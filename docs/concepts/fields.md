@@ -40,7 +40,7 @@ class User(BaseModel):
 
 ## Using `Annotated`
 
-The `Field` function can also be used together with `Annotated`.
+The `Field` function can also be used together with [`Annotated`][annotated].
 
 ```py
 from uuid import uuid4
@@ -55,8 +55,8 @@ class User(BaseModel):
 ```
 
 !!! note
-    Defaults can be set outside `Annotated` as the assigned value or with `Field.default_factory` inside `Annotated`.
-    The `Field.default` argument is not supported inside `Annotated`.
+    Defaults can be set outside [`Annotated`][annotated] as the assigned value or with `Field.default_factory` inside
+    [`Annotated`][annotated]. The `Field.default` argument is not supported inside [`Annotated`][annotated].
 
 
 ## Field aliases
@@ -866,3 +866,4 @@ print(b.model_dump())
 [Validate Assignment]: models.md#validate-assignment
 [Serialization]: serialization.md#model-and-field-level-include-and-exclude
 [Customizing JSON Schema]: json_schema.md#customizing-json-schema
+[annotated]: https://docs.python.org/3/library/typing.html#typing.Annotated
