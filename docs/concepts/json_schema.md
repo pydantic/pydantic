@@ -11,8 +11,8 @@ The generated JSON schemas are compliant with the following specifications:
 
 Use the following functions to generate JSON schema:
 
-* [`BaseModel.model_json_schema`][pydantic.main.BaseModel.model_json_schema] returns a jsonable dict of a model's schema
-* [`TypeAdapter.json_schema`][pydantic.type_adapter.TypeAdapter.json_schema] returns a jsonable dict of an adapted type's schema
+* [`BaseModel.model_json_schema`][pydantic.main.BaseModel.model_json_schema] returns a jsonable dict of a model's schema.
+* [`TypeAdapter.json_schema`][pydantic.type_adapter.TypeAdapter.json_schema] returns a jsonable dict of an adapted type's schema.
 
 !!! note
     These methods are not to be confused with [`BaseModel.model_dump_json`][pydantic.main.BaseModel.model_dump_json]
@@ -23,7 +23,7 @@ Use the following functions to generate JSON schema:
     Regarding the "jsonable" nature of the [`model_json_schema`][pydantic.main.BaseModel.model_json_schema] results,
     calling `json.dumps(m.model_json_schema())`on some `BaseModel` `m` returns a valid JSON string. Similarly, for
     [`TypeAdapter.json_schema`][pydantic.type_adapter.TypeAdapter.json_schema], calling
-    `json.dumps(ta.json_schema())`on some `TypeAdapter` `ta` returns a valid JSON string.
+    `json.dumps(TypeAdapter(<some_type>).json_schema())` returns a valid JSON string.
 
 
 !!! tip
@@ -769,9 +769,10 @@ print(Model(a='1').model_json_schema())
 """
 ```
 
-In the future, it's likely that Pydantic will add builtin support for JSON schema generation for types like
-[`PlainValidator`][pydantic.functional_validators.PlainValidator], but the
-[`WithJsonSchema`][pydantic.json_schema.WithJsonSchema] annotation will still be useful for other custom types.
+!!! note:
+    As discussed in [this issue](https://github.com/pydantic/pydantic/issues/7957), in the future, it's likely that Pydantic will add
+    builtin support for JSON schema generation for types like [`PlainValidator`][pydantic.functional_validators.PlainValidator],
+    but the [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema] annotation will still be useful for other custom types.
 
 ### `SkipJsonSchema` annotation
 
@@ -1023,7 +1024,7 @@ print(
 
 * The JSON schema for `Optional` fields indicates that the value `null` is allowed.
 * The `Decimal` type is exposed in JSON schema (and serialized) as a string.
-* The JSON schema does not preserve `namedtuple`s as `namedtuple`s.
+* Since the `namedtuple` type doesn't exist in JSON, a model's JSON schema does not preserve `namedtuple`s as `namedtuple`s.
 * When they differ, you can specify whether you want the JSON schema to represent the inputs to validation
     or the outputs from serialization.
 * Sub-models used are added to the `$defs` JSON attribute and referenced, as per the spec.
