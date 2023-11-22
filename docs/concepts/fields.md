@@ -41,7 +41,6 @@ class User(BaseModel):
 ## Using `Annotated`
 
 The `Field` function can also be used together with `Annotated`.
-For versions of Python prior to 3.9, `typing_extensions.Annotated` can be used.
 
 ```py
 from uuid import uuid4
