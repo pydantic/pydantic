@@ -104,7 +104,11 @@ __all__ = (
     'Tag',
     'Discriminator',
     'JsonValue',
+    'OnErrorOmit',
 )
+
+
+T = TypeVar('T')
 
 
 @_dataclasses.dataclass
@@ -2800,3 +2804,12 @@ else:
             _AllowAnyJson,
         ],
     )
+
+
+class _OnErrorOmit:
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        return core_schema.with_default_schema(schema=handler(source_type), on_error='omit')
+
+
+OnErrorOmit = Annotated[T, _OnErrorOmit]

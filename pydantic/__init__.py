@@ -205,6 +205,7 @@ __all__ = (
     'ValidatorFunctionWrapHandler',
     'FieldSerializationInfo',
     'SerializerFunctionWrapHandler',
+    'OnErrorOmit',
 )
 
 # A mapping of {<member name>: (package, <module name>)} defining dynamic imports
@@ -328,6 +329,7 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'Tag': (__package__, '.types'),
     'Discriminator': (__package__, '.types'),
     'JsonValue': (__package__, '.types'),
+    'OnErrorOmit': (__package__, '.types'),
     # type_adapter
     'TypeAdapter': (__package__, '.type_adapter'),
     # warnings
