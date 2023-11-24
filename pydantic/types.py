@@ -2809,6 +2809,9 @@ else:
 class _OnErrorOmit:
     @classmethod
     def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        # there is no actual default value here but we use with_default_schema since it already has the on_error
+        # behavior implemented and it would be no more efficient to implement it on every other validator
+        # or as a standalone validator
         return core_schema.with_default_schema(schema=handler(source_type), on_error='omit')
 
 
