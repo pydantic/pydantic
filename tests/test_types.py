@@ -40,7 +40,7 @@ import dirty_equals
 import pytest
 from dirty_equals import HasRepr, IsFloatNan, IsOneOf, IsStr
 from pydantic_core import CoreSchema, PydanticCustomError, SchemaError, core_schema
-from typing_extensions import Annotated, Literal, TypedDict, get_args
+from typing_extensions import Annotated, Literal, NotRequired, TypedDict, get_args
 
 from pydantic import (
     UUID1,
@@ -48,6 +48,7 @@ from pydantic import (
     UUID4,
     UUID5,
     AfterValidator,
+    AllowInfNan,
     AwareDatetime,
     Base64Bytes,
     Base64Str,
@@ -64,6 +65,8 @@ from pydantic import (
     FutureDate,
     FutureDatetime,
     GetCoreSchemaHandler,
+    GetPydanticSchema,
+    ImportString,
     InstanceOf,
     Json,
     JsonValue,
@@ -76,20 +79,24 @@ from pydantic import (
     NonNegativeInt,
     NonPositiveFloat,
     NonPositiveInt,
+    OnErrorOmit,
     PastDate,
     PastDatetime,
     PositiveFloat,
     PositiveInt,
     PydanticInvalidForJsonSchema,
+    PydanticSchemaGenerationError,
     SecretBytes,
     SecretStr,
     SerializeAsAny,
     SkipValidation,
+    Strict,
     StrictBool,
     StrictBytes,
     StrictFloat,
     StrictInt,
     StrictStr,
+    StringConstraints,
     Tag,
     TypeAdapter,
     ValidationError,
@@ -107,9 +114,6 @@ from pydantic import (
     validate_call,
 )
 from pydantic.dataclasses import dataclass as pydantic_dataclass
-from pydantic.errors import PydanticSchemaGenerationError
-from pydantic.functional_validators import AfterValidator
-from pydantic.types import AllowInfNan, GetPydanticSchema, ImportString, Strict, StringConstraints
 
 try:
     import email_validator
@@ -6129,3 +6133,38 @@ def test_json_value_roundtrip() -> None:
 
     round_trip_value = json.loads(MyModel(val=True).model_dump_json())['val']
     assert round_trip_value is True, round_trip_value
+
+
+def test_on_error_omit() -> None:
+    OmittableInt = OnErrorOmit[int]
+
+    class MyTypedDict(TypedDict):
+        a: NotRequired[OmittableInt]
+        b: NotRequired[OmittableInt]
+
+    class Model(BaseModel):
+        a_list: List[OmittableInt]
+        a_dict: Dict[OmittableInt, OmittableInt]
+        a_typed_dict: MyTypedDict
+
+    actual = Model(
+        a_list=[1, 2, 'a', 3],
+        a_dict={1: 1, 2: 2, 'a': 'a', 'b': 0, 3: 'c', 4: 4},
+        a_typed_dict=MyTypedDict(a=1, b='xyz'),  # type: ignore
+    )
+
+    expected = Model(a_list=[1, 2, 3], a_dict={1: 1, 2: 2, 4: 4}, a_typed_dict=MyTypedDict(a=1))
+
+    assert actual == expected
+
+
+def test_on_error_omit_top_level() -> None:
+    ta = TypeAdapter(OnErrorOmit[int])
+
+    assert ta.validate_python(1) == 1
+    assert ta.validate_python('1') == 1
+
+    # we might want to just raise the OmitError or convert it to a ValidationError
+    # if it hits the top level, but this documents the current behavior at least
+    with pytest.raises(SchemaError, match='Uncaught Omit error'):
+        ta.validate_python('a')

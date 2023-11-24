@@ -104,7 +104,11 @@ __all__ = (
     'Tag',
     'Discriminator',
     'JsonValue',
+    'OnErrorOmit',
 )
+
+
+T = TypeVar('T')
 
 
 @_dataclasses.dataclass
@@ -2800,3 +2804,21 @@ else:
             _AllowAnyJson,
         ],
     )
+
+
+class _OnErrorOmit:
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        # there is no actual default value here but we use with_default_schema since it already has the on_error
+        # behavior implemented and it would be no more efficient to implement it on every other validator
+        # or as a standalone validator
+        return core_schema.with_default_schema(schema=handler(source_type), on_error='omit')
+
+
+OnErrorOmit = Annotated[T, _OnErrorOmit]
+"""
+When used as an item in a list, the key type in a dict, optional values of a TypedDict, etc.
+this annotation omits the item from the iteration if there is any error validating it.
+That is, instead of a [`ValidationError`][pydantic_core.ValidationError] being propagated up and the entire iterable being discarded
+any invalid items are discarded and the valid ones are returned.
+"""
