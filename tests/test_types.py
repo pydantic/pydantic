@@ -6143,8 +6143,8 @@ def test_on_error_omit() -> None:
         b: NotRequired[OmittableInt]
 
     class Model(BaseModel):
-        a_list: list[OmittableInt]
-        a_dict: dict[OmittableInt, OmittableInt]
+        a_list: List[OmittableInt]
+        a_dict: Dict[OmittableInt, OmittableInt]
         a_typed_dict: MyTypedDict
 
     actual = Model(
