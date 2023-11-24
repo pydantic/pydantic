@@ -2813,3 +2813,9 @@ class _OnErrorOmit:
 
 
 OnErrorOmit = Annotated[T, _OnErrorOmit]
+"""
+When used as an item in a list, the key type in a dict, optional values of a TypedDict, etc.
+this annotation omits the item from the iteration if there is any error validating it.
+That is, instead of a ValidationError being propagated up and the entire iterable being discarded
+any invalid items are discarded and the valid ones are returned.
+"""
