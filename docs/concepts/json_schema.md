@@ -252,6 +252,56 @@ print(json.dumps(ta_schema, indent=2))
 """
 ```
 
+### Configuring the `JsonSchemaMode`
+
+Specify the mode of JSON schema generation via the `mode` parameter in the
+[`model_json_schema`][pydantic.main.BaseModel.model_json_schema] and
+[`TypeAdapter.json_schema`][pydantic.type_adapter.TypeAdapter.json_schema] methods. By default, the mode is set to
+`'validation'`, which produces a JSON schema corresponding to the model's validation schema.
+
+The [`JsonSchemaMode`][pydantic.json_schema.JsonSchemaMode] is a type alias that represents the available options for the `mode` parameter:
+
+* `'validation'`
+* `'serialization'`
+
+Here's an example of how to specify the `mode` parameter, and how it affects the generated JSON schema:
+
+```py
+from decimal import Decimal
+
+from pydantic import BaseModel
+
+
+class Model(BaseModel):
+    a: Decimal = Decimal('12.34')
+
+
+print(Model.model_json_schema(mode='validation'))
+"""
+{
+    'properties': {
+        'a': {
+            'anyOf': [{'type': 'number'}, {'type': 'string'}],
+            'default': '12.34',
+            'title': 'A',
+        }
+    },
+    'title': 'Model',
+    'type': 'object',
+}
+"""
+
+print(Model.model_json_schema(mode='serialization'))
+"""
+{
+    'properties': {'a': {'default': '12.34', 'title': 'A', 'type': 'string'}},
+    'title': 'Model',
+    'type': 'object',
+}
+"""
+```
+
+
 ## Customizing JSON Schema
 
 The generated JSON schema can be customized at both the field level and model level via:
@@ -265,9 +315,9 @@ The [Using `json_schema_extra`](#using-json_schema_extra) section below provides
 For custom types, Pydantic offers other tools for customizing JSON schema generation:
 
 1. [Implementing `__get_pydantic_core_schema__`](#implementing-getpydanticcoreschema)
-2. [Implementing `__get_pydantic_json_schema__`](#implementing-getpydanticjsonschema)
-3. [`WithJsonSchema` annotation](#withjsonschema-annotation)
-4. [`SkipJsonSchema` annotation](#skipjsonschema-annotation)
+2. [`WithJsonSchema` annotation](#withjsonschema-annotation)
+3. [`SkipJsonSchema` annotation](#skipjsonschema-annotation)
+4. [Implementing `__get_pydantic_json_schema__`](#implementing-getpydanticjsonschema)
 
 ### Field-Level Customization
 
@@ -679,72 +729,6 @@ except ValidationError as e:
 !!! tip
     Note that you *must* return a schema, even if you are just mutating it in place.
 
-
-### Implementing `__get_pydantic_json_schema__`
-
-You can also implement `__get_pydantic_json_schema__` to modify or override the generated json schema.
-Modifying this method only affects the JSON schema - it doesn't effect the core schema, which is used for validation and serialization.
-
-Here's an example of modifying the generated JSON schema:
-
-
-```py output="json"
-import json
-
-from pydantic_core import CoreSchema
-
-from pydantic import BaseModel, GetJsonSchemaHandler
-from pydantic.json_schema import JsonSchemaValue
-
-
-class Person(BaseModel):
-    name: str
-    age: int
-
-    @classmethod
-    def __get_pydantic_json_schema__(
-        cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
-    ) -> JsonSchemaValue:
-        json_schema = handler(core_schema)
-        json_schema = handler.resolve_ref_schema(json_schema)
-        json_schema['examples'] = [
-            {
-                'name': 'John Doe',
-                'age': 25,
-            }
-        ]
-        return json_schema
-
-
-print(json.dumps(Person.model_json_schema(), indent=2))
-"""
-{
-  "examples": [
-    {
-      "age": 25,
-      "name": "John Doe"
-    }
-  ],
-  "properties": {
-    "name": {
-      "title": "Name",
-      "type": "string"
-    },
-    "age": {
-      "title": "Age",
-      "type": "integer"
-    }
-  },
-  "required": [
-    "name",
-    "age"
-  ],
-  "title": "Person",
-  "type": "object"
-}
-"""
-```
-
 To override the schema completely, do not call the handler and return your own
 `CoreSchema`:
 
@@ -849,8 +833,14 @@ print(m.model_fields)
 ??? api "API Documentation"
     [`pydantic.json_schema.WithJsonSchema`][pydantic.json_schema.WithJsonSchema]<br>
 
+!!! tip
+    Using [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema]] is preferred over
+    [implementing `__get_pydantic_json_schema__`](#implementing-getpydanticjsonschema) for custom types,
+    as it's more simple and less error-prone.
+
 The [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema] annotation can be used to override the generated (base)
-JSON schema for a given type without the need to implement `__get_pydantic_core_schema__` on the type itself.
+JSON schema for a given type without the need to implement `__get_pydantic_core_schema__`
+or `__get_pydantic_json_schema__` on the type itself.
 
 This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
 such as `Callable`, or types that have an [`is-instance`][pydantic_core.core_schema.is_instance_schema] core schema.
@@ -900,6 +890,88 @@ print(Model(a='1').model_json_schema())
 
 The [`SkipJsonSchema`][pydantic.json_schema.SkipJsonSchema] annotation can be used to skip a including field (or part of a field's specifications)
 from the generated JSON schema. See the API docs for more details.
+
+
+### Implementing `__get_pydantic_json_schema__`
+
+You can also implement `__get_pydantic_json_schema__` to modify or override the generated json schema.
+Modifying this method only affects the JSON schema - it doesn't affect the core schema, which is used for validation and serialization.
+
+Here's an example of modifying the generated JSON schema:
+
+```py output="json"
+import json
+from typing import Any
+
+from pydantic_core import core_schema
+
+from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler, TypeAdapter
+from pydantic.json_schema import JsonSchemaValue
+
+
+class Person:
+    name: str
+    age: int
+
+    def __init__(self, name: str, age: int):
+        self.name = name
+        self.age = age
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
+        return core_schema.typed_dict_schema(
+            {
+                'name': core_schema.typed_dict_field(core_schema.str_schema()),
+                'age': core_schema.typed_dict_field(core_schema.int_schema()),
+            },
+        )
+
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        json_schema = handler(core_schema)
+        json_schema = handler.resolve_ref_schema(json_schema)
+        json_schema['examples'] = [
+            {
+                'name': 'John Doe',
+                'age': 25,
+            }
+        ]
+        json_schema['title'] = 'Person'
+        return json_schema
+
+
+print(json.dumps(TypeAdapter(Person).json_schema(), indent=2))
+"""
+{
+  "examples": [
+    {
+      "age": 25,
+      "name": "John Doe"
+    }
+  ],
+  "properties": {
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "age": {
+      "title": "Age",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "name",
+    "age"
+  ],
+  "title": "Person",
+  "type": "object"
+}
+"""
+```
 
 
 ## JSON schema types
@@ -1144,8 +1216,6 @@ print(
 * The JSON schema for `Optional` fields indicates that the value `null` is allowed.
 * The `Decimal` type is exposed in JSON schema (and serialized) as a string.
 * Since the `namedtuple` type doesn't exist in JSON, a model's JSON schema does not preserve `namedtuple`s as `namedtuple`s.
-* When they differ, you can specify whether you want the JSON schema to represent the inputs to validation
-    or the outputs from serialization.
 * Sub-models used are added to the `$defs` JSON attribute and referenced, as per the spec.
 * Sub-models with modifications (via the `Field` class) like a custom title, description, or default value,
     are recursively included instead of referenced.
