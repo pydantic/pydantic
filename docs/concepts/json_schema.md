@@ -314,9 +314,9 @@ The [Using `json_schema_extra`](#using-json_schema_extra) section below provides
 
 For custom types, Pydantic offers other tools for customizing JSON schema generation:
 
-1. [Implementing `__get_pydantic_core_schema__`](#implementing-getpydanticcoreschema)
-2. [`WithJsonSchema` annotation](#withjsonschema-annotation)
-3. [`SkipJsonSchema` annotation](#skipjsonschema-annotation)
+1. [`WithJsonSchema` annotation](#withjsonschema-annotation)
+2. [`SkipJsonSchema` annotation](#skipjsonschema-annotation)
+3. [Implementing `__get_pydantic_core_schema__`](#implementing-getpydanticcoreschema)
 4. [Implementing `__get_pydantic_json_schema__`](#implementing-getpydanticjsonschema)
 
 ### Field-Level Customization
@@ -566,6 +566,85 @@ print(json.dumps(Model.model_json_schema(), indent=2))
 }
 """
 ```
+
+### `WithJsonSchema` annotation
+
+??? api "API Documentation"
+    [`pydantic.json_schema.WithJsonSchema`][pydantic.json_schema.WithJsonSchema]<br>
+
+!!! tip
+    Using [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema]] is preferred over
+    [implementing `__get_pydantic_json_schema__`](#implementing-getpydanticjsonschema) for custom types,
+    as it's more simple and less error-prone.
+
+The [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema] annotation can be used to override the generated (base)
+JSON schema for a given type without the need to implement `__get_pydantic_core_schema__`
+or `__get_pydantic_json_schema__` on the type itself.
+
+This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
+such as `Callable`, or types that have an [`is-instance`][pydantic_core.core_schema.is_instance_schema] core schema.
+
+For example, the use of a [`PlainValidator`][pydantic.functional_validators.PlainValidator] in the following example
+would otherwise raise an error when producing a JSON schema because the [`PlainValidator`][pydantic.functional_validators.PlainValidator]
+is a `Callable`. However, by using the [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema]
+annotation, we can override the generated JSON schema for the custom `MyInt` type:
+
+```py output="json"
+import json
+
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, PlainValidator, WithJsonSchema
+
+MyInt = Annotated[
+    int,
+    PlainValidator(lambda v: int(v) + 1),
+    WithJsonSchema({'type': 'integer', 'examples': [1, 0, -1]}),
+]
+
+
+class Model(BaseModel):
+    a: MyInt
+
+
+print(Model(a='1').a)
+#> 2
+
+print(json.dumps(Model.model_json_schema(), indent=2))
+"""
+{
+  "properties": {
+    "a": {
+      "examples": [
+        1,
+        0,
+        -1
+      ],
+      "title": "A",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "a"
+  ],
+  "title": "Model",
+  "type": "object"
+}
+"""
+```
+
+!!! note:
+    As discussed in [this issue](https://github.com/pydantic/pydantic/issues/8208), in the future, it's likely that Pydantic will add
+    builtin support for JSON schema generation for types like [`PlainValidator`][pydantic.functional_validators.PlainValidator],
+    but the [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema] annotation will still be useful for other custom types.
+
+### `SkipJsonSchema` annotation
+
+??? api "API Documentation"
+    [`pydantic.json_schema.SkipJsonSchema`][pydantic.json_schema.SkipJsonSchema]<br>
+
+The [`SkipJsonSchema`][pydantic.json_schema.SkipJsonSchema] annotation can be used to skip a including field (or part of a field's specifications)
+from the generated JSON schema. See the API docs for more details.
 
 ### Implementing `__get_pydantic_core_schema__`
 
@@ -865,86 +944,6 @@ print(m.model_fields)
 }
 """
 ```
-
-### `WithJsonSchema` annotation
-
-??? api "API Documentation"
-    [`pydantic.json_schema.WithJsonSchema`][pydantic.json_schema.WithJsonSchema]<br>
-
-!!! tip
-    Using [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema]] is preferred over
-    [implementing `__get_pydantic_json_schema__`](#implementing-getpydanticjsonschema) for custom types,
-    as it's more simple and less error-prone.
-
-The [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema] annotation can be used to override the generated (base)
-JSON schema for a given type without the need to implement `__get_pydantic_core_schema__`
-or `__get_pydantic_json_schema__` on the type itself.
-
-This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
-such as `Callable`, or types that have an [`is-instance`][pydantic_core.core_schema.is_instance_schema] core schema.
-
-For example, the use of a [`PlainValidator`][pydantic.functional_validators.PlainValidator] in the following example
-would otherwise raise an error when producing a JSON schema because the [`PlainValidator`][pydantic.functional_validators.PlainValidator]
-is a `Callable`. However, by using the [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema]
-annotation, we can override the generated JSON schema for the custom `MyInt` type:
-
-```py output="json"
-import json
-
-from typing_extensions import Annotated
-
-from pydantic import BaseModel, PlainValidator, WithJsonSchema
-
-MyInt = Annotated[
-    int,
-    PlainValidator(lambda v: int(v) + 1),
-    WithJsonSchema({'type': 'integer', 'examples': [1, 0, -1]}),
-]
-
-
-class Model(BaseModel):
-    a: MyInt
-
-
-print(Model(a='1').a)
-#> 2
-
-print(json.dumps(Model.model_json_schema(), indent=2))
-"""
-{
-  "properties": {
-    "a": {
-      "examples": [
-        1,
-        0,
-        -1
-      ],
-      "title": "A",
-      "type": "integer"
-    }
-  },
-  "required": [
-    "a"
-  ],
-  "title": "Model",
-  "type": "object"
-}
-"""
-```
-
-!!! note:
-    As discussed in [this issue](https://github.com/pydantic/pydantic/issues/8208), in the future, it's likely that Pydantic will add
-    builtin support for JSON schema generation for types like [`PlainValidator`][pydantic.functional_validators.PlainValidator],
-    but the [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema] annotation will still be useful for other custom types.
-
-### `SkipJsonSchema` annotation
-
-??? api "API Documentation"
-    [`pydantic.json_schema.SkipJsonSchema`][pydantic.json_schema.SkipJsonSchema]<br>
-
-The [`SkipJsonSchema`][pydantic.json_schema.SkipJsonSchema] annotation can be used to skip a including field (or part of a field's specifications)
-from the generated JSON schema. See the API docs for more details.
-
 
 ### Implementing `__get_pydantic_json_schema__`
 
