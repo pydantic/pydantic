@@ -171,7 +171,6 @@ impl SchemaValidator {
             from_attributes,
             context,
             self_instance,
-            &mut RecursionGuard::default(),
         )
         .map_err(|e| self.prepare_validation_err(py, e, InputType::Python))
     }
@@ -194,7 +193,6 @@ impl SchemaValidator {
             from_attributes,
             context,
             self_instance,
-            &mut RecursionGuard::default(),
         ) {
             Ok(_) => Ok(true),
             Err(ValError::InternalErr(err)) => Err(err),
@@ -213,22 +211,18 @@ impl SchemaValidator {
         context: Option<&PyAny>,
         self_instance: Option<&PyAny>,
     ) -> PyResult<PyObject> {
-        let recursion_guard = &mut RecursionGuard::default();
-        match input.parse_json() {
-            Ok(input) => self
-                ._validate(
-                    py,
-                    &input,
-                    InputType::Json,
-                    strict,
-                    None,
-                    context,
-                    self_instance,
-                    recursion_guard,
-                )
-                .map_err(|e| self.prepare_validation_err(py, e, InputType::Json)),
-            Err(err) => Err(self.prepare_validation_err(py, err, InputType::Json)),
-        }
+        let r = match json::validate_json_bytes(input) {
+            Ok(v_match) => self._validate_json(
+                py,
+                input,
+                v_match.into_inner().as_slice(),
+                strict,
+                context,
+                self_instance,
+            ),
+            Err(err) => Err(err),
+        };
+        r.map_err(|e| self.prepare_validation_err(py, e, InputType::Json))
     }
 
     #[pyo3(signature = (input, *, strict=None, context=None))]
@@ -242,8 +236,7 @@ impl SchemaValidator {
         let t = InputType::String;
         let string_mapping = StringMapping::new_value(input).map_err(|e| self.prepare_validation_err(py, e, t))?;
 
-        let recursion_guard = &mut RecursionGuard::default();
-        match self._validate(py, &string_mapping, t, strict, None, context, None, recursion_guard) {
+        match self._validate(py, &string_mapping, t, strict, None, context, None) {
             Ok(r) => Ok(r),
             Err(e) => Err(self.prepare_validation_err(py, e, t)),
         }
@@ -329,16 +322,30 @@ impl SchemaValidator {
         from_attributes: Option<bool>,
         context: Option<&'data PyAny>,
         self_instance: Option<&PyAny>,
-        recursion_guard: &'data mut RecursionGuard,
     ) -> ValResult<PyObject>
     where
         's: 'data,
     {
+        let mut recursion_guard = RecursionGuard::default();
         let mut state = ValidationState::new(
             Extra::new(strict, from_attributes, context, self_instance, input_type),
-            recursion_guard,
+            &mut recursion_guard,
         );
         self.validator.validate(py, input, &mut state)
+    }
+
+    fn _validate_json(
+        &self,
+        py: Python,
+        input: &PyAny,
+        json_data: &[u8],
+        strict: Option<bool>,
+        context: Option<&PyAny>,
+        self_instance: Option<&PyAny>,
+    ) -> ValResult<PyObject> {
+        let json_value =
+            jiter::JsonValue::parse(json_data, true).map_err(|e| json::map_json_err(input, e, json_data))?;
+        self._validate(py, &json_value, InputType::Json, strict, None, context, self_instance)
     }
 
     fn prepare_validation_err(&self, py: Python, error: ValError, input_type: InputType) -> PyErr {

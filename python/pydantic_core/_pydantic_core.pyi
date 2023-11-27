@@ -385,7 +385,7 @@ def to_json(
        JSON bytes.
     """
 
-def from_json(data: str | bytes | bytearray, *, allow_inf_nan: bool = True) -> Any:
+def from_json(data: str | bytes | bytearray, *, allow_inf_nan: bool = True, cache_strings: bool = True) -> Any:
     """
     Deserialize JSON data to a Python object.
 
@@ -394,6 +394,8 @@ def from_json(data: str | bytes | bytearray, *, allow_inf_nan: bool = True) -> A
     Arguments:
         data: The JSON data to deserialize.
         allow_inf_nan: Whether to allow `Infinity`, `-Infinity` and `NaN` values as `json.loads()` does by default.
+        cache_strings: Whether to cache strings to avoid constructing new Python objects,
+            this should have a significant impact on performance while increasing memory usage slightly.
 
     Raises:
         ValueError: If deserialization fails.

@@ -14,7 +14,7 @@ use super::datetime::{
     float_as_time, int_as_datetime, int_as_duration, int_as_time, EitherDate, EitherDateTime, EitherTime,
 };
 use super::return_enums::ValidationMatch;
-use super::shared::{float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_float, str_as_int};
+use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_float, str_as_int};
 use super::{
     BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericArguments, GenericIterable,
     GenericIterator, GenericMapping, Input, JsonArgs,
@@ -81,13 +81,6 @@ impl<'a> Input<'a> for JsonValue {
                     self,
                 ))
             }
-        }
-    }
-
-    fn parse_json(&'a self) -> ValResult<JsonValue> {
-        match self {
-            JsonValue::Str(s) => JsonValue::parse(s.as_bytes(), true).map_err(|e| map_json_err(self, e)),
-            _ => Err(ValError::new(ErrorTypeDefaults::JsonType, self)),
         }
     }
 
@@ -365,10 +358,6 @@ impl<'a> Input<'a> for String {
             },
             self,
         ))
-    }
-
-    fn parse_json(&'a self) -> ValResult<JsonValue> {
-        JsonValue::parse(self.as_bytes(), true).map_err(|e| map_json_err(self, e))
     }
 
     fn validate_str(

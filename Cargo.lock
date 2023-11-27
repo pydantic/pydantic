@@ -138,9 +138,9 @@ checksum = "62b02a5381cc465bd3041d84623d0fa3b66738b52b8e2fc3bab8ad63ab032f4a"
 
 [[package]]
 name = "jiter"
-version = "0.0.4"
+version = "0.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b27d419c535bf7b50ad355278b1159cbf0cc8d507ea003d625b17bf0375720b8"
+checksum = "e184598fea113663dd78e33a24ad3a1e7ba8ceedf71effb7406b3f2eccb63ed1"
 dependencies = [
  "ahash",
  "lexical-core",
