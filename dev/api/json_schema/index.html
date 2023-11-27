@@ -5021,7 +5021,7 @@ methods for more details; these can be overridden to control warning behavior.</
   
       <div class="admonition abstract">
 <p class="admonition-title">Usage Documentation</p>
-<p><a href="../../concepts/json_schema/#customizing-the-json-schema-generation-process">Customizing the JSON schema generation process</a></p>
+<p><a href="../../concepts/json_schema/#customizing-the-json-schema-generation-process">Customizing the JSON Schema Generation Process</a></p>
 </div>
 <p>A class for generating JSON schemas.</p>
 <p>This class generates JSON schemas based on configured parameters. The default schema dialect
@@ -14226,7 +14226,11 @@ just return None in situations where you don't want warnings to be emitted.</p>
   <div class="doc doc-contents ">
 
   
-      <p>Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
+      <div class="admonition abstract">
+<p class="admonition-title">Usage Documentation</p>
+<p><a href="../../concepts/json_schema/#withjsonschema-annotation"><code>WithJsonSchema</code> annotation</a></p>
+</div>
+<p>Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
 This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
 such as Callable, or types that have an is-instance core schema, without needing to go so far as creating a
 custom subclass of pydantic.json_schema.GenerateJsonSchema.
@@ -14321,20 +14325,56 @@ allowing you to add different examples for validation and serialization.</p>
   <div class="doc doc-contents ">
 
   
-      <p>Add this as an annotation on a field to skip generating a JSON schema for that field.</p>
+      <div class="admonition abstract">
+<p class="admonition-title">Usage Documentation</p>
+<p><a href="../../concepts/json_schema/#skipjsonschema-annotation"><code>SkipJsonSchema</code> annotation</a></p>
+</div>
+<p>Add this as an annotation on a field to skip generating a JSON schema for that field.</p>
 
 <details class="example" open>
   <summary>Example</summary>
-  <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+  <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 <span class="kn">from</span> <span class="nn">pydantic.json_schema</span> <span class="kn">import</span> <span class="n">SkipJsonSchema</span>
 
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+
+
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">SkipJsonSchema</span><span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">a</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># (1)!</span>
+    <span class="n">b</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">SkipJsonSchema</span><span class="p">[</span><span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># (2)!</span>
+    <span class="n">c</span><span class="p">:</span> <span class="n">SkipJsonSchema</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># (3)!</span>
 
 
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;properties&#39;: {&#39;a&#39;: {&#39;default&#39;: None, &#39;title&#39;: &#39;A&#39;, &#39;type&#39;: &#39;integer&#39;}}, &#39;title&#39;: &#39;Model&#39;, &#39;type&#39;: &#39;object&#39;}</span>
+<span class="n">pprint</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">())</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;properties&#39;: {</span>
+<span class="sd">        &#39;a&#39;: {</span>
+<span class="sd">            &#39;anyOf&#39;: [</span>
+<span class="sd">                {&#39;type&#39;: &#39;integer&#39;},</span>
+<span class="sd">                {&#39;type&#39;: &#39;null&#39;}</span>
+<span class="sd">            ],</span>
+<span class="sd">            &#39;default&#39;: None,</span>
+<span class="sd">            &#39;title&#39;: &#39;A&#39;</span>
+<span class="sd">        },</span>
+<span class="sd">        &#39;b&#39;: {</span>
+<span class="sd">            &#39;default&#39;: None,</span>
+<span class="sd">            &#39;title&#39;: &#39;B&#39;,</span>
+<span class="sd">            &#39;type&#39;: &#39;integer&#39;</span>
+<span class="sd">        }</span>
+<span class="sd">    },</span>
+<span class="sd">    &#39;title&#39;: &#39;Model&#39;,</span>
+<span class="sd">    &#39;type&#39;: &#39;object&#39;</span>
+<span class="sd">}</span>
+<span class="sd">&#39;&#39;&#39;</span>
 </code></pre></div>
+<ol>
+<li>The integer and null types are both included in the schema for <code>a</code>.</li>
+<li>The integer type is the only type included in the schema for <code>b</code>.</li>
+<li>The entirety of the <code>c</code> field is omitted from the schema.</li>
+</ol>
 </details>
 
   

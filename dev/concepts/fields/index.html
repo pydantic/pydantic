@@ -1007,6 +1007,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#the-computed_field-decorator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The computed_field decorator
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3181,6 +3192,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#the-computed_field-decorator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The computed_field decorator
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3207,7 +3229,7 @@
 <summary>API Documentation</summary>
 <p><a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>pydantic.fields.Field</code></a><br></p>
 </details>
-<p>The <code>Field</code> function is used to customize and add metadata to fields of models.</p>
+<p>The <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a> function is used to customize and add metadata to fields of models.</p>
 <h2 id="default-values">Default values<a class="headerlink" href="#default-values" title="Permanent link">&para;</a></h2>
 <p>The <code>default</code> parameter is used to define a default value for a field.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
@@ -3239,7 +3261,7 @@
 <p>If you use <code>typing.Optional</code>, it doesn't mean that the field has a default value of <code>None</code>!</p>
 </div>
 <h2 id="using-annotated">Using <code>Annotated</code><a class="headerlink" href="#using-annotated" title="Permanent link">&para;</a></h2>
-<p>The <code>Field</code> function can also be used together with <code>Annotated</code>.</p>
+<p>The <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a> function can also be used together with <a href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a>.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">uuid4</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
@@ -3250,6 +3272,11 @@
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="nb">id</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">)]</span>
 </code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Defaults can be set outside <a href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a> as the assigned value or with <code>Field.default_factory</code> inside
+<a href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a>. The <code>Field.default</code> argument is not supported inside <a href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a>.</p>
+</div>
 <h2 id="field-aliases">Field aliases<a class="headerlink" href="#field-aliases" title="Permanent link">&para;</a></h2>
 <p>For validation and serialization, you can define an alias for a field.</p>
 <p>There are three ways to define an alias:</p>
@@ -3842,7 +3869,7 @@ approach can be useful when the discriminator fields aren't the same for all the
 <p>You can also take advantage of <code>Annotated</code> to define your discriminated unions.
 See the <a href="../../api/standard_library_types/#discriminated-unions-aka-tagged-unions">Discriminated Unions</a> docs for more details.</p>
 <h2 id="strict-mode">Strict Mode<a class="headerlink" href="#strict-mode" title="Permanent link">&para;</a></h2>
-<p>The <code>strict</code> parameter on a <code>Field</code> specifies whether the field should be validated in "strict mode".
+<p>The <code>strict</code> parameter on a <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a> specifies whether the field should be validated in "strict mode".
 In strict mode, Pydantic throws an error during validation instead of coercing data on the field where <code>strict=True</code>.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 
@@ -3910,60 +3937,39 @@ model when exporting the model.</p>
 </ol>
 <p>See the <a href="../serialization/#model-and-field-level-include-and-exclude">Serialization</a> section for more details.</p>
 <h2 id="customizing-json-schema">Customizing JSON Schema<a class="headerlink" href="#customizing-json-schema" title="Permanent link">&para;</a></h2>
-<p>There are fields that exclusively to customise the generated JSON Schema:</p>
+<p>Some field parameters are used exclusively to customize the generated JSON schema. The parameters in question are:</p>
 <ul>
-<li><code>title</code>: The title of the field.</li>
-<li><code>description</code>: The description of the field.</li>
-<li><code>examples</code>: The examples of the field.</li>
-<li><code>json_schema_extra</code>: Extra JSON Schema properties to be added to the field.</li>
+<li><code>title</code></li>
+<li><code>description</code></li>
+<li><code>examples</code></li>
+<li><code>json_schema_extra</code></li>
 </ul>
+<p>Read more about JSON schema customization / modification with fields in the <a href="../json_schema/#field-level-customization">Customizing JSON Schema</a> section of the JSON schema docs.</p>
+<h2 id="the-computed_field-decorator">The <code>computed_field</code> decorator<a class="headerlink" href="#the-computed_field-decorator" title="Permanent link">&para;</a></h2>
+<details class="api">
+<summary>API Documentation</summary>
+<p><a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.computed_field"><code>pydantic.fields.computed_field</code></a><br></p>
+</details>
+<p>The <code>computed_field</code> decorator can be used to include <code>property</code> or <code>cached_property</code> attributes when serializing a
+model or dataclass. This can be useful for fields that are computed from other fields, or for fields that
+are expensive to computed (and thus, are cached).</p>
 <p>Here's an example:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">SecretStr</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">computed_field</span>
 
 
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Age of the user&#39;</span><span class="p">)</span>
-    <span class="n">email</span><span class="p">:</span> <span class="n">EmailStr</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;marcelo@mail.com&#39;</span><span class="p">])</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Username&#39;</span><span class="p">)</span>
-    <span class="n">password</span><span class="p">:</span> <span class="n">SecretStr</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">json_schema_extra</span><span class="o">=</span><span class="p">{</span>
-            <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Password&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s1">&#39;Password of the user&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;examples&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;123456&#39;</span><span class="p">],</span>
-        <span class="p">}</span>
-    <span class="p">)</span>
+<span class="k">class</span> <span class="nc">Box</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">width</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">height</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">depth</span><span class="p">:</span> <span class="nb">float</span>
+
+    <span class="nd">@computed_field</span>
+    <span class="k">def</span> <span class="nf">volume</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">depth</span>
 
 
-<span class="nb">print</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">())</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">{</span>
-<span class="sd">    &#39;properties&#39;: {</span>
-<span class="sd">        &#39;age&#39;: {</span>
-<span class="sd">            &#39;description&#39;: &#39;Age of the user&#39;,</span>
-<span class="sd">            &#39;title&#39;: &#39;Age&#39;,</span>
-<span class="sd">            &#39;type&#39;: &#39;integer&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">        &#39;email&#39;: {</span>
-<span class="sd">            &#39;examples&#39;: [&#39;marcelo@mail.com&#39;],</span>
-<span class="sd">            &#39;format&#39;: &#39;email&#39;,</span>
-<span class="sd">            &#39;title&#39;: &#39;Email&#39;,</span>
-<span class="sd">            &#39;type&#39;: &#39;string&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">        &#39;name&#39;: {&#39;title&#39;: &#39;Username&#39;, &#39;type&#39;: &#39;string&#39;},</span>
-<span class="sd">        &#39;password&#39;: {</span>
-<span class="sd">            &#39;description&#39;: &#39;Password of the user&#39;,</span>
-<span class="sd">            &#39;examples&#39;: [&#39;123456&#39;],</span>
-<span class="sd">            &#39;format&#39;: &#39;password&#39;,</span>
-<span class="sd">            &#39;title&#39;: &#39;Password&#39;,</span>
-<span class="sd">            &#39;type&#39;: &#39;string&#39;,</span>
-<span class="sd">            &#39;writeOnly&#39;: True,</span>
-<span class="sd">        },</span>
-<span class="sd">    },</span>
-<span class="sd">    &#39;required&#39;: [&#39;age&#39;, &#39;email&#39;, &#39;name&#39;, &#39;password&#39;],</span>
-<span class="sd">    &#39;title&#39;: &#39;User&#39;,</span>
-<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
-<span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">Box</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;width&#39;: 1.0, &#39;height&#39;: 2.0, &#39;depth&#39;: 3.0, &#39;volume&#39;: 6.0}</span>
 </code></pre></div>
 
 

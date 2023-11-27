@@ -3589,7 +3589,7 @@ of aliases' fields and all the other fields will be ignored at serialization tim
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Any additional JSON schema data for the schema property.</p>
+              <p>A dict or callable to provide extra JSON schema properties.</p>
             </div>
           </td>
           <td>
@@ -4139,7 +4139,7 @@ type annotated fields without causing a typing error.</p>
 <span class="sd">        examples: Example values for this field.</span>
 <span class="sd">        exclude: Whether to exclude the field from the model serialization.</span>
 <span class="sd">        discriminator: Field name or Discriminator for discriminating the type in a tagged union.</span>
-<span class="sd">        json_schema_extra: Any additional JSON schema data for the schema property.</span>
+<span class="sd">        json_schema_extra: A dict or callable to provide extra JSON schema properties.</span>
 <span class="sd">        frozen: Whether the field is frozen.</span>
 <span class="sd">        validate_default: Run validation that isn&#39;t only checking existence of defaults. This can be set to `True` or `False`. If not set, it defaults to `None`.</span>
 <span class="sd">        repr: A boolean indicating whether to include the field in the `__repr__` output.</span>
@@ -4454,7 +4454,7 @@ function is explicitly used.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Dictionary of extra JSON schema properties.</p>
+              <p>A dict or callable to provide extra JSON schema properties.</p>
             </div>
           </td>
         </tr>
@@ -6523,7 +6523,11 @@ attribute if not provided.</p>
 
   <div class="doc doc-contents ">
   
-      <p>Decorator to include <code>property</code> and <code>cached_property</code> when serializing models or dataclasses.</p>
+      <div class="admonition abstract">
+<p class="admonition-title">Usage Documentation</p>
+<p><a href="../../concepts/fields/#the-computed_field-decorator">The <code>computed_field</code> decorator</a></p>
+</div>
+<p>Decorator to include <code>property</code> and <code>cached_property</code> when serializing models or dataclasses.</p>
 <p>This is useful for fields that are computed from other fields, or for fields that are expensive to compute and should be cached.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">computed_field</span>
 
@@ -6734,7 +6738,7 @@ docstring</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Dictionary of extra JSON schema properties.</p>
+              <p>A dict or callable to provide extra JSON schema properties.</p>
             </div>
           </td>
           <td>
@@ -6973,7 +6977,9 @@ objects.</p>
 <span class="normal">1178</span>
 <span class="normal">1179</span>
 <span class="normal">1180</span>
-<span class="normal">1181</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computed_field</span><span class="p">(</span>
+<span class="normal">1181</span>
+<span class="normal">1182</span>
+<span class="normal">1183</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computed_field</span><span class="p">(</span>
     <span class="n">__f</span><span class="p">:</span> <span class="n">PropertyT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">alias</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -6985,7 +6991,9 @@ objects.</p>
     <span class="nb">repr</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">return_type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PropertyT</span> <span class="o">|</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">[[</span><span class="n">PropertyT</span><span class="p">],</span> <span class="n">PropertyT</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator to include `property` and `cached_property` when serializing models or dataclasses.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.6/concepts/fields#the-computed_field-decorator</span>
+
+<span class="sd">    Decorator to include `property` and `cached_property` when serializing models or dataclasses.</span>
 
 <span class="sd">    This is useful for fields that are computed from other fields, or for fields that are expensive to compute and should be cached.</span>
 
@@ -7109,7 +7117,7 @@ objects.</p>
 <span class="sd">        description: Description to use when including this computed field in JSON Schema, defaults to the function&#39;s</span>
 <span class="sd">            docstring</span>
 <span class="sd">        examples: Example values to use when including this computed field in JSON Schema</span>
-<span class="sd">        json_schema_extra: Dictionary of extra JSON schema properties.</span>
+<span class="sd">        json_schema_extra: A dict or callable to provide extra JSON schema properties.</span>
 <span class="sd">        repr: whether to include this computed field in model repr.</span>
 <span class="sd">            Default is `False` for private properties and `True` for public properties.</span>
 <span class="sd">        return_type: optional return for serialization logic to expect when serializing to JSON, if included</span>
@@ -7284,7 +7292,7 @@ objects.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Dictionary of extra JSON schema properties.</p>
+              <p>A dict or callable to provide extra JSON schema properties.</p>
             </div>
           </td>
         </tr>
