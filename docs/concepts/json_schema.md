@@ -167,7 +167,7 @@ Pydantic V1 (which is now deprecated).
 
 Here's an example of generating JSON schema from a [`TypeAdapter`][pydantic.type_adapter.TypeAdapter]:
 
-```python
+```py
 from typing import List
 
 from pydantic import TypeAdapter
@@ -333,7 +333,9 @@ Some field parameters are used exclusively to customize the generated JSON Schem
 
 Here's an example:
 
-```py
+```py output="json"
+import json
+
 from pydantic import BaseModel, EmailStr, Field, SecretStr
 
 
@@ -350,34 +352,46 @@ class User(BaseModel):
     )
 
 
-print(User.model_json_schema())
+print(json.dumps(User.model_json_schema(), indent=2))
 """
 {
-    'properties': {
-        'age': {
-            'description': 'Age of the user',
-            'title': 'Age',
-            'type': 'integer',
-        },
-        'email': {
-            'examples': ['marcelo@mail.com'],
-            'format': 'email',
-            'title': 'Email',
-            'type': 'string',
-        },
-        'name': {'title': 'Username', 'type': 'string'},
-        'password': {
-            'description': 'Password of the user',
-            'examples': ['123456'],
-            'format': 'password',
-            'title': 'Password',
-            'type': 'string',
-            'writeOnly': True,
-        },
+  "properties": {
+    "age": {
+      "description": "Age of the user",
+      "title": "Age",
+      "type": "integer"
     },
-    'required': ['age', 'email', 'name', 'password'],
-    'title': 'User',
-    'type': 'object',
+    "email": {
+      "examples": [
+        "marcelo@mail.com"
+      ],
+      "format": "email",
+      "title": "Email",
+      "type": "string"
+    },
+    "name": {
+      "title": "Username",
+      "type": "string"
+    },
+    "password": {
+      "description": "Password of the user",
+      "examples": [
+        "123456"
+      ],
+      "format": "password",
+      "title": "Password",
+      "type": "string",
+      "writeOnly": true
+    }
+  },
+  "required": [
+    "age",
+    "email",
+    "name",
+    "password"
+  ],
+  "title": "User",
+  "type": "object"
 }
 """
 ```
@@ -430,7 +444,8 @@ print(ModelB.model_json_schema())
 
 You can specify JSON schema modifications via the [`Field`][pydantic.fields.Field] constructor via `typing.Annotated` as well:
 
-```py
+```py output="json"
+import json
 from uuid import uuid4
 
 from typing_extensions import Annotated
@@ -440,23 +455,26 @@ from pydantic import BaseModel, Field
 
 class Foo(BaseModel):
     id: Annotated[str, Field(default_factory=lambda: uuid4().hex)]
-    name: Annotated[str, Field(max_length=256)] = Field('Bar', title='te')
+    name: Annotated[str, Field(max_length=256)] = Field('Bar', title='CustomName')
 
 
-print(Foo.model_json_schema())
+print(json.dumps(Foo.model_json_schema(), indent=2))
 """
 {
-    'properties': {
-        'id': {'title': 'Id', 'type': 'string'},
-        'name': {
-            'default': 'Bar',
-            'maxLength': 256,
-            'title': 'te',
-            'type': 'string',
-        },
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
     },
-    'title': 'Foo',
-    'type': 'object',
+    "name": {
+      "default": "Bar",
+      "maxLength": 256,
+      "title": "CustomName",
+      "type": "string"
+    }
+  },
+  "title": "Foo",
+  "type": "object"
 }
 """
 ```
@@ -481,7 +499,9 @@ You can pass a `dict` or a `Callable` to `json_schema_extra`.
 
 You can pass a `dict` to `json_schema_extra` to add extra information to the JSON schema:
 
-```py
+```py output="json"
+import json
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -491,14 +511,25 @@ class Model(BaseModel):
     model_config = ConfigDict(json_schema_extra={'examples': [{'a': 'Foo'}]})
 
 
-print(Model.model_json_schema())
+print(json.dumps(Model.model_json_schema(), indent=2))
 """
 {
-    'examples': [{'a': 'Foo'}],
-    'properties': {'a': {'title': 'A', 'type': 'string'}},
-    'required': ['a'],
-    'title': 'Model',
-    'type': 'object',
+  "examples": [
+    {
+      "a": "Foo"
+    }
+  ],
+  "properties": {
+    "a": {
+      "title": "A",
+      "type": "string"
+    }
+  },
+  "required": [
+    "a"
+  ],
+  "title": "Model",
+  "type": "object"
 }
 """
 ```
@@ -507,7 +538,9 @@ print(Model.model_json_schema())
 
 You can pass a `Callable` to `json_schema_extra` to modify the JSON schema with a function:
 
-```py
+```py output="json"
+import json
+
 from pydantic import BaseModel, Field
 
 
@@ -519,12 +552,17 @@ class Model(BaseModel):
     a: int = Field(default=1, json_schema_extra=pop_default)
 
 
-print(Model.model_json_schema())
+print(json.dumps(Model.model_json_schema(), indent=2))
 """
 {
-    'properties': {'a': {'title': 'A', 'type': 'integer'}},
-    'title': 'Model',
-    'type': 'object',
+  "properties": {
+    "a": {
+      "title": "A",
+      "type": "integer"
+    }
+  },
+  "title": "Model",
+  "type": "object"
 }
 """
 ```
@@ -850,7 +888,9 @@ would otherwise raise an error when producing a JSON schema because the [`PlainV
 is a `Callable`. However, by using the [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema]
 annotation, we can override the generated JSON schema for the custom `MyInt` type:
 
-```py
+```py output="json"
+import json
+
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, PlainValidator, WithJsonSchema
@@ -869,15 +909,25 @@ class Model(BaseModel):
 print(Model(a='1').a)
 #> 2
 
-print(Model(a='1').model_json_schema())
+print(json.dumps(Model.model_json_schema(), indent=2))
 """
 {
-    'properties': {
-        'a': {'examples': [1, 0, -1], 'title': 'A', 'type': 'integer'}
-    },
-    'required': ['a'],
-    'title': 'Model',
-    'type': 'object',
+  "properties": {
+    "a": {
+      "examples": [
+        1,
+        0,
+        -1
+      ],
+      "title": "A",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "a"
+  ],
+  "title": "Model",
+  "type": "object"
 }
 """
 ```
