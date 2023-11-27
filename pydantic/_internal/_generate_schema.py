@@ -53,6 +53,7 @@ from ._core_utils import (
     define_expected_missing_refs,
     get_ref,
     get_type_ref,
+    is_function_with_inner_schema,
     is_list_like_schema_with_items_schema,
     simplify_schema_references,
     validate_core_schema,
@@ -620,7 +621,13 @@ class GenerateSchema:
 
         schema = self._unpack_refs_defs(schema)
 
-        ref = get_ref(schema)
+        if is_function_with_inner_schema(schema):
+            ref = schema['schema'].pop('ref', None)
+            if ref:
+                schema['ref'] = ref
+        else:
+            ref = get_ref(schema)
+
         if ref:
             self.defs.definitions[ref] = self._post_process_generated_schema(schema)
             return core_schema.definition_reference_schema(ref)
