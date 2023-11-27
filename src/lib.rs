@@ -5,7 +5,6 @@ extern crate core;
 use std::sync::OnceLock;
 
 use pyo3::exceptions::PyTypeError;
-use pyo3::types::{PyByteArray, PyBytes, PyString};
 use pyo3::{prelude::*, sync::GILOnceCell};
 
 // parse this first to get access to the contained macro
@@ -37,17 +36,16 @@ pub use serializers::{
 };
 pub use validators::{validate_core_schema, PySome, SchemaValidator};
 
-#[pyfunction(signature = (data, *, allow_inf_nan=true))]
-pub fn from_json(py: Python, data: &PyAny, allow_inf_nan: bool) -> PyResult<PyObject> {
-    if let Ok(py_bytes) = data.downcast::<PyBytes>() {
-        jiter::python_parse(py, py_bytes.as_bytes(), allow_inf_nan)
-    } else if let Ok(py_str) = data.downcast::<PyString>() {
-        jiter::python_parse(py, py_str.to_str()?.as_bytes(), allow_inf_nan)
-    } else if let Ok(py_byte_array) = data.downcast::<PyByteArray>() {
-        jiter::python_parse(py, &py_byte_array.to_vec(), allow_inf_nan)
-    } else {
-        Err(PyTypeError::new_err("Expected bytes, bytearray or str"))
-    }
+use crate::input::Input;
+
+#[pyfunction(signature = (data, *, allow_inf_nan=true, cache_strings=true))]
+pub fn from_json(py: Python, data: &PyAny, allow_inf_nan: bool, cache_strings: bool) -> PyResult<PyObject> {
+    let v_match = data
+        .validate_bytes(false)
+        .map_err(|_| PyTypeError::new_err("Expected bytes, bytearray or str"))?;
+    let json_either_bytes = v_match.into_inner();
+    let json_bytes = json_either_bytes.as_slice();
+    jiter::python_parse(py, json_bytes, allow_inf_nan, cache_strings).map_err(|e| jiter::map_json_error(json_bytes, &e))
 }
 
 pub fn get_pydantic_core_version() -> &'static str {

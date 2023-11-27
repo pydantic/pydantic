@@ -48,36 +48,40 @@ def test_any(py_and_json: PyAndJson, input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        ('{"a": 1}', {'a': 1}),
-        (b'{"a": 1}', {'a': 1}),
-        (
+        pytest.param('{"a": 1}', {'a': 1}, id='str'),
+        pytest.param(b'{"a": 1}', {'a': 1}, id='bytes'),
+        pytest.param(
             '🐈 Hello \ud800World',
             Err(
                 'Input should be a valid string, unable to parse raw data as a unicode string '
                 "[type=string_unicode, input_value='🐈 Hello \\ud800World', input_type=str]"
             ),
+            id='str_unicode',
         ),
-        (bytearray(b'{"a": 1}'), {'a': 1}),
-        (
+        pytest.param(bytearray(b'{"a": 1}'), {'a': 1}, id='bytearray'),
+        pytest.param(
             'xx',
             Err(
                 'Invalid JSON: expected value at line 1 column 1 '
                 "[type=json_invalid, input_value='xx', input_type=str]"
             ),
+            id='str_invalid',
         ),
-        (
+        pytest.param(
             b'xx',
             Err(
                 'Invalid JSON: expected value at line 1 column 1 '
                 "[type=json_invalid, input_value=b'xx', input_type=bytes]"
             ),
+            id='bytes_invalid',
         ),
-        (
+        pytest.param(
             bytearray(b'xx'),
             Err(
                 'Invalid JSON: expected value at line 1 column 1 '
                 "[type=json_invalid, input_value=bytearray(b'xx'), input_type=bytearray]"
             ),
+            id='bytearray_invalid',
         ),
     ],
 )

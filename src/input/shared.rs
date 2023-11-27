@@ -1,10 +1,9 @@
 use pyo3::sync::GILOnceCell;
 use pyo3::{intern, Py, PyAny, Python, ToPyObject};
 
-use jiter::JsonValueError;
 use num_bigint::BigInt;
 
-use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
+use crate::errors::{ErrorTypeDefaults, ValError, ValResult};
 
 use super::{EitherFloat, EitherInt, Input};
 static ENUM_META_OBJECT: GILOnceCell<Py<PyAny>> = GILOnceCell::new();
@@ -18,16 +17,6 @@ pub fn get_enum_meta_object(py: Python) -> Py<PyAny> {
                 .to_object(py)
         })
         .clone()
-}
-
-pub fn map_json_err<'a>(input: &'a impl Input<'a>, error: JsonValueError) -> ValError {
-    ValError::new(
-        ErrorType::JsonInvalid {
-            error: error.to_string(),
-            context: None,
-        },
-        input,
-    )
 }
 
 pub fn str_as_bool<'a>(input: &'a impl Input<'a>, str: &str) -> ValResult<bool> {
