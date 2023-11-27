@@ -20,17 +20,16 @@ from ..warnings import GenericBeforeBaseModelWarning, PydanticDeprecatedSince20
 from ._config import ConfigWrapper
 from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_from_bases
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
-from ._generate_schema import GenerateSchema, generate_pydantic_signature
+from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
 from ._mock_val_ser import MockValSer, set_model_mocks
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
+from ._signature import generate_pydantic_signature
 from ._typing_extra import get_cls_types_namespace, is_annotated, is_classvar, parent_frame_namespace
 from ._utils import ClassAttribute, SafeGetItemProxy
 from ._validate_call import ValidateCallWrapper
 
 if typing.TYPE_CHECKING:
-    from inspect import Signature
-
     from ..fields import Field as PydanticModelField
     from ..fields import FieldInfo, ModelPrivateAttr
     from ..main import BaseModel
@@ -536,25 +535,10 @@ def complete_model_class(
 
     # set __signature__ attr only for model class, but not for its instances
     cls.__signature__ = ClassAttribute(
-        '__signature__', generate_model_signature(cls.__init__, cls.model_fields, config_wrapper)
+        '__signature__',
+        generate_pydantic_signature(init=cls.__init__, fields=cls.model_fields, config_wrapper=config_wrapper),
     )
     return True
-
-
-def generate_model_signature(
-    init: Callable[..., None], fields: dict[str, FieldInfo], config_wrapper: ConfigWrapper
-) -> Signature:
-    """Generate signature for model based on its fields.
-
-    Args:
-        init: The class init.
-        fields: The model fields.
-        config_wrapper: The config wrapper instance.
-
-    Returns:
-        The model signature.
-    """
-    return generate_pydantic_signature(init, fields, config_wrapper)
 
 
 class _PydanticWeakRef:
