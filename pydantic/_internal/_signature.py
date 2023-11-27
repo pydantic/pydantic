@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from inspect import Parameter, Signature, signature
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
-from pydantic._internal._config import ConfigWrapper
-from pydantic._internal._utils import is_valid_identifier
-from pydantic.fields import FieldInfo
+from ._config import ConfigWrapper
+from ._utils import is_valid_identifier
+
+if TYPE_CHECKING:
+    from ..fields import FieldInfo
 
 
 def generate_pydantic_signature(
