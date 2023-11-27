@@ -856,7 +856,9 @@ from typing_extensions import Annotated
 from pydantic import BaseModel, PlainValidator, WithJsonSchema
 
 MyInt = Annotated[
-    int, PlainValidator(lambda v: int(v) + 1), WithJsonSchema({'type': 'int'})
+    int,
+    PlainValidator(lambda v: int(v) + 1),
+    WithJsonSchema({'type': 'integer', 'examples': [1, 0, -1]}),
 ]
 
 
@@ -870,7 +872,9 @@ print(Model(a='1').a)
 print(Model(a='1').model_json_schema())
 """
 {
-    'properties': {'a': {'title': 'A', 'type': 'int'}},
+    'properties': {
+        'a': {'examples': [1, 0, -1], 'title': 'A', 'type': 'integer'}
+    },
     'required': ['a'],
     'title': 'Model',
     'type': 'object',
