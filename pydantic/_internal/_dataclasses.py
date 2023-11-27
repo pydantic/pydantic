@@ -23,12 +23,12 @@ from ..fields import FieldInfo
 from ..plugin._schema_validator import create_schema_validator
 from ..warnings import PydanticDeprecatedSince20
 from . import _config, _decorators, _typing_extra
+from ._constructor_signature_generators import generate_pydantic_signature
 from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
 from ._mock_val_ser import set_dataclass_mocks
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
-from ._signature import generate_pydantic_signature
 from ._utils import is_valid_identifier
 
 if typing.TYPE_CHECKING:
