@@ -455,7 +455,9 @@ from pydantic import BaseModel, Field
 
 class Foo(BaseModel):
     id: Annotated[str, Field(default_factory=lambda: uuid4().hex)]
-    name: Annotated[str, Field(max_length=256)] = Field('Bar', title='CustomName')
+    name: Annotated[str, Field(max_length=256)] = Field(
+        'Bar', title='CustomName'
+    )
 
 
 print(json.dumps(Foo.model_json_schema(), indent=2))
