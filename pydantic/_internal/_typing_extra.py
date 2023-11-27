@@ -5,12 +5,13 @@ import dataclasses
 import sys
 import types
 import typing
+import warnings
 from collections.abc import Callable
 from functools import partial
 from types import GetSetDescriptorType
 from typing import TYPE_CHECKING, Any, Final, ForwardRef
 
-from typing_extensions import Annotated, Literal, TypeAliasType, TypeGuard, get_args, get_origin
+from typing_extensions import Annotated, Literal, TypeAliasType, TypeGuard, deprecated, get_args, get_origin
 
 if TYPE_CHECKING:
     from ._dataclasses import StandardDataclass
@@ -62,6 +63,10 @@ LITERAL_TYPES: set[Any] = {Literal}
 if hasattr(typing, 'Literal'):
     LITERAL_TYPES.add(typing.Literal)  # type: ignore
 
+DEPRECATED_TYPES: set[Any] = {deprecated}
+if hasattr(warnings, 'deprecated'):
+    DEPRECATED_TYPES.add(warnings.deprecated)  # type: ignore
+
 NONE_TYPES: tuple[Any, ...] = (None, NoneType, *(tp[None] for tp in LITERAL_TYPES))
 
 
@@ -78,6 +83,10 @@ def is_callable_type(type_: type[Any]) -> bool:
 
 def is_literal_type(type_: type[Any]) -> bool:
     return Literal is not None and get_origin(type_) in LITERAL_TYPES
+
+
+def is_deprecated_instance(instance: Any) -> bool:
+    return isinstance(instance, tuple(DEPRECATED_TYPES))
 
 
 def literal_values(type_: type[Any]) -> tuple[Any, ...]:

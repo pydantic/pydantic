@@ -1044,6 +1044,7 @@ class GenerateSchema:
         json_schema_updates = {
             'title': field_info.title,
             'description': field_info.description,
+            'deprecated': field_info.deprecated,
             'examples': to_jsonable_python(field_info.examples),
         }
         json_schema_updates = {k: v for k, v in json_schema_updates.items() if v is not None}

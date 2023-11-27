@@ -60,6 +60,7 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     decimal_places: int | None
     union_mode: Literal['smart', 'left_to_right'] | None
     discriminator: str | types.Discriminator | None
+    deprecated: bool | None
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
     frozen: bool | None
     validate_default: bool | None
@@ -97,6 +98,7 @@ class FieldInfo(_repr.Representation):
         examples: List of examples of the field.
         exclude: Whether to exclude the field from the model serialization.
         discriminator: Field name or Discriminator for discriminating the type in a tagged union.
+        deprecated: Whether the field is marked as deprecated.
         json_schema_extra: A dict or callable to provide extra JSON schema properties.
         frozen: Whether the field is frozen.
         validate_default: Whether to validate the default value of the field.
@@ -118,6 +120,7 @@ class FieldInfo(_repr.Representation):
     examples: list[Any] | None
     exclude: bool | None
     discriminator: str | types.Discriminator | None
+    deprecated: bool | None
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
     frozen: bool | None
     validate_default: bool | None
@@ -139,6 +142,7 @@ class FieldInfo(_repr.Representation):
         'examples',
         'exclude',
         'discriminator',
+        'deprecated',
         'json_schema_extra',
         'frozen',
         'validate_default',
@@ -198,6 +202,7 @@ class FieldInfo(_repr.Representation):
         self.examples = kwargs.pop('examples', None)
         self.exclude = kwargs.pop('exclude', None)
         self.discriminator = kwargs.pop('discriminator', None)
+        self.deprecated = kwargs.pop('deprecated', None)
         self.repr = kwargs.pop('repr', True)
         self.json_schema_extra = kwargs.pop('json_schema_extra', None)
         self.validate_default = kwargs.pop('validate_default', None)
@@ -289,6 +294,8 @@ class FieldInfo(_repr.Representation):
                 for a in extra_args:
                     if not isinstance(a, FieldInfo):
                         metadata.append(a)
+                    elif _typing_extra.is_deprecated_instance(a):
+                        new_field_info.deprecated = True
                     else:
                         metadata.extend(a.metadata)
                 new_field_info.metadata = metadata
@@ -364,6 +371,8 @@ class FieldInfo(_repr.Representation):
                 for a in extra_args:
                     if not isinstance(a, FieldInfo):
                         metadata.append(a)
+                    elif _typing_extra.is_deprecated_instance(a):
+                        field_info.deprecated = True
                     else:
                         metadata.extend(a.metadata)
                 field_info.metadata = metadata
@@ -619,6 +628,7 @@ def Field(  # noqa: C901
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
+    deprecated: bool | None = _Unset,
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None = _Unset,
     frozen: bool | None = _Unset,
     validate_default: bool | None = _Unset,
@@ -663,6 +673,7 @@ def Field(  # noqa: C901
         examples: Example values for this field.
         exclude: Whether to exclude the field from the model serialization.
         discriminator: Field name or Discriminator for discriminating the type in a tagged union.
+        deprecated: Whether the field is marked as deprecated.
         json_schema_extra: A dict or callable to provide extra JSON schema properties.
         frozen: Whether the field is frozen. If true, attempts to change the value on an instance will raise an error.
         validate_default: If `True`, apply validation to the default value every time you create an instance.
@@ -772,6 +783,7 @@ def Field(  # noqa: C901
         examples=examples,
         exclude=exclude,
         discriminator=discriminator,
+        deprecated=deprecated,
         json_schema_extra=json_schema_extra,
         frozen=frozen,
         pattern=pattern,
