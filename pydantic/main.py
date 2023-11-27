@@ -488,7 +488,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         Args:
             obj: The object to validate.
-            strict: Whether to raise an exception on invalid fields.
+            strict: Whether to enforce types strictly.
             from_attributes: Whether to extract data from object attributes.
             context: Additional context to pass to the validator.
 
