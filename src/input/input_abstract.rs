@@ -4,8 +4,6 @@ use pyo3::exceptions::PyValueError;
 use pyo3::types::{PyDict, PyType};
 use pyo3::{intern, prelude::*};
 
-use jiter::JsonValue;
-
 use crate::errors::{AsLocItem, ErrorTypeDefaults, InputValue, ValError, ValResult};
 use crate::tools::py_err;
 use crate::{PyMultiHostUrl, PyUrl};
@@ -88,8 +86,6 @@ pub trait Input<'a>: fmt::Debug + ToPyObject + AsLocItem + Sized {
     fn validate_args(&'a self) -> ValResult<GenericArguments<'a>>;
 
     fn validate_dataclass_args(&'a self, dataclass_name: &str) -> ValResult<GenericArguments<'a>>;
-
-    fn parse_json(&'a self) -> ValResult<JsonValue>;
 
     fn validate_str(
         &'a self,

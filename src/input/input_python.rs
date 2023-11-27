@@ -10,7 +10,6 @@ use pyo3::types::{
 use pyo3::types::{PyDictItems, PyDictKeys, PyDictValues};
 use pyo3::{intern, PyTypeInfo};
 
-use jiter::JsonValue;
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 
 use crate::errors::{AsLocItem, ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
@@ -26,8 +25,7 @@ use super::datetime::{
 };
 use super::return_enums::ValidationMatch;
 use super::shared::{
-    decimal_as_int, float_as_int, get_enum_meta_object, int_as_bool, map_json_err, str_as_bool, str_as_float,
-    str_as_int,
+    decimal_as_int, float_as_int, get_enum_meta_object, int_as_bool, str_as_bool, str_as_float, str_as_int,
 };
 use super::{
     py_string_str, BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericArguments,
@@ -193,22 +191,6 @@ impl<'a> Input<'a> for PyAny {
                 self,
             ))
         }
-    }
-
-    fn parse_json(&'a self) -> ValResult<JsonValue> {
-        let bytes = if let Ok(py_bytes) = self.downcast::<PyBytes>() {
-            py_bytes.as_bytes()
-        } else if let Ok(py_str) = self.downcast::<PyString>() {
-            let str = py_string_str(py_str)?;
-            str.as_bytes()
-        } else if let Ok(py_byte_array) = self.downcast::<PyByteArray>() {
-            // Safety: from_slice does not run arbitrary Python code and the GIL is held so the
-            // bytes array will not be mutated while `JsonValue::parse` is reading it
-            unsafe { py_byte_array.as_bytes() }
-        } else {
-            return Err(ValError::new(ErrorTypeDefaults::JsonType, self));
-        };
-        JsonValue::parse(bytes, true).map_err(|e| map_json_err(self, e))
     }
 
     fn validate_str(
