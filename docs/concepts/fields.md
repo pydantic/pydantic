@@ -1,7 +1,7 @@
 ??? api "API Documentation"
     [`pydantic.fields.Field`][pydantic.fields.Field]<br>
 
-The `Field` function is used to customize and add metadata to fields of models.
+The [`Field`][pydantic.fields.Field] function is used to customize and add metadata to fields of models.
 
 ## Default values
 
@@ -40,7 +40,7 @@ class User(BaseModel):
 
 ## Using `Annotated`
 
-The `Field` function can also be used together with [`Annotated`][annotated].
+The [`Field`][pydantic.fields.Field] function can also be used together with [`Annotated`][annotated].
 
 ```py
 from uuid import uuid4
@@ -684,7 +684,7 @@ See the [Discriminated Unions] docs for more details.
 
 ## Strict Mode
 
-The `strict` parameter on a `Field` specifies whether the field should be validated in "strict mode".
+The `strict` parameter on a [`Field`][pydantic.fields.Field] specifies whether the field should be validated in "strict mode".
 In strict mode, Pydantic throws an error during validation instead of coercing data on the field where `strict=True`.
 
 ```py
@@ -766,65 +766,14 @@ See the [Serialization] section for more details.
 
 ## Customizing JSON Schema
 
-Some fields are exclusively used to customise the generated JSON Schema:
+Some field parameters are used exclusively to customize the generated JSON schema. The parameters in question are:
 
-* `title`: The title of the field.
-* `description`: The description of the field.
-* `examples`: The examples of the field.
-* `json_schema_extra`: Extra JSON Schema properties to be added to the field.
+* `title`
+* `description`
+* `examples`
+* `json_schema_extra`
 
-Here's an example:
-
-```py
-from pydantic import BaseModel, EmailStr, Field, SecretStr
-
-
-class User(BaseModel):
-    age: int = Field(description='Age of the user')
-    email: EmailStr = Field(examples=['marcelo@mail.com'])
-    name: str = Field(title='Username')
-    password: SecretStr = Field(
-        json_schema_extra={
-            'title': 'Password',
-            'description': 'Password of the user',
-            'examples': ['123456'],
-        }
-    )
-
-
-print(User.model_json_schema())
-"""
-{
-    'properties': {
-        'age': {
-            'description': 'Age of the user',
-            'title': 'Age',
-            'type': 'integer',
-        },
-        'email': {
-            'examples': ['marcelo@mail.com'],
-            'format': 'email',
-            'title': 'Email',
-            'type': 'string',
-        },
-        'name': {'title': 'Username', 'type': 'string'},
-        'password': {
-            'description': 'Password of the user',
-            'examples': ['123456'],
-            'format': 'password',
-            'title': 'Password',
-            'type': 'string',
-            'writeOnly': True,
-        },
-    },
-    'required': ['age', 'email', 'name', 'password'],
-    'title': 'User',
-    'type': 'object',
-}
-"""
-```
-
-Read more about JSON schema customization / modification in the [Customizing JSON Schema] section of the JSON schema docs.
+Read more about JSON schema customization / modification with fields in the [Customizing JSON Schema] section of the JSON schema docs.
 
 ## The `computed_field` decorator
 
@@ -865,5 +814,5 @@ print(b.model_dump())
 [frozen dataclass documentation]: https://docs.python.org/3/library/dataclasses.html#frozen-instances
 [Validate Assignment]: models.md#validate-assignment
 [Serialization]: serialization.md#model-and-field-level-include-and-exclude
-[Customizing JSON Schema]: json_schema.md#customizing-json-schema
+[Customizing JSON Schema]: json_schema.md#field-level-customization
 [annotated]: https://docs.python.org/3/library/typing.html#typing.Annotated

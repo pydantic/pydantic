@@ -17,7 +17,10 @@ Use the following functions to generate JSON schema:
 !!! note
     These methods are not to be confused with [`BaseModel.model_dump_json`][pydantic.main.BaseModel.model_dump_json]
     and [`TypeAdapter.dump_json`][pydantic.type_adapter.TypeAdapter.dump_json], which serialize instances of the
-    model or adapted type, respectively. These methods return JSON strings.
+    model or adapted type, respectively. These methods return JSON strings. In comparison,
+    [`BaseModel.model_json_schema`][pydantic.main.BaseModel.model_json_schema] and
+    [`TypeAdapter.json_schema`][pydantic.type_adapter.TypeAdapter.json_schema] return a jsonable dict
+    representing the JSON schema of the model or adapted type, respectively.
 
 !!! note "on the "jsonable" nature of JSON schema"
     Regarding the "jsonable" nature of the [`model_json_schema`][pydantic.main.BaseModel.model_json_schema] results,
@@ -251,10 +254,13 @@ print(json.dumps(ta_schema, indent=2))
 
 ## Customizing JSON Schema
 
-The generated JSON schema can be customized at both the model level via:
+The generated JSON schema can be customized at both the field level and model level via:
 
 1. [Field-level customization](#field-level-customization) with the [`Field`][pydantic.fields.Field] constructor
 2. [Model-level customization](#model-level-customization) with [`model_config`][pydantic.config.ConfigDict]
+
+At both the field and model levels, you can use the `json_schema_extra` option to add extra information to the JSON schema.
+The [Using `json_schema_extra`](#using-json_schema_extra) section below provides more details on this option.
 
 For custom types, Pydantic offers other tools for customizing JSON schema generation:
 
@@ -268,8 +274,63 @@ For custom types, Pydantic offers other tools for customizing JSON schema genera
 Optionally, the [`Field`][pydantic.fields.Field] function can be used to provide extra information about the field
 and validations.
 
-See [Customizing JSON Schema](fields.md#customizing-json-schema) for details on field parameters that are used
-exclusively to customize the generated JSON schema.
+Some field parameters are used exclusively to customize the generated JSON Schema:
+
+* `title`: The title of the field.
+* `description`: The description of the field.
+* `examples`: The examples of the field.
+* `json_schema_extra`: Extra JSON Schema properties to be added to the field.
+
+Here's an example:
+
+```py
+from pydantic import BaseModel, EmailStr, Field, SecretStr
+
+
+class User(BaseModel):
+    age: int = Field(description='Age of the user')
+    email: EmailStr = Field(examples=['marcelo@mail.com'])
+    name: str = Field(title='Username')
+    password: SecretStr = Field(
+        json_schema_extra={
+            'title': 'Password',
+            'description': 'Password of the user',
+            'examples': ['123456'],
+        }
+    )
+
+
+print(User.model_json_schema())
+"""
+{
+    'properties': {
+        'age': {
+            'description': 'Age of the user',
+            'title': 'Age',
+            'type': 'integer',
+        },
+        'email': {
+            'examples': ['marcelo@mail.com'],
+            'format': 'email',
+            'title': 'Email',
+            'type': 'string',
+        },
+        'name': {'title': 'Username', 'type': 'string'},
+        'password': {
+            'description': 'Password of the user',
+            'examples': ['123456'],
+            'format': 'password',
+            'title': 'Password',
+            'type': 'string',
+            'writeOnly': True,
+        },
+    },
+    'required': ['age', 'email', 'name', 'password'],
+    'title': 'User',
+    'type': 'object',
+}
+"""
+```
 
 #### Unenforced `Field` constraints
 
@@ -359,6 +420,64 @@ Specifically, the following config options are relevant:
 * [`json_schema_extra`][pydantic.config.ConfigDict.json_schema_extra]
 * [`schema_generator`][pydantic.config.ConfigDict.schema_generator]
 * [`json_schema_mode_override`][pydantic.config.ConfigDict.json_schema_mode_override]
+
+### Using `json_schema_extra`
+
+The `json_schema_extra` option can be used to add extra information to the JSON schema, either at the
+[Field level](#field-level-customization) or at the [Model level](#model-level-customization).
+You can pass a `dict` or a `Callable` to `json_schema_extra`.
+
+#### Using `json_schema_extra` with a `dict`
+
+You can pass a `dict` to `json_schema_extra` to add extra information to the JSON schema:
+
+```py
+from pydantic import BaseModel, ConfigDict
+
+
+class Model(BaseModel):
+    a: str
+
+    model_config = ConfigDict(json_schema_extra={'examples': [{'a': 'Foo'}]})
+
+
+print(Model.model_json_schema())
+"""
+{
+    'examples': [{'a': 'Foo'}],
+    'properties': {'a': {'title': 'A', 'type': 'string'}},
+    'required': ['a'],
+    'title': 'Model',
+    'type': 'object',
+}
+"""
+```
+
+#### Using `json_schema_extra` with a `Callable`
+
+You can pass a `Callable` to `json_schema_extra` to modify the JSON schema with a function:
+
+```py
+from pydantic import BaseModel, Field
+
+
+def pop_default(s):
+    s.pop('default')
+
+
+class Model(BaseModel):
+    a: int = Field(default=1, json_schema_extra=pop_default)
+
+
+print(Model.model_json_schema())
+"""
+{
+    'properties': {'a': {'title': 'A', 'type': 'integer'}},
+    'title': 'Model',
+    'type': 'object',
+}
+"""
+```
 
 ### Implementing `__get_pydantic_core_schema__`
 
@@ -770,7 +889,7 @@ print(Model(a='1').model_json_schema())
 ```
 
 !!! note:
-    As discussed in [this issue](https://github.com/pydantic/pydantic/issues/7957), in the future, it's likely that Pydantic will add
+    As discussed in [this issue](https://github.com/pydantic/pydantic/issues/8208), in the future, it's likely that Pydantic will add
     builtin support for JSON schema generation for types like [`PlainValidator`][pydantic.functional_validators.PlainValidator],
     but the [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema] annotation will still be useful for other custom types.
 

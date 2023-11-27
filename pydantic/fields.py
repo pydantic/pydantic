@@ -96,7 +96,7 @@ class FieldInfo(_repr.Representation):
         examples: List of examples of the field.
         exclude: Whether to exclude the field from the model serialization.
         discriminator: Field name or Discriminator for discriminating the type in a tagged union.
-        json_schema_extra: Dictionary of extra JSON schema properties.
+        json_schema_extra: A dict or callable to provide extra JSON schema properties.
         frozen: Whether the field is frozen.
         validate_default: Whether to validate the default value of the field.
         repr: Whether to include the field in representation of the model.
@@ -719,7 +719,7 @@ def Field(  # noqa: C901
         examples: Example values for this field.
         exclude: Whether to exclude the field from the model serialization.
         discriminator: Field name or Discriminator for discriminating the type in a tagged union.
-        json_schema_extra: Any additional JSON schema data for the schema property.
+        json_schema_extra: A dict or callable to provide extra JSON schema properties.
         frozen: Whether the field is frozen.
         validate_default: Run validation that isn't only checking existence of defaults. This can be set to `True` or `False`. If not set, it defaults to `None`.
         repr: A boolean indicating whether to include the field in the `__repr__` output.
@@ -954,7 +954,7 @@ class ComputedFieldInfo:
         title: Title of the computed field as in OpenAPI document, should be a short summary.
         description: Description of the computed field as in OpenAPI document.
         examples: Example values of the computed field as in OpenAPI document.
-        json_schema_extra: Dictionary of extra JSON schema properties.
+        json_schema_extra: A dict or callable to provide extra JSON schema properties.
         repr: A boolean indicating whether or not to include the field in the __repr__ output.
     """
 
@@ -1145,7 +1145,7 @@ def computed_field(
         description: Description to use when including this computed field in JSON Schema, defaults to the function's
             docstring
         examples: Example values to use when including this computed field in JSON Schema
-        json_schema_extra: Dictionary of extra JSON schema properties.
+        json_schema_extra: A dict or callable to provide extra JSON schema properties.
         repr: whether to include this computed field in model repr.
             Default is `False` for private properties and `True` for public properties.
         return_type: optional return for serialization logic to expect when serializing to JSON, if included
