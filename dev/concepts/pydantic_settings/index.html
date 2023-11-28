@@ -3399,11 +3399,11 @@ you like through <code>Field(validation_alias=...)</code>.</p>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    2 validation errors for RedisSettings</span>
-<span class="sd">    host</span>
+<span class="sd">    2 validation errors for Settings</span>
+<span class="sd">    redis.host</span>
 <span class="sd">      Field required [type=missing, input_value={&#39;HOST&#39;: &#39;localhost&#39;, &#39;port&#39;: 6379}, input_type=dict]</span>
 <span class="sd">        For further information visit https://errors.pydantic.dev/2/v/missing</span>
-<span class="sd">    HOST</span>
+<span class="sd">    redis.HOST</span>
 <span class="sd">      Extra inputs are not permitted [type=extra_forbidden, input_value=&#39;localhost&#39;, input_type=str]</span>
 <span class="sd">        For further information visit https://errors.pydantic.dev/2/v/extra_forbidden</span>
 <span class="sd">    &quot;&quot;&quot;</span>
