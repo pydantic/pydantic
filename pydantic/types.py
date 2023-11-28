@@ -2847,3 +2847,17 @@ this annotation omits the item from the iteration if there is any error validati
 That is, instead of a [`ValidationError`][pydantic_core.ValidationError] being propagated up and the entire iterable being discarded
 any invalid items are discarded and the valid ones are returned.
 """
+
+
+# Can't use `Field(deprecated=True)` because of a circular import
+Deprecated = Annotated[T, deprecated("")]
+"""
+Mark a field as being deprecated.
+
+```py
+from pydantic import Deprecated, TypeAdapter
+
+
+print(TypeAdapter(Deprecated[int]).json_schema())
+#> {'type': 'integer', 'deprecated': True}
+"""
