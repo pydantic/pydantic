@@ -363,13 +363,8 @@ def import_email_validator() -> None:
         import email_validator
     except ImportError as e:
         raise ImportError('email-validator is not installed, run `pip install pydantic[email]`') from e
-    if getattr(email_validator, '__version__', '').partition('.')[0] == '2':
-        return
-    else:
-        input_email = 'testaddr@example.tld'
-        valid_email = email_validator.validate_email(input_email, check_deliverability=False)
-        if not hasattr(valid_email, 'normalized'):
-            raise ImportError('email-validator version >= 2.0 required')
+    if not version("email-validator").partition('.')[0] == '2':
+        raise ImportError('email-validator version >= 2.0 required, run pip install -U email-validator')
 
 
 if TYPE_CHECKING:
