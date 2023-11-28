@@ -321,6 +321,14 @@ class FieldInfo(_repr.Representation):
         Returns:
             A field object with the passed values.
         """
+
+        if annotation is default:
+            raise RuntimeError(
+                'Error when building FieldInfo from annotated attribute. '
+                "Make sure you don't have any field name clashing with a type annotation "
+                '(e.g. `date: date = Field(None)`).'
+            )
+
         final = False
         if _typing_extra.is_finalvar(annotation):
             final = True

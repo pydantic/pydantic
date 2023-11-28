@@ -17,6 +17,20 @@ def test_field_info_annotation_keyword_argument():
     assert e.value.args == ('"annotation" is not permitted as a Field keyword argument',)
 
 
+def test_field_info_annotated_attribute_name_clashing():
+    """This tests that `FieldInfo.from_annotated_attribute` will raise a `RuntimeError` if attribute names clashes
+    with a type.
+    """
+
+    with pytest.raises(RuntimeError):
+
+        class SubModel(BaseModel):
+            a: int = 1
+
+        class Model(BaseModel):
+            SubModel: SubModel = Field()
+
+
 def test_init_var_field():
     @pydantic.dataclasses.dataclass
     class Foo:
