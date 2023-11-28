@@ -67,21 +67,26 @@ from pydantic import (
     GetCoreSchemaHandler,
     GetPydanticSchema,
     ImportString,
+    InFiniteDecimal,
     InstanceOf,
     Json,
     JsonValue,
     NaiveDatetime,
     NameEmail,
+    NegativeDecimal,
     NegativeFloat,
     NegativeInt,
     NewPath,
+    NonNegativeDecimal,
     NonNegativeFloat,
     NonNegativeInt,
+    NonPositiveDecimal,
     NonPositiveFloat,
     NonPositiveInt,
     OnErrorOmit,
     PastDate,
     PastDatetime,
+    PositiveDecimal,
     PositiveFloat,
     PositiveInt,
     PydanticInvalidForJsonSchema,
@@ -93,6 +98,7 @@ from pydantic import (
     Strict,
     StrictBool,
     StrictBytes,
+    StrictDecimal,
     StrictFloat,
     StrictInt,
     StrictStr,
@@ -2602,6 +2608,173 @@ def test_finite_float_config():
     ]
 
 
+def test_decimal_validation():
+    _: InFiniteDecimal
+
+    class Model(BaseModel):
+        a: PositiveDecimal = None
+        b: NegativeDecimal = None
+        c: NonNegativeDecimal = None
+        d: NonPositiveDecimal = None
+        e: condecimal(gt=4, lt=12.2) = None
+        f: condecimal(ge=0, le=9.9) = None
+        g: condecimal(multiple_of=Decimal('0.5')) = None
+        h: condecimal(allow_inf_nan=False) = None
+
+    m = Model(
+        a=Decimal('5.1'),
+        b=Decimal('-5.2'),
+        c=Decimal('0'),
+        d=Decimal('0'),
+        e=Decimal('5.3'),
+        f=Decimal('9.9'),
+        g=Decimal('2.5'),
+        h=Decimal('42'),
+    )
+
+    assert m.model_dump() == {
+        'a': 5.1,
+        'b': -5.2,
+        'c': 0,
+        'd': 0,
+        'e': 5.3,
+        'f': 9.9,
+        'g': 2.5,
+        'h': 42,
+    }
+
+    assert Model(a=Decimal('Infinity')).a == Decimal('Infinity')
+    assert Model(b=Decimal('-Infinity')).b == Decimal('-Infinity')
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(
+            a=Decimal('-5.1'),
+            b=Decimal('5.2'),
+            c=Decimal('-5.1'),
+            d=Decimal('5.1'),
+            e=Decimal('-5.3'),
+            f=Decimal('9.91'),
+            g=Decimal('4.2'),
+            h=Decimal('Infinity'),
+        )
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'greater_than',
+            'loc': ('positive_float',),
+            'msg': 'Input should be greater than 0',
+            'input': Decimal('-5.1'),
+            'ctx': {'gt': Decimal('0')},
+        },
+        {
+            'type': 'less_than',
+            'loc': ('negative_float',),
+            'msg': 'Input should be less than 0',
+            'input': Decimal('5.2'),
+            'ctx': {'lt': Decimal('0')},
+        },
+        {
+            'type': 'greater_than_equal',
+            'loc': ('non_negative_float',),
+            'msg': 'Input should be greater than or equal to 0',
+            'input': Decimal('-5.1'),
+            'ctx': {'ge': Decimal('0')},
+        },
+        {
+            'type': 'less_than_equal',
+            'loc': ('non_positive_float',),
+            'msg': 'Input should be less than or equal to 0',
+            'input': Decimal('5.1'),
+            'ctx': {'le': Decimal('0')},
+        },
+        {
+            'type': 'greater_than',
+            'loc': ('gt_float',),
+            'msg': 'Input should be greater than 4',
+            'input': Decimal('-5.3'),
+            'ctx': {'gt': Decimal('4')},
+        },
+        {
+            'type': 'less_than_equal',
+            'loc': ('le_float',),
+            'msg': 'Input should be less than or equal to 9.9',
+            'input': Decimal('9.91'),
+            'ctx': {'le': Decimal('9.9')},
+        },
+        {
+            'type': 'multiple_of',
+            'loc': ('multiple_of_float',),
+            'msg': 'Input should be a multiple of 0.5',
+            'input': Decimal('4.2'),
+            'ctx': {'multiple_of': Decimal('0.5')},
+        },
+        {
+            'type': 'finite_number',
+            'loc': ('finite_float',),
+            'msg': 'Input should be a finite number',
+            'input': HasRepr('Infinity'),
+        },
+    ]
+
+
+def test_infinite_decimal_validation():
+    class Model(BaseModel):
+        a: InFiniteDecimal
+
+    assert Model(a=Decimal('Infinity')).a.is_infinite()
+    assert Model(a=Decimal('-Infinity')).a.is_infinite()
+    assert Model(a=Decimal('nan')).a.is_nan()
+
+
+@pytest.mark.parametrize(
+    ('ser_json_inf_nan', 'input', 'output'),
+    (
+        ('null', Decimal('Infinity'), 'Infinity'),
+        ('null', Decimal('-Infinity'), '-Infinity'),
+        ('constants', Decimal('Infinity'), 'Infinity'),
+        ('constants', Decimal('-Infinity'), '-Infinity'),
+    ),
+)
+def test_infinite_decimal_json_serialization(ser_json_inf_nan, input, output):
+    class Model(BaseModel):
+        model_config = ConfigDict(ser_json_inf_nan=ser_json_inf_nan)
+        a: InFiniteDecimal
+
+    json_string = Model(a=input).model_dump_json()
+    assert json_string == f'{{"a":"{output}"}}'
+    assert json.loads(json_string) == {'a': output}
+    assert Model(**json.loads(json_string)).a.is_infinite()
+
+
+@pytest.mark.parametrize(
+    ('ser_json_inf_nan', 'input', 'output'),
+    (
+        ('null', Decimal('nan'), 'NaN'),
+        ('constants', Decimal('nan'), 'NaN'),
+    ),
+)
+def test_nan_decimal_json_serialization(ser_json_inf_nan, input, output):
+    class Model(BaseModel):
+        model_config = ConfigDict(ser_json_inf_nan=ser_json_inf_nan)
+        a: InFiniteDecimal
+
+    json_string = Model(a=input).model_dump_json()
+    assert json_string == f'{{"a":"{output}"}}'
+    assert json.loads(json_string) == {'a': output}
+    assert Model(**json.loads(json_string)).a.is_nan()
+
+
+def test_infinite_decimal_config():
+    class Model(BaseModel):
+        a: Decimal
+
+        model_config = ConfigDict(allow_inf_nan=True)
+
+    assert Model(a=Decimal('Infinity')).a.is_infinite()
+    assert Model(a=Decimal('-Infinity')).a.is_infinite()
+    assert Model(a=Decimal('nan')).a.is_nan()
+
+
 def test_strict_bytes():
     class Model(BaseModel):
         v: StrictBytes
@@ -2726,6 +2899,20 @@ def test_strict_float():
         Model(v='3.14159')
 
     with pytest.raises(ValidationError, match=r'Input should be a valid number \[type=float_type,'):
+        Model(v=True)
+
+
+def test_strict_decimal():
+    class Model(BaseModel):
+        v: StrictDecimal
+
+    assert Model(v=Decimal('3.14159')).v == Decimal('3.14159')
+    assert Model(v=Decimal('123456')).v == Decimal('123456')
+
+    with pytest.raises(ValidationError, match=r'Input should be an instance of Decimal \[type=is_instance_of,'):
+        Model(v='3.14159')
+
+    with pytest.raises(ValidationError, match=r'Input should be an instance of Decimal \[type=is_instance_of,'):
         Model(v=True)
 
 
@@ -4105,6 +4292,11 @@ def test_secretstr_idempotent():
         confrozenset,
         conlist,
         condecimal,
+        PositiveDecimal,
+        NegativeDecimal,
+        NonPositiveDecimal,
+        NonNegativeDecimal,
+        StrictDecimal,
         UUID1,
         UUID3,
         UUID4,
