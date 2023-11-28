@@ -3,6 +3,7 @@ from __future__ import annotations as _annotations
 
 import dataclasses as _dataclasses
 import re
+from importlib.metadata import version
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import TYPE_CHECKING, Any
 
@@ -363,6 +364,8 @@ def import_email_validator() -> None:
         import email_validator
     except ImportError as e:
         raise ImportError('email-validator is not installed, run `pip install pydantic[email]`') from e
+    if not version('email-validator').partition('.')[0] == '2':
+        raise ImportError('email-validator version >= 2.0 required, run pip install -U email-validator')
 
 
 if TYPE_CHECKING:
