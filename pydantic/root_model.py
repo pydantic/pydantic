@@ -147,7 +147,3 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType], metaclass=_RootMod
 
     def __repr_args__(self) -> _repr.ReprArgs:
         yield 'root', self.root
-
-
-class MyInt(RootModel[int]):
-    root: int
