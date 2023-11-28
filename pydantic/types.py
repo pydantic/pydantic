@@ -67,6 +67,11 @@ __all__ = (
     'NonPositiveFloat',
     'FiniteFloat',
     'condecimal',
+    'PositiveDecimal',
+    'NegativeDecimal',
+    'NonPositiveDecimal',
+    'NonNegativeDecimal',
+    'InFiniteDecimal',
     'UUID1',
     'UUID3',
     'UUID4',
@@ -81,6 +86,7 @@ __all__ = (
     'StrictBytes',
     'StrictInt',
     'StrictFloat',
+    'StrictDecimal',
     'PaymentCardNumber',
     'ByteSize',
     'PastDate',
@@ -1075,6 +1081,172 @@ def condecimal(
         _fields.pydantic_general_metadata(max_digits=max_digits, decimal_places=decimal_places),
         AllowInfNan(allow_inf_nan) if allow_inf_nan is not None else None,
     ]
+
+
+PositiveDecimal = Annotated[Decimal, annotated_types.Gt(0)]
+"""A decimal that must be greater than zero.
+
+```py
+from decimal import Decimal
+from pydantic import BaseModel, PositiveDecimal, ValidationError
+
+class Model(BaseModel):
+    positive_decimal: PositiveDecimal
+
+m = Model(positive_decimal=Decimal('1.0'))
+print(repr(m))
+#> Model(positive_decimal=Decimal('1.0'))
+
+try:
+    Model(positive_decimal=Decimal('-1.0'))
+except ValidationError as e:
+    print(e.errors())
+    '''
+    [
+        {
+            'type': 'greater_than',
+            'loc': ('positive_decimal',),
+            'msg': 'Input should be greater than 0',
+            'input': Decimal('-1.0'),
+            'ctx': {'gt': Decimal('0')},
+            'url': 'https://errors.pydantic.dev/2/v/greater_than',
+        }
+    ]
+    '''
+```
+"""
+NegativeDecimal = Annotated[Decimal, annotated_types.Lt(0)]
+"""A decimal that must be less than zero.
+
+```py
+from decimal import Decimal
+from pydantic import BaseModel, NegativeDecimal, ValidationError
+
+class Model(BaseModel):
+    negative_decimal: NegativeDecimal
+
+m = Model(negative_decimal=Decimal('-1.0'))
+print(repr(m))
+#> Model(negative_decimal=Decimal('-1.0'))
+
+try:
+    Model(negative_decimal=Decimal('1.0'))
+except ValidationError as e:
+    print(e.errors())
+    '''
+    [
+        {
+            'type': 'less_than',
+            'loc': ('negative_decimal',),
+            'msg': 'Input should be less than 0',
+            'input': Decimal('1.0'),
+            'ctx': {'lt': Decimal('0')},
+            'url': 'https://errors.pydantic.dev/2/v/less_than',
+        }
+    ]
+    '''
+```
+"""
+NonPositiveDecimal = Annotated[Decimal, annotated_types.Le(0)]
+"""
+A decimal that must be less than or equal to zero.
+
+```py
+from decimal import Decimal
+from pydantic import BaseModel, NonPositiveDecimal, ValidationError
+
+class Model(BaseModel):
+    non_positive_decimal: NonPositiveDecimal
+
+m = Model(non_positive_decimal=Decimal('0.0'))
+print(repr(m))
+#> Model(non_positive_decimal=Decimal('0.0'))
+
+try:
+    Model(non_positive_decimal=Decimal('1.0'))
+except ValidationError as e:
+    print(e.errors())
+    '''
+    [
+        {
+            'type': 'less_than_equal',
+            'loc': ('non_positive_decimal',),
+            'msg': 'Input should be less than or equal to 0',
+            'input': Decimal('1.0'),
+            'ctx': {'le': Decimal('0')},
+            'url': 'https://errors.pydantic.dev/2/v/less_than_equal',
+        }
+    ]
+    '''
+```
+"""
+NonNegativeDecimal = Annotated[Decimal, annotated_types.Ge(0)]
+"""A decimal that must be greater than or equal to zero.
+
+```py
+from decimal import Decimal
+from pydantic import BaseModel, NonNegativeDecimal, ValidationError
+
+class Model(BaseModel):
+    non_negative_decimal: NonNegativeDecimal
+
+m = Model(non_negative_decimal=Decimal('0.0'))
+print(repr(m))
+#> Model(non_negative_decimal=Decimal('0.0'))
+
+try:
+    Model(non_negative_decimal=Decimal('-1.0'))
+except ValidationError as e:
+    print(e.errors())
+    '''
+    [
+        {
+            'type': 'greater_than_equal',
+            'loc': ('non_negative_decimal',),
+            'msg': 'Input should be greater than or equal to 0',
+            'input': Decimal('-1.0'),
+            'ctx': {'ge': Decimal('0')},
+            'url': 'https://errors.pydantic.dev/2/v/greater_than_equal',
+        }
+    ]
+    '''
+```
+"""
+StrictDecimal = Annotated[Decimal, Strict()]
+"""A decimal that must be validated in strict mode.
+
+```py
+from pydantic import BaseModel, StrictDecimal, ValidationError
+
+class StrictDecimalModel(BaseModel):
+    strict_decimal: StrictDecimal
+
+try:
+    StrictDecimalModel(strict_decimal='1.0')
+except ValidationError as e:
+    print(e)
+    '''
+    1 validation error for StrictDecimalModel
+    strict_decimal
+      Input should be an instance of Decimal [type=is_instance_of, input_value='1.0', input_type=str]
+    '''
+```
+"""
+InFiniteDecimal = Annotated[Decimal, AllowInfNan(True)]
+"""A decimal that can be infinite or NaN(``-Infinity``, ``Infinity``, or ``nan``).
+
+```py
+from decimal import Decimal
+from pydantic import BaseModel, InFiniteDecimal
+
+class Model(BaseModel):
+    infinite_decimal: InFiniteDecimal
+
+m = Model(infinite_decimal=Decimal('Infinity'))
+print(m)
+#> infinite_decimal=Decimal('Infinity')
+```
+"""
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ UUID TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
