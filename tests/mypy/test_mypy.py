@@ -73,7 +73,7 @@ cases = (
         ['mypy-default.ini', 'pyproject-default.toml'],
         'root_models.py',
         pytest.mark.skipif(
-            MYPY_VERSION_TUPLE > (1, 1, 1), reason='`dataclass_transform` only supported on mypy >= 1.1.1'
+            MYPY_VERSION_TUPLE < (1, 1, 1), reason='`dataclass_transform` only supported on mypy >= 1.1.1'
         ),
     ).build()
     + MypyCasesBuilder(
