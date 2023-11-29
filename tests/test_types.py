@@ -67,7 +67,7 @@ from pydantic import (
     GetCoreSchemaHandler,
     GetPydanticSchema,
     ImportString,
-    InFiniteDecimal,
+    InfiniteDecimal,
     InstanceOf,
     Json,
     JsonValue,
@@ -2609,7 +2609,7 @@ def test_finite_float_config():
 
 
 def test_decimal_validation():
-    _: InFiniteDecimal
+    _: InfiniteDecimal
 
     class Model(BaseModel):
         a: PositiveDecimal = None
@@ -2719,7 +2719,7 @@ def test_decimal_validation():
 
 def test_infinite_decimal_validation():
     class Model(BaseModel):
-        a: InFiniteDecimal
+        a: InfiniteDecimal
 
     assert Model(a=Decimal('Infinity')).a.is_infinite()
     assert Model(a=Decimal('-Infinity')).a.is_infinite()
@@ -2738,7 +2738,7 @@ def test_infinite_decimal_validation():
 def test_infinite_decimal_json_serialization(ser_json_inf_nan, input, output):
     class Model(BaseModel):
         model_config = ConfigDict(ser_json_inf_nan=ser_json_inf_nan)
-        a: InFiniteDecimal
+        a: InfiniteDecimal
 
     json_string = Model(a=input).model_dump_json()
     assert json_string == f'{{"a":"{output}"}}'
@@ -2756,7 +2756,7 @@ def test_infinite_decimal_json_serialization(ser_json_inf_nan, input, output):
 def test_nan_decimal_json_serialization(ser_json_inf_nan, input, output):
     class Model(BaseModel):
         model_config = ConfigDict(ser_json_inf_nan=ser_json_inf_nan)
-        a: InFiniteDecimal
+        a: InfiniteDecimal
 
     json_string = Model(a=input).model_dump_json()
     assert json_string == f'{{"a":"{output}"}}'

@@ -71,7 +71,7 @@ __all__ = (
     'NegativeDecimal',
     'NonPositiveDecimal',
     'NonNegativeDecimal',
-    'InFiniteDecimal',
+    'InfiniteDecimal',
     'UUID1',
     'UUID3',
     'UUID4',
@@ -1232,15 +1232,15 @@ except ValidationError as e:
     '''
 ```
 """
-InFiniteDecimal = Annotated[Decimal, AllowInfNan(True)]
+InfiniteDecimal = Annotated[Decimal, AllowInfNan(True)]
 """A decimal that can be infinite or NaN(``-Infinity``, ``Infinity``, or ``nan``).
 
 ```py
 from decimal import Decimal
-from pydantic import BaseModel, InFiniteDecimal
+from pydantic import BaseModel, InfiniteDecimal
 
 class Model(BaseModel):
-    infinite_decimal: InFiniteDecimal
+    infinite_decimal: InfiniteDecimal
 
 m = Model(infinite_decimal=Decimal('Infinity'))
 print(m)
