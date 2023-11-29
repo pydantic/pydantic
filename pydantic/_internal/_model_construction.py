@@ -57,6 +57,12 @@ class _ModelNamespaceDict(dict):
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(PydanticModelField,))
 class ModelMetaclass(ABCMeta):
+    def __dir__(self) -> list[str]:
+        attributes = list(super().__dir__())
+        if '__fields__' in attributes:
+            attributes.remove('__fields__')
+        return attributes
+
     def __new__(
         mcs,
         cls_name: str,

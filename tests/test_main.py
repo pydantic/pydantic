@@ -2,6 +2,7 @@ import json
 import platform
 import re
 import sys
+import warnings
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
@@ -38,7 +39,6 @@ from pydantic import (
     GenerateSchema,
     GetCoreSchemaHandler,
     PrivateAttr,
-    PydanticDeprecatedSince20,
     PydanticUndefinedAnnotation,
     PydanticUserError,
     SecretStr,
@@ -2980,7 +2980,7 @@ def test_deferred_core_schema() -> None:
 def test_help(create_module):
     # since pydoc/help access all attributes to generate their documentation,
     # this triggers the deprecation warnings.
-    with pytest.warns(PydanticDeprecatedSince20):
+    with warnings.catch_warnings():
         module = create_module(
             # language=Python
             """
@@ -2995,7 +2995,7 @@ class Model(BaseModel):
 help_result_string = pydoc.render_doc(Model)
 """
         )
-
+    warnings.simplefilter('error')
     assert 'class Model' in module.help_result_string
 
 

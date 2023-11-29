@@ -1,4 +1,5 @@
 import pickle
+import warnings
 from datetime import date, datetime
 from typing import Any, Dict, List, Optional, Union
 
@@ -593,7 +594,7 @@ def test_json_schema_extra_on_model_and_on_field():
 def test_help(create_module):
     # since pydoc/help access all attributes to generate their documentation,
     # this triggers the deprecation warnings.
-    with pytest.warns(PydanticDeprecatedSince20):
+    with warnings.catch_warnings():
         module = create_module(
             # language=Python
             """
@@ -605,7 +606,7 @@ from pydantic import RootModel
 help_result_string = pydoc.render_doc(RootModel)
 """
         )
-
+    warnings.simplefilter('error')
     assert 'class RootModel' in module.help_result_string
 
 
