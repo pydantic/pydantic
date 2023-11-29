@@ -608,7 +608,7 @@ def test_property_alias():
     assert s.to_json(Model(3, 4)) == b'{"width":3,"height":4,"Area":12,"volume":48}'
 
 
-def test_computed_field_to_python_exclude_none():
+def test_computed_field_exclude_none():
     @dataclasses.dataclass
     class Model:
         width: int
@@ -646,6 +646,8 @@ def test_computed_field_to_python_exclude_none():
         'volume': None,
     }
     assert s.to_python(Model(3, 4), mode='json', exclude_none=True) == {'width': 3, 'height': 4, 'Area': 12}
+    assert s.to_json(Model(3, 4), exclude_none=False) == b'{"width":3,"height":4,"Area":12,"volume":null}'
+    assert s.to_json(Model(3, 4), exclude_none=True) == b'{"width":3,"height":4,"Area":12}'
 
 
 @pytest.mark.skipif(cached_property is None, reason='cached_property is not available')
