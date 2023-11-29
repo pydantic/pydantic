@@ -70,6 +70,13 @@ cases = (
         pytest.mark.skipif(MYPY_VERSION_TUPLE > (1, 0, 1), reason='Need to handle some more things for mypy >=1.1.1'),
     ).build()
     + MypyCasesBuilder(
+        ['mypy-default.ini', 'pyproject-default.toml'],
+        'root_models.py',
+        pytest.mark.skipif(
+            MYPY_VERSION_TUPLE > (1, 1, 1), reason='`dataclass_transform` only supported on mypy >= 1.1.1'
+        ),
+    ).build()
+    + MypyCasesBuilder(
         'mypy-default.ini', ['plugin_success.py', 'plugin_success_baseConfig.py', 'metaclass_args.py']
     ).build()
     # Default plugin config
