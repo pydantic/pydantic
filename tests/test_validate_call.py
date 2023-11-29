@@ -684,6 +684,18 @@ def test_basemodel_method():
     assert bar.test('1') == (bar, 1)
 
 
+def test_dynamic_method_decoration():
+    class Foo:
+        def bar(self, value: str) -> str:
+            return f'bar-{value}'
+
+    Foo.bar = validate_call(Foo.bar)
+    assert Foo.bar
+
+    foo = Foo()
+    assert foo.bar('test') == 'bar-test'
+
+
 @pytest.mark.parametrize('decorator', [staticmethod, classmethod])
 def test_classmethod_order_error(decorator):
     name = decorator.__name__
