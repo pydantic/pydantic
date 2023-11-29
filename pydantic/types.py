@@ -1233,7 +1233,7 @@ except ValidationError as e:
 ```
 """
 InfiniteDecimal = Annotated[Decimal, AllowInfNan(True)]
-"""A decimal that can be infinite or NaN(``-Infinity``, ``Infinity``, or ``nan``).
+"""A decimal that can be infinite or NaN(`-Infinity`, `Infinity`, or `nan`).
 
 ```py
 from decimal import Decimal
