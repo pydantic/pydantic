@@ -133,11 +133,16 @@ class ValidateCallWrapper:
         bound_function = self.raw_function.__get__(obj, objtype)
         result = self.__class__(bound_function, self._config, self._validate_return)
 
-        # skip binding to instance when obj or objtype has __slots__ attribute
-        if hasattr(obj, '__slots__') or hasattr(objtype, '__slots__'):
-            return result
+        # bind the ValidateCallWrapper to the instance to avoid calling __get__ again
+        # which results in a significant performance improvement on subsequent calls
+        # skip binding to instance when:
+        # 1. obj or objtype has __slots__ attribute
+        # 2. bound_function is from another class (likely a parent)
+        has_slots = hasattr(obj, '__slots__') or hasattr(objtype, '__slots__')
+        calling_class = obj.__class__ if obj is not None else objtype.__name__
+        raw_function_class = self.raw_function.__qualname__.split('.')[0]
 
-        if self._name is not None:
+        if self._name is not None and not (has_slots or calling_class != raw_function_class):
             if obj is not None:
                 object.__setattr__(obj, self._name, result)
             else:
