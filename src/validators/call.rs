@@ -67,6 +67,7 @@ impl BuildValidator for CallValidator {
 }
 
 impl_py_gc_traverse!(CallValidator {
+    function,
     arguments_validator,
     return_validator
 });
