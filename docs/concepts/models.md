@@ -1222,7 +1222,7 @@ values of instance attributes will raise errors. See the [API reference][pydanti
     This config flag is deprecated in Pydantic V2, and has been replaced with `frozen`.
 
 !!! warning
-    In Python, strict immutability is not enforced. Developers have the ability to modify objects
+    Immutability in Python is never strict. Developers have the ability to modify objects
     that are conventionally considered "immutable" if they choose to do so.
 
 ```py
