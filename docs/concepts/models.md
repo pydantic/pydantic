@@ -1222,8 +1222,8 @@ values of instance attributes will raise errors. See the [API reference][pydanti
     This config flag is deprecated in Pydantic V2, and has been replaced with `frozen`.
 
 !!! warning
-    Immutability in Python is never strict. If developers are determined/stupid they can always
-    modify a so-called "immutable" object.
+    In Python, strict immutability is not enforced. Developers have the ability to modify objects
+    that are conventionally considered "immutable" if they choose to do so.
 
 ```py
 from pydantic import BaseModel, ConfigDict, ValidationError
