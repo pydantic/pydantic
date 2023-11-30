@@ -775,57 +775,57 @@ def test_alias_populate_by_name(py_and_json: PyAndJson, input_value, expected):
         assert v.validate_test(input_value) == expected
 
 
-def validate(function):
-    """
-    a demo validation decorator to test arguments
-    """
-    parameters = signature(function).parameters
+def validate(config=None):
+    def decorator(function):
+        parameters = signature(function).parameters
+        type_hints = get_type_hints(function)
+        mode_lookup = {
+            Parameter.POSITIONAL_ONLY: 'positional_only',
+            Parameter.POSITIONAL_OR_KEYWORD: 'positional_or_keyword',
+            Parameter.KEYWORD_ONLY: 'keyword_only',
+        }
 
-    type_hints = get_type_hints(function)
-    mode_lookup = {
-        Parameter.POSITIONAL_ONLY: 'positional_only',
-        Parameter.POSITIONAL_OR_KEYWORD: 'positional_or_keyword',
-        Parameter.KEYWORD_ONLY: 'keyword_only',
-    }
+        arguments_schema = []
+        schema = {'type': 'arguments', 'arguments_schema': arguments_schema}
+        for i, (name, p) in enumerate(parameters.items()):
+            if p.annotation is p.empty:
+                annotation = Any
+            else:
+                annotation = type_hints[name]
 
-    arguments_schema = []
-    schema = {'type': 'arguments', 'arguments_schema': arguments_schema}
-    for i, (name, p) in enumerate(parameters.items()):
-        if p.annotation is p.empty:
-            annotation = Any
-        else:
-            annotation = type_hints[name]
+            assert annotation in (bool, int, float, str, Any), f'schema for {annotation} not implemented'
+            if annotation in (bool, int, float, str):
+                arg_schema = {'type': annotation.__name__}
+            else:
+                assert annotation is Any
+                arg_schema = {'type': 'any'}
 
-        assert annotation in (bool, int, float, str, Any), f'schema for {annotation} not implemented'
-        if annotation in (bool, int, float, str):
-            arg_schema = {'type': annotation.__name__}
-        else:
-            assert annotation is Any
-            arg_schema = {'type': 'any'}
+            if p.kind in mode_lookup:
+                if p.default is not p.empty:
+                    arg_schema = {'type': 'default', 'schema': arg_schema, 'default': p.default}
+                s = {'name': name, 'mode': mode_lookup[p.kind], 'schema': arg_schema}
+                arguments_schema.append(s)
+            elif p.kind == Parameter.VAR_POSITIONAL:
+                schema['var_args_schema'] = arg_schema
+            else:
+                assert p.kind == Parameter.VAR_KEYWORD, p.kind
+                schema['var_kwargs_schema'] = arg_schema
 
-        if p.kind in mode_lookup:
-            if p.default is not p.empty:
-                arg_schema = {'type': 'default', 'schema': arg_schema, 'default': p.default}
-            s = {'name': name, 'mode': mode_lookup[p.kind], 'schema': arg_schema}
-            arguments_schema.append(s)
-        elif p.kind == Parameter.VAR_POSITIONAL:
-            schema['var_args_schema'] = arg_schema
-        else:
-            assert p.kind == Parameter.VAR_KEYWORD, p.kind
-            schema['var_kwargs_schema'] = arg_schema
+        validator = SchemaValidator(schema, config=config)
 
-    validator = SchemaValidator(schema)
+        @wraps(function)
+        def wrapper(*args, **kwargs):
+            # Validate arguments using the original schema
+            validated_args, validated_kwargs = validator.validate_python(ArgsKwargs(args, kwargs))
+            return function(*validated_args, **validated_kwargs)
 
-    @wraps(function)
-    def wrapper(*args, **kwargs):
-        validated_args, validated_kwargs = validator.validate_python(ArgsKwargs(args, kwargs))
-        return function(*validated_args, **validated_kwargs)
+        return wrapper
 
-    return wrapper
+    return decorator
 
 
 def test_function_any():
-    @validate
+    @validate()
     def foobar(a, b, c):
         return a, b, c
 
@@ -842,7 +842,7 @@ def test_function_any():
 
 
 def test_function_types():
-    @validate
+    @validate()
     def foobar(a: int, b: int, *, c: int):
         return a, b, c
 
@@ -894,8 +894,8 @@ def test_function_positional_only(import_execute):
     # language=Python
     m = import_execute(
         """
-def create_function(validate):
-    @validate
+def create_function(validate, config = None):
+    @validate(config = config)
     def foobar(a: int, b: int, /, c: int):
         return a, b, c
     return foobar
@@ -915,6 +915,12 @@ def create_function(validate):
         },
         {'type': 'unexpected_keyword_argument', 'loc': ('b',), 'msg': 'Unexpected keyword argument', 'input': 2},
     ]
+    # Allowing extras using the config
+    foobar = m.create_function(validate, config={'title': 'func', 'extra_fields_behavior': 'allow'})
+    assert foobar('1', '2', c=3, d=4) == (1, 2, 3)
+    # Ignore works similar than allow
+    foobar = m.create_function(validate, config={'title': 'func', 'extra_fields_behavior': 'ignore'})
+    assert foobar('1', '2', c=3, d=4) == (1, 2, 3)
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='requires python3.10 or higher')
@@ -923,7 +929,7 @@ def test_function_positional_only_default(import_execute):
     m = import_execute(
         """
 def create_function(validate):
-    @validate
+    @validate()
     def foobar(a: int, b: int = 42, /):
         return a, b
     return foobar
@@ -940,7 +946,7 @@ def test_function_positional_kwargs(import_execute):
     m = import_execute(
         """
 def create_function(validate):
-    @validate
+    @validate()
     def foobar(a: int, b: int, /, **kwargs: bool):
         return a, b, kwargs
     return foobar
@@ -953,7 +959,7 @@ def create_function(validate):
 
 
 def test_function_args_kwargs():
-    @validate
+    @validate()
     def foobar(*args, **kwargs):
         return args, kwargs
 
