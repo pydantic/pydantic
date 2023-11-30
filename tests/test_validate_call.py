@@ -93,9 +93,7 @@ def test_wrap():
     assert foo_bar.__name__ == 'foo_bar'
     assert foo_bar.__module__ == 'tests.test_validate_call'
     assert foo_bar.__qualname__ == 'test_wrap.<locals>.foo_bar'
-    assert isinstance(foo_bar.__pydantic_core_schema__, dict)
     assert callable(foo_bar.raw_function)
-    assert repr(foo_bar) == f'ValidateCallWrapper({repr(foo_bar.raw_function)})'
     assert repr(inspect.signature(foo_bar)) == '<Signature (a: int, b: int)>'
 
 
@@ -369,8 +367,8 @@ def test_item_method():
 
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'missing_argument', 'loc': ('a',), 'msg': 'Missing required argument', 'input': ArgsKwargs(())},
-        {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs(())},
+        {'type': 'missing_argument', 'loc': ('a',), 'msg': 'Missing required argument', 'input': ArgsKwargs((x,))},
+        {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs((x,))},
     ]
 
 
@@ -392,8 +390,8 @@ def test_class_method():
 
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'missing_argument', 'loc': ('a',), 'msg': 'Missing required argument', 'input': ArgsKwargs(())},
-        {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs(())},
+        {'type': 'missing_argument', 'loc': ('a',), 'msg': 'Missing required argument', 'input': ArgsKwargs((X,))},
+        {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs((X,))},
     ]
 
 

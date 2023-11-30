@@ -107,55 +107,8 @@ class ValidateCallWrapper:
             self.__return_pydantic_core_schema__ = None
             self.__return_pydantic_validator__ = None
 
-        self._name: str | None = None  # set by __get__, used to set the instance attribute when decorating methods
-
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         res = self.__pydantic_validator__.validate_python(pydantic_core.ArgsKwargs(args, kwargs))
         if self.__return_pydantic_validator__:
             return self.__return_pydantic_validator__(res)
         return res
-
-    def __get__(self, obj: Any, objtype: type[Any] | None = None) -> ValidateCallWrapper:
-        """Bind the raw function and return another ValidateCallWrapper wrapping that."""
-        if obj is None:
-            # It's possible this wrapper is dynamically applied to a class attribute not allowing
-            # name to be populated by __set_name__. In this case, we'll manually acquire the name
-            # from the function reference.
-            if self._name is None:
-                self._name = self.raw_function.__name__
-            try:
-                # Handle the case where a method is accessed as a class attribute
-                return objtype.__getattribute__(objtype, self._name)  # type: ignore
-            except AttributeError:
-                # This will happen the first time the attribute is accessed
-                pass
-
-        bound_function = self.raw_function.__get__(obj, objtype)
-        result = self.__class__(bound_function, self._config, self._validate_return)
-
-        # skip binding to instance when obj or objtype has __slots__ attribute
-        if hasattr(obj, '__slots__') or hasattr(objtype, '__slots__'):
-            return result
-
-        if self._name is not None:
-            if obj is not None:
-                object.__setattr__(obj, self._name, result)
-            else:
-                object.__setattr__(objtype, self._name, result)
-        return result
-
-    def __set_name__(self, owner: Any, name: str) -> None:
-        self._name = name
-
-    def __repr__(self) -> str:
-        return f'ValidateCallWrapper({self.raw_function})'
-
-    def __eq__(self, other) -> bool:
-        return (
-            (self.raw_function == other.raw_function)
-            and (self._config == other._config)
-            and (self._validate_return == other._validate_return)
-        )
-
-    def __hash__(self):
-        return hash(self.raw_function)

@@ -50,7 +50,17 @@ def validate_call(
         if isinstance(function, (classmethod, staticmethod)):
             name = type(function).__name__
             raise TypeError(f'The `@{name}` decorator should be applied after `@validate_call` (put `@{name}` on top)')
-        return _validate_call.ValidateCallWrapper(function, config, validate_return)  # type: ignore
+        v = _validate_call.ValidateCallWrapper(function, config, validate_return)
+
+        import functools
+
+        @functools.wraps(function)
+        def wrapper(*args, **kwargs):
+            return v(*args, **kwargs)
+
+        wrapper.raw_function = function  # type: ignore
+
+        return wrapper  # type: ignore
 
     if __func:
         return validate(__func)
