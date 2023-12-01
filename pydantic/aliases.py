@@ -70,26 +70,14 @@ class AliasGenerator:
     A data class used by `alias_generator` as a convenience to create various aliases.
 
     Attributes:
-        validation_alias: A callable that takes a field name and returns a validation alias for it.
         alias: A callable that takes a field name and returns an alias for it.
+        validation_alias: A callable that takes a field name and returns a validation alias for it.
         serialization_alias: A callable that takes a field name and returns a serialization alias for it.
     """
 
-    validation_alias: Callable[[str], str | AliasPath | AliasChoices] | None = None
     alias: Callable[[str], str] | None = None
+    validation_alias: Callable[[str], str | AliasPath | AliasChoices] | None = None
     serialization_alias: Callable[[str], str] | None = None
-
-    def __init__(
-        self,
-        alias: Callable[[str], str] | None = None,
-        *,
-        validation_alias: Callable[[str], str | AliasPath | AliasChoices] | None = None,
-        serialization_alias: Callable[[str], str] | None = None,
-    ) -> None:
-        """Initialize the alias generator."""
-        self.validation_alias = validation_alias
-        self.alias = alias
-        self.serialization_alias = serialization_alias
 
     def _generate_alias(
         self,
