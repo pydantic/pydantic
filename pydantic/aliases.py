@@ -107,7 +107,7 @@ class AliasGenerator:
             alias = alias_generator(field_name)
             if alias and not isinstance(alias, allowed_types):
                 raise TypeError(
-                    f'Invalid `{alias_kind}` type. `{alias_kind} generator` must produce' f' one of `{allowed_types}`'
+                    f'Invalid `{alias_kind}` type. `{alias_kind}` generator must produce one of `{allowed_types}`'
                 )
         return alias
 

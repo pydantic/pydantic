@@ -666,3 +666,15 @@ def test_alias_generator_with_computed_field(alias_generator) -> None:
 
     r = Rectangle(width=10, height=20)
     assert r.model_dump(by_alias=True) == {'WIDTH': 10, 'HEIGHT': 20, 'AREA': 200}
+
+
+def test_alias_generator_with_invalid_callables() -> None:
+    for alias_kind in ('validation_alias', 'serialization_alias', 'alias'):
+        with pytest.raises(
+            TypeError, match=f'Invalid `{alias_kind}` type. `{alias_kind}` generator must produce one of'
+        ):
+
+            class Foo(BaseModel):
+                a: str
+
+                model_config = ConfigDict(alias_generator=AliasGenerator(**{alias_kind: lambda x: 1}))
