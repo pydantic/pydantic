@@ -88,6 +88,7 @@ nav:
     - TypeAdapter: api/type_adapter.md
     - Validate Call: api/validate_call.md
     - Fields: api/fields.md
+    - Aliases: api/aliases.md
     - Configuration: api/config.md
     - JSON Schema: api/json_schema.md
     - Errors: api/errors.md

@@ -319,14 +319,15 @@ class ConfigDict(TypedDict, total=False):
     alias_generator: Callable[[str], str] | AliasGenerator | None
     """
     A callable that takes a field name and returns an alias for it
-    or an instance of [`AliasGenerator`][pydantic.alias_generators.AliasGenerator]. Defaults to `None`.
+    or an instance of [`AliasGenerator`][pydantic.aliases.AliasGenerator]. Defaults to `None`.
 
     When using a callable, the alias generator is used for both validation and serialization.
     If you want to use different alias generators for validation and serialization, you can use
-    [`AliasGenerator`][pydantic.alias_generators.AliasGenerator] instead.
+    [`AliasGenerator`][pydantic.aliases.AliasGenerator] instead.
 
     If data source field names do not match your code style (e. g. CamelCase fields),
-    you can automatically generate aliases using `alias_generator`:
+    you can automatically generate aliases using `alias_generator`. Here's an example with
+    a basic callable:
 
     ```py
     from pydantic import BaseModel, ConfigDict
@@ -343,6 +344,30 @@ class ConfigDict(TypedDict, total=False):
     #> tr-TR
     print(voice.model_dump(by_alias=True))
     #> {'Name': 'Filiz', 'LanguageCode': 'tr-TR'}
+    ```
+
+    If you want to use different alias generators for validation and serialization, you can use
+    [`AliasGenerator`][pydantic.aliases.AliasGenerator].
+
+    ```py
+    from pydantic import AliasGenerator, BaseModel, ConfigDict
+    from pydantic.alias_generators import to_camel, to_pascal
+
+    class Athlete(BaseModel):
+        first_name: str
+        last_name: str
+        sport: str
+
+        model_config = ConfigDict(
+            alias_generator=AliasGenerator(
+                validation_alias=to_camel,
+                serialization_alias=to_pascal,
+            )
+        )
+
+    athlete = Athlete(firstName='John', lastName='Doe', sport='track')
+    print(athlete.model_dump(by_alias=True))
+    #> {'FirstName': 'John', 'LastName': 'Doe', 'Sport': 'track'}
     ```
 
     Note:
