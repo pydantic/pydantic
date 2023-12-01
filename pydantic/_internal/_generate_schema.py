@@ -1001,7 +1001,9 @@ class GenerateSchema:
             js_annotation_functions=[get_json_schema_update_func(json_schema_updates, json_schema_extra)]
         )
 
-        # apply alias generator
+        # Apply an alias_generator if
+        # 1. An alias is not specified
+        # 2. An alias is specified, but the priority is <= 1
         alias_generator = self._config_wrapper.alias_generator
         if alias_generator and (
             field_info.alias_priority is None
@@ -1019,14 +1021,19 @@ class GenerateSchema:
                 if not isinstance(alias, str):
                     raise TypeError(f'alias_generator {alias_generator} must return str, not {alias.__class__}')
 
+            # if priority is not set, we set to 1
+            # which supports the case where the alias_generator from a child class is used
+            # to generate an alias for a field in a parent class
             if field_info.alias_priority is None or field_info.alias_priority <= 1:
                 field_info.alias_priority = 1
 
+            # if the priority is 1, then we set the aliases to the generated alias
             if field_info.alias_priority == 1:
                 field_info.serialization_alias = serialization_alias or alias
                 field_info.validation_alias = validation_alias or alias
                 field_info.alias = alias
 
+            # if any of the aliases are not set, then we set them to the corresponding generated alias
             if field_info.alias is None:
                 field_info.alias = alias
             if field_info.serialization_alias is None:
