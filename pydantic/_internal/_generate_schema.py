@@ -943,10 +943,10 @@ class GenerateSchema:
             or field_info.validation_alias is None
             or field_info.serialization_alias is None
         ):
-            validation_alias, alias, serialization_alias = None, None, None
+            alias, validation_alias, serialization_alias = None, None, None
 
             if isinstance(alias_generator, AliasGenerator):
-                validation_alias, alias, serialization_alias = alias_generator.generate_aliases(field_name)
+                alias, validation_alias, serialization_alias = alias_generator.generate_aliases(field_name)
             elif isinstance(alias_generator, Callable):
                 alias = alias_generator(field_name)
                 if not isinstance(alias, str):
