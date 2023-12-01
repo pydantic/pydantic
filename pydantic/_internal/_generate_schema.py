@@ -37,6 +37,7 @@ from warnings import warn
 from pydantic_core import CoreSchema, PydanticUndefined, core_schema, to_jsonable_python
 from typing_extensions import Annotated, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
+from ..aliases import AliasGenerator
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from ..config import ConfigDict, JsonDict, JsonEncoder
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
@@ -925,7 +926,8 @@ class GenerateSchema:
         self, name: str, field_info: FieldInfo, decorators: DecoratorInfos
     ) -> _CommonField:
         # Update FieldInfo annotation if appropriate:
-        from ..fields import AliasChoices, AliasPath, FieldInfo
+        from .. import AliasChoices, AliasPath
+        from ..fields import FieldInfo
 
         if has_instance_in_type(field_info.annotation, (ForwardRef, str)):
             types_namespace = self._types_namespace
@@ -1002,21 +1004,35 @@ class GenerateSchema:
         # apply alias generator
         alias_generator = self._config_wrapper.alias_generator
         if alias_generator and (
-            field_info.alias_priority is None or field_info.alias_priority <= 1 or field_info.alias is None
+            field_info.alias_priority is None
+            or field_info.alias_priority <= 1
+            or field_info.alias is None
+            or field_info.validation_alias is None
+            or field_info.serialization_alias is None
         ):
-            alias = alias_generator(name)
-            if not isinstance(alias, str):
-                raise TypeError(f'alias_generator {alias_generator} must return str, not {alias.__class__}')
-            if field_info.alias is None:
-                if field_info.serialization_alias is None:
-                    field_info.serialization_alias = alias
-                if field_info.validation_alias is None:
-                    field_info.validation_alias = alias
-            else:
-                field_info.serialization_alias = alias
-                field_info.validation_alias = alias
+            validation_alias, alias, serialization_alias = None, None, None
+
+            if isinstance(alias_generator, AliasGenerator):
+                validation_alias, alias, serialization_alias = alias_generator(name)
+            elif isinstance(alias_generator, Callable):
+                alias = alias_generator(name)
+                if not isinstance(alias, str):
+                    raise TypeError(f'alias_generator {alias_generator} must return str, not {alias.__class__}')
+
+            if field_info.alias_priority is None or field_info.alias_priority <= 1:
                 field_info.alias_priority = 1
-            field_info.alias = alias
+
+            if field_info.alias_priority == 1:
+                field_info.serialization_alias = serialization_alias or alias
+                field_info.validation_alias = validation_alias or alias
+                field_info.alias = alias
+
+            if field_info.alias is None:
+                field_info.alias = alias
+            if field_info.serialization_alias is None:
+                field_info.serialization_alias = serialization_alias or alias
+            if field_info.validation_alias is None:
+                field_info.validation_alias = validation_alias or alias
 
         if isinstance(field_info.validation_alias, (AliasChoices, AliasPath)):
             validation_alias = field_info.validation_alias.convert_to_aliases()

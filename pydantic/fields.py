@@ -17,6 +17,7 @@ from typing_extensions import Literal, Unpack
 
 from . import types
 from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils
+from .aliases import AliasChoices, AliasPath
 from .config import JsonDict
 from .errors import PydanticUserError
 from .warnings import PydanticDeprecatedSince20
@@ -566,60 +567,6 @@ class FieldInfo(_repr.Representation):
                 value = getattr(self, s)
                 if value is not None and value is not PydanticUndefined:
                     yield s, value
-
-
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
-class AliasPath:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/fields#aliaspath-and-aliaschoices
-
-    A data class used by `validation_alias` as a convenience to create aliases.
-
-    Attributes:
-        path: A list of string or integer aliases.
-    """
-
-    path: list[int | str]
-
-    def __init__(self, first_arg: str, *args: str | int) -> None:
-        self.path = [first_arg] + list(args)
-
-    def convert_to_aliases(self) -> list[str | int]:
-        """Converts arguments to a list of string or integer aliases.
-
-        Returns:
-            The list of aliases.
-        """
-        return self.path
-
-
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
-class AliasChoices:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/fields#aliaspath-and-aliaschoices
-
-    A data class used by `validation_alias` as a convenience to create aliases.
-
-    Attributes:
-        choices: A list containing a string or `AliasPath`.
-    """
-
-    choices: list[str | AliasPath]
-
-    def __init__(self, first_choice: str | AliasPath, *choices: str | AliasPath) -> None:
-        self.choices = [first_choice] + list(choices)
-
-    def convert_to_aliases(self) -> list[list[str | int]]:
-        """Converts arguments to a list of lists containing string or integer aliases.
-
-        Returns:
-            The list of aliases.
-        """
-        aliases: list[list[str | int]] = []
-        for c in self.choices:
-            if isinstance(c, AliasPath):
-                aliases.append(c.convert_to_aliases())
-            else:
-                aliases.append([c])
-        return aliases
 
 
 class _EmptyKwargs(typing_extensions.TypedDict):

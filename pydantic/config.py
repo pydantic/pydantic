@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, Union
 from typing_extensions import Literal, TypeAlias, TypedDict
 
 from ._migration import getattr_migration
+from .aliases import AliasGenerator
 
 if TYPE_CHECKING:
     from ._internal._generate_schema import GenerateSchema as _GenerateSchema
@@ -315,9 +316,14 @@ class ConfigDict(TypedDict, total=False):
     loc_by_alias: bool
     """Whether to use the actual key provided in the data (e.g. alias) for error `loc`s rather than the field's name. Defaults to `True`."""
 
-    alias_generator: Callable[[str], str] | None
+    alias_generator: Callable[[str], str] | AliasGenerator | None
     """
-    A callable that takes a field name and returns an alias for it.
+    A callable that takes a field name and returns an alias for it
+    or an instance of [`AliasGenerator`][pydantic.alias_generators.AliasGenerator]. Defaults to `None`.
+
+    When using a callable, the alias generator is used for both validation and serialization.
+    If you want to use different alias generators for validation and serialization, you can use
+    [`AliasGenerator`][pydantic.alias_generators.AliasGenerator] instead.
 
     If data source field names do not match your code style (e. g. CamelCase fields),
     you can automatically generate aliases using `alias_generator`:

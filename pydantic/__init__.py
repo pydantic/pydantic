@@ -17,10 +17,11 @@ if typing.TYPE_CHECKING:
 
     from . import dataclasses
     from ._internal._generate_schema import GenerateSchema as GenerateSchema
+    from .aliases import AliasChoices, AliasGenerator, AliasPath
     from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
     from .config import ConfigDict
     from .errors import *
-    from .fields import AliasChoices, AliasPath, Field, PrivateAttr, computed_field
+    from .fields import Field, PrivateAttr, computed_field
     from .functional_serializers import (
         PlainSerializer,
         SerializeAsAny,
@@ -92,11 +93,13 @@ __all__ = (
     'PydanticUndefinedAnnotation',
     'PydanticInvalidForJsonSchema',
     # fields
-    'AliasPath',
-    'AliasChoices',
     'Field',
     'computed_field',
     'PrivateAttr',
+    # alias
+    'AliasChoices',
+    'AliasGenerator',
+    'AliasPath',
     # main
     'BaseModel',
     'create_model',
@@ -240,11 +243,13 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'PydanticUndefinedAnnotation': (__package__, '.errors'),
     'PydanticInvalidForJsonSchema': (__package__, '.errors'),
     # fields
-    'AliasPath': (__package__, '.fields'),
-    'AliasChoices': (__package__, '.fields'),
     'Field': (__package__, '.fields'),
     'computed_field': (__package__, '.fields'),
     'PrivateAttr': (__package__, '.fields'),
+    # alias
+    'AliasChoices': (__package__, '.aliases'),
+    'AliasGenerator': (__package__, '.aliases'),
+    'AliasPath': (__package__, '.aliases'),
     # main
     'BaseModel': (__package__, '.main'),
     'create_model': (__package__, '.main'),

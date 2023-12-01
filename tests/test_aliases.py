@@ -5,8 +5,7 @@ from typing import Any, ContextManager, List, Optional
 import pytest
 from dirty_equals import IsStr
 
-from pydantic import BaseModel, ConfigDict, ValidationError
-from pydantic.fields import AliasChoices, AliasPath, Field
+from pydantic import AliasChoices, AliasPath, BaseModel, ConfigDict, Field, ValidationError
 
 
 def test_alias_generator():
