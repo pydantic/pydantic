@@ -454,7 +454,7 @@ class GenerateSchema:
             PydanticSchemaGenerationError:
                 If it is not possible to generate pydantic-core schema.
             TypeError:
-                - If `alias_generator` returns a non-string value.
+                - If `alias_generator` returns a disallowed type (must be str, AliasPath or AliasChoices).
                 - If V1 style validator with `each_item=True` applied on a wrong field.
             PydanticUserError:
                 - If `typing.TypedDict` is used instead of `typing_extensions.TypedDict` on Python < 3.12.
@@ -922,7 +922,57 @@ class GenerateSchema:
             metadata=common_field['metadata'],
         )
 
-    def _common_field_schema(  # noqa C901
+    @staticmethod
+    def _apply_alias_generator(
+        alias_generator: Callable[[str], str] | AliasGenerator, field_info: FieldInfo, field_name: str
+    ) -> None:
+        """Apply an alias_generator to aliases on a FieldInfo instance if appropriate.
+
+        Args:
+            alias_generator: A callable that takes a string and returns a string, or an AliasGenerator instance.
+            field_info: The FieldInfo instance to which the alias_generator is (maybe) applied.
+            field_name: The name of the field from which to generate the alias.
+        """
+        # Apply an alias_generator if
+        # 1. An alias is not specified
+        # 2. An alias is specified, but the priority is <= 1
+        if alias_generator and (
+            field_info.alias_priority is None
+            or field_info.alias_priority <= 1
+            or field_info.alias is None
+            or field_info.validation_alias is None
+            or field_info.serialization_alias is None
+        ):
+            validation_alias, alias, serialization_alias = None, None, None
+
+            if isinstance(alias_generator, AliasGenerator):
+                validation_alias, alias, serialization_alias = alias_generator.generate_aliases(field_name)
+            elif isinstance(alias_generator, Callable):
+                alias = alias_generator(field_name)
+                if not isinstance(alias, str):
+                    raise TypeError(f'alias_generator {alias_generator} must return str, not {alias.__class__}')
+
+            # if priority is not set, we set to 1
+            # which supports the case where the alias_generator from a child class is used
+            # to generate an alias for a field in a parent class
+            if field_info.alias_priority is None or field_info.alias_priority <= 1:
+                field_info.alias_priority = 1
+
+            # if the priority is 1, then we set the aliases to the generated alias
+            if field_info.alias_priority == 1:
+                field_info.serialization_alias = serialization_alias or alias
+                field_info.validation_alias = validation_alias or alias
+                field_info.alias = alias
+
+            # if any of the aliases are not set, then we set them to the corresponding generated alias
+            if field_info.alias is None:
+                field_info.alias = alias
+            if field_info.serialization_alias is None:
+                field_info.serialization_alias = serialization_alias or alias
+            if field_info.validation_alias is None:
+                field_info.validation_alias = validation_alias or alias
+
+    def _common_field_schema(  # C901
         self, name: str, field_info: FieldInfo, decorators: DecoratorInfos
     ) -> _CommonField:
         # Update FieldInfo annotation if appropriate:
@@ -1001,45 +1051,9 @@ class GenerateSchema:
             js_annotation_functions=[get_json_schema_update_func(json_schema_updates, json_schema_extra)]
         )
 
-        # Apply an alias_generator if
-        # 1. An alias is not specified
-        # 2. An alias is specified, but the priority is <= 1
         alias_generator = self._config_wrapper.alias_generator
-        if alias_generator and (
-            field_info.alias_priority is None
-            or field_info.alias_priority <= 1
-            or field_info.alias is None
-            or field_info.validation_alias is None
-            or field_info.serialization_alias is None
-        ):
-            validation_alias, alias, serialization_alias = None, None, None
-
-            if isinstance(alias_generator, AliasGenerator):
-                validation_alias, alias, serialization_alias = alias_generator(name)
-            elif isinstance(alias_generator, Callable):
-                alias = alias_generator(name)
-                if not isinstance(alias, str):
-                    raise TypeError(f'alias_generator {alias_generator} must return str, not {alias.__class__}')
-
-            # if priority is not set, we set to 1
-            # which supports the case where the alias_generator from a child class is used
-            # to generate an alias for a field in a parent class
-            if field_info.alias_priority is None or field_info.alias_priority <= 1:
-                field_info.alias_priority = 1
-
-            # if the priority is 1, then we set the aliases to the generated alias
-            if field_info.alias_priority == 1:
-                field_info.serialization_alias = serialization_alias or alias
-                field_info.validation_alias = validation_alias or alias
-                field_info.alias = alias
-
-            # if any of the aliases are not set, then we set them to the corresponding generated alias
-            if field_info.alias is None:
-                field_info.alias = alias
-            if field_info.serialization_alias is None:
-                field_info.serialization_alias = serialization_alias or alias
-            if field_info.validation_alias is None:
-                field_info.validation_alias = validation_alias or alias
+        if alias_generator is not None:
+            self._apply_alias_generator(alias_generator, field_info, name)
 
         if isinstance(field_info.validation_alias, (AliasChoices, AliasPath)):
             validation_alias = field_info.validation_alias.convert_to_aliases()
@@ -1270,7 +1284,9 @@ class GenerateSchema:
             parameter_schema['alias'] = field.alias
         else:
             alias_generator = self._config_wrapper.alias_generator
-            if alias_generator:
+            if isinstance(alias_generator, AliasGenerator) and alias_generator.alias is not None:
+                parameter_schema['alias'] = alias_generator.alias(name)
+            elif isinstance(alias_generator, Callable):
                 parameter_schema['alias'] = alias_generator(name)
         return parameter_schema
 
@@ -1572,7 +1588,11 @@ class GenerateSchema:
         # with field_info -> d.info and name -> d.cls_var_name
         alias_generator = self._config_wrapper.alias_generator
         if alias_generator and (d.info.alias_priority is None or d.info.alias_priority <= 1):
-            alias = alias_generator(d.cls_var_name)
+            alias = None
+            if isinstance(alias_generator, AliasGenerator) and alias_generator.alias is not None:
+                alias = alias_generator.alias(d.cls_var_name)
+            elif isinstance(alias_generator, Callable):
+                alias = alias_generator(d.cls_var_name)
             if not isinstance(alias, str):
                 raise TypeError(f'alias_generator {alias_generator} must return str, not {alias.__class__}')
             d.info.alias = alias

@@ -5,7 +5,16 @@ from typing import Any, ContextManager, List, Optional
 import pytest
 from dirty_equals import IsStr
 
-from pydantic import AliasChoices, AliasGenerator, AliasPath, BaseModel, ConfigDict, Field, ValidationError
+from pydantic import (
+    AliasChoices,
+    AliasGenerator,
+    AliasPath,
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    computed_field,
+)
 
 
 def test_alias_generator():
@@ -640,3 +649,20 @@ def test_alias_generator_with_positional_arg() -> None:
     assert Model.model_fields['a'].validation_alias == 'a_alias'
     assert Model.model_fields['a'].serialization_alias == 'a_alias'
     assert Model.model_fields['a'].alias == 'a_alias'
+
+
+@pytest.mark.parametrize('alias_generator', upper_alias_generator)
+def test_alias_generator_with_computed_field(alias_generator) -> None:
+    class Rectangle(BaseModel):
+        model_config = ConfigDict(populate_by_name=True, alias_generator=alias_generator)
+
+        width: int
+        height: int
+
+        @computed_field
+        @property
+        def area(self) -> int:
+            return self.width * self.height
+
+    r = Rectangle(width=10, height=20)
+    assert r.model_dump(by_alias=True) == {'WIDTH': 10, 'HEIGHT': 20, 'AREA': 200}

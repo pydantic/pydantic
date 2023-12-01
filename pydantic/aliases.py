@@ -103,8 +103,7 @@ class AliasGenerator:
             TypeError: If the alias generator produces an invalid type.
         """
         alias = None
-        alias_generator = getattr(self, alias_kind)
-        if alias_generator is not None:
+        if alias_generator := getattr(self, alias_kind):
             alias = alias_generator(field_name)
             if alias and not isinstance(alias, allowed_types):
                 raise TypeError(
@@ -112,8 +111,8 @@ class AliasGenerator:
                 )
         return alias
 
-    def __call__(self, field_name: str) -> tuple[str | AliasPath | AliasChoices | None, str | None, str | None]:
-        """Generate validation_alias, alias, and serialization_alias for a field via the specified generators.
+    def generate_aliases(self, field_name: str) -> tuple[str | AliasPath | AliasChoices | None, str | None, str | None]:
+        """Generate `validation_alias`, `alias`, and `serialization_alias` for a field.
 
         Returns:
             A tuple of three aliases - validation, alias, and serialization.
