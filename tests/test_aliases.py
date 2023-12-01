@@ -678,3 +678,27 @@ def test_alias_generator_with_invalid_callables() -> None:
                 a: str
 
                 model_config = ConfigDict(alias_generator=AliasGenerator(**{alias_kind: lambda x: 1}))
+
+
+def test_all_alias_kinds_specified() -> None:
+    class Foo(BaseModel):
+        a: str
+
+        model_config = ConfigDict(
+            alias_generator=AliasGenerator(
+                alias=lambda field_name: f'{field_name}_alias',
+                validation_alias=lambda field_name: f'{field_name}_val_alias',
+                serialization_alias=lambda field_name: f'{field_name}_ser_alias',
+            )
+        )
+
+    assert Foo.model_fields['a'].alias == 'a_alias'
+    assert Foo.model_fields['a'].validation_alias == 'a_val_alias'
+    assert Foo.model_fields['a'].serialization_alias == 'a_ser_alias'
+
+    # the same behavior we'd expect if we defined alias, validation_alias
+    # and serialization_alias on the field itself
+    f = Foo(a_val_alias='a')
+    assert f.a == 'a'
+    assert f.model_dump(by_alias=True) == {'a_ser_alias': 'a'}
+    assert f.model_dump(by_alias=False) == {'a': 'a'}
