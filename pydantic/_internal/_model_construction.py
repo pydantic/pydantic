@@ -57,12 +57,6 @@ class _ModelNamespaceDict(dict):
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(PydanticModelField,))
 class ModelMetaclass(ABCMeta):
-    def __dir__(self) -> list[str]:
-        attributes = list(super().__dir__())
-        if '__fields__' in attributes:
-            attributes.remove('__fields__')
-        return attributes
-
     def __new__(
         mcs,
         cls_name: str,
@@ -254,6 +248,12 @@ class ModelMetaclass(ABCMeta):
     def __fields__(self) -> dict[str, FieldInfo]:
         warnings.warn('The `__fields__` attribute is deprecated, use `model_fields` instead.', DeprecationWarning)
         return self.model_fields  # type: ignore
+
+    def __dir__(self) -> list[str]:
+        attributes = list(super().__dir__())
+        if '__fields__' in attributes:
+            attributes.remove('__fields__')
+        return attributes
 
 
 def init_private_attributes(self: BaseModel, __context: Any) -> None:
