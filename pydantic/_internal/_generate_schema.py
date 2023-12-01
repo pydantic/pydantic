@@ -923,7 +923,7 @@ class GenerateSchema:
         )
 
     @staticmethod
-    def _apply_alias_generator(
+    def _apply_alias_generator_to_field_info(
         alias_generator: Callable[[str], str] | AliasGenerator, field_info: FieldInfo, field_name: str
     ) -> None:
         """Apply an alias_generator to aliases on a FieldInfo instance if appropriate.
@@ -1053,7 +1053,7 @@ class GenerateSchema:
 
         alias_generator = self._config_wrapper.alias_generator
         if alias_generator is not None:
-            self._apply_alias_generator(alias_generator, field_info, name)
+            self._apply_alias_generator_to_field_info(alias_generator, field_info, name)
 
         if isinstance(field_info.validation_alias, (AliasChoices, AliasPath)):
             validation_alias = field_info.validation_alias.convert_to_aliases()
