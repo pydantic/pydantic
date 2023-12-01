@@ -839,9 +839,7 @@ class PydanticModelTransformer:
 
         return default
 
-    def add_initializer(
-        self, fields: list[PydanticModelField], config: ModelConfigData, is_settings: bool
-    ) -> None:
+    def add_initializer(self, fields: list[PydanticModelField], config: ModelConfigData, is_settings: bool) -> None:
         """Adds a fields-aware `__init__` method to the class.
 
         The added `__init__` will be annotated with types vs. all `Any` depending on the plugin settings.
