@@ -27,6 +27,6 @@ jobs:
           pdm install -G testing -G testing-extra -G email
 
       - name: Run CodSpeed benchmarks
-        uses: CodSpeedHQ/action@v1
+        uses: CodSpeedHQ/action@v2
         with:
           run: pdm run pytest ./tests/benchmarks --codspeed
