@@ -292,10 +292,10 @@ class FieldInfo(_repr.Representation):
                 new_field_info.frozen = final or field_info.frozen
                 metadata: list[Any] = []
                 for a in extra_args:
-                    if not isinstance(a, FieldInfo):
-                        metadata.append(a)
-                    elif _typing_extra.is_deprecated_instance(a):
+                    if _typing_extra.is_deprecated_instance(a):
                         new_field_info.deprecated = True
+                    elif not isinstance(a, FieldInfo):
+                        metadata.append(a)
                     else:
                         metadata.extend(a.metadata)
                 new_field_info.metadata = metadata
@@ -369,10 +369,10 @@ class FieldInfo(_repr.Representation):
                 field_info = FieldInfo.merge_field_infos(*field_infos, annotation=first_arg, default=default)
                 metadata: list[Any] = []
                 for a in extra_args:
-                    if not isinstance(a, FieldInfo):
-                        metadata.append(a)
-                    elif _typing_extra.is_deprecated_instance(a):
+                    if _typing_extra.is_deprecated_instance(a):
                         field_info.deprecated = True
+                    elif not isinstance(a, FieldInfo):
+                        metadata.append(a)
                     else:
                         metadata.extend(a.metadata)
                 field_info.metadata = metadata

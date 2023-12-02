@@ -33,7 +33,7 @@ from uuid import UUID
 import pytest
 from dirty_equals import HasRepr
 from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_json
-from typing_extensions import Annotated, Literal, Self, TypedDict
+from typing_extensions import Annotated, Literal, Self, TypedDict, deprecated
 
 import pydantic
 from pydantic import (
@@ -75,6 +75,7 @@ from pydantic.types import (
     UUID3,
     UUID4,
     UUID5,
+    Deprecated,
     DirectoryPath,
     FilePath,
     Json,
@@ -5819,3 +5820,25 @@ def test_description_not_included_for_basemodel() -> None:
         x: BaseModel
 
     assert 'description' not in Model.model_json_schema()['$defs']['BaseModel']
+
+
+def test_deprecated_fields():
+    class Model(BaseModel):
+        a: Annotated[int, Field(deprecated=True)]
+        b: Annotated[int, Field(deprecated=False)]
+        c: Annotated[int, deprecated('')]
+        d: Annotated[int, deprecated('')] = 1
+        e: Deprecated[int]
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'a': {'deprecated': True, 'title': 'A', 'type': 'integer'},
+            'b': {'deprecated': False, 'title': 'B', 'type': 'integer'},
+            'c': {'deprecated': True, 'title': 'C', 'type': 'integer'},
+            'd': {'default': 1, 'deprecated': True, 'title': 'D', 'type': 'integer'},
+            'e': {'deprecated': True, 'title': 'E', 'type': 'integer'},
+        },
+        'required': ['a', 'b', 'c', 'e'],
+        'title': 'Model',
+        'type': 'object',
+    }

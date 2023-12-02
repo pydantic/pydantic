@@ -2850,7 +2850,7 @@ any invalid items are discarded and the valid ones are returned.
 
 
 # Can't use `Field(deprecated=True)` because of a circular import
-Deprecated = Annotated[T, deprecated("")]
+Deprecated = Annotated[T, deprecated('')]
 """
 Mark a field as being deprecated.
 
