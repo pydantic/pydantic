@@ -1112,6 +1112,8 @@ def computed_field(
         title: Title to use when including this computed field in JSON Schema
         description: Description to use when including this computed field in JSON Schema, defaults to the function's
             docstring
+        deprecated: Whether the computed field should be marked as deprecated in JSON Schema. This will automatically be
+            set if the property is decorated with the `deprecated` decorator.
         examples: Example values to use when including this computed field in JSON Schema
         json_schema_extra: A dict or callable to provide extra JSON schema properties.
         repr: whether to include this computed field in model repr.
