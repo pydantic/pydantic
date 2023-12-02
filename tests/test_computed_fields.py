@@ -5,7 +5,7 @@ from typing import Any, Callable, ClassVar, Generic, List, Tuple, TypeVar
 
 import pytest
 from pydantic_core import ValidationError, core_schema
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, deprecated
 
 from pydantic import (
     BaseModel,
@@ -768,3 +768,47 @@ def test_computed_field_override_raises():
             @property
             def name(self) -> str:
                 return 'bar'
+
+
+def test_computed_field_deprecated():
+    class Model(BaseModel):
+        @computed_field
+        @property
+        @deprecated('This is deprecated')
+        def p1(self) -> int:
+            return 1
+
+        @computed_field(deprecated=True)
+        @property
+        @deprecated('This is deprecated')
+        def p2(self) -> int:
+            return 1
+
+        @computed_field(deprecated=False)
+        @property
+        def p3(self) -> int:
+            return 1
+
+        @computed_field
+        @deprecated('This is deprecated')
+        def p4(self) -> int:
+            return 1
+
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': {
+            'p1': {'deprecated': True, 'readOnly': True, 'title': 'P1', 'type': 'integer'},
+            'p2': {'deprecated': True, 'readOnly': True, 'title': 'P2', 'type': 'integer'},
+            'p3': {'deprecated': False, 'readOnly': True, 'title': 'P3', 'type': 'integer'},
+            'p4': {'deprecated': True, 'readOnly': True, 'title': 'P4', 'type': 'integer'},
+        },
+        'required': ['p1', 'p2', 'p3', 'p4'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+    instance = Model()
+
+    with pytest.warns(DeprecationWarning, match='This is deprecated'):
+        instance.p1
+        instance.p2
+        instance.p4

@@ -1615,6 +1615,10 @@ class GenerateSchema:
             if description is not None:
                 json_schema['description'] = description
 
+            deprecated = d.info.deprecated
+            if deprecated is not None:
+                json_schema['deprecated'] = deprecated
+
             examples = d.info.examples
             if examples is not None:
                 json_schema['examples'] = to_jsonable_python(examples)
