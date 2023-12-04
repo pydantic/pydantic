@@ -1770,10 +1770,32 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.FreeModelBeforeValidatorWithoutInfo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FreeModelBeforeValidatorWithoutInfo
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.functional_validators.ModelBeforeValidatorWithoutInfo" class="md-nav__link">
     <span class="md-ellipsis">
       
         ModelBeforeValidatorWithoutInfo
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.FreeModelBeforeValidator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FreeModelBeforeValidator
       
     </span>
   </a>
@@ -3134,10 +3156,32 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.FreeModelBeforeValidatorWithoutInfo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FreeModelBeforeValidatorWithoutInfo
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.functional_validators.ModelBeforeValidatorWithoutInfo" class="md-nav__link">
     <span class="md-ellipsis">
       
         ModelBeforeValidatorWithoutInfo
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.FreeModelBeforeValidator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FreeModelBeforeValidator
       
     </span>
   </a>
@@ -3803,6 +3847,47 @@ This is used when <code>mode='wrap'</code> and the function does not have info a
 
 
 
+<h2 id="pydantic.functional_validators.FreeModelBeforeValidatorWithoutInfo" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">FreeModelBeforeValidatorWithoutInfo</span>
+
+
+<a href="#pydantic.functional_validators.FreeModelBeforeValidatorWithoutInfo" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="typing.Protocol">Protocol</span></code></p>
+
+  
+      <p>A @model_validator decorated function signature.
+This is used when <code>mode='before'</code> and the function does not have info argument.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
 <h2 id="pydantic.functional_validators.ModelBeforeValidatorWithoutInfo" class="doc doc-heading">
           <span class="doc doc-object-name doc-class-name">ModelBeforeValidatorWithoutInfo</span>
 
@@ -3817,6 +3902,46 @@ This is used when <code>mode='wrap'</code> and the function does not have info a
   
       <p>A @model_validator decorated function signature.
 This is used when <code>mode='before'</code> and the function does not have info argument.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h2 id="pydantic.functional_validators.FreeModelBeforeValidator" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">FreeModelBeforeValidator</span>
+
+
+<a href="#pydantic.functional_validators.FreeModelBeforeValidator" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="typing.Protocol">Protocol</span></code></p>
+
+  
+      <p>A <code>@model_validator</code> decorated function signature. This is used when <code>mode='before'</code>.</p>
 
 
   
@@ -4392,9 +4517,7 @@ from <code>fields</code> to ensure an error is raised if you don't pass at least
 </div>
 <p>Decorate model methods for validation purposes.</p>
 <p>Example usage:
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
-
-<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Self</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Self</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">model_validator</span>
 
@@ -4418,8 +4541,7 @@ from <code>fields</code> to ensure an error is raised if you don't pass at least
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    1 validation error for Square</span>
-<span class="sd">    __root__</span>
-<span class="sd">      width and height do not match (type=value_error)</span>
+<span class="sd">      Value error, width and height do not match [type=value_error, input_value={&#39;width&#39;: 1, &#39;height&#39;: 2}, input_type=dict]</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 </code></pre></div></p>
 <p>For more in depth examples, see <a href="../../concepts/validators/#model-validators">Model Validators</a>.</p>
@@ -4481,38 +4603,7 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">492</span>
-<span class="normal">493</span>
-<span class="normal">494</span>
-<span class="normal">495</span>
-<span class="normal">496</span>
-<span class="normal">497</span>
-<span class="normal">498</span>
-<span class="normal">499</span>
-<span class="normal">500</span>
-<span class="normal">501</span>
-<span class="normal">502</span>
-<span class="normal">503</span>
-<span class="normal">504</span>
-<span class="normal">505</span>
-<span class="normal">506</span>
-<span class="normal">507</span>
-<span class="normal">508</span>
-<span class="normal">509</span>
-<span class="normal">510</span>
-<span class="normal">511</span>
-<span class="normal">512</span>
-<span class="normal">513</span>
-<span class="normal">514</span>
-<span class="normal">515</span>
-<span class="normal">516</span>
-<span class="normal">517</span>
-<span class="normal">518</span>
-<span class="normal">519</span>
-<span class="normal">520</span>
-<span class="normal">521</span>
-<span class="normal">522</span>
-<span class="normal">523</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">523</span>
 <span class="normal">524</span>
 <span class="normal">525</span>
 <span class="normal">526</span>
@@ -4538,7 +4629,35 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 <span class="normal">546</span>
 <span class="normal">547</span>
 <span class="normal">548</span>
-<span class="normal">549</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_validator</span><span class="p">(</span>
+<span class="normal">549</span>
+<span class="normal">550</span>
+<span class="normal">551</span>
+<span class="normal">552</span>
+<span class="normal">553</span>
+<span class="normal">554</span>
+<span class="normal">555</span>
+<span class="normal">556</span>
+<span class="normal">557</span>
+<span class="normal">558</span>
+<span class="normal">559</span>
+<span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span>
+<span class="normal">563</span>
+<span class="normal">564</span>
+<span class="normal">565</span>
+<span class="normal">566</span>
+<span class="normal">567</span>
+<span class="normal">568</span>
+<span class="normal">569</span>
+<span class="normal">570</span>
+<span class="normal">571</span>
+<span class="normal">572</span>
+<span class="normal">573</span>
+<span class="normal">574</span>
+<span class="normal">575</span>
+<span class="normal">576</span>
+<span class="normal">577</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_validator</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;wrap&#39;</span><span class="p">,</span> <span class="s1">&#39;before&#39;</span><span class="p">,</span> <span class="s1">&#39;after&#39;</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
@@ -4548,8 +4667,6 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 
 <span class="sd">    Example usage:</span>
 <span class="sd">    ```py</span>
-<span class="sd">    from typing import Optional</span>
-
 <span class="sd">    from typing_extensions import Self</span>
 
 <span class="sd">    from pydantic import BaseModel, ValidationError, model_validator</span>
@@ -4574,8 +4691,7 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 <span class="sd">        print(e)</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 <span class="sd">        1 validation error for Square</span>
-<span class="sd">        __root__</span>
-<span class="sd">          width and height do not match (type=value_error)</span>
+<span class="sd">          Value error, width and height do not match [type=value_error, input_value={&#39;width&#39;: 1, &#39;height&#39;: 2}, input_type=dict]</span>
 <span class="sd">        &#39;&#39;&#39;</span>
 <span class="sd">    ```</span>
 
