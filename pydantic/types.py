@@ -2704,9 +2704,7 @@ def _get_type_name(x: Any) -> str:
     if type_ in _JSON_TYPES:
         return type_.__name__
 
-    # Handle proper subclasses; note we don't need to handle None here
-    if isinstance(x, bool):
-        return 'bool'
+    # Handle proper subclasses; note we don't need to handle None or bool here
     if isinstance(x, int):
         return 'int'
     if isinstance(x, float):

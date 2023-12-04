@@ -6126,6 +6126,27 @@ def test_json_value():
     ]
 
 
+def test_json_value_with_subclassed_types():
+    class IntType(int):
+        pass
+
+    class FloatType(float):
+        pass
+
+    class StrType(str):
+        pass
+
+    class ListType(list):
+        pass
+
+    class DictType(dict):
+        pass
+
+    adapter = TypeAdapter(JsonValue)
+    valid_json_data = {'int': IntType(), 'float': FloatType(), 'str': StrType(), 'list': ListType(), 'dict': DictType()}
+    assert adapter.validate_python(valid_json_data) == valid_json_data
+
+
 def test_json_value_roundtrip() -> None:
     # see https://github.com/pydantic/pydantic/issues/8175
     class MyModel(BaseModel):
