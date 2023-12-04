@@ -249,6 +249,12 @@ class ModelMetaclass(ABCMeta):
         warnings.warn('The `__fields__` attribute is deprecated, use `model_fields` instead.', DeprecationWarning)
         return self.model_fields  # type: ignore
 
+    def __dir__(self) -> list[str]:
+        attributes = list(super().__dir__())
+        if '__fields__' in attributes:
+            attributes.remove('__fields__')
+        return attributes
+
 
 def init_private_attributes(self: BaseModel, __context: Any) -> None:
     """This function is meant to behave like a BaseModel method to initialise private attributes.
