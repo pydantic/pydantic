@@ -191,7 +191,7 @@ class TypeAdapter(Generic[T]):
         except AttributeError:
             core_schema = _get_schema(type, config_wrapper, parent_depth=_parent_depth + 1)
 
-        core_config = config_wrapper.core_config(None)
+        core_config = core_schema['config'] if 'config' in core_schema else config_wrapper.core_config(None)
         validator: SchemaValidator
         try:
             validator = _getattr_no_parents(type, '__pydantic_validator__')

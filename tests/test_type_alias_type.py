@@ -153,6 +153,18 @@ def test_type_alias_annotated() -> None:
     assert t.json_schema() == {'type': 'array', 'items': {'type': 'integer'}, 'maxItems': 1}
 
 
+def test_type_alias_annotated_inherit_config() -> None:
+    class TestModel(BaseModel):
+        some_bytes: bytes
+        model_config = {'ser_json_bytes': 'base64'}
+
+    value = TestModel(some_bytes=b'\xaa')
+    t = TypeAdapter(Annotated[TestModel, ...])
+
+    assert value.model_dump(mode='json') == {'some_bytes': 'qg=='}
+    assert t.dump_python(value, mode='json') == {'some_bytes': 'qg=='}
+
+
 def test_type_alias_annotated_defs() -> None:
     # force use of refs by referencing the schema in multiple places
     t = TypeAdapter(Tuple[ShortMyList[int], ShortMyList[int]])
