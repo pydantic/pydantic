@@ -320,7 +320,4 @@ class Square(BaseModel):
     width: float
     height: float
 
-    @model_validator(mode='before')
-    @classmethod
-    def free_validator(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        return two_dim_shape_validator(values)
+    free_validator = model_validator(mode='before')(two_dim_shape_validator)
