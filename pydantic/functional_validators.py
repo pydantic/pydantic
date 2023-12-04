@@ -417,6 +417,21 @@ class ModelWrapValidator(Protocol[_ModelType]):
         ...
 
 
+class FreeModelBeforeValidatorWithoutInfo(Protocol):
+    """A @model_validator decorated function signature.
+    This is used when `mode='before'` and the function does not have info argument.
+    """
+
+    def __call__(  # noqa: D102
+        self,
+        # this can be a dict, a model instance
+        # or anything else that gets passed to validate_python
+        # thus validators _must_ handle all cases
+        __value: Any,
+    ) -> Any:
+        ...
+
+
 class ModelBeforeValidatorWithoutInfo(Protocol):
     """A @model_validator decorated function signature.
     This is used when `mode='before'` and the function does not have info argument.
@@ -429,6 +444,20 @@ class ModelBeforeValidatorWithoutInfo(Protocol):
         # or anything else that gets passed to validate_python
         # thus validators _must_ handle all cases
         __value: Any,
+    ) -> Any:
+        ...
+
+
+class FreeModelBeforeValidator(Protocol):
+    """A `@model_validator` decorated function signature. This is used when `mode='before'`."""
+
+    def __call__(  # noqa: D102
+        self,
+        # this can be a dict, a model instance
+        # or anything else that gets passed to validate_python
+        # thus validators _must_ handle all cases
+        __value: Any,
+        __info: _core_schema.ValidationInfo,
     ) -> Any:
         ...
 
@@ -457,7 +486,9 @@ ModelAfterValidator = Callable[[_ModelType, _core_schema.ValidationInfo], _Model
 """A `@model_validator` decorated function signature. This is used when `mode='after'`."""
 
 _AnyModelWrapValidator = Union[ModelWrapValidator[_ModelType], ModelWrapValidatorWithoutInfo[_ModelType]]
-_AnyModeBeforeValidator = Union[ModelBeforeValidator, ModelBeforeValidatorWithoutInfo]
+_AnyModeBeforeValidator = Union[
+    FreeModelBeforeValidator, ModelBeforeValidator, FreeModelBeforeValidatorWithoutInfo, ModelBeforeValidatorWithoutInfo
+]
 _AnyModelAfterValidator = Union[ModelAfterValidator[_ModelType], ModelAfterValidatorWithoutInfo[_ModelType]]
 
 
@@ -499,8 +530,6 @@ def model_validator(
 
     Example usage:
     ```py
-    from typing import Optional
-
     from typing_extensions import Self
 
     from pydantic import BaseModel, ValidationError, model_validator
@@ -525,8 +554,7 @@ def model_validator(
         print(e)
         '''
         1 validation error for Square
-        __root__
-          width and height do not match (type=value_error)
+          Value error, width and height do not match [type=value_error, input_value={'width': 1, 'height': 2}, input_type=dict]
         '''
     ```
 
