@@ -1290,7 +1290,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         category=PydanticDeprecatedSince20,
     )
     def _get_value(cls, *args: Any, **kwargs: Any) -> Any:
-
         from .deprecated import copy_internals
 
         return copy_internals._get_value(cls, *args, **kwargs)
@@ -1300,7 +1299,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         category=PydanticDeprecatedSince20,
     )
     def _calculate_keys(self, *args: Any, **kwargs: Any) -> Any:
-
         from .deprecated import copy_internals
 
         return copy_internals._calculate_keys(self, *args, **kwargs)

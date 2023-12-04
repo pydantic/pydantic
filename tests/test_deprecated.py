@@ -41,7 +41,7 @@ def deprecated_from_orm(model_type: Type[BaseModel], obj: Any) -> Any:
     with pytest.warns(
         PydanticDeprecatedSince20,
         match=re.escape(
-            'The `from_orm` method is deprecated; set `model_config["from_attributes"]=True` '
+            "The `from_orm` method is deprecated; set `model_config['from_attributes']=True` "
             'and use `model_validate` instead.'
         ),
     ):
@@ -746,7 +746,7 @@ def test_deprecated_module(tmp_path: Path) -> None:
 
     assert hasattr(pydantic_encoder, '__deprecated__')
     with pytest.warns(
-        PydanticDeprecatedSince20, match='pydantic_encoder is deprecated, use BaseModel.model_dump instead.'
+        PydanticDeprecatedSince20, match='pydantic_encoder is deprecated, use pydantic_core.to_jsonable_python instead.'
     ):
         pydantic_encoder(Model(x=1))
 
