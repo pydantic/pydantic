@@ -11,6 +11,7 @@ Pydantic models are simply classes which inherit from `BaseModel` and define fie
           - model_config
           - model_computed_fields
           - model_extra
+          - model_fields
           - model_fields_set
           - model_construct
           - model_copy
