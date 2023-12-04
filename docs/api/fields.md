@@ -4,8 +4,6 @@
       members:
         - Field
         - FieldInfo
-        - AliasChoices
-        - AliasPath
         - PrivateAttr
         - ModelPrivateAttr
         - computed_field

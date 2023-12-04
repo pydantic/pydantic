@@ -5,8 +5,16 @@ from typing import Any, ContextManager, List, Optional
 import pytest
 from dirty_equals import IsStr
 
-from pydantic import BaseModel, ConfigDict, ValidationError
-from pydantic.fields import AliasChoices, AliasPath, Field
+from pydantic import (
+    AliasChoices,
+    AliasGenerator,
+    AliasPath,
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    computed_field,
+)
 
 
 def test_alias_generator():
@@ -184,9 +192,22 @@ def test_alias_generator_parent():
     assert Child.model_fields['x'].alias == 'x2'
 
 
-def test_alias_generator_on_parent():
+upper_alias_generator = [
+    pytest.param(
+        lambda x: x.upper(),
+        id='basic_callable',
+    ),
+    pytest.param(
+        AliasGenerator(lambda x: x.upper()),
+        id='alias_generator',
+    ),
+]
+
+
+@pytest.mark.parametrize('alias_generator', upper_alias_generator)
+def test_alias_generator_on_parent(alias_generator):
     class Parent(BaseModel):
-        model_config = ConfigDict(alias_generator=lambda x: x.upper())
+        model_config = ConfigDict(alias_generator=alias_generator)
         x: bool = Field(..., alias='a_b_c')
         y: str
 
@@ -201,13 +222,14 @@ def test_alias_generator_on_parent():
     assert Child.model_fields['z'].alias == 'Z'
 
 
-def test_alias_generator_on_child():
+@pytest.mark.parametrize('alias_generator', upper_alias_generator)
+def test_alias_generator_on_child(alias_generator):
     class Parent(BaseModel):
         x: bool = Field(..., alias='abc')
         y: str
 
     class Child(Parent):
-        model_config = ConfigDict(alias_generator=lambda x: x.upper())
+        model_config = ConfigDict(alias_generator=alias_generator)
 
         y: str
         z: str
@@ -216,9 +238,10 @@ def test_alias_generator_on_child():
     assert [f.alias for f in Child.model_fields.values()] == ['abc', 'Y', 'Z']
 
 
-def test_alias_generator_used_by_default():
+@pytest.mark.parametrize('alias_generator', upper_alias_generator)
+def test_alias_generator_used_by_default(alias_generator):
     class Model(BaseModel):
-        model_config = ConfigDict(alias_generator=lambda x: x.upper())
+        model_config = ConfigDict(alias_generator=alias_generator)
 
         a: str
         b: str = Field(..., alias='b_alias')
@@ -274,7 +297,8 @@ def test_alias_generator_used_by_default():
     }
 
 
-def test_low_priority_alias():
+@pytest.mark.parametrize('alias_generator', upper_alias_generator)
+def test_low_priority_alias(alias_generator):
     class Parent(BaseModel):
         w: bool = Field(..., alias='w_', validation_alias='w_val_alias', serialization_alias='w_ser_alias')
         x: bool = Field(
@@ -283,7 +307,7 @@ def test_low_priority_alias():
         y: str
 
     class Child(Parent):
-        model_config = ConfigDict(alias_generator=lambda x: x.upper())
+        model_config = ConfigDict(alias_generator=alias_generator)
 
         y: str
         z: str
@@ -587,3 +611,94 @@ def test_validation_alias_parse_data():
             'input': {'b': ['hello']},
         }
     ]
+
+
+def test_alias_generator() -> None:
+    class Model(BaseModel):
+        a: str
+
+        model_config = ConfigDict(
+            alias_generator=AliasGenerator(
+                validation_alias=lambda field_name: f'validation_{field_name}',
+                serialization_alias=lambda field_name: f'serialization_{field_name}',
+            )
+        )
+
+    assert Model.model_fields['a'].validation_alias == 'validation_a'
+    assert Model.model_fields['a'].serialization_alias == 'serialization_a'
+    assert Model.model_fields['a'].alias is None
+
+
+def test_alias_generator_with_alias() -> None:
+    class Model(BaseModel):
+        a: str
+
+        model_config = ConfigDict(alias_generator=AliasGenerator(alias=lambda field_name: f'{field_name}_alias'))
+
+    assert Model.model_fields['a'].validation_alias == 'a_alias'
+    assert Model.model_fields['a'].serialization_alias == 'a_alias'
+    assert Model.model_fields['a'].alias == 'a_alias'
+
+
+def test_alias_generator_with_positional_arg() -> None:
+    class Model(BaseModel):
+        a: str
+
+        model_config = ConfigDict(alias_generator=AliasGenerator(lambda field_name: f'{field_name}_alias'))
+
+    assert Model.model_fields['a'].validation_alias == 'a_alias'
+    assert Model.model_fields['a'].serialization_alias == 'a_alias'
+    assert Model.model_fields['a'].alias == 'a_alias'
+
+
+@pytest.mark.parametrize('alias_generator', upper_alias_generator)
+def test_alias_generator_with_computed_field(alias_generator) -> None:
+    class Rectangle(BaseModel):
+        model_config = ConfigDict(populate_by_name=True, alias_generator=alias_generator)
+
+        width: int
+        height: int
+
+        @computed_field
+        @property
+        def area(self) -> int:
+            return self.width * self.height
+
+    r = Rectangle(width=10, height=20)
+    assert r.model_dump(by_alias=True) == {'WIDTH': 10, 'HEIGHT': 20, 'AREA': 200}
+
+
+def test_alias_generator_with_invalid_callables() -> None:
+    for alias_kind in ('validation_alias', 'serialization_alias', 'alias'):
+        with pytest.raises(
+            TypeError, match=f'Invalid `{alias_kind}` type. `{alias_kind}` generator must produce one of'
+        ):
+
+            class Foo(BaseModel):
+                a: str
+
+                model_config = ConfigDict(alias_generator=AliasGenerator(**{alias_kind: lambda x: 1}))
+
+
+def test_all_alias_kinds_specified() -> None:
+    class Foo(BaseModel):
+        a: str
+
+        model_config = ConfigDict(
+            alias_generator=AliasGenerator(
+                alias=lambda field_name: f'{field_name}_alias',
+                validation_alias=lambda field_name: f'{field_name}_val_alias',
+                serialization_alias=lambda field_name: f'{field_name}_ser_alias',
+            )
+        )
+
+    assert Foo.model_fields['a'].alias == 'a_alias'
+    assert Foo.model_fields['a'].validation_alias == 'a_val_alias'
+    assert Foo.model_fields['a'].serialization_alias == 'a_ser_alias'
+
+    # the same behavior we'd expect if we defined alias, validation_alias
+    # and serialization_alias on the field itself
+    f = Foo(a_val_alias='a')
+    assert f.a == 'a'
+    assert f.model_dump(by_alias=True) == {'a_ser_alias': 'a'}
+    assert f.model_dump(by_alias=False) == {'a': 'a'}
