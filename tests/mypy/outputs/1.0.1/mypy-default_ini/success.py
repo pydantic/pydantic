@@ -42,6 +42,7 @@ from pydantic import (
     WrapValidator,
     create_model,
     field_validator,
+    model_validator,
     root_validator,
     validate_call,
 )
@@ -314,3 +315,18 @@ class Abstract(BaseModel):
 
 class Concrete(Abstract):
     class_id = 1
+
+
+def two_dim_shape_validator(v: Dict[str, Any]) -> Dict[str, Any]:
+    assert 'volume' not in v, 'shape is 2d, cannot have volume'
+    return v
+
+
+class Square(BaseModel):
+    width: float
+    height: float
+
+    @model_validator(mode='before')
+    @classmethod
+    def free_validator(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        return two_dim_shape_validator(values)
