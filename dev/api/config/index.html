@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://docs.pydantic.dev/latest/api/config/">
       
       
-        <link rel="prev" href="../fields/">
+        <link rel="prev" href="../aliases/">
       
       
         <link rel="next" href="../json_schema/">
@@ -1481,6 +1481,32 @@
     
   
     Fields
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aliases/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    
+  
+    Aliases
   
 
     
@@ -4505,9 +4531,14 @@ enum's value occurs during validation, not serialization.</p>
 
   <div class="doc doc-contents ">
   
-      <p>A callable that takes a field name and returns an alias for it.</p>
+      <p>A callable that takes a field name and returns an alias for it
+or an instance of <a class="autorefs autorefs-internal" href="../aliases/#pydantic.aliases.AliasGenerator"><code>AliasGenerator</code></a>. Defaults to <code>None</code>.</p>
+<p>When using a callable, the alias generator is used for both validation and serialization.
+If you want to use different alias generators for validation and serialization, you can use
+<a class="autorefs autorefs-internal" href="../aliases/#pydantic.aliases.AliasGenerator"><code>AliasGenerator</code></a> instead.</p>
 <p>If data source field names do not match your code style (e. g. CamelCase fields),
-you can automatically generate aliases using <code>alias_generator</code>:</p>
+you can automatically generate aliases using <code>alias_generator</code>. Here's an example with
+a basic callable:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
 <span class="kn">from</span> <span class="nn">pydantic.alias_generators</span> <span class="kn">import</span> <span class="n">to_pascal</span>
 
@@ -4522,6 +4553,27 @@ you can automatically generate aliases using <code>alias_generator</code>:</p>
 <span class="c1">#&gt; tr-TR</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">voice</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 <span class="c1">#&gt; {&#39;Name&#39;: &#39;Filiz&#39;, &#39;LanguageCode&#39;: &#39;tr-TR&#39;}</span>
+</code></pre></div>
+<p>If you want to use different alias generators for validation and serialization, you can use
+<a class="autorefs autorefs-internal" href="../aliases/#pydantic.aliases.AliasGenerator"><code>AliasGenerator</code></a>.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AliasGenerator</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+<span class="kn">from</span> <span class="nn">pydantic.alias_generators</span> <span class="kn">import</span> <span class="n">to_camel</span><span class="p">,</span> <span class="n">to_pascal</span>
+
+<span class="k">class</span> <span class="nc">Athlete</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">first_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">last_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">sport</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span>
+        <span class="n">alias_generator</span><span class="o">=</span><span class="n">AliasGenerator</span><span class="p">(</span>
+            <span class="n">validation_alias</span><span class="o">=</span><span class="n">to_camel</span><span class="p">,</span>
+            <span class="n">serialization_alias</span><span class="o">=</span><span class="n">to_pascal</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+<span class="n">athlete</span> <span class="o">=</span> <span class="n">Athlete</span><span class="p">(</span><span class="n">firstName</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="n">lastName</span><span class="o">=</span><span class="s1">&#39;Doe&#39;</span><span class="p">,</span> <span class="n">sport</span><span class="o">=</span><span class="s1">&#39;track&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">athlete</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="c1">#&gt; {&#39;FirstName&#39;: &#39;John&#39;, &#39;LastName&#39;: &#39;Doe&#39;, &#39;Sport&#39;: &#39;track&#39;}</span>
 </code></pre></div>
 
 <details class="note" open>

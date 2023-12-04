@@ -41,6 +41,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://docs.pydantic.dev/latest/api/aliases/</loc>
+         <lastmod>2023-12-04</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://docs.pydantic.dev/latest/api/annotated_handlers/</loc>
          <lastmod>2023-12-04</lastmod>
          <changefreq>daily</changefreq>

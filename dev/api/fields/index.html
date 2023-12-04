@@ -16,7 +16,7 @@
         <link rel="prev" href="../validate_call/">
       
       
-        <link rel="next" href="../config/">
+        <link rel="next" href="../aliases/">
       
       
         
@@ -1657,62 +1657,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic.fields.AliasChoices" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        AliasChoices
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="AliasChoices">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pydantic.fields.AliasChoices.convert_to_aliases" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        convert_to_aliases()
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.fields.AliasPath" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        AliasPath
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="AliasPath">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pydantic.fields.AliasPath.convert_to_aliases" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        convert_to_aliases()
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#pydantic.fields.PrivateAttr" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1777,6 +1721,32 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../aliases/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    
+  
+    Aliases
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -3193,62 +3163,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic.fields.AliasChoices" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        AliasChoices
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="AliasChoices">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pydantic.fields.AliasChoices.convert_to_aliases" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        convert_to_aliases()
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.fields.AliasPath" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        AliasPath
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="AliasPath">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pydantic.fields.AliasPath.convert_to_aliases" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        convert_to_aliases()
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#pydantic.fields.PrivateAttr" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3485,7 +3399,7 @@ apply only to number fields (<code>int</code>, <code>float</code>, <code>Decimal
         <tr>
           <td><code>validation_alias</code></td>
           <td>
-                <code>str | <a class="autorefs autorefs-internal" title="pydantic.fields.AliasPath" href="#pydantic.fields.AliasPath">AliasPath</a> | <a class="autorefs autorefs-internal" title="pydantic.fields.AliasChoices" href="#pydantic.fields.AliasChoices">AliasChoices</a> | None</code>
+                <code>str | <a class="autorefs autorefs-internal" title="pydantic.aliases.AliasPath" href="../aliases/#pydantic.aliases.AliasPath">AliasPath</a> | <a class="autorefs autorefs-internal" title="pydantic.aliases.AliasChoices" href="../aliases/#pydantic.aliases.AliasChoices">AliasChoices</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3898,7 +3812,60 @@ type annotated fields without causing a typing error.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">662</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">609</span>
+<span class="normal">610</span>
+<span class="normal">611</span>
+<span class="normal">612</span>
+<span class="normal">613</span>
+<span class="normal">614</span>
+<span class="normal">615</span>
+<span class="normal">616</span>
+<span class="normal">617</span>
+<span class="normal">618</span>
+<span class="normal">619</span>
+<span class="normal">620</span>
+<span class="normal">621</span>
+<span class="normal">622</span>
+<span class="normal">623</span>
+<span class="normal">624</span>
+<span class="normal">625</span>
+<span class="normal">626</span>
+<span class="normal">627</span>
+<span class="normal">628</span>
+<span class="normal">629</span>
+<span class="normal">630</span>
+<span class="normal">631</span>
+<span class="normal">632</span>
+<span class="normal">633</span>
+<span class="normal">634</span>
+<span class="normal">635</span>
+<span class="normal">636</span>
+<span class="normal">637</span>
+<span class="normal">638</span>
+<span class="normal">639</span>
+<span class="normal">640</span>
+<span class="normal">641</span>
+<span class="normal">642</span>
+<span class="normal">643</span>
+<span class="normal">644</span>
+<span class="normal">645</span>
+<span class="normal">646</span>
+<span class="normal">647</span>
+<span class="normal">648</span>
+<span class="normal">649</span>
+<span class="normal">650</span>
+<span class="normal">651</span>
+<span class="normal">652</span>
+<span class="normal">653</span>
+<span class="normal">654</span>
+<span class="normal">655</span>
+<span class="normal">656</span>
+<span class="normal">657</span>
+<span class="normal">658</span>
+<span class="normal">659</span>
+<span class="normal">660</span>
+<span class="normal">661</span>
+<span class="normal">662</span>
 <span class="normal">663</span>
 <span class="normal">664</span>
 <span class="normal">665</span>
@@ -4028,60 +3995,7 @@ type annotated fields without causing a typing error.</p>
 <span class="normal">789</span>
 <span class="normal">790</span>
 <span class="normal">791</span>
-<span class="normal">792</span>
-<span class="normal">793</span>
-<span class="normal">794</span>
-<span class="normal">795</span>
-<span class="normal">796</span>
-<span class="normal">797</span>
-<span class="normal">798</span>
-<span class="normal">799</span>
-<span class="normal">800</span>
-<span class="normal">801</span>
-<span class="normal">802</span>
-<span class="normal">803</span>
-<span class="normal">804</span>
-<span class="normal">805</span>
-<span class="normal">806</span>
-<span class="normal">807</span>
-<span class="normal">808</span>
-<span class="normal">809</span>
-<span class="normal">810</span>
-<span class="normal">811</span>
-<span class="normal">812</span>
-<span class="normal">813</span>
-<span class="normal">814</span>
-<span class="normal">815</span>
-<span class="normal">816</span>
-<span class="normal">817</span>
-<span class="normal">818</span>
-<span class="normal">819</span>
-<span class="normal">820</span>
-<span class="normal">821</span>
-<span class="normal">822</span>
-<span class="normal">823</span>
-<span class="normal">824</span>
-<span class="normal">825</span>
-<span class="normal">826</span>
-<span class="normal">827</span>
-<span class="normal">828</span>
-<span class="normal">829</span>
-<span class="normal">830</span>
-<span class="normal">831</span>
-<span class="normal">832</span>
-<span class="normal">833</span>
-<span class="normal">834</span>
-<span class="normal">835</span>
-<span class="normal">836</span>
-<span class="normal">837</span>
-<span class="normal">838</span>
-<span class="normal">839</span>
-<span class="normal">840</span>
-<span class="normal">841</span>
-<span class="normal">842</span>
-<span class="normal">843</span>
-<span class="normal">844</span>
-<span class="normal">845</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">Field</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+<span class="normal">792</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">Field</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">default_factory</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">_Unset</span><span class="p">,</span>
@@ -4373,7 +4287,7 @@ function is explicitly used.</p>
         <tr>
           <td><code>validation_alias</code></td>
           <td>
-                <code>str | <a class="autorefs autorefs-internal" title="pydantic.fields.AliasPath" href="#pydantic.fields.AliasPath">AliasPath</a> | <a class="autorefs autorefs-internal" title="pydantic.fields.AliasChoices" href="#pydantic.fields.AliasChoices">AliasChoices</a> | None</code>
+                <code>str | <a class="autorefs autorefs-internal" title="pydantic.aliases.AliasPath" href="../aliases/#pydantic.aliases.AliasPath">AliasPath</a> | <a class="autorefs autorefs-internal" title="pydantic.aliases.AliasChoices" href="../aliases/#pydantic.aliases.AliasChoices">AliasChoices</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4531,8 +4445,7 @@ function is explicitly used.</p>
 
                 <details class="quote">
                   <summary>Source code in <code>pydantic/fields.py</code></summary>
-                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">169</span>
-<span class="normal">170</span>
+                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">170</span>
 <span class="normal">171</span>
 <span class="normal">172</span>
 <span class="normal">173</span>
@@ -4570,7 +4483,8 @@ function is explicitly used.</p>
 <span class="normal">205</span>
 <span class="normal">206</span>
 <span class="normal">207</span>
-<span class="normal">208</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Unpack</span><span class="p">[</span><span class="n">_FieldInfoInputs</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">208</span>
+<span class="normal">209</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Unpack</span><span class="p">[</span><span class="n">_FieldInfoInputs</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;This class should generally not be initialized directly; instead, use the `pydantic.fields.Field` function</span>
 <span class="sd">    or one of the constructor classmethods.</span>
 
@@ -4748,8 +4662,7 @@ function is explicitly used.</p>
 </details>
           <details class="quote">
             <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">210</span>
-<span class="normal">211</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">211</span>
 <span class="normal">212</span>
 <span class="normal">213</span>
 <span class="normal">214</span>
@@ -4774,7 +4687,8 @@ function is explicitly used.</p>
 <span class="normal">233</span>
 <span class="normal">234</span>
 <span class="normal">235</span>
-<span class="normal">236</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">236</span>
+<span class="normal">237</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">from_field</span><span class="p">(</span><span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Unpack</span><span class="p">[</span><span class="n">_FromFieldInfoInputs</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">FieldInfo</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a new `FieldInfo` object with the `Field` function.</span>
 
@@ -4910,8 +4824,7 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
 </details>
           <details class="quote">
             <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">238</span>
-<span class="normal">239</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">239</span>
 <span class="normal">240</span>
 <span class="normal">241</span>
 <span class="normal">242</span>
@@ -4970,7 +4883,8 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
 <span class="normal">295</span>
 <span class="normal">296</span>
 <span class="normal">297</span>
-<span class="normal">298</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">298</span>
+<span class="normal">299</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">from_annotation</span><span class="p">(</span><span class="n">annotation</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">FieldInfo</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a `FieldInfo` instance from a bare annotation.</span>
 
@@ -5147,8 +5061,7 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
 </details>
           <details class="quote">
             <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">300</span>
-<span class="normal">301</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">301</span>
 <span class="normal">302</span>
 <span class="normal">303</span>
 <span class="normal">304</span>
@@ -5219,7 +5132,8 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
 <span class="normal">369</span>
 <span class="normal">370</span>
 <span class="normal">371</span>
-<span class="normal">372</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">372</span>
+<span class="normal">373</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">from_annotated_attribute</span><span class="p">(</span><span class="n">annotation</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FieldInfo</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create `FieldInfo` from an annotation with a default value.</span>
 
@@ -5352,8 +5266,7 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
 
           <details class="quote">
             <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">374</span>
-<span class="normal">375</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">375</span>
 <span class="normal">376</span>
 <span class="normal">377</span>
 <span class="normal">378</span>
@@ -5384,7 +5297,8 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
 <span class="normal">403</span>
 <span class="normal">404</span>
 <span class="normal">405</span>
-<span class="normal">406</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">406</span>
+<span class="normal">407</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">merge_field_infos</span><span class="p">(</span><span class="o">*</span><span class="n">field_infos</span><span class="p">:</span> <span class="n">FieldInfo</span><span class="p">,</span> <span class="o">**</span><span class="n">overrides</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FieldInfo</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Merge `FieldInfo` instances keeping only explicitly set attributes.</span>
 
@@ -5505,8 +5419,7 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 
           <details class="quote">
             <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">483</span>
-<span class="normal">484</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">484</span>
 <span class="normal">485</span>
 <span class="normal">486</span>
 <span class="normal">487</span>
@@ -5523,7 +5436,8 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 <span class="normal">498</span>
 <span class="normal">499</span>
 <span class="normal">500</span>
-<span class="normal">501</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">call_default_factory</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="normal">501</span>
+<span class="normal">502</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">call_default_factory</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the default value.</span>
 
 <span class="sd">    We expose an option for whether to call the default_factory (if present), as calling it may</span>
@@ -5597,13 +5511,13 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 
           <details class="quote">
             <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">503</span>
-<span class="normal">504</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">504</span>
 <span class="normal">505</span>
 <span class="normal">506</span>
 <span class="normal">507</span>
 <span class="normal">508</span>
-<span class="normal">509</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">is_required</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="normal">509</span>
+<span class="normal">510</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">is_required</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if the argument is required.</span>
 
 <span class="sd">    Returns:</span>
@@ -5667,8 +5581,7 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 
           <details class="quote">
             <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">511</span>
-<span class="normal">512</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">512</span>
 <span class="normal">513</span>
 <span class="normal">514</span>
 <span class="normal">515</span>
@@ -5680,7 +5593,8 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 <span class="normal">521</span>
 <span class="normal">522</span>
 <span class="normal">523</span>
-<span class="normal">524</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">rebuild_annotation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="normal">524</span>
+<span class="normal">525</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">rebuild_annotation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Rebuilds the original annotation for use in function signatures.</span>
 
 <span class="sd">    If metadata is present, it adds it to the original annotation using an</span>
@@ -5776,8 +5690,7 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 </details>
           <details class="quote">
             <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">526</span>
-<span class="normal">527</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">527</span>
 <span class="normal">528</span>
 <span class="normal">529</span>
 <span class="normal">530</span>
@@ -5792,7 +5705,8 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 <span class="normal">539</span>
 <span class="normal">540</span>
 <span class="normal">541</span>
-<span class="normal">542</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">apply_typevars_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">typevars_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">types_namespace</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">542</span>
+<span class="normal">543</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">apply_typevars_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">typevars_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">types_namespace</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply a `typevars_map` to the annotation.</span>
 
 <span class="sd">    This method is used when analyzing parametrized generic types to replace typevars with their concrete types.</span>
@@ -5809,312 +5723,6 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">annotation</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">eval_type_lenient</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">annotation</span><span class="p">,</span> <span class="n">types_namespace</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">annotation</span> <span class="o">=</span> <span class="n">_generics</span><span class="o">.</span><span class="n">replace_types</span><span class="p">(</span><span class="n">annotation</span><span class="p">,</span> <span class="n">typevars_map</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-          </details>
-  </div>
-
-</div>
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-
-
-
-
-
-<div class="doc doc-object doc-class">
-
-
-
-
-<h2 id="pydantic.fields.AliasChoices" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">AliasChoices</span>
-
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
-  </span>
-
-<a href="#pydantic.fields.AliasChoices" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">AliasChoices</span><span class="p">(</span><span class="n">first_choice</span><span class="p">,</span> <span class="o">*</span><span class="n">choices</span><span class="p">)</span>
-</code></pre></div>
-
-  <div class="doc doc-contents ">
-
-  
-      <div class="admonition abstract">
-<p class="admonition-title">Usage Documentation</p>
-<p><a href="../../concepts/fields/#aliaspath-and-aliaschoices"><code>AliasPath</code> and <code>AliasChoices</code></a></p>
-</div>
-<p>A data class used by <code>validation_alias</code> as a convenience to create aliases.</p>
-
-
-
-  <p><strong>Attributes:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>choices</code></td>
-          <td>
-                <code>list[str | <a class="autorefs autorefs-internal" title="pydantic.fields.AliasPath" href="#pydantic.fields.AliasPath">AliasPath</a>]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A list containing a string or <code>AliasPath</code>.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-                <details class="quote">
-                  <summary>Source code in <code>pydantic/fields.py</code></summary>
-                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">607</span>
-<span class="normal">608</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">first_choice</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">AliasPath</span><span class="p">,</span> <span class="o">*</span><span class="n">choices</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">AliasPath</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">choices</span> <span class="o">=</span> <span class="p">[</span><span class="n">first_choice</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">choices</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-                </details>
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h3 id="pydantic.fields.AliasChoices.convert_to_aliases" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">convert_to_aliases</span>
-
-
-<a href="#pydantic.fields.AliasChoices.convert_to_aliases" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">convert_to_aliases</span><span class="p">()</span>
-</code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Converts arguments to a list of lists containing string or integer aliases.</p>
-
-
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code>list[list[str | int]]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The list of aliases.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-          <details class="quote">
-            <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">610</span>
-<span class="normal">611</span>
-<span class="normal">612</span>
-<span class="normal">613</span>
-<span class="normal">614</span>
-<span class="normal">615</span>
-<span class="normal">616</span>
-<span class="normal">617</span>
-<span class="normal">618</span>
-<span class="normal">619</span>
-<span class="normal">620</span>
-<span class="normal">621</span>
-<span class="normal">622</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">convert_to_aliases</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts arguments to a list of lists containing string or integer aliases.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        The list of aliases.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">aliases</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">choices</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">AliasPath</span><span class="p">):</span>
-            <span class="n">aliases</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">convert_to_aliases</span><span class="p">())</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">aliases</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">c</span><span class="p">])</span>
-    <span class="k">return</span> <span class="n">aliases</span>
-</code></pre></div></td></tr></table></div>
-          </details>
-  </div>
-
-</div>
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-
-
-
-
-
-<div class="doc doc-object doc-class">
-
-
-
-
-<h2 id="pydantic.fields.AliasPath" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">AliasPath</span>
-
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
-  </span>
-
-<a href="#pydantic.fields.AliasPath" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">AliasPath</span><span class="p">(</span><span class="n">first_arg</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
-</code></pre></div>
-
-  <div class="doc doc-contents ">
-
-  
-      <div class="admonition abstract">
-<p class="admonition-title">Usage Documentation</p>
-<p><a href="../../concepts/fields/#aliaspath-and-aliaschoices"><code>AliasPath</code> and <code>AliasChoices</code></a></p>
-</div>
-<p>A data class used by <code>validation_alias</code> as a convenience to create aliases.</p>
-
-
-
-  <p><strong>Attributes:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>path</code></td>
-          <td>
-                <code>list[int | str]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A list of string or integer aliases.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-                <details class="quote">
-                  <summary>Source code in <code>pydantic/fields.py</code></summary>
-                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">583</span>
-<span class="normal">584</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">first_arg</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="p">[</span><span class="n">first_arg</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-                </details>
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h3 id="pydantic.fields.AliasPath.convert_to_aliases" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">convert_to_aliases</span>
-
-
-<a href="#pydantic.fields.AliasPath.convert_to_aliases" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">convert_to_aliases</span><span class="p">()</span>
-</code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Converts arguments to a list of string or integer aliases.</p>
-
-
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code>list[str | int]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The list of aliases.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-          <details class="quote">
-            <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">586</span>
-<span class="normal">587</span>
-<span class="normal">588</span>
-<span class="normal">589</span>
-<span class="normal">590</span>
-<span class="normal">591</span>
-<span class="normal">592</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">convert_to_aliases</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts arguments to a list of string or integer aliases.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        The list of aliases.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span>
 </code></pre></div></td></tr></table></div>
           </details>
   </div>
@@ -6253,36 +5861,36 @@ If both <code>default</code> and <code>default_factory</code> are set, an error 
 
           <details class="quote">
             <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">910</span>
-<span class="normal">911</span>
-<span class="normal">912</span>
-<span class="normal">913</span>
-<span class="normal">914</span>
-<span class="normal">915</span>
-<span class="normal">916</span>
-<span class="normal">917</span>
-<span class="normal">918</span>
-<span class="normal">919</span>
-<span class="normal">920</span>
-<span class="normal">921</span>
-<span class="normal">922</span>
-<span class="normal">923</span>
-<span class="normal">924</span>
-<span class="normal">925</span>
-<span class="normal">926</span>
-<span class="normal">927</span>
-<span class="normal">928</span>
-<span class="normal">929</span>
-<span class="normal">930</span>
-<span class="normal">931</span>
-<span class="normal">932</span>
-<span class="normal">933</span>
-<span class="normal">934</span>
-<span class="normal">935</span>
-<span class="normal">936</span>
-<span class="normal">937</span>
-<span class="normal">938</span>
-<span class="normal">939</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">PrivateAttr</span><span class="p">(</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">857</span>
+<span class="normal">858</span>
+<span class="normal">859</span>
+<span class="normal">860</span>
+<span class="normal">861</span>
+<span class="normal">862</span>
+<span class="normal">863</span>
+<span class="normal">864</span>
+<span class="normal">865</span>
+<span class="normal">866</span>
+<span class="normal">867</span>
+<span class="normal">868</span>
+<span class="normal">869</span>
+<span class="normal">870</span>
+<span class="normal">871</span>
+<span class="normal">872</span>
+<span class="normal">873</span>
+<span class="normal">874</span>
+<span class="normal">875</span>
+<span class="normal">876</span>
+<span class="normal">877</span>
+<span class="normal">878</span>
+<span class="normal">879</span>
+<span class="normal">880</span>
+<span class="normal">881</span>
+<span class="normal">882</span>
+<span class="normal">883</span>
+<span class="normal">884</span>
+<span class="normal">885</span>
+<span class="normal">886</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">PrivateAttr</span><span class="p">(</span>
     <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">default_factory</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -6383,11 +5991,11 @@ attribute if not provided.</p>
 
                 <details class="quote">
                   <summary>Source code in <code>pydantic/fields.py</code></summary>
-                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">863</span>
-<span class="normal">864</span>
-<span class="normal">865</span>
-<span class="normal">866</span>
-<span class="normal">867</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">810</span>
+<span class="normal">811</span>
+<span class="normal">812</span>
+<span class="normal">813</span>
+<span class="normal">814</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">default_factory</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">default</span> <span class="o">=</span> <span class="n">default</span>
@@ -6451,17 +6059,17 @@ attribute if not provided.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">891</span>
-<span class="normal">892</span>
-<span class="normal">893</span>
-<span class="normal">894</span>
-<span class="normal">895</span>
-<span class="normal">896</span>
-<span class="normal">897</span>
-<span class="normal">898</span>
-<span class="normal">899</span>
-<span class="normal">900</span>
-<span class="normal">901</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_default</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">838</span>
+<span class="normal">839</span>
+<span class="normal">840</span>
+<span class="normal">841</span>
+<span class="normal">842</span>
+<span class="normal">843</span>
+<span class="normal">844</span>
+<span class="normal">845</span>
+<span class="normal">846</span>
+<span class="normal">847</span>
+<span class="normal">848</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_default</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve the default value of the object.</span>
 
 <span class="sd">    If `self.default_factory` is `None`, the method will return a deep copy of the `self.default` object.</span>
@@ -6802,7 +6410,60 @@ objects.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1008</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 955</span>
+<span class="normal"> 956</span>
+<span class="normal"> 957</span>
+<span class="normal"> 958</span>
+<span class="normal"> 959</span>
+<span class="normal"> 960</span>
+<span class="normal"> 961</span>
+<span class="normal"> 962</span>
+<span class="normal"> 963</span>
+<span class="normal"> 964</span>
+<span class="normal"> 965</span>
+<span class="normal"> 966</span>
+<span class="normal"> 967</span>
+<span class="normal"> 968</span>
+<span class="normal"> 969</span>
+<span class="normal"> 970</span>
+<span class="normal"> 971</span>
+<span class="normal"> 972</span>
+<span class="normal"> 973</span>
+<span class="normal"> 974</span>
+<span class="normal"> 975</span>
+<span class="normal"> 976</span>
+<span class="normal"> 977</span>
+<span class="normal"> 978</span>
+<span class="normal"> 979</span>
+<span class="normal"> 980</span>
+<span class="normal"> 981</span>
+<span class="normal"> 982</span>
+<span class="normal"> 983</span>
+<span class="normal"> 984</span>
+<span class="normal"> 985</span>
+<span class="normal"> 986</span>
+<span class="normal"> 987</span>
+<span class="normal"> 988</span>
+<span class="normal"> 989</span>
+<span class="normal"> 990</span>
+<span class="normal"> 991</span>
+<span class="normal"> 992</span>
+<span class="normal"> 993</span>
+<span class="normal"> 994</span>
+<span class="normal"> 995</span>
+<span class="normal"> 996</span>
+<span class="normal"> 997</span>
+<span class="normal"> 998</span>
+<span class="normal"> 999</span>
+<span class="normal">1000</span>
+<span class="normal">1001</span>
+<span class="normal">1002</span>
+<span class="normal">1003</span>
+<span class="normal">1004</span>
+<span class="normal">1005</span>
+<span class="normal">1006</span>
+<span class="normal">1007</span>
+<span class="normal">1008</span>
 <span class="normal">1009</span>
 <span class="normal">1010</span>
 <span class="normal">1011</span>
@@ -6922,60 +6583,7 @@ objects.</p>
 <span class="normal">1125</span>
 <span class="normal">1126</span>
 <span class="normal">1127</span>
-<span class="normal">1128</span>
-<span class="normal">1129</span>
-<span class="normal">1130</span>
-<span class="normal">1131</span>
-<span class="normal">1132</span>
-<span class="normal">1133</span>
-<span class="normal">1134</span>
-<span class="normal">1135</span>
-<span class="normal">1136</span>
-<span class="normal">1137</span>
-<span class="normal">1138</span>
-<span class="normal">1139</span>
-<span class="normal">1140</span>
-<span class="normal">1141</span>
-<span class="normal">1142</span>
-<span class="normal">1143</span>
-<span class="normal">1144</span>
-<span class="normal">1145</span>
-<span class="normal">1146</span>
-<span class="normal">1147</span>
-<span class="normal">1148</span>
-<span class="normal">1149</span>
-<span class="normal">1150</span>
-<span class="normal">1151</span>
-<span class="normal">1152</span>
-<span class="normal">1153</span>
-<span class="normal">1154</span>
-<span class="normal">1155</span>
-<span class="normal">1156</span>
-<span class="normal">1157</span>
-<span class="normal">1158</span>
-<span class="normal">1159</span>
-<span class="normal">1160</span>
-<span class="normal">1161</span>
-<span class="normal">1162</span>
-<span class="normal">1163</span>
-<span class="normal">1164</span>
-<span class="normal">1165</span>
-<span class="normal">1166</span>
-<span class="normal">1167</span>
-<span class="normal">1168</span>
-<span class="normal">1169</span>
-<span class="normal">1170</span>
-<span class="normal">1171</span>
-<span class="normal">1172</span>
-<span class="normal">1173</span>
-<span class="normal">1174</span>
-<span class="normal">1175</span>
-<span class="normal">1176</span>
-<span class="normal">1177</span>
-<span class="normal">1178</span>
-<span class="normal">1179</span>
-<span class="normal">1180</span>
-<span class="normal">1181</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computed_field</span><span class="p">(</span>
+<span class="normal">1128</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computed_field</span><span class="p">(</span>
     <span class="n">__f</span><span class="p">:</span> <span class="n">PropertyT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">alias</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>

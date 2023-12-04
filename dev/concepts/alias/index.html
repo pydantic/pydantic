@@ -84,7 +84,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#alias-precedence" class="md-skip">
+        <a href="#aliaspath-and-aliaschoices" class="md-skip">
           Skip to content
         </a>
       
@@ -956,6 +956,56 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#aliaspath-and-aliaschoices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AliasPath and AliasChoices
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-alias-generators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using alias generators
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using alias generators">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-a-callable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using a callable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-an-aliasgenerator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using an AliasGenerator
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#alias-precedence" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1549,6 +1599,32 @@
     
   
     Fields
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/aliases/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    
+  
+    Aliases
   
 
     
@@ -2846,6 +2922,56 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#aliaspath-and-aliaschoices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AliasPath and AliasChoices
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-alias-generators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using alias generators
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using alias generators">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-a-callable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using a callable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-an-aliasgenerator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using an AliasGenerator
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#alias-precedence" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2898,11 +3024,150 @@
 <p>An alias is an alternative name for a field, used when serializing and deserializing data.</p>
 <p>You can specify an alias in the following ways:</p>
 <ul>
-<li><code>alias</code> on the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a></li>
-<li><code>validation_alias</code> on the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a></li>
-<li><code>serialization_alias</code> on the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a></li>
-<li><code>alias_generator</code> on the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.alias_generator"><code>Config</code></a></li>
+<li><code>alias</code> on the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a><ul>
+<li>must be a <code>str</code></li>
 </ul>
+</li>
+<li><code>validation_alias</code> on the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a><ul>
+<li>can be an instance of <code>str</code>, <a class="autorefs autorefs-internal" href="../../api/aliases/#pydantic.aliases.AliasPath"><code>AliasPath</code></a>, or <a class="autorefs autorefs-internal" href="../../api/aliases/#pydantic.aliases.AliasChoices"><code>AliasChoices</code></a></li>
+</ul>
+</li>
+<li><code>serialization_alias</code> on the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a><ul>
+<li>must be a <code>str</code></li>
+</ul>
+</li>
+<li><code>alias_generator</code> on the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.alias_generator"><code>Config</code></a><ul>
+<li>can be a callable or an instance of <a class="autorefs autorefs-internal" href="../../api/aliases/#pydantic.aliases.AliasGenerator"><code>AliasGenerator</code></a></li>
+</ul>
+</li>
+</ul>
+<p>For examples of how to use <code>alias</code>, <code>validation_alias</code>, and <code>serialization_alias</code>, see <a href="../fields/#field-aliases">Field aliases</a>.</p>
+<h2 id="aliaspath-and-aliaschoices"><code>AliasPath</code> and <code>AliasChoices</code><a class="headerlink" href="#aliaspath-and-aliaschoices" title="Permanent link">&para;</a></h2>
+<details class="api">
+<summary>API Documentation</summary>
+<p><a class="autorefs autorefs-internal" href="../../api/aliases/#pydantic.aliases.AliasPath"><code>pydantic.aliases.AliasPath</code></a><br>
+<a class="autorefs autorefs-internal" href="../../api/aliases/#pydantic.aliases.AliasChoices"><code>pydantic.aliases.AliasChoices</code></a><br></p>
+</details>
+<p>Pydantic provides two special types for convenience when using <code>validation_alias</code>: <code>AliasPath</code> and <code>AliasChoices</code>.</p>
+<p>The <code>AliasPath</code> is used to specify a path to a field using aliases. For example:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">AliasPath</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">first_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasPath</span><span class="p">(</span><span class="s1">&#39;names&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="n">last_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasPath</span><span class="p">(</span><span class="s1">&#39;names&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;names&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="s1">&#39;Doe&#39;</span><span class="p">]})</span>  <span class="c1"># (1)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="c1">#&gt; first_name=&#39;John&#39; last_name=&#39;Doe&#39;</span>
+</code></pre></div>
+<ol>
+<li>
+<p>We are using <code>model_validate</code> to validate a dictionary using the field aliases.</p>
+<p>You can see more details about <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate</code></a> in the API reference.</p>
+</li>
+</ol>
+<p>In the <code>'first_name'</code> field, we are using the alias <code>'names'</code> and the index <code>0</code> to specify the path to the first name.
+In the <code>'last_name'</code> field, we are using the alias <code>'names'</code> and the index <code>1</code> to specify the path to the last name.</p>
+<p><code>AliasChoices</code> is used to specify a choice of aliases. For example:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">AliasChoices</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">first_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;first_name&#39;</span><span class="p">,</span> <span class="s1">&#39;fname&#39;</span><span class="p">))</span>
+    <span class="n">last_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;last_name&#39;</span><span class="p">,</span> <span class="s1">&#39;lname&#39;</span><span class="p">))</span>
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;fname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="s1">&#39;lname&#39;</span><span class="p">:</span> <span class="s1">&#39;Doe&#39;</span><span class="p">})</span>  <span class="c1"># (1)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="c1">#&gt; first_name=&#39;John&#39; last_name=&#39;Doe&#39;</span>
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;first_name&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="s1">&#39;lname&#39;</span><span class="p">:</span> <span class="s1">&#39;Doe&#39;</span><span class="p">})</span>  <span class="c1"># (2)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="c1">#&gt; first_name=&#39;John&#39; last_name=&#39;Doe&#39;</span>
+</code></pre></div>
+<ol>
+<li>We are using the second alias choice for both fields.</li>
+<li>We are using the first alias choice for the field <code>'first_name'</code> and the second alias choice
+   for the field <code>'last_name'</code>.</li>
+</ol>
+<p>You can also use <code>AliasChoices</code> with <code>AliasPath</code>:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">AliasPath</span><span class="p">,</span> <span class="n">AliasChoices</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">first_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;first_name&#39;</span><span class="p">,</span> <span class="n">AliasPath</span><span class="p">(</span><span class="s1">&#39;names&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)))</span>
+    <span class="n">last_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;last_name&#39;</span><span class="p">,</span> <span class="n">AliasPath</span><span class="p">(</span><span class="s1">&#39;names&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;first_name&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="s1">&#39;last_name&#39;</span><span class="p">:</span> <span class="s1">&#39;Doe&#39;</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="c1">#&gt; first_name=&#39;John&#39; last_name=&#39;Doe&#39;</span>
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;names&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="s1">&#39;Doe&#39;</span><span class="p">]})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="c1">#&gt; first_name=&#39;John&#39; last_name=&#39;Doe&#39;</span>
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;names&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;John&#39;</span><span class="p">],</span> <span class="s1">&#39;last_name&#39;</span><span class="p">:</span> <span class="s1">&#39;Doe&#39;</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="c1">#&gt; first_name=&#39;John&#39; last_name=&#39;Doe&#39;</span>
+</code></pre></div>
+<h2 id="using-alias-generators">Using alias generators<a class="headerlink" href="#using-alias-generators" title="Permanent link">&para;</a></h2>
+<p>You can use the <code>alias_generator</code> parameter of <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.alias_generator"><code>Config</code></a> to specify
+a callable (or group of callables, via <code>AliasGenerator</code>) that will generate aliases for all fields in a model.
+This is useful if you want to use a consistent naming convention for all fields in a model, but doin't
+want to specify the alias for each field individually.</p>
+<p>Note:
+    Pydantic offers three built-in alias generators that you can use out of the box:</p>
+<div class="language-text highlight"><pre><span></span><code>* [`to_pascal`][pydantic.alias_generators.to_pascal]
+* [`to_camel`][pydantic.alias_generators.to_camel]
+* [`to_snake`][pydantic.alias_generators.to_snake]
+</code></pre></div>
+<h3 id="using-a-callable">Using a callable<a class="headerlink" href="#using-a-callable" title="Permanent link">&para;</a></h3>
+<p>Here's a basic example using a callable:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+
+
+<span class="k">class</span> <span class="nc">Tree</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span>
+        <span class="n">alias_generator</span><span class="o">=</span><span class="k">lambda</span> <span class="n">field_name</span><span class="p">:</span> <span class="n">field_name</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+    <span class="p">)</span>
+
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">height</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="n">t</span> <span class="o">=</span> <span class="n">Tree</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;AGE&#39;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span> <span class="s1">&#39;HEIGHT&#39;</span><span class="p">:</span> <span class="mf">1.2</span><span class="p">,</span> <span class="s1">&#39;KIND&#39;</span><span class="p">:</span> <span class="s1">&#39;oak&#39;</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="c1">#&gt; {&#39;AGE&#39;: 12, &#39;HEIGHT&#39;: 1.2, &#39;KIND&#39;: &#39;oak&#39;}</span>
+</code></pre></div>
+<h3 id="using-an-aliasgenerator">Using an <code>AliasGenerator</code><a class="headerlink" href="#using-an-aliasgenerator" title="Permanent link">&para;</a></h3>
+<details class="api">
+<summary>API Documentation</summary>
+<p><a class="autorefs autorefs-internal" href="../../api/aliases/#pydantic.aliases.AliasGenerator"><code>pydantic.aliases.AliasGenerator</code></a><br></p>
+</details>
+<p><code>AliasGenerator</code> is a class that allows you to specify multiple alias generators for a model.
+You can use an <code>AliasGenerator</code> to specify different alias generators for validation and serialization.</p>
+<p>This is particularly useful if you need to use different naming conventions for loading and saving data,
+but you don't want to specify the validation and serialization aliases for each field individually.</p>
+<p>For example:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AliasGenerator</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+
+
+<span class="k">class</span> <span class="nc">Tree</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span>
+        <span class="n">alias_generator</span><span class="o">=</span><span class="n">AliasGenerator</span><span class="p">(</span>
+            <span class="n">validation_alias</span><span class="o">=</span><span class="k">lambda</span> <span class="n">field_name</span><span class="p">:</span> <span class="n">field_name</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
+            <span class="n">serialization_alias</span><span class="o">=</span><span class="k">lambda</span> <span class="n">field_name</span><span class="p">:</span> <span class="n">field_name</span><span class="o">.</span><span class="n">title</span><span class="p">(),</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">height</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="n">t</span> <span class="o">=</span> <span class="n">Tree</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;AGE&#39;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span> <span class="s1">&#39;HEIGHT&#39;</span><span class="p">:</span> <span class="mf">1.2</span><span class="p">,</span> <span class="s1">&#39;KIND&#39;</span><span class="p">:</span> <span class="s1">&#39;oak&#39;</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="c1">#&gt; {&#39;Age&#39;: 12, &#39;Height&#39;: 1.2, &#39;Kind&#39;: &#39;oak&#39;}</span>
+</code></pre></div>
 <h2 id="alias-precedence">Alias Precedence<a class="headerlink" href="#alias-precedence" title="Permanent link">&para;</a></h2>
 <p>If you specify an <code>alias</code> on the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a>, it will take precedence over the generated alias by default:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
@@ -2930,7 +3195,11 @@
 <ul>
 <li><code>alias_priority=2</code> the alias will <em>not</em> be overridden by the alias generator.</li>
 <li><code>alias_priority=1</code> the alias <em>will</em> be overridden by the alias generator.</li>
-<li><code>alias_priority</code> not set, the alias will be overridden by the alias generator.</li>
+<li><code>alias_priority</code> not set:<ul>
+<li>alias is set: the alias will <em>not</em> be overridden by the alias generator.</li>
+<li>alias is not set: the alias <em>will</em> be overridden by the alias generator.</li>
+</ul>
+</li>
 </ul>
 <p>The same precedence applies to <code>validation_alias</code> and <code>serialization_alias</code>.
 See more about the different field aliases under <a href="../fields/#field-aliases">field aliases</a>.</p>
