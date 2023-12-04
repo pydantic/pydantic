@@ -530,8 +530,6 @@ def model_validator(
 
     Example usage:
     ```py
-    from typing import Optional
-
     from typing_extensions import Self
 
     from pydantic import BaseModel, ValidationError, model_validator
@@ -556,8 +554,7 @@ def model_validator(
         print(e)
         '''
         1 validation error for Square
-        __root__
-          width and height do not match (type=value_error)
+          Value error, width and height do not match [type=value_error, input_value={'width': 1, 'height': 2}, input_type=dict]
         '''
     ```
 
