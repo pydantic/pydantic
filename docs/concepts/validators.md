@@ -460,7 +460,7 @@ Because of this `mode='before'` validators are extremely flexible and powerful b
 Before model validators should be class methods.
 The first argument should be `cls` (and we also recommend you use `@classmethod` below `@model_validator` for proper type checking), the second argument will be the input (you should generally type it as `Any` and use `isinstance` to narrow the type) and the third argument (if present) will be a `pydantic.ValidationInfo`.
 
-`mode='after'` validators are instance methods and always receive an instance of the model as the first argument.
+`mode='after'` validators are instance methods and always receive an instance of the model as the first argument. Be sure to return the instance at the end of your validator.
 You should not use `(cls, ModelType)` as the signature, instead just use `(self)` and let type checkers infer the type of `self` for you.
 Since these are fully type safe they are often easier to implement than `mode='before'` validators.
 If any field fails to validate, `mode='after'` validators for that field will not be called.
