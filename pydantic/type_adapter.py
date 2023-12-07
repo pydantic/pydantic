@@ -178,7 +178,7 @@ class TypeAdapter(Generic[T]):
 
         if type_has_config and config is not None:
             raise PydanticUserError(
-                'Cannot use `config` when the type is a BaseModel, dataclass or TypedDict.'
+                'Cannot use `config` when the type is a BaseModel, pydantic dataclass or TypedDict.'
                 ' These types can have their own config and setting the config via the `config`'
                 ' parameter to TypeAdapter will not override it, thus the `config` you passed to'
                 ' TypeAdapter becomes meaningless, which is probably not what you want.',
