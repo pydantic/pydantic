@@ -88,8 +88,6 @@ model = Model(a=1)
         done: bool = False
     ```
 
-===
-
 ## Use tagged union, not union
 
 Tagged union (or discriminated union) is a union with a field that indicates which type it is.
