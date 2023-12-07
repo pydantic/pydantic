@@ -2,7 +2,7 @@
 from __future__ import annotations as _annotations
 
 import sys
-from dataclasses import is_dataclass
+from pydantic.dataclasses import is_pydantic_dataclass
 from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, cast, overload
 
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
@@ -171,7 +171,7 @@ class TypeAdapter(Generic[T]):
         config_wrapper = _config.ConfigWrapper(config)
 
         try:
-            type_has_config = issubclass(type, BaseModel) or is_dataclass(type) or is_typeddict(type)
+            type_has_config = issubclass(type, BaseModel) or is_pydantic_dataclass(type) or is_typeddict(type)
         except TypeError:
             # type is not a class
             type_has_config = False
