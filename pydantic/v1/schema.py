@@ -400,7 +400,7 @@ def get_flat_models_from_fields(fields: Sequence[ModelField], known_models: Type
     """
     Take a list of Pydantic  ``ModelField``s (from a model) that could have been declared as subclasses of ``BaseModel``
     (so, any of them could be a submodel), and generate a set with their models and all the sub-models in the tree.
-    I.e. if you pass a the fields of a model ``Foo`` (subclass of ``BaseModel``) as ``fields``, and on of them has a
+    I.e. if you pass the fields of a model ``Foo`` (subclass of ``BaseModel``) as ``fields``, and one of them has a
     field of type ``Bar`` (also subclass of ``BaseModel``) and that model ``Bar`` has a field of type ``Baz`` (also
     subclass of ``BaseModel``), the return value will be ``set([Foo, Bar, Baz])``.
 
