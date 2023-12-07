@@ -8,7 +8,7 @@ import weakref
 from abc import ABCMeta
 from functools import partial
 from types import FunctionType
-from typing import Any, Callable, Generic, Mapping
+from typing import Any, Callable, Generic
 
 import typing_extensions
 from pydantic_core import PydanticUndefined, SchemaSerializer
@@ -216,7 +216,7 @@ class ModelMetaclass(ABCMeta):
             raise AttributeError(item)
 
     @classmethod
-    def __prepare__(cls, *args: Any, **kwargs: Any) -> Mapping[str, object]:
+    def __prepare__(cls, *args: Any, **kwargs: Any) -> dict[str, object]:
         return _ModelNamespaceDict()
 
     def __instancecheck__(self, instance: Any) -> bool:
