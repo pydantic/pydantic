@@ -288,7 +288,9 @@ class FieldInfo(_repr.Representation):
                 new_field_info.frozen = final or field_info.frozen
                 metadata: list[Any] = []
                 for a in extra_args:
-                    if not isinstance(a, FieldInfo):
+                    if not isinstance(a, FieldInfo) or (
+                        issubclass(type(a), FieldInfo) and not issubclass(FieldInfo, type(a))
+                    ):
                         metadata.append(a)
                     else:
                         metadata.extend(a.metadata)
