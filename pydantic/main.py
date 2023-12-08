@@ -1152,7 +1152,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return cls.model_construct(_fields_set=_fields_set, **values)
 
     @typing_extensions.deprecated(
-        'The copy method is deprecated; use `model_copy` instead.', category=PydanticDeprecatedSince20
+        'The `copy` method is deprecated; use `model_copy` instead. '
+        'See the docstring of `BaseModel.copy` for details about how to handle `include` and `exclude`.',
+        category=PydanticDeprecatedSince20,
     )
     def copy(
         self: Model,

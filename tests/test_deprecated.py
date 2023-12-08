@@ -689,7 +689,7 @@ def test_update_forward_refs():
 def test_copy_and_set_values():
     m = SimpleModel(x=1)
     with pytest.warns(
-        PydanticDeprecatedSince20, match='^The private method  `_copy_and_set_values` will be removed and '
+        PydanticDeprecatedSince20, match='^The private method `_copy_and_set_values` will be removed and '
     ):
         m2 = m._copy_and_set_values(values={'x': 2}, fields_set={'x'}, deep=False)
 
