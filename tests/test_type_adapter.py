@@ -335,13 +335,16 @@ def test_validate_type_adapter_config_error() -> None:
 
 def test_type_adapter_config_nested() -> None:
     class ExampleNested(TypedDict):
-        x: Union[int, 'ExampleNested']
+        x: Union[str, 'ExampleNested']
+        y: str
 
-    ta = TypeAdapter(ExampleNested, config=ConfigDict(strict=True))
-    assert ta.validate_python({'x': {'x': {'x': 1}}}) == ExampleNested(x=ExampleNested(x=ExampleNested(x=1)))
-    with pytest.raises(ValidationError):
-        ta.validate_python({'x': {'x': {'x': '1'}}})
+    ta = TypeAdapter(ExampleNested, config=ConfigDict(str_to_upper=True))
+    assert ta.validate_python({'x': 'foo', 'y': 'bar'}) == ExampleNested(x='FOO', y='BAR')
+    assert ta.validate_json('{"x": "foo", "y": "bar"}') == ExampleNested(x='FOO', y='BAR')
 
-    assert ta.validate_json('{"x": {"x": {"x": 1}}}') == ExampleNested(x=ExampleNested(x=ExampleNested(x=1)))
-    with pytest.raises(ValidationError):
-        ta.validate_json('{"x": {"x": {"x": "1"}}}')
+    assert ta.validate_python({'x': {'x': 'foo', 'y': 'baz'}, 'y': 'bar'}) == ExampleNested(
+        x=ExampleNested(x='FOO', y='BAZ'), y='BAR'
+    )
+    assert ta.validate_json('{"x": {"x": "foo", "y": "baz"}, "y": "bar"}') == ExampleNested(
+        x=ExampleNested(x='FOO', y='BAZ'), y='BAR'
+    )
