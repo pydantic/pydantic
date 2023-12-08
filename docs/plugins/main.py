@@ -301,9 +301,6 @@ def build_conversion_table(markdown: str, page: Page) -> str | None:
 
     return markdown
 
-def insert_people_data(markdown: str, page: Page) -> str | None:
-
-
 
 def devtools_example(markdown: str, page: Page) -> str | None:
     if page.file.src_uri != 'integrations/devtools.md':

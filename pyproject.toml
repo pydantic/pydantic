@@ -79,6 +79,7 @@ docs = [
     "mkdocs-embed-external-markdown",
     "mkdocs-exclude",
     "mkdocs-material",
+    "mkdocs-markdownextradata-plugin",
     "mkdocs-redirects",
     "mkdocs-simple-hooks",
     "mkdocstrings-python",

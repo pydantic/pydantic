@@ -180,6 +180,16 @@ plugins:
       on_pre_build: 'docs.plugins.main:on_pre_build'
       on_files: 'docs.plugins.main:on_files'
       on_page_markdown: 'docs.plugins.main:on_page_markdown'
+- markdownextradata:
+    data: docs/data/
+    jinja_options:
+      # customized specifically for the pydantic_people.md page as to not conflict with other jinja2 work
+      block_start_string: "{:"
+      block_end_string: ":}"
+      variable_start_string: '{='
+      variable_end_string: '=}'
+      comment_start_string: '{/'
+      comment_end_string: '/}'
 - redirects:
     redirect_maps:
       'usage/mypy.md': 'integrations/mypy.md'
