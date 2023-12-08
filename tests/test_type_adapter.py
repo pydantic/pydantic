@@ -350,3 +350,18 @@ def test_type_adapter_config_nested() -> None:
         'x': {'x': 'FOO', 'y': 'BAZ'},
         'y': 'BAR',
     }
+
+
+def test_type_adapter_config_tested_with_model() -> None:
+    class Model(BaseModel):
+        inner: 'Nested'
+
+    class Nested(TypedDict):
+        x: Union[Model, None]
+        y: str
+
+    ta = TypeAdapter(Nested, config=ConfigDict(str_to_upper=True))
+    assert ta.validate_python({'x': {'inner': {'x': None, 'y': 'a'}}, 'y': 'a'}) == {
+        'x': Model(inner={'x': None, 'y': 'a'}),
+        'y': 'A',
+    }
