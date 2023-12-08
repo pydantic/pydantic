@@ -21,7 +21,7 @@ class Protocol(str, Enum):
     pickle = 'pickle'
 
 
-@deprecated('load_str_bytes is deprecated.', category=PydanticDeprecatedSince20, stacklevel=2)
+@deprecated('`load_str_bytes` is deprecated.', category=PydanticDeprecatedSince20, stacklevel=2)
 def load_str_bytes(
     b: str | bytes,
     *,
