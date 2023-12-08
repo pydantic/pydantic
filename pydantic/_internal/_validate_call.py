@@ -13,11 +13,7 @@ from ._config import ConfigWrapper
 
 
 class ValidateCallWrapper:
-    """This is a wrapper around a function that validates the arguments passed to it, and optionally the return value.
-
-    It's partially inspired by `wraps` which in turn uses `partial`, but extended to be a descriptor so
-    these functions can be applied to instance methods, class methods, static methods, as well as normal functions.
-    """
+    """This is a wrapper around a function that validates the arguments passed to it, and optionally the return value."""
 
     __slots__ = (
         '__pydantic_validator__',
