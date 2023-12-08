@@ -27,12 +27,7 @@ class ValidateCallWrapper:
     """
 
     __slots__ = (
-        'raw_function',
-        '_config',
-        '_validate_return',
-        '__pydantic_core_schema__',
         '__pydantic_validator__',
-        '__signature__',
         '__name__',
         '__qualname__',
         '__annotations__',
@@ -40,31 +35,22 @@ class ValidateCallWrapper:
     )
 
     def __init__(self, function: Callable[..., Any], config: ConfigDict | None, validate_return: bool):
-        self.raw_function = function
-        self._config = config
-        self._validate_return = validate_return
-        self.__signature__ = inspect.signature(function)
         if isinstance(function, partial):
             func = function.func
             schema_type = func
             self.__name__ = f'partial({func.__name__})'
             self.__qualname__ = f'partial({func.__qualname__})'
-            self.__annotations__ = func.__annotations__
             self.__module__ = func.__module__
-            self.__doc__ = func.__doc__
         else:
             schema_type = function
             self.__name__ = function.__name__
             self.__qualname__ = function.__qualname__
-            self.__annotations__ = function.__annotations__
             self.__module__ = function.__module__
-            self.__doc__ = function.__doc__
 
         namespace = _typing_extra.add_module_globals(function, None)
         config_wrapper = ConfigWrapper(config)
         gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
         schema = gen_schema.clean_schema(gen_schema.generate_schema(function))
-        self.__pydantic_core_schema__ = schema
         core_config = config_wrapper.core_config(self)
 
         self.__pydantic_validator__ = create_schema_validator(
@@ -77,15 +63,11 @@ class ValidateCallWrapper:
             config_wrapper.plugin_settings,
         )
 
-        if self._validate_return:
-            return_type = (
-                self.__signature__.return_annotation
-                if self.__signature__.return_annotation is not self.__signature__.empty
-                else Any
-            )
+        if validate_return:
+            signature = inspect.signature(function)
+            return_type = signature.return_annotation if signature.return_annotation is not signature.empty else Any
             gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
             schema = gen_schema.clean_schema(gen_schema.generate_schema(return_type))
-            self.__return_pydantic_core_schema__ = schema
             validator = create_schema_validator(
                 schema,
                 schema_type,
@@ -95,7 +77,7 @@ class ValidateCallWrapper:
                 core_config,
                 config_wrapper.plugin_settings,
             )
-            if inspect.iscoroutinefunction(self.raw_function):
+            if inspect.iscoroutinefunction(function):
 
                 async def return_val_wrapper(aw: Awaitable[Any]) -> None:
                     return validator.validate_python(await aw)
@@ -104,7 +86,6 @@ class ValidateCallWrapper:
             else:
                 self.__return_pydantic_validator__ = validator.validate_python
         else:
-            self.__return_pydantic_core_schema__ = None
             self.__return_pydantic_validator__ = None
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
