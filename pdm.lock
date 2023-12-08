@@ -798,7 +798,7 @@ files = [
 name = "mike"
 version = "2.1.0.dev0"
 git = "https://github.com/jimporter/mike.git"
-revision = "076a4af3270a448f6aeb880c9c6c2fc0d80f603f"
+revision = "533e996066579124a8c406c4d70e54fb78ac8dd6"
 summary = "Manage multiple versions of your MkDocs-powered documentation"
 dependencies = [
     "importlib-metadata",
@@ -877,7 +877,7 @@ files = [
 
 [[package]]
 name = "mkdocs-material"
-version = "9.4.14"
+version = "9.5.1"
 requires_python = ">=3.8"
 summary = "Documentation that simply works"
 dependencies = [
@@ -894,8 +894,8 @@ dependencies = [
     "requests~=2.26",
 ]
 files = [
-    {file = "mkdocs_material-9.4.14-py3-none-any.whl", hash = "sha256:dbc78a4fea97b74319a6aa9a2f0be575a6028be6958f813ba367188f7b8428f6"},
-    {file = "mkdocs_material-9.4.14.tar.gz", hash = "sha256:a511d3ff48fa8718b033e7e37d17abd9cc1de0fdf0244a625ca2ae2387e2416d"},
+    {file = "mkdocs_material-9.5.1-py3-none-any.whl", hash = "sha256:2e01249bc41813afe2479a4a659f8ba899c3355ccaf9310b5b782952df9c1dea"},
+    {file = "mkdocs_material-9.5.1.tar.gz", hash = "sha256:7ec5d20ed5eee97bb090823a33b33e177ad0704d74bad5937b53acca571ddb3d"},
 ]
 
 [[package]]
