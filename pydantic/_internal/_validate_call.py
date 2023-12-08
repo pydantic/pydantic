@@ -1,7 +1,6 @@
 from __future__ import annotations as _annotations
 
 import inspect
-from dataclasses import dataclass
 from functools import partial
 from typing import Any, Awaitable, Callable
 
@@ -11,12 +10,6 @@ from ..config import ConfigDict
 from ..plugin._schema_validator import create_schema_validator
 from . import _generate_schema, _typing_extra
 from ._config import ConfigWrapper
-
-
-@dataclass
-class CallMarker:
-    function: Callable[..., Any]
-    validate_return: bool
 
 
 class ValidateCallWrapper:
