@@ -78,7 +78,7 @@ ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
 
 
 @deprecated(
-    'pydantic_encoder is deprecated, use pydantic_core.to_jsonable_python instead.',
+    '`pydantic_encoder` is deprecated, use `pydantic_core.to_jsonable_python` instead.',
     category=PydanticDeprecatedSince20,
     stacklevel=2,
 )
@@ -104,7 +104,11 @@ def pydantic_encoder(obj: Any) -> Any:
 
 
 # TODO: Add a suggested migration path once there is a way to use custom encoders
-@deprecated('custom_pydantic_encoder is deprecated.', category=PydanticDeprecatedSince20, stacklevel=2)
+@deprecated(
+    '`custom_pydantic_encoder` is deprecated, use `BaseModel.model_dump` instead.',
+    category=PydanticDeprecatedSince20,
+    stacklevel=2,
+)
 def custom_pydantic_encoder(type_encoders: Dict[Any, Callable[[Type[Any]], Any]], obj: Any) -> Any:
     # Check the class type and its superclasses for a matching encoder
     for base in obj.__class__.__mro__[:-1]:

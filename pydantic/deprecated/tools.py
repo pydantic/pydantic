@@ -24,7 +24,7 @@ T = TypeVar('T')
 
 
 @deprecated(
-    'parse_obj_as is deprecated. Use pydantic.TypeAdapter.validate_python instead.',
+    '`parse_obj_as` is deprecated. Use `pydantic.TypeAdapter.validate_python` instead.',
     category=PydanticDeprecatedSince20,
     stacklevel=2,
 )
@@ -39,7 +39,7 @@ def parse_obj_as(type_: type[T], obj: Any, type_name: NameFactory | None = None)
 
 
 @deprecated(
-    'schema_of is deprecated. Use pydantic.TypeAdapter.json_schema instead.',
+    '`schema_of` is deprecated. Use `pydantic.TypeAdapter.json_schema` instead.',
     category=PydanticDeprecatedSince20,
     stacklevel=2,
 )
@@ -71,7 +71,7 @@ def schema_of(
 
 
 @deprecated(
-    'schema_json_of is deprecated. Use pydantic.TypeAdapter.json_schema instead.',
+    '`schema_json_of` is deprecated. Use `pydantic.TypeAdapter.json_schema` instead.',
     category=PydanticDeprecatedSince20,
     stacklevel=2,
 )

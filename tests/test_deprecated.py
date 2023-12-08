@@ -698,7 +698,7 @@ def test_copy_and_set_values():
 
 def test_get_value():
     m = SimpleModel(x=1)
-    with pytest.warns(PydanticDeprecatedSince20, match='^The private method  `_get_value` will be removed and '):
+    with pytest.warns(PydanticDeprecatedSince20, match='^The private method `_get_value` will be removed and '):
         v = m._get_value(
             [1, 2, 3],
             to_dict=False,
@@ -718,41 +718,44 @@ def test_deprecated_module(tmp_path: Path) -> None:
 
     assert hasattr(parse_obj_as, '__deprecated__')
     with pytest.warns(
-        PydanticDeprecatedSince20, match='parse_obj_as is deprecated. Use pydantic.TypeAdapter.validate_python instead.'
+        PydanticDeprecatedSince20,
+        match='`parse_obj_as` is deprecated. Use `pydantic.TypeAdapter.validate_python` instead.',
     ):
         parse_obj_as(Model, {'x': 1})
 
     assert hasattr(schema_json_of, '__deprecated__')
     with pytest.warns(
-        PydanticDeprecatedSince20, match='schema_json_of is deprecated. Use pydantic.TypeAdapter.json_schema instead.'
+        PydanticDeprecatedSince20,
+        match='`schema_json_of` is deprecated. Use `pydantic.TypeAdapter.json_schema` instead.',
     ):
         schema_json_of(Model)
 
     assert hasattr(schema_of, '__deprecated__')
     with pytest.warns(
-        PydanticDeprecatedSince20, match='schema_of is deprecated. Use pydantic.TypeAdapter.json_schema instead.'
+        PydanticDeprecatedSince20, match='`schema_of` is deprecated. Use `pydantic.TypeAdapter.json_schema` instead.'
     ):
         schema_of(Model)
 
     assert hasattr(load_str_bytes, '__deprecated__')
-    with pytest.warns(PydanticDeprecatedSince20, match='load_str_bytes is deprecated.'):
+    with pytest.warns(PydanticDeprecatedSince20, match='`load_str_bytes` is deprecated.'):
         load_str_bytes('{"x": 1}')
 
     assert hasattr(load_file, '__deprecated__')
     file = tmp_path / 'main.py'
     file.write_text('{"x": 1}')
-    with pytest.warns(PydanticDeprecatedSince20, match='load_file is deprecated.'):
+    with pytest.warns(PydanticDeprecatedSince20, match='`load_file` is deprecated.'):
         load_file(file)
 
     assert hasattr(pydantic_encoder, '__deprecated__')
     with pytest.warns(
-        PydanticDeprecatedSince20, match='pydantic_encoder is deprecated, use pydantic_core.to_jsonable_python instead.'
+        PydanticDeprecatedSince20,
+        match='`pydantic_encoder` is deprecated, use `pydantic_core.to_jsonable_python` instead.',
     ):
         pydantic_encoder(Model(x=1))
 
     assert hasattr(custom_pydantic_encoder, '__deprecated__')
     with pytest.warns(
-        PydanticDeprecatedSince20, match='custom_pydantic_encoder is deprecated, use BaseModel.model_dump instead.'
+        PydanticDeprecatedSince20, match='`custom_pydantic_encoder` is deprecated, use `BaseModel.model_dump` instead.'
     ):
         custom_pydantic_encoder({int: lambda x: str(x)}, Model(x=1))
 

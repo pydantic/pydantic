@@ -54,7 +54,7 @@ def load_str_bytes(
         raise TypeError(f'Unknown protocol: {proto}')
 
 
-@deprecated('load_file is deprecated.', category=PydanticDeprecatedSince20, stacklevel=2)
+@deprecated('`load_file` is deprecated.', category=PydanticDeprecatedSince20, stacklevel=2)
 def load_file(
     path: str | Path,
     *,
