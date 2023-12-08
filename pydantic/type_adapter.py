@@ -2,11 +2,10 @@
 from __future__ import annotations as _annotations
 
 import sys
-from dataclasses import is_dataclass
 from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, cast, overload
 
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
-from typing_extensions import Literal, is_typeddict
+from typing_extensions import Literal
 
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel
@@ -169,16 +168,12 @@ class TypeAdapter(Generic[T]):
             A type adapter configured for the specified `type`.
         """
         config_wrapper = _config.ConfigWrapper(config)
-
-        try:
-            type_has_config = issubclass(type, BaseModel) or is_dataclass(type) or is_typeddict(type)
-        except TypeError:
-            # type is not a class
-            type_has_config = False
+        type_has_config = issubclass(type, BaseModel) or hasattr(type, '__pydantic_config__')
 
         if type_has_config and config is not None:
             raise PydanticUserError(
-                'Cannot use `config` when the type is a BaseModel, dataclass or TypedDict.'
+                'Cannot use `config` when the adapted type is a BaseModel or has `__pydantic_config__` defined.'
+                ' This is likely because the adapted type is a BaseModel, dataclass or TypedDict.'
                 ' These types can have their own config and setting the config via the `config`'
                 ' parameter to TypeAdapter will not override it, thus the `config` you passed to'
                 ' TypeAdapter becomes meaningless, which is probably not what you want.',

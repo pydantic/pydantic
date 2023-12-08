@@ -8,7 +8,7 @@ import pytest
 from pydantic_core import ValidationError
 from typing_extensions import TypeAlias, TypedDict
 
-from pydantic import BaseModel, TypeAdapter, ValidationInfo, field_validator
+from pydantic import BaseModel, PydanticUserError, TypeAdapter, ValidationInfo, field_validator
 from pydantic.config import ConfigDict
 
 ItemType = TypeVar('ItemType')
@@ -130,7 +130,6 @@ def test_validate_python_strict() -> None:
     ]
 
 
-@pytest.mark.xfail(reason='Need to fix this in https://github.com/pydantic/pydantic/pull/5944')
 def test_validate_json_strict() -> None:
     class Model(TypedDict):
         x: int
@@ -309,3 +308,40 @@ def test_validate_strings_dict(strict):
         1: date(2017, 1, 1),
         2: date(2017, 1, 2),
     }
+
+
+def test_validate_type_adapter_config_error() -> None:
+    class Model1(BaseModel):
+        x: int
+
+    @dataclass
+    class Model2:
+        x: int
+
+        __pydantic_config__ = ConfigDict(strict=False)
+
+    class Model3(TypedDict):
+        x: int
+
+        __pydantic_config__ = ConfigDict(strict=False)
+
+    for model in (Model1, Model2, Model3):
+        with pytest.raises(
+            PydanticUserError,
+            match='Cannot use `config` when the adapted type is a BaseModel or has `__pydantic_config__` defined.',
+        ):
+            TypeAdapter(model, config=ConfigDict(strict=False))
+
+
+def test_type_adapter_config_nested() -> None:
+    class ExampleNested(TypedDict):
+        x: Union[int, 'ExampleNested']
+
+    ta = TypeAdapter(ExampleNested, config=ConfigDict(strict=True))
+    assert ta.validate_python({'x': {'x': {'x': 1}}}) == ExampleNested(x=ExampleNested(x=ExampleNested(x=1)))
+    with pytest.raises(ValidationError):
+        ta.validate_python({'x': {'x': {'x': '1'}}})
+
+    assert ta.validate_json('{"x": {"x": {"x": 1}}}') == ExampleNested(x=ExampleNested(x=ExampleNested(x=1)))
+    with pytest.raises(ValidationError):
+        ta.validate_json('{"x": {"x": {"x": "1"}}}')
