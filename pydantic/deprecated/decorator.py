@@ -1,7 +1,7 @@
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Tuple, Type, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Tuple, Type, TypeVar, Union
 
-from typing_extensions import deprecated
+from typing_extensions import deprecated, overload
 
 from .._internal import _config, _typing_extra
 from ..alias_generators import to_pascal
