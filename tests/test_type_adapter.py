@@ -339,12 +339,14 @@ def test_type_adapter_config_nested() -> None:
         y: str
 
     ta = TypeAdapter(ExampleNested, config=ConfigDict(str_to_upper=True))
-    assert ta.validate_python({'x': 'foo', 'y': 'bar'}) == ExampleNested(x='FOO', y='BAR')
-    assert ta.validate_json('{"x": "foo", "y": "bar"}') == ExampleNested(x='FOO', y='BAR')
+    assert ta.validate_python({'x': 'foo', 'y': 'bar'}) == {'x': 'FOO', 'y': 'BAR'}
+    assert ta.validate_json('{"x": "foo", "y": "bar"}') == {'x': 'FOO', 'y': 'BAR'}
 
-    assert ta.validate_python({'x': {'x': 'foo', 'y': 'baz'}, 'y': 'bar'}) == ExampleNested(
-        x=ExampleNested(x='FOO', y='BAZ'), y='BAR'
-    )
-    assert ta.validate_json('{"x": {"x": "foo", "y": "baz"}, "y": "bar"}') == ExampleNested(
-        x=ExampleNested(x='FOO', y='BAZ'), y='BAR'
-    )
+    assert ta.validate_python({'x': {'x': 'foo', 'y': 'baz'}, 'y': 'bar'}) == {
+        'x': {'x': 'FOO', 'y': 'BAZ'},
+        'y': 'BAR',
+    }
+    assert ta.validate_json('{"x": {"x": "foo", "y": "baz"}, "y": "bar"}') == {
+        'x': {'x': 'FOO', 'y': 'BAZ'},
+        'y': 'BAR',
+    }
