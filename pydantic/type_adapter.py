@@ -168,7 +168,11 @@ class TypeAdapter(Generic[T]):
             A type adapter configured for the specified `type`.
         """
         config_wrapper = _config.ConfigWrapper(config)
-        type_has_config = issubclass(type, BaseModel) or hasattr(type, '__pydantic_config__')
+        try:
+            type_has_config = issubclass(type, BaseModel) or hasattr(type, '__pydantic_config__')
+        except TypeError:
+            # type is not a class
+            type_has_config = False
 
         if type_has_config and config is not None:
             raise PydanticUserError(
