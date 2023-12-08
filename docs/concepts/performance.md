@@ -208,4 +208,4 @@ Instead of using nested models, use `TypedDict` to define the structure of the d
 
 <!-- TODO: I need help on this one. -->
 
-[Discriminated Unions]: ../api/standard_library_types.md#discriminated-unions-aka-tagged-unions
+[Discriminated Unions]: ../concepts/unions.md#discriminated-unions
