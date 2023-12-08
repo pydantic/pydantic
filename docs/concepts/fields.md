@@ -734,7 +734,7 @@ print(b.model_dump())
 
 
 [JSON Schema Draft 2020-12]: https://json-schema.org/understanding-json-schema/reference/numeric.html#numeric-types
-[Discriminated Unions]: ../concepts/unions/#discriminated-unions
+[Discriminated Unions]: ../concepts/unions.md#discriminated-unions
 [Helper Functions]: models.md#helper-functions
 [Models]: models.md
 [init-only field]: https://docs.python.org/3/library/dataclasses.html#init-only-variables
