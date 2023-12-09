@@ -181,7 +181,7 @@ extend-ignore = ['D105', 'D107', 'D205', 'D415']
 flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
 mccabe = { max-complexity = 14 }
 isort = { known-first-party = ['pydantic', 'tests'] }
-target-version = "py37"
+target-version = "py38"
 extend-exclude = ['pydantic/v1', 'tests/mypy/outputs']
 
 [tool.ruff.extend-per-file-ignores]
