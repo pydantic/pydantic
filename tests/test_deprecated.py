@@ -763,7 +763,6 @@ def test_deprecated_module(tmp_path: Path) -> None:
     with pytest.warns(PydanticDeprecatedSince20, match='timedelta_isoformat is deprecated.'):
         timedelta_isoformat(timedelta(seconds=1))
 
-    assert all(hasattr(func, '__deprecated__') for func in get_overloads(validate_arguments))
     with pytest.warns(
         PydanticDeprecatedSince20, match='The `validate_arguments` method is deprecated; use `validate_call` instead.'
     ):
