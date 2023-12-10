@@ -1,6 +1,5 @@
 import platform
 import re
-import sys
 from datetime import date, timedelta
 from pathlib import Path
 from types import SimpleNamespace
@@ -30,11 +29,6 @@ from pydantic.deprecated.tools import parse_obj_as, schema_json_of, schema_of
 from pydantic.functional_serializers import model_serializer
 from pydantic.json_schema import JsonSchemaValue
 from pydantic.type_adapter import TypeAdapter
-
-if sys.version_info < (3, 11):
-    from typing_extensions import get_overloads
-else:
-    from typing import get_overloads
 
 
 def deprecated_from_orm(model_type: Type[BaseModel], obj: Any) -> Any:
