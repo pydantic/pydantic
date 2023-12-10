@@ -337,7 +337,7 @@ most_active_users_template = Template(
     """
 
 <div class="user-list user-list-center">
-    {% for user in people.most_active_users %}
+    {% for user in people.last_month_active %}
     <div class="user">
         <a href="{{ user.url }}" target="_blank">
             <div class="avatar-wrapper">
@@ -405,7 +405,6 @@ def populate_pydantic_people(markdown: str, page: Page) -> None:
         ('top_reviewers', top_reviewers_template),
     ]:
         rendered = template.render(people=people)
-        print(rendered)
         markdown = re.sub(f'{{{{ {name} }}}}', rendered, markdown)
 
     return markdown
