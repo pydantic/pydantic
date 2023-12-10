@@ -5,7 +5,7 @@
 groups = ["default", "email", "mypy", "linting", "testing", "testing-extra", "docs", "memray"]
 strategy = ["cross_platform"]
 lock_version = "4.4"
-content_hash = "sha256:e175846d71a8bce0bc3021d0f4826f5847f06757f76b4346613e768a7f8f7482"
+content_hash = "sha256:e1f89b0682da6dbb5e93d3cb88361b4672b707414bfd89a2a47c06600372325c"
 
 [[package]]
 name = "annotated-types"
@@ -1695,12 +1695,12 @@ files = [
 
 [[package]]
 name = "typing-extensions"
-version = "4.9.0rc1"
+version = "4.9.0"
 requires_python = ">=3.8"
 summary = "Backported and Experimental Type Hints for Python 3.8+"
 files = [
-    {file = "typing_extensions-4.9.0rc1-py3-none-any.whl", hash = "sha256:cc22327e22d9b583d1565ce1ed9f5ecc22831afa743f8789a403cad849fb702b"},
-    {file = "typing_extensions-4.9.0rc1.tar.gz", hash = "sha256:56a8f7a8776ea160e59ef0af6fc3a3a03b7d42156b90e47f0241515fcec620c2"},
+    {file = "typing_extensions-4.9.0-py3-none-any.whl", hash = "sha256:af72aea155e91adfc61c3ae9e0e342dbc0cba726d6cba4b6c72c1f34e47291cd"},
+    {file = "typing_extensions-4.9.0.tar.gz", hash = "sha256:23478f88c37f27d76ac8aee6c905017a143b0b1b886c3c9f66bc2fd94f9f5783"},
 ]
 
 [[package]]
