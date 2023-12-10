@@ -8,9 +8,11 @@ import textwrap
 from pathlib import Path
 from textwrap import indent
 
-import autoflake  # type: ignore
+import autoflake
 import pyupgrade._main as pyupgrade_main  # type: ignore
 import tomli
+import yaml
+from jinja2 import Template  # type: ignore
 from mkdocs.config import Config
 from mkdocs.structure.files import Files
 from mkdocs.structure.pages import Page
@@ -54,6 +56,8 @@ def on_page_markdown(markdown: str, page: Page, config: Config, files: Files) ->
     elif md := build_conversion_table(markdown, page):
         return md
     elif md := devtools_example(markdown, page):
+        return md
+    elif md := populate_pydantic_people(markdown, page):
         return md
     else:
         return markdown
@@ -309,3 +313,99 @@ def devtools_example(markdown: str, page: Page) -> str | None:
     html = (THIS_DIR / 'devtools_output.html').read_text().strip('\n')
     full_html = f'<div class="highlight">\n<pre><code>{html}</code></pre>\n</div>'
     return re.sub(r'{{ *devtools_example *}}', full_html, markdown)
+
+
+experts_template = Template(
+    """
+<div class="user-list user-list-center">
+    {% for user in people.experts %}
+    <div class="user">
+        <a href="{{ user.url }}" target="_blank">
+            <div class="avatar-wrapper">
+                <img src="{{ user.avatarUrl }}"/>
+            </div>
+            <div class="title">@{{ user.login }}</div>
+        </a>
+        <div class="count">Questions replied: {{ user.count }}</div>
+    </div>
+    {% endfor %}
+</div>
+"""
+)
+
+most_active_users_template = Template(
+    """
+
+<div class="user-list user-list-center">
+    {% for user in people.most_active_users %}
+    <div class="user">
+        <a href="{{ user.url }}" target="_blank">
+            <div class="avatar-wrapper">
+                <img src="{{ user.avatarUrl }}"/>
+            </div>
+            <div class="title">@{{ user.login }}</div>
+        </a>
+        <div class="count">Questions replied: {{ user.count }}</div>
+    </div>
+    {% endfor %}
+</div>
+"""
+)
+
+top_contributors_template = Template(
+    """
+<div class="user-list user-list-center">
+    {% for user in people.top_contributors %}
+    <div class="user">
+        <a href="{{ user.url }}" target="_blank">
+            <div class="avatar-wrapper">
+                <img src="{{ user.avatarUrl }}"/>
+            </div>
+            <div class="title">@{{ user.login }}</div>
+        </a>
+        <div class="count">Contributions: {{ user.contributions }}</div>
+    </div>
+    {% endfor %}
+</div>
+"""
+)
+
+top_reviewers_template = Template(
+    """
+<div class="user-list user-list-center">
+    {% for user in people.top_reviewers %}
+    <div class="user">
+        <a href="{{ user.url }}" target="_blank">
+            <div class="avatar-wrapper">
+                <img src="{{ user.avatarUrl }}"/>
+            </div>
+            <div class="title">@{{ user.login }}</div>
+        </a>
+        <div class="count">Reviews: {{ user.reviews }}</div>
+    </div>
+    {% endfor %}
+</div>
+"""
+)
+
+
+def populate_pydantic_people(markdown: str, page: Page) -> None:
+    if page.file.src_uri != 'pydantic_people.md':
+        return None
+
+    # read people.yml file data
+    with (THIS_DIR / 'people.yml').open('rb') as f:
+        people = yaml.load(f, Loader=yaml.FullLoader)
+
+    # Render the templates
+    for name, template in [
+        ('experts', experts_template),
+        ('most_active_users', most_active_users_template),
+        ('top_contributors', top_contributors_template),
+        ('top_reviewers', top_reviewers_template),
+    ]:
+        rendered = template.render(people=people)
+        print(rendered)
+        markdown = re.sub(f'{{{{ {name} }}}}', rendered, markdown)
+
+    return markdown

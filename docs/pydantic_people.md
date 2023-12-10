@@ -7,57 +7,25 @@ Here, we celebrate those people and their contributions.
 
 These are the users that have helped others the most with questions in GitHub through *all time*.
 
-{: if people :}
-<div class="user-list user-list-center">
-{: for user in people.experts :}
-
-<div class="user"><a href="{= user.url =}" target="_blank"><div class="avatar-wrapper"><img src="{= user.avatarUrl =}"/></div><div class="title">@{= user.login =}</div></a> <div class="count">Questions replied: {= user.count =}</div></div>
-{: endfor :}
-
-</div>
-{: endif :}
+{{ experts }}
 
 ### Most active users last month
 
 These are the users that have helped others the most with questions in GitHub during the last month.
 
-{: if people :}
-<div class="user-list user-list-center">
-{: for user in people.last_month_active :}
-
-<div class="user"><a href="{= user.url =}" target="_blank"><div class="avatar-wrapper"><img src="{= user.avatarUrl =}"/></div><div class="title">@{= user.login =}</div></a> <div class="count">Questions replied: {= user.count =}</div></div>
-{: endfor :}
-
-</div>
-{: endif :}
+{{ most_active_users }}
 
 ## Top contributors
 
 These are the users that have created the most pull requests that have been *merged*.
 
-{: if people :}
-<div class="user-list user-list-center">
-{: for user in people.top_contributors :}
-
-<div class="user"><a href="{= user.url =}" target="_blank"><div class="avatar-wrapper"><img src="{= user.avatarUrl =}"/></div><div class="title">@{= user.login =}</div></a> <div class="count">Pull Requests: {= user.count =}</div></div>
-{: endfor :}
-
-</div>
-{: endif :}
+{{ top_contributors }}
 
 ## Top Reviewers
 
 These are the users that have reviewed the most Pull Requests from others, assisting with code quality, documentation, bug fixes, feature requests, etc.
 
-{: if people :}
-<div class="user-list user-list-center">
-{: for user in people.top_reviewers :}
-
-<div class="user"><a href="{= user.url =}" target="_blank"><div class="avatar-wrapper"><img src="{= user.avatarUrl =}"/></div><div class="title">@{= user.login =}</div></a> <div class="count">Reviews: {= user.count =}</div></div>
-{: endfor :}
-
-</div>
-{: endif :}
+{{ top_reviewers }}
 
 ## About the data
 

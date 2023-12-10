@@ -286,7 +286,7 @@ class PRsResponse(BaseModel):
 
 
 class Settings(BaseSettings):
-    input_token: SecretStr = "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"
+    input_token: SecretStr = ""
     github_repository: str = "pydantic/pydantic"
     request_timeout: int = 30
 
@@ -577,16 +577,16 @@ if __name__ == "__main__":
         "top_contributors": top_contributors,
         "top_reviewers": top_reviewers,
     }
-    people_path = Path("./docs/data/people.yml")
-    # people_old_content = people_path.read_text(encoding="utf-8")
+    people_path = Path("./docs/plugins/people.yml")
+    people_old_content = people_path.read_text(encoding="utf-8")
     new_people_content = yaml.dump(
         people, sort_keys=False, width=200, allow_unicode=True
     )
-    # if (
-    #     people_old_content == new_people_content
-    # ):
-    #     logging.info("The FastAPI People data hasn't changed, finishing.")
-    #     sys.exit(0)
+    if (
+        people_old_content == new_people_content
+    ):
+        logging.info("The Pydantic People data hasn't changed, finishing.")
+        sys.exit(0)
     people_path.write_text(new_people_content, encoding="utf-8")
 
     # logging.info("Setting up GitHub Actions git user")
