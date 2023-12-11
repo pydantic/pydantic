@@ -728,6 +728,19 @@ def test_nested_generic_typeddict():
     assert fields['format']['schema']['type'] == 'str'
     assert fields['value']['schema']['type'] == 'str'
 
+    V = TypeVar('V')
+
+    class SubNestedGenericTypedDict(NestedGenericTypedDict[V]):
+        info: V
+
+    adapter = TypeAdapter(SubNestedGenericTypedDict[str])
+    schema = cast(core_schema.TypedDictSchema, adapter.core_schema)
+    fields = schema['fields']
+
+    assert fields['format']['schema']['type'] == 'str'
+    assert fields['value']['schema']['type'] == 'str'
+    assert fields['info']['schema']['type'] == 'str'
+
 
 def test_partial_generic_typeddict():
     T = TypeVar('T')
