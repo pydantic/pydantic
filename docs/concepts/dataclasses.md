@@ -74,6 +74,7 @@ print(TypeAdapter(User).json_schema())
         'id': {'title': 'Id', 'type': 'integer'},
         'name': {'default': 'John Doe', 'title': 'Name', 'type': 'string'},
         'friends': {
+            'default': [0],
             'items': {'type': 'integer'},
             'title': 'Friends',
             'type': 'array',

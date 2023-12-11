@@ -446,7 +446,6 @@ You can specify JSON schema modifications via the [`Field`][pydantic.fields.Fiel
 
 ```py output="json"
 import json
-from uuid import uuid4
 
 from typing_extensions import Annotated
 
@@ -454,7 +453,7 @@ from pydantic import BaseModel, Field
 
 
 class Foo(BaseModel):
-    id: Annotated[str, Field(default_factory=lambda: uuid4().hex)]
+    id: Annotated[str, Field(default_factory=lambda: 1)]
     name: Annotated[str, Field(max_length=256)] = Field(
         'Bar', title='CustomName'
     )
@@ -465,6 +464,7 @@ print(json.dumps(Foo.model_json_schema(), indent=2))
 {
   "properties": {
     "id": {
+      "default": 1,
       "title": "Id",
       "type": "string"
     },

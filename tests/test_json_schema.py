@@ -5153,7 +5153,10 @@ def test_inclusion_of_defaults():
         y: int = Field(default_factory=lambda: 2)
 
     assert Model.model_json_schema() == {
-        'properties': {'x': {'default': 1, 'title': 'X', 'type': 'integer'}, 'y': {'title': 'Y', 'type': 'integer'}},
+        'properties': {
+            'x': {'default': 1, 'title': 'X', 'type': 'integer'},
+            'y': {'default': 2, 'title': 'Y', 'type': 'integer'},
+        },
         'title': 'Model',
         'type': 'object',
     }
