@@ -74,7 +74,7 @@ def get_typed_dict_type_hints(
     """
     hints: dict[str, Any] = {}
     typevars_map: dict[type, dict[Any, Any]] = {}
-    previous_base_cls: type | None = None
+    previous_base: type | None = None
 
     for base_cls in reversed(mro(typed_dict_cls)):
         base = base_cls
@@ -91,14 +91,14 @@ def get_typed_dict_type_hints(
 
         for field_name, annotation in new_type_hints.items():
             if field_name in hints:
-                if previous_base_cls is not None:
-                    hints[field_name] = replace_types(hints[field_name], typevars_map[previous_base_cls])
+                if previous_base is not None:
+                    hints[field_name] = replace_types(hints[field_name], typevars_map[previous_base])
                 continue
 
 
             hints[field_name] = annotation
 
-        previous_base_cls = base
+        previous_base = base
 
     return hints
 
