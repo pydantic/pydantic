@@ -221,7 +221,8 @@ def modify_model_json_schema(
         original_schema['allOf'] = [{'$ref': ref}]
     if 'title' not in original_schema:
         original_schema['title'] = cls.__name__
-    docstring = cls.__doc__
+    # BaseModel; don't use cls.__doc__ as it will contain the verbose class signature by default
+    docstring = cls.__doc__ if cls.__name__ != 'BaseModel' else None
     if docstring and 'description' not in original_schema:
         original_schema['description'] = inspect.cleandoc(docstring)
     return json_schema
