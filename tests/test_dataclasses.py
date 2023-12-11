@@ -570,7 +570,6 @@ def test_schema():
                 'description': 'do not lie!',
             },
             'aliases': {
-                'default': {'John': 'Joey'},
                 'additionalProperties': {'type': 'string'},
                 'title': 'Aliases',
                 'type': 'object',
