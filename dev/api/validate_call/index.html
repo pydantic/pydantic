@@ -3043,8 +3043,7 @@
 
           <details class="quote">
             <summary>Source code in <code>pydantic/validate_call_decorator.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">28</span>
-<span class="normal">29</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">29</span>
 <span class="normal">30</span>
 <span class="normal">31</span>
 <span class="normal">32</span>
@@ -3073,7 +3072,16 @@
 <span class="normal">55</span>
 <span class="normal">56</span>
 <span class="normal">57</span>
-<span class="normal">58</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_call</span><span class="p">(</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_call</span><span class="p">(</span>
     <span class="n">__func</span><span class="p">:</span> <span class="n">AnyCallableT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -3098,7 +3106,15 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">function</span><span class="p">,</span> <span class="p">(</span><span class="nb">classmethod</span><span class="p">,</span> <span class="nb">staticmethod</span><span class="p">)):</span>
             <span class="n">name</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">function</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The `@</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">` decorator should be applied after `@validate_call` (put `@</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">` on top)&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">_validate_call</span><span class="o">.</span><span class="n">ValidateCallWrapper</span><span class="p">(</span><span class="n">function</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">validate_return</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+        <span class="n">validate_call_wrapper</span> <span class="o">=</span> <span class="n">_validate_call</span><span class="o">.</span><span class="n">ValidateCallWrapper</span><span class="p">(</span><span class="n">function</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">validate_return</span><span class="p">)</span>
+
+        <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">function</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">wrapper_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">validate_call_wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">wrapper_function</span><span class="o">.</span><span class="n">raw_function</span> <span class="o">=</span> <span class="n">function</span>  <span class="c1"># type: ignore</span>
+
+        <span class="k">return</span> <span class="n">wrapper_function</span>  <span class="c1"># type: ignore</span>
 
     <span class="k">if</span> <span class="n">__func</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">validate</span><span class="p">(</span><span class="n">__func</span><span class="p">)</span>
