@@ -212,6 +212,8 @@ def modify_model_json_schema(
     Returns:
         JsonSchemaValue: The updated JSON schema.
     """
+    from ..main import BaseModel
+
     json_schema = handler(schema_or_field)
     original_schema = handler.resolve_ref_schema(json_schema)
     # Preserve the fact that definitions schemas should never have sibling keys:
@@ -222,7 +224,7 @@ def modify_model_json_schema(
     if 'title' not in original_schema:
         original_schema['title'] = cls.__name__
     # BaseModel; don't use cls.__doc__ as it will contain the verbose class signature by default
-    docstring = cls.__doc__ if cls.__name__ != 'BaseModel' else None
+    docstring = None if cls is BaseModel else cls.__doc__
     if docstring and 'description' not in original_schema:
         original_schema['description'] = inspect.cleandoc(docstring)
     return json_schema
