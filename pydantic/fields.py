@@ -927,7 +927,7 @@ def _wrapped_property_is_private(property_: cached_property | property) -> bool:
     return wrapped_name.startswith('_') and not wrapped_name.startswith('__')
 
 
-# this should really be `property[T], cached_proprety[T]` but property is not generic unlike cached_property
+# this should really be `property[T], cached_property[T]` but property is not generic unlike cached_property
 # See https://github.com/python/typing/issues/985 and linked issues
 PropertyT = typing.TypeVar('PropertyT')
 

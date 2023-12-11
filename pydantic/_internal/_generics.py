@@ -167,7 +167,7 @@ def _get_caller_frame_info(depth: int = 2) -> tuple[str | None, bool]:
         depth: The depth to get the frame.
 
     Returns:
-        A tuple contains `module_nam` and `called_globally`.
+        A tuple contains `module_name` and `called_globally`.
 
     Raises:
         RuntimeError: If the function is not called inside a function.
