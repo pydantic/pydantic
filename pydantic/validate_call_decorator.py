@@ -1,6 +1,7 @@
 """Decorator for validating function calls."""
 from __future__ import annotations as _annotations
 
+import functools
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
 
 from ._internal import _validate_call
@@ -50,7 +51,15 @@ def validate_call(
         if isinstance(function, (classmethod, staticmethod)):
             name = type(function).__name__
             raise TypeError(f'The `@{name}` decorator should be applied after `@validate_call` (put `@{name}` on top)')
-        return _validate_call.ValidateCallWrapper(function, config, validate_return)  # type: ignore
+        validate_call_wrapper = _validate_call.ValidateCallWrapper(function, config, validate_return)
+
+        @functools.wraps(function)
+        def wrapper_function(*args, **kwargs):
+            return validate_call_wrapper(*args, **kwargs)
+
+        wrapper_function.raw_function = function  # type: ignore
+
+        return wrapper_function  # type: ignore
 
     if __func:
         return validate(__func)
