@@ -1,3 +1,4 @@
+import importlib.metadata
 import json
 import math
 import re
@@ -75,7 +76,6 @@ from pydantic.types import (
     UUID3,
     UUID4,
     UUID5,
-    Deprecated,
     DirectoryPath,
     FilePath,
     Json,
@@ -5822,13 +5822,16 @@ def test_description_not_included_for_basemodel() -> None:
     assert 'description' not in Model.model_json_schema()['$defs']['BaseModel']
 
 
+@pytest.mark.skipif(
+    pydantic.version.parse_package_version(importlib.metadata.version('typing_extensions')) < (4, 9),
+    reason='deprecated type annotation requires typing_extensions>=4.9',
+)
 def test_deprecated_fields():
     class Model(BaseModel):
         a: Annotated[int, Field(deprecated=True)]
         b: Annotated[int, Field(deprecated=False)]
         c: Annotated[int, deprecated('')]
         d: Annotated[int, deprecated('')] = 1
-        e: Deprecated[int]
 
     assert Model.model_json_schema() == {
         'properties': {
@@ -5836,9 +5839,8 @@ def test_deprecated_fields():
             'b': {'deprecated': False, 'title': 'B', 'type': 'integer'},
             'c': {'deprecated': True, 'title': 'C', 'type': 'integer'},
             'd': {'default': 1, 'deprecated': True, 'title': 'D', 'type': 'integer'},
-            'e': {'deprecated': True, 'title': 'E', 'type': 'integer'},
         },
-        'required': ['a', 'b', 'c', 'e'],
+        'required': ['a', 'b', 'c'],
         'title': 'Model',
         'type': 'object',
     }

@@ -63,9 +63,10 @@ LITERAL_TYPES: set[Any] = {Literal}
 if hasattr(typing, 'Literal'):
     LITERAL_TYPES.add(typing.Literal)  # type: ignore
 
-DEPRECATED_TYPES: set[Any] = {deprecated}
+# Check if `deprecated` is a type to prevent errors when using typing_extensions < 4.9.0
+DEPRECATED_TYPES: tuple[Any, ...] = (deprecated,) if isinstance(deprecated, type) else ()
 if hasattr(warnings, 'deprecated'):
-    DEPRECATED_TYPES.add(warnings.deprecated)  # type: ignore
+    DEPRECATED_TYPES = (*DEPRECATED_TYPES, warnings.deprecated)
 
 NONE_TYPES: tuple[Any, ...] = (None, NoneType, *(tp[None] for tp in LITERAL_TYPES))
 
@@ -86,7 +87,7 @@ def is_literal_type(type_: type[Any]) -> bool:
 
 
 def is_deprecated_instance(instance: Any) -> bool:
-    return isinstance(instance, tuple(DEPRECATED_TYPES))
+    return isinstance(instance, DEPRECATED_TYPES)
 
 
 def literal_values(type_: type[Any]) -> tuple[Any, ...]:
