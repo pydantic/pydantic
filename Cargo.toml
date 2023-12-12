@@ -42,7 +42,7 @@ idna = "0.4.0"
 base64 = "0.21.5"
 num-bigint = "0.4.4"
 python3-dll-a = "0.2.7"
-uuid = "1.5.0"
+uuid = "1.6.1"
 jiter = {version = "0.0.5", features = ["python"]}
 
 [lib]
