@@ -3443,6 +3443,10 @@ you like through <code>Field(validation_alias=...)</code>.</p>
 <code>case_sensitive</code> config setting will have no effect - settings will always be updated ignoring case.</p>
 </div>
 <h2 id="parsing-environment-variable-values">Parsing environment variable values<a class="headerlink" href="#parsing-environment-variable-values" title="Permanent link">&para;</a></h2>
+<p>By default environment variables are parsed verbatim, including if the value is empty. You can choose to
+ignore empty environment variables by setting the <code>env_ignore_empty</code> config setting to <code>True</code>. This can be
+useful if you would prefer to use the default value for a field rather than an empty value from the
+environment.</p>
 <p>For most simple field types (such as <code>int</code>, <code>float</code>, <code>str</code>, etc.), the environment variable value is parsed
 the same way it would be if passed directly to the initialiser (as a string).</p>
 <p>Complex types like <code>list</code>, <code>set</code>, <code>dict</code>, and sub-models are populated from the environment by treating the
