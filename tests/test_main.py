@@ -1533,7 +1533,7 @@ def test_model_export_inclusion_inheritance():
         s4: str = 'v4'
 
     class Parent(BaseModel):
-        # b will be included since fields are set idependently
+        # b will be included since fields are set independently
         model_config = ConfigDict(fields={'b': {'include': ...}})
         a: int
         b: int
