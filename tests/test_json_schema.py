@@ -5812,3 +5812,10 @@ def test_repeated_custom_type():
 
     with pytest.raises(ValidationError):
         OuterModel(x=2, y=-1, z=-1)
+
+
+def test_description_not_included_for_basemodel() -> None:
+    class Model(BaseModel):
+        x: BaseModel
+
+    assert 'description' not in Model.model_json_schema()['$defs']['BaseModel']
