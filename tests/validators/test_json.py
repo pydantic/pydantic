@@ -1,4 +1,5 @@
 import re
+from enum import Enum
 
 import pytest
 
@@ -150,6 +151,23 @@ def test_dict_key(py_and_json: PyAndJson):
             'ctx': {'error': 'expected value at line 1 column 1'},
         }
     ]
+
+
+def test_enum() -> None:
+    class MyEnum(Enum):
+        a = 'a'
+        b = 'b'
+
+    enum_schema = core_schema.lax_or_strict_schema(
+        core_schema.no_info_after_validator_function(MyEnum, core_schema.str_schema()),
+        core_schema.is_instance_schema(MyEnum),
+    )
+    v = core_schema.json_schema(enum_schema)
+    v = SchemaValidator(v)
+    assert v.validate_python('"a"') == MyEnum.a
+    assert v.validate_python('"b"') == MyEnum.b
+    with pytest.raises(ValidationError):
+        v.validate_python('"c"')
 
 
 def test_any_schema_no_schema():

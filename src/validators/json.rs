@@ -5,7 +5,7 @@ use pyo3::types::PyDict;
 use jiter::JsonValue;
 
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
-use crate::input::{EitherBytes, Input, ValidationMatch};
+use crate::input::{EitherBytes, Input, InputType, ValidationMatch};
 use crate::tools::SchemaDict;
 
 use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
@@ -58,7 +58,10 @@ impl Validator for JsonValidator {
         match self.validator {
             Some(ref validator) => {
                 let json_value = JsonValue::parse(json_bytes, true).map_err(|e| map_json_err(input, e, json_bytes))?;
-                validator.validate(py, &json_value, state)
+                let mut json_state = state.rebind_extra(|e| {
+                    e.input_type = InputType::Json;
+                });
+                validator.validate(py, &json_value, &mut json_state)
             }
             None => {
                 let obj =
