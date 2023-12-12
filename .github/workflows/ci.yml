@@ -632,7 +632,7 @@ jobs:
           name: pypi_files_pgo
           path: dist
 
-      - uses: uraimo/run-on-arch-action@v2.5.1
+      - uses: uraimo/run-on-arch-action@v2.6.0
         name: install & test
         with:
           arch: ${{ matrix.target }}
