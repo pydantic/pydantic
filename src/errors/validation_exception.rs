@@ -341,6 +341,20 @@ impl ValidationError {
     fn __str__(&self, py: Python) -> String {
         self.__repr__(py)
     }
+
+    fn __reduce__(slf: &PyCell<Self>) -> PyResult<(&PyAny, PyObject)> {
+        let py = slf.py();
+        let callable = slf.getattr("from_exception_data")?;
+        let borrow = slf.try_borrow()?;
+        let args = (
+            borrow.title.as_ref(py),
+            borrow.errors(py, include_url_env(py), true, true)?,
+            borrow.input_type.into_py(py),
+            borrow.hide_input,
+        )
+            .into_py(slf.py());
+        Ok((callable, args))
+    }
 }
 
 // TODO: is_utf8_char_boundary, floor_char_boundary and ceil_char_boundary
