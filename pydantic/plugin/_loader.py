@@ -1,16 +1,8 @@
 from __future__ import annotations
 
-import sys
+import importlib.metadata as importlib_metadata
 import warnings
-from typing import TYPE_CHECKING, Iterable
-
-from typing_extensions import Final
-
-if sys.version_info >= (3, 8):
-    import importlib.metadata as importlib_metadata
-else:
-    import importlib_metadata
-
+from typing import TYPE_CHECKING, Final, Iterable
 
 if TYPE_CHECKING:
     from . import PydanticPluginProtocol

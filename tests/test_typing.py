@@ -27,13 +27,7 @@ try:
 except ImportError:
     typing_extensions_TypedDict = None
 
-
-try:
-    from mypy_extensions import TypedDict as mypy_extensions_TypedDict
-except ImportError:
-    mypy_extensions_TypedDict = None
-
-ALL_TYPEDDICT_KINDS = (typing_TypedDict, typing_extensions_TypedDict, mypy_extensions_TypedDict)
+ALL_TYPEDDICT_KINDS = (typing_TypedDict, typing_extensions_TypedDict)
 
 
 def test_is_namedtuple():
