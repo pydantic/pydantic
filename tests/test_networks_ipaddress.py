@@ -1,4 +1,5 @@
 import json
+import sys
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Interface, IPv6Network
 from typing import Any, List
 
@@ -498,6 +499,9 @@ def test_ip_v6_interface_fails(value):
     }
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason='IPv6Address with scope identifier is not supported in python < 3.9'
+)
 @pytest.mark.parametrize(
     'ip_address,exploded_ip_address',
     [
