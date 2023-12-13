@@ -6,7 +6,7 @@ from dataclasses import is_dataclass
 from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, cast, overload
 
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
-from typing_extensions import Literal, is_typeddict
+from typing_extensions import Literal, get_args, is_typeddict
 
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel
@@ -98,6 +98,15 @@ def _getattr_no_parents(obj: Any, attribute: str) -> Any:
         raise AttributeError(attribute)
 
 
+def _type_has_config(type_: Any) -> bool:
+    """Returns whether the type has config."""
+    try:
+        return issubclass(type_, BaseModel) or is_dataclass(type_) or is_typeddict(type_)
+    except TypeError:
+        # type is not a class
+        return False
+
+
 class TypeAdapter(Generic[T]):
     """Type adapters provide a flexible way to perform validation and serialization based on a Python type.
 
@@ -168,13 +177,9 @@ class TypeAdapter(Generic[T]):
         Returns:
             A type adapter configured for the specified `type`.
         """
-        config_wrapper = _config.ConfigWrapper(config)
-
-        try:
-            type_has_config = issubclass(type, BaseModel) or is_dataclass(type) or is_typeddict(type)
-        except TypeError:
-            # type is not a class
-            type_has_config = False
+        type_is_annotated: bool = _typing_extra.is_annotated(type)
+        annotated_type: Any = get_args(type)[0] if type_is_annotated else None
+        type_has_config: bool = _type_has_config(annotated_type if type_is_annotated else type)
 
         if type_has_config and config is not None:
             raise PydanticUserError(
@@ -184,6 +189,16 @@ class TypeAdapter(Generic[T]):
                 ' TypeAdapter becomes meaningless, which is probably not what you want.',
                 code='type-adapter-config-unused',
             )
+
+        # If `type` is annotated, attempt to use the config from the annotated type.
+        # The checks below for '__pydantic_core_schema__', '__pydantic_validator__', and '__pydantic_serializer__'
+        # don't work for annotated types, so we need to use the config from the annotated type
+        # in the calls to _get_schema, create_schema_validator, and SchemaSerializer
+        # to make ensure that the schema, validatior, and serializer respect the annotated type's config.
+        if config is None and type_is_annotated:
+            config = getattr(annotated_type, 'model_config', getattr(annotated_type, '__pydantic_config__', None))
+
+        config_wrapper = _config.ConfigWrapper(config)
 
         core_schema: CoreSchema
         try:
