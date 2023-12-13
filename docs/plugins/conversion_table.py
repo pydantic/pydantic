@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
-from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
+from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Interface, IPv6Network
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Pattern, Sequence, Type
 from uuid import UUID
@@ -16,6 +16,7 @@ from pydantic_core import CoreSchema, core_schema
 from typing_extensions import TypedDict
 
 from pydantic import ByteSize, InstanceOf
+from pydantic.networks import IPv6Address
 
 
 @dataclass

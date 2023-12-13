@@ -5,7 +5,7 @@ from dataclasses import dataclass as vanilla_dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
-from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
+from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Interface, IPv6Network
 from pathlib import Path
 from typing import Any, Generator, List, Optional, Pattern, Union
 from uuid import UUID
@@ -32,6 +32,7 @@ from pydantic.functional_serializers import (
     field_serializer,
 )
 from pydantic.json_schema import JsonSchemaValue
+from pydantic.networks import IPv6Address
 from pydantic.type_adapter import TypeAdapter
 from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr, condecimal
 

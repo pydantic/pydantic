@@ -1,11 +1,12 @@
 import json
-from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
+from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Interface, IPv6Network
 from typing import Any, List
 
 import pytest
 
 from pydantic import BaseModel, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, ValidationError
 from pydantic.config import ConfigDict
+from pydantic.networks import IPv6Address
 
 
 @pytest.mark.parametrize(
@@ -495,3 +496,15 @@ def test_ip_v6_interface_fails(value):
         'msg': 'Input is not a valid IPv6 interface',
         'input': value,
     }
+
+
+@pytest.mark.parametrize(
+    'ip_address,exploded_ip_address',
+    [
+        ('::1:0:1%test', '0000:0000:0000:0000:0000:0001:0000:0001%test'),
+        ('::1:0:1', '0000:0000:0000:0000:0000:0001:0000:0001'),
+        ('1111:2222:3333:4444:5555:6666:7777:8888%test', '1111:2222:3333:4444:5555:6666:7777:8888%test'),
+    ],
+)
+def test_ipv6_explode(ip_address, exploded_ip_address):
+    assert IPv6Address(ip_address).exploded == exploded_ip_address

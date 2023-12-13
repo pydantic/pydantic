@@ -13,7 +13,7 @@ import os
 import typing
 from enum import Enum
 from functools import partial
-from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
+from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Interface, IPv6Network
 from typing import Any, Callable, Iterable, TypeVar
 
 import typing_extensions
@@ -29,6 +29,7 @@ from typing_extensions import get_args, get_origin
 
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.fields import FieldInfo
+from pydantic.networks import IPv6Address
 from pydantic.types import Strict
 
 from ..config import ConfigDict

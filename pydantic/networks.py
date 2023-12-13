@@ -4,7 +4,17 @@ from __future__ import annotations as _annotations
 import dataclasses as _dataclasses
 import re
 from importlib.metadata import version
-from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
+from ipaddress import (
+    AddressValueError,
+    IPv4Address,
+    IPv4Interface,
+    IPv4Network,
+    IPv6Interface,
+    IPv6Network,
+)
+from ipaddress import (
+    IPv6Address as _IPv6Address,
+)
 from typing import TYPE_CHECKING, Any
 
 from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
@@ -33,6 +43,7 @@ __all__ = [
     'EmailStr',
     'NameEmail',
     'IPvAnyAddress',
+    'IPv6Address',
     'IPvAnyInterface',
     'IPvAnyNetwork',
     'PostgresDsn',
@@ -497,6 +508,47 @@ class NameEmail(_repr.Representation):
 
     def __str__(self) -> str:
         return f'{self.name} <{self.email}>'
+
+
+class IPv6Address(_IPv6Address):
+    """A short term solution for a bug in the `ipaddress.IPv6Address`.
+    When exploding  an IPV6 address with a scope id i.e. '::1:0:1%eth0' an exception is thrown.
+    Once the bug is fixed in the stdlib `ipaddress` modules, this class should be removed.
+    """
+
+    def __init__(self, value):
+        try:
+            super().__init__(value)
+        except ValueError:
+            raise PydanticCustomError('ip_v6_address', 'Input is not a valid IPv6 address')
+
+    @property
+    def exploded(self):
+        """Return the longhand version of the IP address as a string."""
+        ip_str, scope_id = self._split_scope_id(str(self))
+        if not scope_id:
+            return super().exploded
+        return f'{_IPv6Address(ip_str).exploded}%{scope_id}'
+
+    @staticmethod
+    def _split_scope_id(ip_str):
+        """Helper function to parse IPv6 string address with scope id.
+
+        See RFC 4007 for details.
+
+        Args:
+            ip_str: A string, the IPv6 address.
+
+        Returns:
+            (addr, scope_id) tuple.
+
+        """
+        addr, sep, scope_id = ip_str.partition('%')
+        if not sep:
+            scope_id = None
+        elif not scope_id or '%' in scope_id:
+            raise AddressValueError(f'Invalid IPv6 address: "{ip_str}"')
+        return addr, scope_id
 
 
 class IPvAnyAddress:
