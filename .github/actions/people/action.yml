@@ -23,5 +23,3 @@ jobs:
 
       - name:
       - run: python .github/actions/people/people.py
-        env:
-            INPUT_TOKEN: ${{ inputs.token }}
