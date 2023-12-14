@@ -1,5 +1,4 @@
 name: Pydantic People Update
-description: Generate the data for the Pydantic People page
 
 # on:
 #   schedule:
