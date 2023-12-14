@@ -3,6 +3,12 @@
 Pydantic has an amazing community of contributors, reviewers, and experts that help propel the project forward.
 Here, we celebrate those people and their contributions.
 
+## Maintainers
+
+These are the current maintainers of the Pydantic repo. Feel free to tag us if you have questions, review requests, or feature requests for which you'd like feedback!
+
+{{ maintainers }}
+
 ## Experts
 
 These are the users that have helped others the most with questions in GitHub through *all time*.
@@ -26,12 +32,6 @@ These are the users that have created the most pull requests that have been *mer
 These are the users that have reviewed the most Pull Requests from others, assisting with code quality, documentation, bug fixes, feature requests, etc.
 
 {{ top_reviewers }}
-
-## Maintainers
-
-These are the current maintainers of the Pydantic repo. Feel free to tag us if you have questions, review requests, or feature requests for which you'd like feedback!
-
-{{ maintainers }}
 
 ## About the data
 
