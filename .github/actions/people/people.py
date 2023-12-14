@@ -608,6 +608,7 @@ if __name__ == "__main__":
     logging.info("Pushing branch")
     subprocess.run(["git", "push", "origin", branch_name], check=True)
     logging.info("Creating PR")
-    pr = repo.create_pull(title=message, body=message, base="master", head=branch_name)
+    # will change to main in a sec, just testing now
+    pr = repo.create_pull(title=message, body=message, base="pydantic-people-v2", head=branch_name)
     logging.info(f"Created PR: {pr.number}")
     logging.info("Finished")
