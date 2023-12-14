@@ -14,7 +14,7 @@ runs:
         python-version: '3.11'
 
     - name: install deps
-      run: pip install -U PyGithub pyyaml
+      run: pip install -U PyGithub pyyaml pydantic pydantic-settings
       shell: bash
 
     - name: update pydantic people
