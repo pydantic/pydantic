@@ -338,6 +338,8 @@ def test_ta_config_with_annotated_type() -> None:
     result = TestSerializer(some_bytes=b'\xaa')
     assert result.model_dump(mode='json') == {'some_bytes': 'qg=='}
     assert TypeAdapter(TestSerializer).dump_python(result, mode='json') == {'some_bytes': 'qg=='}
+
+    # cases where SchemaSerializer is constructed within TypeAdapter's __init__
     assert TypeAdapter(Annotated[TestSerializer, ...]).dump_python(result, mode='json') == {'some_bytes': 'qg=='}
     assert TypeAdapter(Annotated[list[TestSerializer], ...]).dump_python([result], mode='json') == [
         {'some_bytes': 'qg=='}
