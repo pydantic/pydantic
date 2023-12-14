@@ -6,20 +6,19 @@ inputs:
     description: 'User token for accessing the GitHub API. Can be passed in using {{ secrets.GITHUB_TOKEN }}'
     required: true
 
-jobs:
-  pydantic-people:
-    name: generate-pydantic-people
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+runs:
+  name: generate-pydantic-people
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
 
-      - name: set up python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+    - name: set up python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
 
-      - name: install deps
-      - run: pip install -U PyGithub "pyyaml>=5.3.1,<6.0.0"
+    - name: install deps
+    - run: pip install -U PyGithub "pyyaml>=5.3.1,<6.0.0"
 
-      - name:
-      - run: python .github/actions/people/people.py
+    - name:
+    - run: python .github/actions/people/people.py
