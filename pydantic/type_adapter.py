@@ -190,14 +190,6 @@ class TypeAdapter(Generic[T]):
                 code='type-adapter-config-unused',
             )
 
-        # If `type` is annotated, attempt to use the config from the annotated type.
-        # The checks below for '__pydantic_core_schema__', '__pydantic_validator__', and '__pydantic_serializer__'
-        # don't work for annotated types, so we need to use the config from the annotated type
-        # in the calls to _get_schema, create_schema_validator, and SchemaSerializer
-        # to make ensure that the schema, validatior, and serializer respect the annotated type's config.
-        if config is None and type_is_annotated:
-            config = getattr(annotated_type, 'model_config', getattr(annotated_type, '__pydantic_config__', None))
-
         config_wrapper = _config.ConfigWrapper(config)
 
         core_schema: CoreSchema

@@ -320,6 +320,7 @@ def test_annotated_type_disallows_config() -> None:
         TypeAdapter(Annotated[Model, ...], config=ConfigDict(strict=False))
 
 
+@pytest.mark.xfail(reason='waiting for fix in core for ser_json_bytes application')
 def test_ta_config_with_annotated_type() -> None:
     class TestValidator(BaseModel):
         x: str
@@ -338,3 +339,6 @@ def test_ta_config_with_annotated_type() -> None:
     assert result.model_dump(mode='json') == {'some_bytes': 'qg=='}
     assert TypeAdapter(TestSerializer).dump_python(result, mode='json') == {'some_bytes': 'qg=='}
     assert TypeAdapter(Annotated[TestSerializer, ...]).dump_python(result, mode='json') == {'some_bytes': 'qg=='}
+    assert TypeAdapter(Annotated[list[TestSerializer], ...]).dump_python([result], mode='json') == [
+        {'some_bytes': 'qg=='}
+    ]
