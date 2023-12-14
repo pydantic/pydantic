@@ -7,19 +7,17 @@ inputs:
     required: true
 
 runs:
-  jobs:
-    name: generate-pydantic-people
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+  using: 'composite'
+  steps:
+    - uses: actions/checkout@v4
 
-      - name: set up python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+    - name: set up python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
 
-      - name: install deps
-      - run: pip install -U PyGithub "pyyaml>=5.3.1,<6.0.0"
+    - name: install deps
+    - run: pip install -U PyGithub "pyyaml>=5.3.1,<6.0.0"
 
-      - name:
-      - run: python .github/actions/people/people.py
+    - name: update pydantic people
+    - run: python .github/actions/people/people.py
