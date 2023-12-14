@@ -21,3 +21,6 @@ runs:
 
     - name: update pydantic people
     - run: python .github/actions/people/people.py
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
