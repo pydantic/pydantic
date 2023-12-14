@@ -27,6 +27,12 @@ These are the users that have reviewed the most Pull Requests from others, assis
 
 {{ top_reviewers }}
 
+## Maintainers
+
+These are the current maintainers of the Pydantic repo. Feel free to tag us if you have questions, review requests, or feature requests for which you'd like feedback!
+
+{{ maintainers }}
+
 ## About the data
 
 The data displayed above is calculated monthly via the Github GraphQL API.

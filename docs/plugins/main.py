@@ -363,7 +363,7 @@ top_contributors_template = Template(
             </div>
             <div class="title">@{{ user.login }}</div>
         </a>
-        <div class="count">Contributions: {{ user.contributions }}</div>
+        <div class="count">Contributions: {{ user.count }}</div>
     </div>
     {% endfor %}
 </div>
@@ -381,7 +381,24 @@ top_reviewers_template = Template(
             </div>
             <div class="title">@{{ user.login }}</div>
         </a>
-        <div class="count">Reviews: {{ user.reviews }}</div>
+        <div class="count">Reviews: {{ user.count }}</div>
+    </div>
+    {% endfor %}
+</div>
+"""
+)
+
+maintainers_template = Template(
+    """
+<div class="user-list user-list-center">
+    {% for user in people.maintainers %}
+    <div class="user">
+        <a href="{{ user.url }}" target="_blank">
+            <div class="avatar-wrapper">
+                <img src="{{ user.avatarUrl }}"/>
+            </div>
+            <div class="title">@{{ user.login }}</div>
+        </a>
     </div>
     {% endfor %}
 </div>
@@ -403,6 +420,7 @@ def populate_pydantic_people(markdown: str, page: Page) -> None:
         ('most_active_users', most_active_users_template),
         ('top_contributors', top_contributors_template),
         ('top_reviewers', top_reviewers_template),
+        ('maintainers', maintainers_template),
     ]:
         rendered = template.render(people=people)
         markdown = re.sub(f'{{{{ {name} }}}}', rendered, markdown)
