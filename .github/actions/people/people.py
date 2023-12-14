@@ -286,7 +286,7 @@ class PRsResponse(BaseModel):
 
 
 class Settings(BaseSettings):
-    input_token: SecretStr = ""
+    input_token: SecretStr
     github_repository: str = "pydantic/pydantic"
     request_timeout: int = 30
 
@@ -589,24 +589,25 @@ if __name__ == "__main__":
         sys.exit(0)
     people_path.write_text(new_people_content, encoding="utf-8")
 
-    # logging.info("Setting up GitHub Actions git user")
-    # subprocess.run(["git", "config", "user.name", "github-actions"], check=True)
-    # subprocess.run(
-    #     ["git", "config", "user.email", "github-actions@github.com"], check=True
-    # )
-    # branch_name = "pydantic-people"
-    # logging.info(f"Creating a new branch {branch_name}")
-    # subprocess.run(["git", "checkout", "-b", branch_name], check=True)
-    # logging.info("Adding updated file")
-    # subprocess.run(
-    #     ["git", "add", str(people_path)], check=True
-    # )
-    # logging.info("Committing updated file")
-    # message = "👥 Update FastAPI People"
-    # result = subprocess.run(["git", "commit", "-m", message], check=True)
-    # logging.info("Pushing branch")
-    # subprocess.run(["git", "push", "origin", branch_name], check=True)
-    # logging.info("Creating PR")
-    # pr = repo.create_pull(title=message, body=message, base="master", head=branch_name)
-    # logging.info(f"Created PR: {pr.number}")
-    # logging.info("Finished")
+    logging.info("Setting up GitHub Actions git user")
+    subprocess.run(["git", "config", "user.name", "github-actions"], check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "github-actions@github.com"], check=True
+    )
+
+    branch_name = "pydantic-people-update"
+    logging.info(f"Creating a new branch {branch_name}")
+    subprocess.run(["git", "checkout", "-b", branch_name], check=True)
+    logging.info("Adding updated file")
+    subprocess.run(
+        ["git", "add", str(people_path)], check=True
+    )
+    logging.info("Committing updated file")
+    message = "👥 Update Pydantic People"
+    result = subprocess.run(["git", "commit", "-m", message], check=True)
+    logging.info("Pushing branch")
+    subprocess.run(["git", "push", "origin", branch_name], check=True)
+    logging.info("Creating PR")
+    pr = repo.create_pull(title=message, body=message, base="master", head=branch_name)
+    logging.info(f"Created PR: {pr.number}")
+    logging.info("Finished")

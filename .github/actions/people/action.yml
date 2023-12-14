@@ -3,7 +3,7 @@ description: "Generate the data for the Pydantic People page"
 
 inputs:
   token:
-    description: 'User token for accessing the GitHub API. Can be passed in using {{ secrets.PYDANTIC_PEOPLE }}'
+    description: 'User token for accessing the GitHub API. Can be passed in using {{ secrets.GITHUB_TOKEN }}'
     required: true
 
 jobs:

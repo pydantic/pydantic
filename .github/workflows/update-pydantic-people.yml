@@ -1,0 +1,16 @@
+name: Pydantic People Update
+description: Generate the data for the Pydantic People page
+
+# on:
+#   schedule:
+#     - cron: "0 12 1 * *"
+#   workflow_dispatch: {}
+on: push
+
+jobs:
+  pydantic-people:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/people
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
