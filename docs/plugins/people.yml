@@ -1,44 +1,44 @@
 maintainers:
-- login: Kludex
-  answers: 21
-  prs: 111
-  avatarUrl: https://avatars.githubusercontent.com/u/7353520?u=62adc405ef418f4b6c8caa93d3eb8ab107bc4927&v=4
-  url: https://github.com/Kludex
-- login: davidhewitt
-  answers: 1
-  prs: 34
-  avatarUrl: https://avatars.githubusercontent.com/u/1939362?u=b4b48981c3a097daaad16c4c5417aa7a3e5e32d9&v=4
-  url: https://github.com/davidhewitt
-- login: samuelcolvin
-  answers: 278
-  prs: 396
-  avatarUrl: https://avatars.githubusercontent.com/u/4039449?u=42eb3b833047c8c4b4f647a031eaef148c16d93f&v=4
-  url: https://github.com/samuelcolvin
-- login: sydney-runkle
-  answers: 27
-  prs: 74
-  avatarUrl: https://avatars.githubusercontent.com/u/54324534?u=3a4ffd00a8270b607922250d3a2d9c9af38b9cf9&v=4
-  url: https://github.com/sydney-runkle
 - login: adriangb
   answers: 41
   prs: 194
   avatarUrl: https://avatars.githubusercontent.com/u/1755071?u=612704256e38d6ac9cbed24f10e4b6ac2da74ecb&v=4
   url: https://github.com/adriangb
-- login: dmontagu
-  answers: 55
-  prs: 290
-  avatarUrl: https://avatars.githubusercontent.com/u/35119617?u=540f30c937a6450812628b9592a1dfe91bbe148e&v=4
-  url: https://github.com/dmontagu
-- login: hramezani
-  answers: 15
-  prs: 182
-  avatarUrl: https://avatars.githubusercontent.com/u/3122442?u=f387fc2dbc0c681f23e80e2ad705790fafcec9a2&v=4
-  url: https://github.com/hramezani
+- login: sydney-runkle
+  answers: 27
+  prs: 74
+  avatarUrl: https://avatars.githubusercontent.com/u/54324534?u=3a4ffd00a8270b607922250d3a2d9c9af38b9cf9&v=4
+  url: https://github.com/sydney-runkle
 - login: lig
   answers: 3
   prs: 49
   avatarUrl: https://avatars.githubusercontent.com/u/38705?v=4
   url: https://github.com/lig
+- login: Kludex
+  answers: 21
+  prs: 111
+  avatarUrl: https://avatars.githubusercontent.com/u/7353520?u=62adc405ef418f4b6c8caa93d3eb8ab107bc4927&v=4
+  url: https://github.com/Kludex
+- login: samuelcolvin
+  answers: 278
+  prs: 396
+  avatarUrl: https://avatars.githubusercontent.com/u/4039449?u=42eb3b833047c8c4b4f647a031eaef148c16d93f&v=4
+  url: https://github.com/samuelcolvin
+- login: hramezani
+  answers: 15
+  prs: 182
+  avatarUrl: https://avatars.githubusercontent.com/u/3122442?u=f387fc2dbc0c681f23e80e2ad705790fafcec9a2&v=4
+  url: https://github.com/hramezani
+- login: davidhewitt
+  answers: 1
+  prs: 34
+  avatarUrl: https://avatars.githubusercontent.com/u/1939362?u=b4b48981c3a097daaad16c4c5417aa7a3e5e32d9&v=4
+  url: https://github.com/davidhewitt
+- login: dmontagu
+  answers: 55
+  prs: 290
+  avatarUrl: https://avatars.githubusercontent.com/u/35119617?u=540f30c937a6450812628b9592a1dfe91bbe148e&v=4
+  url: https://github.com/dmontagu
 experts:
 - login: PrettyWood
   count: 142
