@@ -21,4 +21,4 @@ runs:
       run: python .github/actions/people/people.py
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ inputs.token }}
+        INPUT_TOKEN: ${{ inputs.token }}
