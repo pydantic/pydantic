@@ -71,7 +71,7 @@ A type alias for defined schema types that represents a union of
 
 JsonSchemaValue = Dict[str, Any]
 """
-A type alias for a JSON schema value. This is a dictionary of string keys to arbitrary values.
+A type alias for a JSON schema value. This is a dictionary of string keys to arbitrary JSON values.
 """
 
 JsonSchemaMode = Literal['validation', 'serialization']
@@ -88,7 +88,7 @@ _MODE_TITLE_MAPPING: dict[JsonSchemaMode, str] = {'validation': 'Input', 'serial
 
 
 def update_json_schema(schema: JsonSchemaValue, updates: dict[str, Any]) -> JsonSchemaValue:
-    """Update a JSON schema by providing a dictionary of updates.
+    """Update a JSON schema in-place by providing a dictionary of updates.
 
     This function sets the provided key-value pairs in the schema and returns the updated schema.
 
@@ -238,23 +238,16 @@ class GenerateJsonSchema:
         ignored_warning_kinds: Warnings to ignore when generating the schema. `self.render_warning_message` will
             do nothing if its argument `kind` is in `ignored_warning_kinds`;
             this value can be modified on subclasses to easily control which warnings are emitted.
-        by_alias: Whether or not to use field names when generating the schema.
+        by_alias: Whether to use field aliases when generating the schema.
         ref_template: The format string used when generating reference names.
         core_to_json_refs: A mapping of core refs to JSON refs.
         core_to_defs_refs: A mapping of core refs to definition refs.
         defs_to_core_refs: A mapping of definition refs to core refs.
         json_to_defs_refs: A mapping of JSON refs to definition refs.
         definitions: Definitions in the schema.
-        collisions: Definitions with colliding names. When collisions are detected, we choose a non-colliding
-            name during generation, but we also track the colliding tag so that it can be remapped for the first
-            occurrence at the end of the process.
-        defs_ref_fallbacks: Core refs to fallback definitions refs.
-        _schema_type_to_method: A mapping of schema types to generator methods.
-        _used: Set to `True` after generating a schema to avoid re-use issues.
-        mode: The schema mode.
 
     Args:
-        by_alias: Whether or not to include field names.
+        by_alias: Whether to use field aliases in the generated schemas.
         ref_template: The format string to use when generating reference names.
 
     Raises:
@@ -568,7 +561,7 @@ class GenerateJsonSchema:
         return {}
 
     def none_schema(self, schema: core_schema.NoneSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a None value.
+        """Generates a JSON schema that matches `None`.
 
         Args:
             schema: The core schema.
@@ -590,7 +583,7 @@ class GenerateJsonSchema:
         return {'type': 'boolean'}
 
     def int_schema(self, schema: core_schema.IntSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches an Int value.
+        """Generates a JSON schema that matches an int value.
 
         Args:
             schema: The core schema.
@@ -757,8 +750,9 @@ class GenerateJsonSchema:
             return {'enum': expected}
 
     def is_instance_schema(self, schema: core_schema.IsInstanceSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that checks if a value is an instance of a class, equivalent to Python's
-        `isinstance` method.
+        """Handles JSON schema generation for a core schema that checks if a value is an instance of a class.
+
+        Unless overridden in a subclass, this raises an error.
 
         Args:
             schema: The core schema.
@@ -769,8 +763,9 @@ class GenerateJsonSchema:
         return self.handle_invalid_for_json_schema(schema, f'core_schema.IsInstanceSchema ({schema["cls"]})')
 
     def is_subclass_schema(self, schema: core_schema.IsSubclassSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that checks if a value is a subclass of a class, equivalent to Python's `issubclass`
-        method.
+        """Handles JSON schema generation for a core schema that checks if a value is a subclass of a class.
+
+        For backwards compatibility with v1, this does not raise an error, but can be overridden to change this.
 
         Args:
             schema: The core schema.
@@ -783,6 +778,8 @@ class GenerateJsonSchema:
 
     def callable_schema(self, schema: core_schema.CallableSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a callable value.
+
+        Unless overridden in a subclass, this raises an error.
 
         Args:
             schema: The core schema.

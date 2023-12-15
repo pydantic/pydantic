@@ -61,7 +61,7 @@ def validator(
     """
     Decorate methods on the class indicating that they should be used to validate fields
     :param fields: which field(s) the method should be called on
-    :param pre: whether or not this validator should be called before the standard validators (else after)
+    :param pre: whether this validator should be called before the standard validators (else after)
     :param each_item: for complex objects (sets, lists etc.) whether to validate individual elements rather than the
       whole object
     :param always: whether this method and other validators should be called even if the value is missing
