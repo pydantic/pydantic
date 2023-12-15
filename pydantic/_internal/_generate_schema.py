@@ -267,7 +267,7 @@ def _add_custom_serialization_from_json_encoders(
     return schema
 
 
-TypesNamespace = dict[str, Any] | None
+TypesNamespace = Union[Dict[str, Any], None]
 
 
 class TypesNamespaceStack:
