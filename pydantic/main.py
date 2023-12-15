@@ -133,6 +133,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # pydantic._internal._generate_schema.GenerateSchema.model_schema to work for a plain BaseModel annotation
         model_fields = {}
         __pydantic_decorators__ = _decorators.DecoratorInfos()
+        __pydantic_parent_namespace__ = None
         # Prevent `BaseModel` from being instantiated directly:
         __pydantic_validator__ = _mock_val_ser.MockValSer(
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly',
