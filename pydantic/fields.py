@@ -250,7 +250,7 @@ class FieldInfo(_repr.Representation):
         ```
 
         We also account for the case where the annotation can be an instance of `Annotated` and where
-        one of the (not first) arguments in `Annotated` are an instance of `FieldInfo`, e.g.:
+        one of the (not first) arguments in `Annotated` is an instance of `FieldInfo`, e.g.:
 
         ```python
         import annotated_types
