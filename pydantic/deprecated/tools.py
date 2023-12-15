@@ -25,10 +25,14 @@ T = TypeVar('T')
 
 @deprecated(
     '`parse_obj_as` is deprecated. Use `pydantic.TypeAdapter.validate_python` instead.',
-    category=PydanticDeprecatedSince20,
-    stacklevel=2,
+    category=None,
 )
 def parse_obj_as(type_: type[T], obj: Any, type_name: NameFactory | None = None) -> T:
+    warnings.warn(
+        '`parse_obj_as` is deprecated. Use `pydantic.TypeAdapter.validate_python` instead.',
+        category=PydanticDeprecatedSince20,
+        stacklevel=2,
+    )
     if type_name is not None:  # pragma: no cover
         warnings.warn(
             'The type_name parameter is deprecated. parse_obj_as no longer creates temporary models',
@@ -40,8 +44,7 @@ def parse_obj_as(type_: type[T], obj: Any, type_name: NameFactory | None = None)
 
 @deprecated(
     '`schema_of` is deprecated. Use `pydantic.TypeAdapter.json_schema` instead.',
-    category=PydanticDeprecatedSince20,
-    stacklevel=2,
+    category=None,
 )
 def schema_of(
     type_: Any,
@@ -52,6 +55,11 @@ def schema_of(
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
 ) -> dict[str, Any]:
     """Generate a JSON schema (as dict) for the passed model or dynamically generated one."""
+    warnings.warn(
+        '`schema_of` is deprecated. Use `pydantic.TypeAdapter.json_schema` instead.',
+        category=PydanticDeprecatedSince20,
+        stacklevel=2,
+    )
     res = TypeAdapter(type_).json_schema(
         by_alias=by_alias,
         schema_generator=schema_generator,
@@ -72,8 +80,7 @@ def schema_of(
 
 @deprecated(
     '`schema_json_of` is deprecated. Use `pydantic.TypeAdapter.json_schema` instead.',
-    category=PydanticDeprecatedSince20,
-    stacklevel=2,
+    category=None,
 )
 def schema_json_of(
     type_: Any,
@@ -85,6 +92,11 @@ def schema_json_of(
     **dumps_kwargs: Any,
 ) -> str:
     """Generate a JSON schema (as JSON) for the passed model or dynamically generated one."""
+    warnings.warn(
+        '`schema_json_of` is deprecated. Use `pydantic.TypeAdapter.json_schema` instead.',
+        category=PydanticDeprecatedSince20,
+        stacklevel=2,
+    )
     return json.dumps(
         schema_of(type_, title=title, by_alias=by_alias, ref_template=ref_template, schema_generator=schema_generator),
         **dumps_kwargs,
