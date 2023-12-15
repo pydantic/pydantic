@@ -281,9 +281,8 @@ class TypesNamespaceStack:
         return self._types_namespace_stack[-1]
 
     @contextmanager
-    def push(self, for_type: type[Any], existing_types_namespace: TypesNamespace):
-        # Not sure whether we should really preserve/extend the existing types namespace or not
-        types_namespace = {**_typing_extra.get_cls_types_namespace(for_type), **(existing_types_namespace or {})}
+    def push(self, for_type: type[Any]):
+        types_namespace = {**_typing_extra.get_cls_types_namespace(for_type), **(self.tail or {})}
         self._types_namespace_stack.append(types_namespace)
         try:
             yield
@@ -737,8 +736,7 @@ class GenerateSchema:
         self._has_invalid_schema = False
         needs_apply_discriminated_union = self._needs_apply_discriminated_union
         self._needs_apply_discriminated_union = False
-        schema = self._generate_schema_inner(obj)
-        schema = self._post_process_generated_schema(schema)
+        schema = self._post_process_generated_schema(self._generate_schema_inner(obj))
         self._has_invalid_schema = self._has_invalid_schema or has_invalid_schema
         self._needs_apply_discriminated_union = self._needs_apply_discriminated_union or needs_apply_discriminated_union
         return schema
@@ -1142,7 +1140,7 @@ class GenerateSchema:
 
             annotation = origin.__value__
             typevars_map = get_standard_typevars_map(obj)
-            with self._types_namespace_stack.push(origin, self._types_namespace):
+            with self._types_namespace_stack.push(origin):
                 annotation = _typing_extra.eval_type_lenient(annotation, self._types_namespace, None)
                 annotation = replace_types(annotation, typevars_map)
                 schema = self.generate_schema(annotation)
@@ -1448,9 +1446,7 @@ class GenerateSchema:
                 dataclass = origin
 
             config = getattr(dataclass, '__pydantic_config__', None)
-            with self._config_wrapper_stack.push(config), self._types_namespace_stack.push(
-                dataclass, self._types_namespace
-            ):
+            with self._config_wrapper_stack.push(config), self._types_namespace_stack.push(dataclass):
                 core_config = self._config_wrapper.core_config(dataclass)
 
                 self = self._current_generate_schema
