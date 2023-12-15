@@ -4895,6 +4895,10 @@ become fields on model instances:</p>
 <span class="c1">#&gt; 1</span>
 </code></pre></div>
 <h3 id="private-model-attributes">Private model attributes<a class="headerlink" href="#private-model-attributes" title="Permanent link">&para;</a></h3>
+<details class="api">
+<summary>API Documentation</summary>
+<p><a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.PrivateAttr"><code>pydantic.fields.PrivateAttr</code></a><br></p>
+</details>
 <p>Attributes whose name has a leading underscore are not treated as fields by Pydantic, and are not included in the
 model schema. Instead, these are converted into a "private attribute" which is not validated or even set during
 calls to <code>__init__</code>, <code>model_validate</code>, etc.</p>

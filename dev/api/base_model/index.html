@@ -4853,10 +4853,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
 <span class="normal">1350</span>
 <span class="normal">1351</span>
 <span class="normal">1352</span>
-<span class="normal">1353</span>
-<span class="normal">1354</span>
-<span class="normal">1355</span>
-<span class="normal">1356</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
+<span class="normal">1353</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.6/concepts/models/</span>
 
 <span class="sd">    A base class for creating Pydantic models.</span>
@@ -5090,15 +5087,15 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
 
 <span class="sd">        Args:</span>
 <span class="sd">            mode: The mode in which `to_python` should run.</span>
-<span class="sd">                If mode is &#39;json&#39;, the dictionary will only contain JSON serializable types.</span>
-<span class="sd">                If mode is &#39;python&#39;, the dictionary may contain any Python objects.</span>
+<span class="sd">                If mode is &#39;json&#39;, the output will only contain JSON serializable types.</span>
+<span class="sd">                If mode is &#39;python&#39;, the output may contain non-JSON-serializable Python objects.</span>
 <span class="sd">            include: A list of fields to include in the output.</span>
 <span class="sd">            exclude: A list of fields to exclude from the output.</span>
 <span class="sd">            by_alias: Whether to use the field&#39;s alias in the dictionary key if defined.</span>
 <span class="sd">            exclude_unset: Whether to exclude fields that have not been explicitly set.</span>
-<span class="sd">            exclude_defaults: Whether to exclude fields that are set to their default value from the output.</span>
-<span class="sd">            exclude_none: Whether to exclude fields that have a value of `None` from the output.</span>
-<span class="sd">            round_trip: Whether to enable serialization and deserialization round-trip support.</span>
+<span class="sd">            exclude_defaults: Whether to exclude fields that are set to their default value.</span>
+<span class="sd">            exclude_none: Whether to exclude fields that have a value of `None`.</span>
+<span class="sd">            round_trip: If True, dumped values should be valid as input for non-idempotent types such as Json[T].</span>
 <span class="sd">            warnings: Whether to log warnings when invalid fields are encountered.</span>
 
 <span class="sd">        Returns:</span>
@@ -5136,14 +5133,14 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
 
 <span class="sd">        Args:</span>
 <span class="sd">            indent: Indentation to use in the JSON output. If None is passed, the output will be compact.</span>
-<span class="sd">            include: Field(s) to include in the JSON output. Can take either a string or set of strings.</span>
-<span class="sd">            exclude: Field(s) to exclude from the JSON output. Can take either a string or set of strings.</span>
+<span class="sd">            include: Field(s) to include in the JSON output.</span>
+<span class="sd">            exclude: Field(s) to exclude from the JSON output.</span>
 <span class="sd">            by_alias: Whether to serialize using field aliases.</span>
 <span class="sd">            exclude_unset: Whether to exclude fields that have not been explicitly set.</span>
-<span class="sd">            exclude_defaults: Whether to exclude fields that have the default value.</span>
+<span class="sd">            exclude_defaults: Whether to exclude fields that are set to their default value.</span>
 <span class="sd">            exclude_none: Whether to exclude fields that have a value of `None`.</span>
-<span class="sd">            round_trip: Whether to use serialization/deserialization between JSON and class instance.</span>
-<span class="sd">            warnings: Whether to show any warnings that occurred during serialization.</span>
+<span class="sd">            round_trip: If True, dumped values should be valid as input for non-idempotent types such as Json[T].</span>
+<span class="sd">            warnings: Whether to log warnings when invalid fields are encountered.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            A JSON string representation of the model.</span>
@@ -5998,13 +5995,10 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
 <span class="sd">        ```</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            include: Optional set or mapping</span>
-<span class="sd">                specifying which fields to include in the copied model.</span>
-<span class="sd">            exclude: Optional set or mapping</span>
-<span class="sd">                specifying which fields to exclude in the copied model.</span>
-<span class="sd">            update: Optional dictionary of field-value pairs to override field values</span>
-<span class="sd">                in the copied model.</span>
-<span class="sd">            deep: If True, the values of fields that are Pydantic models will be deep copied.</span>
+<span class="sd">            include: Optional set or mapping specifying which fields to include in the copied model.</span>
+<span class="sd">            exclude: Optional set or mapping specifying which fields to exclude in the copied model.</span>
+<span class="sd">            update: Optional dictionary of field-value pairs to override field values in the copied model.</span>
+<span class="sd">            deep: If True, the values of fields that are Pydantic models will be deep-copied.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            A copy of the model with included, excluded and updated fields as specified.</span>
@@ -6854,8 +6848,8 @@ before creating the new model. You should trust this data.</p>
           <td>
             <div class="doc-md-description">
               <p>The mode in which <code>to_python</code> should run.
-If mode is 'json', the dictionary will only contain JSON serializable types.
-If mode is 'python', the dictionary may contain any Python objects.</p>
+If mode is 'json', the output will only contain JSON serializable types.
+If mode is 'python', the output may contain non-JSON-serializable Python objects.</p>
             </div>
           </td>
           <td>
@@ -6925,7 +6919,7 @@ If mode is 'python', the dictionary may contain any Python objects.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to exclude fields that are set to their default value from the output.</p>
+              <p>Whether to exclude fields that are set to their default value.</p>
             </div>
           </td>
           <td>
@@ -6939,7 +6933,7 @@ If mode is 'python', the dictionary may contain any Python objects.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to exclude fields that have a value of <code>None</code> from the output.</p>
+              <p>Whether to exclude fields that have a value of <code>None</code>.</p>
             </div>
           </td>
           <td>
@@ -6953,7 +6947,7 @@ If mode is 'python', the dictionary may contain any Python objects.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to enable serialization and deserialization round-trip support.</p>
+              <p>If True, dumped values should be valid as input for non-idempotent types such as Json[T].</p>
             </div>
           </td>
           <td>
@@ -7066,15 +7060,15 @@ If mode is 'python', the dictionary may contain any Python objects.</p>
 
 <span class="sd">    Args:</span>
 <span class="sd">        mode: The mode in which `to_python` should run.</span>
-<span class="sd">            If mode is &#39;json&#39;, the dictionary will only contain JSON serializable types.</span>
-<span class="sd">            If mode is &#39;python&#39;, the dictionary may contain any Python objects.</span>
+<span class="sd">            If mode is &#39;json&#39;, the output will only contain JSON serializable types.</span>
+<span class="sd">            If mode is &#39;python&#39;, the output may contain non-JSON-serializable Python objects.</span>
 <span class="sd">        include: A list of fields to include in the output.</span>
 <span class="sd">        exclude: A list of fields to exclude from the output.</span>
 <span class="sd">        by_alias: Whether to use the field&#39;s alias in the dictionary key if defined.</span>
 <span class="sd">        exclude_unset: Whether to exclude fields that have not been explicitly set.</span>
-<span class="sd">        exclude_defaults: Whether to exclude fields that are set to their default value from the output.</span>
-<span class="sd">        exclude_none: Whether to exclude fields that have a value of `None` from the output.</span>
-<span class="sd">        round_trip: Whether to enable serialization and deserialization round-trip support.</span>
+<span class="sd">        exclude_defaults: Whether to exclude fields that are set to their default value.</span>
+<span class="sd">        exclude_none: Whether to exclude fields that have a value of `None`.</span>
+<span class="sd">        round_trip: If True, dumped values should be valid as input for non-idempotent types such as Json[T].</span>
 <span class="sd">        warnings: Whether to log warnings when invalid fields are encountered.</span>
 
 <span class="sd">    Returns:</span>
@@ -7170,7 +7164,7 @@ If mode is 'python', the dictionary may contain any Python objects.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Field(s) to include in the JSON output. Can take either a string or set of strings.</p>
+              <p>Field(s) to include in the JSON output.</p>
             </div>
           </td>
           <td>
@@ -7184,7 +7178,7 @@ If mode is 'python', the dictionary may contain any Python objects.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Field(s) to exclude from the JSON output. Can take either a string or set of strings.</p>
+              <p>Field(s) to exclude from the JSON output.</p>
             </div>
           </td>
           <td>
@@ -7226,7 +7220,7 @@ If mode is 'python', the dictionary may contain any Python objects.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to exclude fields that have the default value.</p>
+              <p>Whether to exclude fields that are set to their default value.</p>
             </div>
           </td>
           <td>
@@ -7254,7 +7248,7 @@ If mode is 'python', the dictionary may contain any Python objects.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to use serialization/deserialization between JSON and class instance.</p>
+              <p>If True, dumped values should be valid as input for non-idempotent types such as Json[T].</p>
             </div>
           </td>
           <td>
@@ -7268,7 +7262,7 @@ If mode is 'python', the dictionary may contain any Python objects.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to show any warnings that occurred during serialization.</p>
+              <p>Whether to log warnings when invalid fields are encountered.</p>
             </div>
           </td>
           <td>
@@ -7365,14 +7359,14 @@ If mode is 'python', the dictionary may contain any Python objects.</p>
 
 <span class="sd">    Args:</span>
 <span class="sd">        indent: Indentation to use in the JSON output. If None is passed, the output will be compact.</span>
-<span class="sd">        include: Field(s) to include in the JSON output. Can take either a string or set of strings.</span>
-<span class="sd">        exclude: Field(s) to exclude from the JSON output. Can take either a string or set of strings.</span>
+<span class="sd">        include: Field(s) to include in the JSON output.</span>
+<span class="sd">        exclude: Field(s) to exclude from the JSON output.</span>
 <span class="sd">        by_alias: Whether to serialize using field aliases.</span>
 <span class="sd">        exclude_unset: Whether to exclude fields that have not been explicitly set.</span>
-<span class="sd">        exclude_defaults: Whether to exclude fields that have the default value.</span>
+<span class="sd">        exclude_defaults: Whether to exclude fields that are set to their default value.</span>
 <span class="sd">        exclude_none: Whether to exclude fields that have a value of `None`.</span>
-<span class="sd">        round_trip: Whether to use serialization/deserialization between JSON and class instance.</span>
-<span class="sd">        warnings: Whether to show any warnings that occurred during serialization.</span>
+<span class="sd">        round_trip: If True, dumped values should be valid as input for non-idempotent types such as Json[T].</span>
+<span class="sd">        warnings: Whether to log warnings when invalid fields are encountered.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        A JSON string representation of the model.</span>
@@ -8507,8 +8501,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Optional set or mapping
-specifying which fields to include in the copied model.</p>
+              <p>Optional set or mapping specifying which fields to include in the copied model.</p>
             </div>
           </td>
           <td>
@@ -8522,8 +8515,7 @@ specifying which fields to include in the copied model.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Optional set or mapping
-specifying which fields to exclude in the copied model.</p>
+              <p>Optional set or mapping specifying which fields to exclude in the copied model.</p>
             </div>
           </td>
           <td>
@@ -8537,8 +8529,7 @@ specifying which fields to exclude in the copied model.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Optional dictionary of field-value pairs to override field values
-in the copied model.</p>
+              <p>Optional dictionary of field-value pairs to override field values in the copied model.</p>
             </div>
           </td>
           <td>
@@ -8552,7 +8543,7 @@ in the copied model.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>If True, the values of fields that are Pydantic models will be deep copied.</p>
+              <p>If True, the values of fields that are Pydantic models will be deep-copied.</p>
             </div>
           </td>
           <td>
@@ -8660,10 +8651,7 @@ in the copied model.</p>
 <span class="normal">1247</span>
 <span class="normal">1248</span>
 <span class="normal">1249</span>
-<span class="normal">1250</span>
-<span class="normal">1251</span>
-<span class="normal">1252</span>
-<span class="normal">1253</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@typing_extensions</span><span class="o">.</span><span class="n">deprecated</span><span class="p">(</span>
+<span class="normal">1250</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@typing_extensions</span><span class="o">.</span><span class="n">deprecated</span><span class="p">(</span>
     <span class="s1">&#39;The copy method is deprecated; use `model_copy` instead.&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="n">PydanticDeprecatedSince20</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span>
@@ -8688,13 +8676,10 @@ in the copied model.</p>
 <span class="sd">    ```</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        include: Optional set or mapping</span>
-<span class="sd">            specifying which fields to include in the copied model.</span>
-<span class="sd">        exclude: Optional set or mapping</span>
-<span class="sd">            specifying which fields to exclude in the copied model.</span>
-<span class="sd">        update: Optional dictionary of field-value pairs to override field values</span>
-<span class="sd">            in the copied model.</span>
-<span class="sd">        deep: If True, the values of fields that are Pydantic models will be deep copied.</span>
+<span class="sd">        include: Optional set or mapping specifying which fields to include in the copied model.</span>
+<span class="sd">        exclude: Optional set or mapping specifying which fields to exclude in the copied model.</span>
+<span class="sd">        update: Optional dictionary of field-value pairs to override field values in the copied model.</span>
+<span class="sd">        deep: If True, the values of fields that are Pydantic models will be deep-copied.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        A copy of the model with included, excluded and updated fields as specified.</span>
@@ -8846,7 +8831,7 @@ subclass of <a class="autorefs autorefs-internal" href="#pydantic.BaseModel"><co
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The base class for the new model.</p>
+              <p>The base class or classes for the new model.</p>
             </div>
           </td>
           <td>
@@ -8860,8 +8845,8 @@ subclass of <a class="autorefs autorefs-internal" href="#pydantic.BaseModel"><co
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The name of the module that the model belongs to,
-if <code>None</code> the value is taken from <code>sys._getframe(1)</code></p>
+              <p>The name of the module that the model belongs to;
+if <code>None</code>, the value is taken from <code>sys._getframe(1)</code></p>
             </div>
           </td>
           <td>
@@ -8978,7 +8963,10 @@ if <code>None</code> the value is taken from <code>sys._getframe(1)</code></p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/main.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1389</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1386</span>
+<span class="normal">1387</span>
+<span class="normal">1388</span>
+<span class="normal">1389</span>
 <span class="normal">1390</span>
 <span class="normal">1391</span>
 <span class="normal">1392</span>
@@ -9073,10 +9061,7 @@ if <code>None</code> the value is taken from <code>sys._getframe(1)</code></p>
 <span class="normal">1481</span>
 <span class="normal">1482</span>
 <span class="normal">1483</span>
-<span class="normal">1484</span>
-<span class="normal">1485</span>
-<span class="normal">1486</span>
-<span class="normal">1487</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+<span class="normal">1484</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">__model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">__config__</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -9095,9 +9080,9 @@ if <code>None</code> the value is taken from <code>sys._getframe(1)</code></p>
 <span class="sd">        __model_name: The name of the newly created model.</span>
 <span class="sd">        __config__: The configuration of the new model.</span>
 <span class="sd">        __doc__: The docstring of the new model.</span>
-<span class="sd">        __base__: The base class for the new model.</span>
-<span class="sd">        __module__: The name of the module that the model belongs to,</span>
-<span class="sd">            if `None` the value is taken from `sys._getframe(1)`</span>
+<span class="sd">        __base__: The base class or classes for the new model.</span>
+<span class="sd">        __module__: The name of the module that the model belongs to;</span>
+<span class="sd">            if `None`, the value is taken from `sys._getframe(1)`</span>
 <span class="sd">        __validators__: A dictionary of methods that validate fields.</span>
 <span class="sd">        __cls_kwargs__: A dictionary of keyword arguments for class creation.</span>
 <span class="sd">        __slots__: Deprecated. Should not be passed to `create_model`.</span>

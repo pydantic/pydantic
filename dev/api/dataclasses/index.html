@@ -3107,7 +3107,7 @@ own  <code>__init__</code> function.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>A boolean indicating whether or not to include the field in the <code>__repr__</code> output.</p>
+              <p>A boolean indicating whether to include the field in the <code>__repr__</code> output.</p>
             </div>
           </td>
           <td>
@@ -3121,7 +3121,7 @@ own  <code>__init__</code> function.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Determines if a <code>__eq__</code> should be generated for the class.</p>
+              <p>Determines if a <code>__eq__</code> method should be generated for the class.</p>
             </div>
           </td>
           <td>
@@ -3149,7 +3149,7 @@ own  <code>__init__</code> function.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Determines if an unsafe hashing function should be included in the class.</p>
+              <p>Determines if a <code>__hash__</code> method should be included in the class, as in <code>dataclasses.dataclass</code>.</p>
             </div>
           </td>
           <td>
@@ -3164,7 +3164,7 @@ own  <code>__init__</code> function.</p>
           <td>
             <div class="doc-md-description">
               <p>Determines if the generated class should be a 'frozen' <code>dataclass</code>, which does not allow its
-attributes to be modified from its constructor.</p>
+attributes to be modified after it has been initialized.</p>
             </div>
           </td>
           <td>
@@ -3178,7 +3178,7 @@ attributes to be modified from its constructor.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>A configuration for the <code>dataclass</code> generation.</p>
+              <p>The Pydantic config to use for the <code>dataclass</code>.</p>
             </div>
           </td>
           <td>
@@ -3449,13 +3449,13 @@ new attributes after instantiation.</p>
 <span class="sd">        init: Included for signature compatibility with `dataclasses.dataclass`, and is passed through to</span>
 <span class="sd">            `dataclasses.dataclass` when appropriate. If specified, must be set to `False`, as pydantic inserts its</span>
 <span class="sd">            own  `__init__` function.</span>
-<span class="sd">        repr: A boolean indicating whether or not to include the field in the `__repr__` output.</span>
-<span class="sd">        eq: Determines if a `__eq__` should be generated for the class.</span>
+<span class="sd">        repr: A boolean indicating whether to include the field in the `__repr__` output.</span>
+<span class="sd">        eq: Determines if a `__eq__` method should be generated for the class.</span>
 <span class="sd">        order: Determines if comparison magic methods should be generated, such as `__lt__`, but not `__eq__`.</span>
-<span class="sd">        unsafe_hash: Determines if an unsafe hashing function should be included in the class.</span>
+<span class="sd">        unsafe_hash: Determines if a `__hash__` method should be included in the class, as in `dataclasses.dataclass`.</span>
 <span class="sd">        frozen: Determines if the generated class should be a &#39;frozen&#39; `dataclass`, which does not allow its</span>
-<span class="sd">            attributes to be modified from its constructor.</span>
-<span class="sd">        config: A configuration for the `dataclass` generation.</span>
+<span class="sd">            attributes to be modified after it has been initialized.</span>
+<span class="sd">        config: The Pydantic config to use for the `dataclass`.</span>
 <span class="sd">        validate_on_init: A deprecated parameter included for backwards compatibility; in V2, all Pydantic dataclasses</span>
 <span class="sd">            are validated on init.</span>
 <span class="sd">        kw_only: Determines if `__init__` method parameters must be specified by keyword only. Defaults to `False`.</span>
@@ -3617,7 +3617,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The class to build the dataclass core schema for.</p>
+              <p>The class to rebuild the pydantic-core schema for.</p>
             </div>
           </td>
           <td>
@@ -3631,7 +3631,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to force the rebuilding of the model schema, defaults to <code>False</code>.</p>
+              <p>Whether to force the rebuilding of the schema, defaults to <code>False</code>.</p>
             </div>
           </td>
           <td>
@@ -3781,8 +3781,8 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <span class="sd">    This is analogous to `BaseModel.model_rebuild`.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        cls: The class to build the dataclass core schema for.</span>
-<span class="sd">        force: Whether to force the rebuilding of the model schema, defaults to `False`.</span>
+<span class="sd">        cls: The class to rebuild the pydantic-core schema for.</span>
+<span class="sd">        force: Whether to force the rebuilding of the schema, defaults to `False`.</span>
 <span class="sd">        raise_errors: Whether to raise errors, defaults to `True`.</span>
 <span class="sd">        _parent_namespace_depth: The depth level of the parent namespace, defaults to 2.</span>
 <span class="sd">        _types_namespace: The types namespace, defaults to `None`.</span>

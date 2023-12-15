@@ -3417,7 +3417,8 @@ apply only to number fields (<code>int</code>, <code>float</code>, <code>Decimal
           </td>
           <td>
             <div class="doc-md-description">
-              <p>An alternative name for the attribute.</p>
+              <p>The name to use for the attribute when validating or serializing by alias.
+This is often used for things like converting between snake and camel case.</p>
             </div>
           </td>
           <td>
@@ -3445,8 +3446,7 @@ apply only to number fields (<code>int</code>, <code>float</code>, <code>Decimal
           </td>
           <td>
             <div class="doc-md-description">
-              <p>'Whitelist' validation step. The field will be the single one allowed by the alias or set of
-aliases defined.</p>
+              <p>Like <code>alias</code>, but only affects validation, not serialization.</p>
             </div>
           </td>
           <td>
@@ -3460,8 +3460,7 @@ aliases defined.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>'Blacklist' validation step. The vanilla field will be the single one of the alias' or set
-of aliases' fields and all the other fields will be ignored at serialization time.</p>
+              <p>Like <code>alias</code>, but only affects serialization, not validation.</p>
             </div>
           </td>
           <td>
@@ -3559,7 +3558,7 @@ of aliases' fields and all the other fields will be ignored at serialization tim
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether the field is frozen.</p>
+              <p>Whether the field is frozen. If true, attempts to change the value on an instance will raise an error.</p>
             </div>
           </td>
           <td>
@@ -3573,7 +3572,8 @@ of aliases' fields and all the other fields will be ignored at serialization tim
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Run validation that isn't only checking existence of defaults. This can be set to <code>True</code> or <code>False</code>. If not set, it defaults to <code>None</code>.</p>
+              <p>If <code>True</code>, apply validation to the default value every time you create an instance.
+Otherwise, for performance reasons, the default value of the field is trusted and not validated.</p>
             </div>
           </td>
           <td>
@@ -3601,7 +3601,8 @@ of aliases' fields and all the other fields will be ignored at serialization tim
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether the field should be included in the constructor of the dataclass.</p>
+              <p>Whether the field should be included in the constructor of the dataclass.
+(Only applies to dataclasses.)</p>
             </div>
           </td>
           <td>
@@ -3615,7 +3616,8 @@ of aliases' fields and all the other fields will be ignored at serialization tim
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether the field should be a keyword-only argument in the constructor of the dataclass.</p>
+              <p>Whether the field should be a keyword-only argument in the constructor of the dataclass.
+(Only applies to dataclasses.)</p>
             </div>
           </td>
           <td>
@@ -3742,7 +3744,7 @@ See <a href="../../concepts/strict_mode/">Strict Mode</a> for details.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Pattern for strings.</p>
+              <p>Pattern for strings (a regular expression).</p>
             </div>
           </td>
           <td>
@@ -3813,7 +3815,7 @@ See <a href="../standard_library_types/#union-mode">Union Mode</a> for details.<
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Include extra fields used by the JSON schema.</p>
+              <p>(Deprecated) Extra fields that will be included in the JSON schema.</p>
 <div class="admonition warning deprecated">
 <p class="admonition-title">Warning</p>
 <p>The <code>extra</code> kwargs is deprecated. Use <code>json_schema_extra</code> instead.</p>
@@ -3844,8 +3846,8 @@ See <a href="../standard_library_types/#union-mode">Union Mode</a> for details.<
           </td>
           <td>
             <div class="doc-md-description">
-              <p>A new <a class="autorefs autorefs-internal" href="#pydantic.fields.FieldInfo"><code>FieldInfo</code></a>, the return annotation is <code>Any</code> so <code>Field</code> can be used on
-type annotated fields without causing a typing error.</p>
+              <p>A new <a class="autorefs autorefs-internal" href="#pydantic.fields.FieldInfo"><code>FieldInfo</code></a>. The return annotation is <code>Any</code> so <code>Field</code> can be used on
+type-annotated fields without causing a type error.</p>
             </div>
           </td>
         </tr>
@@ -4037,7 +4039,9 @@ type annotated fields without causing a typing error.</p>
 <span class="normal">789</span>
 <span class="normal">790</span>
 <span class="normal">791</span>
-<span class="normal">792</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">Field</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+<span class="normal">792</span>
+<span class="normal">793</span>
+<span class="normal">794</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">Field</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">default_factory</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">_Unset</span><span class="p">,</span>
@@ -4084,23 +4088,25 @@ type annotated fields without causing a typing error.</p>
 <span class="sd">    Args:</span>
 <span class="sd">        default: Default value if the field is not set.</span>
 <span class="sd">        default_factory: A callable to generate the default value, such as :func:`~datetime.utcnow`.</span>
-<span class="sd">        alias: An alternative name for the attribute.</span>
+<span class="sd">        alias: The name to use for the attribute when validating or serializing by alias.</span>
+<span class="sd">            This is often used for things like converting between snake and camel case.</span>
 <span class="sd">        alias_priority: Priority of the alias. This affects whether an alias generator is used.</span>
-<span class="sd">        validation_alias: &#39;Whitelist&#39; validation step. The field will be the single one allowed by the alias or set of</span>
-<span class="sd">            aliases defined.</span>
-<span class="sd">        serialization_alias: &#39;Blacklist&#39; validation step. The vanilla field will be the single one of the alias&#39; or set</span>
-<span class="sd">            of aliases&#39; fields and all the other fields will be ignored at serialization time.</span>
+<span class="sd">        validation_alias: Like `alias`, but only affects validation, not serialization.</span>
+<span class="sd">        serialization_alias: Like `alias`, but only affects serialization, not validation.</span>
 <span class="sd">        title: Human-readable title.</span>
 <span class="sd">        description: Human-readable description.</span>
 <span class="sd">        examples: Example values for this field.</span>
 <span class="sd">        exclude: Whether to exclude the field from the model serialization.</span>
 <span class="sd">        discriminator: Field name or Discriminator for discriminating the type in a tagged union.</span>
 <span class="sd">        json_schema_extra: A dict or callable to provide extra JSON schema properties.</span>
-<span class="sd">        frozen: Whether the field is frozen.</span>
-<span class="sd">        validate_default: Run validation that isn&#39;t only checking existence of defaults. This can be set to `True` or `False`. If not set, it defaults to `None`.</span>
+<span class="sd">        frozen: Whether the field is frozen. If true, attempts to change the value on an instance will raise an error.</span>
+<span class="sd">        validate_default: If `True`, apply validation to the default value every time you create an instance.</span>
+<span class="sd">            Otherwise, for performance reasons, the default value of the field is trusted and not validated.</span>
 <span class="sd">        repr: A boolean indicating whether to include the field in the `__repr__` output.</span>
 <span class="sd">        init_var: Whether the field should be included in the constructor of the dataclass.</span>
+<span class="sd">            (Only applies to dataclasses.)</span>
 <span class="sd">        kw_only: Whether the field should be a keyword-only argument in the constructor of the dataclass.</span>
+<span class="sd">            (Only applies to dataclasses.)</span>
 <span class="sd">        strict: If `True`, strict validation is applied to the field.</span>
 <span class="sd">            See [Strict Mode](../concepts/strict_mode.md) for details.</span>
 <span class="sd">        gt: Greater than. If set, value must be greater than this. Only applicable to numbers.</span>
@@ -4110,20 +4116,20 @@ type annotated fields without causing a typing error.</p>
 <span class="sd">        multiple_of: Value must be a multiple of this. Only applicable to numbers.</span>
 <span class="sd">        min_length: Minimum length for strings.</span>
 <span class="sd">        max_length: Maximum length for strings.</span>
-<span class="sd">        pattern: Pattern for strings.</span>
+<span class="sd">        pattern: Pattern for strings (a regular expression).</span>
 <span class="sd">        allow_inf_nan: Allow `inf`, `-inf`, `nan`. Only applicable to numbers.</span>
 <span class="sd">        max_digits: Maximum number of allow digits for strings.</span>
 <span class="sd">        decimal_places: Maximum number of decimal places allowed for numbers.</span>
 <span class="sd">        union_mode: The strategy to apply when validating a union. Can be `smart` (the default), or `left_to_right`.</span>
 <span class="sd">            See [Union Mode](standard_library_types.md#union-mode) for details.</span>
-<span class="sd">        extra: Include extra fields used by the JSON schema.</span>
+<span class="sd">        extra: (Deprecated) Extra fields that will be included in the JSON schema.</span>
 
 <span class="sd">            !!! warning Deprecated</span>
 <span class="sd">                The `extra` kwargs is deprecated. Use `json_schema_extra` instead.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        A new [`FieldInfo`][pydantic.fields.FieldInfo], the return annotation is `Any` so `Field` can be used on</span>
-<span class="sd">            type annotated fields without causing a typing error.</span>
+<span class="sd">        A new [`FieldInfo`][pydantic.fields.FieldInfo]. The return annotation is `Any` so `Field` can be used on</span>
+<span class="sd">            type-annotated fields without causing a type error.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Check deprecated and removed params from V1. This logic should eventually be removed.</span>
     <span class="n">const</span> <span class="o">=</span> <span class="n">extra</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;const&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
@@ -4333,7 +4339,7 @@ function is explicitly used.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The validation alias name of the field.</p>
+              <p>The validation alias of the field.</p>
             </div>
           </td>
         </tr>
@@ -4344,7 +4350,7 @@ function is explicitly used.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The serialization alias name of the field.</p>
+              <p>The serialization alias of the field.</p>
             </div>
           </td>
         </tr>
@@ -4789,6 +4795,23 @@ function is explicitly used.</p>
   <div class="doc doc-contents ">
   
       <p>Creates a <code>FieldInfo</code> instance from a bare annotation.</p>
+<p>This function is used internally to create a <code>FieldInfo</code> from a bare annotation like this:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">pydantic</span>
+
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">pydantic</span><span class="o">.</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="nb">int</span>  <span class="c1"># &lt;-- like this</span>
+</code></pre></div>
+<p>We also account for the case where the annotation can be an instance of <code>Annotated</code> and where
+one of the (not first) arguments in <code>Annotated</code> is an instance of <code>FieldInfo</code>, e.g.:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">annotated_types</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">import</span> <span class="nn">pydantic</span>
+
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">pydantic</span><span class="o">.</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">annotated_types</span><span class="o">.</span><span class="n">Gt</span><span class="p">(</span><span class="mi">42</span><span class="p">)]</span>
+    <span class="n">bar</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">pydantic</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">42</span><span class="p">)]</span>
+</code></pre></div>
 
 
 
@@ -4844,26 +4867,6 @@ function is explicitly used.</p>
     </tbody>
   </table>
 
-<details class="example" open>
-  <summary>Example</summary>
-  <p>This is how you can create a field from a bare annotation like this:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">pydantic</span>
-
-<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">pydantic</span><span class="o">.</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">foo</span><span class="p">:</span> <span class="nb">int</span>  <span class="c1"># &lt;-- like this</span>
-</code></pre></div>
-<p>We also account for the case where the annotation can be an instance of <code>Annotated</code> and where
-one of the (not first) arguments in <code>Annotated</code> are an instance of <code>FieldInfo</code>, e.g.:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">annotated_types</span>
-<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
-
-<span class="kn">import</span> <span class="nn">pydantic</span>
-
-<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">pydantic</span><span class="o">.</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">foo</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">annotated_types</span><span class="o">.</span><span class="n">Gt</span><span class="p">(</span><span class="mi">42</span><span class="p">)]</span>
-    <span class="n">bar</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">pydantic</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">42</span><span class="p">)]</span>
-</code></pre></div>
-</details>
           <details class="quote">
             <summary>Source code in <code>pydantic/fields.py</code></summary>
             <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">239</span>
@@ -4924,42 +4927,38 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
 <span class="normal">294</span>
 <span class="normal">295</span>
 <span class="normal">296</span>
-<span class="normal">297</span>
-<span class="normal">298</span>
-<span class="normal">299</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">297</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">from_annotation</span><span class="p">(</span><span class="n">annotation</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">FieldInfo</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a `FieldInfo` instance from a bare annotation.</span>
+
+<span class="sd">    This function is used internally to create a `FieldInfo` from a bare annotation like this:</span>
+
+<span class="sd">    ```python</span>
+<span class="sd">    import pydantic</span>
+
+<span class="sd">    class MyModel(pydantic.BaseModel):</span>
+<span class="sd">        foo: int  # &lt;-- like this</span>
+<span class="sd">    ```</span>
+
+<span class="sd">    We also account for the case where the annotation can be an instance of `Annotated` and where</span>
+<span class="sd">    one of the (not first) arguments in `Annotated` is an instance of `FieldInfo`, e.g.:</span>
+
+<span class="sd">    ```python</span>
+<span class="sd">    import annotated_types</span>
+<span class="sd">    from typing_extensions import Annotated</span>
+
+<span class="sd">    import pydantic</span>
+
+<span class="sd">    class MyModel(pydantic.BaseModel):</span>
+<span class="sd">        foo: Annotated[int, annotated_types.Gt(42)]</span>
+<span class="sd">        bar: Annotated[int, pydantic.Field(gt=42)]</span>
+<span class="sd">    ```</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        annotation: An annotation object.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        An instance of the field metadata.</span>
-
-<span class="sd">    Example:</span>
-<span class="sd">        This is how you can create a field from a bare annotation like this:</span>
-
-<span class="sd">        ```python</span>
-<span class="sd">        import pydantic</span>
-
-<span class="sd">        class MyModel(pydantic.BaseModel):</span>
-<span class="sd">            foo: int  # &lt;-- like this</span>
-<span class="sd">        ```</span>
-
-<span class="sd">        We also account for the case where the annotation can be an instance of `Annotated` and where</span>
-<span class="sd">        one of the (not first) arguments in `Annotated` are an instance of `FieldInfo`, e.g.:</span>
-
-<span class="sd">        ```python</span>
-<span class="sd">        import annotated_types</span>
-<span class="sd">        from typing_extensions import Annotated</span>
-
-<span class="sd">        import pydantic</span>
-
-<span class="sd">        class MyModel(pydantic.BaseModel):</span>
-<span class="sd">            foo: Annotated[int, annotated_types.Gt(42)]</span>
-<span class="sd">            bar: Annotated[int, pydantic.Field(gt=42)]</span>
-<span class="sd">        ```</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">final</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="k">if</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">is_finalvar</span><span class="p">(</span><span class="n">annotation</span><span class="p">):</span>
@@ -5019,6 +5018,17 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
   <div class="doc doc-contents ">
   
       <p>Create <code>FieldInfo</code> from an annotation with a default value.</p>
+<p>This is used in cases like the following:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">annotated_types</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">import</span> <span class="nn">pydantic</span>
+
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">pydantic</span><span class="o">.</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>  <span class="c1"># &lt;-- like this</span>
+    <span class="n">bar</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">annotated_types</span><span class="o">.</span><span class="n">Gt</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">4</span>  <span class="c1"># &lt;-- or this</span>
+    <span class="n">spam</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">pydantic</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">4</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">4</span>  <span class="c1"># &lt;-- or this</span>
+</code></pre></div>
 
 
 
@@ -5088,22 +5098,11 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
     </tbody>
   </table>
 
-<details class="example" open>
-  <summary>Example</summary>
-  <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">annotated_types</span>
-<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
-
-<span class="kn">import</span> <span class="nn">pydantic</span>
-
-<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">pydantic</span><span class="o">.</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">foo</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>  <span class="c1"># &lt;-- like this</span>
-    <span class="n">bar</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">annotated_types</span><span class="o">.</span><span class="n">Gt</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">4</span>  <span class="c1"># &lt;-- or this</span>
-    <span class="n">spam</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">pydantic</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">4</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">4</span>  <span class="c1"># &lt;-- or this</span>
-</code></pre></div>
-</details>
           <details class="quote">
             <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">301</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
 <span class="normal">302</span>
 <span class="normal">303</span>
 <span class="normal">304</span>
@@ -5174,10 +5173,23 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
 <span class="normal">369</span>
 <span class="normal">370</span>
 <span class="normal">371</span>
-<span class="normal">372</span>
-<span class="normal">373</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">372</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">from_annotated_attribute</span><span class="p">(</span><span class="n">annotation</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FieldInfo</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create `FieldInfo` from an annotation with a default value.</span>
+
+<span class="sd">    This is used in cases like the following:</span>
+
+<span class="sd">    ```python</span>
+<span class="sd">    import annotated_types</span>
+<span class="sd">    from typing_extensions import Annotated</span>
+
+<span class="sd">    import pydantic</span>
+
+<span class="sd">    class MyModel(pydantic.BaseModel):</span>
+<span class="sd">        foo: int = 4  # &lt;-- like this</span>
+<span class="sd">        bar: Annotated[int, annotated_types.Gt(4)] = 4  # &lt;-- or this</span>
+<span class="sd">        spam: Annotated[int, pydantic.Field(gt=4)] = 4  # &lt;-- or this</span>
+<span class="sd">    ```</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        annotation: The type annotation of the field.</span>
@@ -5185,19 +5197,6 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
 
 <span class="sd">    Returns:</span>
 <span class="sd">        A field object with the passed values.</span>
-
-<span class="sd">    Example:</span>
-<span class="sd">        ```python</span>
-<span class="sd">        import annotated_types</span>
-<span class="sd">        from typing_extensions import Annotated</span>
-
-<span class="sd">        import pydantic</span>
-
-<span class="sd">        class MyModel(pydantic.BaseModel):</span>
-<span class="sd">            foo: int = 4  # &lt;-- like this</span>
-<span class="sd">            bar: Annotated[int, annotated_types.Gt(4)] = 4  # &lt;-- or this</span>
-<span class="sd">            spam: Annotated[int, pydantic.Field(gt=4)] = 4  # &lt;-- or this</span>
-<span class="sd">        ```</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">final</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="k">if</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">is_finalvar</span><span class="p">(</span><span class="n">annotation</span><span class="p">):</span>
@@ -5308,7 +5307,8 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
 
           <details class="quote">
             <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">375</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">374</span>
+<span class="normal">375</span>
 <span class="normal">376</span>
 <span class="normal">377</span>
 <span class="normal">378</span>
@@ -5339,8 +5339,7 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
 <span class="normal">403</span>
 <span class="normal">404</span>
 <span class="normal">405</span>
-<span class="normal">406</span>
-<span class="normal">407</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">406</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">merge_field_infos</span><span class="p">(</span><span class="o">*</span><span class="n">field_infos</span><span class="p">:</span> <span class="n">FieldInfo</span><span class="p">,</span> <span class="o">**</span><span class="n">overrides</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FieldInfo</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Merge `FieldInfo` instances keeping only explicitly set attributes.</span>
 
@@ -5461,7 +5460,11 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 
           <details class="quote">
             <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">484</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
 <span class="normal">485</span>
 <span class="normal">486</span>
 <span class="normal">487</span>
@@ -5475,11 +5478,7 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 <span class="normal">495</span>
 <span class="normal">496</span>
 <span class="normal">497</span>
-<span class="normal">498</span>
-<span class="normal">499</span>
-<span class="normal">500</span>
-<span class="normal">501</span>
-<span class="normal">502</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">call_default_factory</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="normal">498</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">call_default_factory</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the default value.</span>
 
 <span class="sd">    We expose an option for whether to call the default_factory (if present), as calling it may</span>
@@ -5525,7 +5524,7 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 
   <div class="doc doc-contents ">
   
-      <p>Check if the argument is required.</p>
+      <p>Check if the field is required (i.e., does not have a default value or factory).</p>
 
 
 
@@ -5544,7 +5543,7 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
           </td>
           <td>
             <div class="doc-md-description">
-              <p><code>True</code> if the argument is required, <code>False</code> otherwise.</p>
+              <p><code>True</code> if the field is required, <code>False</code> otherwise.</p>
             </div>
           </td>
         </tr>
@@ -5553,17 +5552,17 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 
           <details class="quote">
             <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">504</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">500</span>
+<span class="normal">501</span>
+<span class="normal">502</span>
+<span class="normal">503</span>
+<span class="normal">504</span>
 <span class="normal">505</span>
-<span class="normal">506</span>
-<span class="normal">507</span>
-<span class="normal">508</span>
-<span class="normal">509</span>
-<span class="normal">510</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">is_required</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if the argument is required.</span>
+<span class="normal">506</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">is_required</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if the field is required (i.e., does not have a default value or factory).</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        `True` if the argument is required, `False` otherwise.</span>
+<span class="sd">        `True` if the field is required, `False` otherwise.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">default</span> <span class="ow">is</span> <span class="n">PydanticUndefined</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_factory</span> <span class="ow">is</span> <span class="kc">None</span>
 </code></pre></div></td></tr></table></div>
@@ -5593,9 +5592,12 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 
   <div class="doc doc-contents ">
   
-      <p>Rebuilds the original annotation for use in function signatures.</p>
-<p>If metadata is present, it adds it to the original annotation using an
-<code>AnnotatedAlias</code>. Otherwise, it returns the original annotation as is.</p>
+      <p>Attempts to rebuild the original annotation for use in function signatures.</p>
+<p>If metadata is present, it adds it to the original annotation using
+<code>Annotated</code>. Otherwise, it returns the original annotation as-is.</p>
+<p>Note that because the metadata has been flattened, the original annotation
+may not be reconstructed exactly as originally provided, e.g. if the original
+type had unrecognized annotations, or was annotated with a call to <code>pydantic.Field</code>.</p>
 
 
 
@@ -5623,7 +5625,11 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 
           <details class="quote">
             <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">512</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">508</span>
+<span class="normal">509</span>
+<span class="normal">510</span>
+<span class="normal">511</span>
+<span class="normal">512</span>
 <span class="normal">513</span>
 <span class="normal">514</span>
 <span class="normal">515</span>
@@ -5637,10 +5643,14 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 <span class="normal">523</span>
 <span class="normal">524</span>
 <span class="normal">525</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">rebuild_annotation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Rebuilds the original annotation for use in function signatures.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Attempts to rebuild the original annotation for use in function signatures.</span>
 
-<span class="sd">    If metadata is present, it adds it to the original annotation using an</span>
-<span class="sd">    `AnnotatedAlias`. Otherwise, it returns the original annotation as is.</span>
+<span class="sd">    If metadata is present, it adds it to the original annotation using</span>
+<span class="sd">    `Annotated`. Otherwise, it returns the original annotation as-is.</span>
+
+<span class="sd">    Note that because the metadata has been flattened, the original annotation</span>
+<span class="sd">    may not be reconstructed exactly as originally provided, e.g. if the original</span>
+<span class="sd">    type had unrecognized annotations, or was annotated with a call to `pydantic.Field`.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        The rebuilt annotation.</span>
@@ -5803,8 +5813,12 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 
   <div class="doc doc-contents ">
   
-      <p>Indicates that attribute is only used internally and never mixed with regular fields.</p>
-<p>Private attributes are not checked by Pydantic, so it's up to you to maintain their accuracy.</p>
+      <div class="admonition abstract">
+<p class="admonition-title">Usage Documentation</p>
+<p><a href="../../concepts/models/#private-model-attributes">Private model attributes</a></p>
+</div>
+<p>Indicates that an attribute is intended for private use and not handled during normal validation/serialization.</p>
+<p>Private attributes are not validated by Pydantic, so it's up to you to ensure they are used in a type-safe manner.</p>
 <p>Private attributes are stored in <code>__private_attributes__</code> on the model.</p>
 
 
@@ -5903,13 +5917,7 @@ If both <code>default</code> and <code>default_factory</code> are set, an error 
 
           <details class="quote">
             <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">857</span>
-<span class="normal">858</span>
-<span class="normal">859</span>
-<span class="normal">860</span>
-<span class="normal">861</span>
-<span class="normal">862</span>
-<span class="normal">863</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">863</span>
 <span class="normal">864</span>
 <span class="normal">865</span>
 <span class="normal">866</span>
@@ -5932,14 +5940,24 @@ If both <code>default</code> and <code>default_factory</code> are set, an error 
 <span class="normal">883</span>
 <span class="normal">884</span>
 <span class="normal">885</span>
-<span class="normal">886</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">PrivateAttr</span><span class="p">(</span>
+<span class="normal">886</span>
+<span class="normal">887</span>
+<span class="normal">888</span>
+<span class="normal">889</span>
+<span class="normal">890</span>
+<span class="normal">891</span>
+<span class="normal">892</span>
+<span class="normal">893</span>
+<span class="normal">894</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">PrivateAttr</span><span class="p">(</span>
     <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">default_factory</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Indicates that attribute is only used internally and never mixed with regular fields.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.6/concepts/models/#private-model-attributes</span>
 
-<span class="sd">    Private attributes are not checked by Pydantic, so it&#39;s up to you to maintain their accuracy.</span>
+<span class="sd">    Indicates that an attribute is intended for private use and not handled during normal validation/serialization.</span>
+
+<span class="sd">    Private attributes are not validated by Pydantic, so it&#39;s up to you to ensure they are used in a type-safe manner.</span>
 
 <span class="sd">    Private attributes are stored in `__private_attributes__` on the model.</span>
 
@@ -5994,6 +6012,11 @@ If both <code>default</code> and <code>default_factory</code> are set, an error 
 
   
       <p>A descriptor for private attributes in class models.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>You generally shouldn't be creating <code>ModelPrivateAttr</code> instances directly, instead use
+<code>pydantic.fields.PrivateAttr</code>. (This is similar to <code>FieldInfo</code> vs. <code>Field</code>.)</p>
+</div>
 
 
 
@@ -6033,11 +6056,11 @@ attribute if not provided.</p>
 
                 <details class="quote">
                   <summary>Source code in <code>pydantic/fields.py</code></summary>
-                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">810</span>
-<span class="normal">811</span>
-<span class="normal">812</span>
-<span class="normal">813</span>
-<span class="normal">814</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">816</span>
+<span class="normal">817</span>
+<span class="normal">818</span>
+<span class="normal">819</span>
+<span class="normal">820</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">default_factory</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">default</span> <span class="o">=</span> <span class="n">default</span>
@@ -6101,17 +6124,17 @@ attribute if not provided.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">838</span>
-<span class="normal">839</span>
-<span class="normal">840</span>
-<span class="normal">841</span>
-<span class="normal">842</span>
-<span class="normal">843</span>
-<span class="normal">844</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">844</span>
 <span class="normal">845</span>
 <span class="normal">846</span>
 <span class="normal">847</span>
-<span class="normal">848</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_default</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="normal">848</span>
+<span class="normal">849</span>
+<span class="normal">850</span>
+<span class="normal">851</span>
+<span class="normal">852</span>
+<span class="normal">853</span>
+<span class="normal">854</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_default</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve the default value of the object.</span>
 
 <span class="sd">    If `self.default_factory` is `None`, the method will return a deep copy of the `self.default` object.</span>
@@ -6452,15 +6475,7 @@ objects.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 955</span>
-<span class="normal"> 956</span>
-<span class="normal"> 957</span>
-<span class="normal"> 958</span>
-<span class="normal"> 959</span>
-<span class="normal"> 960</span>
-<span class="normal"> 961</span>
-<span class="normal"> 962</span>
-<span class="normal"> 963</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 963</span>
 <span class="normal"> 964</span>
 <span class="normal"> 965</span>
 <span class="normal"> 966</span>
@@ -6625,7 +6640,15 @@ objects.</p>
 <span class="normal">1125</span>
 <span class="normal">1126</span>
 <span class="normal">1127</span>
-<span class="normal">1128</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computed_field</span><span class="p">(</span>
+<span class="normal">1128</span>
+<span class="normal">1129</span>
+<span class="normal">1130</span>
+<span class="normal">1131</span>
+<span class="normal">1132</span>
+<span class="normal">1133</span>
+<span class="normal">1134</span>
+<span class="normal">1135</span>
+<span class="normal">1136</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computed_field</span><span class="p">(</span>
     <span class="n">__f</span><span class="p">:</span> <span class="n">PropertyT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">alias</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -6883,7 +6906,7 @@ objects.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The alias of the property to be used during encoding and decoding.</p>
+              <p>The alias of the property to be used during serialization.</p>
             </div>
           </td>
         </tr>
@@ -6894,7 +6917,7 @@ objects.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>priority of the alias. This affects whether an alias generator is used</p>
+              <p>The priority of the alias. This affects whether an alias generator is used.</p>
             </div>
           </td>
         </tr>
@@ -6905,7 +6928,7 @@ objects.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Title of the computed field as in OpenAPI document, should be a short summary.</p>
+              <p>Title of the computed field to include in the serialization JSON schema.</p>
             </div>
           </td>
         </tr>
@@ -6916,7 +6939,7 @@ objects.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Description of the computed field as in OpenAPI document.</p>
+              <p>Description of the computed field to include in the serialization JSON schema.</p>
             </div>
           </td>
         </tr>
@@ -6927,7 +6950,7 @@ objects.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Example values of the computed field as in OpenAPI document.</p>
+              <p>Example values of the computed field to include in the serialization JSON schema.</p>
             </div>
           </td>
         </tr>
@@ -6949,7 +6972,7 @@ objects.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>A boolean indicating whether or not to include the field in the <strong>repr</strong> output.</p>
+              <p>A boolean indicating whether to include the field in the <strong>repr</strong> output.</p>
             </div>
           </td>
         </tr>
