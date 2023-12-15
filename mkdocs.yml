@@ -130,6 +130,7 @@ nav:
   - blog/pydantic-v2-final.md
   - blog/pydantic-v2-alpha.md
   - blog/pydantic-v2.md
+- Pydantic People: pydantic_people.md
 
 markdown_extensions:
 - tables
