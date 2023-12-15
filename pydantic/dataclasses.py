@@ -119,13 +119,13 @@ def dataclass(
         init: Included for signature compatibility with `dataclasses.dataclass`, and is passed through to
             `dataclasses.dataclass` when appropriate. If specified, must be set to `False`, as pydantic inserts its
             own  `__init__` function.
-        repr: A boolean indicating whether or not to include the field in the `__repr__` output.
-        eq: Determines if a `__eq__` should be generated for the class.
+        repr: A boolean indicating whether to include the field in the `__repr__` output.
+        eq: Determines if a `__eq__` method should be generated for the class.
         order: Determines if comparison magic methods should be generated, such as `__lt__`, but not `__eq__`.
-        unsafe_hash: Determines if an unsafe hashing function should be included in the class.
+        unsafe_hash: Determines if a `__hash__` method should be included in the class, as in `dataclasses.dataclass`.
         frozen: Determines if the generated class should be a 'frozen' `dataclass`, which does not allow its
-            attributes to be modified from its constructor.
-        config: A configuration for the `dataclass` generation.
+            attributes to be modified after it has been initialized.
+        config: The Pydantic config to use for the `dataclass`.
         validate_on_init: A deprecated parameter included for backwards compatibility; in V2, all Pydantic dataclasses
             are validated on init.
         kw_only: Determines if `__init__` method parameters must be specified by keyword only. Defaults to `False`.
@@ -267,8 +267,8 @@ def rebuild_dataclass(
     This is analogous to `BaseModel.model_rebuild`.
 
     Args:
-        cls: The class to build the dataclass core schema for.
-        force: Whether to force the rebuilding of the model schema, defaults to `False`.
+        cls: The class to rebuild the pydantic-core schema for.
+        force: Whether to force the rebuilding of the schema, defaults to `False`.
         raise_errors: Whether to raise errors, defaults to `True`.
         _parent_namespace_depth: The depth level of the parent namespace, defaults to 2.
         _types_namespace: The types namespace, defaults to `None`.

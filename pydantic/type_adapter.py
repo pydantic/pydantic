@@ -31,14 +31,14 @@ if TYPE_CHECKING:
 
 def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth: int) -> CoreSchema:
     """`BaseModel` uses its own `__module__` to find out where it was defined
-    and then look for symbols to resolve forward references in those globals.
+    and then looks for symbols to resolve forward references in those globals.
     On the other hand this function can be called with arbitrary objects,
-    including type aliases where `__module__` (always `typing.py`) is not useful.
+    including type aliases, where `__module__` (always `typing.py`) is not useful.
     So instead we look at the globals in our parent stack frame.
 
     This works for the case where this function is called in a module that
     has the target of forward references in its scope, but
-    does not work for more complex cases.
+    does not always work for more complex cases.
 
     For example, take the following:
 
@@ -61,10 +61,9 @@ def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth:
     v({'x': 1})  # should fail but doesn't
     ```
 
-    If OuterDict were a `BaseModel`, this would work because it would resolve
+    If `OuterDict` were a `BaseModel`, this would work because it would resolve
     the forward reference within the `a.py` namespace.
-    But `TypeAdapter(OuterDict)`
-    can't know what module OuterDict came from.
+    But `TypeAdapter(OuterDict)` can't determine what module `OuterDict` came from.
 
     In other words, the assumption that _all_ forward references exist in the
     module we are being called from is not technically always true.
@@ -113,7 +112,7 @@ class TypeAdapter(Generic[T]):
     A `TypeAdapter` instance exposes some of the functionality from `BaseModel` instance methods
     for types that do not have such methods (such as dataclasses, primitive types, and more).
 
-    Note that `TypeAdapter` is not an actual type, so you cannot use it in type annotations.
+    **Note:** `TypeAdapter` instances are not types, and cannot be used as type annotations for fields.
 
     Attributes:
         core_schema: The core schema for the type.
