@@ -12,8 +12,17 @@ Hypothesis will automatically load support for [custom types](usage/types.md) li
 and [`st.from_type()`](https://hypothesis.readthedocs.io/en/latest/data.html#hypothesis.strategies.from_type)
 strategies support them without any user configuration.
 
+
+!!! note
+    If you are generating a model with `st.builds` whose fields have aliases, you must
+    pass the *alias* and not the field name as a keyword argument. In the examples
+    below, `test_with_discount_field_name` will likely raise an `AssertionError`
+    because the field name and not the alias has been passed to `st.builds`. (Raising an
+    `AssertionError` is not guaranteed, as Hypothesis may generate a float whose value
+    happens to be between 100 and 200).
+
 !!! warning
-    Please note, while the plugin supports these types, hypothesis will(currently) generate values outside 
+    Please note, while the plugin supports these types, hypothesis will (currently) generate values outside 
     of given args for the constrained function types.
 
 

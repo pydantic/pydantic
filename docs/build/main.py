@@ -4,6 +4,8 @@ import sys
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
+import hypothesis # noqa : necessary to register custom strategies
+
 THIS_DIR = Path(__file__).parent
 PROJECT_ROOT = THIS_DIR / '..' / '..'
 
