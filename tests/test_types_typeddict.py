@@ -735,7 +735,7 @@ def test_typeddict_alias_generator(TypedDict):
     ]
 
 
-def test_typeddict_inheritence(TypedDict: Any) -> None:
+def test_typeddict_inheritance(TypedDict: Any) -> None:
     class Parent(TypedDict):
         x: int
 

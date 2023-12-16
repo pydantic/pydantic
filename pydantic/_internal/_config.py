@@ -15,6 +15,7 @@ from typing_extensions import (
     Self,
 )
 
+from ..aliases import AliasGenerator
 from ..config import ConfigDict, ExtraValues, JsonDict, JsonEncoder, JsonSchemaExtraCallable
 from ..errors import PydanticUserError
 from ..warnings import PydanticDeprecatedSince20
@@ -55,7 +56,7 @@ class ConfigWrapper:
     # whether to use the actual key provided in the data (e.g. alias or first alias for "field required" errors) instead of field_names
     # to construct error `loc`s, default `True`
     loc_by_alias: bool
-    alias_generator: Callable[[str], str] | None
+    alias_generator: Callable[[str], str] | AliasGenerator | None
     ignored_types: tuple[type, ...]
     allow_inf_nan: bool
     json_schema_extra: JsonDict | JsonSchemaExtraCallable | None

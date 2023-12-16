@@ -50,7 +50,7 @@ class GetJsonSchemaHandler:
         This means you don't have to check before calling this function.
 
         Args:
-            __maybe_ref_json_schema: A JsonSchemaValue, ref based or not.
+            __maybe_ref_json_schema: A JsonSchemaValue which may be a `$ref` schema.
 
         Raises:
             LookupError: If the ref is not found.

@@ -8,7 +8,7 @@ import weakref
 from abc import ABCMeta
 from functools import partial
 from types import FunctionType
-from typing import Any, Callable, Generic, Mapping
+from typing import Any, Callable, Generic
 
 import typing_extensions
 from pydantic_core import PydanticUndefined, SchemaSerializer
@@ -18,9 +18,10 @@ from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..plugin._schema_validator import create_schema_validator
 from ..warnings import GenericBeforeBaseModelWarning, PydanticDeprecatedSince20
 from ._config import ConfigWrapper
+from ._constructor_signature_generators import generate_pydantic_signature
 from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_from_bases
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
-from ._generate_schema import GenerateSchema, generate_pydantic_signature
+from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
 from ._mock_val_ser import MockValSer, set_model_mocks
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
@@ -29,8 +30,6 @@ from ._utils import ClassAttribute, SafeGetItemProxy
 from ._validate_call import ValidateCallWrapper
 
 if typing.TYPE_CHECKING:
-    from inspect import Signature
-
     from ..fields import Field as PydanticModelField
     from ..fields import FieldInfo, ModelPrivateAttr
     from ..main import BaseModel
@@ -217,7 +216,7 @@ class ModelMetaclass(ABCMeta):
             raise AttributeError(item)
 
     @classmethod
-    def __prepare__(cls, *args: Any, **kwargs: Any) -> Mapping[str, object]:
+    def __prepare__(cls, *args: Any, **kwargs: Any) -> dict[str, object]:
         return _ModelNamespaceDict()
 
     def __instancecheck__(self, instance: Any) -> bool:
@@ -249,6 +248,12 @@ class ModelMetaclass(ABCMeta):
     def __fields__(self) -> dict[str, FieldInfo]:
         warnings.warn('The `__fields__` attribute is deprecated, use `model_fields` instead.', DeprecationWarning)
         return self.model_fields  # type: ignore
+
+    def __dir__(self) -> list[str]:
+        attributes = list(super().__dir__())
+        if '__fields__' in attributes:
+            attributes.remove('__fields__')
+        return attributes
 
 
 def init_private_attributes(self: BaseModel, __context: Any) -> None:
@@ -536,25 +541,10 @@ def complete_model_class(
 
     # set __signature__ attr only for model class, but not for its instances
     cls.__signature__ = ClassAttribute(
-        '__signature__', generate_model_signature(cls.__init__, cls.model_fields, config_wrapper)
+        '__signature__',
+        generate_pydantic_signature(init=cls.__init__, fields=cls.model_fields, config_wrapper=config_wrapper),
     )
     return True
-
-
-def generate_model_signature(
-    init: Callable[..., None], fields: dict[str, FieldInfo], config_wrapper: ConfigWrapper
-) -> Signature:
-    """Generate signature for model based on its fields.
-
-    Args:
-        init: The class init.
-        fields: The model fields.
-        config_wrapper: The config wrapper instance.
-
-    Returns:
-        The model signature.
-    """
-    return generate_pydantic_signature(init, fields, config_wrapper)
 
 
 class _PydanticWeakRef:

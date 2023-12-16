@@ -133,6 +133,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # pydantic._internal._generate_schema.GenerateSchema.model_schema to work for a plain BaseModel annotation
         model_fields = {}
         __pydantic_decorators__ = _decorators.DecoratorInfos()
+        __pydantic_parent_namespace__ = None
         # Prevent `BaseModel` from being instantiated directly:
         __pydantic_validator__ = _mock_val_ser.MockValSer(
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly',
@@ -291,15 +292,15 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         Args:
             mode: The mode in which `to_python` should run.
-                If mode is 'json', the dictionary will only contain JSON serializable types.
-                If mode is 'python', the dictionary may contain any Python objects.
+                If mode is 'json', the output will only contain JSON serializable types.
+                If mode is 'python', the output may contain non-JSON-serializable Python objects.
             include: A list of fields to include in the output.
             exclude: A list of fields to exclude from the output.
             by_alias: Whether to use the field's alias in the dictionary key if defined.
             exclude_unset: Whether to exclude fields that have not been explicitly set.
-            exclude_defaults: Whether to exclude fields that are set to their default value from the output.
-            exclude_none: Whether to exclude fields that have a value of `None` from the output.
-            round_trip: Whether to enable serialization and deserialization round-trip support.
+            exclude_defaults: Whether to exclude fields that are set to their default value.
+            exclude_none: Whether to exclude fields that have a value of `None`.
+            round_trip: If True, dumped values should be valid as input for non-idempotent types such as Json[T].
             warnings: Whether to log warnings when invalid fields are encountered.
 
         Returns:
@@ -337,14 +338,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         Args:
             indent: Indentation to use in the JSON output. If None is passed, the output will be compact.
-            include: Field(s) to include in the JSON output. Can take either a string or set of strings.
-            exclude: Field(s) to exclude from the JSON output. Can take either a string or set of strings.
+            include: Field(s) to include in the JSON output.
+            exclude: Field(s) to exclude from the JSON output.
             by_alias: Whether to serialize using field aliases.
             exclude_unset: Whether to exclude fields that have not been explicitly set.
-            exclude_defaults: Whether to exclude fields that have the default value.
+            exclude_defaults: Whether to exclude fields that are set to their default value.
             exclude_none: Whether to exclude fields that have a value of `None`.
-            round_trip: Whether to use serialization/deserialization between JSON and class instance.
-            warnings: Whether to show any warnings that occurred during serialization.
+            round_trip: If True, dumped values should be valid as input for non-idempotent types such as Json[T].
+            warnings: Whether to log warnings when invalid fields are encountered.
 
         Returns:
             A JSON string representation of the model.
@@ -488,7 +489,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         Args:
             obj: The object to validate.
-            strict: Whether to raise an exception on invalid fields.
+            strict: Whether to enforce types strictly.
             from_attributes: Whether to extract data from object attributes.
             context: Additional context to pass to the validator.
 
@@ -1199,13 +1200,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         ```
 
         Args:
-            include: Optional set or mapping
-                specifying which fields to include in the copied model.
-            exclude: Optional set or mapping
-                specifying which fields to exclude in the copied model.
-            update: Optional dictionary of field-value pairs to override field values
-                in the copied model.
-            deep: If True, the values of fields that are Pydantic models will be deep copied.
+            include: Optional set or mapping specifying which fields to include in the copied model.
+            exclude: Optional set or mapping specifying which fields to exclude in the copied model.
+            update: Optional dictionary of field-value pairs to override field values in the copied model.
+            deep: If True, the values of fields that are Pydantic models will be deep-copied.
 
         Returns:
             A copy of the model with included, excluded and updated fields as specified.
@@ -1404,9 +1402,9 @@ def create_model(  # noqa: C901
         __model_name: The name of the newly created model.
         __config__: The configuration of the new model.
         __doc__: The docstring of the new model.
-        __base__: The base class for the new model.
-        __module__: The name of the module that the model belongs to,
-            if `None` the value is taken from `sys._getframe(1)`
+        __base__: The base class or classes for the new model.
+        __module__: The name of the module that the model belongs to;
+            if `None`, the value is taken from `sys._getframe(1)`
         __validators__: A dictionary of methods that validate fields.
         __cls_kwargs__: A dictionary of keyword arguments for class creation.
         __slots__: Deprecated. Should not be passed to `create_model`.

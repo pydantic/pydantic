@@ -94,7 +94,7 @@ def validator(
         __field (str): The first field the validator should be called on; this is separate
             from `fields` to ensure an error is raised if you don't pass at least one.
         *fields (str): Additional field(s) the validator should be called on.
-        pre (bool, optional): Whether or not this validator should be called before the standard
+        pre (bool, optional): Whether this validator should be called before the standard
             validators (else after). Defaults to False.
         each_item (bool, optional): For complex objects (sets, lists etc.) whether to validate
             individual elements rather than the whole object. Defaults to False.

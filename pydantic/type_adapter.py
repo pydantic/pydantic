@@ -6,7 +6,7 @@ from dataclasses import is_dataclass
 from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, cast, overload
 
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
-from typing_extensions import Literal, is_typeddict
+from typing_extensions import Literal, get_args, is_typeddict
 
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel
@@ -31,14 +31,14 @@ if TYPE_CHECKING:
 
 def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth: int) -> CoreSchema:
     """`BaseModel` uses its own `__module__` to find out where it was defined
-    and then look for symbols to resolve forward references in those globals.
+    and then looks for symbols to resolve forward references in those globals.
     On the other hand this function can be called with arbitrary objects,
-    including type aliases where `__module__` (always `typing.py`) is not useful.
+    including type aliases, where `__module__` (always `typing.py`) is not useful.
     So instead we look at the globals in our parent stack frame.
 
     This works for the case where this function is called in a module that
     has the target of forward references in its scope, but
-    does not work for more complex cases.
+    does not always work for more complex cases.
 
     For example, take the following:
 
@@ -61,10 +61,9 @@ def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth:
     v({'x': 1})  # should fail but doesn't
     ```
 
-    If OuterDict were a `BaseModel`, this would work because it would resolve
+    If `OuterDict` were a `BaseModel`, this would work because it would resolve
     the forward reference within the `a.py` namespace.
-    But `TypeAdapter(OuterDict)`
-    can't know what module OuterDict came from.
+    But `TypeAdapter(OuterDict)` can't determine what module `OuterDict` came from.
 
     In other words, the assumption that _all_ forward references exist in the
     module we are being called from is not technically always true.
@@ -98,13 +97,22 @@ def _getattr_no_parents(obj: Any, attribute: str) -> Any:
         raise AttributeError(attribute)
 
 
+def _type_has_config(type_: Any) -> bool:
+    """Returns whether the type has config."""
+    try:
+        return issubclass(type_, BaseModel) or is_dataclass(type_) or is_typeddict(type_)
+    except TypeError:
+        # type is not a class
+        return False
+
+
 class TypeAdapter(Generic[T]):
     """Type adapters provide a flexible way to perform validation and serialization based on a Python type.
 
     A `TypeAdapter` instance exposes some of the functionality from `BaseModel` instance methods
     for types that do not have such methods (such as dataclasses, primitive types, and more).
 
-    Note that `TypeAdapter` is not an actual type, so you cannot use it in type annotations.
+    **Note:** `TypeAdapter` instances are not types, and cannot be used as type annotations for fields.
 
     Attributes:
         core_schema: The core schema for the type.
@@ -168,13 +176,9 @@ class TypeAdapter(Generic[T]):
         Returns:
             A type adapter configured for the specified `type`.
         """
-        config_wrapper = _config.ConfigWrapper(config)
-
-        try:
-            type_has_config = issubclass(type, BaseModel) or is_dataclass(type) or is_typeddict(type)
-        except TypeError:
-            # type is not a class
-            type_has_config = False
+        type_is_annotated: bool = _typing_extra.is_annotated(type)
+        annotated_type: Any = get_args(type)[0] if type_is_annotated else None
+        type_has_config: bool = _type_has_config(annotated_type if type_is_annotated else type)
 
         if type_has_config and config is not None:
             raise PydanticUserError(
@@ -184,6 +188,8 @@ class TypeAdapter(Generic[T]):
                 ' TypeAdapter becomes meaningless, which is probably not what you want.',
                 code='type-adapter-config-unused',
             )
+
+        config_wrapper = _config.ConfigWrapper(config)
 
         core_schema: CoreSchema
         try:
