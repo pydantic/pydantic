@@ -227,28 +227,30 @@ def eval_type_lenient(value: Any, globalns: dict[str, Any] | None, localns: dict
         return value
 
 
-def is_unsupported_types_for_union_error(e: TypeError) -> bool:
-    return str(e).startswith('unsupported operand type(s) for |: ')
-
-
 def eval_type_backport(
     value: Any, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None
 ) -> Any:
     """Like `typing._eval_type`, but falls back to the `eval_type_backport` package if it's
     installed to let older Python versions use newer typing features.
-    Currently this just means that `X | Y` is converted to `Union[X, Y]` if `X | Y` is not supported.
-    This would also be the place to add support for `list[int]` instead of `List[int]` etc.
+    Specifically, this transforms `X | Y` into `typing.Union[X, Y]`
+    and `list[X]` into `typing.List[X]` etc. (for all the types made generic in PEP 585)
+    if the original syntax is not supported in the current Python version.
     """
     try:
         return typing._eval_type(  # type: ignore
             value, globalns, localns
         )
     except TypeError as e:
-        if not (isinstance(value, typing.ForwardRef) and is_unsupported_types_for_union_error(e)):
+        if not (isinstance(value, typing.ForwardRef) and is_backport_fixable_error(e)):
             raise
         from eval_type_backport import eval_type_backport
 
         return eval_type_backport(value, globalns, localns, try_default=False)
+
+
+def is_backport_fixable_error(e: TypeError) -> bool:
+    msg = str(e)
+    return msg.startswith('unsupported operand type(s) for |: ') or "' object is not subscriptable" in msg
 
 
 def get_function_type_hints(
