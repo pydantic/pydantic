@@ -10,6 +10,13 @@ if TYPE_CHECKING:
     from ..fields import FieldInfo
 
 
+def field_to_param_name(field_name: str, field: FieldInfo) -> str:
+    """Convert field to parameter name.
+    Returns the name to use for the parameter, giving priority to the alias of the field.
+    """
+    return field.alias if isinstance(field.alias, str) and is_valid_identifier(field.alias) else field_name
+
+
 def generate_pydantic_signature(
     init: Callable[..., None],
     fields: dict[str, FieldInfo],
@@ -37,6 +44,9 @@ def generate_pydantic_signature(
     for param in islice(present_params, 1, None):  # skip self arg
         # inspect does "clever" things to show annotations as strings because we have
         # `from __future__ import annotations` in main, we don't want that
+        if fields.get(param.name) and isinstance(fields[param.name].alias, str):
+            param_name = field_to_param_name(param.name, fields[param.name])
+            param = param.replace(name=param_name)
         if param.annotation == 'Any':
             param = param.replace(annotation=Any)
         if param.kind is param.VAR_KEYWORD:
@@ -48,16 +58,13 @@ def generate_pydantic_signature(
         allow_names = config_wrapper.populate_by_name
         for field_name, field in fields.items():
             # when alias is a str it should be used for signature generation
-            if isinstance(field.alias, str):
-                param_name = field.alias
-            else:
-                param_name = field_name
+            param_name = field_to_param_name(field_name, field)
 
             if field_name in merged_params or param_name in merged_params:
                 continue
 
             if not is_valid_identifier(param_name):
-                if allow_names and is_valid_identifier(field_name):
+                if allow_names:
                     param_name = field_name
                 else:
                     use_var_kw = True
