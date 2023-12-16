@@ -463,12 +463,12 @@ files = [
 
 [[package]]
 name = "eval-type-backport"
-version = "0.1.0"
+version = "0.1.1"
 requires_python = ">=3.7"
 summary = "Like `typing._eval_type`, but lets older Python versions use newer typing features."
 files = [
-    {file = "eval_type_backport-0.1.0-py3-none-any.whl", hash = "sha256:9e63ef53a47b7d3d7236a75954fe55bb283564b6c5daccc76792090800862cd2"},
-    {file = "eval_type_backport-0.1.0.tar.gz", hash = "sha256:fd811b6d52ec526adb777391ebd525b156b126883ff85af1ac1719c624ad38f6"},
+    {file = "eval_type_backport-0.1.1-py3-none-any.whl", hash = "sha256:34e49d3a2ed0b24ed329a8a8753748dc8ea04884360743adb119673ddd7133ce"},
+    {file = "eval_type_backport-0.1.1.tar.gz", hash = "sha256:8bd16b4612c0ce86560260c93b0c7f58701a07a8129670c0b52c184b74ff3906"},
 ]
 
 [[package]]
