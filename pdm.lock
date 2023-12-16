@@ -4,8 +4,8 @@
 [metadata]
 groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "testing-extra"]
 strategy = ["cross_platform"]
-lock_version = "4.4"
-content_hash = "sha256:66e5649881b398968ef855f6b7d41831abd2d7436ded8dbb8ee7f95a1c11513d"
+lock_version = "4.4.1"
+content_hash = "sha256:9bbdb835acfbe55679d45362084a31c74c2acc1ddcde7dcaacafc941f27f431f"
 
 [[package]]
 name = "annotated-types"
@@ -463,12 +463,12 @@ files = [
 
 [[package]]
 name = "eval-type-backport"
-version = "0.0.1"
+version = "0.1.0"
 requires_python = ">=3.7"
 summary = "Like `typing._eval_type`, but lets older Python versions use newer typing features."
 files = [
-    {file = "eval_type_backport-0.0.1-py3-none-any.whl", hash = "sha256:3aa0d990e642af9d8f9480c84dcaeabaaef83207bdcf5cb018706db6bb77d692"},
-    {file = "eval_type_backport-0.0.1.tar.gz", hash = "sha256:3328c532f0d159f84756b11bd932ff2b5f93a7c605a603af02de0e38566c86df"},
+    {file = "eval_type_backport-0.1.0-py3-none-any.whl", hash = "sha256:9e63ef53a47b7d3d7236a75954fe55bb283564b6c5daccc76792090800862cd2"},
+    {file = "eval_type_backport-0.1.0.tar.gz", hash = "sha256:fd811b6d52ec526adb777391ebd525b156b126883ff85af1ac1719c624ad38f6"},
 ]
 
 [[package]]
@@ -1633,7 +1633,7 @@ version = "2.0.23"
 requires_python = ">=3.7"
 summary = "Database Abstraction Library"
 dependencies = [
-    "greenlet!=0.4.17; platform_machine == \"aarch64\" or (platform_machine == \"ppc64le\" or (platform_machine == \"x86_64\" or (platform_machine == \"amd64\" or (platform_machine == \"AMD64\" or (platform_machine == \"win32\" or platform_machine == \"WIN32\")))))",
+    "greenlet!=0.4.17; platform_machine == \"win32\" or platform_machine == \"WIN32\" or platform_machine == \"AMD64\" or platform_machine == \"amd64\" or platform_machine == \"x86_64\" or platform_machine == \"ppc64le\" or platform_machine == \"aarch64\"",
     "typing-extensions>=4.2.0",
 ]
 files = [
