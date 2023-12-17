@@ -243,7 +243,13 @@ def eval_type_backport(
     except TypeError as e:
         if not (isinstance(value, typing.ForwardRef) and is_backport_fixable_error(e)):
             raise
-        from eval_type_backport import eval_type_backport
+        try:
+            from eval_type_backport import eval_type_backport
+        except ImportError:
+            raise RuntimeError(
+                'In order to use newer typing features on older Python versions, '
+                'you need to install the `eval_type_backport` package.'
+            ) from e
 
         return eval_type_backport(value, globalns, localns, try_default=False)
 

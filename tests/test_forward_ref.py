@@ -712,9 +712,14 @@ class Foobar(BaseModel):
 
 
 def test_recursive_models_union(create_module):
-    module = create_module(
-        # language=Python
-        """
+    # This test should pass because PydanticRecursiveRef.__or__ is implemented,
+    # not because `eval_type_backport` magically makes `|` work,
+    # since it's installed for tests but otherwise optional.
+    sys.modules['eval_type_backport'] = None  # type: ignore
+    try:
+        module = create_module(
+            # language=Python
+            """
 from __future__ import annotations
 
 from pydantic import BaseModel
@@ -728,8 +733,11 @@ class Foo(BaseModel):
 
 class Bar(BaseModel, Generic[T]):
     foo: Foo
-"""
-    )
+    """
+        )
+    finally:
+        del sys.modules['eval_type_backport']
+
     assert module.Foo.model_fields['bar'].annotation == typing.Optional[module.Bar[str]]
     assert module.Foo.model_fields['bar2'].annotation == typing.Union[int, module.Bar[float]]
     assert module.Bar.model_fields['foo'].annotation == module.Foo
