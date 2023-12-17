@@ -53,7 +53,7 @@ from pydantic.functional_serializers import (
 
 def test_str_bytes():
     class Model(BaseModel):
-        v: 'str | bytes'
+        v: Union[str, bytes]
 
     m = Model(v='s')
     assert m.v == 's'
@@ -73,7 +73,7 @@ def test_str_bytes():
 
 def test_str_bytes_none():
     class Model(BaseModel):
-        v: 'None | str | bytes' = ...
+        v: Union[None, str, bytes] = ...
 
     m = Model(v='s')
     assert m.v == 's'
@@ -497,7 +497,7 @@ def test_recursive_list_error():
 
 def test_list_unions():
     class Model(BaseModel):
-        v: 'List[int | str]' = ...
+        v: List[Union[int, str]] = ...
 
     assert Model(v=[123, '456', 'foobar']).v == [123, '456', 'foobar']
 
@@ -512,7 +512,7 @@ def test_list_unions():
 
 def test_recursive_lists():
     class Model(BaseModel):
-        v: 'List[List[int | float]]' = ...
+        v: List[List[Union[int, float]]] = ...
 
     assert Model(v=[[1, 2], [3, '4', '4.1']]).v == [[1, 2], [3, 4, 4.1]]
     assert Model.model_fields['v'].annotation == List[List[Union[int, float]]]
@@ -1210,7 +1210,7 @@ def test_unable_to_infer():
 
 def test_multiple_errors():
     class Model(BaseModel):
-        a: 'None | int | float | Decimal'
+        a: Union[None, int, float, Decimal]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='foobar')
@@ -1382,8 +1382,8 @@ def test_type_on_annotation():
         e: Type[FooBar]
         f: Type[FooBar] = FooBar
         g: Sequence[Type[FooBar]] = [FooBar]
-        h: 'Type[FooBar] | Sequence[Type[FooBar]]' = FooBar
-        i: 'Type[FooBar] | Sequence[Type[FooBar]]' = [FooBar]
+        h: Union[Type[FooBar], Sequence[Type[FooBar]]] = FooBar
+        i: Union[Type[FooBar], Sequence[Type[FooBar]]] = [FooBar]
 
         model_config = dict(arbitrary_types_allowed=True)
 
@@ -2564,8 +2564,8 @@ def test_union_literal_with_other_type(literal_type, other_type, data, json_valu
 
 def test_type_union():
     class Model(BaseModel):
-        a: 'Type[str | bytes]'
-        b: 'Type[Any | str]'
+        a: Type[Union[str, bytes]]
+        b: Type[Union[Any, str]]
 
     m = Model(a=bytes, b=int)
     assert m.model_dump() == {'a': bytes, 'b': int}

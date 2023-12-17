@@ -8,7 +8,7 @@ from collections.abc import Hashable
 from dataclasses import InitVar
 from datetime import date, datetime
 from pathlib import Path
-from typing import Any, Callable, ClassVar, Dict, FrozenSet, Generic, List, Optional, Set, TypeVar
+from typing import Any, Callable, ClassVar, Dict, FrozenSet, Generic, List, Optional, Set, TypeVar, Union
 
 import pytest
 from dirty_equals import HasRepr
@@ -1346,7 +1346,7 @@ def test_discriminated_union_basemodel_instance_value():
 
     @pydantic.dataclasses.dataclass
     class Top:
-        sub: 'A | B' = dataclasses.field(metadata=dict(discriminator='l'))
+        sub: Union[A, B] = dataclasses.field(metadata=dict(discriminator='l'))
 
     t = Top(sub=A(l='a'))
     assert isinstance(t, Top)
