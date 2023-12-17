@@ -524,7 +524,6 @@ def test_multiple_inheritance_config():
     assert Child.model_config.get('use_enum_values') is True
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason='different on older versions')
 def test_config_wrapper_match():
     localns = {'_GenerateSchema': GenerateSchema, 'GenerateSchema': GenerateSchema, 'JsonValue': JsonValue}
     config_dict_annotations = [(k, str(v)) for k, v in get_type_hints(ConfigDict, localns=localns).items()]
@@ -568,7 +567,6 @@ def test_config_validation_error_cause():
     assert src_exc.__notes__[0] == '\nPydantic: cause of loc: foo'
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason='different on older versions')
 def test_config_defaults_match():
     localns = {'_GenerateSchema': GenerateSchema, 'GenerateSchema': GenerateSchema}
     config_dict_keys = sorted(list(get_type_hints(ConfigDict, localns=localns).keys()))

@@ -397,9 +397,13 @@ else:
 
                     value = eval_type_backport(value, base_globals, base_locals)
                     hints[name] = value
-            return (
-                hints if include_extras else {k: typing._strip_annotations(t) for k, t in hints.items()}  # type: ignore
-            )
+            if not include_extras and hasattr(typing, '_strip_annotations'):
+                return {
+                    k: typing._strip_annotations(t)  # type: ignore
+                    for k, t in hints.items()
+                }
+            else:
+                return hints
 
         if globalns is None:
             if isinstance(obj, types.ModuleType):
