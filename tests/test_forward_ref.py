@@ -297,12 +297,11 @@ def test_self_reference_json_schema_with_future_annotations(create_module):
         # language=Python
         """
 from __future__ import annotations
-from typing import List
 from pydantic import BaseModel
 
 class Account(BaseModel):
   name: str
-  subaccounts: List[Account] = []
+  subaccounts: list[Account] = []
     """
     )
     Account = module.Account
@@ -376,7 +375,6 @@ def test_circular_reference_json_schema_with_future_annotations(create_module):
         # language=Python
         """
 from __future__ import annotations
-from typing import List
 from pydantic import BaseModel
 
 class Owner(BaseModel):
@@ -385,7 +383,7 @@ class Owner(BaseModel):
 class Account(BaseModel):
   name: str
   owner: Owner
-  subaccounts: List[Account] = []
+  subaccounts: list[Account] = []
 
     """
     )
@@ -440,28 +438,27 @@ def test_forward_ref_optional(create_module):
         # language=Python
         """
 from __future__ import annotations
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Optional
+from pydantic import BaseModel, Field
 
 
 class Spec(BaseModel):
-    spec_fields: List[str] = Field(..., alias="fields")
-    filter: Optional[str] = None
-    sort: Optional[str]
+    spec_fields: list[str] = Field(..., alias="fields")
+    filter: str | None = None
+    sort: str | None
 
 
 class PSpec(Spec):
-    g: Optional[GSpec] = None
+    g: GSpec | None = None
 
 
 class GSpec(Spec):
-    p: Optional[PSpec]
+    p: PSpec | None
 
 # PSpec.model_rebuild()
 
 class Filter(BaseModel):
-    g: Optional[GSpec] = None
-    p: Optional[PSpec]
+    g: GSpec | None = None
+    p: PSpec | None
     """
     )
     Filter = module.Filter

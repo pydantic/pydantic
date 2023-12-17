@@ -1,7 +1,6 @@
 import asyncio
 import inspect
 import re
-import sys
 from datetime import datetime, timezone
 from functools import partial
 from typing import Any, List, Tuple
@@ -12,8 +11,6 @@ from typing_extensions import Annotated, TypedDict
 
 from pydantic import Field, PydanticInvalidForJsonSchema, TypeAdapter, ValidationError, validate_call
 from pydantic.main import BaseModel
-
-skip_pre_39 = pytest.mark.skipif(sys.version_info < (3, 9), reason='testing >= 3.9 behaviour only')
 
 
 def test_args():
@@ -372,7 +369,6 @@ def test_item_method():
     ]
 
 
-@skip_pre_39
 def test_class_method():
     class X:
         @classmethod

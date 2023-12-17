@@ -9,7 +9,7 @@ from typing_extensions import Literal, get_origin
 from pydantic import Field  # noqa: F401
 from pydantic._internal._typing_extra import (
     NoneType,
-    eval_type_backport,
+    eval_type_lenient,
     get_function_type_hints,
     is_classvar,
     is_literal_type,
@@ -64,7 +64,7 @@ def test_is_none_type():
     'union',
     [
         typing.Union[int, str],
-        eval_type_backport(typing.ForwardRef('int | str')),
+        eval_type_lenient('int | str'),
         *([int | str] if sys.version_info >= (3, 10) else []),
     ],
 )

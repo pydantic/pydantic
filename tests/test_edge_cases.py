@@ -303,7 +303,6 @@ def test_tuple_more():
         (dict, frozenset, list, set, tuple, type),
     ],
 )
-@pytest.mark.skipif(sys.version_info < (3, 9), reason='PEP585 generics only supported for python 3.9 and above')
 def test_pep585_generic_types(dict_cls, frozenset_cls, list_cls, set_cls, tuple_cls, type_cls):
     class Type1:
         pass
@@ -313,19 +312,19 @@ def test_pep585_generic_types(dict_cls, frozenset_cls, list_cls, set_cls, tuple_
 
     class Model(BaseModel, arbitrary_types_allowed=True):
         a: dict_cls
-        a1: dict_cls[str, int]
+        a1: 'dict_cls[str, int]'
         b: frozenset_cls
-        b1: frozenset_cls[int]
+        b1: 'frozenset_cls[int]'
         c: list_cls
-        c1: list_cls[int]
+        c1: 'list_cls[int]'
         d: set_cls
-        d1: set_cls[int]
+        d1: 'set_cls[int]'
         e: tuple_cls
-        e1: tuple_cls[int]
-        e2: tuple_cls[int, ...]
-        e3: tuple_cls[()]
+        e1: 'tuple_cls[int]'
+        e2: 'tuple_cls[int, ...]'
+        e3: 'tuple_cls[()]'
         f: type_cls
-        f1: type_cls[Type1]
+        f1: 'type_cls[Type1]'
 
     default_model_kwargs = dict(
         a={},
@@ -361,7 +360,7 @@ def test_pep585_generic_types(dict_cls, frozenset_cls, list_cls, set_cls, tuple_
     assert m.f1 == Type1
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(**(default_model_kwargs | {'e3': (1,)}))
+        Model(**{**default_model_kwargs, 'e3': (1,)})
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
@@ -373,10 +372,10 @@ def test_pep585_generic_types(dict_cls, frozenset_cls, list_cls, set_cls, tuple_
         }
     ]
 
-    Model(**(default_model_kwargs | {'f': Type2}))
+    Model(**{**default_model_kwargs, 'f': Type2})
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(**(default_model_kwargs | {'f1': Type2}))
+        Model(**{**default_model_kwargs, 'f1': Type2})
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
@@ -2382,10 +2381,9 @@ def test_abstractmethod_missing_for_all_decorators(bases):
         Square(side=1.0)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason='cannot use list.__class_getitem__ before 3.9')
 def test_generic_wrapped_forwardref():
     class Operation(BaseModel):
-        callbacks: list['PathItem']
+        callbacks: 'list[PathItem]'
 
     class PathItem(BaseModel):
         pass
@@ -2483,7 +2481,6 @@ def test_invalid_forward_ref_model():
     ]
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason='cannot parametrize types before 3.9')
 @pytest.mark.parametrize(
     ('sequence_type', 'input_data', 'expected_error_type', 'expected_error_msg', 'expected_error_ctx'),
     [

@@ -989,7 +989,7 @@ class GenerateSchema:
                 # Ensure that typevars get mapped to their concrete types:
                 types_namespace.update({k.__name__: v for k, v in self._typevars_map.items()})
 
-            evaluated = _typing_extra.eval_type_lenient(field_info.annotation, types_namespace, None)
+            evaluated = _typing_extra.eval_type_lenient(field_info.annotation, types_namespace)
             if evaluated is not field_info.annotation and not has_instance_in_type(evaluated, PydanticRecursiveRef):
                 field_info.annotation = evaluated
 
@@ -1118,7 +1118,7 @@ class GenerateSchema:
             self._types_namespace = new_namespace
             typevars_map = get_standard_typevars_map(obj)
 
-            annotation = _typing_extra.eval_type_lenient(annotation, self._types_namespace, None)
+            annotation = _typing_extra.eval_type_lenient(annotation, self._types_namespace)
             annotation = replace_types(annotation, typevars_map)
             schema = self.generate_schema(annotation)
             assert schema['type'] != 'definitions'
