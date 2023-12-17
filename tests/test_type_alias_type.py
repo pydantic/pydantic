@@ -1,5 +1,6 @@
 import datetime
-from typing import Dict, List, Tuple, TypeVar, Union
+from dataclasses import dataclass
+from typing import Dict, Generic, List, Tuple, TypeVar, Union
 
 import pytest
 from annotated_types import MaxLen
@@ -131,6 +132,18 @@ def test_recursive_type_alias() -> None:
             }
         },
     }
+
+
+def test_recursive_type_alias_name():
+    T = TypeVar('T')
+
+    @dataclass
+    class MyGeneric(Generic[T]):
+        field: T
+
+    MyRecursiveType = TypeAliasType('MyRecursiveType', MyGeneric['MyRecursiveType'] | int)
+    json_schema = TypeAdapter(MyRecursiveType).json_schema()
+    assert sorted(json_schema['$defs'].keys()) == ['MyGeneric_MyRecursiveType_', 'MyRecursiveType']
 
 
 def test_type_alias_annotated() -> None:
