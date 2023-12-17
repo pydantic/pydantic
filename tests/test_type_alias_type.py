@@ -141,7 +141,7 @@ def test_recursive_type_alias_name():
     class MyGeneric(Generic[T]):
         field: T
 
-    MyRecursiveType = TypeAliasType('MyRecursiveType', MyGeneric['MyRecursiveType'] | int)
+    MyRecursiveType = TypeAliasType('MyRecursiveType', Union[MyGeneric['MyRecursiveType'], int])
     json_schema = TypeAdapter(MyRecursiveType).json_schema()
     assert sorted(json_schema['$defs'].keys()) == ['MyGeneric_MyRecursiveType_', 'MyRecursiveType']
 
