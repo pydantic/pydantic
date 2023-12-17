@@ -758,3 +758,39 @@ def test_validate_call_with_slots() -> None:
     assert c.some_instance_method == c.some_instance_method
     assert c.some_class_method == c.some_class_method
     assert c.some_static_method == c.some_static_method
+
+
+def test_eval_type_backport():
+    @validate_call
+    def foo(bar: 'list[int | str]') -> 'list[int | str]':
+        return bar
+
+    assert foo([1, '2']) == [1, '2']
+    with pytest.raises(ValidationError) as exc_info:
+        foo('not a list')  # type: ignore
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'list_type',
+            'loc': (0,),
+            'msg': 'Input should be a valid list',
+            'input': 'not a list',
+        }
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        foo([{'not a str or int'}])  # type: ignore
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_type',
+            'loc': (0, 0, 'int'),
+            'msg': 'Input should be a valid integer',
+            'input': {'not a str or int'},
+        },
+        {
+            'type': 'string_type',
+            'loc': (0, 0, 'str'),
+            'msg': 'Input should be a valid string',
+            'input': {'not a str or int'},
+        },
+    ]

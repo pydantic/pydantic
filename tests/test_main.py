@@ -3125,3 +3125,39 @@ def test_shadow_attribute() -> None:
     assert getattr(One, 'foo', None) == ' edited!'
     assert getattr(Two, 'foo', None) == ' edited! edited!'
     assert getattr(Three, 'foo', None) == ' edited! edited!'
+
+
+def test_eval_type_backport():
+    class Model(BaseModel):
+        foo: 'list[int | str]'
+
+    assert Model(foo=[1, '2']).model_dump() == {'foo': [1, '2']}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo='not a list')
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'list_type',
+            'loc': ('foo',),
+            'msg': 'Input should be a valid list',
+            'input': 'not a list',
+        }
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=[{'not a str or int'}])
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_type',
+            'loc': ('foo', 0, 'int'),
+            'msg': 'Input should be a valid integer',
+            'input': {'not a str or int'},
+        },
+        {
+            'type': 'string_type',
+            'loc': ('foo', 0, 'str'),
+            'msg': 'Input should be a valid string',
+            'input': {'not a str or int'},
+        },
+    ]
