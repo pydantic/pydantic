@@ -887,15 +887,11 @@ else:
         On model instantiation, pointers will be evaluated and imported. There is
         some nuance to this behavior, demonstrated in the examples below.
 
-        > A known limitation: setting a default value to a string
-        > won't result in validation (thus evaluation). This is actively
-        > being worked on.
-
         **Good behavior:**
         ```py
         from math import cos
 
-        from pydantic import BaseModel, ImportString, ValidationError
+        from pydantic import BaseModel, Field, ImportString, ValidationError
 
 
         class ImportThings(BaseModel):
@@ -925,7 +921,31 @@ else:
         # Actual python objects can be assigned as well
         my_cos = ImportThings(obj=cos)
         my_cos_2 = ImportThings(obj='math.cos')
-        assert my_cos == my_cos_2
+        my_cos_3 = ImportThings(obj='math:cos')
+        assert my_cos == my_cos_2 == my_cos_3
+
+
+        # You can set default field value either as Python object:
+        class ImportThingsDefaultPyObj(BaseModel):
+            obj: ImportString = math.cos
+
+
+        # or as a string value (but only if used with `validate_default=True`)
+        class ImportThingsDefaultString(BaseModel):
+            obj: ImportString = Field(default='math.cos', validate_default=True)
+
+
+        my_cos_default1 = ImportThingsDefaultPyObj()
+        my_cos_default2 = ImportThingsDefaultString()
+        assert my_cos_default1.obj == my_cos_default2.obj == math.cos
+
+
+        # note: this will not work!
+        class ImportThingsMissingValidateDefault(BaseModel):
+            obj: ImportString = 'math.cos'
+
+        my_cos_default3 = ImportThingsMissingValidateDefault()
+        assert my_cos_default3.obj == 'math.cos'  # just string, not evaluated
         ```
 
         Serializing an `ImportString` type to json is also possible.
@@ -939,7 +959,7 @@ else:
 
 
         # Create an instance
-        m = ImportThings(obj='math:cos')
+        m = ImportThings(obj='math.cos')
         print(m)
         #> obj=<built-in function cos>
         print(m.model_dump_json())

@@ -877,6 +877,8 @@ def test_string_import_callable(annotation):
     [
         ('math:cos', 'math.cos', 'json'),
         ('math:cos', math.cos, 'python'),
+        ('math.cos', 'math.cos', 'json'),
+        ('math.cos', math.cos, 'python'),
         pytest.param(
             'os.path', 'posixpath', 'json', marks=pytest.mark.skipif(sys.platform == 'win32', reason='different output')
         ),
@@ -901,6 +903,22 @@ def test_string_import_any(value: Any, expected: Any, mode: Literal['json', 'pyt
         thing: ImportString
 
     assert PyObjectModel(thing=value).model_dump(mode=mode) == {'thing': expected}
+
+
+@pytest.mark.parametrize(
+    ('value', 'validate_default', 'expected'),
+    [
+        (math.cos, True, math.cos),
+        ('math:cos', True, math.cos),
+        (math.cos, False, math.cos),
+        ('math:cos', False, 'math:cos'),
+    ],
+)
+def test_string_import_default_value(value: Any, validate_default: bool, expected: Any):
+    class PyObjectModel(BaseModel):
+        thing: ImportString = Field(default=value, validate_default=validate_default)
+
+    assert PyObjectModel().thing == expected
 
 
 @pytest.mark.parametrize('value', ['oss', 'os.os', f'{__name__}.x'])
