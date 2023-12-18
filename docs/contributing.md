@@ -108,7 +108,7 @@ If you've made any changes to the documentation (including changes to function s
 # Build documentation
 make docs
 # If you have changed the documentation, make sure it builds successfully.
-# You can also use `make docs-serve` to serve the documentation at localhost:8000
+# You can also use `pdm run mkdocs serve` to serve the documentation at localhost:8000
 ```
 
 ### Commit and push your changes
