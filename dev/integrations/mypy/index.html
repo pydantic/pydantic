@@ -3285,10 +3285,14 @@ features to mypy that improve its ability to type-check your code.</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">middle_name</span><span class="p">)</span>  <span class="c1"># not a model field!</span>
 <span class="n">Model</span><span class="p">()</span>  <span class="c1"># will raise a validation error for age and list_of_ints</span>
 </code></pre></div>
-<p>Without any special configuration, mypy catches one of the errors:</p>
-<div class="language-text highlight"><pre><span></span><code>16: error: &quot;Model&quot; has no attribute &quot;middle_name&quot;  [attr-defined]
+<p>Without any special configuration, mypy does not catch the <a href="https://docs.pydantic.dev/2.5/errors/usage_errors/#model-field-missing-annotation">missing model field annotation</a> and warns about the <code>list_of_ints</code> argument which Pydantic parses correctly:</p>
+<div class="language-text highlight"><pre><span></span><code>test.py:15: error: List item 1 has incompatible type &quot;str&quot;; expected &quot;int&quot;  [list-item]
+test.py:15: error: List item 2 has incompatible type &quot;bytes&quot;; expected &quot;int&quot;  [list-item]
+test.py:16: error: &quot;Model&quot; has no attribute &quot;middle_name&quot;  [attr-defined]
+test.py:17: error: Missing named argument &quot;age&quot; for &quot;Model&quot;  [call-arg]
+test.py:17: error: Missing named argument &quot;list_of_ints&quot; for &quot;Model&quot;  [call-arg]
 </code></pre></div>
-<p>But <a href="#enabling-the-plugin">with the plugin enabled</a>, it catches both:
+<p>But <a href="#enabling-the-plugin">with the plugin enabled</a>, it gives the correct error:
 <div class="language-text highlight"><pre><span></span><code>9: error: Untyped fields disallowed  [pydantic-field]
 16: error: &quot;Model&quot; has no attribute &quot;middle_name&quot;  [attr-defined]
 17: error: Missing named argument &quot;age&quot; for &quot;Model&quot;  [call-arg]
