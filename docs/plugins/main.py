@@ -406,7 +406,7 @@ maintainers_template = Template(
 )
 
 
-def populate_pydantic_people(markdown: str, page: Page) -> None:
+def populate_pydantic_people(markdown: str, page: Page) -> str | None:
     if page.file.src_uri != 'pydantic_people.md':
         return None
 
