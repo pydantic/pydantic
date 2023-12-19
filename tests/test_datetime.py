@@ -176,6 +176,31 @@ def datetime_model_fixture():
         (b'1494012444', datetime(2017, 5, 5, 19, 27, 24, tzinfo=timezone.utc)),
         ('1494012444000.883309', datetime(2017, 5, 5, 19, 27, 24, 883301, tzinfo=timezone.utc)),
         ('-1494012444000.883309', datetime(1922, 8, 29, 4, 32, 35, 999000, tzinfo=timezone.utc)),
+        (19_999_999_999, datetime(2603, 10, 11, 11, 33, 19, tzinfo=timezone.utc)),  # just before watershed
+        (20_000_000_001, datetime(1970, 8, 20, 11, 33, 20, 1000, tzinfo=timezone.utc)),  # just after watershed
+        (1_549_316_052, datetime(2019, 2, 4, 21, 34, 12, 0, tzinfo=timezone.utc)),  # nowish in s
+        (1_549_316_052_104, datetime(2019, 2, 4, 21, 34, 12, 104_000, tzinfo=timezone.utc)),  # nowish in ms
+        # Invalid inputs
+        (1_549_316_052_104_324, Err('Input should be a valid datetime, dates after 9999')),  # nowish in μs
+        (1_549_316_052_104_324_096, Err('Input should be a valid datetime, dates after 9999')),  # nowish in ns
+        (float('inf'), Err('Input should be a valid datetime, dates after 9999')),
+        (float('-inf'), Err('Input should be a valid datetime, dates before 1600')),
+        (1e50, Err('Input should be a valid datetime, dates after 9999')),
+        (float('nan'), Err('Input should be a valid datetime, NaN values not permitted')),
+    ],
+)
+def test_datetime_parsing(DatetimeModel, value, result):
+    if isinstance(result, Err):
+        with pytest.raises(ValidationError, match=result.message_escaped()):
+            DatetimeModel(dt=value)
+    else:
+        assert DatetimeModel(dt=value).dt == result
+
+
+@pytest.mark.xfail(reason='needs new pydantic-core version')
+@pytest.mark.parametrize(
+    'value,result',
+    [
         # Invalid inputs
         ('2012-4-9 4:8:16', Err('Input should be a valid datetime or date, invalid character in month')),
         ('x20120423091500', Err('Input should be a valid datetime or date, invalid character in year')),
@@ -184,20 +209,10 @@ def datetime_model_fixture():
             '2012-04-23T11:05:00-25:00',
             Err('Input should be a valid datetime or date, unexpected extra characters at the end of the input'),
         ),
-        (19_999_999_999, datetime(2603, 10, 11, 11, 33, 19, tzinfo=timezone.utc)),  # just before watershed
-        (20_000_000_001, datetime(1970, 8, 20, 11, 33, 20, 1000, tzinfo=timezone.utc)),  # just after watershed
-        (1_549_316_052, datetime(2019, 2, 4, 21, 34, 12, 0, tzinfo=timezone.utc)),  # nowish in s
-        (1_549_316_052_104, datetime(2019, 2, 4, 21, 34, 12, 104_000, tzinfo=timezone.utc)),  # nowish in ms
-        (1_549_316_052_104_324, Err('Input should be a valid datetime, dates after 9999')),  # nowish in μs
-        (1_549_316_052_104_324_096, Err('Input should be a valid datetime, dates after 9999')),  # nowish in ns
         ('infinity', Err('Input should be a valid datetime or date, input is too short')),
-        (float('inf'), Err('Input should be a valid datetime, dates after 9999')),
-        (float('-inf'), Err('Input should be a valid datetime, dates before 1600')),
-        (1e50, Err('Input should be a valid datetime, dates after 9999')),
-        (float('nan'), Err('Input should be a valid datetime, NaN values not permitted')),
     ],
 )
-def test_datetime_parsing(DatetimeModel, value, result):
+def test_datetime_parsing_from_str(DatetimeModel, value, result):
     if isinstance(result, Err):
         with pytest.raises(ValidationError, match=result.message_escaped()):
             DatetimeModel(dt=value)
@@ -614,6 +629,7 @@ def test_tzinfo_could_be_reused():
     assert isinstance(now, datetime)
 
 
+@pytest.mark.xfail(reason='needs new pydantic-core version')
 def test_datetime_from_date_str():
     class Model(BaseModel):
         value: datetime
