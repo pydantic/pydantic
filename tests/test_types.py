@@ -1478,9 +1478,9 @@ def test_datetime_errors(DatetimeModel):
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'datetime_parsing',
+            'type': 'datetime_from_date_parsing',
             'loc': ('dt',),
-            'msg': 'Input should be a valid datetime, month value is outside expected range of 1-12',
+            'msg': 'Input should be a valid datetime or date, month value is outside expected range of 1-12',
             'input': '2017-13-05T19:47:07',
             'ctx': {'error': 'month value is outside expected range of 1-12'},
         },
