@@ -52,7 +52,7 @@ def generate_pydantic_signature(
     for param in islice(present_params, 1, None):  # skip self arg
         # inspect does "clever" things to show annotations as strings because we have
         # `from __future__ import annotations` in main, we don't want that
-        if fields.get(param.name) and isinstance(fields[param.name].alias, str):
+        if fields.get(param.name):
             param_name = _field_name_or_alias(param.name, fields[param.name])
             param = param.replace(name=param_name)
         if param.annotation == 'Any':
