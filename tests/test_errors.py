@@ -332,6 +332,7 @@ all_errors = [
     ('time_parsing', 'Input should be in a valid time format, foobar', {'error': 'foobar'}),
     ('datetime_type', 'Input should be a valid datetime', None),
     ('datetime_parsing', 'Input should be a valid datetime, foobar', {'error': 'foobar'}),
+    ('datetime_from_date_parsing', 'Input should be a valid datetime or date, foobar', {'error': 'foobar'}),
     ('datetime_object_invalid', 'Invalid datetime object, got foobar', {'error': 'foobar'}),
     ('datetime_past', 'Input should be in the past', None),
     ('datetime_future', 'Input should be in the future', None),

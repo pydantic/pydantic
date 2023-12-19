@@ -3787,6 +3787,7 @@ ErrorType = Literal[
     'datetime_type',
     'datetime_parsing',
     'datetime_object_invalid',
+    'datetime_from_date_parsing',
     'datetime_past',
     'datetime_future',
     'timezone_naive',

@@ -2,7 +2,7 @@ use pyo3::intern;
 use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
 use pyo3::types::{PyDateTime, PyDict, PyString};
-use speedate::DateTime;
+use speedate::{DateTime, Time};
 use std::cmp::Ordering;
 use strum::EnumMessage;
 
@@ -13,6 +13,7 @@ use crate::input::{EitherDateTime, Input};
 
 use crate::tools::SchemaDict;
 
+use super::Exactness;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 #[derive(Debug, Clone)]
@@ -65,9 +66,15 @@ impl Validator for DateTimeValidator {
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         let strict = state.strict_or(self.strict);
-        let datetime = input
-            .validate_datetime(strict, self.microseconds_precision)?
-            .unpack(state);
+        let datetime = match input.validate_datetime(strict, self.microseconds_precision) {
+            Ok(val_match) => val_match.unpack(state),
+            // if the error was a parsing error, in lax mode we allow dates and add the time 00:00:00
+            Err(line_errors @ ValError::LineErrors(..)) if !strict => {
+                state.floor_exactness(Exactness::Lax);
+                datetime_from_date(input)?.ok_or(line_errors)?
+            }
+            Err(otherwise) => return Err(otherwise),
+        };
         if let Some(constraints) = &self.constraints {
             // if we get an error from as_speedate, it's probably because the input datetime was invalid
             // specifically had an invalid tzinfo, hence here we return a validation error
@@ -130,6 +137,48 @@ impl Validator for DateTimeValidator {
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }
+}
+
+/// In lax mode, if the input is not a datetime, we try parsing the input as a date and add the "00:00:00" time.
+///
+/// Ok(None) means that this is not relevant to datetimes (the input was not a date nor a string)
+fn datetime_from_date<'data>(input: &'data impl Input<'data>) -> Result<Option<EitherDateTime<'data>>, ValError> {
+    let either_date = match input.validate_date(false) {
+        Ok(val_match) => val_match.into_inner(),
+        // if the error was a parsing error, update the error type from DateParsing to DatetimeFromDateParsing
+        Err(ValError::LineErrors(mut line_errors)) => {
+            if line_errors.iter_mut().fold(false, |has_parsing_error, line_error| {
+                if let ErrorType::DateParsing { error, .. } = &mut line_error.error_type {
+                    line_error.error_type = ErrorType::DatetimeFromDateParsing {
+                        error: std::mem::take(error),
+                        context: None,
+                    };
+                    true
+                } else {
+                    has_parsing_error
+                }
+            }) {
+                return Err(ValError::LineErrors(line_errors));
+            }
+            return Ok(None);
+        }
+        // for any other error, don't return it
+        Err(_) => return Ok(None),
+    };
+
+    let zero_time = Time {
+        hour: 0,
+        minute: 0,
+        second: 0,
+        microsecond: 0,
+        tz_offset: Some(0),
+    };
+
+    let datetime = DateTime {
+        date: either_date.as_raw()?,
+        time: zero_time,
+    };
+    Ok(Some(EitherDateTime::Raw(datetime)))
 }
 
 #[derive(Debug, Clone)]
