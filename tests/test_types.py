@@ -1472,15 +1472,16 @@ def test_datetime_successful(DatetimeModel):
     assert m.duration == timedelta(minutes=15, seconds=30, microseconds=100)
 
 
+@pytest.mark.xfail(reason='needs new pydantic-core version')
 def test_datetime_errors(DatetimeModel):
     with pytest.raises(ValueError) as exc_info:
         DatetimeModel(dt='2017-13-05T19:47:07', date_='XX1494012000', time_='25:20:30.400', duration='15:30.0001broken')
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'datetime_parsing',
+            'type': 'datetime_from_date_parsing',
             'loc': ('dt',),
-            'msg': 'Input should be a valid datetime, month value is outside expected range of 1-12',
+            'msg': 'Input should be a valid datetime or date, month value is outside expected range of 1-12',
             'input': '2017-13-05T19:47:07',
             'ctx': {'error': 'month value is outside expected range of 1-12'},
         },
