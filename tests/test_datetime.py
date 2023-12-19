@@ -612,3 +612,11 @@ def test_tzinfo_could_be_reused():
 
     now = datetime.now(tz=m.value.tzinfo)
     assert isinstance(now, datetime)
+
+
+def test_datetime_from_date_str():
+    class Model(BaseModel):
+        value: datetime
+
+    m = Model(value='2015-10-21')
+    assert m.value == datetime(2015, 10, 21, 0, 0, tzinfo=timezone.utc)
