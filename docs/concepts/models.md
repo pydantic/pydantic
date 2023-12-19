@@ -1427,6 +1427,9 @@ print(Model.y)
 
 ### Private model attributes
 
+??? api "API Documentation"
+    [`pydantic.fields.PrivateAttr`][pydantic.fields.PrivateAttr]<br>
+
 Attributes whose name has a leading underscore are not treated as fields by Pydantic, and are not included in the
 model schema. Instead, these are converted into a "private attribute" which is not validated or even set during
 calls to `__init__`, `model_validate`, etc.
