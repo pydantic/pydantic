@@ -47,12 +47,12 @@ def test_datetime_binary(datetime_schema, data):
     except ValidationError as exc:
         assert exc.errors(include_url=False) == [
             {
-                'type': 'datetime_parsing',
-                'loc': (),
-                'msg': IsStr(regex='Input should be a valid datetime, .+'),
-                'input': IsBytes(),
                 'ctx': {'error': IsStr()},
-            }
+                'input': IsBytes(),
+                'loc': (),
+                'msg': IsStr(regex='Input should be a valid datetime or date, .+'),
+                'type': 'datetime_from_date_parsing',
+            },
         ]
 
 

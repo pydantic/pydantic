@@ -338,6 +338,9 @@ error_types! {
     DatetimeObjectInvalid {
         error: {ctx_type: String, ctx_fn: field_from_context},
     },
+    DatetimeFromDateParsing {
+        error: {ctx_type: Cow<'static, str>, ctx_fn: cow_field_from_context<String, _>},
+    },
     DatetimePast {},
     DatetimeFuture {},
     // ---------------------
@@ -529,6 +532,7 @@ impl ErrorType {
             Self::DatetimeType {..} => "Input should be a valid datetime",
             Self::DatetimeParsing {..} => "Input should be a valid datetime, {error}",
             Self::DatetimeObjectInvalid {..} => "Invalid datetime object, got {error}",
+            Self::DatetimeFromDateParsing {..} => "Input should be a valid datetime or date, {error}",
             Self::DatetimePast {..} => "Input should be in the past",
             Self::DatetimeFuture {..} => "Input should be in the future",
             Self::TimezoneNaive {..} => "Input should not have timezone info",
@@ -684,6 +688,7 @@ impl ErrorType {
             Self::DateFromDatetimeParsing { error, .. } => render!(tmpl, error),
             Self::TimeParsing { error, .. } => render!(tmpl, error),
             Self::DatetimeParsing { error, .. } => render!(tmpl, error),
+            Self::DatetimeFromDateParsing { error, .. } => render!(tmpl, error),
             Self::DatetimeObjectInvalid { error, .. } => render!(tmpl, error),
             Self::TimezoneOffset {
                 tz_expected, tz_actual, ..

@@ -19,6 +19,7 @@ from ..conftest import Err, PyAndJson
     [
         (datetime(2022, 6, 8, 12, 13, 14), datetime(2022, 6, 8, 12, 13, 14)),
         (date(2022, 6, 8), datetime(2022, 6, 8)),
+        ('2022-01-01', datetime(2022, 1, 1, 0, 0, 0, tzinfo=timezone.utc)),
         ('2022-06-08T12:13:14', datetime(2022, 6, 8, 12, 13, 14)),
         ('1000000000000', datetime(2001, 9, 9, 1, 46, 40, tzinfo=timezone.utc)),
         (b'2022-06-08T12:13:14', datetime(2022, 6, 8, 12, 13, 14)),
@@ -36,8 +37,14 @@ from ..conftest import Err, PyAndJson
         (float('nan'), Err('Input should be a valid datetime, NaN values not permitted [type=datetime_parsing,')),
         (float('inf'), Err('Input should be a valid datetime, dates after 9999')),
         (float('-inf'), Err('Input should be a valid datetime, dates before 1600')),
-        ('-', Err('Input should be a valid datetime, input is too short [type=datetime_parsing,')),
-        ('+', Err('Input should be a valid datetime, input is too short [type=datetime_parsing,')),
+        ('-', Err('Input should be a valid datetime or date, input is too short [type=datetime_from_date_parsing,')),
+        ('+', Err('Input should be a valid datetime or date, input is too short [type=datetime_from_date_parsing,')),
+        (
+            '2022-02-30',
+            Err(
+                'Input should be a valid datetime or date, day value is outside expected range [type=datetime_from_date_parsing,'
+            ),
+        ),
     ],
 )
 def test_datetime(input_value, expected):
@@ -119,7 +126,9 @@ def test_keep_tz_bound():
         (1655205632.331557, datetime(2022, 6, 14, 11, 20, 32, microsecond=331557, tzinfo=timezone.utc)),
         (
             '2022-06-08T12:13:14+24:00',
-            Err('Input should be a valid datetime, timezone offset must be less than 24 hours [type=datetime_parsing,'),
+            Err(
+                'Input should be a valid datetime or date, unexpected extra characters at the end of the input [type=datetime_from_date_parsing,'
+            ),
         ),
         (True, Err('Input should be a valid datetime [type=datetime_type')),
         (None, Err('Input should be a valid datetime [type=datetime_type')),
