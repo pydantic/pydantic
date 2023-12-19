@@ -10,11 +10,19 @@ if TYPE_CHECKING:
     from ..fields import FieldInfo
 
 
-def field_to_param_name(field_name: str, field: FieldInfo) -> str:
-    """Convert field to parameter name.
-    Returns the name to use for the parameter, giving priority to the alias of the field.
+def _field_name_or_alias(field_name: str, field_info: FieldInfo) -> str:
+    """Extract the correct name to use for the field when generating a signature.
+    If it has a valid alias then returns its alais, else returns its name
+    Args:
+        field_name: The name of the field
+        field_info: The field
+
+    Returns:
+        The correct name to use when generating a signature.
     """
-    return field.alias if isinstance(field.alias, str) and is_valid_identifier(field.alias) else field_name
+    return (
+        field_info.alias if isinstance(field_info.alias, str) and is_valid_identifier(field_info.alias) else field_name
+    )
 
 
 def generate_pydantic_signature(
@@ -45,7 +53,7 @@ def generate_pydantic_signature(
         # inspect does "clever" things to show annotations as strings because we have
         # `from __future__ import annotations` in main, we don't want that
         if fields.get(param.name) and isinstance(fields[param.name].alias, str):
-            param_name = field_to_param_name(param.name, fields[param.name])
+            param_name = _field_name_or_alias(param.name, fields[param.name])
             param = param.replace(name=param_name)
         if param.annotation == 'Any':
             param = param.replace(annotation=Any)
@@ -58,7 +66,7 @@ def generate_pydantic_signature(
         allow_names = config_wrapper.populate_by_name
         for field_name, field in fields.items():
             # when alias is a str it should be used for signature generation
-            param_name = field_to_param_name(field_name, field)
+            param_name = _field_name_or_alias(field_name, field)
 
             if field_name in merged_params or param_name in merged_params:
                 continue
