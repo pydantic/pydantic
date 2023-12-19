@@ -2597,10 +2597,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#datetime_future" class="md-nav__link">
+  <a href="#datetime_from_date_parsing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        datetime_future
+        datetime_from_date_parsing
       
     </span>
   </a>
@@ -4096,10 +4096,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#datetime_future" class="md-nav__link">
+  <a href="#datetime_from_date_parsing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        datetime_future
+        datetime_from_date_parsing
       
     </span>
   </a>
@@ -5274,9 +5274,36 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
     <span class="c1">#&gt; &#39;date_type&#39;</span>
 </code></pre></div>
 <p>This error is also raised for strict fields when the input value is not an instance of <code>date</code>.</p>
-<h2 id="datetime_future"><code>datetime_future</code><a class="headerlink" href="#datetime_future" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value provided for a <code>FutureDatetime</code> field is not in the future:</p>
+<h2 id="datetime_from_date_parsing"><code>datetime_from_date_parsing</code><a class="headerlink" href="#datetime_from_date_parsing" title="Permanent link">&para;</a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Support for this error, along with support for parsing datetimes from <code>yyyy-MM-DD</code> dates will be added in <code>v2.6.0</code></p>
+</div>
+<p>This error is raised when the input value is a string that cannot be parsed for a <code>datetime</code> field:</p>
+<p>&lt;!-- uncomment with new pydantic-core version
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">datetime</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="c1"># there is no 13th month</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;2023-13-01&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
+    <span class="c1">#&gt; &#39;datetime_from_date_parsing&#39;</span>
+<span class="err">```</span> <span class="o">--&gt;</span>
+
+<span class="c1">## `datetime_future`</span>
+
+<span class="n">This</span> <span class="n">error</span> <span class="ow">is</span> <span class="n">raised</span> <span class="n">when</span> <span class="n">the</span> <span class="n">value</span> <span class="n">provided</span> <span class="k">for</span> <span class="n">a</span> <span class="err">`</span><span class="n">FutureDatetime</span><span class="err">`</span> <span class="n">field</span> <span class="ow">is</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">future</span><span class="p">:</span>
+
+<span class="err">```</span><span class="n">py</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">FutureDatetime</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5290,7 +5317,7 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
     <span class="c1">#&gt; &#39;datetime_future&#39;</span>
-</code></pre></div>
+</code></pre></div></p>
 <h2 id="datetime_object_invalid"><code>datetime_object_invalid</code><a class="headerlink" href="#datetime_object_invalid" title="Permanent link">&para;</a></h2>
 <p>This error is raised when something about the <code>datetime</code> object is not valid:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">tzinfo</span>
@@ -5317,17 +5344,18 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 </code></pre></div>
 <h2 id="datetime_parsing"><code>datetime_parsing</code><a class="headerlink" href="#datetime_parsing" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the value is a string that cannot be parsed for a <code>datetime</code> field:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;test&#39;</span><span class="p">)</span>
+    <span class="n">Model</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;not a datetime&#39;</span><span class="p">}))</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
     <span class="c1">#&gt; &#39;datetime_parsing&#39;</span>
