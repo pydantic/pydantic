@@ -2487,9 +2487,10 @@ def test_signature():
         a: float = dataclasses.field(default_factory=float)
         b: float = Field(default=1.0)
         c: float = Field(default_factory=float)
+        d: int = dataclasses.field(metadata={'alias': 'dd'}, default=1)
 
     assert str(inspect.signature(Model)) == (
-        "(x: int, y: str = 'y', z: float = 1.0, a: float = <factory>, b: float = 1.0, c: float = <factory>) -> None"
+        "(x: int, y: str = 'y', z: float = 1.0, a: float = <factory>, b: float = 1.0, c: float = <factory>, dd: int = 1) -> None"
     )
 
 
