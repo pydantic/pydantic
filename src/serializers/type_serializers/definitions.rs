@@ -68,15 +68,17 @@ impl TypeSerializer for DefinitionRefSerializer {
         exclude: Option<&PyAny>,
         extra: &Extra,
     ) -> PyResult<PyObject> {
-        let comb_serializer = self.definition.get().unwrap();
-        let value_id = extra.rec_guard.add(value, self.definition.id())?;
-        let r = comb_serializer.to_python(value, include, exclude, extra);
-        extra.rec_guard.pop(value_id, self.definition.id());
-        r
+        self.definition.read(|comb_serializer| {
+            let comb_serializer = comb_serializer.unwrap();
+            let value_id = extra.rec_guard.add(value, self.definition.id())?;
+            let r = comb_serializer.to_python(value, include, exclude, extra);
+            extra.rec_guard.pop(value_id, self.definition.id());
+            r
+        })
     }
 
     fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
-        self.definition.get().unwrap().json_key(key, extra)
+        self.definition.read(|s| s.unwrap().json_key(key, extra))
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
@@ -87,14 +89,16 @@ impl TypeSerializer for DefinitionRefSerializer {
         exclude: Option<&PyAny>,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
-        let comb_serializer = self.definition.get().unwrap();
-        let value_id = extra
-            .rec_guard
-            .add(value, self.definition.id())
-            .map_err(py_err_se_err)?;
-        let r = comb_serializer.serde_serialize(value, serializer, include, exclude, extra);
-        extra.rec_guard.pop(value_id, self.definition.id());
-        r
+        self.definition.read(|comb_serializer| {
+            let comb_serializer = comb_serializer.unwrap();
+            let value_id = extra
+                .rec_guard
+                .add(value, self.definition.id())
+                .map_err(py_err_se_err)?;
+            let r = comb_serializer.serde_serialize(value, serializer, include, exclude, extra);
+            extra.rec_guard.pop(value_id, self.definition.id());
+            r
+        })
     }
 
     fn get_name(&self) -> &str {
@@ -102,6 +106,6 @@ impl TypeSerializer for DefinitionRefSerializer {
     }
 
     fn retry_with_lax_check(&self) -> bool {
-        self.definition.get().unwrap().retry_with_lax_check()
+        self.definition.read(|s| s.unwrap().retry_with_lax_check())
     }
 }
