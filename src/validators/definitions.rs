@@ -73,23 +73,25 @@ impl Validator for DefinitionRefValidator {
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
-        let validator = self.definition.get().unwrap();
-        if let Some(id) = input.identity() {
-            if state.recursion_guard.contains_or_insert(id, self.definition.id()) {
-                // we don't remove id here, we leave that to the validator which originally added id to `recursion_guard`
-                Err(ValError::new(ErrorTypeDefaults::RecursionLoop, input))
-            } else {
-                if state.recursion_guard.incr_depth() {
-                    return Err(ValError::new(ErrorTypeDefaults::RecursionLoop, input));
+        self.definition.read(|validator| {
+            let validator = validator.unwrap();
+            if let Some(id) = input.identity() {
+                if state.recursion_guard.contains_or_insert(id, self.definition.id()) {
+                    // we don't remove id here, we leave that to the validator which originally added id to `recursion_guard`
+                    Err(ValError::new(ErrorTypeDefaults::RecursionLoop, input))
+                } else {
+                    if state.recursion_guard.incr_depth() {
+                        return Err(ValError::new(ErrorTypeDefaults::RecursionLoop, input));
+                    }
+                    let output = validator.validate(py, input, state);
+                    state.recursion_guard.remove(id, self.definition.id());
+                    state.recursion_guard.decr_depth();
+                    output
                 }
-                let output = validator.validate(py, input, state);
-                state.recursion_guard.remove(id, self.definition.id());
-                state.recursion_guard.decr_depth();
-                output
+            } else {
+                validator.validate(py, input, state)
             }
-        } else {
-            validator.validate(py, input, state)
-        }
+        })
     }
 
     fn validate_assignment<'data>(
@@ -100,23 +102,25 @@ impl Validator for DefinitionRefValidator {
         field_value: &'data PyAny,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
-        let validator = self.definition.get().unwrap();
-        if let Some(id) = obj.identity() {
-            if state.recursion_guard.contains_or_insert(id, self.definition.id()) {
-                // we don't remove id here, we leave that to the validator which originally added id to `recursion_guard`
-                Err(ValError::new(ErrorTypeDefaults::RecursionLoop, obj))
-            } else {
-                if state.recursion_guard.incr_depth() {
-                    return Err(ValError::new(ErrorTypeDefaults::RecursionLoop, obj));
+        self.definition.read(|validator| {
+            let validator = validator.unwrap();
+            if let Some(id) = obj.identity() {
+                if state.recursion_guard.contains_or_insert(id, self.definition.id()) {
+                    // we don't remove id here, we leave that to the validator which originally added id to `recursion_guard`
+                    Err(ValError::new(ErrorTypeDefaults::RecursionLoop, obj))
+                } else {
+                    if state.recursion_guard.incr_depth() {
+                        return Err(ValError::new(ErrorTypeDefaults::RecursionLoop, obj));
+                    }
+                    let output = validator.validate_assignment(py, obj, field_name, field_value, state);
+                    state.recursion_guard.remove(id, self.definition.id());
+                    state.recursion_guard.decr_depth();
+                    output
                 }
-                let output = validator.validate_assignment(py, obj, field_name, field_value, state);
-                state.recursion_guard.remove(id, self.definition.id());
-                state.recursion_guard.decr_depth();
-                output
+            } else {
+                validator.validate_assignment(py, obj, field_name, field_value, state)
             }
-        } else {
-            validator.validate_assignment(py, obj, field_name, field_value, state)
-        }
+        })
     }
 
     fn get_name(&self) -> &str {
