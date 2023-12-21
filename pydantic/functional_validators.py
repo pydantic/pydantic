@@ -355,7 +355,7 @@ def field_validator(
         )
 
     def dec(
-        f: Callable[..., Any] | staticmethod[Any, Any] | classmethod[Any, Any, Any]
+        f: Callable[..., Any] | staticmethod[Any, Any] | classmethod[Any, Any, Any],
     ) -> _decorators.PydanticDescriptorProxy[Any]:
         if _decorators.is_instance_method_from_sig(f):
             raise PydanticUserError(
