@@ -754,7 +754,7 @@ def test_deprecated_module(tmp_path: Path) -> None:
         custom_pydantic_encoder({int: lambda x: str(x)}, Model(x=1))
 
     assert hasattr(timedelta_isoformat, '__deprecated__')
-    with pytest.warns(PydanticDeprecatedSince20, match='timedelta_isoformat is deprecated.'):
+    with pytest.warns(PydanticDeprecatedSince20, match='`timedelta_isoformat` is deprecated.'):
         timedelta_isoformat(timedelta(seconds=1))
 
     with pytest.warns(

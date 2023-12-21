@@ -1,7 +1,7 @@
 import datetime
+import warnings
 from collections import deque
 from decimal import Decimal
-import warnings
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
