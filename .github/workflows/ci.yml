@@ -643,11 +643,11 @@ jobs:
             if command -v apt-get &> /dev/null; then
               echo "installing python & pip with apt-get..."
               apt-get update
-              apt-get install -y --no-install-recommends python3 python3-pip python3-venv
+              apt-get install -y --no-install-recommends python3 python3-pip python3-venv git
             else
               echo "installing python & pip with apk..."
               apk update
-              apk add python3 py3-pip
+              apk add python3 py3-pip git
             fi
           run: |
             set -x
