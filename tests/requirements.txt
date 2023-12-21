@@ -9,7 +9,9 @@ pandas==2.1.3; python_version >= "3.9" and python_version < "3.13" and implement
 pytest==7.4.3
 # we run codspeed benchmarks on x86_64 CPython (i.e. native github actions architecture)
 pytest-codspeed~=2.2.0; implementation_name == "cpython" and platform_machine == 'x86_64'
-pytest-examples==0.0.10
+# pytest-examples currently depends on aiohttp via black; we don't want to build
+# it on platforms like aarch64 musllinux in CI
+pytest-examples==0.0.10; implementation_name == "cpython" and platform_machine == 'x86_64'
 pytest-speed==0.3.5
 pytest-mock==3.11.1
 pytest-pretty==1.2.0
