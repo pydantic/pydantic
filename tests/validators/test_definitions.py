@@ -140,3 +140,13 @@ def test_use_after():
         )
     )
     assert v.validate_python(['1', '2']) == (1, 2)
+
+
+def test_definition_chain():
+    v = SchemaValidator(
+        core_schema.definitions_schema(
+            core_schema.definition_reference_schema('foo'),
+            [core_schema.definition_reference_schema(ref='foo', schema_ref='bar'), core_schema.int_schema(ref='bar')],
+        ),
+    )
+    assert v.validate_python('1') == 1
