@@ -3576,12 +3576,13 @@ def definitions_schema(schema: CoreSchema, definitions: list[CoreSchema]) -> Def
 class DefinitionReferenceSchema(TypedDict, total=False):
     type: Required[Literal['definition-ref']]
     schema_ref: Required[str]
+    ref: str
     metadata: Any
     serialization: SerSchema
 
 
 def definition_reference_schema(
-    schema_ref: str, metadata: Any = None, serialization: SerSchema | None = None
+    schema_ref: str, ref: str | None = None, metadata: Any = None, serialization: SerSchema | None = None
 ) -> DefinitionReferenceSchema:
     """
     Returns a schema that points to a schema stored in "definitions", this is useful for nested recursive
@@ -3606,7 +3607,9 @@ def definition_reference_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return _dict_not_none(type='definition-ref', schema_ref=schema_ref, metadata=metadata, serialization=serialization)
+    return _dict_not_none(
+        type='definition-ref', schema_ref=schema_ref, ref=ref, metadata=metadata, serialization=serialization
+    )
 
 
 MYPY = False
