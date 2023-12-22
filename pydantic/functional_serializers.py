@@ -23,11 +23,14 @@ class PlainSerializer:
         return_type: The return type for the function. If omitted it will be inferred from the type annotation.
         when_used: Determines when this serializer should be used. Accepts a string with values `'always'`,
             `'unless-none'`, `'json'`, and `'json-unless-none'`. Defaults to 'always'.
+            Can also use a set containing `'python'`, `'json'` or both
+            to specify precisely the mode
     """
 
     func: core_schema.SerializerFunction
     return_type: Any = PydanticUndefined
-    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always'
+    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] | set[Literal['python', 'json']] = 'always'
+    unless_none: bool = False
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         """Gets the Pydantic core schema.
@@ -47,13 +50,46 @@ class PlainSerializer:
         except NameError as e:
             raise PydanticUndefinedAnnotation.from_name_error(e) from e
         return_schema = None if return_type is PydanticUndefined else handler.generate_schema(return_type)
-        schema['serialization'] = core_schema.plain_serializer_function_ser_schema(
+
+        if isinstance(self.when_used, str):
+            schema['serialization'] = core_schema.plain_serializer_function_ser_schema(
+                function=self.func,
+                info_arg=_decorators.inspect_annotated_serializer(self.func, 'plain'),
+                return_schema=return_schema,
+                when_used=self.when_used,
+            )
+            return schema
+
+        new_plain_serializer = core_schema.plain_serializer_function_ser_schema(
             function=self.func,
             info_arg=_decorators.inspect_annotated_serializer(self.func, 'plain'),
             return_schema=return_schema,
-            when_used=self.when_used,
+            when_used='unless-none' if self.unless_none else 'always',
         )
-        return schema
+
+        if self.when_used == {'python', 'json'}:
+            schema['serialization'] = new_plain_serializer
+            return schema
+
+        # if (serialization:=schema.get('serialization')) and isinstance(serialization, core_schema.JsonOrPythonSchema):
+        #     if 'python' in self.when_used:
+        #         serialization.python = new_plain_serializer
+        #     if 'json' in self.when_used:
+        #         serialization.json = new_plain_serializer
+        #     return schema
+
+        python_schema = schema
+        if 'python' in self.when_used:
+            python_schema['serialization'] = new_plain_serializer
+
+        json_schema = schema.copy()
+        if 'json' in self.when_used:
+            json_schema['serialization'] = new_plain_serializer
+
+        return core_schema.json_or_python_schema(
+            python_schema=python_schema,
+            json_schema=json_schema,
+        )
 
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)

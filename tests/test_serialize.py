@@ -102,6 +102,17 @@ def test_serializer_annotated_plain_json():
     assert MyModel(x=1234).model_dump_json() == '{"x":"1,234"}'
 
 
+def test_serializer_annotated_plain_only_python():
+    FancyInt = Annotated[int, PlainSerializer(lambda x: f'{x:,}', return_type=str, when_used={'python'})]
+
+    class MyModel(BaseModel):
+        x: FancyInt
+
+    assert MyModel(x=1234).model_dump() == {'x': '1,234'}
+    assert MyModel(x=1234).model_dump_json() == '{"x":1234}'
+    assert MyModel(x=1234).model_dump(mode='json') == {'x': 1234}
+
+
 def test_serializer_annotated_wrap_always():
     def ser_wrap(v: Any, nxt: SerializerFunctionWrapHandler) -> str:
         return f'{nxt(v + 1):,}'
