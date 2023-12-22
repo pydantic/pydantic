@@ -6,7 +6,7 @@
 
 #### Packaging
 
-* uprev `pydantic-core` to 2.14.5
+* uprev `pydantic-core` to 2.14.6
 
 #### Fixes
 
