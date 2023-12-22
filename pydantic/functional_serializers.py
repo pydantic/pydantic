@@ -176,7 +176,7 @@ def field_serializer(
     """
 
     def dec(
-        f: Callable[..., Any] | staticmethod[Any, Any] | classmethod[Any, Any, Any]
+        f: Callable[..., Any] | staticmethod[Any, Any] | classmethod[Any, Any, Any],
     ) -> _decorators.PydanticDescriptorProxy[Any]:
         dec_info = _decorators.FieldSerializerDecoratorInfo(
             fields=fields,
