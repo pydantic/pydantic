@@ -1,4 +1,19 @@
-## v2.5.2 (2023-11-122)
+## v2.5.3 (2023-12-22)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.5.3)
+
+### What's Changed
+
+#### Packaging
+
+* uprev `pydantic-core` to 2.14.5
+
+#### Fixes
+
+* Fix memory leak with recursive definitions creating reference cycles by @davidhewitt in [pydantic/pydantic-core#1125](https://github.com/pydantic/pydantic-core/pull/1125)
+* Fix `JsonValue` `bool` serialization by @sydney-runkle in [#8190](https://github.com/pydantic/pydantic/pull/8190)
+
+## v2.5.2 (2023-11-22)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.5.2)
 
