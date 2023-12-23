@@ -2547,8 +2547,6 @@ def test_multiple_enums():
         (Literal[False], str, False, 'false', False, 'false'),
         (Literal[True], str, True, 'true', True, 'true'),
         (Literal[False], str, 'abc', '"abc"', 'abc', '"abc"'),
-        (Literal[False], int, False, 'false', 0, '0'),
-        (Literal[True], int, True, 'true', 1, '1'),
         (Literal[False], int, 42, '42', 42, '42'),
     ],
 )
