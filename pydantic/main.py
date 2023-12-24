@@ -58,6 +58,14 @@ __all__ = 'BaseModel', 'create_model'
 _object_setattr = _model_construction.object_setattr
 
 
+class classproperty:
+    def __init__(self, function) -> None:
+        self.fget = function
+
+    def __get__(self, instance, owner) -> Any:
+        return self.fget(owner)
+
+
 class BaseModel(metaclass=_model_construction.ModelMetaclass):
     """Usage docs: https://docs.pydantic.dev/2.6/concepts/models/
 
@@ -167,14 +175,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     # The following line sets a flag that we use to determine when `__init__` gets overridden by the user
     __init__.__pydantic_base_init__ = True
 
-    @property
-    def model_computed_fields(self) -> dict[str, ComputedFieldInfo]:
+    @classproperty
+    def model_computed_fields(cls) -> dict[str, ComputedFieldInfo]:
         """Get the computed fields of this model instance.
 
         Returns:
             A dictionary of computed field names and their corresponding `ComputedFieldInfo` objects.
         """
-        return {k: v.info for k, v in self.__pydantic_decorators__.computed_fields.items()}
+        return {k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()}
 
     @property
     def model_extra(self) -> dict[str, Any] | None:
