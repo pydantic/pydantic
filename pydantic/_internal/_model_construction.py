@@ -188,6 +188,11 @@ class ModelMetaclass(ABCMeta):
                 types_namespace=types_namespace,
                 create_model_module=_create_model_module,
             )
+
+            # If this is placed before the complete_model_class call above,
+            # the generic computed fields return type is set to PydanticUndefined
+            cls.model_computed_fields = {k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()}
+
             # using super(cls, cls) on the next line ensures we only call the parent class's __pydantic_init_subclass__
             # I believe the `type: ignore` is only necessary because mypy doesn't realize that this code branch is
             # only hit for _proper_ subclasses of BaseModel

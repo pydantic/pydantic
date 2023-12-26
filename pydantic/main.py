@@ -58,14 +58,6 @@ __all__ = 'BaseModel', 'create_model'
 _object_setattr = _model_construction.object_setattr
 
 
-class classproperty:
-    def __init__(self, function) -> None:
-        self.fget = function
-
-    def __get__(self, instance, owner) -> Any:
-        return self.fget(owner)
-
-
 class BaseModel(metaclass=_model_construction.ModelMetaclass):
     """Usage docs: https://docs.pydantic.dev/2.6/concepts/models/
 
@@ -136,10 +128,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_extra__: dict[str, Any] | None = _Field(init=False)  # type: ignore
         __pydantic_fields_set__: set[str] = _Field(init=False)  # type: ignore
         __pydantic_private__: dict[str, Any] | None = _Field(init=False)  # type: ignore
+
+        model_computed_fields: ClassVar[dict[str, ComputedFieldInfo]]
     else:
         # `model_fields` and `__pydantic_decorators__` must be set for
         # pydantic._internal._generate_schema.GenerateSchema.model_schema to work for a plain BaseModel annotation
         model_fields = {}
+        model_computed_fields = {}
         __pydantic_decorators__ = _decorators.DecoratorInfos()
         __pydantic_parent_namespace__ = None
         # Prevent `BaseModel` from being instantiated directly:
@@ -174,15 +169,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     # The following line sets a flag that we use to determine when `__init__` gets overridden by the user
     __init__.__pydantic_base_init__ = True
-
-    @classproperty
-    def model_computed_fields(cls) -> dict[str, ComputedFieldInfo]:
-        """Get the computed fields of this model instance.
-
-        Returns:
-            A dictionary of computed field names and their corresponding `ComputedFieldInfo` objects.
-        """
-        return {k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()}
 
     @property
     def model_extra(self) -> dict[str, Any] | None:
