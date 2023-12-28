@@ -780,7 +780,7 @@ def test_computed_field_deprecated():
 
         @computed_field(deprecated='This is deprecated')
         @property
-        @deprecated('This is deprecated (this message is overriden)')
+        @deprecated('This is deprecated (this message is overridden)')
         def p2(self) -> int:
             return 1
 

@@ -66,7 +66,7 @@ if hasattr(typing, 'Literal'):
 # Check if `deprecated` is a type to prevent errors when using typing_extensions < 4.9.0
 DEPRECATED_TYPES: tuple[Any, ...] = (deprecated,) if isinstance(deprecated, type) else ()
 if hasattr(warnings, 'deprecated'):
-    DEPRECATED_TYPES = (*DEPRECATED_TYPES, warnings.deprecated)
+    DEPRECATED_TYPES = (*DEPRECATED_TYPES, warnings.deprecated)  # type: ignore
 
 NONE_TYPES: tuple[Any, ...] = (None, NoneType, *(tp[None] for tp in LITERAL_TYPES))
 
