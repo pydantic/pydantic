@@ -86,7 +86,7 @@ def is_literal_type(type_: type[Any]) -> bool:
     return Literal is not None and get_origin(type_) in LITERAL_TYPES
 
 
-def is_deprecated_instance(instance: Any) -> bool:
+def is_deprecated_instance(instance: Any) -> TypeGuard[deprecated]:
     return isinstance(instance, DEPRECATED_TYPES)
 
 

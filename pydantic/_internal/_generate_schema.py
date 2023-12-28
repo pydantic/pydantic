@@ -1044,7 +1044,7 @@ class GenerateSchema:
         json_schema_updates = {
             'title': field_info.title,
             'description': field_info.description,
-            'deprecated': field_info.deprecated,
+            'deprecated': isinstance(field_info.deprecated, str) or None,
             'examples': to_jsonable_python(field_info.examples),
         }
         json_schema_updates = {k: v for k, v in json_schema_updates.items() if v is not None}
@@ -1615,9 +1615,8 @@ class GenerateSchema:
             if description is not None:
                 json_schema['description'] = description
 
-            deprecated = d.info.deprecated
-            if deprecated is not None:
-                json_schema['deprecated'] = deprecated
+            if isinstance(d.info.deprecated, str):
+                json_schema['deprecated'] = True
 
             examples = d.info.examples
             if examples is not None:

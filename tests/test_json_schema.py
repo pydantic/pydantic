@@ -5822,25 +5822,37 @@ def test_description_not_included_for_basemodel() -> None:
     assert 'description' not in Model.model_json_schema()['$defs']['BaseModel']
 
 
+def test_deprecated_fields_field_function():
+    class Model(BaseModel):
+        a: Annotated[int, Field(deprecated='')]
+        b: Annotated[int, Field(deprecated=None)]
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'a': {'deprecated': True, 'title': 'A', 'type': 'integer'},
+            'b': {'title': 'B', 'type': 'integer'},
+        },
+        'required': ['a', 'b'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 @pytest.mark.skipif(
     pydantic.version.parse_package_version(importlib.metadata.version('typing_extensions')) < (4, 9),
     reason='deprecated type annotation requires typing_extensions>=4.9',
 )
 def test_deprecated_fields():
     class Model(BaseModel):
-        a: Annotated[int, Field(deprecated=True)]
-        b: Annotated[int, Field(deprecated=False)]
-        c: Annotated[int, deprecated('')]
-        d: Annotated[int, deprecated('')] = 1
+        a: Annotated[int, deprecated('')]
+        b: Annotated[int, deprecated('')] = 1
 
     assert Model.model_json_schema() == {
         'properties': {
             'a': {'deprecated': True, 'title': 'A', 'type': 'integer'},
-            'b': {'deprecated': False, 'title': 'B', 'type': 'integer'},
-            'c': {'deprecated': True, 'title': 'C', 'type': 'integer'},
-            'd': {'default': 1, 'deprecated': True, 'title': 'D', 'type': 'integer'},
+            'b': {'default': 1, 'deprecated': True, 'title': 'B', 'type': 'integer'},
         },
-        'required': ['a', 'b', 'c'],
+        'required': ['a'],
         'title': 'Model',
         'type': 'object',
     }

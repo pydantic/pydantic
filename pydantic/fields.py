@@ -60,7 +60,7 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     decimal_places: int | None
     union_mode: Literal['smart', 'left_to_right'] | None
     discriminator: str | types.Discriminator | None
-    deprecated: bool | None
+    deprecated: str | None
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
     frozen: bool | None
     validate_default: bool | None
@@ -98,7 +98,7 @@ class FieldInfo(_repr.Representation):
         examples: List of examples of the field.
         exclude: Whether to exclude the field from the model serialization.
         discriminator: Field name or Discriminator for discriminating the type in a tagged union.
-        deprecated: Whether the field is marked as deprecated.
+        deprecated: A deprecation message to be emitted when accessing the field.
         json_schema_extra: A dict or callable to provide extra JSON schema properties.
         frozen: Whether the field is frozen.
         validate_default: Whether to validate the default value of the field.
@@ -120,7 +120,7 @@ class FieldInfo(_repr.Representation):
     examples: list[Any] | None
     exclude: bool | None
     discriminator: str | types.Discriminator | None
-    deprecated: bool | None
+    deprecated: str | None
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
     frozen: bool | None
     validate_default: bool | None
@@ -293,7 +293,7 @@ class FieldInfo(_repr.Representation):
                 metadata: list[Any] = []
                 for a in extra_args:
                     if _typing_extra.is_deprecated_instance(a):
-                        new_field_info.deprecated = True
+                        new_field_info.deprecated = a.message
                     elif not isinstance(a, FieldInfo):
                         metadata.append(a)
                     else:
@@ -370,7 +370,7 @@ class FieldInfo(_repr.Representation):
                 metadata: list[Any] = []
                 for a in extra_args:
                     if _typing_extra.is_deprecated_instance(a):
-                        field_info.deprecated = True
+                        field_info.deprecated = a.message
                     elif not isinstance(a, FieldInfo):
                         metadata.append(a)
                     else:
@@ -628,7 +628,7 @@ def Field(  # noqa: C901
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
-    deprecated: bool | None = _Unset,
+    deprecated: str | None = _Unset,
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None = _Unset,
     frozen: bool | None = _Unset,
     validate_default: bool | None = _Unset,
@@ -673,7 +673,7 @@ def Field(  # noqa: C901
         examples: Example values for this field.
         exclude: Whether to exclude the field from the model serialization.
         discriminator: Field name or Discriminator for discriminating the type in a tagged union.
-        deprecated: Whether the field is marked as deprecated.
+        deprecated: A deprecation message to be emitted when accessing the field.
         json_schema_extra: A dict or callable to provide extra JSON schema properties.
         frozen: Whether the field is frozen. If true, attempts to change the value on an instance will raise an error.
         validate_default: If `True`, apply validation to the default value every time you create an instance.
@@ -930,7 +930,7 @@ class ComputedFieldInfo:
     alias_priority: int | None
     title: str | None
     description: str | None
-    deprecated: bool | None
+    deprecated: str | None
     examples: list[Any] | None
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
     repr: bool
@@ -960,7 +960,7 @@ def computed_field(
     alias_priority: int | None = None,
     title: str | None = None,
     description: str | None = None,
-    deprecated: bool | None = None,
+    deprecated: str | None = None,
     examples: list[Any] | None = None,
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None = None,
     repr: bool = True,
@@ -981,7 +981,7 @@ def computed_field(
     alias_priority: int | None = None,
     title: str | None = None,
     description: str | None = None,
-    deprecated: bool | None = None,
+    deprecated: str | None = None,
     examples: list[Any] | None = None,
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None = None,
     repr: bool | None = None,
@@ -1112,7 +1112,7 @@ def computed_field(
         title: Title to use when including this computed field in JSON Schema
         description: Description to use when including this computed field in JSON Schema, defaults to the function's
             docstring
-        deprecated: Whether the computed field should be marked as deprecated in JSON Schema. This will automatically be
+        deprecated: A deprecation message to be emitted when accessing the field. This will automatically be
             set if the property is decorated with the `deprecated` decorator.
         examples: Example values to use when including this computed field in JSON Schema
         json_schema_extra: A dict or callable to provide extra JSON schema properties.
@@ -1134,7 +1134,7 @@ def computed_field(
         if description is None and unwrapped.__doc__:
             description = inspect.cleandoc(unwrapped.__doc__)
         if deprecated is None and getattr(unwrapped, '__deprecated__', None):
-            deprecated = True
+            deprecated = unwrapped.__deprecated__
 
         # if the function isn't already decorated with `@property` (or another descriptor), then we wrap it now
         f = _decorators.ensure_property(f)
