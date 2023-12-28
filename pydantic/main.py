@@ -122,6 +122,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_serializer__: ClassVar[SchemaSerializer]
         __pydantic_validator__: ClassVar[SchemaValidator]
 
+        model_computed_fields: ClassVar[dict[str, ComputedFieldInfo]]
+        """A dictionary of computed field names and their corresponding `ComputedFieldInfo` objects."""
+
         # Instance attributes
         # Note: we use the non-existent kwarg `init=False` in pydantic.fields.Field below so that @dataclass_transform
         # doesn't think these are valid as keyword arguments to the class initializer.
@@ -129,12 +132,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_fields_set__: set[str] = _Field(init=False)  # type: ignore
         __pydantic_private__: dict[str, Any] | None = _Field(init=False)  # type: ignore
 
-        model_computed_fields: ClassVar[dict[str, ComputedFieldInfo]]
     else:
         # `model_fields` and `__pydantic_decorators__` must be set for
         # pydantic._internal._generate_schema.GenerateSchema.model_schema to work for a plain BaseModel annotation
         model_fields = {}
         model_computed_fields = {}
+
         __pydantic_decorators__ = _decorators.DecoratorInfos()
         __pydantic_parent_namespace__ = None
         # Prevent `BaseModel` from being instantiated directly:
