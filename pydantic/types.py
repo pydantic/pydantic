@@ -1552,7 +1552,7 @@ class SecretStr(_SecretField[str]):
     print(user.password.get_secret_value())
     #> password1
     print((SecretStr('password'), SecretStr('')))
-    #> ('**********', '')
+    #> (SecretStr('**********'), SecretStr(''))
     ```
     """
 
@@ -1579,7 +1579,7 @@ class SecretBytes(_SecretField[bytes]):
     print(user.password.get_secret_value())
     #> b'password1'
     print((SecretBytes(b'password'), SecretBytes(b'')))
-    #> (b'**********', b'')
+    #> (SecretBytes(b'**********'), SecretBytes(b''))
     ```
     """
 
