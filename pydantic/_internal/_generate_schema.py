@@ -626,7 +626,7 @@ class GenerateSchema:
         schema = self._unpack_refs_defs(schema)
 
         if is_function_with_inner_schema(schema):
-            ref = schema['schema'].pop('ref', None)
+            ref = schema['schema'].pop('ref', None)  # pyright: ignore[reportGeneralTypeIssues]
             if ref:
                 schema['ref'] = ref
         else:
@@ -2036,7 +2036,7 @@ def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSch
 
         has_custom_v2_modify_js_func = (
             js_modify_function is not None
-            and BaseModel.__get_pydantic_json_schema__.__func__
+            and BaseModel.__get_pydantic_json_schema__.__func__  # type: ignore
             not in (js_modify_function, getattr(js_modify_function, '__func__', None))
         )
 

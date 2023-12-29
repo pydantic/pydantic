@@ -165,7 +165,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         self.__pydantic_validator__.validate_python(data, self_instance=self)
 
     # The following line sets a flag that we use to determine when `__init__` gets overridden by the user
-    __init__.__pydantic_base_init__ = True
+    __init__.__pydantic_base_init__ = True  # pyright: ignore[reportFunctionMemberAccess]
 
     @property
     def model_computed_fields(self) -> dict[str, ComputedFieldInfo]:
