@@ -1,6 +1,7 @@
 """Logic for creating models."""
 from __future__ import annotations as _annotations
 
+import builtins
 import operator
 import sys
 import types
@@ -72,6 +73,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_core_schema__: The pydantic-core schema used to build the SchemaValidator and SchemaSerializer.
         __pydantic_custom_init__: Whether the model has a custom `__init__` function.
         __pydantic_decorators__: Metadata containing the decorators defined on the model.
+        __pydantic_deprecated_messages__: A mapping between deprecated field names and the message to be emitted.
             This replaces `Model.__validators__` and `Model.__root_validators__` from Pydantic V1.
         __pydantic_generic_metadata__: Metadata for generic models; contains data used for a similar purpose to
             __args__, __origin__, __parameters__ in typing-module generics. May eventually be replaced by these.
@@ -115,6 +117,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_core_schema__: ClassVar[CoreSchema]
         __pydantic_custom_init__: ClassVar[bool]
         __pydantic_decorators__: ClassVar[_decorators.DecoratorInfos]
+        __pydantic_deprecated_messages__: ClassVar[dict[str, str]]
         __pydantic_generic_metadata__: ClassVar[_generics.PydanticGenericMetadata]
         __pydantic_parent_namespace__: ClassVar[dict[str, Any] | None]
         __pydantic_post_init__: ClassVar[None | Literal['model_post_init']]
@@ -760,6 +763,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     else:
                         # this is the current error
                         raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+
+        def __getattribute__(self, item: str) -> Any:
+            try:
+                msg = type(self).__pydantic_deprecated_messages__[item]
+                warnings.warn(msg, builtins.DeprecationWarning, stacklevel=2)
+            except KeyError:
+                pass
+            return object.__getattribute__(self, item)
 
     def __setattr__(self, name: str, value: Any) -> None:
         if name in self.__class_vars__:

@@ -918,6 +918,8 @@ class ComputedFieldInfo:
         alias_priority: The priority of the alias. This affects whether an alias generator is used.
         title: Title of the computed field to include in the serialization JSON schema.
         description: Description of the computed field to include in the serialization JSON schema.
+        deprecated: A deprecation message to be emitted when accessing the field.
+        from_deprecated_decorator: Whether the field was marked as deprecated from the `warnings` decorator.
         examples: Example values of the computed field to include in the serialization JSON schema.
         json_schema_extra: A dict or callable to provide extra JSON schema properties.
         repr: A boolean indicating whether to include the field in the __repr__ output.
@@ -931,6 +933,8 @@ class ComputedFieldInfo:
     title: str | None
     description: str | None
     deprecated: str | None
+    # This is necessary to avoid emitting two runtime warnings:
+    from_deprecated_decorator: bool
     examples: list[Any] | None
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
     repr: bool
@@ -1133,8 +1137,11 @@ def computed_field(
 
         if description is None and unwrapped.__doc__:
             description = inspect.cleandoc(unwrapped.__doc__)
-        if deprecated is None and getattr(unwrapped, '__deprecated__', None):
+
+        from_deprecated_decorator = False
+        if deprecated is None and hasattr(unwrapped, '__deprecated__'):
             deprecated = unwrapped.__deprecated__
+            from_deprecated_decorator = True
 
         # if the function isn't already decorated with `@property` (or another descriptor), then we wrap it now
         f = _decorators.ensure_property(f)
@@ -1146,7 +1153,17 @@ def computed_field(
             repr_ = repr
 
         dec_info = ComputedFieldInfo(
-            f, return_type, alias, alias_priority, title, description, deprecated, examples, json_schema_extra, repr_
+            f,
+            return_type,
+            alias,
+            alias_priority,
+            title,
+            description,
+            deprecated,
+            from_deprecated_decorator,
+            examples,
+            json_schema_extra,
+            repr_,
         )
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 

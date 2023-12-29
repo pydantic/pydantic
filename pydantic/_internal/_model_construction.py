@@ -180,6 +180,19 @@ class ModelMetaclass(ABCMeta):
             if config_wrapper.frozen and '__hash__' not in namespace:
                 set_default_hash_func(cls, bases)
 
+            cls.__pydantic_deprecated_messages__ = {
+                field: field_info.deprecated
+                for field, field_info in cls.model_fields.items()
+                if field_info.deprecated is not None
+            }
+            cls.__pydantic_deprecated_messages__.update(
+                {
+                    field: computed_field_info.info.deprecated  # type: ignore
+                    for field, computed_field_info in cls.__pydantic_decorators__.computed_fields.items()
+                    if not computed_field_info.info.from_deprecated_decorator  # Avoid having two warnings emitted
+                }
+            )
+
             complete_model_class(
                 cls,
                 cls_name,
@@ -205,6 +218,8 @@ class ModelMetaclass(ABCMeta):
             private_attributes = self.__dict__.get('__private_attributes__')
             if private_attributes and item in private_attributes:
                 return private_attributes[item]
+            if item == '__pydantic_deprecated_messages__':
+                return self.__dict__.get('__pydantic_deprecated_messages__')
             if item == '__pydantic_core_schema__':
                 # This means the class didn't get a schema generated for it, likely because there was an undefined reference
                 maybe_mock_validator = getattr(self, '__pydantic_validator__', None)

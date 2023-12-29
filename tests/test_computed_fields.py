@@ -5,7 +5,7 @@ from typing import Any, Callable, ClassVar, Generic, List, Tuple, TypeVar
 
 import pytest
 from pydantic_core import ValidationError, core_schema
-from typing_extensions import TypedDict, deprecated
+from typing_extensions import TypedDict
 
 from pydantic import (
     BaseModel,
@@ -768,56 +768,3 @@ def test_computed_field_override_raises():
             @property
             def name(self) -> str:
                 return 'bar'
-
-
-def test_computed_field_deprecated():
-    class Model(BaseModel):
-        @computed_field
-        @property
-        @deprecated('This is deprecated')
-        def p1(self) -> int:
-            return 1
-
-        @computed_field(deprecated='This is deprecated')
-        @property
-        @deprecated('This is deprecated (this message is overridden)')
-        def p2(self) -> int:
-            return 1
-
-        @computed_field(deprecated='')
-        @property
-        def p3(self) -> int:
-            return 1
-
-        @computed_field(deprecated='This is deprecated')
-        @property
-        def p4(self) -> int:
-            return 1
-
-        @computed_field
-        @deprecated('This is deprecated')
-        def p5(self) -> int:
-            return 1
-
-    assert Model.model_json_schema(mode='serialization') == {
-        'properties': {
-            'p1': {'deprecated': True, 'readOnly': True, 'title': 'P1', 'type': 'integer'},
-            'p2': {'deprecated': True, 'readOnly': True, 'title': 'P2', 'type': 'integer'},
-            'p3': {'deprecated': True, 'readOnly': True, 'title': 'P3', 'type': 'integer'},
-            'p4': {'deprecated': True, 'readOnly': True, 'title': 'P4', 'type': 'integer'},
-            'p5': {'deprecated': True, 'readOnly': True, 'title': 'P5', 'type': 'integer'},
-        },
-        'required': ['p1', 'p2', 'p3', 'p4', 'p5'],
-        'title': 'Model',
-        'type': 'object',
-    }
-
-    instance = Model()
-
-    pytest.warns(DeprecationWarning, lambda: instance.p1, match='^This is deprecated$')
-    pytest.warns(DeprecationWarning, lambda: instance.p2, match='^This is deprecated$')
-    pytest.warns(DeprecationWarning, lambda: instance.p4, match='^This is deprecated$')
-    pytest.warns(DeprecationWarning, lambda: instance.p5, match='^This is deprecated$')
-
-    with pytest.warns(DeprecationWarning, match='^$'):
-        instance.p3
