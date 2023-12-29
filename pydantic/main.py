@@ -768,7 +768,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             try:
                 msg = type(self).__pydantic_deprecated_messages__[item]
                 warnings.warn(msg, builtins.DeprecationWarning, stacklevel=2)
-            except KeyError:
+            except (KeyError, TypeError):  # `TypeError` raised if `BaseModel` instantiated directly.
                 pass
             return object.__getattribute__(self, item)
 
