@@ -190,7 +190,7 @@ class ModelMetaclass(ABCMeta):
                     field: computed_field_info.info.deprecated
                     for field, computed_field_info in cls.__pydantic_decorators__.computed_fields.items()
                     if computed_field_info.info.deprecated is not None
-                    if computed_field_info.info.from_deprecated_decorator  # Avoid having two warnings emitted
+                    if not computed_field_info.info.from_deprecated_decorator  # Avoid having two warnings emitted
                 }
             )
 
