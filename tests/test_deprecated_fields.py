@@ -1,8 +1,7 @@
 import importlib.metadata
-from typing import Annotated
 
 import pytest
-from typing_extensions import deprecated
+from typing_extensions import Annotated, deprecated
 
 import pydantic
 from pydantic import BaseModel, Field, computed_field
