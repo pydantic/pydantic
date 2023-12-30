@@ -24,6 +24,8 @@ from .plugin._schema_validator import create_schema_validator
 
 T = TypeVar('T')
 
+MYPY = False
+
 if TYPE_CHECKING:
     # should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
     IncEx = Union[Set[int], Set[str], Dict[int, Any], Dict[str, Any]]
@@ -120,26 +122,16 @@ class TypeAdapter(Generic[T]):
         serializer: The schema serializer for the type.
     """
 
-    if TYPE_CHECKING:
-
-        @overload
-        def __new__(cls, __type: type[T], *, config: ConfigDict | None = ...) -> TypeAdapter[T]:
-            ...
-
-        # this overload is for non-type things like Union[int, str]
-        # Pyright currently handles this "correctly", but MyPy understands this as TypeAdapter[object]
-        # so an explicit type cast is needed
-        @overload
-        def __new__(cls, __type: T, *, config: ConfigDict | None = ...) -> TypeAdapter[T]:
-            ...
-
-        def __new__(cls, __type: Any, *, config: ConfigDict | None = None) -> TypeAdapter[T]:
-            """A class representing the type adapter."""
-            raise NotImplementedError
+    if MYPY:
 
         @overload
         def __init__(
-            self, type: type[T], *, config: ConfigDict | None = None, _parent_depth: int = 2, module: str | None = None
+            self: TypeAdapter[T],
+            type: type[T],
+            *,
+            config: ConfigDict | None = None,
+            _parent_depth: int = 2,
+            module: str | None = None,
         ) -> None:
             ...
 
@@ -148,76 +140,87 @@ class TypeAdapter(Generic[T]):
         # so an explicit type cast is needed
         @overload
         def __init__(
-            self, type: T, *, config: ConfigDict | None = None, _parent_depth: int = 2, module: str | None = None
+            self: TypeAdapter[T],
+            type: T,
+            *,
+            config: ConfigDict | None = None,
+            _parent_depth: int = 2,
+            module: str | None = None,
         ) -> None:
             ...
+    else:
 
-    def __init__(
-        self, type: Any, *, config: ConfigDict | None = None, _parent_depth: int = 2, module: str | None = None
-    ) -> None:
-        """Initializes the TypeAdapter object.
+        def __init__(
+            self: TypeAdapter[T],
+            type: type[T],
+            *,
+            config: ConfigDict | None = None,
+            _parent_depth: int = 2,
+            module: str | None = None,
+        ) -> None:
+            """Initializes the TypeAdapter object.
 
-        Args:
-            type: The type associated with the `TypeAdapter`.
-            config: Configuration for the `TypeAdapter`, should be a dictionary conforming to [`ConfigDict`][pydantic.config.ConfigDict].
-            _parent_depth: depth at which to search the parent namespace to construct the local namespace.
-            module: The module that passes to plugin if provided.
+            Args:
+                type: The type associated with the `TypeAdapter`.
+                config: Configuration for the `TypeAdapter`, should be a dictionary conforming to [`ConfigDict`][pydantic.config.ConfigDict].
+                _parent_depth: depth at which to search the parent namespace to construct the local namespace.
+                module: The module that passes to plugin if provided.
 
-        !!! note
-            You cannot use the `config` argument when instantiating a `TypeAdapter` if the type you're using has its own
-            config that cannot be overridden (ex: `BaseModel`, `TypedDict`, and `dataclass`). A
-            [`type-adapter-config-unused`](../errors/usage_errors.md#type-adapter-config-unused) error will be raised in this case.
+            !!! note
+                You cannot use the `config` argument when instantiating a `TypeAdapter` if the type you're using has its own
+                config that cannot be overridden (ex: `BaseModel`, `TypedDict`, and `dataclass`). A
+                [`type-adapter-config-unused`](../errors/usage_errors.md#type-adapter-config-unused) error will be raised in this case.
 
-        !!! note
-            The `_parent_depth` argument is named with an underscore to suggest its private nature and discourage use.
-            It may be deprecated in a minor version, so we only recommend using it if you're
-            comfortable with potential change in behavior / support.
+            !!! note
+                The `_parent_depth` argument is named with an underscore to suggest its private nature and discourage use.
+                It may be deprecated in a minor version, so we only recommend using it if you're
+                comfortable with potential change in behavior / support.
 
-        Returns:
-            A type adapter configured for the specified `type`.
-        """
-        type_is_annotated: bool = _typing_extra.is_annotated(type)
-        annotated_type: Any = get_args(type)[0] if type_is_annotated else None
-        type_has_config: bool = _type_has_config(annotated_type if type_is_annotated else type)
+            Returns:
+                A type adapter configured for the specified `type`.
+            """
+            type_is_annotated: bool = _typing_extra.is_annotated(type)
+            annotated_type: Any = get_args(type)[0] if type_is_annotated else None
+            type_has_config: bool = _type_has_config(annotated_type if type_is_annotated else type)
 
-        if type_has_config and config is not None:
-            raise PydanticUserError(
-                'Cannot use `config` when the type is a BaseModel, dataclass or TypedDict.'
-                ' These types can have their own config and setting the config via the `config`'
-                ' parameter to TypeAdapter will not override it, thus the `config` you passed to'
-                ' TypeAdapter becomes meaningless, which is probably not what you want.',
-                code='type-adapter-config-unused',
-            )
+            if type_has_config and config is not None:
+                raise PydanticUserError(
+                    'Cannot use `config` when the type is a BaseModel, dataclass or TypedDict.'
+                    ' These types can have their own config and setting the config via the `config`'
+                    ' parameter to TypeAdapter will not override it, thus the `config` you passed to'
+                    ' TypeAdapter becomes meaningless, which is probably not what you want.',
+                    code='type-adapter-config-unused',
+                )
 
-        config_wrapper = _config.ConfigWrapper(config)
+            config_wrapper = _config.ConfigWrapper(config)
 
-        core_schema: CoreSchema
-        try:
-            core_schema = _getattr_no_parents(type, '__pydantic_core_schema__')
-        except AttributeError:
-            core_schema = _get_schema(type, config_wrapper, parent_depth=_parent_depth + 1)
+            core_schema: CoreSchema
+            try:
+                core_schema = _getattr_no_parents(type, '__pydantic_core_schema__')
+            except AttributeError:
+                core_schema = _get_schema(type, config_wrapper, parent_depth=_parent_depth + 1)
 
-        core_config = config_wrapper.core_config(None)
-        validator: SchemaValidator
-        try:
-            validator = _getattr_no_parents(type, '__pydantic_validator__')
-        except AttributeError:
-            if module is None:
-                f = sys._getframe(1)
-                module = cast(str, f.f_globals['__name__'])
-            validator = create_schema_validator(
-                core_schema, type, module, str(type), 'TypeAdapter', core_config, config_wrapper.plugin_settings
-            )  # type: ignore
+            core_config = config_wrapper.core_config(None)
+            validator: SchemaValidator
+            try:
+                validator = _getattr_no_parents(type, '__pydantic_validator__')
+            except AttributeError:
+                if module is None:
+                    f = sys._getframe(1)
+                    module = cast(str, f.f_globals['__name__'])
+                validator = create_schema_validator(
+                    core_schema, type, module, str(type), 'TypeAdapter', core_config, config_wrapper.plugin_settings
+                )  # type: ignore
 
-        serializer: SchemaSerializer
-        try:
-            serializer = _getattr_no_parents(type, '__pydantic_serializer__')
-        except AttributeError:
-            serializer = SchemaSerializer(core_schema, core_config)
+            serializer: SchemaSerializer
+            try:
+                serializer = _getattr_no_parents(type, '__pydantic_serializer__')
+            except AttributeError:
+                serializer = SchemaSerializer(core_schema, core_config)
 
-        self.core_schema = core_schema
-        self.validator = validator
-        self.serializer = serializer
+            self.core_schema = core_schema
+            self.validator = validator
+            self.serializer = serializer
 
     def validate_python(
         self,
