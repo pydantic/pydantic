@@ -9,7 +9,7 @@ from itertools import islice
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Iterable, TypeVar, Union
 
 from pydantic_core import PydanticUndefined, core_schema
-from typing_extensions import Literal, TypeAlias, is_typeddict
+from typing_extensions import Literal, TypeAlias, get_origin, is_typeddict
 
 from ..errors import PydanticUserError
 from ._core_utils import get_type_ref
@@ -283,6 +283,14 @@ def get_bases(tp: type[Any]) -> tuple[type[Any], ...]:
     """
     if is_typeddict(tp):
         return tp.__orig_bases__  # type: ignore
+
+    if tp is Generic:
+        return ()
+
+    origin = get_origin(tp)
+    if origin is not None:
+        return get_bases(origin)
+
     try:
         return tp.__bases__
     except AttributeError:

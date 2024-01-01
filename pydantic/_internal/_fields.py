@@ -16,7 +16,14 @@ from ._config import ConfigWrapper
 from ._decorators import mro
 from ._generics import get_standard_typevars_map, replace_types
 from ._repr import Representation
-from ._typing_extra import get_cls_type_hints_lenient, eval_cls_annotations_lenient, get_type_hints, is_classvar, is_finalvar, typed_dict_types
+from ._typing_extra import (
+    eval_cls_annotations_lenient,
+    get_cls_type_hints_lenient,
+    get_type_hints,
+    is_classvar,
+    is_finalvar,
+    typed_dict_types,
+)
 
 if TYPE_CHECKING:
     from annotated_types import BaseMetadata
@@ -94,7 +101,6 @@ def get_typed_dict_type_hints(
                 if previous_base is not None:
                     hints[field_name] = replace_types(hints[field_name], typevars_map[previous_base])
                 continue
-
 
             hints[field_name] = annotation
 

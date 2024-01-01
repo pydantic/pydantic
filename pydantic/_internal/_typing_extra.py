@@ -210,8 +210,9 @@ def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None)
     for base in reversed(obj.__mro__):
         new_hints = eval_cls_annotations_lenient(base, globalns)
         hints.update(new_hints)
-        
+
     return hints
+
 
 def eval_cls_annotations_lenient(obj: Any, globalns: dict[str, Any] | None = None) -> dict[str, Any]:
     """Evaluate annotations of a class, (excluding those from parent classes).
@@ -219,14 +220,15 @@ def eval_cls_annotations_lenient(obj: Any, globalns: dict[str, Any] | None = Non
     Unlike `typing.get_type_hints`, this function will not error if a forward reference is not resolvable.
     """
     hints = {}
-    
+
     ann = obj.__dict__.get('__annotations__')
     localns = dict(vars(obj))
     if ann is not None and ann is not GetSetDescriptorType:
         for name, value in ann.items():
             hints[name] = eval_type_lenient(value, globalns, localns)
-    
+
     return hints
+
 
 def eval_type_lenient(value: Any, globalns: dict[str, Any] | None, localns: dict[str, Any] | None) -> Any:
     """Behaves like typing._eval_type, except it won't raise an error if a forward reference can't be resolved."""

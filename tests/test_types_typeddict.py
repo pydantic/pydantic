@@ -764,7 +764,7 @@ def test_partial_generic_typeddict():
     )
 
     with pytest.raises(ValidationError) as exc_info:
-        ts.validate_python({'type': False, 'value': False, 'info': 'type override of default not respected'})
+        ts.validate_python({'type': False, 'value': False, 'info': 'type override not respected'})
     assert exc_info.value.errors(include_url=False) == [
         {
             'input': False,
@@ -773,7 +773,7 @@ def test_partial_generic_typeddict():
             'type': 'string_type',
         },
         {
-            'input': 'type override of default not respected',
+            'input': 'type override not respected',
             'loc': ('info',),
             'msg': 'Input should be a valid boolean, unable to interpret input',
             'type': 'bool_parsing',
