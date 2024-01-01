@@ -155,7 +155,7 @@ jobs:
         CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-with-deps
 
     - name: store coverage files
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: coverage
         path: coverage
@@ -270,7 +270,7 @@ jobs:
         CONTEXT: linux-py${{ matrix.python-version }}-pyright
 
     - name: store coverage files
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: coverage
         path: coverage
@@ -300,7 +300,7 @@ jobs:
       - run: coverage html --show-contexts --title "pydantic coverage for ${{ github.sha }}"
 
       - name: Store coverage html
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-html
           path: htmlcov
