@@ -186,21 +186,6 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.pydantic.dev/latest/blog/pydantic-v2-alpha/</loc>
-         <lastmod>2024-01-04</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.pydantic.dev/latest/blog/pydantic-v2-final/</loc>
-         <lastmod>2024-01-04</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.pydantic.dev/latest/blog/pydantic-v2/</loc>
-         <lastmod>2024-01-04</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
          <loc>https://docs.pydantic.dev/latest/concepts/alias/</loc>
          <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
