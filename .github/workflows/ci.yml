@@ -157,7 +157,7 @@ jobs:
     - name: store coverage files
       uses: actions/upload-artifact@v4
       with:
-        name: coverage
+        name: coverage-${{ matrix.os }}-${{ matrix.python-version }}
         path: coverage
 
   test-fastapi:
@@ -272,7 +272,7 @@ jobs:
     - name: store coverage files
       uses: actions/upload-artifact@v4
       with:
-        name: coverage
+        name: coverage-${{ matrix.os }}-${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
         path: coverage
 
   coverage-combine:
@@ -302,7 +302,7 @@ jobs:
       - name: Store coverage html
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-html
+          name: coverage-html-${{ matrix.os }}-${{ matrix.python-version }}
           path: htmlcov
 
   test-typing-extensions:
