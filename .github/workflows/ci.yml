@@ -289,7 +289,8 @@ jobs:
       - name: get coverage files
         uses: actions/download-artifact@v4
         with:
-          name: coverage
+          merge-multiple: true
+          pattern: coverage-*
           path: coverage
 
       - run: pip install coverage[toml]
@@ -302,7 +303,7 @@ jobs:
       - name: Store coverage html
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-html-${{ matrix.os }}-${{ matrix.python-version }}
+          name: coverage-html
           path: htmlcov
 
   test-typing-extensions:
