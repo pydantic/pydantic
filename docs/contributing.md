@@ -9,6 +9,10 @@ To make it as simple as possible for us to help you, please include the output o
 ```bash
 python -c "import pydantic.version; print(pydantic.version.version_info())"
 ```
+If you're using Pydantic prior to **v2.0** please use:
+```bash
+python -c "import pydantic.utils; print(pydantic.utils.version_info())"
+```
 If you're using Pydantic prior to **v1.3** (when `version_info()` was added), please manually include OS, Python
 version and pydantic version.
 
