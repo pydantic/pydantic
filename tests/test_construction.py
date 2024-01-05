@@ -509,3 +509,13 @@ def test_pydantic_extra():
 
     m = Model.model_construct(x=1, y=2)
     assert m.__pydantic_extra__ == {'y': 2}
+
+
+def test_retain_order_of_fields():
+    class MyModel(BaseModel):
+        a: str = 'a'
+        b: str
+
+    m = MyModel.model_construct(b='b')
+
+    assert m.model_dump_json() == '{"a":"a","b":"b"}'
