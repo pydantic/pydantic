@@ -3288,7 +3288,7 @@ the <strong>exact same configuration</strong> (<code>order</code>, <code>frozen<
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -3303,6 +3303,9 @@ the <strong>exact same configuration</strong> (<code>order</code>, <code>frozen<
 
 
 <span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="c1"># Required so that pydantic revalidates the model attributes</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">revalidate_instances</span><span class="o">=</span><span class="s1">&#39;always&#39;</span><span class="p">)</span>
+
     <span class="n">file</span><span class="p">:</span> <span class="n">File</span>
     <span class="n">user</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">User</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
