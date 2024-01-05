@@ -997,3 +997,31 @@ For `ConstrainedStr` you can use [`StringConstraints`][pydantic.types.StringCons
 - `pydantic.utils.path_type`
 - `pydantic.utils.validate_field_name`
 - `pydantic.validate_model`
+
+## Customizing JSON Encoding for Pydantic Model with `ObjectId` Field in V2
+
+To ensure that instances of the model are serialized to JSON with the `ObjectId` field represented as a string, use a custom JSON encoder for instances of `ObjectId` since `ENCODERS_BY_TYPE` class is removed. For example:
+
+```
+from pydantic.json import ENCODERS_BY_TYPE
+from bson import ObjectId
+ENCODERS_BY_TYPE[ObjectId] = lambda v: str(v)
+```
+
+becomes:
+```
+from bson import ObjectId
+from pydantic import BaseModel, ConfigDict
+
+BaseModel.model_config["json_encoders"] = {ObjectId: lambda v: str(v)}
+
+
+class Item(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    id: ObjectId
+
+
+item = Item(id=ObjectId("5ff1e194b6a9d7a5f9a2741c"))
+print(item.model_dump_json())
+```
