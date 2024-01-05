@@ -18,7 +18,7 @@ to your question or feature request.
 ## Pull Requests
 
 It should be extremely simple to get started and create a Pull Request.
-Pydantic is released regularly so you should see your improvements release in a matter of days or weeks.
+Pydantic is released regularly so you should see your improvements release in a matter of days or weeks 🚀.
 
 Unless your change is trivial (typo, docs tweak etc.), please create an issue to discuss the change before
 creating a pull request.
