@@ -267,7 +267,7 @@ class File:
 class Foo(BaseModel):
     # Required so that pydantic revalidates the model attributes
     model_config = ConfigDict(revalidate_instances='always')
-    
+
     file: File
     user: Optional[User] = None
 
