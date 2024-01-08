@@ -191,7 +191,7 @@ def eval_forward_ref(type_: Any) -> Any:
     try:
         return type_._evaluate(core_schema.__dict__, None, set())
     except TypeError:
-        # for older python (3.7 at least)
+        # for Python 3.8
         return type_._evaluate(core_schema.__dict__, None)
 
 

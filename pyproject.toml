@@ -7,7 +7,7 @@ build-backend = 'maturin'
 
 [project]
 name = 'pydantic_core'
-requires-python = '>=3.7'
+requires-python = '>=3.8'
 authors = [
     {name = 'Samuel Colvin', email = 's@muelcolvin.com'}
 ]
@@ -16,7 +16,6 @@ classifiers = [
     'Programming Language :: Python',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',

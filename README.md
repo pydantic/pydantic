@@ -71,7 +71,7 @@ except ValidationError as e:
 
 You'll need rust stable [installed](https://rustup.rs/), or rust nightly if you want to generate accurate coverage.
 
-With rust and python 3.7+ installed, compiling pydantic-core should be possible with roughly the following:
+With rust and python 3.8+ installed, compiling pydantic-core should be possible with roughly the following:
 
 ```bash
 # clone this repo or your fork
