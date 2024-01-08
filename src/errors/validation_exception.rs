@@ -193,15 +193,31 @@ impl ValidationError {
 
 static URL_ENV_VAR: GILOnceCell<bool> = GILOnceCell::new();
 
-fn _get_include_url_env() -> bool {
-    match std::env::var("PYDANTIC_ERRORS_OMIT_URL") {
-        Ok(val) => val.is_empty(),
-        Err(_) => true,
-    }
-}
-
 fn include_url_env(py: Python) -> bool {
-    *URL_ENV_VAR.get_or_init(py, _get_include_url_env)
+    *URL_ENV_VAR.get_or_init(py, || {
+        // Check the legacy env var first.
+        // Using `var_os` here instead of `var` because we don't care about
+        // the value (or whether we're able to decode it as UTF-8), just
+        // whether it exists (and if it does, whether it's non-empty).
+        match std::env::var_os("PYDANTIC_ERRORS_OMIT_URL") {
+            Some(val) => {
+                // We don't care whether warning succeeded or not, hence the assignment
+                let _ = PyErr::warn(
+                    py,
+                    py.get_type::<pyo3::exceptions::PyDeprecationWarning>(),
+                    "PYDANTIC_ERRORS_OMIT_URL is deprecated, use PYDANTIC_ERRORS_INCLUDE_URL instead",
+                    1,
+                );
+                // If OMIT_URL exists but is empty, we include the URL:
+                val.is_empty()
+            }
+            // If the legacy env var doesn't exist, check the documented one:
+            None => match std::env::var("PYDANTIC_ERRORS_INCLUDE_URL") {
+                Ok(val) => val == "1" || val.to_lowercase() == "true",
+                Err(_) => true,
+            },
+        }
+    })
 }
 
 static URL_PREFIX: GILOnceCell<String> = GILOnceCell::new();
