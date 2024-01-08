@@ -564,7 +564,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: get dist artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: pypi_files
           path: dist
@@ -576,7 +576,7 @@ jobs:
          echo "`ls dist | wc -l` files"
 
       - name: get PGO dist artifacts (comes after "get dist artifacts" to so these files override the non-PGO builds)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: pypi_files_pgo
           path: dist
@@ -616,13 +616,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: get dist artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: pypi_files
           path: dist
 
       - name: get PGO dist artifacts (comes after "get dist artifacts" to so these files override the non-PGO builds)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: pypi_files_pgo
           path: dist
@@ -674,13 +674,13 @@ jobs:
           python-version: '3.11'
 
       - name: get dist artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: pypi_files
           path: dist
 
       - name: get PGO dist artifacts (comes after "get dist artifacts" to so these files override the non-PGO builds)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: pypi_files_pgo
           path: dist
@@ -709,13 +709,13 @@ jobs:
         run: python .github/check_version.py
 
       - name: get dist artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: pypi_files
           path: dist
 
       - name: get PGO dist artifacts (comes after "get dist artifacts" to so these files override the non-PGO builds)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: pypi_files_pgo
           path: dist
@@ -729,7 +729,7 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.pypi_token }}
 
       - name: get wasm dist artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: wasm_wheels
           path: wasm
