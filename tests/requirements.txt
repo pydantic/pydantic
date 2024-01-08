@@ -1,6 +1,6 @@
 coverage==7.2.7
 dirty-equals==0.6.0
-hypothesis==6.79.4
+hypothesis==6.92.5
 # TODO: remove manual override for dateutil once a version newer than 2.8.2 is
 # released which removes use of deprecated utcfromtimestamp
 git+https://github.com/dateutil/dateutil.git@f2293200747fb03d56c6c5997bfebeabe703576f
