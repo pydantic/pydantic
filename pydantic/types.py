@@ -1834,11 +1834,13 @@ class ByteSize(int):
         return f'{num:0.1f}{final_unit}'
 
     def to(self, unit: str) -> float:
-        """Converts a byte size to another unit.
+        """Converts a byte size to another unit, including both byte and bit units.
 
         Args:
-            unit: The unit to convert to. Must be one of the following: B, KB, MB, GB, TB, PB, EiB,
-                KiB, MiB, GiB, TiB, PiB, EiB.
+            unit: The unit to convert to. Must be one of the following: B, KB, MB, GB, TB, PB, EB,
+                KiB, MiB, GiB, TiB, PiB, EiB (byte units) and
+                bit, kbit, mbit, gbit, tbit, pbit, ebit,
+                kibit, mibit, gibit, tibit, pibit, eibit (bit units).
 
         Returns:
             The byte size in the new unit.
