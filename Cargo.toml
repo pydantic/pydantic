@@ -26,7 +26,7 @@ include = [
 ]
 
 [dependencies]
-pyo3 = { version = "0.20.0", features = ["generate-import-lib", "num-bigint"] }
+pyo3 = { version = "0.20.1", features = ["generate-import-lib", "num-bigint"] }
 regex = "1.10.2"
 strum = { version = "0.25.0", features = ["derive"] }
 strum_macros = "0.25.3"
@@ -68,12 +68,12 @@ debug = true
 strip = false
 
 [dev-dependencies]
-pyo3 = { version = "0.20.0", features = ["auto-initialize"] }
+pyo3 = { version = "0.20.1", features = ["auto-initialize"] }
 
 [build-dependencies]
 version_check = "0.9.4"
 # used where logic has to be version/distribution specific, e.g. pypy
-pyo3-build-config = { version = "0.20.0" }
+pyo3-build-config = { version = "0.20.1" }
 
 [lints.clippy]
 dbg_macro = "warn"
