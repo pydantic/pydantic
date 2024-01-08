@@ -7093,20 +7093,7 @@ rather than a power of 10 (so, for example, <code>'1 MB'</code> is treated as <c
 
           <details class="quote">
             <summary>Source code in <code>pydantic/types.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1793</span>
-<span class="normal">1794</span>
-<span class="normal">1795</span>
-<span class="normal">1796</span>
-<span class="normal">1797</span>
-<span class="normal">1798</span>
-<span class="normal">1799</span>
-<span class="normal">1800</span>
-<span class="normal">1801</span>
-<span class="normal">1802</span>
-<span class="normal">1803</span>
-<span class="normal">1804</span>
-<span class="normal">1805</span>
-<span class="normal">1806</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1806</span>
 <span class="normal">1807</span>
 <span class="normal">1808</span>
 <span class="normal">1809</span>
@@ -7121,7 +7108,20 @@ rather than a power of 10 (so, for example, <code>'1 MB'</code> is treated as <c
 <span class="normal">1818</span>
 <span class="normal">1819</span>
 <span class="normal">1820</span>
-<span class="normal">1821</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">human_readable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">decimal</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">1821</span>
+<span class="normal">1822</span>
+<span class="normal">1823</span>
+<span class="normal">1824</span>
+<span class="normal">1825</span>
+<span class="normal">1826</span>
+<span class="normal">1827</span>
+<span class="normal">1828</span>
+<span class="normal">1829</span>
+<span class="normal">1830</span>
+<span class="normal">1831</span>
+<span class="normal">1832</span>
+<span class="normal">1833</span>
+<span class="normal">1834</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">human_readable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">decimal</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts a byte size to a human readable string.</span>
 
 <span class="sd">    Args:</span>
@@ -7172,7 +7172,7 @@ rather than a power of 10 (so, for example, <code>'1 MB'</code> is treated as <c
 
   <div class="doc doc-contents ">
   
-      <p>Converts a byte size to another unit.</p>
+      <p>Converts a byte size to another unit, including both byte and bit units.</p>
 
 
 
@@ -7194,8 +7194,10 @@ rather than a power of 10 (so, for example, <code>'1 MB'</code> is treated as <c
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The unit to convert to. Must be one of the following: B, KB, MB, GB, TB, PB, EiB,
-KiB, MiB, GiB, TiB, PiB, EiB.</p>
+              <p>The unit to convert to. Must be one of the following: B, KB, MB, GB, TB, PB, EB,
+KiB, MiB, GiB, TiB, PiB, EiB (byte units) and
+bit, kbit, mbit, gbit, tbit, pbit, ebit,
+kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
             </div>
           </td>
           <td>
@@ -7231,27 +7233,31 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/types.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1823</span>
-<span class="normal">1824</span>
-<span class="normal">1825</span>
-<span class="normal">1826</span>
-<span class="normal">1827</span>
-<span class="normal">1828</span>
-<span class="normal">1829</span>
-<span class="normal">1830</span>
-<span class="normal">1831</span>
-<span class="normal">1832</span>
-<span class="normal">1833</span>
-<span class="normal">1834</span>
-<span class="normal">1835</span>
-<span class="normal">1836</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1836</span>
 <span class="normal">1837</span>
-<span class="normal">1838</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unit</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts a byte size to another unit.</span>
+<span class="normal">1838</span>
+<span class="normal">1839</span>
+<span class="normal">1840</span>
+<span class="normal">1841</span>
+<span class="normal">1842</span>
+<span class="normal">1843</span>
+<span class="normal">1844</span>
+<span class="normal">1845</span>
+<span class="normal">1846</span>
+<span class="normal">1847</span>
+<span class="normal">1848</span>
+<span class="normal">1849</span>
+<span class="normal">1850</span>
+<span class="normal">1851</span>
+<span class="normal">1852</span>
+<span class="normal">1853</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unit</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts a byte size to another unit, including both byte and bit units.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        unit: The unit to convert to. Must be one of the following: B, KB, MB, GB, TB, PB, EiB,</span>
-<span class="sd">            KiB, MiB, GiB, TiB, PiB, EiB.</span>
+<span class="sd">        unit: The unit to convert to. Must be one of the following: B, KB, MB, GB, TB, PB, EB,</span>
+<span class="sd">            KiB, MiB, GiB, TiB, PiB, EiB (byte units) and</span>
+<span class="sd">            bit, kbit, mbit, gbit, tbit, pbit, ebit,</span>
+<span class="sd">            kibit, mibit, gibit, tibit, pibit, eibit (bit units).</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        The byte size in the new unit.</span>
@@ -7614,17 +7620,17 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/types.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2013</span>
-<span class="normal">2014</span>
-<span class="normal">2015</span>
-<span class="normal">2016</span>
-<span class="normal">2017</span>
-<span class="normal">2018</span>
-<span class="normal">2019</span>
-<span class="normal">2020</span>
-<span class="normal">2021</span>
-<span class="normal">2022</span>
-<span class="normal">2023</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2028</span>
+<span class="normal">2029</span>
+<span class="normal">2030</span>
+<span class="normal">2031</span>
+<span class="normal">2032</span>
+<span class="normal">2033</span>
+<span class="normal">2034</span>
+<span class="normal">2035</span>
+<span class="normal">2036</span>
+<span class="normal">2037</span>
+<span class="normal">2038</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode the data using the encoder.</span>
 
@@ -7719,17 +7725,17 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/types.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2025</span>
-<span class="normal">2026</span>
-<span class="normal">2027</span>
-<span class="normal">2028</span>
-<span class="normal">2029</span>
-<span class="normal">2030</span>
-<span class="normal">2031</span>
-<span class="normal">2032</span>
-<span class="normal">2033</span>
-<span class="normal">2034</span>
-<span class="normal">2035</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2040</span>
+<span class="normal">2041</span>
+<span class="normal">2042</span>
+<span class="normal">2043</span>
+<span class="normal">2044</span>
+<span class="normal">2045</span>
+<span class="normal">2046</span>
+<span class="normal">2047</span>
+<span class="normal">2048</span>
+<span class="normal">2049</span>
+<span class="normal">2050</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Encode the data using the encoder.</span>
 
@@ -7794,14 +7800,14 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/types.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2037</span>
-<span class="normal">2038</span>
-<span class="normal">2039</span>
-<span class="normal">2040</span>
-<span class="normal">2041</span>
-<span class="normal">2042</span>
-<span class="normal">2043</span>
-<span class="normal">2044</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2052</span>
+<span class="normal">2053</span>
+<span class="normal">2054</span>
+<span class="normal">2055</span>
+<span class="normal">2056</span>
+<span class="normal">2057</span>
+<span class="normal">2058</span>
+<span class="normal">2059</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">get_json_format</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the JSON format for the encoded data.</span>
 
@@ -7933,20 +7939,20 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/types.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2050</span>
-<span class="normal">2051</span>
-<span class="normal">2052</span>
-<span class="normal">2053</span>
-<span class="normal">2054</span>
-<span class="normal">2055</span>
-<span class="normal">2056</span>
-<span class="normal">2057</span>
-<span class="normal">2058</span>
-<span class="normal">2059</span>
-<span class="normal">2060</span>
-<span class="normal">2061</span>
-<span class="normal">2062</span>
-<span class="normal">2063</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2065</span>
+<span class="normal">2066</span>
+<span class="normal">2067</span>
+<span class="normal">2068</span>
+<span class="normal">2069</span>
+<span class="normal">2070</span>
+<span class="normal">2071</span>
+<span class="normal">2072</span>
+<span class="normal">2073</span>
+<span class="normal">2074</span>
+<span class="normal">2075</span>
+<span class="normal">2076</span>
+<span class="normal">2077</span>
+<span class="normal">2078</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode the data from base64 encoded bytes to original bytes data.</span>
 
@@ -8044,17 +8050,17 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/types.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2065</span>
-<span class="normal">2066</span>
-<span class="normal">2067</span>
-<span class="normal">2068</span>
-<span class="normal">2069</span>
-<span class="normal">2070</span>
-<span class="normal">2071</span>
-<span class="normal">2072</span>
-<span class="normal">2073</span>
-<span class="normal">2074</span>
-<span class="normal">2075</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2080</span>
+<span class="normal">2081</span>
+<span class="normal">2082</span>
+<span class="normal">2083</span>
+<span class="normal">2084</span>
+<span class="normal">2085</span>
+<span class="normal">2086</span>
+<span class="normal">2087</span>
+<span class="normal">2088</span>
+<span class="normal">2089</span>
+<span class="normal">2090</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Encode the data from bytes to a base64 encoded bytes.</span>
 
@@ -8119,14 +8125,14 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/types.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2077</span>
-<span class="normal">2078</span>
-<span class="normal">2079</span>
-<span class="normal">2080</span>
-<span class="normal">2081</span>
-<span class="normal">2082</span>
-<span class="normal">2083</span>
-<span class="normal">2084</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2092</span>
+<span class="normal">2093</span>
+<span class="normal">2094</span>
+<span class="normal">2095</span>
+<span class="normal">2096</span>
+<span class="normal">2097</span>
+<span class="normal">2098</span>
+<span class="normal">2099</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">get_json_format</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;base64&#39;</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the JSON format for the encoded data.</span>
 
@@ -8258,20 +8264,20 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/types.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2090</span>
-<span class="normal">2091</span>
-<span class="normal">2092</span>
-<span class="normal">2093</span>
-<span class="normal">2094</span>
-<span class="normal">2095</span>
-<span class="normal">2096</span>
-<span class="normal">2097</span>
-<span class="normal">2098</span>
-<span class="normal">2099</span>
-<span class="normal">2100</span>
-<span class="normal">2101</span>
-<span class="normal">2102</span>
-<span class="normal">2103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2105</span>
+<span class="normal">2106</span>
+<span class="normal">2107</span>
+<span class="normal">2108</span>
+<span class="normal">2109</span>
+<span class="normal">2110</span>
+<span class="normal">2111</span>
+<span class="normal">2112</span>
+<span class="normal">2113</span>
+<span class="normal">2114</span>
+<span class="normal">2115</span>
+<span class="normal">2116</span>
+<span class="normal">2117</span>
+<span class="normal">2118</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode the data from base64 encoded bytes to original bytes data.</span>
 
@@ -8369,17 +8375,17 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/types.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2105</span>
-<span class="normal">2106</span>
-<span class="normal">2107</span>
-<span class="normal">2108</span>
-<span class="normal">2109</span>
-<span class="normal">2110</span>
-<span class="normal">2111</span>
-<span class="normal">2112</span>
-<span class="normal">2113</span>
-<span class="normal">2114</span>
-<span class="normal">2115</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2120</span>
+<span class="normal">2121</span>
+<span class="normal">2122</span>
+<span class="normal">2123</span>
+<span class="normal">2124</span>
+<span class="normal">2125</span>
+<span class="normal">2126</span>
+<span class="normal">2127</span>
+<span class="normal">2128</span>
+<span class="normal">2129</span>
+<span class="normal">2130</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Encode the data from bytes to a base64 encoded bytes.</span>
 
@@ -8444,14 +8450,14 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/types.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2117</span>
-<span class="normal">2118</span>
-<span class="normal">2119</span>
-<span class="normal">2120</span>
-<span class="normal">2121</span>
-<span class="normal">2122</span>
-<span class="normal">2123</span>
-<span class="normal">2124</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2132</span>
+<span class="normal">2133</span>
+<span class="normal">2134</span>
+<span class="normal">2135</span>
+<span class="normal">2136</span>
+<span class="normal">2137</span>
+<span class="normal">2138</span>
+<span class="normal">2139</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">get_json_format</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;base64url&#39;</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the JSON format for the encoded data.</span>
 
@@ -8628,16 +8634,16 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/types.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2198</span>
-<span class="normal">2199</span>
-<span class="normal">2200</span>
-<span class="normal">2201</span>
-<span class="normal">2202</span>
-<span class="normal">2203</span>
-<span class="normal">2204</span>
-<span class="normal">2205</span>
-<span class="normal">2206</span>
-<span class="normal">2207</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2213</span>
+<span class="normal">2214</span>
+<span class="normal">2215</span>
+<span class="normal">2216</span>
+<span class="normal">2217</span>
+<span class="normal">2218</span>
+<span class="normal">2219</span>
+<span class="normal">2220</span>
+<span class="normal">2221</span>
+<span class="normal">2222</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode the data using the specified encoder.</span>
 
 <span class="sd">    Args:</span>
@@ -8727,16 +8733,16 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/types.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2209</span>
-<span class="normal">2210</span>
-<span class="normal">2211</span>
-<span class="normal">2212</span>
-<span class="normal">2213</span>
-<span class="normal">2214</span>
-<span class="normal">2215</span>
-<span class="normal">2216</span>
-<span class="normal">2217</span>
-<span class="normal">2218</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2224</span>
+<span class="normal">2225</span>
+<span class="normal">2226</span>
+<span class="normal">2227</span>
+<span class="normal">2228</span>
+<span class="normal">2229</span>
+<span class="normal">2230</span>
+<span class="normal">2231</span>
+<span class="normal">2232</span>
+<span class="normal">2233</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Encode the data using the specified encoder.</span>
 
 <span class="sd">    Args:</span>
@@ -8917,16 +8923,16 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/types.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2286</span>
-<span class="normal">2287</span>
-<span class="normal">2288</span>
-<span class="normal">2289</span>
-<span class="normal">2290</span>
-<span class="normal">2291</span>
-<span class="normal">2292</span>
-<span class="normal">2293</span>
-<span class="normal">2294</span>
-<span class="normal">2295</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">decode_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2301</span>
+<span class="normal">2302</span>
+<span class="normal">2303</span>
+<span class="normal">2304</span>
+<span class="normal">2305</span>
+<span class="normal">2306</span>
+<span class="normal">2307</span>
+<span class="normal">2308</span>
+<span class="normal">2309</span>
+<span class="normal">2310</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">decode_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode the data using the specified encoder.</span>
 
 <span class="sd">    Args:</span>
@@ -9016,16 +9022,16 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/types.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2297</span>
-<span class="normal">2298</span>
-<span class="normal">2299</span>
-<span class="normal">2300</span>
-<span class="normal">2301</span>
-<span class="normal">2302</span>
-<span class="normal">2303</span>
-<span class="normal">2304</span>
-<span class="normal">2305</span>
-<span class="normal">2306</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">encode_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2312</span>
+<span class="normal">2313</span>
+<span class="normal">2314</span>
+<span class="normal">2315</span>
+<span class="normal">2316</span>
+<span class="normal">2317</span>
+<span class="normal">2318</span>
+<span class="normal">2319</span>
+<span class="normal">2320</span>
+<span class="normal">2321</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">encode_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Encode the data using the specified encoder.</span>
 
 <span class="sd">    Args:</span>
@@ -11737,22 +11743,7 @@ See <a href="https://github.com/pydantic/pydantic-core/issues/296">this issue</a
 
           <details class="quote">
             <summary>Source code in <code>pydantic/types.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1893</span>
-<span class="normal">1894</span>
-<span class="normal">1895</span>
-<span class="normal">1896</span>
-<span class="normal">1897</span>
-<span class="normal">1898</span>
-<span class="normal">1899</span>
-<span class="normal">1900</span>
-<span class="normal">1901</span>
-<span class="normal">1902</span>
-<span class="normal">1903</span>
-<span class="normal">1904</span>
-<span class="normal">1905</span>
-<span class="normal">1906</span>
-<span class="normal">1907</span>
-<span class="normal">1908</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1908</span>
 <span class="normal">1909</span>
 <span class="normal">1910</span>
 <span class="normal">1911</span>
@@ -11761,7 +11752,22 @@ See <a href="https://github.com/pydantic/pydantic-core/issues/296">this issue</a
 <span class="normal">1914</span>
 <span class="normal">1915</span>
 <span class="normal">1916</span>
-<span class="normal">1917</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">condate</span><span class="p">(</span>
+<span class="normal">1917</span>
+<span class="normal">1918</span>
+<span class="normal">1919</span>
+<span class="normal">1920</span>
+<span class="normal">1921</span>
+<span class="normal">1922</span>
+<span class="normal">1923</span>
+<span class="normal">1924</span>
+<span class="normal">1925</span>
+<span class="normal">1926</span>
+<span class="normal">1927</span>
+<span class="normal">1928</span>
+<span class="normal">1929</span>
+<span class="normal">1930</span>
+<span class="normal">1931</span>
+<span class="normal">1932</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">condate</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">gt</span><span class="p">:</span> <span class="n">date</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
