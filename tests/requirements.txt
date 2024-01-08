@@ -1,4 +1,4 @@
-coverage==7.2.7
+coverage==7.4.0
 dirty-equals==0.6.0
 hypothesis==6.92.5
 # TODO: remove manual override for dateutil once a version newer than 2.8.2 is
