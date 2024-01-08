@@ -266,7 +266,7 @@ def collect_dataclass_fields(
 
     source_module = sys.modules.get(cls.__module__)
     if source_module is not None:
-        types_namespace = {**source_module.__dict__, **types_namespace}
+        types_namespace = {**source_module.__dict__, **(types_namespace or {})}
 
     for ann_name, dataclass_field in dataclass_fields.items():
         ann_type = _typing_extra.eval_type_lenient(dataclass_field.type, types_namespace, cls_localns)
