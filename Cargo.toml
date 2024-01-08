@@ -35,7 +35,7 @@ enum_dispatch = "0.3.8"
 serde = { version = "1.0.193", features = ["derive"] }
 speedate = "0.13.0"
 smallvec = "1.11.2"
-ahash = "0.8.6"
+ahash = "0.8.7"
 url = "2.5.0"
 # idna is already required by url, added here to be explicit
 idna = "0.4.0"
