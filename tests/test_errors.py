@@ -1,6 +1,8 @@
 import enum
+import os
 import pickle
 import re
+import subprocess
 import sys
 from decimal import Decimal
 from typing import Any, Optional
@@ -1090,3 +1092,51 @@ def test_validation_error_pickle() -> None:
     original = exc_info.value
     roundtripped = pickle.loads(pickle.dumps(original))
     assert original.errors() == roundtripped.errors()
+
+
+@pytest.mark.skipif('PYDANTIC_ERRORS_INCLUDE_URL' in os.environ, reason="can't test when envvar is set")
+def test_errors_include_url() -> None:
+    s = SchemaValidator({'type': 'int'})
+    with pytest.raises(ValidationError) as exc_info:
+        s.validate_python('definitely not an int')
+    assert 'https://errors.pydantic.dev' in repr(exc_info.value)
+
+
+@pytest.mark.skipif(sys.platform == 'emscripten', reason='no subprocesses on emscripten')
+@pytest.mark.parametrize(
+    ('env_var', 'env_var_value', 'expected_to_have_url'),
+    [
+        ('PYDANTIC_ERRORS_INCLUDE_URL', None, True),
+        ('PYDANTIC_ERRORS_INCLUDE_URL', '1', True),
+        ('PYDANTIC_ERRORS_INCLUDE_URL', 'True', True),
+        ('PYDANTIC_ERRORS_INCLUDE_URL', 'no', False),
+        ('PYDANTIC_ERRORS_INCLUDE_URL', '0', False),
+        # Legacy environment variable, will raise a deprecation warning:
+        ('PYDANTIC_ERRORS_OMIT_URL', '1', False),
+        ('PYDANTIC_ERRORS_OMIT_URL', None, True),
+    ],
+)
+def test_errors_include_url_envvar(env_var, env_var_value, expected_to_have_url) -> None:
+    """
+    Test the `PYDANTIC_ERRORS_INCLUDE_URL` environment variable.
+
+    Since it can only be set before `ValidationError.__repr__()` is first called,
+    we need to spawn a subprocess to test it.
+    """
+    code = "import pydantic_core; pydantic_core.SchemaValidator({'type': 'int'}).validate_python('ooo')"
+    env = os.environ.copy()
+    env.pop('PYDANTIC_ERRORS_OMIT_URL', None)  # in case the ambient environment has it set
+    if env_var_value is not None:
+        env[env_var] = env_var_value
+    env['PYTHONDEVMODE'] = '1'  # required to surface the deprecation warning
+    result = subprocess.run(
+        [sys.executable, '-c', code],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        encoding='utf-8',
+        env=env,
+    )
+    assert result.returncode == 1
+    if 'PYDANTIC_ERRORS_OMIT_URL' in env:
+        assert 'PYDANTIC_ERRORS_OMIT_URL is deprecated' in result.stdout
+    assert ('https://errors.pydantic.dev' in result.stdout) == expected_to_have_url
