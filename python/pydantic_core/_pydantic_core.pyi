@@ -787,6 +787,18 @@ class ValidationError(ValueError):
             a JSON string.
         """
 
+    def __repr__(self) -> str:
+        """
+        A string representation of the validation error.
+
+        Whether or not documentation URLs are included in the repr is controlled by the
+        environment variable `PYDANTIC_ERRORS_INCLUDE_URL` being set to `1` or
+        `true`; by default, URLs are shown.
+
+        Due to implementation details, this environment variable can only be set once,
+        before the first validation error is created.
+        """
+
 @final
 class PydanticCustomError(ValueError):
     def __new__(
