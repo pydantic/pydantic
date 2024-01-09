@@ -1,5 +1,5 @@
 coverage==7.4.0
-dirty-equals==0.6.0
+dirty-equals==0.7.1.post0
 hypothesis==6.92.5
 # TODO: remove manual override for dateutil once a version newer than 2.8.2 is
 # released which removes use of deprecated utcfromtimestamp
