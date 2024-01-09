@@ -77,9 +77,9 @@ def test_schema_typing() -> None:
     SchemaValidator(schema)
     schema: CoreSchema = {'type': 'set', 'items_schema': {'type': 'str'}, 'max_length': 3}
     SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'tuple-variable', 'items_schema': {'type': 'str'}, 'max_length': 3}
+    schema: CoreSchema = {'type': 'tuple', 'items_schema': [{'type': 'str'}], 'variadic_item_index': 0, 'max_length': 3}
     SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'tuple-positional', 'items_schema': [{'type': 'str'}, {'type': 'int'}]}
+    schema: CoreSchema = {'type': 'tuple', 'items_schema': [{'type': 'str'}, {'type': 'int'}]}
     SchemaValidator(schema)
     schema: CoreSchema = {'type': 'frozenset', 'items_schema': {'type': 'str'}, 'max_length': 3}
     SchemaValidator(schema)
