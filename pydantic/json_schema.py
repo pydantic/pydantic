@@ -38,7 +38,7 @@ from typing import (
 import pydantic_core
 from pydantic_core import CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
-from typing_extensions import Annotated, Literal, TypeAlias, assert_never, deprecated
+from typing_extensions import Annotated, Literal, TypeAlias, assert_never, deprecated, final
 
 from ._internal import (
     _config,
@@ -804,6 +804,7 @@ class GenerateJsonSchema:
         return json_schema
 
     @deprecated('tuple_positional_schema is deprecated. Use tuple_schema instead.')
+    @final
     def tuple_positional_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a positional tuple schema e.g. `Tuple[int, str, bool]`.
 
@@ -816,6 +817,7 @@ class GenerateJsonSchema:
         return self.tuple_schema(schema)
 
     @deprecated('tuple_variable_schema is deprecated. Use tuple_schema instead.')
+    @final
     def tuple_variable_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a variable tuple schema e.g. `Tuple[int, ...]`.
 
