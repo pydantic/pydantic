@@ -131,6 +131,8 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
 * In many cases, arguments passed to the constructor will be **copied** in order to perform validation and, where necessary, coercion.
   This is notable in the case of passing mutable objects as arguments to a constructor.
   You can see an example + more detail [here](https://docs.pydantic.dev/latest/concepts/models/#attribute-copies).
+* The `.json()` method is deprecated, and attempting to use this deprecated method with arguments such as
+`indent` or `ensure_ascii` may lead to confusing errors. For best results, switch to V2's equivalent, `model_dump_json()`.
 * JSON serialization of non-string key values is generally done with `str(key)`, leading to some changes in behavior such as the following:
 
 ```py
