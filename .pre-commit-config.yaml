@@ -36,4 +36,4 @@ repos:
     types: [python]
     language: node
     pass_filenames: false
-    additional_dependencies: ["pyright@1.1.344"]  # try to keep this in sync with .github/workflows/ci.yml
+    additional_dependencies: ["pyright@1.1.345"]  # try to keep this in sync with .github/workflows/ci.yml
