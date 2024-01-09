@@ -128,9 +128,39 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
   [Subclass instances for fields of BaseModel, dataclasses, TypedDict](concepts/serialization.md#subclass-instances-for-fields-of-basemodel-dataclasses-typeddict)
   section of the model exporting docs.
 * `GetterDict` has been removed as it was just an implementation detail of `orm_mode`, which has been removed.
-* In many cases, arguments passed to the constructor will be copied in order to perform validation and, where necessary, coercion.
+* In many cases, arguments passed to the constructor will be **copied** in order to perform validation and, where necessary, coercion.
   This is notable in the case of passing mutable objects as arguments to a constructor.
   You can see an example + more detail [here](https://docs.pydantic.dev/latest/concepts/models/#attribute-copies).
+* The `.json()` method is deprecated, and attempting to use this deprecated method with arguments such as
+`indent` or `ensure_ascii` may lead to confusing errors. For best results, switch to V2's equivalent, `model_dump_json()`.
+* JSON serialization of non-string key values is generally done with `str(key)`, leading to some changes in behavior such as the following:
+
+```py
+from typing import Dict, Optional
+
+from pydantic import BaseModel as V2BaseModel
+from pydantic.v1 import BaseModel as V1BaseModel
+
+
+class V1Model(V1BaseModel):
+    a: Dict[Optional[str], int]
+
+
+class V2Model(V2BaseModel):
+    a: Dict[Optional[str], int]
+
+
+v1_model = V1Model(a={None: 123})
+v2_model = V2Model(a={None: 123})
+
+# V1
+print(v1_model.json())
+#> {"a": {"null": 123}}
+
+# V2
+print(v2_model.model_dump_json())
+#> {"a":{"None":123}}
+```
 
 ### Changes to `pydantic.generics.GenericModel`
 
