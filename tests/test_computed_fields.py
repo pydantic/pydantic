@@ -62,6 +62,13 @@ def test_computed_fields_get():
     assert rect.model_dump() == {'width': 10, 'length': 5, 'area': 50, 'area2': 50}
     assert rect.model_dump_json() == '{"width":10,"length":5,"area":50,"area2":50}'
 
+    assert set(Rectangle.model_fields) == {'width', 'length'}
+    assert set(Rectangle.model_computed_fields) == {'area', 'area2'}
+
+    assert Rectangle.model_computed_fields['area'].description == 'An awesome area'
+    assert Rectangle.model_computed_fields['area2'].title == 'Pikarea'
+    assert Rectangle.model_computed_fields['area2'].description == 'Another area'
+
 
 def test_computed_fields_json_schema():
     class Rectangle(BaseModel):
