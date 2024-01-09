@@ -1406,7 +1406,9 @@ def create_model(  # noqa: C901
     __slots__: tuple[str, ...] | None = None,
     **field_definitions: Any,
 ) -> type[Model]:
-    """Dynamically creates and returns a new Pydantic model, in other words, `create_model` dynamically creates a
+    """Usage docs: https://docs.pydantic.dev/2.6/models/#dynamic-model-creation/
+
+    Dynamically creates and returns a new Pydantic model, in other words, `create_model` dynamically creates a
     subclass of [`BaseModel`][pydantic.BaseModel].
 
     Args:
@@ -1417,7 +1419,7 @@ def create_model(  # noqa: C901
         __module__: The name of the module that the model belongs to;
             if `None`, the value is taken from `sys._getframe(1)`
         __validators__: A dictionary of methods that validate fields.
-        __cls_kwargs__: A dictionary of keyword arguments for class creation.
+        __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.
         __slots__: Deprecated. Should not be passed to `create_model`.
         **field_definitions: Attributes of the new model. They should be passed in the format:
             `<name>=(<type>, <default value>)` or `<name>=(<type>, <FieldInfo>)`.
