@@ -136,18 +136,18 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
 * JSON serialization of non-string key values is generally done with `str(key)`, leading to some changes in behavior such as the following:
 
 ```py
-from typing import Optional
+from typing import Dict, Optional
 
 from pydantic import BaseModel as V2BaseModel
 from pydantic.v1 import BaseModel as V1BaseModel
 
 
 class V1Model(V1BaseModel):
-    a: dict[Optional[str], int]
+    a: Dict[Optional[str], int]
 
 
 class V2Model(V2BaseModel):
-    a: dict[Optional[str], int]
+    a: Dict[Optional[str], int]
 
 
 v1_model = V1Model(a={None: 123})
