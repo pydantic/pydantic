@@ -1406,7 +1406,7 @@ def create_model(  # noqa: C901
     __slots__: tuple[str, ...] | None = None,
     **field_definitions: Any,
 ) -> type[Model]:
-    """Usage docs: https://docs.pydantic.dev/2.6/models/#dynamic-model-creation/
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/models/#dynamic-model-creation
 
     Dynamically creates and returns a new Pydantic model, in other words, `create_model` dynamically creates a
     subclass of [`BaseModel`][pydantic.BaseModel].
