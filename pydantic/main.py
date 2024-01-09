@@ -122,16 +122,22 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_serializer__: ClassVar[SchemaSerializer]
         __pydantic_validator__: ClassVar[SchemaValidator]
 
+        model_computed_fields: ClassVar[dict[str, ComputedFieldInfo]]
+        """A dictionary of computed field names and their corresponding `ComputedFieldInfo` objects."""
+
         # Instance attributes
         # Note: we use the non-existent kwarg `init=False` in pydantic.fields.Field below so that @dataclass_transform
         # doesn't think these are valid as keyword arguments to the class initializer.
         __pydantic_extra__: dict[str, Any] | None = _Field(init=False)  # type: ignore
         __pydantic_fields_set__: set[str] = _Field(init=False)  # type: ignore
         __pydantic_private__: dict[str, Any] | None = _Field(init=False)  # type: ignore
+
     else:
         # `model_fields` and `__pydantic_decorators__` must be set for
         # pydantic._internal._generate_schema.GenerateSchema.model_schema to work for a plain BaseModel annotation
         model_fields = {}
+        model_computed_fields = {}
+
         __pydantic_decorators__ = _decorators.DecoratorInfos()
         __pydantic_parent_namespace__ = None
         # Prevent `BaseModel` from being instantiated directly:
@@ -166,15 +172,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     # The following line sets a flag that we use to determine when `__init__` gets overridden by the user
     __init__.__pydantic_base_init__ = True
-
-    @property
-    def model_computed_fields(self) -> dict[str, ComputedFieldInfo]:
-        """Get the computed fields of this model instance.
-
-        Returns:
-            A dictionary of computed field names and their corresponding `ComputedFieldInfo` objects.
-        """
-        return {k: v.info for k, v in self.__pydantic_decorators__.computed_fields.items()}
 
     @property
     def model_extra(self) -> dict[str, Any] | None:
@@ -212,17 +209,19 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
         m = cls.__new__(cls)
         fields_values: dict[str, Any] = {}
-        defaults: dict[str, Any] = {}  # keeping this separate from `fields_values` helps us compute `_fields_set`
+        fields_set = set()
+
         for name, field in cls.model_fields.items():
             if field.alias and field.alias in values:
                 fields_values[name] = values.pop(field.alias)
+                fields_set.add(name)
             elif name in values:
                 fields_values[name] = values.pop(name)
+                fields_set.add(name)
             elif not field.is_required():
-                defaults[name] = field.get_default(call_default_factory=True)
+                fields_values[name] = field.get_default(call_default_factory=True)
         if _fields_set is None:
-            _fields_set = set(fields_values.keys())
-        fields_values.update(defaults)
+            _fields_set = fields_set
 
         _extra: dict[str, Any] | None = None
         if cls.model_config.get('extra') == 'allow':

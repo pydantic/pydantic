@@ -204,7 +204,7 @@ class TypeAdapter(Generic[T]):
         except AttributeError:
             if module is None:
                 f = sys._getframe(1)
-                module = cast(str, f.f_globals['__name__'])
+                module = cast(str, f.f_globals.get('__name__', ''))
             validator = create_schema_validator(
                 core_schema, type, module, str(type), 'TypeAdapter', core_config, config_wrapper.plugin_settings
             )  # type: ignore

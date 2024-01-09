@@ -991,15 +991,20 @@ class GenerateSchema:
 
             evaluated = _typing_extra.eval_type_lenient(field_info.annotation, types_namespace, None)
             if evaluated is not field_info.annotation and not has_instance_in_type(evaluated, PydanticRecursiveRef):
-                field_info.annotation = evaluated
+                new_field_info = FieldInfo.from_annotation(evaluated)
+                field_info.annotation = new_field_info.annotation
 
                 # Handle any field info attributes that may have been obtained from now-resolved annotations
-                new_field_info = FieldInfo.from_annotation(evaluated)
                 for k, v in new_field_info._attributes_set.items():
                     # If an attribute is already set, it means it was set by assigning to a call to Field (or just a
                     # default value), and that should take the highest priority. So don't overwrite existing attributes.
-                    if k not in field_info._attributes_set:
+                    # We skip over "attributes" that are present in the metadata_lookup dict because these won't
+                    # actually end up as attributes of the `FieldInfo` instance.
+                    if k not in field_info._attributes_set and k not in field_info.metadata_lookup:
                         setattr(field_info, k, v)
+
+                # Finally, ensure the field info also reflects all the `_attributes_set` that are actually metadata.
+                field_info.metadata = [*new_field_info.metadata, *field_info.metadata]
 
         source_type, annotations = field_info.annotation, field_info.metadata
 

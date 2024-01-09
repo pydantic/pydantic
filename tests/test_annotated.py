@@ -424,3 +424,49 @@ def test_annotated_private_field_with_default():
 
     with pytest.raises(AttributeError):
         assert model.bar
+
+
+def test_min_length_field_info_not_lost():
+    class AnnotatedFieldModel(BaseModel):
+        foo: 'Annotated[String, Field(min_length=3)]' = Field(description='hello')
+
+    String = str
+
+    AnnotatedFieldModel.model_rebuild()
+
+    assert AnnotatedFieldModel(foo='000').foo == '000'
+
+    with pytest.raises(ValidationError) as exc_info:
+        AnnotatedFieldModel(foo='00')
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'loc': ('foo',),
+            'input': '00',
+            'ctx': {'min_length': 3},
+            'msg': 'String should have at least 3 characters',
+            'type': 'string_too_short',
+        }
+    ]
+
+    # Ensure that the inner annotation does not override the outer, even for metadata:
+    class AnnotatedFieldModel2(BaseModel):
+        foo: 'Annotated[String, Field(min_length=3)]' = Field(description='hello', min_length=2)
+
+    AnnotatedFieldModel2(foo='00')
+
+    class AnnotatedFieldModel4(BaseModel):
+        foo: 'Annotated[String, Field(min_length=3)]' = Field(description='hello', min_length=4)
+
+    with pytest.raises(ValidationError) as exc_info:
+        AnnotatedFieldModel4(foo='00')
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'loc': ('foo',),
+            'input': '00',
+            'ctx': {'min_length': 4},
+            'msg': 'String should have at least 4 characters',
+            'type': 'string_too_short',
+        }
+    ]
