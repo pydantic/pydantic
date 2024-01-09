@@ -29,7 +29,7 @@ from uuid import UUID
 
 import annotated_types
 from annotated_types import BaseMetadata, MaxLen, MinLen
-from pydantic_core import CoreSchema, PydanticCustomError, core_schema
+from pydantic_core import CoreSchema, PydanticCustomError, SchemaValidator, core_schema
 from typing_extensions import Annotated, Literal, Protocol, TypeAlias, TypeAliasType, deprecated
 
 from ._internal import (
@@ -76,6 +76,7 @@ __all__ = (
     'NewPath',
     'Json',
     'SecretStr',
+    'SecretDate',
     'SecretBytes',
     'StrictBool',
     'StrictBytes',
@@ -1332,7 +1333,8 @@ NewPath = Annotated[Path, PathType('new')]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ JSON TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 if TYPE_CHECKING:
-    Json = Annotated[AnyType, ...]  # Json[list[str]] will be recognized by type checkers as list[str]
+    # Json[list[str]] will be recognized by type checkers as list[str]
+    Json = Annotated[AnyType, ...]
 
 else:
 
@@ -1439,7 +1441,7 @@ else:
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SECRET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-SecretType = TypeVar('SecretType', str, bytes)
+SecretType = TypeVar('SecretType', str, bytes, date)
 
 
 class _SecretField(Generic[SecretType]):
@@ -1460,9 +1462,6 @@ class _SecretField(Generic[SecretType]):
     def __hash__(self) -> int:
         return hash(self.get_secret_value())
 
-    def __len__(self) -> int:
-        return len(self._secret_value)
-
     def __str__(self) -> str:
         return str(self._display())
 
@@ -1474,14 +1473,19 @@ class _SecretField(Generic[SecretType]):
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        if issubclass(source, SecretStr):
-            field_type = str
-            inner_schema = core_schema.str_schema()
-        else:
-            assert issubclass(source, SecretBytes)
-            field_type = bytes
-            inner_schema = core_schema.bytes_schema()
-        error_kind = 'string_type' if field_type is str else 'bytes_type'
+        assert issubclass(cls, (SecretStr, SecretBytes, SecretDate))
+        inner_schema: CoreSchema = core_schema.str_schema()
+        error_kind = 'string_type'
+        strict: bool = True
+
+        if issubclass(source, SecretBytes):
+            inner_schema: CoreSchema = core_schema.bytes_schema()
+            error_kind = 'bytes_type'
+            strict: bool = True
+        elif issubclass(source, SecretDate):
+            inner_schema: CoreSchema = core_schema.date_schema()
+            error_kind = 'date_type'
+            strict: bool = False
 
         def serialize(
             value: _SecretField[SecretType], info: core_schema.SerializationInfo
@@ -1513,7 +1517,7 @@ class _SecretField(Generic[SecretType]):
                     core_schema.is_instance_schema(source),
                     json_schema,
                 ],
-                strict=True,
+                strict=strict,
                 custom_error_type=error_kind,
             ),
             json_schema=json_schema,
@@ -1528,8 +1532,10 @@ class _SecretField(Generic[SecretType]):
         return s
 
 
-def _secret_display(value: str | bytes) -> str:
-    return '**********' if value else ''
+def _secret_display(value: str | bytes | date) -> str:
+    if isinstance(value, (str, bytes)):
+        return '**********' if value else ''
+    return '**/**/****' if value else ''
 
 
 class SecretStr(_SecretField[str]):
@@ -1555,6 +1561,9 @@ class SecretStr(_SecretField[str]):
     #> (SecretStr('**********'), SecretStr(''))
     ```
     """
+
+    def __len__(self) -> int:
+        return len(self._secret_value)
 
     def _display(self) -> str:
         return _secret_display(self.get_secret_value())
@@ -1583,8 +1592,42 @@ class SecretBytes(_SecretField[bytes]):
     ```
     """
 
+    def __len__(self) -> int:
+        return len(self._secret_value)
+
     def _display(self) -> bytes:
         return _secret_display(self.get_secret_value()).encode()
+
+
+class SecretDate(_SecretField[date]):
+    """A date field used for storing sensitive information that you do not want to be visible in logging or tracebacks.
+
+    It displays `'**/**/**** instead of the date value on `repr()` and `str()` calls.
+
+    ```py
+    from pydantic import BaseModel, SecretDate
+
+    class Event(BaseModel):
+        date: SecretDate
+
+    event = Event(date='2017-01-01')
+    #> Event(date=SecretDate('**/**/****'))
+
+    print(event.date)
+    #> **/**/****
+
+    event.date.get_secret_value()
+    #> datetime.date(2017, 1, 1)
+    ```
+    """
+
+    def __init__(self, secret_value: SecretType) -> None:
+        schema = core_schema.date_schema()
+        v = SchemaValidator(schema)
+        self._secret_value: SecretType = v.validate_python(secret_value)
+
+    def _display(self) -> str:
+        return _secret_display(self.get_secret_value())
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PAYMENT CARD TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

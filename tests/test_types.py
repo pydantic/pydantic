@@ -87,6 +87,7 @@ from pydantic import (
     PydanticInvalidForJsonSchema,
     PydanticSchemaGenerationError,
     SecretBytes,
+    SecretDate,
     SecretStr,
     SerializeAsAny,
     SkipValidation,
@@ -114,6 +115,8 @@ from pydantic import (
     validate_call,
 )
 from pydantic.dataclasses import dataclass as pydantic_dataclass
+
+from .conftest import Err
 
 try:
     import email_validator
@@ -4096,6 +4099,111 @@ def test_secretstr_idempotent():
 
 
 @pytest.mark.parametrize(
+    'value, result',
+    [
+        # Valid inputs
+        (1_493_942_400, date(2017, 5, 5)),
+        (1_493_942_400_000, date(2017, 5, 5)),
+        (0, date(1970, 1, 1)),
+        ('2012-04-23', date(2012, 4, 23)),
+        (b'2012-04-23', date(2012, 4, 23)),
+        (date(2012, 4, 9), date(2012, 4, 9)),
+        (datetime(2012, 4, 9, 0, 0), date(2012, 4, 9)),
+    ],
+)
+def test_secretdate(value, result):
+    class Foobar(BaseModel):
+        value: SecretDate
+
+    f = Foobar(value=value)
+
+    # Assert correct type.
+    assert f.value.__class__.__name__ == 'SecretDate'
+
+    # Assert str and repr are correct.
+    assert str(f.value) == '**/**/****'
+    assert repr(f.value) == "SecretDate('**/**/****')"
+
+    # Assert retrieval of secret value is correct
+    assert f.value.get_secret_value() == result
+
+
+@pytest.mark.parametrize(
+    'value,result',
+    [
+        # Valid inputs
+        (1_493_942_400, date(2017, 5, 5)),
+        (1_493_942_400_000, date(2017, 5, 5)),
+        (0, date(1970, 1, 1)),
+        ('2012-04-23', date(2012, 4, 23)),
+        (b'2012-04-23', date(2012, 4, 23)),
+        (date(2012, 4, 9), date(2012, 4, 9)),
+        (datetime(2012, 4, 9, 0, 0), date(2012, 4, 9)),
+        # Invalid inputs
+        (datetime(2012, 4, 9, 12, 15), Err('Datetimes provided to dates should have zero time - e.g. be exact dates')),
+        ('x20120423', Err('Input should be a valid date or datetime, input is too short')),
+        ('2012-04-56', Err('Input should be a valid date or datetime, day value is outside expected range')),
+        (19_999_958_400, date(2603, 10, 11)),  # just before watershed
+        # just after watershed
+        (20000044800, Err('type=date_from_datetime_inexact,')),
+        (1_549_238_400, date(2019, 2, 4)),  # nowish in s
+        (1_549_238_400_000, date(2019, 2, 4)),  # nowish in ms
+        (1_549_238_400_000_000, Err('Input should be a valid date or datetime, dates after 9999')),  # nowish in μs
+        (1_549_238_400_000_000_000, Err('Input should be a valid date or datetime, dates after 9999')),  # nowish in ns
+        ('infinity', Err('Input should be a valid date or datetime, input is too short')),
+        (float('inf'), Err('Input should be a valid date or datetime, dates after 9999')),
+        (int('1' + '0' * 100), Err('Input should be a valid date or datetime, dates after 9999')),
+        (1e1000, Err('Input should be a valid date or datetime, dates after 9999')),
+        (float('-infinity'), Err('Input should be a valid date or datetime, dates before 1600')),
+        (float('nan'), Err('Input should be a valid date or datetime, NaN values not permitted')),
+    ],
+)
+def test_secretdate_parsing(value, result):
+    class FooBar(BaseModel):
+        d: SecretDate
+
+    if isinstance(result, Err):
+        with pytest.raises(ValidationError, match=result.message_escaped()):
+            FooBar(d=value)
+    else:
+        assert FooBar(d=value).d.get_secret_value() == result
+
+
+def test_secretdate_equality():
+    assert SecretDate('2017-01-01') == SecretDate('2017-01-01')
+    assert SecretDate(date(2017, 1, 1)) == SecretDate('2017-01-01')
+    assert SecretDate('2017-01-01') != SecretDate('2018-01-01')
+    assert SecretDate('2017-01-01') != date(2017, 1, 1)
+    assert SecretDate('2017-01-01') is not SecretDate('2017-01-01')
+
+
+def test_secretdate_idempotent():
+    class Foobar(BaseModel):
+        value: SecretDate
+
+    # Should not raise an exception
+    m = Foobar(value=SecretDate('2017-01-01'))
+    assert m.value.get_secret_value() == date(2017, 1, 1)
+
+
+def test_secretdate_error():
+    class Foobar(BaseModel):
+        value: SecretDate
+
+    with pytest.raises(ValidationError) as exc_info:
+        Foobar(value='foobar')
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'date_type',
+            'loc': ('value',),
+            'msg': 'Input should be a valid date',
+            'input': 'foobar',
+        }
+    ]
+
+
+@pytest.mark.parametrize(
     'pydantic_type',
     [
         Strict,
@@ -4118,6 +4226,7 @@ def test_secretstr_idempotent():
         constr,
         StrictStr,
         SecretStr,
+        SecretDate,
         ImportString,
         conset,
         confrozenset,
@@ -5682,7 +5791,8 @@ def test_typing_literal_field():
 
 def test_instance_of_annotation():
     class Model(BaseModel):
-        x: InstanceOf[Sequence[int]]  # Note: the generic parameter gets ignored by runtime validation
+        # Note: the generic parameter gets ignored by runtime validation
+        x: InstanceOf[Sequence[int]]
 
     class MyList(list):
         pass
@@ -6091,7 +6201,8 @@ def test_union_tags_in_errors():
     with pytest.raises(ValidationError) as exc_info:
         adapter.validate_python(['a'])
 
-    assert '2 validation errors for union[function-after[<lambda>(), list[int]],dict[str,str]]' in str(exc_info)  # yuck
+    # yuck
+    assert '2 validation errors for union[function-after[<lambda>(), list[int]],dict[str,str]]' in str(exc_info)
     # the loc's are bad here:
     assert exc_info.value.errors(include_url=False) == [
         {
@@ -6135,7 +6246,8 @@ def test_union_tags_in_errors():
 def test_json_value():
     adapter = TypeAdapter(JsonValue)
     valid_json_data = {'a': {'b': {'c': 1, 'd': [2, None]}}}
-    invalid_json_data = {'a': {'b': ...}}  # would pass validation as a dict[str, Any]
+    # would pass validation as a dict[str, Any]
+    invalid_json_data = {'a': {'b': ...}}
 
     assert adapter.validate_python(valid_json_data) == valid_json_data
     assert adapter.validate_json(json.dumps(valid_json_data)) == valid_json_data
