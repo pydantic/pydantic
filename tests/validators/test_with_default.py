@@ -164,7 +164,11 @@ def test_dict_keys():
 
 def test_tuple_variable(py_and_json: PyAndJson):
     v = py_and_json(
-        {'type': 'tuple-variable', 'items_schema': {'type': 'default', 'schema': {'type': 'int'}, 'on_error': 'omit'}}
+        {
+            'type': 'tuple',
+            'items_schema': [{'type': 'default', 'schema': {'type': 'int'}, 'on_error': 'omit'}],
+            'variadic_item_index': 0,
+        }
     )
     assert v.validate_python((1, 2, 3)) == (1, 2, 3)
     assert v.validate_python([1, '2', 3]) == (1, 2, 3)
@@ -174,7 +178,7 @@ def test_tuple_variable(py_and_json: PyAndJson):
 def test_tuple_positional():
     v = SchemaValidator(
         {
-            'type': 'tuple-positional',
+            'type': 'tuple',
             'items_schema': [{'type': 'int'}, {'type': 'default', 'schema': {'type': 'int'}, 'default': 42}],
         }
     )
@@ -187,9 +191,13 @@ def test_tuple_positional():
 def test_tuple_positional_omit():
     v = SchemaValidator(
         {
-            'type': 'tuple-positional',
-            'items_schema': [{'type': 'int'}, {'type': 'int'}],
-            'extras_schema': {'type': 'default', 'schema': {'type': 'int'}, 'on_error': 'omit'},
+            'type': 'tuple',
+            'items_schema': [
+                {'type': 'int'},
+                {'type': 'int'},
+                {'type': 'default', 'schema': {'type': 'int'}, 'on_error': 'omit'},
+            ],
+            'variadic_item_index': 2,
         }
     )
     assert v.validate_python((1, '2')) == (1, 2)

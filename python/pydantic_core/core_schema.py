@@ -1384,16 +1384,7 @@ def list_schema(
     )
 
 
-class TuplePositionalSchema(TypedDict, total=False):
-    type: Required[Literal['tuple-positional']]
-    items_schema: Required[List[CoreSchema]]
-    extras_schema: CoreSchema
-    strict: bool
-    ref: str
-    metadata: Any
-    serialization: IncExSeqOrElseSerSchema
-
-
+# @deprecated('tuple_positional_schema is deprecated. Use pydantic_core.core_schema.tuple_schema instead.')
 def tuple_positional_schema(
     items_schema: list[CoreSchema],
     *,
@@ -1402,7 +1393,7 @@ def tuple_positional_schema(
     ref: str | None = None,
     metadata: Any = None,
     serialization: IncExSeqOrElseSerSchema | None = None,
-) -> TuplePositionalSchema:
+) -> TupleSchema:
     """
     Returns a schema that matches a tuple of schemas, e.g.:
 
@@ -1427,10 +1418,14 @@ def tuple_positional_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return _dict_not_none(
-        type='tuple-positional',
+    if extras_schema is not None:
+        variadic_item_index = len(items_schema)
+        items_schema = items_schema + [extras_schema]
+    else:
+        variadic_item_index = None
+    return tuple_schema(
         items_schema=items_schema,
-        extras_schema=extras_schema,
+        variadic_item_index=variadic_item_index,
         strict=strict,
         ref=ref,
         metadata=metadata,
@@ -1438,17 +1433,7 @@ def tuple_positional_schema(
     )
 
 
-class TupleVariableSchema(TypedDict, total=False):
-    type: Required[Literal['tuple-variable']]
-    items_schema: CoreSchema
-    min_length: int
-    max_length: int
-    strict: bool
-    ref: str
-    metadata: Any
-    serialization: IncExSeqOrElseSerSchema
-
-
+# @deprecated('tuple_variable_schema is deprecated. Use pydantic_core.core_schema.tuple_schema instead.')
 def tuple_variable_schema(
     items_schema: CoreSchema | None = None,
     *,
@@ -1458,7 +1443,7 @@ def tuple_variable_schema(
     ref: str | None = None,
     metadata: Any = None,
     serialization: IncExSeqOrElseSerSchema | None = None,
-) -> TupleVariableSchema:
+) -> TupleSchema:
     """
     Returns a schema that matches a tuple of a given schema, e.g.:
 
@@ -1477,13 +1462,73 @@ def tuple_variable_schema(
         min_length: The value must be a tuple with at least this many items
         max_length: The value must be a tuple with at most this many items
         strict: The value must be a tuple with exactly this many items
-        ref: optional unique identifier of the schema, used to reference the schema in other places
+        ref: Optional unique identifier of the schema, used to reference the schema in other places
+        metadata: Any other information you want to include with the schema, not used by pydantic-core
+        serialization: Custom serialization schema
+    """
+    return tuple_schema(
+        items_schema=[items_schema or any_schema()],
+        variadic_item_index=0,
+        min_length=min_length,
+        max_length=max_length,
+        strict=strict,
+        ref=ref,
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+
+class TupleSchema(TypedDict, total=False):
+    type: Required[Literal['tuple']]
+    items_schema: Required[List[CoreSchema]]
+    variadic_item_index: int
+    min_length: int
+    max_length: int
+    strict: bool
+    ref: str
+    metadata: Any
+    serialization: IncExSeqOrElseSerSchema
+
+
+def tuple_schema(
+    items_schema: list[CoreSchema],
+    *,
+    variadic_item_index: int | None = None,
+    min_length: int | None = None,
+    max_length: int | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: Any = None,
+    serialization: IncExSeqOrElseSerSchema | None = None,
+) -> TupleSchema:
+    """
+    Returns a schema that matches a tuple of schemas, with an optional variadic item, e.g.:
+
+    ```py
+    from pydantic_core import SchemaValidator, core_schema
+
+    schema = core_schema.tuple_schema(
+        [core_schema.int_schema(), core_schema.str_schema(), core_schema.float_schema()],
+        variadic_item_index=1,
+    )
+    v = SchemaValidator(schema)
+    assert v.validate_python((1, 'hello', 'world', 1.5)) == (1, 'hello', 'world', 1.5)
+    ```
+
+    Args:
+        items_schema: The value must be a tuple with items that match these schemas
+        variadic_item_index: The index of the schema in `items_schema` to be treated as variadic (following PEP 646)
+        min_length: The value must be a tuple with at least this many items
+        max_length: The value must be a tuple with at most this many items
+        strict: The value must be a tuple with exactly this many items
+        ref: Optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
     return _dict_not_none(
-        type='tuple-variable',
+        type='tuple',
         items_schema=items_schema,
+        variadic_item_index=variadic_item_index,
         min_length=min_length,
         max_length=max_length,
         strict=strict,
@@ -3634,8 +3679,7 @@ if not MYPY:
         IsSubclassSchema,
         CallableSchema,
         ListSchema,
-        TuplePositionalSchema,
-        TupleVariableSchema,
+        TupleSchema,
         SetSchema,
         FrozenSetSchema,
         GeneratorSchema,
@@ -3689,8 +3733,7 @@ CoreSchemaType = Literal[
     'is-subclass',
     'callable',
     'list',
-    'tuple-positional',
-    'tuple-variable',
+    'tuple',
     'set',
     'frozenset',
     'generator',

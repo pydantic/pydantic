@@ -79,17 +79,7 @@ all_schema_functions = [
     (core_schema.callable_schema, args(), {'type': 'callable'}),
     (core_schema.list_schema, args(), {'type': 'list'}),
     (core_schema.list_schema, args({'type': 'int'}), {'type': 'list', 'items_schema': {'type': 'int'}}),
-    (
-        core_schema.tuple_positional_schema,
-        args([{'type': 'int'}]),
-        {'type': 'tuple-positional', 'items_schema': [{'type': 'int'}]},
-    ),
-    (core_schema.tuple_positional_schema, args([]), {'type': 'tuple-positional', 'items_schema': []}),
-    (
-        core_schema.tuple_variable_schema,
-        args({'type': 'int'}),
-        {'type': 'tuple-variable', 'items_schema': {'type': 'int'}},
-    ),
+    (core_schema.tuple_schema, args([]), {'type': 'tuple', 'items_schema': []}),
     (
         core_schema.set_schema,
         args({'type': 'int'}, min_length=4),

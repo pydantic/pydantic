@@ -140,8 +140,7 @@ combined_serializer! {
         Union: super::type_serializers::union::UnionSerializer;
         Literal: super::type_serializers::literal::LiteralSerializer;
         Recursive: super::type_serializers::definitions::DefinitionRefSerializer;
-        TuplePositional: super::type_serializers::tuple::TuplePositionalSerializer;
-        TupleVariable: super::type_serializers::tuple::TupleVariableSerializer;
+        Tuple: super::type_serializers::tuple::TupleSerializer;
     }
 }
 
@@ -248,8 +247,7 @@ impl PyGcTraverse for CombinedSerializer {
             CombinedSerializer::Union(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Literal(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Recursive(inner) => inner.py_gc_traverse(visit),
-            CombinedSerializer::TuplePositional(inner) => inner.py_gc_traverse(visit),
-            CombinedSerializer::TupleVariable(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Tuple(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Uuid(inner) => inner.py_gc_traverse(visit),
         }
     }

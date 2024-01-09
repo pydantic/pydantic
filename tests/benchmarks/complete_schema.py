@@ -83,16 +83,20 @@ def schema(*, strict: bool = False) -> dict:
                         'max_length': 42,
                     },
                 },
-                'field_tuple_var_len_any': {'type': 'model-field', 'schema': {'type': 'tuple-variable'}},
+                'field_tuple_var_len_any': {
+                    'type': 'model-field',
+                    'schema': {'type': 'tuple', 'items_schema': [{'type': 'any'}], 'variadic_item_index': 0},
+                },
                 'field_tuple_var_len_float': {
                     'type': 'model-field',
-                    'schema': {'type': 'tuple-variable', 'items_schema': {'type': 'float'}},
+                    'schema': {'type': 'tuple', 'items_schema': [{'type': 'float'}], 'variadic_item_index': 0},
                 },
                 'field_tuple_var_len_float_con': {
                     'type': 'model-field',
                     'schema': {
-                        'type': 'tuple-variable',
-                        'items_schema': {'type': 'float'},
+                        'type': 'tuple',
+                        'items_schema': [{'type': 'float'}],
+                        'variadic_item_index': 0,
                         'min_length': 3,
                         'max_length': 42,
                     },
@@ -100,7 +104,7 @@ def schema(*, strict: bool = False) -> dict:
                 'field_tuple_fix_len': {
                     'type': 'model-field',
                     'schema': {
-                        'type': 'tuple-positional',
+                        'type': 'tuple',
                         'items_schema': [{'type': 'str'}, {'type': 'int'}, {'type': 'float'}, {'type': 'bool'}],
                     },
                 },
