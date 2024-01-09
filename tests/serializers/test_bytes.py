@@ -4,7 +4,7 @@ from enum import Enum
 
 import pytest
 
-from pydantic_core import PydanticSerializationError, SchemaSerializer, core_schema
+from pydantic_core import PydanticSerializationError, SchemaSerializer, core_schema, to_json
 
 
 def test_bytes():
@@ -126,3 +126,37 @@ def test_any_bytes_base64():
     assert s.to_json(b'foobar') == b'"Zm9vYmFy"'
     assert s.to_json({b'foobar': 123}) == b'{"Zm9vYmFy":123}'
     assert s.to_python({b'foobar': 123}, mode='json') == {'Zm9vYmFy': 123}
+
+
+class BasicModel:
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+
+def test_bytes_mode_set_via_model_config_not_serializer_config():
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            BasicModel,
+            core_schema.model_fields_schema(
+                {
+                    'foo': core_schema.model_field(core_schema.bytes_schema()),
+                }
+            ),
+            config=core_schema.CoreConfig(ser_json_bytes='base64'),
+        )
+    )
+
+    bm = BasicModel(foo=b'foobar')
+    assert s.to_python(bm) == {'foo': b'foobar'}
+    assert s.to_json(bm) == b'{"foo":"Zm9vYmFy"}'
+    assert s.to_python(bm, mode='json') == {'foo': 'Zm9vYmFy'}
+
+    # assert doesn't override serializer config
+    # in V3, we can change the serialization settings provided to to_json to override model config settings,
+    # but that'd be a breaking change
+    BasicModel.__pydantic_serializer__ = s
+    assert to_json(bm, bytes_mode='utf8') == b'{"foo":"Zm9vYmFy"}'
+
+    assert to_json({'foo': b'some bytes'}, bytes_mode='base64') == b'{"foo":"c29tZSBieXRlcw=="}'
+    assert to_json({'bar': bm}, bytes_mode='base64') == b'{"bar":{"foo":"Zm9vYmFy"}}'
