@@ -329,19 +329,20 @@ def test_filter_list_of_dicts():
 
 
 def test_positional_tuple():
-    s = SchemaSerializer(
-        {'type': 'tuple-positional', 'items_schema': [{'type': 'int'}, {'type': 'bytes'}, {'type': 'float'}]}
-    )
+    s = SchemaSerializer({'type': 'tuple', 'items_schema': [{'type': 'int'}, {'type': 'bytes'}, {'type': 'float'}]})
     assert s.to_python((1, b'2', 3.0)) == (1, b'2', 3.0)
-    assert s.to_python((1, b'2', 3.0, 123)) == (1, b'2', 3.0, 123)
+    with pytest.warns(UserWarning, match='Unexpected extra items present in tuple'):
+        assert s.to_python((1, b'2', 3.0, 123)) == (1, b'2', 3.0, 123)
     assert s.to_python((1, b'2')) == (1, b'2')
 
     assert s.to_python((1, b'2', 3.0), mode='json') == [1, '2', 3.0]
-    assert s.to_python((1, b'2', 3.0, 123), mode='json') == [1, '2', 3.0, 123]
+    with pytest.warns(UserWarning, match='Unexpected extra items present in tuple'):
+        assert s.to_python((1, b'2', 3.0, 123), mode='json') == [1, '2', 3.0, 123]
     assert s.to_python((1, b'2'), mode='json') == [1, '2']
 
     assert s.to_json((1, b'2', 3.0)) == b'[1,"2",3.0]'
-    assert s.to_json((1, b'2', 3.0, 123)) == b'[1,"2",3.0,123]'
+    with pytest.warns(UserWarning, match='Unexpected extra items present in tuple'):
+        assert s.to_json((1, b'2', 3.0, 123)) == b'[1,"2",3.0,123]'
     assert s.to_json((1, b'2')) == b'[1,"2"]'
 
 
@@ -351,7 +352,7 @@ def test_function_positional_tuple():
 
     s = SchemaSerializer(
         {
-            'type': 'tuple-positional',
+            'type': 'tuple',
             'items_schema': [
                 core_schema.any_schema(
                     serialization=core_schema.plain_serializer_function_ser_schema(partial(f, 'a'), info_arg=True)
@@ -359,10 +360,11 @@ def test_function_positional_tuple():
                 core_schema.any_schema(
                     serialization=core_schema.plain_serializer_function_ser_schema(partial(f, 'b'), info_arg=True)
                 ),
+                core_schema.any_schema(
+                    serialization=core_schema.plain_serializer_function_ser_schema(partial(f, 'extra'), info_arg=True)
+                ),
             ],
-            'extras_schema': core_schema.any_schema(
-                serialization=core_schema.plain_serializer_function_ser_schema(partial(f, 'extra'), info_arg=True)
-            ),
+            'variadic_item_index': 2,
         }
     )
     assert s.to_python((1,)) == ('a1',)

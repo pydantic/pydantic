@@ -279,7 +279,7 @@ def test_outside_parent():
                 }
             ),
             [
-                core_schema.tuple_positional_schema(
+                core_schema.tuple_schema(
                     [core_schema.int_schema(), core_schema.int_schema(), core_schema.str_schema()], ref='tuple-iis'
                 )
             ],
@@ -426,7 +426,7 @@ def multiple_tuple_schema() -> SchemaValidator:
                 }
             ),
             [
-                core_schema.tuple_positional_schema(
+                core_schema.tuple_schema(
                     [
                         core_schema.int_schema(),
                         core_schema.nullable_schema(core_schema.definition_reference_schema('t')),
@@ -522,7 +522,7 @@ def test_definition_wrap():
             [
                 core_schema.with_info_wrap_validator_function(
                     wrap_func,
-                    core_schema.tuple_positional_schema(
+                    core_schema.tuple_schema(
                         [
                             core_schema.int_schema(),
                             core_schema.nullable_schema(core_schema.definition_reference_schema('wrapper')),

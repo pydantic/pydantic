@@ -848,7 +848,7 @@ def test_raise_error_custom(benchmark):
 def test_positional_tuple(benchmark):
     v = SchemaValidator(
         {
-            'type': 'tuple-positional',
+            'type': 'tuple',
             'items_schema': [{'type': 'int'}, {'type': 'int'}, {'type': 'int'}, {'type': 'int'}, {'type': 'int'}],
         }
     )
@@ -859,7 +859,7 @@ def test_positional_tuple(benchmark):
 
 @pytest.mark.benchmark(group='tuple')
 def test_variable_tuple(benchmark):
-    v = SchemaValidator({'type': 'tuple-variable', 'items_schema': {'type': 'int'}})
+    v = SchemaValidator({'type': 'tuple', 'items_schema': [{'type': 'int'}], 'variadic_item_index': 0})
     assert v.validate_python((1, 2, 3, '4', 5)) == (1, 2, 3, 4, 5)
 
     benchmark(v.validate_python, (1, 2, 3, '4', 5))
@@ -867,7 +867,7 @@ def test_variable_tuple(benchmark):
 
 @pytest.mark.benchmark(group='tuple-many')
 def test_tuple_many_variable(benchmark):
-    v = SchemaValidator({'type': 'tuple-variable', 'items_schema': {'type': 'int'}})
+    v = SchemaValidator({'type': 'tuple', 'items_schema': [{'type': 'int'}], 'variadic_item_index': 0})
     assert v.validate_python(list(range(10))) == tuple(range(10))
 
     benchmark(v.validate_python, list(range(10)))
@@ -875,7 +875,7 @@ def test_tuple_many_variable(benchmark):
 
 @pytest.mark.benchmark(group='tuple-many')
 def test_tuple_many_positional(benchmark):
-    v = SchemaValidator({'type': 'tuple-positional', 'items_schema': [], 'extras_schema': {'type': 'int'}})
+    v = SchemaValidator({'type': 'tuple', 'items_schema': [{'type': 'int'}], 'variadic_item_index': 0})
     assert v.validate_python(list(range(10))) == tuple(range(10))
 
     benchmark(v.validate_python, list(range(10)))

@@ -457,7 +457,7 @@ impl TaggedUnionValidator {
         let tag_cow = either_tag.as_cow()?;
         let tag = tag_cow.as_ref();
         // custom logic to distinguish between different function and tuple schemas
-        if tag == "function" || tag == "tuple" {
+        if tag == "function" {
             let mode = match dict {
                 GenericMapping::PyDict(dict) => match dict.get_item(intern!(py, "mode"))? {
                     Some(m) => Some(m.validate_str(true, false)?.into_inner()),
@@ -465,21 +465,11 @@ impl TaggedUnionValidator {
                 },
                 _ => unreachable!(),
             };
-            if tag == "function" {
-                let mode = mode.ok_or_else(|| self.tag_not_found(input))?;
-                match mode.as_cow()?.as_ref() {
-                    "plain" => Ok(intern!(py, "function-plain")),
-                    "wrap" => Ok(intern!(py, "function-wrap")),
-                    _ => Ok(intern!(py, "function")),
-                }
-            } else {
-                // tag == "tuple"
-                if let Some(mode) = mode {
-                    if mode.as_cow()?.as_ref() == "positional" {
-                        return Ok(intern!(py, "tuple-positional"));
-                    }
-                }
-                Ok(intern!(py, "tuple-variable"))
+            let mode = mode.ok_or_else(|| self.tag_not_found(input))?;
+            match mode.as_cow()?.as_ref() {
+                "plain" => Ok(intern!(py, "function-plain")),
+                "wrap" => Ok(intern!(py, "function-wrap")),
+                _ => Ok(intern!(py, "function")),
             }
         } else {
             Ok(PyString::new(py, tag))
