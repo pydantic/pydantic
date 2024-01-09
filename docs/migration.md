@@ -137,8 +137,9 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
 
 ```py
 from typing import Optional
-from pydantic.v1 import BaseModel as V1BaseModel
+
 from pydantic import BaseModel as V2BaseModel
+from pydantic.v1 import BaseModel as V1BaseModel
 
 
 class V1Model(V1BaseModel):
@@ -154,11 +155,11 @@ v2_model = V2Model(a={None: 123})
 
 # V1
 print(v1_model.json())
-# > {"a": {"null": 123}}
+#> {"a": {"null": 123}}
 
 # V2
 print(v2_model.model_dump_json())
-# > {"a":{"None":123}}
+#> {"a":{"None":123}}
 ```
 
 ### Changes to `pydantic.generics.GenericModel`
