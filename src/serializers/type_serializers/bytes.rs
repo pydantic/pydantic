@@ -4,6 +4,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict};
 
 use crate::definitions::DefinitionsBuilder;
+use crate::serializers::config::{BytesMode, FromConfig};
 
 use super::{
     infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, Extra, SerMode,
@@ -11,17 +12,20 @@ use super::{
 };
 
 #[derive(Debug, Clone)]
-pub struct BytesSerializer;
+pub struct BytesSerializer {
+    bytes_mode: BytesMode,
+}
 
 impl BuildSerializer for BytesSerializer {
     const EXPECTED_TYPE: &'static str = "bytes";
 
     fn build(
         _schema: &PyDict,
-        _config: Option<&PyDict>,
+        config: Option<&PyDict>,
         _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
-        Ok(Self {}.into())
+        let bytes_mode = BytesMode::from_config(config)?;
+        Ok(Self { bytes_mode }.into())
     }
 }
 
@@ -38,8 +42,7 @@ impl TypeSerializer for BytesSerializer {
         let py = value.py();
         match value.downcast::<PyBytes>() {
             Ok(py_bytes) => match extra.mode {
-                SerMode::Json => extra
-                    .config
+                SerMode::Json => self
                     .bytes_mode
                     .bytes_to_string(py, py_bytes.as_bytes())
                     .map(|s| s.into_py(py)),
@@ -54,7 +57,7 @@ impl TypeSerializer for BytesSerializer {
 
     fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
         match key.downcast::<PyBytes>() {
-            Ok(py_bytes) => extra.config.bytes_mode.bytes_to_string(key.py(), py_bytes.as_bytes()),
+            Ok(py_bytes) => self.bytes_mode.bytes_to_string(key.py(), py_bytes.as_bytes()),
             Err(_) => {
                 extra.warnings.on_fallback_py(self.get_name(), key, extra)?;
                 infer_json_key(key, extra)
@@ -71,7 +74,7 @@ impl TypeSerializer for BytesSerializer {
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         match value.downcast::<PyBytes>() {
-            Ok(py_bytes) => extra.config.bytes_mode.serialize_bytes(py_bytes.as_bytes(), serializer),
+            Ok(py_bytes) => self.bytes_mode.serialize_bytes(py_bytes.as_bytes(), serializer),
             Err(_) => {
                 extra.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
                 infer_serialize(value, serializer, include, exclude, extra)

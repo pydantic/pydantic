@@ -15,60 +15,98 @@ use crate::tools::SchemaDict;
 use super::errors::py_err_se_err;
 
 #[derive(Debug, Clone)]
+#[allow(clippy::struct_field_names)]
 pub(crate) struct SerializationConfig {
     pub timedelta_mode: TimedeltaMode,
     pub bytes_mode: BytesMode,
+    pub inf_nan_mode: InfNanMode,
 }
 
 impl SerializationConfig {
     pub fn from_config(config: Option<&PyDict>) -> PyResult<Self> {
         let timedelta_mode = TimedeltaMode::from_config(config)?;
         let bytes_mode = BytesMode::from_config(config)?;
+        let inf_nan_mode = InfNanMode::from_config(config)?;
         Ok(Self {
             timedelta_mode,
             bytes_mode,
+            inf_nan_mode,
         })
     }
 
-    pub fn from_args(timedelta_mode: &str, bytes_mode: &str) -> PyResult<Self> {
+    pub fn from_args(timedelta_mode: &str, bytes_mode: &str, inf_nan_mode: &str) -> PyResult<Self> {
         Ok(Self {
             timedelta_mode: TimedeltaMode::from_str(timedelta_mode)?,
             bytes_mode: BytesMode::from_str(bytes_mode)?,
+            inf_nan_mode: InfNanMode::from_str(inf_nan_mode)?,
         })
     }
 }
 
-#[derive(Default, Debug, Clone)]
-pub(crate) enum TimedeltaMode {
-    #[default]
-    Iso8601,
-    Float,
+pub trait FromConfig {
+    fn from_config(config: Option<&PyDict>) -> PyResult<Self>
+    where
+        Self: Sized;
 }
 
-impl FromStr for TimedeltaMode {
-    type Err = PyErr;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "iso8601" => Ok(Self::Iso8601),
-            "float" => Ok(Self::Float),
-            s => py_schema_err!(
-                "Invalid timedelta serialization mode: `{}`, expected `iso8601` or `float`",
-                s
-            ),
+macro_rules! serialization_mode {
+    ($name:ident, $config_key:expr, $($variant:ident => $value:expr),* $(,)?) => {
+        #[derive(Default, Debug, Clone, PartialEq, Eq)]
+        pub(crate) enum $name {
+            #[default]
+            $($variant,)*
         }
-    }
+
+        impl FromStr for $name {
+            type Err = PyErr;
+
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                match s {
+                    $($value => Ok(Self::$variant),)*
+                    s => py_schema_err!(
+                        concat!("Invalid ", stringify!($name), " serialization mode: `{}`, expected ", $($value, " or "),*),
+                        s
+                    ),
+                }
+            }
+        }
+
+        impl FromConfig for $name {
+            fn from_config(config: Option<&PyDict>) -> PyResult<Self> {
+                let Some(config_dict) = config else {
+                    return Ok(Self::default());
+                };
+                let raw_mode = config_dict.get_as::<&str>(intern!(config_dict.py(), $config_key))?;
+                raw_mode.map_or_else(|| Ok(Self::default()), Self::from_str)
+            }
+        }
+
+    };
+}
+
+serialization_mode! {
+    TimedeltaMode,
+    "ser_json_timedelta",
+    Iso8601 => "iso8601",
+    Float => "float",
+}
+
+serialization_mode! {
+    BytesMode,
+    "ser_json_bytes",
+    Utf8 => "utf8",
+    Base64 => "base64",
+    Hex => "hex",
+}
+
+serialization_mode! {
+    InfNanMode,
+    "ser_json_inf_nan",
+    Null => "null",
+    Constants => "constants",
 }
 
 impl TimedeltaMode {
-    pub fn from_config(config: Option<&PyDict>) -> PyResult<Self> {
-        let Some(config_dict) = config else {
-            return Ok(Self::default());
-        };
-        let raw_mode = config_dict.get_as::<&str>(intern!(config_dict.py(), "ser_json_timedelta"))?;
-        raw_mode.map_or_else(|| Ok(Self::default()), Self::from_str)
-    }
-
     fn total_seconds(py_timedelta: &PyDelta) -> PyResult<&PyAny> {
         py_timedelta.call_method0(intern!(py_timedelta.py(), "total_seconds"))
     }
@@ -124,39 +162,7 @@ impl TimedeltaMode {
     }
 }
 
-#[derive(Default, Debug, Clone)]
-pub(crate) enum BytesMode {
-    #[default]
-    Utf8,
-    Base64,
-    Hex,
-}
-
-impl FromStr for BytesMode {
-    type Err = PyErr;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "utf8" => Ok(Self::Utf8),
-            "base64" => Ok(Self::Base64),
-            "hex" => Ok(Self::Hex),
-            s => py_schema_err!(
-                "Invalid bytes serialization mode: `{}`, expected `utf8`, `base64` or `hex`",
-                s
-            ),
-        }
-    }
-}
-
 impl BytesMode {
-    pub fn from_config(config: Option<&PyDict>) -> PyResult<Self> {
-        let Some(config_dict) = config else {
-            return Ok(Self::default());
-        };
-        let raw_mode = config_dict.get_as::<&str>(intern!(config_dict.py(), "ser_json_bytes"))?;
-        raw_mode.map_or_else(|| Ok(Self::default()), Self::from_str)
-    }
-
     pub fn bytes_to_string<'py>(&self, py: Python, bytes: &'py [u8]) -> PyResult<Cow<'py, str>> {
         match self {
             Self::Utf8 => from_utf8(bytes)
@@ -187,28 +193,6 @@ pub fn utf8_py_error(py: Python, err: Utf8Error, data: &[u8]) -> PyErr {
     match pyo3::exceptions::PyUnicodeDecodeError::new_utf8(py, data, err) {
         Ok(decode_err) => PyErr::from_value(decode_err),
         Err(err) => err,
-    }
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
-pub(crate) enum InfNanMode {
-    #[default]
-    Null,
-    Constants,
-}
-
-impl FromStr for InfNanMode {
-    type Err = PyErr;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "null" => Ok(Self::Null),
-            "constants" => Ok(Self::Constants),
-            s => py_schema_err!(
-                "Invalid inf_nan serialization mode: `{}`, expected `null` or `constants`",
-                s
-            ),
-        }
     }
 }
 

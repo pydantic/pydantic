@@ -10,6 +10,7 @@ use pyo3::types::{
 use serde::ser::{Error, Serialize, SerializeMap, SerializeSeq, Serializer};
 
 use crate::input::{EitherTimedelta, Int};
+use crate::serializers::config::InfNanMode;
 use crate::serializers::errors::SERIALIZATION_ERR_MARKER;
 use crate::serializers::filter::SchemaFilter;
 use crate::serializers::shared::{PydanticSerializer, TypeSerializer};
@@ -120,10 +121,16 @@ pub(crate) fn infer_to_python_known(
     let value = match extra.mode {
         SerMode::Json => match ob_type {
             // `bool` and `None` can't be subclasses, `ObType::Int`, `ObType::Float`, `ObType::Str` refer to exact types
-            ObType::None | ObType::Bool | ObType::Int | ObType::Float | ObType::Str => value.into_py(py),
+            ObType::None | ObType::Bool | ObType::Int | ObType::Str => value.into_py(py),
             // have to do this to make sure subclasses of for example str are upcast to `str`
             ObType::IntSubclass => extract_i64(value)?.into_py(py),
-            ObType::FloatSubclass => value.extract::<f64>()?.into_py(py),
+            ObType::Float | ObType::FloatSubclass => {
+                let v = value.extract::<f64>()?;
+                if (v.is_nan() || v.is_infinite()) && extra.config.inf_nan_mode == InfNanMode::Null {
+                    return Ok(py.None());
+                }
+                v.into_py(py)
+            }
             ObType::Decimal => value.to_string().into_py(py),
             ObType::StrSubclass => value.extract::<&str>()?.into_py(py),
             ObType::Bytes => extra
