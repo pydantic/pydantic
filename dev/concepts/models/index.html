@@ -4450,6 +4450,10 @@ could cause data loss. See the example below:</p>
    so the input data is validated against the <code>IntItem</code> class and the serialization output matches what's expected.</li>
 </ol>
 <h2 id="dynamic-model-creation">Dynamic model creation<a class="headerlink" href="#dynamic-model-creation" title="Permanent link">&para;</a></h2>
+<details class="api">
+<summary>API Documentation</summary>
+<p><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.create_model"><code>pydantic.main.create_model</code></a><br></p>
+</details>
 <p>There are some occasions where it is desirable to create a model using runtime information to specify the fields.
 For this Pydantic provides the <code>create_model</code> function to allow models to be created on the fly:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">create_model</span>

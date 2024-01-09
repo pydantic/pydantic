@@ -8674,7 +8674,11 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 
   <div class="doc doc-contents first">
   
-      <p>Dynamically creates and returns a new Pydantic model, in other words, <code>create_model</code> dynamically creates a
+      <div class="admonition abstract">
+<p class="admonition-title">Usage Documentation</p>
+<p><a href="../../concepts/models/#dynamic-model-creation">Dynamic model creation</a></p>
+</div>
+<p>Dynamically creates and returns a new Pydantic model, in other words, <code>create_model</code> dynamically creates a
 subclass of <a class="autorefs autorefs-internal" href="#pydantic.BaseModel"><code>BaseModel</code></a>.</p>
 
 
@@ -8782,7 +8786,7 @@ if <code>None</code>, the value is taken from <code>sys._getframe(1)</code></p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>A dictionary of keyword arguments for class creation.</p>
+              <p>A dictionary of keyword arguments for class creation, such as <code>metaclass</code>.</p>
             </div>
           </td>
           <td>
@@ -8969,7 +8973,9 @@ if <code>None</code>, the value is taken from <code>sys._getframe(1)</code></p>
 <span class="normal">1492</span>
 <span class="normal">1493</span>
 <span class="normal">1494</span>
-<span class="normal">1495</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+<span class="normal">1495</span>
+<span class="normal">1496</span>
+<span class="normal">1497</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">__model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">__config__</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -8981,7 +8987,9 @@ if <code>None</code>, the value is taken from <code>sys._getframe(1)</code></p>
     <span class="vm">__slots__</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">field_definitions</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">Model</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dynamically creates and returns a new Pydantic model, in other words, `create_model` dynamically creates a</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.6/concepts/models/#dynamic-model-creation</span>
+
+<span class="sd">    Dynamically creates and returns a new Pydantic model, in other words, `create_model` dynamically creates a</span>
 <span class="sd">    subclass of [`BaseModel`][pydantic.BaseModel].</span>
 
 <span class="sd">    Args:</span>
@@ -8992,7 +9000,7 @@ if <code>None</code>, the value is taken from <code>sys._getframe(1)</code></p>
 <span class="sd">        __module__: The name of the module that the model belongs to;</span>
 <span class="sd">            if `None`, the value is taken from `sys._getframe(1)`</span>
 <span class="sd">        __validators__: A dictionary of methods that validate fields.</span>
-<span class="sd">        __cls_kwargs__: A dictionary of keyword arguments for class creation.</span>
+<span class="sd">        __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.</span>
 <span class="sd">        __slots__: Deprecated. Should not be passed to `create_model`.</span>
 <span class="sd">        **field_definitions: Attributes of the new model. They should be passed in the format:</span>
 <span class="sd">            `&lt;name&gt;=(&lt;type&gt;, &lt;default value&gt;)` or `&lt;name&gt;=(&lt;type&gt;, &lt;FieldInfo&gt;)`.</span>

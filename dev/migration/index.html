@@ -3697,10 +3697,38 @@ to help ease migration, but calling them will emit <code>DeprecationWarning</cod
   <a href="../concepts/serialization/#subclass-instances-for-fields-of-basemodel-dataclasses-typeddict">Subclass instances for fields of BaseModel, dataclasses, TypedDict</a>
   section of the model exporting docs.</li>
 <li><code>GetterDict</code> has been removed as it was just an implementation detail of <code>orm_mode</code>, which has been removed.</li>
-<li>In many cases, arguments passed to the constructor will be copied in order to perform validation and, where necessary, coercion.
+<li>In many cases, arguments passed to the constructor will be <strong>copied</strong> in order to perform validation and, where necessary, coercion.
   This is notable in the case of passing mutable objects as arguments to a constructor.
   You can see an example + more detail <a href="https://docs.pydantic.dev/latest/concepts/models/#attribute-copies">here</a>.</li>
+<li>The <code>.json()</code> method is deprecated, and attempting to use this deprecated method with arguments such as
+<code>indent</code> or <code>ensure_ascii</code> may lead to confusing errors. For best results, switch to V2's equivalent, <code>model_dump_json()</code>.</li>
+<li>JSON serialization of non-string key values is generally done with <code>str(key)</code>, leading to some changes in behavior such as the following:</li>
 </ul>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span> <span class="k">as</span> <span class="n">V2BaseModel</span>
+<span class="kn">from</span> <span class="nn">pydantic.v1</span> <span class="kn">import</span> <span class="n">BaseModel</span> <span class="k">as</span> <span class="n">V1BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">V1Model</span><span class="p">(</span><span class="n">V1BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">int</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">V2Model</span><span class="p">(</span><span class="n">V2BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">int</span><span class="p">]</span>
+
+
+<span class="n">v1_model</span> <span class="o">=</span> <span class="n">V1Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="p">{</span><span class="kc">None</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span>
+<span class="n">v2_model</span> <span class="o">=</span> <span class="n">V2Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="p">{</span><span class="kc">None</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span>
+
+<span class="c1"># V1</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v1_model</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
+<span class="c1">#&gt; {&quot;a&quot;: {&quot;null&quot;: 123}}</span>
+
+<span class="c1"># V2</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">v2_model</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>
+<span class="c1">#&gt; {&quot;a&quot;:{&quot;None&quot;:123}}</span>
+</code></pre></div>
 <h3 id="changes-to-pydanticgenericsgenericmodel">Changes to <code>pydantic.generics.GenericModel</code><a class="headerlink" href="#changes-to-pydanticgenericsgenericmodel" title="Permanent link">&para;</a></h3>
 <p>The <code>pydantic.generics.GenericModel</code> class is no longer necessary, and has been removed. Instead, you can now
 create generic <code>BaseModel</code> subclasses by just adding <code>Generic</code> as a parent class on a <code>BaseModel</code> subclass directly.
