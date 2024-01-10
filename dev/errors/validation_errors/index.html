@@ -2607,6 +2607,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#datetime_future" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        datetime_future
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#datetime_object_invalid" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3997,6 +4008,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#datetime_future" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        datetime_future
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#datetime_object_invalid" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5170,7 +5192,6 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 <p>Support for this error, along with support for parsing datetimes from <code>yyyy-MM-DD</code> dates will be added in <code>v2.6.0</code></p>
 </div>
 <p>This error is raised when the input value is a string that cannot be parsed for a <code>datetime</code> field:</p>
-<p>&lt;!-- uncomment with new pydantic-core version
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -5186,14 +5207,10 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
     <span class="c1">#&gt; &#39;datetime_from_date_parsing&#39;</span>
-<span class="err">```</span> <span class="o">--&gt;</span>
-
-<span class="c1">## `datetime_future`</span>
-
-<span class="n">This</span> <span class="n">error</span> <span class="ow">is</span> <span class="n">raised</span> <span class="n">when</span> <span class="n">the</span> <span class="n">value</span> <span class="n">provided</span> <span class="k">for</span> <span class="n">a</span> <span class="err">`</span><span class="n">FutureDatetime</span><span class="err">`</span> <span class="n">field</span> <span class="ow">is</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">future</span><span class="p">:</span>
-
-<span class="err">```</span><span class="n">py</span>
-<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+</code></pre></div>
+<h2 id="datetime_future"><code>datetime_future</code><a class="headerlink" href="#datetime_future" title="Permanent link">&para;</a></h2>
+<p>This error is raised when the value provided for a <code>FutureDatetime</code> field is not in the future:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">FutureDatetime</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5207,7 +5224,7 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
     <span class="c1">#&gt; &#39;datetime_future&#39;</span>
-</code></pre></div></p>
+</code></pre></div>
 <h2 id="datetime_object_invalid"><code>datetime_object_invalid</code><a class="headerlink" href="#datetime_object_invalid" title="Permanent link">&para;</a></h2>
 <p>This error is raised when something about the <code>datetime</code> object is not valid:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">tzinfo</span>
@@ -6628,7 +6645,7 @@ argument while calling a function decorated with <code>validate_call</code>:</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.6.0a1", "pydantic-core==2.14.5"]
+    window.mkdocs_run_deps = ["pydantic==2.6.0a1", "pydantic-core==2.15.0"]
     </script>
 
               </article>
