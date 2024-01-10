@@ -1,6 +1,8 @@
 import dataclasses
 import json
 import re
+import uuid
+from decimal import Decimal
 from typing import Any, ClassVar, Union
 
 import pytest
@@ -510,3 +512,117 @@ def test_union_serializes_list_of_model_subclass_from_definition() -> None:
     )
 
     assert s.to_python([DBUser(name='John', password='secret')]) == [{'name': 'John'}]
+
+
+EXAMPLE_UUID = uuid.uuid4()
+
+
+class IntSubclass(int):
+    pass
+
+
+@pytest.mark.parametrize('reverse', [False, True])
+@pytest.mark.parametrize(
+    'core_schema_left,core_schema_right,input_value,expected_value',
+    [
+        (core_schema.int_schema(), core_schema.bool_schema(), True, True),
+        (core_schema.int_schema(), core_schema.bool_schema(), 1, 1),
+        (core_schema.str_schema(), core_schema.int_schema(), 1, 1),
+        (core_schema.str_schema(), core_schema.int_schema(), '1', '1'),
+        (core_schema.int_schema(), core_schema.bool_schema(), IntSubclass(1), 1),
+        (
+            core_schema.decimal_schema(),
+            core_schema.int_schema(),
+            Decimal('1'),
+            Decimal('1'),
+        ),
+        (core_schema.decimal_schema(), core_schema.int_schema(), 1, 1),
+        (
+            core_schema.decimal_schema(),
+            core_schema.float_schema(),
+            Decimal('1.'),
+            Decimal('1.'),
+        ),
+        (
+            core_schema.decimal_schema(),
+            core_schema.str_schema(),
+            Decimal('_1'),
+            Decimal('_1'),
+        ),
+        (
+            core_schema.decimal_schema(),
+            core_schema.str_schema(),
+            '_1',
+            '_1',
+        ),
+        (
+            core_schema.uuid_schema(),
+            core_schema.str_schema(),
+            EXAMPLE_UUID,
+            EXAMPLE_UUID,
+        ),
+        (
+            core_schema.uuid_schema(),
+            core_schema.str_schema(),
+            str(EXAMPLE_UUID),
+            str(EXAMPLE_UUID),
+        ),
+    ],
+)
+def test_union_serializer_picks_exact_type_over_subclass(
+    core_schema_left, core_schema_right, input_value, expected_value, reverse
+):
+    s = SchemaSerializer(
+        core_schema.union_schema(
+            [core_schema_right, core_schema_left] if reverse else [core_schema_left, core_schema_right]
+        )
+    )
+    assert s.to_python(input_value) == expected_value
+
+
+@pytest.mark.parametrize('reverse', [False, True])
+@pytest.mark.parametrize(
+    'core_schema_left,core_schema_right,input_value,expected_value',
+    [
+        (core_schema.int_schema(), core_schema.bool_schema(), True, True),
+        (core_schema.int_schema(), core_schema.bool_schema(), 1, 1),
+        (core_schema.str_schema(), core_schema.int_schema(), 1, 1),
+        (core_schema.str_schema(), core_schema.int_schema(), '1', '1'),
+        (core_schema.int_schema(), core_schema.bool_schema(), IntSubclass(1), 1),
+        (
+            core_schema.decimal_schema(),
+            core_schema.int_schema(),
+            Decimal('1'),
+            '1',
+        ),
+        (core_schema.decimal_schema(), core_schema.int_schema(), 1, 1),
+        (
+            core_schema.decimal_schema(),
+            core_schema.float_schema(),
+            Decimal('1.'),
+            '1',
+        ),
+        (
+            core_schema.decimal_schema(),
+            core_schema.str_schema(),
+            Decimal('_1'),
+            '1',
+        ),
+        (
+            core_schema.decimal_schema(),
+            core_schema.str_schema(),
+            '_1',
+            '_1',
+        ),
+    ],
+)
+def test_union_serializer_picks_exact_type_over_subclass_json(
+    core_schema_left, core_schema_right, input_value, expected_value, reverse
+):
+    s = SchemaSerializer(
+        core_schema.union_schema(
+            [core_schema_right, core_schema_left] if reverse else [core_schema_left, core_schema_right]
+        )
+    )
+    assert s.to_python(input_value, mode='json') == expected_value
+    assert s.to_json(input_value) == json.dumps(expected_value).encode()
