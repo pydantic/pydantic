@@ -553,7 +553,7 @@ class GenerateSchema:
                             extras_schema = self.generate_schema(extra_items_type)
                             break
 
-            with self._config_wrapper_stack.push(config_wrapper):
+            with self._config_wrapper_stack.push(config_wrapper), self._types_namespace_stack.push(cls):
                 self = self._current_generate_schema
                 if cls.__pydantic_root_model__:
                     root_field = self._common_field_schema('root', fields['root'], decorators)
@@ -1192,7 +1192,7 @@ class GenerateSchema:
             except AttributeError:
                 config = None
 
-            with self._config_wrapper_stack.push(config):
+            with self._config_wrapper_stack.push(config), self._types_namespace_stack.push(typed_dict_cls):
                 core_config = self._config_wrapper.core_config(typed_dict_cls)
 
                 self = self._current_generate_schema
