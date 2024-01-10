@@ -372,8 +372,7 @@ This error is also raised for strict fields when the input value is not an insta
 
 This error is raised when the input value is a string that cannot be parsed for a `datetime` field:
 
-<!-- uncomment with new pydantic-core version
-```py test="skip"
+```py
 from datetime import datetime
 
 from pydantic import BaseModel, ValidationError
@@ -389,7 +388,7 @@ try:
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'datetime_from_date_parsing'
-``` -->
+```
 
 ## `datetime_future`
 

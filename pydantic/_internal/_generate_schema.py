@@ -180,6 +180,11 @@ def apply_each_item_validators(
     if schema['type'] == 'nullable':
         schema['schema'] = apply_each_item_validators(schema['schema'], each_item_validators, field_name)
         return schema
+    elif schema['type'] == 'tuple':
+        if (variadic_item_index := schema.get('variadic_item_index')) is not None:
+            schema['items_schema'][variadic_item_index] = apply_validators(
+                schema['items_schema'][variadic_item_index], each_item_validators, field_name
+            )
     elif is_list_like_schema_with_items_schema(schema):
         inner_schema = schema.get('items_schema', None)
         if inner_schema is None:
@@ -348,13 +353,6 @@ class GenerateSchema:
 
     def _frozenset_schema(self, tp: Any, items_type: Any) -> CoreSchema:
         return core_schema.frozenset_schema(self.generate_schema(items_type))
-
-    def _tuple_variable_schema(self, tp: Any, items_type: Any) -> CoreSchema:
-        return core_schema.tuple_variable_schema(self.generate_schema(items_type))
-
-    def _tuple_positional_schema(self, tp: Any, items_types: list[Any]) -> CoreSchema:
-        items_schemas = [self.generate_schema(items_type) for items_type in items_types]
-        return core_schema.tuple_positional_schema(items_schemas)
 
     def _arbitrary_type_schema(self, tp: Any) -> CoreSchema:
         if not isinstance(tp, type):
@@ -1311,22 +1309,22 @@ class GenerateSchema:
         # This is only true for <3.11, on Python 3.11+ `typing.Tuple[()]` gives `params=()`
         if not params:
             if tuple_type in TUPLE_TYPES:
-                return core_schema.tuple_variable_schema()
+                return core_schema.tuple_schema([core_schema.any_schema()], variadic_item_index=0)
             else:
                 # special case for `tuple[()]` which means `tuple[]` - an empty tuple
-                return core_schema.tuple_positional_schema([])
+                return core_schema.tuple_schema([])
         elif params[-1] is Ellipsis:
             if len(params) == 2:
-                return self._tuple_variable_schema(tuple_type, params[0])
+                return core_schema.tuple_schema([self.generate_schema(params[0])], variadic_item_index=0)
             else:
                 # TODO: something like https://github.com/pydantic/pydantic/issues/5952
                 raise ValueError('Variable tuples can only have one type')
         elif len(params) == 1 and params[0] == ():
             # special case for `Tuple[()]` which means `Tuple[]` - an empty tuple
             # NOTE: This conditional can be removed when we drop support for Python 3.10.
-            return self._tuple_positional_schema(tuple_type, [])
+            return core_schema.tuple_schema([])
         else:
-            return self._tuple_positional_schema(tuple_type, list(params))
+            return core_schema.tuple_schema([self.generate_schema(param) for param in params])
 
     def _type_schema(self) -> core_schema.CoreSchema:
         return core_schema.custom_error_schema(
