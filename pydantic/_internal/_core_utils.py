@@ -38,7 +38,7 @@ CoreSchemaOrField = Union[core_schema.CoreSchema, CoreSchemaField]
 
 _CORE_SCHEMA_FIELD_TYPES = {'typed-dict-field', 'dataclass-field', 'model-field', 'computed-field'}
 _FUNCTION_WITH_INNER_SCHEMA_TYPES = {'function-before', 'function-after', 'function-wrap'}
-_LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'tuple-variable', 'set', 'frozenset'}
+_LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'set', 'frozenset'}
 
 _DEFINITIONS_CACHE_METADATA_KEY = 'pydantic.definitions_cache'
 
@@ -77,7 +77,7 @@ def is_function_with_inner_schema(
 
 def is_list_like_schema_with_items_schema(
     schema: CoreSchema,
-) -> TypeGuard[core_schema.ListSchema | core_schema.TupleSchema | core_schema.SetSchema | core_schema.FrozenSetSchema]:
+) -> TypeGuard[core_schema.ListSchema | core_schema.SetSchema | core_schema.FrozenSetSchema]:
     return schema['type'] in _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES
 
 

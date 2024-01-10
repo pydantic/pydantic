@@ -180,6 +180,11 @@ def apply_each_item_validators(
     if schema['type'] == 'nullable':
         schema['schema'] = apply_each_item_validators(schema['schema'], each_item_validators, field_name)
         return schema
+    elif schema['type'] == 'tuple':
+        if (variadic_item_index := schema.get('variadic_item_index')) is not None:
+            schema['items_schema'][variadic_item_index] = apply_validators(
+                schema['items_schema'][variadic_item_index], each_item_validators, field_name
+            )
     elif is_list_like_schema_with_items_schema(schema):
         inner_schema = schema.get('items_schema', None)
         if inner_schema is None:
