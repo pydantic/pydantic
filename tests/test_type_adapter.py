@@ -320,7 +320,6 @@ def test_annotated_type_disallows_config() -> None:
         TypeAdapter(Annotated[Model, ...], config=ConfigDict(strict=False))
 
 
-@pytest.mark.xfail(reason='waiting for fix in core for ser_json_bytes application')
 def test_ta_config_with_annotated_type() -> None:
     class TestValidator(BaseModel):
         x: str

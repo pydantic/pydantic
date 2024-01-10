@@ -2651,8 +2651,8 @@ def test_tuple_with_extra_schema():
     class MyTuple(Tuple[int, str]):
         @classmethod
         def __get_pydantic_core_schema__(cls, _source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.tuple_positional_schema(
-                [core_schema.int_schema(), core_schema.str_schema()], extras_schema=core_schema.int_schema()
+            return core_schema.tuple_schema(
+                [core_schema.int_schema(), core_schema.str_schema(), core_schema.int_schema()], variadic_item_index=2
             )
 
     class Model(BaseModel):

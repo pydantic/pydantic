@@ -8,7 +8,6 @@ from typing import (
     Hashable,
     TypeVar,
     Union,
-    cast,
 )
 
 from pydantic_core import CoreSchema, core_schema
@@ -78,9 +77,7 @@ def is_function_with_inner_schema(
 
 def is_list_like_schema_with_items_schema(
     schema: CoreSchema,
-) -> TypeGuard[
-    core_schema.ListSchema | core_schema.TupleVariableSchema | core_schema.SetSchema | core_schema.FrozenSetSchema
-]:
+) -> TypeGuard[core_schema.ListSchema | core_schema.TupleSchema | core_schema.SetSchema | core_schema.FrozenSetSchema]:
     return schema['type'] in _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES
 
 
@@ -272,23 +269,8 @@ class _WalkCoreSchema:
             schema['items_schema'] = self.walk(items_schema, f)
         return schema
 
-    def handle_tuple_variable_schema(
-        self, schema: core_schema.TupleVariableSchema | core_schema.TuplePositionalSchema, f: Walk
-    ) -> core_schema.CoreSchema:
-        schema = cast(core_schema.TupleVariableSchema, schema)
-        items_schema = schema.get('items_schema')
-        if items_schema is not None:
-            schema['items_schema'] = self.walk(items_schema, f)
-        return schema
-
-    def handle_tuple_positional_schema(
-        self, schema: core_schema.TupleVariableSchema | core_schema.TuplePositionalSchema, f: Walk
-    ) -> core_schema.CoreSchema:
-        schema = cast(core_schema.TuplePositionalSchema, schema)
+    def handle_tuple_schema(self, schema: core_schema.TupleSchema, f: Walk) -> core_schema.CoreSchema:
         schema['items_schema'] = [self.walk(v, f) for v in schema['items_schema']]
-        extras_schema = schema.get('extras_schema')
-        if extras_schema is not None:
-            schema['extras_schema'] = self.walk(extras_schema, f)
         return schema
 
     def handle_dict_schema(self, schema: core_schema.DictSchema, f: Walk) -> core_schema.CoreSchema:

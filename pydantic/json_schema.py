@@ -842,6 +842,7 @@ class GenerateJsonSchema:
         if 'variadic_item_index' in schema:
             variadic_item_index = schema['variadic_item_index']
             if variadic_item_index > 0:
+                json_schema['minItems'] = variadic_item_index
                 json_schema['prefixItems'] = [
                     self.generate_inner(item) for item in schema['items_schema'][:variadic_item_index]
                 ]
@@ -857,7 +858,8 @@ class GenerateJsonSchema:
             prefixItems = [self.generate_inner(item) for item in schema['items_schema']]
             if prefixItems:
                 json_schema['prefixItems'] = prefixItems
-            json_schema['items'] = False
+            json_schema['minItems'] = len(prefixItems)
+            json_schema['maxItems'] = len(prefixItems)
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
         return json_schema
 
