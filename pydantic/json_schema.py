@@ -805,23 +805,23 @@ class GenerateJsonSchema:
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
         return json_schema
 
-    @deprecated('tuple_positional_schema is deprecated. Use tuple_schema instead.', category=None)
+    @deprecated('`tuple_positional_schema` is deprecated. Use `tuple_schema` instead.', category=None)
     @final
     def tuple_positional_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
         """Replaced by `tuple_schema`."""
         warnings.warn(
-            'tuple_positional_schema is deprecated. Use tuple_schema instead.',
+            '`tuple_positional_schema` is deprecated. Use `tuple_schema` instead.',
             PydanticDeprecatedSince26,
             stacklevel=2,
         )
         return self.tuple_schema(schema)
 
-    @deprecated('tuple_variable_schema is deprecated. Use tuple_schema instead.', category=None)
+    @deprecated('`tuple_variable_schema` is deprecated. Use `tuple_schema` instead.', category=None)
     @final
     def tuple_variable_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
         """Replaced by `tuple_schema`."""
         warnings.warn(
-            'tuple_variable_schema is deprecated. Use tuple_schema instead.',
+            '`tuple_variable_schema` is deprecated. Use `tuple_schema` instead.',
             PydanticDeprecatedSince26,
             stacklevel=2,
         )
