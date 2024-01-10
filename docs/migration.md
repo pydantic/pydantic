@@ -779,29 +779,30 @@ For `ConstrainedStr` you can use [`StringConstraints`][pydantic.types.StringCons
 
 ## Deprecated and moved in Pydantic V2
 
-| Pydantic V1 | Pydantic V2 |
-| --- | --- |
-| `pydantic.tools.schema_of` | `pydantic.deprecated.tools.schema_of` |
-| `pydantic.tools.parse_obj_as` | `pydantic.deprecated.tools.parse_obj_as` |
-| `pydantic.tools.schema_json_of` | `pydantic.deprecated.tools.schema_json_of` |
-| `pydantic.json.pydantic_encoder` | `pydantic.deprecated.json.pydantic_encoder` |
-| `pydantic.validate_arguments` | `pydantic.deprecated.decorator.validate_arguments` |
-| `pydantic.json.custom_pydantic_encoder` | `pydantic.deprecated.json.custom_pydantic_encoder` |
-| `pydantic.json.timedelta_isoformat` | `pydantic.deprecated.json.timedelta_isoformat` |
-| `pydantic.decorator.validate_arguments` | `pydantic.deprecated.decorator.validate_arguments` |
-| `pydantic.class_validators.validator` | `pydantic.deprecated.class_validators.validator` |
+| Pydantic V1                                | Pydantic V2                                           |
+|--------------------------------------------|-------------------------------------------------------|
+| `pydantic.tools.schema_of`                 | `pydantic.deprecated.tools.schema_of`                 |
+| `pydantic.tools.parse_obj_as`              | `pydantic.deprecated.tools.parse_obj_as`              |
+| `pydantic.tools.schema_json_of`            | `pydantic.deprecated.tools.schema_json_of`            |
+| `pydantic.json.pydantic_encoder`           | `pydantic.deprecated.json.pydantic_encoder`           |
+| `pydantic.validate_arguments`              | `pydantic.deprecated.decorator.validate_arguments`    |
+| `pydantic.json.custom_pydantic_encoder`    | `pydantic.deprecated.json.custom_pydantic_encoder`    |
+| `pydantic.json.timedelta_isoformat`        | `pydantic.deprecated.json.timedelta_isoformat`        |
+| `pydantic.json.ENCODERS_BY_TYPE`           | `pydantic.deprecated.json.ENCODERS_BY_TYPE`           |
+| `pydantic.decorator.validate_arguments`    | `pydantic.deprecated.decorator.validate_arguments`    |
+| `pydantic.class_validators.validator`      | `pydantic.deprecated.class_validators.validator`      |
 | `pydantic.class_validators.root_validator` | `pydantic.deprecated.class_validators.root_validator` |
-| `pydantic.utils.deep_update` | `pydantic.v1.utils.deep_update` |
-| `pydantic.utils.GetterDict` | `pydantic.v1.utils.GetterDict` |
-| `pydantic.utils.lenient_issubclass` | `pydantic.v1.utils.lenient_issubclass` |
-| `pydantic.utils.lenient_isinstance` | `pydantic.v1.utils.lenient_isinstance` |
-| `pydantic.utils.is_valid_field` | `pydantic.v1.utils.is_valid_field` |
-| `pydantic.utils.update_not_none` | `pydantic.v1.utils.update_not_none` |
-| `pydantic.utils.import_string` | `pydantic.v1.utils.import_string` |
-| `pydantic.utils.Representation` | `pydantic.v1.utils.Representation` |
-| `pydantic.utils.ROOT_KEY` | `pydantic.v1.utils.ROOT_KEY` |
-| `pydantic.utils.smart_deepcopy` | `pydantic.v1.utils.smart_deepcopy` |
-| `pydantic.utils.sequence_like` | `pydantic.v1.utils.sequence_like` |
+| `pydantic.utils.deep_update`               | `pydantic.v1.utils.deep_update`                       |
+| `pydantic.utils.GetterDict`                | `pydantic.v1.utils.GetterDict`                        |
+| `pydantic.utils.lenient_issubclass`        | `pydantic.v1.utils.lenient_issubclass`                |
+| `pydantic.utils.lenient_isinstance`        | `pydantic.v1.utils.lenient_isinstance`                |
+| `pydantic.utils.is_valid_field`            | `pydantic.v1.utils.is_valid_field`                    |
+| `pydantic.utils.update_not_none`           | `pydantic.v1.utils.update_not_none`                   |
+| `pydantic.utils.import_string`             | `pydantic.v1.utils.import_string`                     |
+| `pydantic.utils.Representation`            | `pydantic.v1.utils.Representation`                    |
+| `pydantic.utils.ROOT_KEY`                  | `pydantic.v1.utils.ROOT_KEY`                          |
+| `pydantic.utils.smart_deepcopy`            | `pydantic.v1.utils.smart_deepcopy`                    |
+| `pydantic.utils.sequence_like`             | `pydantic.v1.utils.sequence_like`                     |
 
 ## Removed in Pydantic V2
 
@@ -997,31 +998,3 @@ For `ConstrainedStr` you can use [`StringConstraints`][pydantic.types.StringCons
 - `pydantic.utils.path_type`
 - `pydantic.utils.validate_field_name`
 - `pydantic.validate_model`
-
-## Customizing JSON Encoding for Pydantic Model with `ObjectId` Field in V2
-
-To ensure that instances of the model are serialized to JSON with the `ObjectId` field represented as a string, use a custom JSON encoder for instances of `ObjectId` since `ENCODERS_BY_TYPE` class is removed. For example:
-
-```
-from pydantic.json import ENCODERS_BY_TYPE
-from bson import ObjectId
-ENCODERS_BY_TYPE[ObjectId] = lambda v: str(v)
-```
-
-becomes:
-```
-from bson import ObjectId
-from pydantic import BaseModel, ConfigDict
-
-BaseModel.model_config["json_encoders"] = {ObjectId: lambda v: str(v)}
-
-
-class Item(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    id: ObjectId
-
-
-item = Item(id=ObjectId("5ff1e194b6a9d7a5f9a2741c"))
-print(item.model_dump_json())
-```
