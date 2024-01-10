@@ -40,6 +40,8 @@ from pydantic_core import CoreSchema, PydanticOmit, core_schema, to_jsonable_pyt
 from pydantic_core.core_schema import ComputedField
 from typing_extensions import Annotated, Literal, TypeAlias, assert_never, deprecated, final
 
+from pydantic.warnings import PydanticDeprecatedSince26
+
 from ._internal import (
     _config,
     _core_metadata,
@@ -803,34 +805,31 @@ class GenerateJsonSchema:
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
         return json_schema
 
-    @deprecated('tuple_positional_schema is deprecated. Use tuple_schema instead.')
+    @deprecated('tuple_positional_schema is deprecated. Use tuple_schema instead.', category=None)
     @final
     def tuple_positional_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a positional tuple schema e.g. `Tuple[int, str, bool]`.
-
-        Args:
-            schema: The core schema.
-
-        Returns:
-            The generated JSON schema.
-        """
+        """Replaced by `tuple_schema`."""
+        warnings.warn(
+            'tuple_positional_schema is deprecated. Use tuple_schema instead.',
+            PydanticDeprecatedSince26,
+            stacklevel=2,
+        )
         return self.tuple_schema(schema)
 
-    @deprecated('tuple_variable_schema is deprecated. Use tuple_schema instead.')
+    @deprecated('tuple_variable_schema is deprecated. Use tuple_schema instead.', category=None)
     @final
     def tuple_variable_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a variable tuple schema e.g. `Tuple[int, ...]`.
-
-        Args:
-            schema: The core schema.
-
-        Returns:
-            The generated JSON schema.
-        """
+        """Replaced by `tuple_schema`."""
+        warnings.warn(
+            'tuple_variable_schema is deprecated. Use tuple_schema instead.',
+            PydanticDeprecatedSince26,
+            stacklevel=2,
+        )
         return self.tuple_schema(schema)
 
     def tuple_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a tuple schema e.g. `Tuple[int, ...]`.
+        """Generates a JSON schema that matches a tuple schema e.g. `Tuple[int,
+        str, bool]` or `Tuple[int, ...]`.
 
         Args:
             schema: The core schema.
