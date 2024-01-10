@@ -358,7 +358,7 @@ jobs:
           rust-toolchain: stable
       - uses: actions/upload-artifact@v4
         with:
-          name: pypi_files
+          name: pypi_files_sdist
           path: dist
 
   build:
@@ -447,7 +447,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          manylinux: ${{ matrix.manylinux == 'manylinux' && 'auto' || matrix.manylinux }}
+          manylinux: ${{ matrix.manylinux }}
           args: --release --out dist --interpreter ${{ matrix.interpreter || '3.8 3.9 3.10 3.11 3.12 pypy3.9 pypy3.10' }}
           rust-toolchain: stable
           docker-options: -e CI
@@ -458,7 +458,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: pypi_files
+          name: pypi_files_${{ matrix.os }}_${{ matrix.target }}_${{ matrix.interpreter || 'all' }}_${{ matrix.manylinux }}
           path: dist
 
   build-pgo:
@@ -553,7 +553,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: pypi_files_pgo
+          name: pypi_files_${{ matrix.os }}_${{ matrix.interpreter }}
           path: dist
 
   inspect-pypi-assets:
@@ -566,22 +566,11 @@ jobs:
       - name: get dist artifacts
         uses: actions/download-artifact@v4
         with:
-          name: pypi_files
+          pattern: pypi_files_*
+          merge-multiple: true
           path: dist
 
-      - name: list dist files before PGO builds
-        run: |
-         ls -lh dist/
-         ls -l dist/
-         echo "`ls dist | wc -l` files"
-
-      - name: get PGO dist artifacts (comes after "get dist artifacts" to so these files override the non-PGO builds)
-        uses: actions/download-artifact@v4
-        with:
-          name: pypi_files_pgo
-          path: dist
-
-      - name: list dist files with PGO builds
+      - name: list dist files
         run: |
          ls -lh dist/
          ls -l dist/
@@ -618,13 +607,8 @@ jobs:
       - name: get dist artifacts
         uses: actions/download-artifact@v4
         with:
-          name: pypi_files
-          path: dist
-
-      - name: get PGO dist artifacts (comes after "get dist artifacts" to so these files override the non-PGO builds)
-        uses: actions/download-artifact@v4
-        with:
-          name: pypi_files_pgo
+          pattern: pypi_files_linux_*
+          merge-multiple: true
           path: dist
 
       - uses: uraimo/run-on-arch-action@v2.6.0
@@ -676,13 +660,8 @@ jobs:
       - name: get dist artifacts
         uses: actions/download-artifact@v4
         with:
-          name: pypi_files
-          path: dist
-
-      - name: get PGO dist artifacts (comes after "get dist artifacts" to so these files override the non-PGO builds)
-        uses: actions/download-artifact@v4
-        with:
-          name: pypi_files_pgo
+          pattern: pypi_files_*
+          merge-multiple: true
           path: dist
 
       - run: pip install typing-extensions
@@ -711,13 +690,8 @@ jobs:
       - name: get dist artifacts
         uses: actions/download-artifact@v4
         with:
-          name: pypi_files
-          path: dist
-
-      - name: get PGO dist artifacts (comes after "get dist artifacts" to so these files override the non-PGO builds)
-        uses: actions/download-artifact@v4
-        with:
-          name: pypi_files_pgo
+          pattern: pypi_files_*
+          merge-multiple: true
           path: dist
 
       - run: twine check --strict dist/*
