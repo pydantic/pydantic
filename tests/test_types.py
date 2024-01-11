@@ -4435,6 +4435,7 @@ def test_frozenset_field_not_convertible():
 @pytest.mark.parametrize(
     'input_value,output,human_bin,human_dec',
     (
+        (1, 1, '1B', '1B'),
         ('1', 1, '1B', '1B'),
         ('1.0', 1, '1B', '1B'),
         ('1b', 1, '1B', '1B'),
@@ -4473,7 +4474,7 @@ def test_bytesize_raises():
     class Model(BaseModel):
         size: ByteSize
 
-    with pytest.raises(ValidationError, match='parse value'):
+    with pytest.raises(ValidationError, match='should match'):
         Model(size='d1MB')
 
     with pytest.raises(ValidationError, match='byte unit'):

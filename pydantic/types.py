@@ -1719,7 +1719,8 @@ BYTE_SIZES = {
     'eib': 2**60,
 }
 BYTE_SIZES.update({k.lower()[0]: v for k, v in BYTE_SIZES.items() if 'i' not in k})
-byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
+byte_string_pattern = r'^\s*(\d*\.?\d+)\s*(\w+)?'
+byte_string_re = re.compile(byte_string_pattern, re.IGNORECASE)
 
 
 class ByteSize(int):
@@ -1759,7 +1760,16 @@ class ByteSize(int):
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        return core_schema.with_info_plain_validator_function(cls._validate)
+        return core_schema.with_info_after_validator_function(
+            function=cls._validate,
+            schema=core_schema.union_schema(
+                [
+                    core_schema.str_schema(pattern=byte_string_pattern),
+                    core_schema.int_schema(ge=0),
+                ]
+            ),
+            serialization=core_schema.plain_serializer_function_ser_schema(function=cls.to),
+        )
 
     @classmethod
     def _validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> ByteSize:
