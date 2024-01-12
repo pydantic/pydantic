@@ -1311,8 +1311,12 @@ def test_callable_type_with_fallback(default_value, properties):
 def test_byte_size_type():
     class Model(BaseModel):
         a: ByteSize
+        b: ByteSize = '1MB'
 
-    assert Model.model_json_schema() == {
+    model_json_schema_validation = Model.model_json_schema(mode='validation')
+    model_json_schema_serialization = Model.model_json_schema(mode='serialization')
+
+    assert model_json_schema_validation == {
         'properties': {
             'a': {
                 'anyOf': [
@@ -1320,7 +1324,37 @@ def test_byte_size_type():
                     {'minimum': 0, 'type': 'integer'},
                 ],
                 'title': 'A',
-            }
+            },
+            'b': {
+                'anyOf': [
+                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
+                    {'minimum': 0, 'type': 'integer'},
+                ],
+                'default': '1MB',
+                'title': 'B',
+            },
+        },
+        'required': ['a'],
+        'title': 'Model',
+        'type': 'object',
+    }
+    assert model_json_schema_serialization == {
+        'properties': {
+            'a': {
+                'anyOf': [
+                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
+                    {'minimum': 0, 'type': 'integer'},
+                ],
+                'title': 'A',
+            },
+            'b': {
+                'anyOf': [
+                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
+                    {'minimum': 0, 'type': 'integer'},
+                ],
+                'default': '1MB',
+                'title': 'B',
+            },
         },
         'required': ['a'],
         'title': 'Model',
