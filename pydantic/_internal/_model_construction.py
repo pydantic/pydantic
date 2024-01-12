@@ -180,20 +180,6 @@ class ModelMetaclass(ABCMeta):
             if config_wrapper.frozen and '__hash__' not in namespace:
                 set_default_hash_func(cls, bases)
 
-            cls.__pydantic_deprecated_messages__ = {
-                field: field_info.deprecated
-                for field, field_info in cls.model_fields.items()
-                if field_info.deprecated is not None
-            }
-            cls.__pydantic_deprecated_messages__.update(
-                {
-                    field: computed_field_info.info.deprecated
-                    for field, computed_field_info in cls.__pydantic_decorators__.computed_fields.items()
-                    if computed_field_info.info.deprecated is not None
-                    if not computed_field_info.info.from_deprecated_decorator  # Avoid having two warnings emitted
-                }
-            )
-
             complete_model_class(
                 cls,
                 cls_name,
@@ -206,6 +192,20 @@ class ModelMetaclass(ABCMeta):
             # If this is placed before the complete_model_class call above,
             # the generic computed fields return type is set to PydanticUndefined
             cls.model_computed_fields = {k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()}
+
+            cls.__pydantic_deprecated_messages__ = {
+                field: field_info.deprecated
+                for field, field_info in cls.model_fields.items()
+                if field_info.deprecated is not None
+            }
+            cls.__pydantic_deprecated_messages__.update(
+                {
+                    field: computed_field_info.deprecated
+                    for field, computed_field_info in cls.model_computed_fields.items()
+                    if computed_field_info.deprecated is not None
+                    if not computed_field_info.from_deprecated_decorator  # Avoid having two warnings emitted
+                }
+            )
 
             # using super(cls, cls) on the next line ensures we only call the parent class's __pydantic_init_subclass__
             # I believe the `type: ignore` is only necessary because mypy doesn't realize that this code branch is
