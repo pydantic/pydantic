@@ -6,7 +6,14 @@ import typing
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
-from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
+from ipaddress import (
+    IPv4Address,
+    IPv4Interface,
+    IPv4Network,
+    IPv6Address,
+    IPv6Interface,
+    IPv6Network,
+)
 from pathlib import Path
 from typing import (
     Any,
@@ -68,13 +75,22 @@ from pydantic.json_schema import (
     model_json_schema,
     models_json_schema,
 )
-from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, MultiHostUrl, NameEmail
+from pydantic.networks import (
+    AnyUrl,
+    EmailStr,
+    IPvAnyAddress,
+    IPvAnyInterface,
+    IPvAnyNetwork,
+    MultiHostUrl,
+    NameEmail,
+)
 from pydantic.type_adapter import TypeAdapter
 from pydantic.types import (
     UUID1,
     UUID3,
     UUID4,
     UUID5,
+    ByteSize,
     DirectoryPath,
     FilePath,
     Json,
@@ -1290,6 +1306,26 @@ def test_callable_type_with_fallback(default_value, properties):
     ):
         model_schema = Model.model_json_schema(schema_generator=MyGenerator)
     assert model_schema['properties'] == properties
+
+
+def test_byte_size_type():
+    class Model(BaseModel):
+        a: ByteSize
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'a': {
+                'anyOf': [
+                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
+                    {'minimum': 0, 'type': 'integer'},
+                ],
+                'title': 'A',
+            }
+        },
+        'required': ['a'],
+        'title': 'Model',
+        'type': 'object',
+    }
 
 
 @pytest.mark.parametrize(
