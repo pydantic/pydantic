@@ -778,6 +778,7 @@ For `ConstrainedStr` you can use [`StringConstraints`][pydantic.types.StringCons
 | `pydantic.PyObject` | [`pydantic.ImportString`][pydantic.types.ImportString] |
 
 ## Deprecated and moved in Pydantic V2
+
 | Pydantic V1 | Pydantic V2 |
 | --- | --- |
 | `pydantic.tools.schema_of` | `pydantic.deprecated.tools.schema_of` |
