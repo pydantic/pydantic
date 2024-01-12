@@ -9,6 +9,10 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    groups:
+      python-packages:
+        patterns:
+          - "*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
