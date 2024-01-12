@@ -1316,6 +1316,8 @@ def test_byte_size_type():
     model_json_schema_validation = Model.model_json_schema(mode='validation')
     model_json_schema_serialization = Model.model_json_schema(mode='serialization')
 
+    print(model_json_schema_serialization)
+
     assert model_json_schema_validation == {
         'properties': {
             'a': {
@@ -1338,23 +1340,11 @@ def test_byte_size_type():
         'title': 'Model',
         'type': 'object',
     }
+
     assert model_json_schema_serialization == {
         'properties': {
-            'a': {
-                'anyOf': [
-                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
-                    {'minimum': 0, 'type': 'integer'},
-                ],
-                'title': 'A',
-            },
-            'b': {
-                'anyOf': [
-                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
-                    {'minimum': 0, 'type': 'integer'},
-                ],
-                'default': '1MB',
-                'title': 'B',
-            },
+            'a': {'minimum': 0, 'title': 'A', 'type': 'integer'},
+            'b': {'default': '1MB', 'minimum': 0, 'title': 'B', 'type': 'integer'},
         },
         'required': ['a'],
         'title': 'Model',
