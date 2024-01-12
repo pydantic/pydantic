@@ -88,7 +88,7 @@ class ModelMetaclass(ABCMeta):
             base_field_names, class_vars, base_private_attributes = mcs._collect_bases_data(bases)
 
             config_wrapper = ConfigWrapper.for_model(bases, namespace, kwargs)
-            cls_name = config_wrapper.config_dict.get("model_name") or cls_name
+            cls_name = config_wrapper.config_dict.get('model_name') or cls_name
             namespace['model_config'] = config_wrapper.config_dict
             private_attributes = inspect_namespace(
                 namespace, config_wrapper.ignored_types, class_vars, base_field_names

@@ -4,16 +4,24 @@ import sys
 from contextlib import nullcontext as does_not_raise
 from decimal import Decimal
 from inspect import signature
-from typing import (Any, ContextManager, Iterable, NamedTuple, Optional, Type,
-                    Union, get_type_hints)
+from typing import Any, ContextManager, Iterable, NamedTuple, Optional, Type, Union, get_type_hints
 
 from dirty_equals import HasRepr, IsPartialDict
 from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator
 
-from pydantic import (BaseConfig, BaseModel, Field, GenerateSchema,
-                      PrivateAttr, PydanticDeprecatedSince20,
-                      PydanticSchemaGenerationError, ValidationError,
-                      create_model, field_validator, validate_call)
+from pydantic import (
+    BaseConfig,
+    BaseModel,
+    Field,
+    GenerateSchema,
+    PrivateAttr,
+    PydanticDeprecatedSince20,
+    PydanticSchemaGenerationError,
+    ValidationError,
+    create_model,
+    field_validator,
+    validate_call,
+)
 from pydantic._internal._config import ConfigWrapper, config_defaults
 from pydantic._internal._mock_val_ser import MockValSer
 from pydantic.config import ConfigDict, JsonValue
@@ -484,10 +492,10 @@ def test_invalid_config_keys():
     def my_function():
         pass
 
-def test_config_model_name() -> None:
-    CLIENT_USER_MODEL_NAME = "ClientUser"
-    BUSINESS_USER_MODEL_NAME = "BusinessUser"
 
+def test_config_model_name() -> None:
+    CLIENT_USER_MODEL_NAME = 'ClientUser'
+    BUSINESS_USER_MODEL_NAME = 'BusinessUser'
 
     def _get_business_user_class():
         class User(BaseModel):
@@ -508,8 +516,41 @@ def test_config_model_name() -> None:
     assert name_map[BusinessUser] == BUSINESS_USER_MODEL_NAME
     assert name_map[ClientUser] == CLIENT_USER_MODEL_NAME
 
-    assert BusinessUser().model_json_schema()["title"] == BUSINESS_USER_MODEL_NAME
-    assert ClientUser().model_json_schema()["title"] == CLIENT_USER_MODEL_NAME
+    assert BusinessUser().model_json_schema()['title'] == BUSINESS_USER_MODEL_NAME
+    assert ClientUser().model_json_schema()['title'] == CLIENT_USER_MODEL_NAME
+
+
+def test_config_model_name__long_model_name_on_conflict() -> None:
+    CLIENT_USER_MODEL_NAME = 'ClientUser'
+
+    def _get_client_user_class():
+        class User(BaseModel):
+            model_config = ConfigDict(model_name=CLIENT_USER_MODEL_NAME)
+
+        return User
+
+    def _get_client_2_user_class():
+        class User(BaseModel):
+            model_config = ConfigDict(model_name=CLIENT_USER_MODEL_NAME)
+
+        return User
+
+    ClientUser = _get_client_user_class()
+    ClientUserV2 = _get_client_2_user_class()
+
+    name_map = get_model_name_map({ClientUser, ClientUserV2})
+    assert (
+        name_map[ClientUser]
+        == 'tests__test_config__test_config_model_name__long_model_name_on_conflict__<locals>___get_client_user_class__<locals>__User'
+    )
+    assert (
+        name_map[ClientUserV2]
+        == 'tests__test_config__test_config_model_name__long_model_name_on_conflict__<locals>___get_client_2_user_class__<locals>__User'
+    )
+
+    # FIXME: Maye the model_json_schema should have a long name on conflict?
+    assert ClientUser().model_json_schema()['title'] == CLIENT_USER_MODEL_NAME
+    assert ClientUserV2().model_json_schema()['title'] == CLIENT_USER_MODEL_NAME
 
 
 def test_multiple_inheritance_config():
