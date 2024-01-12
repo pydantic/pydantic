@@ -180,22 +180,22 @@ class ConfigDict(TypedDict, total=False):
 
     from pydantic import BaseModel, ConfigDict, Field
 
-
     class SomeEnum(Enum):
         FOO = 'foo'
         BAR = 'bar'
         BAZ = 'baz'
 
-
     class SomeModel(BaseModel):
         model_config = ConfigDict(use_enum_values=True)
 
         some_enum: SomeEnum
-        another_enum: Optional[SomeEnum] = Field(default=SomeEnum.FOO, validate_default=True)
-
+        another_enum: Optional[SomeEnum] = Field(
+            default=SomeEnum.FOO, validate_default=True
+        )
 
     model1 = SomeModel(some_enum=SomeEnum.BAR)
     print(model1.model_dump())
+    #> {'some_enum': 'bar', 'another_enum': 'foo'}
     # {'some_enum': 'bar', 'another_enum': 'foo'}
 
     model2 = SomeModel(some_enum=SomeEnum.BAR, another_enum=SomeEnum.BAZ)
