@@ -3,7 +3,7 @@ from __future__ import annotations as _annotations
 
 import sys
 from dataclasses import is_dataclass
-from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, cast, final, overload
 
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
 from typing_extensions import Literal, get_args, is_typeddict
@@ -107,6 +107,7 @@ def _type_has_config(type_: Any) -> bool:
         return False
 
 
+@final
 class TypeAdapter(Generic[T]):
     """Type adapters provide a flexible way to perform validation and serialization based on a Python type.
 
