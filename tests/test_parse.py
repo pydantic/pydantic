@@ -168,7 +168,7 @@ def test_parse_nested_root_list():
     assert isinstance(m.nested.root[0], NestedData)
 
 
-@pytest.mark.filterwarnings('ignore:parse_obj_as is deprecated.*:DeprecationWarning')
+@pytest.mark.filterwarnings('ignore:`parse_obj_as` is deprecated.*:DeprecationWarning')
 def test_parse_nested_root_tuple():
     class NestedData(BaseModel):
         id: str

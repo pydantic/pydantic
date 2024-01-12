@@ -62,10 +62,10 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
             root = data  # type: ignore
         self.__pydantic_validator__.validate_python(root, self_instance=self)
 
-    __init__.__pydantic_base_init__ = True
+    __init__.__pydantic_base_init__ = True  # pyright: ignore[reportFunctionMemberAccess]
 
     @classmethod
-    def model_construct(cls: type[Model], root: RootModelRootType, _fields_set: set[str] | None = None) -> Model:
+    def model_construct(cls: type[Model], root: RootModelRootType, _fields_set: set[str] | None = None) -> Model:  # type: ignore
         """Create a new model using the provided root object and update fields set.
 
         Args:
@@ -110,7 +110,7 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
 
     if typing.TYPE_CHECKING:
 
-        def model_dump(
+        def model_dump(  # type: ignore
             self,
             *,
             mode: Literal['json', 'python'] | str = 'python',
