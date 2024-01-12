@@ -3,7 +3,7 @@ from __future__ import annotations as _annotations
 
 import sys
 from dataclasses import is_dataclass
-from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, cast, final, overload
 
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
 from typing_extensions import Literal, get_args, is_typeddict
@@ -23,6 +23,7 @@ from .json_schema import (
 from .plugin._schema_validator import create_schema_validator
 
 T = TypeVar('T')
+
 
 if TYPE_CHECKING:
     # should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
@@ -106,6 +107,7 @@ def _type_has_config(type_: Any) -> bool:
         return False
 
 
+@final
 class TypeAdapter(Generic[T]):
     """Type adapters provide a flexible way to perform validation and serialization based on a Python type.
 
@@ -120,40 +122,37 @@ class TypeAdapter(Generic[T]):
         serializer: The schema serializer for the type.
     """
 
-    if TYPE_CHECKING:
+    @overload
+    def __init__(
+        self,
+        type: type[T],
+        *,
+        config: ConfigDict | None = ...,
+        _parent_depth: int = ...,
+        module: str | None = ...,
+    ) -> None:
+        ...
 
-        @overload
-        def __new__(cls, __type: type[T], *, config: ConfigDict | None = ...) -> TypeAdapter[T]:
-            ...
-
-        # this overload is for non-type things like Union[int, str]
-        # Pyright currently handles this "correctly", but MyPy understands this as TypeAdapter[object]
-        # so an explicit type cast is needed
-        @overload
-        def __new__(cls, __type: T, *, config: ConfigDict | None = ...) -> TypeAdapter[T]:
-            ...
-
-        def __new__(cls, __type: Any, *, config: ConfigDict | None = None) -> TypeAdapter[T]:
-            """A class representing the type adapter."""
-            raise NotImplementedError
-
-        @overload
-        def __init__(
-            self, type: type[T], *, config: ConfigDict | None = None, _parent_depth: int = 2, module: str | None = None
-        ) -> None:
-            ...
-
-        # this overload is for non-type things like Union[int, str]
-        # Pyright currently handles this "correctly", but MyPy understands this as TypeAdapter[object]
-        # so an explicit type cast is needed
-        @overload
-        def __init__(
-            self, type: T, *, config: ConfigDict | None = None, _parent_depth: int = 2, module: str | None = None
-        ) -> None:
-            ...
+    # This second overload is for unsupported special forms (such as Union). `pyright` handles them fine, but `mypy` does not match
+    # them against `type: type[T]`, so an explicit overload with `type: T` is needed.
+    @overload
+    def __init__(  # pyright: ignore[reportOverlappingOverload]
+        self,
+        type: T,
+        *,
+        config: ConfigDict | None = ...,
+        _parent_depth: int = ...,
+        module: str | None = ...,
+    ) -> None:
+        ...
 
     def __init__(
-        self, type: Any, *, config: ConfigDict | None = None, _parent_depth: int = 2, module: str | None = None
+        self,
+        type: type[T] | T,
+        *,
+        config: ConfigDict | None = None,
+        _parent_depth: int = 2,
+        module: str | None = None,
     ) -> None:
         """Initializes the TypeAdapter object.
 
@@ -172,6 +171,18 @@ class TypeAdapter(Generic[T]):
             The `_parent_depth` argument is named with an underscore to suggest its private nature and discourage use.
             It may be deprecated in a minor version, so we only recommend using it if you're
             comfortable with potential change in behavior / support.
+
+        ??? tip "Compatibility with `mypy`"
+            Depending on the type used, `mypy` might raise an error when instantiating a `TypeAdapter`. As a workaround, you can explicitly
+            annotate your variable:
+
+            ```py
+            from typing import Union
+
+            from pydantic import TypeAdapter
+
+            ta: TypeAdapter[Union[str, int]] = TypeAdapter(Union[str, int])  # type: ignore[arg-type]
+            ```
 
         Returns:
             A type adapter configured for the specified `type`.

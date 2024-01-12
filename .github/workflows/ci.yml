@@ -261,7 +261,7 @@ jobs:
         node-version: '18'
 
     - name: install pyright
-      run: npm install -g pyright@1.1.335  # try to keep this in sync with .pre-commit-config.yaml
+      run: npm install -g pyright@1.1.345  # try to keep this in sync with .pre-commit-config.yaml
 
     - name: run pyright tests
       run: make test-pyright
