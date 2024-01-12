@@ -516,33 +516,24 @@ def test_fields():
     assert fields['signup_ts'].default is None
 
 
-def test_default_factory_field():
+@pytest.mark.parametrize('field_constructor', [dataclasses.field, pydantic.dataclasses.Field])
+def test_default_factory_field(field_constructor: Callable):
     @pydantic.dataclasses.dataclass
     class User:
         id: int
-        other: Dict[str, str] = dataclasses.field(default_factory=lambda: {'John': 'Joey'})
+        other: Dict[str, str] = field_constructor(default_factory=lambda: {'John': 'Joey'})
 
-    @pydantic.dataclasses.dataclass
-    class User2:
-        id: int
-        other: Dict[str, str] = pydantic.dataclasses.Field(default_factory=lambda: {'John': 'Joey'})
+    user = User(id=123)
 
-    user1 = User(id=123)
-    user2 = User2(id=123)
+    assert user.id == 123
+    assert user.other == {'John': 'Joey'}
+    fields = user.__pydantic_fields__
 
-    def validate_user(user):
-        assert user.id == 123
-        assert user.other == {'John': 'Joey'}
-        fields = user.__pydantic_fields__
+    assert fields['id'].is_required() is True
+    assert repr(fields['id'].default) == 'PydanticUndefined'
 
-        assert fields['id'].is_required() is True
-        assert repr(fields['id'].default) == 'PydanticUndefined'
-
-        assert fields['other'].is_required() is False
-        assert fields['other'].default_factory() == {'John': 'Joey'}
-
-    validate_user(user1)
-    validate_user(user2)
+    assert fields['other'].is_required() is False
+    assert fields['other'].default_factory() == {'John': 'Joey'}
 
 
 def test_default_factory_singleton_field():
@@ -1658,18 +1649,12 @@ def test_kw_only_subclass():
     assert B(1, y=2, z=3) == B(x=1, y=2, z=3)
 
 
-def test_repr_false():
+@pytest.mark.parametrize('field_constructor', [pydantic.dataclasses.Field, dataclasses.field])
+def test_repr_false(field_constructor: Callable):
     @pydantic.dataclasses.dataclass
     class A:
         visible_field: str
-        hidden_field: str = pydantic.dataclasses.Field(repr=False)
-
-    @pydantic.dataclasses.dataclass
-    class B:
-        visible_field: str
-        hidden_field: str = dataclasses.field(repr=False)
-
-    assert "hidden_field='excluded'" not in repr(B(visible_field='included', hidden_field='excluded'))
+        hidden_field: str = field_constructor(repr=False)
 
     instance = A(visible_field='this_should_be_included', hidden_field='this_should_not_be_included')
     assert "visible_field='this_should_be_included'" in repr(instance)
