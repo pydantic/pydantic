@@ -112,6 +112,7 @@ nav:
     - Routing Numbers: api/pydantic_extra_types_routing_numbers.md
     - Coordinate: api/pydantic_extra_types_coordinate.md
     - Mac Address: api/pydantic_extra_types_mac_address.md
+    - ISBN: api/pydantic_extra_types_isbn.md
 - Examples:
   - Secrets: examples/secrets.md
 - Error Messages:
