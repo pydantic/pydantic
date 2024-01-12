@@ -175,7 +175,7 @@ class TypeAdapter(Generic[T]):
             Depending on the type used, `mypy` might raise an error when instantiating a `TypeAdapter`. As a workaround, you can explicitly
             annotate your variable:
 
-            ```py
+            ```py test="skip"
             ta: TypeAdapter[Union[str, int]] = TypeAdapter(Union[str, int])  # type: ignore[arg-type]
             ```
 
