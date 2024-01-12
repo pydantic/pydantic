@@ -88,6 +88,13 @@ const lookup = {
   'history': '/changelog/',
 }
 
+function sanitizeURL(url) {
+  // escape untrusted source by creating an anchor element and letting the browser parse it
+  let a = document.createElement('a');
+  a.href = url;
+  return a.href;
+}
+
 function main() {
   const fragment = location.hash.substr(1)
   if (fragment === '' || location.pathname !== '/') {
@@ -105,7 +112,7 @@ function main() {
       .replace(/(v\d)-(\d+-\d{4})/, '$1$2')
   }
 
-  window.location = new_url
+  window.location = sanitizeURL(new_url)
 }
 
 main()
