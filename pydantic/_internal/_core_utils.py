@@ -228,6 +228,14 @@ class _WalkCoreSchema:
     def handle_definitions_schema(self, schema: core_schema.DefinitionsSchema, f: Walk) -> core_schema.CoreSchema:
         new_definitions: list[core_schema.CoreSchema] = []
         for definition in schema['definitions']:
+            if 'schema_ref' and 'ref' in definition:
+                # This indicates a purposely indirect reference
+                # We want to keep such references around for implications related to JSON schema, etc.:
+                new_definitions.append(definition)
+                # However, we still need to walk the referenced definition:
+                self.walk(definition, f)
+                continue
+
             updated_definition = self.walk(definition, f)
             if 'ref' in updated_definition:
                 # If the updated definition schema doesn't have a 'ref', it shouldn't go in the definitions
