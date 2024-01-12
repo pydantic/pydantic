@@ -817,6 +817,7 @@ For `ConstrainedStr` you can use [`StringConstraints`][pydantic.types.StringCons
 | `pydantic.json.pydantic_encoder` | `pydantic.deprecated.json.pydantic_encoder` |
 | `pydantic.validate_arguments` | `pydantic.deprecated.decorator.validate_arguments` |
 | `pydantic.json.custom_pydantic_encoder` | `pydantic.deprecated.json.custom_pydantic_encoder` |
+| `pydantic.json.ENCODERS_BY_TYPE` | `pydantic.deprecated.json.ENCODERS_BY_TYPE` |
 | `pydantic.json.timedelta_isoformat` | `pydantic.deprecated.json.timedelta_isoformat` |
 | `pydantic.decorator.validate_arguments` | `pydantic.deprecated.decorator.validate_arguments` |
 | `pydantic.class_validators.validator` | `pydantic.deprecated.class_validators.validator` |
