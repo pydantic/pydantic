@@ -7,7 +7,7 @@ markdown-include==0.8.0
 mdx-truly-sane-lists==1.3
 mkdocs==1.4.2
 mkdocs-exclude==1.0.2
-mkdocs-material==9.0.5
+mkdocs-material==9.5.1
 pyupgrade==2.37.3
 sqlalchemy
 orjson
