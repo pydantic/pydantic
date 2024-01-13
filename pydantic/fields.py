@@ -321,12 +321,11 @@ class FieldInfo(_repr.Representation):
         Returns:
             A field object with the passed values.
         """
-
         if annotation is default:
-            raise RuntimeError(
+            raise PydanticUserError(
                 'Error when building FieldInfo from annotated attribute. '
-                "Make sure you don't have any field name clashing with a type annotation "
-                '(e.g. `date: date = Field(None)`).'
+                "Make sure you don't have any field name clashing with a type annotation ",
+                code='unevaluable-type-annotation',
             )
 
         final = False

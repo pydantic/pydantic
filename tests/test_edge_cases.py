@@ -1375,19 +1375,17 @@ def test_type_on_annotation():
         pass
 
     class Model(BaseModel):
-        a: int = int
-        b: Type[int]
-        c: Type[int] = int
-        d: FooBar = FooBar
-        e: Type[FooBar]
-        f: Type[FooBar] = FooBar
-        g: Sequence[Type[FooBar]] = [FooBar]
-        h: Union[Type[FooBar], Sequence[Type[FooBar]]] = FooBar
-        i: Union[Type[FooBar], Sequence[Type[FooBar]]] = [FooBar]
+        a: Type[int]
+        b: Type[int] = int
+        c: Type[FooBar]
+        d: Type[FooBar] = FooBar
+        e: Sequence[Type[FooBar]] = [FooBar]
+        f: Union[Type[FooBar], Sequence[Type[FooBar]]] = FooBar
+        g: Union[Type[FooBar], Sequence[Type[FooBar]]] = [FooBar]
 
         model_config = dict(arbitrary_types_allowed=True)
 
-    assert Model.model_fields.keys() == set('abcdefghi')
+    assert Model.model_fields.keys() == set('abcdefg')
 
 
 def test_assign_type():
