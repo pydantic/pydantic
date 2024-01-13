@@ -475,7 +475,7 @@ class PydanticModelTransformer:
                 return False
 
         is_settings = any(base.fullname == BASESETTINGS_FULLNAME for base in info.mro[:-1])
-        self.add_initializer(fields, config, is_settings)
+        self.add_initializer(fields, config, is_settings, is_root_model)
         self.add_model_construct_method(fields, config, is_settings)
         try:
             self.set_frozen(fields, frozen=config.frozen is True)
@@ -839,7 +839,9 @@ class PydanticModelTransformer:
 
         return default
 
-    def add_initializer(self, fields: list[PydanticModelField], config: ModelConfigData, is_settings: bool) -> None:
+    def add_initializer(
+        self, fields: list[PydanticModelField], config: ModelConfigData, is_settings: bool, is_root_model: bool
+    ) -> None:
         """Adds a fields-aware `__init__` method to the class.
 
         The added `__init__` will be annotated with types vs. all `Any` depending on the plugin settings.
@@ -858,6 +860,11 @@ class PydanticModelTransformer:
                 use_alias=use_alias,
                 is_settings=is_settings,
             )
+
+            if is_root_model and MYPY_VERSION_TUPLE <= (1, 0, 1):
+                # convert root argument to positional argument
+                # This is needed because mypy support for `dataclass_transform` isn't complete on 1.0.1
+                args[0].kind = ARG_POS if args[0].kind == ARG_NAMED else ARG_OPT
 
             if is_settings:
                 base_settings_node = self._api.lookup_fully_qualified(BASESETTINGS_FULLNAME).node
