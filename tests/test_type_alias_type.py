@@ -4,7 +4,7 @@ from typing import Dict, Generic, List, Tuple, TypeVar, Union
 
 import pytest
 from annotated_types import MaxLen
-from typing_extensions import Annotated, TypeAliasType
+from typing_extensions import Annotated, Literal, TypeAliasType
 
 from pydantic import BaseModel, Field, ValidationError
 from pydantic.type_adapter import TypeAdapter
@@ -366,3 +366,25 @@ def test_redefined_type_alias():
 
     data = {'inner': {'x': 'hello'}, 'y': 1}
     assert MyOuterModel.model_validate(data).model_dump() == data
+
+
+def test_type_alias_to_type_with_ref():
+    class Div(BaseModel):
+        type: Literal['Div'] = 'Div'
+        components: List['AnyComponent']
+
+    AnyComponent = TypeAliasType('AnyComponent', Div)
+
+    adapter = TypeAdapter(AnyComponent)
+    adapter.validate_python({'type': 'Div', 'components': [{'type': 'Div', 'components': []}]})
+    with pytest.raises(ValidationError) as exc_info:
+        adapter.validate_python({'type': 'Div', 'components': [{'type': 'NotDiv', 'components': []}]})
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'ctx': {'expected': "'Div'"},
+            'input': 'NotDiv',
+            'loc': ('components', 0, 'type'),
+            'msg': "Input should be 'Div'",
+            'type': 'literal_error',
+        }
+    ]

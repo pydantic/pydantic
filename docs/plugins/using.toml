@@ -92,9 +92,6 @@ stars = 7908
 repo = "NVlabs/SPADE"
 stars = 7407
 [[libs]]
-repo = "NVlabs/SPADE"
-stars = 7407
-[[libs]]
 repo = "brycedrennan/imaginAIry"
 stars = 7217
 [[libs]]

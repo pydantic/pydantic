@@ -188,7 +188,7 @@ class PydanticDescriptorProxy(Generic[ReturnType]):
 
     def __set_name__(self, instance: Any, name: str) -> None:
         if hasattr(self.wrapped, '__set_name__'):
-            self.wrapped.__set_name__(instance, name)
+            self.wrapped.__set_name__(instance, name)  # pyright: ignore[reportFunctionMemberAccess]
 
     def __getattr__(self, __name: str) -> Any:
         """Forward checks for __isabstractmethod__ and such."""
