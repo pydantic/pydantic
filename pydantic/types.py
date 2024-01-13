@@ -1535,7 +1535,8 @@ def _secret_display(value: str | bytes) -> str:
 class SecretStr(_SecretField[str]):
     """A string used for storing sensitive information that you do not want to be visible in logging or tracebacks.
 
-    It displays `'**********'` instead of the string value on `repr()` and `str()` calls.
+    When the secret value is nonempty, it is displayed as `'**********'` instead of the underlying value in
+    calls to `repr()` and `str()`. If the value _is_ empty, it is displayed as `''`.
 
     ```py
     from pydantic import BaseModel, SecretStr
@@ -1550,6 +1551,8 @@ class SecretStr(_SecretField[str]):
     #> username='scolvin' password=SecretStr('**********')
     print(user.password.get_secret_value())
     #> password1
+    print((SecretStr('password'), SecretStr('')))
+    #> (SecretStr('**********'), SecretStr(''))
     ```
     """
 
@@ -1561,6 +1564,8 @@ class SecretBytes(_SecretField[bytes]):
     """A bytes used for storing sensitive information that you do not want to be visible in logging or tracebacks.
 
     It displays `b'**********'` instead of the string value on `repr()` and `str()` calls.
+    When the secret value is nonempty, it is displayed as `b'**********'` instead of the underlying value in
+    calls to `repr()` and `str()`. If the value _is_ empty, it is displayed as `b''`.
 
     ```py
     from pydantic import BaseModel, SecretBytes
@@ -1573,6 +1578,8 @@ class SecretBytes(_SecretField[bytes]):
     #> username='scolvin' password=SecretBytes(b'**********')
     print(user.password.get_secret_value())
     #> b'password1'
+    print((SecretBytes(b'password'), SecretBytes(b'')))
+    #> (SecretBytes(b'**********'), SecretBytes(b''))
     ```
     """
 
@@ -1753,9 +1760,20 @@ class ByteSize(int):
         'tib': 2**40,
         'pib': 2**50,
         'eib': 2**60,
+        'bit': 1 / 8,
+        'kbit': 10**3 / 8,
+        'mbit': 10**6 / 8,
+        'gbit': 10**9 / 8,
+        'tbit': 10**12 / 8,
+        'pbit': 10**15 / 8,
+        'ebit': 10**18 / 8,
+        'kibit': 2**10 / 8,
+        'mibit': 2**20 / 8,
+        'gibit': 2**30 / 8,
+        'tibit': 2**40 / 8,
+        'pibit': 2**50 / 8,
+        'eibit': 2**60 / 8,
     }
-    byte_sizes.update({k.lower()[0]: v for k, v in byte_sizes.items() if 'i' not in k})
-
     byte_string_pattern = r'^\s*(\d*\.?\d+)\s*(\w+)?'
     byte_string_re = re.compile(byte_string_pattern, re.IGNORECASE)
 
@@ -1831,11 +1849,13 @@ class ByteSize(int):
         return f'{num:0.1f}{final_unit}'
 
     def to(self, unit: str) -> float:
-        """Converts a byte size to another unit.
+        """Converts a byte size to another unit, including both byte and bit units.
 
         Args:
-            unit: The unit to convert to. Must be one of the following: B, KB, MB, GB, TB, PB, EiB,
-                KiB, MiB, GiB, TiB, PiB, EiB.
+            unit: The unit to convert to. Must be one of the following: B, KB, MB, GB, TB, PB, EB,
+                KiB, MiB, GiB, TiB, PiB, EiB (byte units) and
+                bit, kbit, mbit, gbit, tbit, pbit, ebit,
+                kibit, mibit, gibit, tibit, pibit, eibit (bit units).
 
         Returns:
             The byte size in the new unit.
