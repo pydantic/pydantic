@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, Union
 from typing_extensions import Literal, TypeAlias, TypedDict
 
 from ._migration import getattr_migration
+from .aliases import AliasGenerator
 
 if TYPE_CHECKING:
     from ._internal._generate_schema import GenerateSchema as _GenerateSchema
@@ -119,12 +120,12 @@ class ConfigDict(TypedDict, total=False):
 
     frozen: bool
     """
-    Whether or not models are faux-immutable, i.e. whether `__setattr__` is allowed, and also generates
+    Whether models are faux-immutable, i.e. whether `__setattr__` is allowed, and also generates
     a `__hash__()` method for the model. This makes instances of the model potentially hashable if all the
     attributes are hashable. Defaults to `False`.
 
     Note:
-        On V1, this setting was called `allow_mutation`, and was `True` by default.
+        On V1, the inverse of this setting was called `allow_mutation`, and was `True` by default.
     """
 
     populate_by_name: bool
@@ -315,12 +316,18 @@ class ConfigDict(TypedDict, total=False):
     loc_by_alias: bool
     """Whether to use the actual key provided in the data (e.g. alias) for error `loc`s rather than the field's name. Defaults to `True`."""
 
-    alias_generator: Callable[[str], str] | None
+    alias_generator: Callable[[str], str] | AliasGenerator | None
     """
-    A callable that takes a field name and returns an alias for it.
+    A callable that takes a field name and returns an alias for it
+    or an instance of [`AliasGenerator`][pydantic.aliases.AliasGenerator]. Defaults to `None`.
+
+    When using a callable, the alias generator is used for both validation and serialization.
+    If you want to use different alias generators for validation and serialization, you can use
+    [`AliasGenerator`][pydantic.aliases.AliasGenerator] instead.
 
     If data source field names do not match your code style (e. g. CamelCase fields),
-    you can automatically generate aliases using `alias_generator`:
+    you can automatically generate aliases using `alias_generator`. Here's an example with
+    a basic callable:
 
     ```py
     from pydantic import BaseModel, ConfigDict
@@ -337,6 +344,30 @@ class ConfigDict(TypedDict, total=False):
     #> tr-TR
     print(voice.model_dump(by_alias=True))
     #> {'Name': 'Filiz', 'LanguageCode': 'tr-TR'}
+    ```
+
+    If you want to use different alias generators for validation and serialization, you can use
+    [`AliasGenerator`][pydantic.aliases.AliasGenerator].
+
+    ```py
+    from pydantic import AliasGenerator, BaseModel, ConfigDict
+    from pydantic.alias_generators import to_camel, to_pascal
+
+    class Athlete(BaseModel):
+        first_name: str
+        last_name: str
+        sport: str
+
+        model_config = ConfigDict(
+            alias_generator=AliasGenerator(
+                validation_alias=to_camel,
+                serialization_alias=to_pascal,
+            )
+        )
+
+    athlete = Athlete(firstName='John', lastName='Doe', sport='track')
+    print(athlete.model_dump(by_alias=True))
+    #> {'FirstName': 'John', 'LastName': 'Doe', 'Sport': 'track'}
     ```
 
     Note:
@@ -538,6 +569,15 @@ class ConfigDict(TypedDict, total=False):
 
     - `'utf8'` will serialize bytes to UTF-8 strings.
     - `'base64'` will serialize bytes to URL safe base64 strings.
+    """
+
+    ser_json_inf_nan: Literal['null', 'constants']
+    """
+    The encoding of JSON serialized infinity and NaN float values. Accepts the string values of `'null'` and `'constants'`.
+    Defaults to `'null'`.
+
+    - `'null'` will serialize infinity and NaN values as `null`.
+    - `'constants'` will serialize infinity and NaN values as `Infinity` and `NaN`.
     """
 
     # whether to validate default values during validation, default False

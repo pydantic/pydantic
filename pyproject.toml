@@ -65,7 +65,7 @@ requires-python = '>=3.8'
 dependencies = [
     'typing-extensions>=4.6.1',
     'annotated-types>=0.4.0',
-    "pydantic-core==2.14.3",
+    "pydantic-core==2.15.0",
 ]
 dynamic = ['version', 'readme']
 
@@ -181,7 +181,7 @@ extend-ignore = ['D105', 'D107', 'D205', 'D415']
 flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
 mccabe = { max-complexity = 14 }
 isort = { known-first-party = ['pydantic', 'tests'] }
-target-version = "py37"
+target-version = "py38"
 extend-exclude = ['pydantic/v1', 'tests/mypy/outputs']
 
 [tool.ruff.extend-per-file-ignores]

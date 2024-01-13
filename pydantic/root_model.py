@@ -52,7 +52,7 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
             )
         super().__init_subclass__(**kwargs)
 
-    def __init__(__pydantic_self__, root: RootModelRootType = PydanticUndefined, **data) -> None:  # type: ignore
+    def __init__(self, /, root: RootModelRootType = PydanticUndefined, **data) -> None:  # type: ignore
         __tracebackhide__ = True
         if data:
             if root is not PydanticUndefined:
@@ -60,12 +60,12 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
                     '"RootModel.__init__" accepts either a single positional argument or arbitrary keyword arguments'
                 )
             root = data  # type: ignore
-        __pydantic_self__.__pydantic_validator__.validate_python(root, self_instance=__pydantic_self__)
+        self.__pydantic_validator__.validate_python(root, self_instance=self)
 
-    __init__.__pydantic_base_init__ = True
+    __init__.__pydantic_base_init__ = True  # pyright: ignore[reportFunctionMemberAccess]
 
     @classmethod
-    def model_construct(cls: type[Model], root: RootModelRootType, _fields_set: set[str] | None = None) -> Model:
+    def model_construct(cls: type[Model], root: RootModelRootType, _fields_set: set[str] | None = None) -> Model:  # type: ignore
         """Create a new model using the provided root object and update fields set.
 
         Args:
@@ -110,7 +110,7 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
 
     if typing.TYPE_CHECKING:
 
-        def model_dump(
+        def model_dump(  # type: ignore
             self,
             *,
             mode: Literal['json', 'python'] | str = 'python',

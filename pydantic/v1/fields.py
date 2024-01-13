@@ -817,7 +817,7 @@ class ModelField(Representation):
         """
         Prepare self.pre_validators, self.validators, and self.post_validators based on self.type_'s  __get_validators__
         and class validators. This method should be idempotent, e.g. it should be safe to call multiple times
-        without mis-configuring the field.
+        without misconfiguring the field.
         """
         self.validate_always = getattr(self.type_, 'validate_always', False) or any(
             v.always for v in self.class_validators.values()

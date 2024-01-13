@@ -38,7 +38,9 @@ from typing import (
 import pydantic_core
 from pydantic_core import CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
-from typing_extensions import Annotated, Literal, TypeAlias, assert_never
+from typing_extensions import Annotated, Literal, TypeAlias, assert_never, deprecated, final
+
+from pydantic.warnings import PydanticDeprecatedSince26
 
 from ._internal import (
     _config,
@@ -71,7 +73,7 @@ A type alias for defined schema types that represents a union of
 
 JsonSchemaValue = Dict[str, Any]
 """
-A type alias for a JSON schema value. This is a dictionary of string keys to arbitrary values.
+A type alias for a JSON schema value. This is a dictionary of string keys to arbitrary JSON values.
 """
 
 JsonSchemaMode = Literal['validation', 'serialization']
@@ -88,7 +90,7 @@ _MODE_TITLE_MAPPING: dict[JsonSchemaMode, str] = {'validation': 'Input', 'serial
 
 
 def update_json_schema(schema: JsonSchemaValue, updates: dict[str, Any]) -> JsonSchemaValue:
-    """Update a JSON schema by providing a dictionary of updates.
+    """Update a JSON schema in-place by providing a dictionary of updates.
 
     This function sets the provided key-value pairs in the schema and returns the updated schema.
 
@@ -238,23 +240,16 @@ class GenerateJsonSchema:
         ignored_warning_kinds: Warnings to ignore when generating the schema. `self.render_warning_message` will
             do nothing if its argument `kind` is in `ignored_warning_kinds`;
             this value can be modified on subclasses to easily control which warnings are emitted.
-        by_alias: Whether or not to use field names when generating the schema.
+        by_alias: Whether to use field aliases when generating the schema.
         ref_template: The format string used when generating reference names.
         core_to_json_refs: A mapping of core refs to JSON refs.
         core_to_defs_refs: A mapping of core refs to definition refs.
         defs_to_core_refs: A mapping of definition refs to core refs.
         json_to_defs_refs: A mapping of JSON refs to definition refs.
         definitions: Definitions in the schema.
-        collisions: Definitions with colliding names. When collisions are detected, we choose a non-colliding
-            name during generation, but we also track the colliding tag so that it can be remapped for the first
-            occurrence at the end of the process.
-        defs_ref_fallbacks: Core refs to fallback definitions refs.
-        _schema_type_to_method: A mapping of schema types to generator methods.
-        _used: Set to `True` after generating a schema to avoid re-use issues.
-        mode: The schema mode.
 
     Args:
-        by_alias: Whether or not to include field names.
+        by_alias: Whether to use field aliases in the generated schemas.
         ref_template: The format string to use when generating reference names.
 
     Raises:
@@ -568,7 +563,7 @@ class GenerateJsonSchema:
         return {}
 
     def none_schema(self, schema: core_schema.NoneSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a None value.
+        """Generates a JSON schema that matches `None`.
 
         Args:
             schema: The core schema.
@@ -590,7 +585,7 @@ class GenerateJsonSchema:
         return {'type': 'boolean'}
 
     def int_schema(self, schema: core_schema.IntSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches an Int value.
+        """Generates a JSON schema that matches an int value.
 
         Args:
             schema: The core schema.
@@ -757,8 +752,9 @@ class GenerateJsonSchema:
             return {'enum': expected}
 
     def is_instance_schema(self, schema: core_schema.IsInstanceSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that checks if a value is an instance of a class, equivalent to Python's
-        `isinstance` method.
+        """Handles JSON schema generation for a core schema that checks if a value is an instance of a class.
+
+        Unless overridden in a subclass, this raises an error.
 
         Args:
             schema: The core schema.
@@ -769,8 +765,9 @@ class GenerateJsonSchema:
         return self.handle_invalid_for_json_schema(schema, f'core_schema.IsInstanceSchema ({schema["cls"]})')
 
     def is_subclass_schema(self, schema: core_schema.IsSubclassSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that checks if a value is a subclass of a class, equivalent to Python's `issubclass`
-        method.
+        """Handles JSON schema generation for a core schema that checks if a value is a subclass of a class.
+
+        For backwards compatibility with v1, this does not raise an error, but can be overridden to change this.
 
         Args:
             schema: The core schema.
@@ -783,6 +780,8 @@ class GenerateJsonSchema:
 
     def callable_schema(self, schema: core_schema.CallableSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a callable value.
+
+        Unless overridden in a subclass, this raises an error.
 
         Args:
             schema: The core schema.
@@ -806,8 +805,31 @@ class GenerateJsonSchema:
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
         return json_schema
 
-    def tuple_positional_schema(self, schema: core_schema.TuplePositionalSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a positional tuple schema e.g. `Tuple[int, str, bool]`.
+    @deprecated('`tuple_positional_schema` is deprecated. Use `tuple_schema` instead.', category=None)
+    @final
+    def tuple_positional_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
+        """Replaced by `tuple_schema`."""
+        warnings.warn(
+            '`tuple_positional_schema` is deprecated. Use `tuple_schema` instead.',
+            PydanticDeprecatedSince26,
+            stacklevel=2,
+        )
+        return self.tuple_schema(schema)
+
+    @deprecated('`tuple_variable_schema` is deprecated. Use `tuple_schema` instead.', category=None)
+    @final
+    def tuple_variable_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
+        """Replaced by `tuple_schema`."""
+        warnings.warn(
+            '`tuple_variable_schema` is deprecated. Use `tuple_schema` instead.',
+            PydanticDeprecatedSince26,
+            stacklevel=2,
+        )
+        return self.tuple_schema(schema)
+
+    def tuple_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a tuple schema e.g. `Tuple[int,
+        str, bool]` or `Tuple[int, ...]`.
 
         Args:
             schema: The core schema.
@@ -816,28 +838,27 @@ class GenerateJsonSchema:
             The generated JSON schema.
         """
         json_schema: JsonSchemaValue = {'type': 'array'}
-        json_schema['minItems'] = len(schema['items_schema'])
-        prefixItems = [self.generate_inner(item) for item in schema['items_schema']]
-        if prefixItems:
-            json_schema['prefixItems'] = prefixItems
-        if 'extras_schema' in schema:
-            json_schema['items'] = self.generate_inner(schema['extras_schema'])
+        if 'variadic_item_index' in schema:
+            variadic_item_index = schema['variadic_item_index']
+            if variadic_item_index > 0:
+                json_schema['minItems'] = variadic_item_index
+                json_schema['prefixItems'] = [
+                    self.generate_inner(item) for item in schema['items_schema'][:variadic_item_index]
+                ]
+            if variadic_item_index + 1 == len(schema['items_schema']):
+                # if the variadic item is the last item, then represent it faithfully
+                json_schema['items'] = self.generate_inner(schema['items_schema'][variadic_item_index])
+            else:
+                # otherwise, 'items' represents the schema for the variadic
+                # item plus the suffix, so just allow anything for simplicity
+                # for now
+                json_schema['items'] = True
         else:
-            json_schema['maxItems'] = len(schema['items_schema'])
-        self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
-        return json_schema
-
-    def tuple_variable_schema(self, schema: core_schema.TupleVariableSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a variable tuple schema e.g. `Tuple[int, ...]`.
-
-        Args:
-            schema: The core schema.
-
-        Returns:
-            The generated JSON schema.
-        """
-        items_schema = {} if 'items_schema' not in schema else self.generate_inner(schema['items_schema'])
-        json_schema = {'type': 'array', 'items': items_schema}
+            prefixItems = [self.generate_inner(item) for item in schema['items_schema']]
+            if prefixItems:
+                json_schema['prefixItems'] = prefixItems
+            json_schema['minItems'] = len(prefixItems)
+            json_schema['maxItems'] = len(prefixItems)
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
         return json_schema
 
@@ -2243,7 +2264,9 @@ def _sort_json_schema(value: JsonSchemaValue, parent_key: str | None = None) -> 
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
 class WithJsonSchema:
-    """Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/json_schema/#withjsonschema-annotation
+
+    Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
     This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
     such as Callable, or types that have an is-instance core schema, without needing to go so far as creating a
     custom subclass of pydantic.json_schema.GenerateJsonSchema.
@@ -2330,20 +2353,53 @@ else:
 
     @dataclasses.dataclass(**_internal_dataclass.slots_true)
     class SkipJsonSchema:
-        """Add this as an annotation on a field to skip generating a JSON schema for that field.
+        """Usage docs: https://docs.pydantic.dev/2.6/concepts/json_schema/#skipjsonschema-annotation
+
+        Add this as an annotation on a field to skip generating a JSON schema for that field.
 
         Example:
             ```py
+            from typing import Union
+
             from pydantic import BaseModel
             from pydantic.json_schema import SkipJsonSchema
 
+            from pprint import pprint
+
+
             class Model(BaseModel):
-                a: int | SkipJsonSchema[None] = None
+                a: Union[int, None] = None  # (1)!
+                b: Union[int, SkipJsonSchema[None]] = None  # (2)!
+                c: SkipJsonSchema[Union[int, None]] = None  # (3)!
 
 
-            print(Model.model_json_schema())
-            #> {'properties': {'a': {'default': None, 'title': 'A', 'type': 'integer'}}, 'title': 'Model', 'type': 'object'}
+            pprint(Model.model_json_schema())
+            '''
+            {
+                'properties': {
+                    'a': {
+                        'anyOf': [
+                            {'type': 'integer'},
+                            {'type': 'null'}
+                        ],
+                        'default': None,
+                        'title': 'A'
+                    },
+                    'b': {
+                        'default': None,
+                        'title': 'B',
+                        'type': 'integer'
+                    }
+                },
+                'title': 'Model',
+                'type': 'object'
+            }
+            '''
             ```
+
+            1. The integer and null types are both included in the schema for `a`.
+            2. The integer type is the only type included in the schema for `b`.
+            3. The entirety of the `c` field is omitted from the schema.
         """
 
         def __class_getitem__(cls, item: AnyType) -> AnyType:

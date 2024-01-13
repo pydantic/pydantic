@@ -104,7 +104,11 @@ __all__ = (
     'Tag',
     'Discriminator',
     'JsonValue',
+    'OnErrorOmit',
 )
+
+
+T = TypeVar('T')
 
 
 @_dataclasses.dataclass
@@ -883,15 +887,11 @@ else:
         On model instantiation, pointers will be evaluated and imported. There is
         some nuance to this behavior, demonstrated in the examples below.
 
-        > A known limitation: setting a default value to a string
-        > won't result in validation (thus evaluation). This is actively
-        > being worked on.
-
         **Good behavior:**
         ```py
         from math import cos
 
-        from pydantic import BaseModel, ImportString, ValidationError
+        from pydantic import BaseModel, Field, ImportString, ValidationError
 
 
         class ImportThings(BaseModel):
@@ -921,7 +921,31 @@ else:
         # Actual python objects can be assigned as well
         my_cos = ImportThings(obj=cos)
         my_cos_2 = ImportThings(obj='math.cos')
-        assert my_cos == my_cos_2
+        my_cos_3 = ImportThings(obj='math:cos')
+        assert my_cos == my_cos_2 == my_cos_3
+
+
+        # You can set default field value either as Python object:
+        class ImportThingsDefaultPyObj(BaseModel):
+            obj: ImportString = math.cos
+
+
+        # or as a string value (but only if used with `validate_default=True`)
+        class ImportThingsDefaultString(BaseModel):
+            obj: ImportString = Field(default='math.cos', validate_default=True)
+
+
+        my_cos_default1 = ImportThingsDefaultPyObj()
+        my_cos_default2 = ImportThingsDefaultString()
+        assert my_cos_default1.obj == my_cos_default2.obj == math.cos
+
+
+        # note: this will not work!
+        class ImportThingsMissingValidateDefault(BaseModel):
+            obj: ImportString = 'math.cos'
+
+        my_cos_default3 = ImportThingsMissingValidateDefault()
+        assert my_cos_default3.obj == 'math.cos'  # just string, not evaluated
         ```
 
         Serializing an `ImportString` type to json is also possible.
@@ -935,7 +959,7 @@ else:
 
 
         # Create an instance
-        m = ImportThings(obj='math:cos')
+        m = ImportThings(obj='math.cos')
         print(m)
         #> obj=<built-in function cos>
         print(m.model_dump_json())
@@ -1511,7 +1535,8 @@ def _secret_display(value: str | bytes) -> str:
 class SecretStr(_SecretField[str]):
     """A string used for storing sensitive information that you do not want to be visible in logging or tracebacks.
 
-    It displays `'**********'` instead of the string value on `repr()` and `str()` calls.
+    When the secret value is nonempty, it is displayed as `'**********'` instead of the underlying value in
+    calls to `repr()` and `str()`. If the value _is_ empty, it is displayed as `''`.
 
     ```py
     from pydantic import BaseModel, SecretStr
@@ -1526,6 +1551,8 @@ class SecretStr(_SecretField[str]):
     #> username='scolvin' password=SecretStr('**********')
     print(user.password.get_secret_value())
     #> password1
+    print((SecretStr('password'), SecretStr('')))
+    #> (SecretStr('**********'), SecretStr(''))
     ```
     """
 
@@ -1537,6 +1564,8 @@ class SecretBytes(_SecretField[bytes]):
     """A bytes used for storing sensitive information that you do not want to be visible in logging or tracebacks.
 
     It displays `b'**********'` instead of the string value on `repr()` and `str()` calls.
+    When the secret value is nonempty, it is displayed as `b'**********'` instead of the underlying value in
+    calls to `repr()` and `str()`. If the value _is_ empty, it is displayed as `b''`.
 
     ```py
     from pydantic import BaseModel, SecretBytes
@@ -1549,6 +1578,8 @@ class SecretBytes(_SecretField[bytes]):
     #> username='scolvin' password=SecretBytes(b'**********')
     print(user.password.get_secret_value())
     #> b'password1'
+    print((SecretBytes(b'password'), SecretBytes(b'')))
+    #> (SecretBytes(b'**********'), SecretBytes(b''))
     ```
     """
 
@@ -1693,6 +1724,19 @@ BYTE_SIZES = {
     'tib': 2**40,
     'pib': 2**50,
     'eib': 2**60,
+    'bit': 1 / 8,
+    'kbit': 10**3 / 8,
+    'mbit': 10**6 / 8,
+    'gbit': 10**9 / 8,
+    'tbit': 10**12 / 8,
+    'pbit': 10**15 / 8,
+    'ebit': 10**18 / 8,
+    'kibit': 2**10 / 8,
+    'mibit': 2**20 / 8,
+    'gibit': 2**30 / 8,
+    'tibit': 2**40 / 8,
+    'pibit': 2**50 / 8,
+    'eibit': 2**60 / 8,
 }
 BYTE_SIZES.update({k.lower()[0]: v for k, v in BYTE_SIZES.items() if 'i' not in k})
 byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
@@ -1790,11 +1834,13 @@ class ByteSize(int):
         return f'{num:0.1f}{final_unit}'
 
     def to(self, unit: str) -> float:
-        """Converts a byte size to another unit.
+        """Converts a byte size to another unit, including both byte and bit units.
 
         Args:
-            unit: The unit to convert to. Must be one of the following: B, KB, MB, GB, TB, PB, EiB,
-                KiB, MiB, GiB, TiB, PiB, EiB.
+            unit: The unit to convert to. Must be one of the following: B, KB, MB, GB, TB, PB, EB,
+                KiB, MiB, GiB, TiB, PiB, EiB (byte units) and
+                bit, kbit, mbit, gbit, tbit, pbit, ebit,
+                kibit, mibit, gibit, tibit, pibit, eibit (bit units).
 
         Returns:
             The byte size in the new unit.
@@ -2700,9 +2746,7 @@ def _get_type_name(x: Any) -> str:
     if type_ in _JSON_TYPES:
         return type_.__name__
 
-    # Handle proper subclasses; note we don't need to handle None here
-    if isinstance(x, bool):
-        return 'bool'
+    # Handle proper subclasses; note we don't need to handle None or bool here
     if isinstance(x, int):
         return 'int'
     if isinstance(x, float):
@@ -2731,9 +2775,9 @@ if TYPE_CHECKING:
         List['JsonValue'],
         Dict[str, 'JsonValue'],
         str,
+        bool,
         int,
         float,
-        bool,
         None,
     ]
     """A `JsonValue` is used to represent a value that can be serialized to JSON.
@@ -2743,9 +2787,9 @@ if TYPE_CHECKING:
     * `List['JsonValue']`
     * `Dict[str, 'JsonValue']`
     * `str`
+    * `bool`
     * `int`
     * `float`
-    * `bool`
     * `None`
 
     The following example demonstrates how to use `JsonValue` to validate JSON data,
@@ -2787,9 +2831,9 @@ else:
                 Annotated[List['JsonValue'], Tag('list')],
                 Annotated[Dict[str, 'JsonValue'], Tag('dict')],
                 Annotated[str, Tag('str')],
+                Annotated[bool, Tag('bool')],
                 Annotated[int, Tag('int')],
                 Annotated[float, Tag('float')],
-                Annotated[bool, Tag('bool')],
                 Annotated[None, Tag('NoneType')],
             ],
             Discriminator(
@@ -2800,3 +2844,21 @@ else:
             _AllowAnyJson,
         ],
     )
+
+
+class _OnErrorOmit:
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        # there is no actual default value here but we use with_default_schema since it already has the on_error
+        # behavior implemented and it would be no more efficient to implement it on every other validator
+        # or as a standalone validator
+        return core_schema.with_default_schema(schema=handler(source_type), on_error='omit')
+
+
+OnErrorOmit = Annotated[T, _OnErrorOmit]
+"""
+When used as an item in a list, the key type in a dict, optional values of a TypedDict, etc.
+this annotation omits the item from the iteration if there is any error validating it.
+That is, instead of a [`ValidationError`][pydantic_core.ValidationError] being propagated up and the entire iterable being discarded
+any invalid items are discarded and the valid ones are returned.
+"""

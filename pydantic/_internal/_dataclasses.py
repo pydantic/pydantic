@@ -6,7 +6,7 @@ import inspect
 import typing
 import warnings
 from functools import partial, wraps
-from inspect import Parameter, Signature
+from inspect import Parameter
 from typing import Any, Callable, ClassVar
 
 from pydantic_core import (
@@ -23,9 +23,9 @@ from ..fields import FieldInfo
 from ..plugin._schema_validator import create_schema_validator
 from ..warnings import PydanticDeprecatedSince20
 from . import _config, _decorators, _typing_extra
-from ._config import ConfigWrapper
+from ._constructor_signature_generators import generate_pydantic_signature
 from ._fields import collect_dataclass_fields
-from ._generate_schema import GenerateSchema, generate_pydantic_signature
+from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
 from ._mock_val_ser import set_dataclass_mocks
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
@@ -130,7 +130,12 @@ def complete_dataclass(
     )
 
     # This needs to be called before we change the __init__
-    sig = generate_dataclass_signature(cls, cls.__pydantic_fields__, config_wrapper)  # type: ignore
+    sig = generate_pydantic_signature(
+        init=cls.__init__,
+        fields=cls.__pydantic_fields__,  # type: ignore
+        config_wrapper=config_wrapper,
+        parameter_post_processor=process_param_defaults,
+    )
 
     # dataclass.__init__ must be defined here so its `__qualname__` can be changed since functions can't be copied.
     def __init__(__dataclass_self__: PydanticDataclass, *args: Any, **kwargs: Any) -> None:
@@ -193,7 +198,7 @@ def complete_dataclass(
 
 
 def process_param_defaults(param: Parameter) -> Parameter:
-    """Custom processing where the parameter default is of type FieldInfo
+    """Modify the signature for a parameter in a dataclass where the default value is a FieldInfo instance.
 
     Args:
         param (Parameter): The parameter
@@ -229,24 +234,6 @@ def process_param_defaults(param: Parameter) -> Parameter:
                 default = dataclasses._HAS_DEFAULT_FACTORY  # type: ignore
         return param.replace(annotation=annotation, name=name, default=default)
     return param
-
-
-def generate_dataclass_signature(
-    cls: type[StandardDataclass], fields: dict[str, FieldInfo], config_wrapper: ConfigWrapper
-) -> Signature:
-    """Generate signature for a pydantic dataclass.
-
-    Args:
-        cls: The dataclass.
-        fields: The model fields.
-        config_wrapper: The config wrapper instance.
-
-    Returns:
-        The dataclass signature.
-    """
-    return generate_pydantic_signature(
-        init=cls.__init__, fields=fields, config_wrapper=config_wrapper, post_process_parameter=process_param_defaults
-    )
 
 
 def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:

@@ -516,15 +516,17 @@ def test_fields():
     assert fields['signup_ts'].default is None
 
 
-def test_default_factory_field():
+@pytest.mark.parametrize('field_constructor', [dataclasses.field, pydantic.dataclasses.Field])
+def test_default_factory_field(field_constructor: Callable):
     @pydantic.dataclasses.dataclass
     class User:
         id: int
-        other: Dict[str, str] = dataclasses.field(default_factory=lambda: {'John': 'Joey'})
+        other: Dict[str, str] = field_constructor(default_factory=lambda: {'John': 'Joey'})
 
     user = User(id=123)
+
     assert user.id == 123
-    # assert user.other == {'John': 'Joey'}
+    assert user.other == {'John': 'Joey'}
     fields = user.__pydantic_fields__
 
     assert fields['id'].is_required() is True
@@ -1647,6 +1649,18 @@ def test_kw_only_subclass():
     assert B(1, y=2, z=3) == B(x=1, y=2, z=3)
 
 
+@pytest.mark.parametrize('field_constructor', [pydantic.dataclasses.Field, dataclasses.field])
+def test_repr_false(field_constructor: Callable):
+    @pydantic.dataclasses.dataclass
+    class A:
+        visible_field: str
+        hidden_field: str = field_constructor(repr=False)
+
+    instance = A(visible_field='this_should_be_included', hidden_field='this_should_not_be_included')
+    assert "visible_field='this_should_be_included'" in repr(instance)
+    assert "hidden_field='this_should_not_be_included'" not in repr(instance)
+
+
 def dataclass_decorators(include_identity: bool = False, exclude_combined: bool = False):
     decorators = [pydantic.dataclasses.dataclass, dataclasses.dataclass]
     ids = ['pydantic', 'stdlib']
@@ -2487,9 +2501,10 @@ def test_signature():
         a: float = dataclasses.field(default_factory=float)
         b: float = Field(default=1.0)
         c: float = Field(default_factory=float)
+        d: int = dataclasses.field(metadata={'alias': 'dd'}, default=1)
 
     assert str(inspect.signature(Model)) == (
-        "(x: int, y: str = 'y', z: float = 1.0, a: float = <factory>, b: float = 1.0, c: float = <factory>) -> None"
+        "(x: int, y: str = 'y', z: float = 1.0, a: float = <factory>, b: float = 1.0, c: float = <factory>, dd: int = 1) -> None"
     )
 
 

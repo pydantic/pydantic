@@ -4,7 +4,9 @@ The [datamodel-code-generator](https://github.com/koxudaxi/datamodel-code-genera
 
 * OpenAPI 3 (YAML/JSON)
 * JSON Schema
-* JSON/YAML Data (which will converted to JSON Schema)
+* JSON/YAML/CSV Data (which will converted to JSON Schema)
+* Python dictionary (which will be converted to JSON Schema)
+* GraphQL schema
 
 Whenever you find yourself with any data convertible JSON but without pydantic models, this tool will allow you to generate type-safe model hierarchies on demand.
 

@@ -17,10 +17,11 @@ if typing.TYPE_CHECKING:
 
     from . import dataclasses
     from ._internal._generate_schema import GenerateSchema as GenerateSchema
+    from .aliases import AliasChoices, AliasGenerator, AliasPath
     from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
     from .config import ConfigDict
     from .errors import *
-    from .fields import AliasChoices, AliasPath, Field, PrivateAttr, computed_field
+    from .fields import Field, PrivateAttr, computed_field
     from .functional_serializers import (
         PlainSerializer,
         SerializeAsAny,
@@ -44,7 +45,7 @@ if typing.TYPE_CHECKING:
     from .type_adapter import TypeAdapter
     from .types import *
     from .validate_call_decorator import validate_call
-    from .warnings import PydanticDeprecatedSince20, PydanticDeprecationWarning
+    from .warnings import PydanticDeprecatedSince20, PydanticDeprecatedSince26, PydanticDeprecationWarning
 
     # this encourages pycharm to import `ValidationError` from here, not pydantic_core
     ValidationError = pydantic_core.ValidationError
@@ -92,11 +93,13 @@ __all__ = (
     'PydanticUndefinedAnnotation',
     'PydanticInvalidForJsonSchema',
     # fields
-    'AliasPath',
-    'AliasChoices',
     'Field',
     'computed_field',
     'PrivateAttr',
+    # alias
+    'AliasChoices',
+    'AliasGenerator',
+    'AliasPath',
     # main
     'BaseModel',
     'create_model',
@@ -192,6 +195,7 @@ __all__ = (
     'VERSION',
     # warnings
     'PydanticDeprecatedSince20',
+    'PydanticDeprecatedSince26',
     'PydanticDeprecationWarning',
     # annotated handlers
     'GetCoreSchemaHandler',
@@ -205,6 +209,7 @@ __all__ = (
     'ValidatorFunctionWrapHandler',
     'FieldSerializationInfo',
     'SerializerFunctionWrapHandler',
+    'OnErrorOmit',
 )
 
 # A mapping of {<member name>: (package, <module name>)} defining dynamic imports
@@ -239,11 +244,13 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'PydanticUndefinedAnnotation': (__package__, '.errors'),
     'PydanticInvalidForJsonSchema': (__package__, '.errors'),
     # fields
-    'AliasPath': (__package__, '.fields'),
-    'AliasChoices': (__package__, '.fields'),
     'Field': (__package__, '.fields'),
     'computed_field': (__package__, '.fields'),
     'PrivateAttr': (__package__, '.fields'),
+    # alias
+    'AliasChoices': (__package__, '.aliases'),
+    'AliasGenerator': (__package__, '.aliases'),
+    'AliasPath': (__package__, '.aliases'),
     # main
     'BaseModel': (__package__, '.main'),
     'create_model': (__package__, '.main'),
@@ -328,10 +335,12 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'Tag': (__package__, '.types'),
     'Discriminator': (__package__, '.types'),
     'JsonValue': (__package__, '.types'),
+    'OnErrorOmit': (__package__, '.types'),
     # type_adapter
     'TypeAdapter': (__package__, '.type_adapter'),
     # warnings
     'PydanticDeprecatedSince20': (__package__, '.warnings'),
+    'PydanticDeprecatedSince26': (__package__, '.warnings'),
     'PydanticDeprecationWarning': (__package__, '.warnings'),
     # annotated handlers
     'GetCoreSchemaHandler': (__package__, '.annotated_handlers'),

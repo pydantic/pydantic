@@ -1,3 +1,4 @@
+import functools
 import importlib.util
 import re
 import sys
@@ -1296,6 +1297,14 @@ def test_self():
     }
 
 
+def test_no_name_conflict_in_constructor():
+    class Model(BaseModel):
+        self: int
+
+    m = Model(**{'__pydantic_self__': 4, 'self': 2})
+    assert m.self == 2
+
+
 def test_self_recursive():
     class SubModel(BaseModel):
         self: int
@@ -2538,8 +2547,8 @@ def test_multiple_enums():
         (Literal[False], str, False, 'false', False, 'false'),
         (Literal[True], str, True, 'true', True, 'true'),
         (Literal[False], str, 'abc', '"abc"', 'abc', '"abc"'),
-        (Literal[False], int, False, 'false', 0, '0'),
-        (Literal[True], int, True, 'true', 1, '1'),
+        (Literal[False], int, False, 'false', False, 'false'),
+        (Literal[True], int, True, 'true', True, 'true'),
         (Literal[False], int, 42, '42', 42, '42'),
     ],
 )
@@ -2704,3 +2713,31 @@ def test_recursive_root_models_in_discriminated_union():
         'title': 'Outer',
         'type': 'object',
     }
+
+
+def test_eq_with_cached_property():
+    """
+    Test BaseModel.__eq__ compatibility with functools.cached_property
+
+    See GH-7444: https://github.com/pydantic/pydantic/issues/7444
+    Previously, pydantic BaseModel.__eq__ compared the full __dict__ of
+    model instances. This is not compatible with e.g. functools.cached_property,
+    which caches the computed values in the instance's __dict__
+    """
+
+    class Model(BaseModel):
+        attr: int
+
+        @functools.cached_property
+        def cached(self) -> int:
+            return 0
+
+    obj1 = Model(attr=1)
+    obj2 = Model(attr=1)
+    # ensure the instances are indeed equal before __dict__ mutations
+    assert obj1 == obj2
+    # This access to the cached_property has the side-effect of modifying obj1.__dict__
+    # See functools.cached_property documentation and source code
+    obj1.cached
+    # Ensure the objects still compare equals after caching a property
+    assert obj1 == obj2

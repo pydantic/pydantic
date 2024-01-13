@@ -509,3 +509,23 @@ def test_pydantic_extra():
 
     m = Model.model_construct(x=1, y=2)
     assert m.__pydantic_extra__ == {'y': 2}
+
+
+def test_retain_order_of_fields():
+    class MyModel(BaseModel):
+        a: str = 'a'
+        b: str
+
+    m = MyModel.model_construct(b='b')
+
+    assert m.model_dump_json() == '{"a":"a","b":"b"}'
+
+
+def test_initialize_with_private_attr():
+    class MyModel(BaseModel):
+        _a: str
+
+    m = MyModel.model_construct(_a='a')
+
+    assert m._a == 'a'
+    assert '_a' in m.__pydantic_private__

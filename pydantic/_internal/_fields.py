@@ -280,6 +280,10 @@ def collect_dataclass_fields(
     dataclass_fields: dict[str, dataclasses.Field] = cls.__dataclass_fields__
     cls_localns = dict(vars(cls))  # this matches get_cls_type_hints_lenient, but all tests pass with `= None` instead
 
+    source_module = sys.modules.get(cls.__module__)
+    if source_module is not None:
+        types_namespace = {**source_module.__dict__, **(types_namespace or {})}
+
     for ann_name, dataclass_field in dataclass_fields.items():
         ann_type = _typing_extra.eval_type_lenient(dataclass_field.type, types_namespace, cls_localns)
         if is_classvar(ann_type):

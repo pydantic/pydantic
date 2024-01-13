@@ -312,8 +312,8 @@ from pydantic import (
 
 
 class UserModel(BaseModel):
-    id: int
     name: str
+    id: int
 
     @field_validator('name')
     @classmethod
@@ -333,11 +333,11 @@ class UserModel(BaseModel):
         return v
 
 
-print(UserModel(id=1, name='John Doe'))
-#> id=1 name='John Doe'
+print(UserModel(name='John Doe', id=1))
+#> name='John Doe' id=1
 
 try:
-    UserModel(id=1, name='samuel')
+    UserModel(name='samuel', id=1)
 except ValidationError as e:
     print(e)
     """
@@ -347,7 +347,7 @@ except ValidationError as e:
     """
 
 try:
-    UserModel(id='abc', name='John Doe')
+    UserModel(name='John Doe', id=1)
 except ValidationError as e:
     print(e)
     """
@@ -357,7 +357,7 @@ except ValidationError as e:
     """
 
 try:
-    UserModel(id=1, name='John Doe!')
+    UserModel(name='John Doe!', id=1)
 except ValidationError as e:
     print(e)
     """
@@ -460,7 +460,7 @@ Because of this `mode='before'` validators are extremely flexible and powerful b
 Before model validators should be class methods.
 The first argument should be `cls` (and we also recommend you use `@classmethod` below `@model_validator` for proper type checking), the second argument will be the input (you should generally type it as `Any` and use `isinstance` to narrow the type) and the third argument (if present) will be a `pydantic.ValidationInfo`.
 
-`mode='after'` validators are instance methods and always receive an instance of the model as the first argument.
+`mode='after'` validators are instance methods and always receive an instance of the model as the first argument. Be sure to return the instance at the end of your validator.
 You should not use `(cls, ModelType)` as the signature, instead just use `(self)` and let type checkers infer the type of `self` for you.
 Since these are fully type safe they are often easier to implement than `mode='before'` validators.
 If any field fails to validate, `mode='after'` validators for that field will not be called.
@@ -726,10 +726,10 @@ def init_context(value: Dict[str, Any]) -> Iterator[None]:
 class Model(BaseModel):
     my_number: int
 
-    def __init__(__pydantic_self__, **data: Any) -> None:
-        __pydantic_self__.__pydantic_validator__.validate_python(
+    def __init__(self, /, **data: Any) -> None:
+        self.__pydantic_validator__.validate_python(
             data,
-            self_instance=__pydantic_self__,
+            self_instance=self,
             context=_init_context_var.get(),
         )
 

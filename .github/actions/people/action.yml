@@ -1,0 +1,24 @@
+inputs:
+  token:
+    description: 'User token for accessing the GitHub API. Can be passed in using {{ secrets.GITHUB_TOKEN }}'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/checkout@v4
+
+    - name: set up python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: install deps
+      run: pip install -U PyGithub pyyaml pydantic pydantic-settings
+      shell: bash
+
+    - name: update pydantic people
+      run: python .github/actions/people/people.py
+      shell: bash
+      env:
+        INPUT_TOKEN: ${{ inputs.token }}
