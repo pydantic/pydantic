@@ -1774,6 +1774,8 @@ class ByteSize(int):
         'pibit': 2**50 / 8,
         'eibit': 2**60 / 8,
     }
+    byte_sizes.update({k.lower()[0]: v for k, v in byte_sizes.items() if 'i' not in k})
+
     byte_string_pattern = r'^\s*(\d*\.?\d+)\s*(\w+)?'
     byte_string_re = re.compile(byte_string_pattern, re.IGNORECASE)
 
