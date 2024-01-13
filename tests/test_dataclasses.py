@@ -616,6 +616,23 @@ def test_nested_schema():
     }
 
 
+@pytest.mark.parametrize(
+    'init_false_field', [dataclasses.field(init=False, default=-1), pydantic.dataclasses.Field(init=False, default=-1)]
+)
+def test_init_false(init_false_field):
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra='forbid'))
+    class MyDataclass:
+        a: int = init_false_field
+        b: int = pydantic.dataclasses.Field(default=2)
+
+    signature = inspect.signature(MyDataclass)
+    # `a` should not be in the __init__
+    assert 'a' not in signature.parameters.keys()
+    assert 'b' in signature.parameters.keys()
+
+    assert isinstance(MyDataclass(b=2), MyDataclass)
+
+
 def test_initvar():
     @pydantic.dataclasses.dataclass
     class TestInitVar:

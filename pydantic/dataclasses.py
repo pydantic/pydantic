@@ -172,6 +172,10 @@ def dataclass(
             if field_value.repr is not True:
                 field_args['repr'] = field_value.repr
 
+            # Set `init` attribute if it's explicitly specified to be `False`.
+            if field_value.init is False:
+                field_args['init'] = field_value.init
+
             setattr(cls, field_name, dataclasses.field(**field_args))
 
     def create_dataclass(cls: type[Any]) -> type[PydanticDataclass]:

@@ -64,6 +64,7 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     frozen: bool | None
     validate_default: bool | None
     repr: bool
+    init: bool | None
     init_var: bool | None
     kw_only: bool | None
 
@@ -101,7 +102,9 @@ class FieldInfo(_repr.Representation):
         frozen: Whether the field is frozen.
         validate_default: Whether to validate the default value of the field.
         repr: Whether to include the field in representation of the model.
-        init_var: Whether the field should be included in the constructor of the dataclass.
+        init: If true (the default), this field is included as a parameter to the generated `__init__` of the dataclass
+        init_var: Whether the field is an "init-only" field: used as a parameter to the generated `__init__` method, but
+            not included as a field of the resulting model.
         kw_only: Whether the field should be a keyword-only argument in the constructor of the dataclass.
         metadata: List of metadata constraints.
     """
@@ -122,6 +125,7 @@ class FieldInfo(_repr.Representation):
     frozen: bool | None
     validate_default: bool | None
     repr: bool
+    init: bool | None
     init_var: bool | None
     kw_only: bool | None
     metadata: list[Any]
@@ -143,6 +147,7 @@ class FieldInfo(_repr.Representation):
         'frozen',
         'validate_default',
         'repr',
+        'init',
         'init_var',
         'kw_only',
         'metadata',
@@ -203,6 +208,7 @@ class FieldInfo(_repr.Representation):
         self.validate_default = kwargs.pop('validate_default', None)
         self.frozen = kwargs.pop('frozen', None)
         # currently only used on dataclasses
+        self.init = kwargs.pop('init', None)
         self.init_var = kwargs.pop('init_var', None)
         self.kw_only = kwargs.pop('kw_only', None)
 
@@ -623,6 +629,7 @@ def Field(  # noqa: C901
     frozen: bool | None = _Unset,
     validate_default: bool | None = _Unset,
     repr: bool = _Unset,
+    init: bool | None = _Unset,
     init_var: bool | None = _Unset,
     kw_only: bool | None = _Unset,
     pattern: str | None = _Unset,
@@ -668,8 +675,10 @@ def Field(  # noqa: C901
         validate_default: If `True`, apply validation to the default value every time you create an instance.
             Otherwise, for performance reasons, the default value of the field is trusted and not validated.
         repr: A boolean indicating whether to include the field in the `__repr__` output.
-        init_var: Whether the field should be included in the constructor of the dataclass.
+        init: Whether the field should be included in the generated constructor of the dataclass.
             (Only applies to dataclasses.)
+        init_var: Whether the field is `init-only`. Used as a parameter to the generated `__init__` method, but not
+            included as a field of the resulting model. (Only applies to dataclasses.)
         kw_only: Whether the field should be a keyword-only argument in the constructor of the dataclass.
             (Only applies to dataclasses.)
         strict: If `True`, strict validation is applied to the field.
@@ -777,6 +786,7 @@ def Field(  # noqa: C901
         pattern=pattern,
         validate_default=validate_default,
         repr=repr,
+        init=init,
         init_var=init_var,
         kw_only=kw_only,
         strict=strict,
