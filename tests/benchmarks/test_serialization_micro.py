@@ -4,7 +4,7 @@ from uuid import UUID
 
 import pytest
 
-from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
+from pydantic_core import SchemaSerializer, SchemaValidator, core_schema, to_json
 
 
 class TestBenchmarkSimpleModel:
@@ -394,3 +394,18 @@ def test_filter(benchmark):
     @benchmark
     def t():
         v.to_python(['a', 'b', 'c', 'd', 'e'], include={-1, -2})
+
+
+@pytest.mark.benchmark(group='list-of-lists')
+def test_to_json_list_of_lists(benchmark):
+    data = [[i + j for j in range(10)] for i in range(1000)]
+
+    benchmark(to_json, data)
+
+
+@pytest.mark.benchmark(group='list-of-lists')
+def test_ser_list_of_lists(benchmark):
+    s = SchemaSerializer(core_schema.list_schema(core_schema.list_schema(core_schema.int_schema())))
+    data = [[i + j for j in range(10)] for i in range(1000)]
+
+    benchmark(s.to_json, data)
