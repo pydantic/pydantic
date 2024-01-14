@@ -18,6 +18,28 @@ from .annotated_handlers import GetCoreSchemaHandler
 class PlainSerializer:
     """Plain serializers use a function to modify the output of serialization.
 
+    If you want to customize the serialization for annotated types.
+    Consider an input of `list`, which will be serialized into a space-delimited string.
+
+    ```python
+    from typing import List
+
+    from typing_extensions import Annotated
+
+    from pydantic import BaseModel, PlainSerializer
+
+    CustomStr = Annotated[
+        List, PlainSerializer(lambda x: ' '.join(x), return_type=str)
+    ]
+
+    class StudentModel(BaseModel):
+        courses: CustomStr
+
+    student = StudentModel(courses=['Math', 'Chemistry', 'English'])
+    print(student.model_dump())
+    #> {'courses': 'Math Chemistry English'}
+    ```
+
     Attributes:
         func: The serializer function.
         return_type: The return type for the function. If omitted it will be inferred from the type annotation.
@@ -151,6 +173,26 @@ def field_serializer(
 ) -> Callable[[Any], Any]:
     """Decorator that enables custom field serialization.
 
+    For example, a field of `set` type to mitigate duplication. We want this field to be serialized as a sorted list.
+
+    ```python
+    from typing import Set
+
+    from pydantic import BaseModel, field_serializer
+
+    class StudentModel(BaseModel):
+        name: str = 'Jane'
+        courses: Set[str]
+
+        @field_serializer('courses', when_used='json')
+        def serialize_course_in_order(courses: Set[str]):
+            return sorted(courses)
+
+    student = StudentModel(courses={'Math', 'Chemistry', 'English'})
+    print(student.model_dump_json())
+    #> {"name":"Jane","courses":["Chemistry","English","Math"]}
+    ```
+
     See [Custom serializers](../concepts/serialization.md#custom-serializers) for more information.
 
     Four signatures are supported:
@@ -216,6 +258,30 @@ def model_serializer(
     return_type: Any = PydanticUndefined,
 ) -> Callable[[Any], Any]:
     """Decorator that enables custom model serialization.
+
+    This is useful when a model need to be serialized in a customized manner, allowing for flexibility beyond just specific fields.
+
+    Following [`field_serializer`][pydantic.functional_serializers.field_serializer] example, we not only want to sort courses field but also capitalize the name of student.
+
+    ```python
+    from typing import Set
+
+    from pydantic import BaseModel, model_serializer
+
+    class StudentModel(BaseModel):
+        name: str
+        courses: Set[str]
+
+        @model_serializer(when_used='json')
+        def serialize_model(self):
+            return {'name': self.name.title(), 'courses': sorted(self.courses)}
+
+    student = StudentModel(
+        name='jane doe', courses={'Math', 'Chemistry', 'English'}
+    )
+    print(student.model_dump_json())
+    #> {"name":"Jane Doe","courses":["Chemistry","English","Math"]}
+    ```
 
     See [Custom serializers](../concepts/serialization.md#custom-serializers) for more information.
 
