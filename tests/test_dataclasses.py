@@ -5,7 +5,12 @@ import re
 import sys
 from collections.abc import Hashable
 from datetime import datetime
-from functools import cached_property
+
+try:
+    from functools import cached_property
+except ImportError:
+    pass
+
 from pathlib import Path
 from typing import Callable, ClassVar, Dict, FrozenSet, List, Optional, Set, Union
 
@@ -1633,30 +1638,31 @@ def test_can_deepcopy_wrapped_dataclass_type():
     assert B is not A
     assert B(1) == A(1)
 
+
+@pytest.mark.skipif(sys.version_info < (3, 8), reason='cached_property was introduced in python3.8 stdlib')
 def test_cached_property():
     @dataclasses.dataclass(frozen=True)
     class A:
         name: str
 
         @cached_property
-        def _name(self): 
-            return "name"
+        def _name(self):
+            return 'name'
 
     class MyModel(BaseModel, arbitrary_types_allowed=True, frozen=True, extra=Extra.forbid):
         scheduler: A
 
     models = {
-        "AX": MyModel(scheduler=A("a")),
+        'AX': MyModel(scheduler=A('a')),
     }
 
-    sched = A("sched")
+    sched = A('sched')
 
     models_2 = {
-        "AY": models["AX"].copy(update=dict(scheduler=sched)), 
+        'AY': models['AX'].copy(update=dict(scheduler=sched)),
     }
 
-    models |= models_2
+    models = {**models, **models_2}
 
-    models["AY"].scheduler._name
-    MyModel.parse_obj(models["AY"].dict())
-        
+    models['AY'].scheduler._name
+    MyModel.parse_obj(models['AY'].dict())
