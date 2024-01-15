@@ -1040,6 +1040,9 @@ print(ItemHolder[IntItem](**loaded_data).model_dump())  # (2)!
 
 ## Dynamic model creation
 
+??? api "API Documentation"
+    [`pydantic.main.create_model`][pydantic.main.create_model]<br>
+
 There are some occasions where it is desirable to create a model using runtime information to specify the fields.
 For this Pydantic provides the `create_model` function to allow models to be created on the fly:
 
@@ -1426,6 +1429,9 @@ print(Model.y)
 ```
 
 ### Private model attributes
+
+??? api "API Documentation"
+    [`pydantic.fields.PrivateAttr`][pydantic.fields.PrivateAttr]<br>
 
 Attributes whose name has a leading underscore are not treated as fields by Pydantic, and are not included in the
 model schema. Instead, these are converted into a "private attribute" which is not validated or even set during

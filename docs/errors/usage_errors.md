@@ -1018,5 +1018,32 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'root-model-extra'
 ```
 
+## Cannot evaluate type annotation {#unevaluable-type-annotation}
+
+Because type annotations are evaluated *after* assignments, you might get unexpected results when using a type annotation name
+that clashes with one of your fields. We raise an error in the following case:
+
+```py test="skip"
+from datetime import date
+
+from pydantic import BaseModel, Field
+
+
+class Model(BaseModel):
+    date: date = Field(description='A date')
+```
+
+As a workaround, you can either use an alias or change your import:
+
+```py lint="skip"
+import datetime
+# Or `from datetime import date as _date`
+
+from pydantic import BaseModel, Field
+
+
+class Model(BaseModel):
+    date: datetime.date = Field(description='A date')
+```
 
 {% endraw %}

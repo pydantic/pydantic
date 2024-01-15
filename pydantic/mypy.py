@@ -860,8 +860,10 @@ class PydanticModelTransformer:
                 use_alias=use_alias,
                 is_settings=is_settings,
             )
-            if is_root_model:
+
+            if is_root_model and MYPY_VERSION_TUPLE <= (1, 0, 1):
                 # convert root argument to positional argument
+                # This is needed because mypy support for `dataclass_transform` isn't complete on 1.0.1
                 args[0].kind = ARG_POS if args[0].kind == ARG_NAMED else ARG_OPT
 
             if is_settings:

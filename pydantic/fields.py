@@ -321,6 +321,13 @@ class FieldInfo(_repr.Representation):
         Returns:
             A field object with the passed values.
         """
+        if annotation is default:
+            raise PydanticUserError(
+                'Error when building FieldInfo from annotated attribute. '
+                "Make sure you don't have any field name clashing with a type annotation ",
+                code='unevaluable-type-annotation',
+            )
+
         final = False
         if _typing_extra.is_finalvar(annotation):
             final = True

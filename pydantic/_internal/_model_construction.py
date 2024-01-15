@@ -188,6 +188,11 @@ class ModelMetaclass(ABCMeta):
                 types_namespace=types_namespace,
                 create_model_module=_create_model_module,
             )
+
+            # If this is placed before the complete_model_class call above,
+            # the generic computed fields return type is set to PydanticUndefined
+            cls.model_computed_fields = {k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()}
+
             # using super(cls, cls) on the next line ensures we only call the parent class's __pydantic_init_subclass__
             # I believe the `type: ignore` is only necessary because mypy doesn't realize that this code branch is
             # only hit for _proper_ subclasses of BaseModel
@@ -242,11 +247,11 @@ class ModelMetaclass(ABCMeta):
         return field_names, class_vars, private_attributes
 
     @property
-    @deprecated(
-        'The `__fields__` attribute is deprecated, use `model_fields` instead.', category=PydanticDeprecatedSince20
-    )
+    @deprecated('The `__fields__` attribute is deprecated, use `model_fields` instead.', category=None)
     def __fields__(self) -> dict[str, FieldInfo]:
-        warnings.warn('The `__fields__` attribute is deprecated, use `model_fields` instead.', DeprecationWarning)
+        warnings.warn(
+            'The `__fields__` attribute is deprecated, use `model_fields` instead.', PydanticDeprecatedSince20
+        )
         return self.model_fields  # type: ignore
 
     def __dir__(self) -> list[str]:

@@ -1,7 +1,7 @@
 import pytest
 
 import pydantic.dataclasses
-from pydantic import BaseModel, Field, RootModel, ValidationError, fields
+from pydantic import BaseModel, Field, PydanticUserError, RootModel, ValidationError, fields
 
 
 def test_field_info_annotation_keyword_argument():
@@ -15,6 +15,20 @@ def test_field_info_annotation_keyword_argument():
         fields.FieldInfo.from_field(annotation=())
 
     assert e.value.args == ('"annotation" is not permitted as a Field keyword argument',)
+
+
+def test_field_info_annotated_attribute_name_clashing():
+    """This tests that `FieldInfo.from_annotated_attribute` will raise a `PydanticUserError` if attribute names clashes
+    with a type.
+    """
+
+    with pytest.raises(PydanticUserError):
+
+        class SubModel(BaseModel):
+            a: int = 1
+
+        class Model(BaseModel):
+            SubModel: SubModel = Field()
 
 
 def test_init_var_field():

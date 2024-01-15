@@ -877,6 +877,8 @@ def test_string_import_callable(annotation):
     [
         ('math:cos', 'math.cos', 'json'),
         ('math:cos', math.cos, 'python'),
+        ('math.cos', 'math.cos', 'json'),
+        ('math.cos', math.cos, 'python'),
         pytest.param(
             'os.path', 'posixpath', 'json', marks=pytest.mark.skipif(sys.platform == 'win32', reason='different output')
         ),
@@ -901,6 +903,22 @@ def test_string_import_any(value: Any, expected: Any, mode: Literal['json', 'pyt
         thing: ImportString
 
     assert PyObjectModel(thing=value).model_dump(mode=mode) == {'thing': expected}
+
+
+@pytest.mark.parametrize(
+    ('value', 'validate_default', 'expected'),
+    [
+        (math.cos, True, math.cos),
+        ('math:cos', True, math.cos),
+        (math.cos, False, math.cos),
+        ('math:cos', False, 'math:cos'),
+    ],
+)
+def test_string_import_default_value(value: Any, validate_default: bool, expected: Any):
+    class PyObjectModel(BaseModel):
+        thing: ImportString = Field(default=value, validate_default=validate_default)
+
+    assert PyObjectModel().thing == expected
 
 
 @pytest.mark.parametrize('value', ['oss', 'os.os', f'{__name__}.x'])
@@ -1460,9 +1478,9 @@ def test_datetime_errors(DatetimeModel):
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'datetime_parsing',
+            'type': 'datetime_from_date_parsing',
             'loc': ('dt',),
-            'msg': 'Input should be a valid datetime, month value is outside expected range of 1-12',
+            'msg': 'Input should be a valid datetime or date, month value is outside expected range of 1-12',
             'input': '2017-13-05T19:47:07',
             'ctx': {'error': 'month value is outside expected range of 1-12'},
         },
@@ -4416,6 +4434,7 @@ def test_frozenset_field_not_convertible():
 @pytest.mark.parametrize(
     'input_value,output,human_bin,human_dec',
     (
+        (1, 1, '1B', '1B'),
         ('1', 1, '1B', '1B'),
         ('1.0', 1, '1B', '1B'),
         ('1b', 1, '1B', '1B'),
@@ -4425,6 +4444,8 @@ def test_frozenset_field_not_convertible():
         ('1.5 M', int(1.5e6), '1.4MiB', '1.5MB'),
         ('5.1kib', 5222, '5.1KiB', '5.2KB'),
         ('6.2EiB', 7148113328562451456, '6.2EiB', '7.1EB'),
+        ('8bit', 1, '1B', '1B'),
+        ('1kbit', 125, '125B', '125B'),
     ),
 )
 def test_bytesize_conversions(input_value, output, human_bin, human_dec):
@@ -4448,13 +4469,15 @@ def test_bytesize_to():
     assert m.size.to('MiB') == pytest.approx(1024)
     assert m.size.to('MB') == pytest.approx(1073.741824)
     assert m.size.to('TiB') == pytest.approx(0.0009765625)
+    assert m.size.to('bit') == pytest.approx(8589934592)
+    assert m.size.to('kbit') == pytest.approx(8589934.592)
 
 
 def test_bytesize_raises():
     class Model(BaseModel):
         size: ByteSize
 
-    with pytest.raises(ValidationError, match='parse value'):
+    with pytest.raises(ValidationError, match='should match'):
         Model(size='d1MB')
 
     with pytest.raises(ValidationError, match='byte unit'):
@@ -4467,6 +4490,9 @@ def test_bytesize_raises():
     m = Model(size='1MB')
     with pytest.raises(PydanticCustomError, match='byte unit'):
         m.size.to('bad_unit')
+
+    with pytest.raises(PydanticCustomError, match='byte unit'):
+        m.size.to('1ZiB')
 
 
 def test_deque_success():

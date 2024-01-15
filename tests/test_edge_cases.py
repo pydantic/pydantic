@@ -1374,19 +1374,17 @@ def test_type_on_annotation():
         pass
 
     class Model(BaseModel):
-        a: int = int
-        b: Type[int]
-        c: Type[int] = int
-        d: FooBar = FooBar
-        e: Type[FooBar]
-        f: Type[FooBar] = FooBar
-        g: Sequence[Type[FooBar]] = [FooBar]
-        h: Union[Type[FooBar], Sequence[Type[FooBar]]] = FooBar
-        i: Union[Type[FooBar], Sequence[Type[FooBar]]] = [FooBar]
+        a: Type[int]
+        b: Type[int] = int
+        c: Type[FooBar]
+        d: Type[FooBar] = FooBar
+        e: Sequence[Type[FooBar]] = [FooBar]
+        f: Union[Type[FooBar], Sequence[Type[FooBar]]] = FooBar
+        g: Union[Type[FooBar], Sequence[Type[FooBar]]] = [FooBar]
 
         model_config = dict(arbitrary_types_allowed=True)
 
-    assert Model.model_fields.keys() == set('abcdefghi')
+    assert Model.model_fields.keys() == set('abcdefg')
 
 
 def test_assign_type():
@@ -2434,15 +2432,11 @@ def test_invalid_forward_ref_model():
     """
     # The problem:
     if sys.version_info >= (3, 11):
-        error = RecursionError
-        kwargs = {}
+        # See PR #8243, this was a RecursionError raised by Python, but is now caught on the Pydantic side
+        error = errors.PydanticUserError
     else:
         error = TypeError
-        kwargs = {
-            'match': r'Forward references must evaluate to types\.'
-            r' Got FieldInfo\(annotation=NoneType, required=False\)\.'
-        }
-    with pytest.raises(error, **kwargs):
+    with pytest.raises(error):
 
         class M(BaseModel):
             B: ForwardRef('B') = Field(default=None)
@@ -2544,8 +2538,8 @@ def test_multiple_enums():
         (Literal[False], str, False, 'false', False, 'false'),
         (Literal[True], str, True, 'true', True, 'true'),
         (Literal[False], str, 'abc', '"abc"', 'abc', '"abc"'),
-        (Literal[False], int, False, 'false', 0, '0'),
-        (Literal[True], int, True, 'true', 1, '1'),
+        (Literal[False], int, False, 'false', False, 'false'),
+        (Literal[True], int, True, 'true', True, 'true'),
         (Literal[False], int, 42, '42', 42, '42'),
     ],
 )

@@ -1,3 +1,38 @@
+## v2.5.3 (2023-12-22)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.5.3)
+
+### What's Changed
+
+#### Packaging
+
+* uprev `pydantic-core` to 2.14.6
+
+#### Fixes
+
+* Fix memory leak with recursive definitions creating reference cycles by @davidhewitt in [pydantic/pydantic-core#1125](https://github.com/pydantic/pydantic-core/pull/1125)
+
+## v2.5.2 (2023-11-22)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.5.2)
+
+### What's Changed
+
+#### Packaging
+
+* uprev `pydantic-core` to 2.14.5
+
+#### New Features
+
+* Add `ConfigDict.ser_json_inf_nan` by @davidhewitt in [#8159](https://github.com/pydantic/pydantic/pull/8159)
+
+#### Fixes
+
+* Fix validation of `Literal` from JSON keys when used as `dict` key by @sydney-runkle in [pydantic/pydantic-core#1075](https://github.com/pydantic/pydantic-core/pull/1075)
+* Fix bug re `custom_init` on members of `Union` by @sydney-runkle in [pydantic/pydantic-core#1076](https://github.com/pydantic/pydantic-core/pull/1076)
+* Fix `JsonValue` `bool` serialization by @sydney-runkle in [#8190](https://github.com/pydantic/pydantic/pull/8159)
+* Fix handling of unhashable inputs with `Literal` in `Union`s by @sydney-runkle in [pydantic/pydantic-core#1089](https://github.com/pydantic/pydantic-core/pull/1089)
+
 ## v2.5.1 (2023-11-15)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.5.1)
