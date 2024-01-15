@@ -1030,7 +1030,7 @@ from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    date: date = Field(description="A date")
+    date: date = Field(description='A date')
 ```
 
 As a workaround, you can either use an alias or change your import:
@@ -1040,11 +1040,11 @@ import datetime
 
 # Or `from datetime import date as _date`
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Model(BaseModel):
-    date: datetime.date = Field(description="A date")
+    date: datetime.date = Field(description='A date')
 
 ```
 

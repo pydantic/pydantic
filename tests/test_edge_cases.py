@@ -2435,14 +2435,10 @@ def test_invalid_forward_ref_model():
     # The problem:
     if sys.version_info >= (3, 11):
         error = RecursionError
-        kwargs = {}
     else:
-        error = TypeError
-        kwargs = {
-            'match': r'Forward references must evaluate to types\.'
-            r' Got FieldInfo\(annotation=NoneType, required=False\)\.'
-        }
-    with pytest.raises(error, **kwargs):
+        # See PR #8243, this was a TypeError raised by Python, but is now catched on the Pydantic side
+        error = errors.PydanticUserError
+    with pytest.raises(error):
 
         class M(BaseModel):
             B: ForwardRef('B') = Field(default=None)
