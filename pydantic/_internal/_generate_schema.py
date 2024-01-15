@@ -941,6 +941,7 @@ class GenerateSchema:
         return core_schema.dataclass_field(
             name,
             common_field['schema'],
+            init=field_info.init,
             init_only=field_info.init_var or None,
             kw_only=None if field_info.kw_only else False,
             serialization_exclude=common_field['serialization_exclude'],
