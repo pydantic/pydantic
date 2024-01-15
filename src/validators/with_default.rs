@@ -74,6 +74,7 @@ pub struct WithDefaultValidator {
     validate_default: bool,
     copy_default: bool,
     name: String,
+    undefined: PyObject,
 }
 
 impl BuildValidator for WithDefaultValidator {
@@ -118,6 +119,7 @@ impl BuildValidator for WithDefaultValidator {
             validate_default: schema_or_config_same(schema, config, intern!(py, "validate_default"))?.unwrap_or(false),
             copy_default,
             name,
+            undefined: PydanticUndefinedType::new(py).to_object(py),
         }
         .into())
     }
@@ -132,7 +134,7 @@ impl Validator for WithDefaultValidator {
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
-        if input.to_object(py).is(&PydanticUndefinedType::py_undefined()) {
+        if input.to_object(py).is(&self.undefined) {
             Ok(self.default_value(py, None::<usize>, state)?.unwrap())
         } else {
             match self.validator.validate(py, input, state) {

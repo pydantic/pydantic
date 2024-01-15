@@ -102,9 +102,3 @@ impl PydanticUndefinedType {
         "PydanticUndefined"
     }
 }
-
-impl PydanticUndefinedType {
-    pub fn py_undefined() -> Py<Self> {
-        Python::with_gil(PydanticUndefinedType::new)
-    }
-}
