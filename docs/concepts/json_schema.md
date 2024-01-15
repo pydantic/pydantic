@@ -635,8 +635,8 @@ print(json.dumps(Model.model_json_schema(), indent=2))
 """
 ```
 
-!!! note:
-    As discussed in [this issue](https://github.com/pydantic/pydantic/issues/8208), in the future, it's likely that Pydantic will add
+!!! note
+    As discussed in [this issue](https://github.com/pydantic/pydantic/issues/8208), in the future, it's likely that Pydanti will add
     builtin support for JSON schema generation for types like [`PlainValidator`][pydantic.functional_validators.PlainValidator],
     but the [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema] annotation will still be useful for other custom types.
 
