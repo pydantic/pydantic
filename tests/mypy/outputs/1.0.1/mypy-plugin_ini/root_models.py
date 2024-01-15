@@ -16,10 +16,8 @@ class Pets3(RootModel):
 
 
 pets1 = Pets1(['dog', 'cat'])
-# MYPY: error: Too many positional arguments for "Pets1"  [misc]
 pets2 = Pets2(['dog', 'cat'])
 pets3 = Pets3(['dog', 'cat'])
-# MYPY: error: Too many positional arguments for "Pets3"  [misc]
 
 
 class Pets4(RootModel[List[str]]):
