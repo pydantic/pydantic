@@ -23,7 +23,7 @@ use pyo3::PyTypeInfo;
 use serde::{ser::Error, Serialize, Serializer};
 
 use crate::errors::{py_err_string, ErrorType, ErrorTypeDefaults, InputValue, ValError, ValLineError, ValResult};
-use crate::tools::py_err;
+use crate::tools::{extract_i64, py_err};
 use crate::validators::{CombinedValidator, Exactness, ValidationState, Validator};
 
 use super::input_string::StringMapping;
@@ -863,7 +863,7 @@ pub enum EitherInt<'a> {
 impl<'a> EitherInt<'a> {
     pub fn upcast(py_any: &'a PyAny) -> ValResult<Self> {
         // Safety: we know that py_any is a python int
-        if let Ok(int_64) = py_any.extract::<i64>() {
+        if let Some(int_64) = extract_i64(py_any) {
             Ok(Self::I64(int_64))
         } else {
             let big_int: BigInt = py_any.extract()?;
@@ -1021,7 +1021,7 @@ impl<'a> Rem for &'a Int {
 
 impl<'a> FromPyObject<'a> for Int {
     fn extract(obj: &'a PyAny) -> PyResult<Self> {
-        if let Ok(i) = obj.extract::<i64>() {
+        if let Some(i) = extract_i64(obj) {
             Ok(Int::I64(i))
         } else if let Ok(b) = obj.extract::<BigInt>() {
             Ok(Int::Big(b))
