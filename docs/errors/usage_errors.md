@@ -1023,7 +1023,7 @@ except PydanticUserError as exc_info:
 Because type annotations are evaluated *after* assignments, you might get unexpected results when using a type annotation name
 that clashes with one of your fields. We raise an error in the following case:
 
-```py
+```py test="skip"
 from datetime import date
 
 from pydantic import BaseModel, Field
@@ -1035,9 +1035,8 @@ class Model(BaseModel):
 
 As a workaround, you can either use an alias or change your import:
 
-```py
+```py lint="skip"
 import datetime
-
 # Or `from datetime import date as _date`
 
 from pydantic import BaseModel, Field
