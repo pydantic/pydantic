@@ -52,8 +52,7 @@ jobs:
           key: v1
 
       - name: Compile pydantic-core for profiling
-        run: |
-          pip install -e . --config-settings=build-args='--verbose --profile codspeed' -v
+        run: make build-profiling
         env:
           CONST_RANDOM_SEED: 0 # Fix the compile time RNG seed
           RUSTFLAGS: "-Cprofile-generate=${{ github.workspace }}/profdata"
@@ -65,8 +64,7 @@ jobs:
         run: rustup run stable bash -c '$RUSTUP_HOME/toolchains/$RUSTUP_TOOLCHAIN/lib/rustlib/x86_64-unknown-linux-gnu/bin/llvm-profdata merge -o ${{ github.workspace }}/merged.profdata ${{ github.workspace }}/profdata'
 
       - name: Compile pydantic-core for benchmarking
-        run: |
-          pip install -e . --config-settings=build-args='--verbose --profile codspeed' -v
+        run: make build-profiling
         env:
           CONST_RANDOM_SEED: 0 # Fix the compile time RNG seed
           RUSTFLAGS: "-Cprofile-use=${{ github.workspace }}/merged.profdata"

@@ -48,9 +48,9 @@ endif
 build-profiling:
 	@rm -f python/pydantic_core/*.so
 ifneq ($(USE_MATURIN),)
-	CARGO_PROFILE_RELEASE_STRIP=false CARGO_PROFILE_RELEASE_DEBUG=true maturin develop --release
+	maturin develop '--profile profiling'
 else
-	CARGO_PROFILE_RELEASE_STRIP=false CARGO_PROFILE_RELEASE_DEBUG=true pip install -v -e .
+	pip install -v -e . --config-settings=build-args='--profile profiling'
 endif
 
 .PHONY: build-coverage
