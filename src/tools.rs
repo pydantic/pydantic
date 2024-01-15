@@ -1,9 +1,9 @@
 use std::borrow::Cow;
 
-use pyo3::exceptions::{PyKeyError, PyTypeError};
+use pyo3::exceptions::PyKeyError;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyInt, PyString};
-use pyo3::{intern, FromPyObject, PyTypeInfo};
+use pyo3::types::{PyDict, PyString};
+use pyo3::{ffi, intern, FromPyObject};
 
 pub trait SchemaDict<'py> {
     fn get_as<T>(&'py self, key: &PyString) -> PyResult<Option<T>>
@@ -99,10 +99,24 @@ pub fn safe_repr(v: &PyAny) -> Cow<str> {
     }
 }
 
-pub fn extract_i64(v: &PyAny) -> PyResult<i64> {
-    if PyInt::is_type_of(v) {
-        v.extract()
+/// Extract an i64 from a python object more quickly, see
+/// https://github.com/PyO3/pyo3/pull/3742#discussion_r1451763928
+#[cfg(not(any(target_pointer_width = "32", windows, PyPy)))]
+pub fn extract_i64(obj: &PyAny) -> Option<i64> {
+    let val = unsafe { ffi::PyLong_AsLong(obj.as_ptr()) };
+    if val == -1 && PyErr::occurred(obj.py()) {
+        unsafe { ffi::PyErr_Clear() };
+        None
     } else {
-        py_err!(PyTypeError; "expected int, got {}", safe_repr(v))
+        Some(val)
+    }
+}
+
+#[cfg(any(target_pointer_width = "32", windows, PyPy))]
+pub fn extract_i64(v: &PyAny) -> Option<i64> {
+    if v.is_instance_of::<pyo3::types::PyInt>() {
+        v.extract().ok()
+    } else {
+        None
     }
 }

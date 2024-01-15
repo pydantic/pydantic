@@ -96,7 +96,7 @@ impl AsLocItem for PyAny {
     fn as_loc_item(&self) -> LocItem {
         if let Ok(py_str) = self.downcast::<PyString>() {
             py_str.to_string_lossy().as_ref().into()
-        } else if let Ok(key_int) = extract_i64(self) {
+        } else if let Some(key_int) = extract_i64(self) {
             key_int.into()
         } else {
             safe_repr(self).to_string().into()
@@ -292,7 +292,7 @@ impl<'a> Input<'a> for PyAny {
         if !strict {
             if let Some(cow_str) = maybe_as_string(self, ErrorTypeDefaults::BoolParsing)? {
                 return str_as_bool(self, &cow_str).map(ValidationMatch::lax);
-            } else if let Ok(int) = extract_i64(self) {
+            } else if let Some(int) = extract_i64(self) {
                 return int_as_bool(self, int).map(ValidationMatch::lax);
             } else if let Ok(float) = self.extract::<f64>() {
                 if let Ok(int) = float_as_int(self, float) {
@@ -635,7 +635,7 @@ impl<'a> Input<'a> for PyAny {
                     bytes_as_time(self, py_bytes.as_bytes(), microseconds_overflow_behavior)
                 } else if PyBool::is_exact_type_of(self) {
                     Err(ValError::new(ErrorTypeDefaults::TimeType, self))
-                } else if let Ok(int) = extract_i64(self) {
+                } else if let Some(int) = extract_i64(self) {
                     int_as_time(self, int, 0)
                 } else if let Ok(float) = self.extract::<f64>() {
                     float_as_time(self, float)
@@ -669,7 +669,7 @@ impl<'a> Input<'a> for PyAny {
                     bytes_as_datetime(self, py_bytes.as_bytes(), microseconds_overflow_behavior)
                 } else if PyBool::is_exact_type_of(self) {
                     Err(ValError::new(ErrorTypeDefaults::DatetimeType, self))
-                } else if let Ok(int) = extract_i64(self) {
+                } else if let Some(int) = extract_i64(self) {
                     int_as_datetime(self, int, 0)
                 } else if let Ok(float) = self.extract::<f64>() {
                     float_as_datetime(self, float)
@@ -706,7 +706,7 @@ impl<'a> Input<'a> for PyAny {
                     bytes_as_timedelta(self, str.as_bytes(), microseconds_overflow_behavior)
                 } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
                     bytes_as_timedelta(self, py_bytes.as_bytes(), microseconds_overflow_behavior)
-                } else if let Ok(int) = extract_i64(self) {
+                } else if let Some(int) = extract_i64(self) {
                     Ok(int_as_duration(self, int)?.into())
                 } else if let Ok(float) = self.extract::<f64>() {
                     Ok(float_as_duration(self, float)?.into())

@@ -1232,6 +1232,18 @@ def test_strict_int(benchmark):
     benchmark(v.validate_python, 42)
 
 
+@pytest.mark.benchmark(group='strict_int')
+def test_strict_int_fails(benchmark):
+    v = SchemaValidator(core_schema.int_schema(strict=True))
+
+    @benchmark
+    def t():
+        try:
+            v.validate_python(())
+        except ValidationError:
+            pass
+
+
 @pytest.mark.benchmark(group='int_range')
 def test_int_range(benchmark):
     v = SchemaValidator(core_schema.int_schema(gt=0, lt=100))
