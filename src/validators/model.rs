@@ -60,6 +60,7 @@ pub struct ModelValidator {
     frozen: bool,
     custom_init: bool,
     root_model: bool,
+    undefined: PyObject,
     name: String,
 }
 
@@ -93,6 +94,7 @@ impl BuildValidator for ModelValidator {
             frozen: schema.get_as(intern!(py, "frozen"))?.unwrap_or(false),
             custom_init: schema.get_as(intern!(py, "custom_init"))?.unwrap_or(false),
             root_model: schema.get_as(intern!(py, "root_model"))?.unwrap_or(false),
+            undefined: PydanticUndefinedType::new(py).to_object(py),
             // Get the class's `__name__`, not using `class.name()` since it uses `__qualname__`
             // which is not what we want here
             name: class.getattr(intern!(py, "__name__"))?.extract()?,
@@ -229,7 +231,7 @@ impl ModelValidator {
         let output = self.validator.validate(py, input, state)?;
 
         if self.root_model {
-            let fields_set = if input.to_object(py).is(&PydanticUndefinedType::py_undefined()) {
+            let fields_set = if input.to_object(py).is(&self.undefined) {
                 PySet::empty(py)?
             } else {
                 PySet::new(py, [&String::from(ROOT_FIELD)])?
@@ -270,7 +272,7 @@ impl ModelValidator {
         let instance_ref = instance.as_ref(py);
 
         if self.root_model {
-            let fields_set = if input.to_object(py).is(&PydanticUndefinedType::py_undefined()) {
+            let fields_set = if input.to_object(py).is(&self.undefined) {
                 PySet::empty(py)?
             } else {
                 PySet::new(py, [&String::from(ROOT_FIELD)])?
