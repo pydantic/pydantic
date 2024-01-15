@@ -1037,9 +1037,11 @@ As a workaround, you can either use an alias or change your import:
 
 ```py
 import datetime
+
 # Or `from datetime import date as _date`
 
 from pydantic import BaseModel
+
 
 class Model(BaseModel):
     date: datetime.date = Field(description="A date")
