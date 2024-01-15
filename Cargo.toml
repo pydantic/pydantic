@@ -39,7 +39,7 @@ ahash = "0.8.7"
 url = "2.5.0"
 # idna is already required by url, added here to be explicit
 idna = "0.5.0"
-base64 = "0.21.5"
+base64 = "0.21.7"
 num-bigint = "0.4.4"
 python3-dll-a = "0.2.7"
 uuid = "1.6.1"
