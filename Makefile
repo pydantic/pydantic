@@ -48,7 +48,7 @@ endif
 build-profiling:
 	@rm -f python/pydantic_core/*.so
 ifneq ($(USE_MATURIN),)
-	maturin develop '--profile profiling'
+	maturin develop --profile profiling
 else
 	pip install -v -e . --config-settings=build-args='--profile profiling'
 endif
