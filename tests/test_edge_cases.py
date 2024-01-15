@@ -2434,10 +2434,10 @@ def test_invalid_forward_ref_model():
     """
     # The problem:
     if sys.version_info >= (3, 11):
-        error = RecursionError
-    else:
-        # See PR #8243, this was a TypeError raised by Python, but is now catched on the Pydantic side
+        # See PR #8243, this was a RecursionError raised by Python, but is now caught on the Pydantic side
         error = errors.PydanticUserError
+    else:
+        error = TypeError
     with pytest.raises(error):
 
         class M(BaseModel):
