@@ -1311,7 +1311,7 @@ def test_callable_type_with_fallback(default_value, properties):
 def test_byte_size_type():
     class Model(BaseModel):
         a: ByteSize
-        b: ByteSize = '1MB'
+        b: ByteSize = Field('1MB', validate_default=True)
 
     model_json_schema_validation = Model.model_json_schema(mode='validation')
     model_json_schema_serialization = Model.model_json_schema(mode='serialization')

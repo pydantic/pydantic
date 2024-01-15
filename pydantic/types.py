@@ -1790,7 +1790,7 @@ class ByteSize(int):
                 ]
             ),
             serialization=core_schema.plain_serializer_function_ser_schema(
-                lambda v: int(v), return_schema=core_schema.int_schema(ge=0)
+                int, return_schema=core_schema.int_schema(ge=0)
             ),
         )
 
@@ -1815,10 +1815,6 @@ class ByteSize(int):
             raise PydanticCustomError('byte_size_unit', 'could not interpret byte unit: {unit}', {'unit': unit})
 
         return cls(int(float(scalar) * unit_mult))
-
-    @staticmethod
-    def _serialize(value: Any) -> int:
-        return int(value)
 
     def human_readable(self, decimal: bool = False) -> str:
         """Converts a byte size to a human readable string.
