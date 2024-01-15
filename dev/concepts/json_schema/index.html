@@ -4107,10 +4107,12 @@ annotation, we can override the generated JSON schema for the custom <code>MyInt
 <span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span>
 <span class="p">}</span>
 </code></pre></div>
-<p>!!! note:
-    As discussed in <a href="https://github.com/pydantic/pydantic/issues/8208">this issue</a>, in the future, it's likely that Pydantic will add
-    builtin support for JSON schema generation for types like <a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.PlainValidator"><code>PlainValidator</code></a>,
-    but the <a class="autorefs autorefs-internal" href="../../api/json_schema/#pydantic.json_schema.WithJsonSchema"><code>WithJsonSchema</code></a> annotation will still be useful for other custom types.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As discussed in <a href="https://github.com/pydantic/pydantic/issues/8208">this issue</a>, in the future, it's likely that Pydantic will add
+builtin support for JSON schema generation for types like <a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.PlainValidator"><code>PlainValidator</code></a>,
+but the <a class="autorefs autorefs-internal" href="../../api/json_schema/#pydantic.json_schema.WithJsonSchema"><code>WithJsonSchema</code></a> annotation will still be useful for other custom types.</p>
+</div>
 <h3 id="skipjsonschema-annotation"><code>SkipJsonSchema</code> annotation<a class="headerlink" href="#skipjsonschema-annotation" title="Permanent link">&para;</a></h3>
 <details class="api">
 <summary>API Documentation</summary>
