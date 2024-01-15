@@ -75,7 +75,7 @@ pyo3 = { version = "0.20.2", features = ["auto-initialize"] }
 [build-dependencies]
 version_check = "0.9.4"
 # used where logic has to be version/distribution specific, e.g. pypy
-pyo3-build-config = { version = "0.20.1" }
+pyo3-build-config = { version = "0.20.2" }
 
 [lints.clippy]
 dbg_macro = "warn"
