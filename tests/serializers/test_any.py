@@ -371,7 +371,7 @@ def test_fallback_cycle_change(any_serializer: SchemaSerializer):
     f = FoobarCount(0)
     v = 0
     # when recursion is detected and we're in mode python, we just return the value
-    expected_visits = pydantic_core._pydantic_core._recursion_limit - 1
+    expected_visits = pydantic_core._pydantic_core._recursion_limit
     assert any_serializer.to_python(f, fallback=fallback_func) == HasRepr(f'<FoobarCount {expected_visits} repr>')
 
     with pytest.raises(ValueError, match=r'Circular reference detected \(depth exceeded\)'):

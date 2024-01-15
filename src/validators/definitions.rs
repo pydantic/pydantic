@@ -76,10 +76,7 @@ impl Validator for DefinitionRefValidator {
         self.definition.read(|validator| {
             let validator = validator.unwrap();
             if let Some(id) = input.identity() {
-                if state.recursion_guard.contains_or_insert(id, self.definition.id()) {
-                    // we don't remove id here, we leave that to the validator which originally added id to `recursion_guard`
-                    Err(ValError::new(ErrorTypeDefaults::RecursionLoop, input))
-                } else {
+                if state.recursion_guard.insert(id, self.definition.id()) {
                     if state.recursion_guard.incr_depth() {
                         return Err(ValError::new(ErrorTypeDefaults::RecursionLoop, input));
                     }
@@ -87,6 +84,9 @@ impl Validator for DefinitionRefValidator {
                     state.recursion_guard.remove(id, self.definition.id());
                     state.recursion_guard.decr_depth();
                     output
+                } else {
+                    // we don't remove id here, we leave that to the validator which originally added id to `recursion_guard`
+                    Err(ValError::new(ErrorTypeDefaults::RecursionLoop, input))
                 }
             } else {
                 validator.validate(py, input, state)
@@ -105,10 +105,7 @@ impl Validator for DefinitionRefValidator {
         self.definition.read(|validator| {
             let validator = validator.unwrap();
             if let Some(id) = obj.identity() {
-                if state.recursion_guard.contains_or_insert(id, self.definition.id()) {
-                    // we don't remove id here, we leave that to the validator which originally added id to `recursion_guard`
-                    Err(ValError::new(ErrorTypeDefaults::RecursionLoop, obj))
-                } else {
+                if state.recursion_guard.insert(id, self.definition.id()) {
                     if state.recursion_guard.incr_depth() {
                         return Err(ValError::new(ErrorTypeDefaults::RecursionLoop, obj));
                     }
@@ -116,6 +113,9 @@ impl Validator for DefinitionRefValidator {
                     state.recursion_guard.remove(id, self.definition.id());
                     state.recursion_guard.decr_depth();
                     output
+                } else {
+                    // we don't remove id here, we leave that to the validator which originally added id to `recursion_guard`
+                    Err(ValError::new(ErrorTypeDefaults::RecursionLoop, obj))
                 }
             } else {
                 validator.validate_assignment(py, obj, field_name, field_value, state)
