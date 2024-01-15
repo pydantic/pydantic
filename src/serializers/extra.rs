@@ -346,17 +346,17 @@ pub struct SerRecursionGuard {
 
 impl SerRecursionGuard {
     pub fn add(&self, value: &PyAny, def_ref_id: usize) -> PyResult<usize> {
-        // https://doc.rust-lang.org/std/collections/struct.HashSet.html#method.insert
-        // "If the set did not have this value present, `true` is returned."
         let id = value.as_ptr() as usize;
         let mut guard = self.guard.borrow_mut();
 
-        if guard.contains_or_insert(id, def_ref_id) {
-            Err(PyValueError::new_err("Circular reference detected (id repeated)"))
-        } else if guard.incr_depth() {
-            Err(PyValueError::new_err("Circular reference detected (depth exceeded)"))
+        if guard.insert(id, def_ref_id) {
+            if guard.incr_depth() {
+                Err(PyValueError::new_err("Circular reference detected (depth exceeded)"))
+            } else {
+                Ok(id)
+            }
         } else {
-            Ok(id)
+            Err(PyValueError::new_err("Circular reference detected (id repeated)"))
         }
     }
 
