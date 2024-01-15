@@ -1026,7 +1026,7 @@ that clashes with one of your fields. We raise an error in the following case:
 ```py
 from datetime import date
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Model(BaseModel):
@@ -1045,7 +1045,6 @@ from pydantic import BaseModel, Field
 
 class Model(BaseModel):
     date: datetime.date = Field(description='A date')
-
 ```
 
 {% endraw %}
