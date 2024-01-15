@@ -20,6 +20,7 @@ from pydantic import (
     ConfigDict,
     Field,
     GetCoreSchemaHandler,
+    PlainSerializer,
     PydanticDeprecatedSince20,
     PydanticUserError,
     TypeAdapter,
@@ -2810,3 +2811,18 @@ def test_validate_default_raises_for_dataclasses() -> None:
             'ctx': {'error': IsInstance(AssertionError)},
         },
     ]
+
+
+def test_plain_validator_plain_serializer() -> None:
+    ser_type = str
+
+    class Blah(BaseModel):
+        enabled: Annotated[
+            bool,
+            PlainSerializer(lambda x: ser_type(int(x)), return_type=ser_type),
+            PlainValidator(lambda x: bool(int(x))),
+        ]
+
+    blah = Blah(enabled='0')
+    data = blah.model_dump()
+    assert isinstance(data['enabled'], ser_type)
