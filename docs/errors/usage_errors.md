@@ -1028,6 +1028,7 @@ from datetime import date
 
 from pydantic import BaseModel
 
+
 class Model(BaseModel):
     date: date = Field(description="A date")
 ```
