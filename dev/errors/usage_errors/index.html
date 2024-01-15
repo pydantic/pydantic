@@ -2867,6 +2867,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#unevaluable-type-annotation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cannot evaluate type annotation
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3587,6 +3598,17 @@
     <span class="md-ellipsis">
       
         Cannot specify model_config['extra'] with RootModel
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unevaluable-type-annotation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cannot evaluate type annotation
       
     </span>
   </a>
@@ -4451,6 +4473,27 @@ if you try to specify a value for the config setting <code>'extra'</code> when c
 
 <span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;root-model-extra&#39;</span>
+</code></pre></div>
+<h2 id="unevaluable-type-annotation">Cannot evaluate type annotation<a class="headerlink" href="#unevaluable-type-annotation" title="Permanent link">&para;</a></h2>
+<p>Because type annotations are evaluated <em>after</em> assignments, you might get unexpected results when using a type annotation name
+that clashes with one of your fields. We raise an error in the following case:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">date</span><span class="p">:</span> <span class="n">date</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;A date&#39;</span><span class="p">)</span>
+</code></pre></div>
+<p>As a workaround, you can either use an alias or change your import:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="c1"># Or `from datetime import date as _date`</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">date</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;A date&#39;</span><span class="p">)</span>
 </code></pre></div>
 
 
