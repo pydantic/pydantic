@@ -429,7 +429,7 @@ impl PathItem {
             } else {
                 Ok(Self::Pos(usize_key))
             }
-        } else if let Ok(int_key) = extract_i64(obj) {
+        } else if let Some(int_key) = extract_i64(obj) {
             if index == 0 {
                 py_err!(PyTypeError; "The first item in an alias path should be a string")
             } else {

@@ -46,7 +46,7 @@ impl BuildSerializer for LiteralSerializer {
             repr_args.push(item.repr()?.extract()?);
             if let Ok(bool) = item.downcast::<PyBool>() {
                 expected_py.append(bool)?;
-            } else if let Ok(int) = extract_i64(item) {
+            } else if let Some(int) = extract_i64(item) {
                 expected_int.insert(int);
             } else if let Ok(py_str) = item.downcast::<PyString>() {
                 expected_str.insert(py_str.to_str()?.to_string());
@@ -79,7 +79,7 @@ impl LiteralSerializer {
     fn check<'a>(&self, value: &'a PyAny, extra: &Extra) -> PyResult<OutputValue<'a>> {
         if extra.check.enabled() {
             if !self.expected_int.is_empty() && !PyBool::is_type_of(value) {
-                if let Ok(int) = extract_i64(value) {
+                if let Some(int) = extract_i64(value) {
                     if self.expected_int.contains(&int) {
                         return Ok(OutputValue::OkInt(int));
                     }

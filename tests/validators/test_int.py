@@ -29,6 +29,8 @@ i64_max = 9_223_372_036_854_775_807
         ('123456789123456.00001', Err('Input should be a valid integer, unable to parse string as an integer')),
         (int(1e10), int(1e10)),
         (i64_max, i64_max),
+        (i64_max + 1, i64_max + 1),
+        (i64_max * 2, i64_max * 2),
         pytest.param(
             12.5,
             Err('Input should be a valid integer, got a number with a fractional part [type=int_from_float'),
@@ -106,10 +108,15 @@ def test_int(input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        (Decimal('1'), 1),
-        (Decimal('1.0'), 1),
-        (i64_max, i64_max),
-        (i64_max + 1, i64_max + 1),
+        pytest.param(Decimal('1'), 1),
+        pytest.param(Decimal('1.0'), 1),
+        pytest.param(i64_max, i64_max, id='i64_max'),
+        pytest.param(i64_max + 1, i64_max + 1, id='i64_max+1'),
+        pytest.param(
+            -1,
+            Err('Input should be greater than 0 [type=greater_than, input_value=-1, input_type=int]'),
+            id='-1',
+        ),
         (
             -i64_max + 1,
             Err('Input should be greater than 0 [type=greater_than, input_value=-9223372036854775806, input_type=int]'),

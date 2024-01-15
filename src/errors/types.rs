@@ -786,7 +786,7 @@ impl From<Int> for Number {
 
 impl FromPyObject<'_> for Number {
     fn extract(obj: &PyAny) -> PyResult<Self> {
-        if let Ok(int) = extract_i64(obj) {
+        if let Some(int) = extract_i64(obj) {
             Ok(Number::Int(int))
         } else if let Ok(float) = obj.extract::<f64>() {
             Ok(Number::Float(float))
