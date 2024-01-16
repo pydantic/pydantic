@@ -1,4 +1,5 @@
 import json
+from dataclasses import dataclass
 from datetime import date, datetime
 from uuid import UUID
 
@@ -409,3 +410,48 @@ def test_ser_list_of_lists(benchmark):
     data = [[i + j for j in range(10)] for i in range(1000)]
 
     benchmark(s.to_json, data)
+
+
+@dataclass
+class Foo:
+    a: str
+    b: bytes
+    c: int
+    d: float
+
+
+dataclass_schema = core_schema.dataclass_schema(
+    Foo,
+    core_schema.dataclass_args_schema(
+        'Foo',
+        [
+            core_schema.dataclass_field(name='a', schema=core_schema.str_schema()),
+            core_schema.dataclass_field(name='b', schema=core_schema.bytes_schema()),
+            core_schema.dataclass_field(name='c', schema=core_schema.int_schema()),
+            core_schema.dataclass_field(name='d', schema=core_schema.float_schema()),
+        ],
+    ),
+    ['a', 'b', 'c', 'd'],
+)
+
+
+@pytest.mark.benchmark(group='dataclass-ser')
+def test_dataclass_serialization_python(benchmark):
+    s = SchemaSerializer(dataclass_schema)
+    dc = Foo(a='hello', b=b'more', c=123, d=1.23)
+    assert s.to_python(dc) == {'a': 'hello', 'b': b'more', 'c': 123, 'd': 1.23}
+    benchmark(s.to_python, dc)
+
+
+@pytest.mark.benchmark(group='dataclass-ser')
+def test_dataclass_serialization_json(benchmark):
+    s = SchemaSerializer(dataclass_schema)
+    dc = Foo(a='hello', b=b'more', c=123, d=1.23)
+    assert s.to_python(dc) == {'a': 'hello', 'b': b'more', 'c': 123, 'd': 1.23}
+    benchmark(s.to_json, dc)
+
+
+@pytest.mark.benchmark(group='dataclass-ser')
+def test_dataclass_to_json(benchmark):
+    dc = Foo(a='hello', b=b'more', c=123, d=1.23)
+    benchmark(to_json, dc)
