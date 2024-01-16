@@ -246,9 +246,11 @@ def eval_type_backport(
         try:
             from eval_type_backport import eval_type_backport
         except ImportError:
-            raise RuntimeError(
-                'In order to use newer typing features on older Python versions, '
-                'you need to install the `eval_type_backport` package.'
+            raise TypeError(
+                f'You have a type annotation {value.__forward_arg__!r} '
+                f'which makes use of newer typing features than are supported in your version of Python. '
+                f'To handle this error, you should either remove the use of new syntax '
+                f'or install the `eval_type_backport` package.'
             ) from e
 
         return eval_type_backport(value, globalns, localns, try_default=False)

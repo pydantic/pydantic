@@ -6,7 +6,7 @@ from typing import Callable, ClassVar, ForwardRef, NamedTuple
 import pytest
 from typing_extensions import Literal, get_origin
 
-from pydantic import Field  # noqa: F401
+from pydantic import BaseModel, Field  # noqa: F401
 from pydantic._internal._typing_extra import (
     NoneType,
     eval_type_lenient,
@@ -117,3 +117,23 @@ def test_get_function_type_hints_none_type():
         return x
 
     assert get_function_type_hints(f) == {'return': int, 'x': int, 'y': NoneType}
+
+
+@pytest.mark.skipif(sys.version_info[:2] > (3, 9), reason='testing using a feature not supported by older Python')
+def test_eval_type_backport_not_installed():
+    sys.modules['eval_type_backport'] = None
+    try:
+        with pytest.raises(TypeError) as exc_info:
+
+            class _Model(BaseModel):
+                foo: 'list[int]'
+
+        assert str(exc_info.value) == (
+            "You have a type annotation 'list[int]' which makes use of newer typing "
+            'features than are supported in your version of Python. To handle this error, '
+            'you should either remove the use of new syntax or install the '
+            '`eval_type_backport` package.'
+        )
+
+    finally:
+        del sys.modules['eval_type_backport']
