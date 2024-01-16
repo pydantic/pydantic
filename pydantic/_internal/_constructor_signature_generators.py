@@ -53,6 +53,10 @@ def generate_pydantic_signature(
         # inspect does "clever" things to show annotations as strings because we have
         # `from __future__ import annotations` in main, we don't want that
         if fields.get(param.name):
+            # exclude params with init=False
+            if getattr(fields[param.name], 'init', True) is False:
+                continue
+
             param_name = _field_name_or_alias(param.name, fields[param.name])
             param = param.replace(name=param_name)
         if param.annotation == 'Any':
