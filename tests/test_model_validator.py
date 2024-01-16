@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Union, cast
+from typing import Any, Dict, cast
 
 import pytest
 
@@ -116,7 +116,7 @@ def test_nested_models() -> None:
     calls: list[str] = []
 
     class Model(BaseModel):
-        inner: Union[Model, None]  # noqa
+        inner: Model | None
 
         @model_validator(mode='before')
         @classmethod

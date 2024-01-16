@@ -297,12 +297,11 @@ def test_self_reference_json_schema_with_future_annotations(create_module):
         # language=Python
         """
 from __future__ import annotations
-from typing import List
 from pydantic import BaseModel
 
 class Account(BaseModel):
   name: str
-  subaccounts: List[Account] = []
+  subaccounts: list[Account] = []
     """
     )
     Account = module.Account
@@ -376,7 +375,6 @@ def test_circular_reference_json_schema_with_future_annotations(create_module):
         # language=Python
         """
 from __future__ import annotations
-from typing import List
 from pydantic import BaseModel
 
 class Owner(BaseModel):
@@ -385,7 +383,7 @@ class Owner(BaseModel):
 class Account(BaseModel):
   name: str
   owner: Owner
-  subaccounts: List[Account] = []
+  subaccounts: list[Account] = []
 
     """
     )
@@ -440,28 +438,27 @@ def test_forward_ref_optional(create_module):
         # language=Python
         """
 from __future__ import annotations
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Optional
+from pydantic import BaseModel, Field
 
 
 class Spec(BaseModel):
-    spec_fields: List[str] = Field(..., alias="fields")
-    filter: Optional[str] = None
-    sort: Optional[str]
+    spec_fields: list[str] = Field(..., alias="fields")
+    filter: str | None = None
+    sort: str | None
 
 
 class PSpec(Spec):
-    g: Optional[GSpec] = None
+    g: GSpec | None = None
 
 
 class GSpec(Spec):
-    p: Optional[PSpec]
+    p: PSpec | None
 
 # PSpec.model_rebuild()
 
 class Filter(BaseModel):
-    g: Optional[GSpec] = None
-    p: Optional[PSpec]
+    g: GSpec | None = None
+    p: PSpec | None
     """
     )
     Filter = module.Filter
@@ -676,7 +673,6 @@ def test_pep585_recursive_generics(create_module):
     assert h.model_dump() == {'name': 'Ivan', 'teams': [{'name': 'TheBest', 'heroes': []}]}
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason='needs 3.9 or newer')
 def test_class_var_forward_ref(create_module):
     # see #3679
     create_module(
@@ -713,9 +709,14 @@ class Foobar(BaseModel):
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='needs 3.10 or newer')
 def test_recursive_models_union(create_module):
-    module = create_module(
-        # language=Python
-        """
+    # This test should pass because PydanticRecursiveRef.__or__ is implemented,
+    # not because `eval_type_backport` magically makes `|` work,
+    # since it's installed for tests but otherwise optional.
+    sys.modules['eval_type_backport'] = None  # type: ignore
+    try:
+        module = create_module(
+            # language=Python
+            """
 from __future__ import annotations
 
 from pydantic import BaseModel
@@ -729,10 +730,41 @@ class Foo(BaseModel):
 
 class Bar(BaseModel, Generic[T]):
     foo: Foo
-"""
-    )
+    """
+        )
+    finally:
+        del sys.modules['eval_type_backport']
+
     assert module.Foo.model_fields['bar'].annotation == typing.Optional[module.Bar[str]]
     assert module.Foo.model_fields['bar2'].annotation == typing.Union[int, module.Bar[float]]
+    assert module.Bar.model_fields['foo'].annotation == module.Foo
+
+
+def test_recursive_models_union_backport(create_module):
+    module = create_module(
+        # language=Python
+        """
+from __future__ import annotations
+
+from pydantic import BaseModel
+from typing import TypeVar, Generic
+
+T = TypeVar("T")
+
+class Foo(BaseModel):
+    bar: Bar[str] | None = None
+    # The `int | str` here differs from the previous test and requires the backport.
+    # At the same time, `PydanticRecursiveRef.__or__` means that the second `|` works normally,
+    # which actually triggered a bug in the backport that needed fixing.
+    bar2: int | str | Bar[float]
+
+class Bar(BaseModel, Generic[T]):
+    foo: Foo
+"""
+    )
+
+    assert module.Foo.model_fields['bar'].annotation == typing.Optional[module.Bar[str]]
+    assert module.Foo.model_fields['bar2'].annotation == typing.Union[int, str, module.Bar[float]]
     assert module.Bar.model_fields['foo'].annotation == module.Foo
 
 
