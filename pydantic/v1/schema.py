@@ -89,8 +89,7 @@ if TYPE_CHECKING:
 default_prefix = '#/definitions/'
 default_ref_template = '#/definitions/{model}'
 
-T = TypeVar('T', bound='BaseModel')
-TypeModelOrEnum = Union[Type[T], Type[Enum]]
+TypeModelOrEnum = Union[Type['BaseModel'], Type[Enum]]
 TypeModelSet = Set[TypeModelOrEnum]
 
 
@@ -334,7 +333,10 @@ def get_model_name_map(unique_models: TypeModelSet) -> Dict[TypeModelOrEnum, str
     name_model_map = {}
     conflicting_names: Set[str] = set()
     for model in unique_models:
-        model_name = normalize_name(model.__name__)
+        try:
+            model_name = model.model_config["model_name"]
+        except AttributeError:
+            model_name = normalize_name(model.__name__)
         if model_name in conflicting_names:
             model_name = get_long_model_name(model)
             name_model_map[model_name] = model

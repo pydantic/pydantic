@@ -34,7 +34,7 @@ class ConfigDict(TypedDict, total=False):
     """The title for the generated JSON schema, defaults to the model's name"""
 
     model_name: str | None
-    """Name assigned to `__name__` and used in the model's JSON schema"""
+    """Name used in the model's JSON schema"""
 
     str_to_lower: bool
     """Whether to convert all characters to lowercase for str types. Defaults to `False`."""
