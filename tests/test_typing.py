@@ -126,10 +126,10 @@ def test_eval_type_backport_not_installed():
         with pytest.raises(TypeError) as exc_info:
 
             class _Model(BaseModel):
-                foo: 'list[int]'
+                foo: 'int | str'
 
         assert str(exc_info.value) == (
-            "You have a type annotation 'list[int]' which makes use of newer typing "
+            "You have a type annotation 'int | str' which makes use of newer typing "
             'features than are supported in your version of Python. To handle this error, '
             'you should either remove the use of new syntax or install the '
             '`eval_type_backport` package.'
