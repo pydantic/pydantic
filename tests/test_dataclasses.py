@@ -2664,30 +2664,31 @@ def test_init_false_not_in_signature(extra, field_constructor):
     assert 'b' in signature.parameters.keys()
 
 
+init_test_cases = [
+    ({'a': 2, 'b': -1}, 'ignore', {'a': 2, 'b': 1}),
+    ({'a': 2}, 'ignore', {'a': 2, 'b': 1}),
+    (
+        {'a': 2, 'b': -1},
+        'forbid',
+        [
+            {
+                'type': 'unexpected_keyword_argument',
+                'loc': ('b',),
+                'msg': 'Unexpected keyword argument',
+                'input': -1,
+            }
+        ],
+    ),
+    ({'a': 2}, 'forbid', {'a': 2, 'b': 1}),
+]
+
+
 @pytest.mark.parametrize('field_constructor', [dataclasses.field, pydantic.dataclasses.Field])
 @pytest.mark.parametrize(
     'input_data,extra,expected',
-    [
-        ({'a': 2, 'b': -1}, 'ignore', {'a': 2, 'b': 1}),
-        ({'a': 2}, 'ignore', {'a': 2, 'b': 1}),
-        ({'a': 2, 'b': -1}, 'allow', {'a': 2, 'b': 1}),
-        ({'a': 2}, 'allow', {'a': 2, 'b': 1}),
-        (
-            {'a': 2, 'b': -1},
-            'forbid',
-            [
-                {
-                    'type': 'unexpected_keyword_argument',
-                    'loc': ('b',),
-                    'msg': 'Unexpected keyword argument',
-                    'input': -1,
-                }
-            ],
-        ),
-        ({'a': 2}, 'forbid', {'a': 2, 'b': 1}),
-    ],
+    init_test_cases,
 )
-def test_init_false(input_data, extra, expected, field_constructor):
+def test_init_false_with_post_init(input_data, extra, expected, field_constructor):
     @pydantic.dataclasses.dataclass(config=ConfigDict(extra=extra))
     class MyDataclass:
         a: int
@@ -2695,6 +2696,26 @@ def test_init_false(input_data, extra, expected, field_constructor):
 
         def __post_init__(self):
             self.b = 1
+
+    if isinstance(expected, list):
+        with pytest.raises(ValidationError) as exc_info:
+            MyDataclass(**input_data)
+
+        assert exc_info.value.errors(include_url=False) == expected
+    else:
+        assert dataclasses.asdict(MyDataclass(**input_data)) == expected
+
+
+@pytest.mark.parametrize('field_constructor', [dataclasses.field, pydantic.dataclasses.Field])
+@pytest.mark.parametrize(
+    'input_data,extra,expected',
+    init_test_cases,
+)
+def test_init_false_with_default(input_data, extra, expected, field_constructor):
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra=extra))
+    class MyDataclass:
+        a: int
+        b: int = field_constructor(init=False, default=1)
 
     if isinstance(expected, list):
         with pytest.raises(ValidationError) as exc_info:
