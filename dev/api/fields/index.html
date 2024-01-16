@@ -5703,7 +5703,7 @@ type had unrecognized annotations, or was annotated with a call to <code>pydanti
 <span class="sd">        pydantic._internal._generics.replace_types is used for replacing the typevars with</span>
 <span class="sd">            their concrete types.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">annotation</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">eval_type_lenient</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">annotation</span><span class="p">,</span> <span class="n">types_namespace</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">annotation</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">eval_type_lenient</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">annotation</span><span class="p">,</span> <span class="n">types_namespace</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">annotation</span> <span class="o">=</span> <span class="n">_generics</span><span class="o">.</span><span class="n">replace_types</span><span class="p">(</span><span class="n">annotation</span><span class="p">,</span> <span class="n">typevars_map</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
           </details>
