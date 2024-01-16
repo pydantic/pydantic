@@ -364,29 +364,33 @@ pub(crate) fn to_json_bytes(
     Ok(bytes)
 }
 
-static DC_FIELD_MARKER: GILOnceCell<PyObject> = GILOnceCell::new();
-
-/// needed to match the logic from dataclasses.fields `tuple(f for f in fields.values() if f._field_type is _FIELD)`
-pub(super) fn get_field_marker(py: Python<'_>) -> PyResult<&PyAny> {
-    let field_type_marker_obj = DC_FIELD_MARKER.get_or_try_init(py, || {
-        let field_ = py.import("dataclasses")?.getattr("_FIELD")?;
-        Ok::<PyObject, PyErr>(field_.into_py(py))
-    })?;
-    Ok(field_type_marker_obj.as_ref(py))
-}
-
-pub(super) fn dataclass_to_dict(dc: &PyAny) -> PyResult<&PyDict> {
-    let py = dc.py();
-    let dc_fields: &PyDict = dc.getattr(intern!(py, "__dataclass_fields__"))?.downcast()?;
-    let dict = PyDict::new(py);
-
+pub(super) fn any_dataclass_iter<'py>(
+    dataclass: &'py PyAny,
+) -> PyResult<(impl Iterator<Item = PyResult<(&'py PyAny, &'py PyAny)>> + 'py, &PyDict)> {
+    let py = dataclass.py();
+    let fields: &PyDict = dataclass.getattr(intern!(py, "__dataclass_fields__"))?.downcast()?;
     let field_type_marker = get_field_marker(py)?;
-    for (field_name, field) in dc_fields {
+
+    let next = move |(field_name, field): (&'py PyAny, &'py PyAny)| -> PyResult<Option<(&'py PyAny, &'py PyAny)>> {
         let field_type = field.getattr(intern!(py, "_field_type"))?;
         if field_type.is(field_type_marker) {
             let field_name: &PyString = field_name.downcast()?;
-            dict.set_item(field_name, dc.getattr(field_name)?)?;
+            let value = dataclass.getattr(field_name)?;
+            Ok(Some((field_name, value)))
+        } else {
+            Ok(None)
         }
-    }
-    Ok(dict)
+    };
+
+    Ok((fields.iter().filter_map(move |field| next(field).transpose()), fields))
+}
+
+static DC_FIELD_MARKER: GILOnceCell<PyObject> = GILOnceCell::new();
+
+/// needed to match the logic from dataclasses.fields `tuple(f for f in fields.values() if f._field_type is _FIELD)`
+fn get_field_marker(py: Python<'_>) -> PyResult<&PyAny> {
+    let field_type_marker_obj = DC_FIELD_MARKER.get_or_try_init(py, || {
+        py.import("dataclasses")?.getattr("_FIELD").map(|f| f.into_py(py))
+    })?;
+    Ok(field_type_marker_obj.as_ref(py))
 }
