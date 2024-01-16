@@ -25,7 +25,7 @@ def _field_name_or_alias(field_name: str, field_info: FieldInfo) -> str:
     )
 
 
-def generate_pydantic_signature(
+def generate_pydantic_signature(  # noqa: C901 (ignore complexity -- # TODO: refactor for simplicity)
     init: Callable[..., None],
     fields: dict[str, FieldInfo],
     config_wrapper: ConfigWrapper,
