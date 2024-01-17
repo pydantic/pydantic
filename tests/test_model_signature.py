@@ -200,4 +200,6 @@ def test_annotated_field_info_subclass():
     class QueryParams(BaseModel):
         q: Annotated[List[str], Query()]
 
-    assert str(signature(QueryParams)) == '(*, q: Annotated[List[str], Query(annotation=NoneType, required=True)]) -> None'
+    assert (
+        str(signature(QueryParams)) == '(*, q: Annotated[List[str], Query(annotation=NoneType, required=True)]) -> None'
+    )
