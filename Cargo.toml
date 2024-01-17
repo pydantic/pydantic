@@ -1,6 +1,6 @@
 [package]
 name = "pydantic-core"
-version = "2.15.0"
+version = "2.16.0"
 edition = "2021"
 license = "MIT"
 homepage = "https://github.com/pydantic/pydantic-core"
@@ -43,7 +43,7 @@ base64 = "0.21.7"
 num-bigint = "0.4.4"
 python3-dll-a = "0.2.7"
 uuid = "1.6.1"
-jiter = {version = "0.0.5", features = ["python"]}
+jiter = {version = "0.0.6", features = ["python"]}
 
 [lib]
 name = "_pydantic_core"
