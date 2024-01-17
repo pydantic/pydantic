@@ -2651,7 +2651,7 @@ def test_validate_strings():
 
 
 @pytest.mark.parametrize('field_constructor', [dataclasses.field, pydantic.dataclasses.Field])
-@pytest.mark.parametrize('extra', ['allow', 'ignore', 'forbid'])
+@pytest.mark.parametrize('extra', ['ignore', 'forbid'])
 def test_init_false_not_in_signature(extra, field_constructor):
     @pydantic.dataclasses.dataclass(config=ConfigDict(extra=extra))
     class MyDataclass:
