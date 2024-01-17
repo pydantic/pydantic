@@ -2814,6 +2814,7 @@ def test_validate_default_raises_for_dataclasses() -> None:
 
 
 def test_plain_validator_plain_serializer() -> None:
+    """https://github.com/pydantic/pydantic/issues/8512"""
     ser_type = str
     serializer = PlainSerializer(lambda x: ser_type(int(x)), return_type=ser_type)
     validator = PlainValidator(lambda x: bool(int(x)))
