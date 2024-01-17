@@ -1,6 +1,6 @@
 import sys
 from inspect import Parameter, Signature, signature
-from typing import Any, Generic, Iterable, Optional, TypeVar, Union
+from typing import Any, Generic, Iterable, List, Optional, TypeVar, Union
 
 import pytest
 from typing_extensions import Annotated
@@ -193,15 +193,11 @@ def test_annotated_optional_field():
     assert str(signature(Model)) == '(*, foo: Annotated[Optional[int], Gt(gt=1)] = None) -> None'
 
 
-def test_annotated_fieldinfo_subclass():
+def test_annotated_field_info_subclass():
     class Query(FieldInfo):
         pass
 
     class QueryParams(BaseModel):
-        q: Annotated[list[str], Query()]
+        q: Annotated[List[str], Query()]
 
-    sig = signature(QueryParams)
-    if sys.version_info < (3, 12):
-        assert str(sig) == '(*, q: typing.Annotated[list[str], Query(annotation=NoneType, required=True)]) -> None'
-    else:
-        assert str(sig) == '(*, q: Annotated[list[str], Query(annotation=NoneType, required=True)]) -> None'
+    assert str(signature(QueryParams)) == '(*, q: Annotated[List[str], Query(annotation=NoneType, required=True)]) -> None'
