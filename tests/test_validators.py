@@ -2815,14 +2815,14 @@ def test_validate_default_raises_for_dataclasses() -> None:
 
 def test_plain_validator_plain_serializer() -> None:
     ser_type = str
+    serializer = PlainSerializer(lambda x: ser_type(int(x)), return_type=ser_type)
+    validator = PlainValidator(lambda x: bool(int(x)))
 
     class Blah(BaseModel):
-        enabled: Annotated[
-            bool,
-            PlainSerializer(lambda x: ser_type(int(x)), return_type=ser_type),
-            PlainValidator(lambda x: bool(int(x))),
-        ]
+        foo: Annotated[bool, validator, serializer]
+        bar: Annotated[bool, serializer, validator]
 
-    blah = Blah(enabled='0')
+    blah = Blah(foo='0', bar='1')
     data = blah.model_dump()
-    assert isinstance(data['enabled'], ser_type)
+    assert isinstance(data['foo'], ser_type)
+    assert isinstance(data['bar'], ser_type)
