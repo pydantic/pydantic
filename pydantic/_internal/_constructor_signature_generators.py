@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+import dataclasses
 from inspect import Parameter, Signature, signature
 from typing import TYPE_CHECKING, Any, Callable
 
@@ -31,7 +31,7 @@ def _field_name_for_signature(field_name: str, field_info: FieldInfo) -> str:
         """Return the alias if it is a valid alias and identifier, else None."""
         return x if isinstance(x, str) and is_valid_identifier(x) else None
 
-    return _alias_if_valid(field_info.validation_alias) or _alias_if_valid(field_info.alias) or field_name
+    return _alias_if_valid(field_info.alias) or _alias_if_valid(field_info.validation_alias) or field_name
 
 
 def _process_param_defaults(param: Parameter) -> Parameter:
@@ -43,6 +43,8 @@ def _process_param_defaults(param: Parameter) -> Parameter:
     Returns:
         Parameter: The custom processed parameter
     """
+    from ..fields import FieldInfo
+
     param_default = param.default
     if isinstance(param_default, FieldInfo):
         annotation = param.annotation
@@ -59,7 +61,7 @@ def _process_param_defaults(param: Parameter) -> Parameter:
                 default = Signature.empty
             else:
                 # this is used by dataclasses to indicate a factory exists:
-                default = dataclass._HAS_DEFAULT_FACTORY  # type: ignore
+                default = dataclasses._HAS_DEFAULT_FACTORY  # type: ignore
         return param.replace(
             annotation=annotation, name=_field_name_for_signature(param.name, param_default), default=default
         )
