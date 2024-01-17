@@ -201,4 +201,7 @@ def test_annotated_fieldinfo_subclass():
         q: Annotated[list[str], Query()]
 
     sig = signature(QueryParams)
-    assert str(sig) == '(*, q: typing.Annotated[list[str], Query(annotation=NoneType, required=True)]) -> None'
+    if sys.version_info < (3, 12):
+        assert str(sig) == '(*, q: typing.Annotated[list[str], Query(annotation=NoneType, required=True)]) -> None'
+    else:
+        assert str(sig) == '(*, q: Annotated[list[str], Query(annotation=NoneType, required=True)]) -> None'
