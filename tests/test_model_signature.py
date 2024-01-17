@@ -200,7 +200,7 @@ def test_annotated_field_info_subclass():
     class QueryParams(BaseModel):
         q: Annotated[List[str], Query()]
 
-    if sys.version_info == (3, 8):
+    if sys.version_info < (3, 9):
         assert (
             str(signature(QueryParams))
             == '(*, q: typing_extensions.Annotated[List[str], Query(annotation=NoneType, required=True)]) -> None'
