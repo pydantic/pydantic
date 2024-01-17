@@ -6,6 +6,7 @@ import pytest
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
+from pydantic.fields import FieldInfo
 from pydantic._internal._typing_extra import is_annotated
 
 
@@ -190,3 +191,14 @@ def test_annotated_optional_field():
         foo: Annotated[Optional[int], Gt(1)] = None
 
     assert str(signature(Model)) == '(*, foo: Annotated[Optional[int], Gt(gt=1)] = None) -> None'
+
+
+def test_annotated_fieldinfo_subclass():
+    class Query(FieldInfo):
+        pass
+
+    class QueryParams(BaseModel):
+        q: Annotated[list[str], Query()]
+
+    sig = signature(QueryParams)
+    assert str(sig) == '(*, q: typing.Annotated[list[str], Query(annotation=NoneType, required=True)]) -> None'
