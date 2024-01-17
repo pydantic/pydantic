@@ -2,16 +2,13 @@
 from __future__ import annotations as _annotations
 
 import dataclasses
-import inspect
 import typing
 import warnings
 from functools import partial, wraps
-from inspect import Parameter
 from typing import Any, Callable, ClassVar
 
 from pydantic_core import (
     ArgsKwargs,
-    PydanticUndefined,
     SchemaSerializer,
     SchemaValidator,
     core_schema,
@@ -29,7 +26,6 @@ from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
 from ._mock_val_ser import set_dataclass_mocks
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
-from ._utils import is_valid_identifier
 
 if typing.TYPE_CHECKING:
     from ..config import ConfigDict
@@ -129,7 +125,7 @@ def complete_dataclass(
         init=cls.__init__,
         fields=cls.__pydantic_fields__,  # type: ignore
         config_wrapper=config_wrapper,
-        parameter_post_processor=process_param_defaults,
+        is_dataclass=True,
     )
 
     # dataclass.__init__ must be defined here so its `__qualname__` can be changed since functions can't be copied.
@@ -190,45 +186,6 @@ def complete_dataclass(
         cls.__setattr__ = validated_setattr.__get__(None, cls)  # type: ignore
 
     return True
-
-
-def process_param_defaults(param: Parameter) -> Parameter:
-    """Modify the signature for a parameter in a dataclass where the default value is a FieldInfo instance.
-
-    Args:
-        param (Parameter): The parameter
-
-    Returns:
-        Parameter: The custom processed parameter
-    """
-    param_default = param.default
-    if isinstance(param_default, FieldInfo):
-        annotation = param.annotation
-        # Replace the annotation if appropriate
-        # inspect does "clever" things to show annotations as strings because we have
-        # `from __future__ import annotations` in main, we don't want that
-        if annotation == 'Any':
-            annotation = Any
-
-        # Replace the field name with the alias if present
-        name = param.name
-        alias = param_default.alias
-        validation_alias = param_default.validation_alias
-        if validation_alias is None and isinstance(alias, str) and is_valid_identifier(alias):
-            name = alias
-        elif isinstance(validation_alias, str) and is_valid_identifier(validation_alias):
-            name = validation_alias
-
-        # Replace the field default
-        default = param_default.default
-        if default is PydanticUndefined:
-            if param_default.default_factory is PydanticUndefined:
-                default = inspect.Signature.empty
-            else:
-                # this is used by dataclasses to indicate a factory exists:
-                default = dataclasses._HAS_DEFAULT_FACTORY  # type: ignore
-        return param.replace(annotation=annotation, name=name, default=default)
-    return param
 
 
 def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:

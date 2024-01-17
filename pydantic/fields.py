@@ -209,7 +209,9 @@ class FieldInfo(_repr.Representation):
         self.metadata = self._collect_metadata(kwargs) + annotation_metadata  # type: ignore
 
     @classmethod
-    def from_field(cls, default: Any = PydanticUndefined, **kwargs: Unpack[_FromFieldInfoInputs]) -> typing_extensions.Self:
+    def from_field(
+        cls, default: Any = PydanticUndefined, **kwargs: Unpack[_FromFieldInfoInputs]
+    ) -> typing_extensions.Self:
         """Create a new `FieldInfo` object with the `Field` function.
 
         Args:
@@ -286,7 +288,7 @@ class FieldInfo(_repr.Representation):
                 new_field_info.annotation = first_arg
                 new_field_info.frozen = final or field_info.frozen
                 metadata: list[Any] = []
-                for a in extra_args: 
+                for a in extra_args:
                     if not isinstance(a, cls):
                         metadata.append(a)
                     else:
@@ -400,14 +402,14 @@ class FieldInfo(_repr.Representation):
                 raise PydanticUserError(
                     '`merge_field_infos` must be called on `FieldInfo` instances or subclasses, but all'
                     'passed instances must be of the same type.',
-                    code='invalid-field-info-merge'
+                    code='invalid-field-info-merge',
                 )
             new_kwargs.update(field_info._attributes_set)
             for x in field_info.metadata:
                 if not isinstance(x, FieldInfo):
                     metadata[type(x)] = x
         new_kwargs.update(overrides)
-        field_info = FieldInfo(**new_kwargs)
+        field_info = cls(**new_kwargs)
         field_info.metadata = list(metadata.values())
         return field_info
 

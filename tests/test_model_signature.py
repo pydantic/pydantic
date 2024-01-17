@@ -6,8 +6,8 @@ import pytest
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
-from pydantic.fields import FieldInfo
 from pydantic._internal._typing_extra import is_annotated
+from pydantic.fields import FieldInfo
 
 
 def _equals(a: Union[str, Iterable[str]], b: Union[str, Iterable[str]]) -> bool:
