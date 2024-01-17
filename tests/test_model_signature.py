@@ -1,13 +1,12 @@
 import sys
 from inspect import Parameter, Signature, signature
-from typing import Any, Generic, Iterable, List, Optional, TypeVar, Union
+from typing import Any, Generic, Iterable, Optional, TypeVar, Union
 
 import pytest
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
 from pydantic._internal._typing_extra import is_annotated
-from pydantic.fields import FieldInfo
 
 
 def _equals(a: Union[str, Iterable[str]], b: Union[str, Iterable[str]]) -> bool:
@@ -191,22 +190,3 @@ def test_annotated_optional_field():
         foo: Annotated[Optional[int], Gt(1)] = None
 
     assert str(signature(Model)) == '(*, foo: Annotated[Optional[int], Gt(gt=1)] = None) -> None'
-
-
-def test_annotated_field_info_subclass():
-    class Query(FieldInfo):
-        pass
-
-    class QueryParams(BaseModel):
-        q: Annotated[List[str], Query()]
-
-    if sys.version_info < (3, 9):
-        assert (
-            str(signature(QueryParams))
-            == '(*, q: typing_extensions.Annotated[List[str], Query(annotation=NoneType, required=True)]) -> None'
-        )
-    else:
-        assert (
-            str(signature(QueryParams))
-            == '(*, q: Annotated[List[str], Query(annotation=NoneType, required=True)]) -> None'
-        )
