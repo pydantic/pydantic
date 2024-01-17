@@ -3,10 +3,9 @@
 
 [metadata]
 groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "testing-extra"]
-cross_platform = true
-static_urls = false
-lock_version = "4.3"
-content_hash = "sha256:53b3e49964b2139e6c067bf803466e473702a6926b2b473fe5e84f1fc68aa2bb"
+strategy = ["cross_platform"]
+lock_version = "4.4.1"
+content_hash = "sha256:d2cc8b153a68b6d07852e3891eef7abcc64854c7ed9e6a12284097c1205fda04"
 
 [[package]]
 name = "annotated-types"
@@ -460,6 +459,16 @@ dependencies = [
 files = [
     {file = "email_validator-2.1.0.post1-py3-none-any.whl", hash = "sha256:c973053efbeddfef924dc0bd93f6e77a1ea7ee0fce935aea7103c7a3d6d2d637"},
     {file = "email_validator-2.1.0.post1.tar.gz", hash = "sha256:a4b0bd1cf55f073b924258d19321b1f3aa74b4b5a71a42c305575dba920e1a44"},
+]
+
+[[package]]
+name = "eval-type-backport"
+version = "0.1.3"
+requires_python = ">=3.7"
+summary = "Like `typing._eval_type`, but lets older Python versions use newer typing features."
+files = [
+    {file = "eval_type_backport-0.1.3-py3-none-any.whl", hash = "sha256:519d2a993b3da286df9f90e17f503f66435106ad870cf26620c5720e2158ddf2"},
+    {file = "eval_type_backport-0.1.3.tar.gz", hash = "sha256:d83ee225331dfa009493cec1f3608a71550b515ee4749abe78da14e3c5e314f5"},
 ]
 
 [[package]]
