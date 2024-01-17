@@ -26,6 +26,7 @@ struct Field {
     kw_only: bool,
     name: String,
     py_name: Py<PyString>,
+    init: bool,
     init_only: bool,
     lookup_key: LookupKey,
     validator: CombinedValidator,
@@ -107,6 +108,7 @@ impl BuildValidator for DataclassArgsValidator {
                 py_name: py_name.into(),
                 lookup_key,
                 validator,
+                init: field.get_as(intern!(py, "init"))?.unwrap_or(true),
                 init_only: field.get_as(intern!(py, "init_only"))?.unwrap_or(false),
                 frozen: field.get_as::<bool>(intern!(py, "frozen"))?.unwrap_or(false),
             });
@@ -176,6 +178,23 @@ impl Validator for DataclassArgsValidator {
                     ($args:ident, $get_method:ident, $get_macro:ident, $slice_macro:ident) => {{
                         // go through fields getting the value from args or kwargs and validating it
                         for (index, field) in self.fields.iter().enumerate() {
+                            if (!field.init) {
+                                match field.validator.default_value(py, Some(field.name.as_str()), state) {
+                                    Ok(Some(value)) => {
+                                        // Default value exists, and passed validation if required
+                                        set_item!(field, value);
+                                    },
+                                    Ok(None) | Err(ValError::Omit) => continue,
+                                    // Note: this will always use the field name even if there is an alias
+                                    // However, we don't mind so much because this error can only happen if the
+                                    // default value fails validation, which is arguably a developer error.
+                                    // We could try to "fix" this in the future if desired.
+                                    Err(ValError::LineErrors(line_errors)) => errors.extend(line_errors),
+                                    Err(err) => return Err(err),
+                                };
+                                continue;
+                            };
+
                             let mut pos_value = None;
                             if let Some(args) = $args.args {
                                 if !field.kw_only {
