@@ -208,10 +208,8 @@ class FieldInfo(_repr.Representation):
 
         self.metadata = self._collect_metadata(kwargs) + annotation_metadata  # type: ignore
 
-    @classmethod
-    def from_field(
-        cls, default: Any = PydanticUndefined, **kwargs: Unpack[_FromFieldInfoInputs]
-    ) -> typing_extensions.Self:
+    @staticmethod
+    def from_field(default: Any = PydanticUndefined, **kwargs: Unpack[_FromFieldInfoInputs]) -> FieldInfo:
         """Create a new `FieldInfo` object with the `Field` function.
 
         Args:
@@ -236,10 +234,10 @@ class FieldInfo(_repr.Representation):
         """
         if 'annotation' in kwargs:
             raise TypeError('"annotation" is not permitted as a Field keyword argument')
-        return cls(default=default, **kwargs)
+        return FieldInfo(default=default, **kwargs)
 
-    @classmethod
-    def from_annotation(cls, annotation: type[Any]) -> typing_extensions.Self:
+    @staticmethod
+    def from_annotation(annotation: type[Any]) -> FieldInfo:
         """Creates a `FieldInfo` instance from a bare annotation.
 
         This function is used internally to create a `FieldInfo` from a bare annotation like this:
@@ -281,25 +279,25 @@ class FieldInfo(_repr.Representation):
             first_arg, *extra_args = typing_extensions.get_args(annotation)
             if _typing_extra.is_finalvar(first_arg):
                 final = True
-            field_info_annotations = [a for a in extra_args if isinstance(a, cls)]
-            field_info = cls.merge_field_infos(*field_info_annotations, annotation=first_arg)
+            field_info_annotations = [a for a in extra_args if isinstance(a, FieldInfo)]
+            field_info = FieldInfo.merge_field_infos(*field_info_annotations, annotation=first_arg)
             if field_info:
                 new_field_info = copy(field_info)
                 new_field_info.annotation = first_arg
                 new_field_info.frozen = final or field_info.frozen
                 metadata: list[Any] = []
                 for a in extra_args:
-                    if not isinstance(a, cls):
+                    if not isinstance(a, FieldInfo):
                         metadata.append(a)
                     else:
                         metadata.extend(a.metadata)
                 new_field_info.metadata = metadata
                 return new_field_info
 
-        return cls(annotation=annotation, frozen=final or None)
+        return FieldInfo(annotation=annotation, frozen=final or None)
 
-    @classmethod
-    def from_annotated_attribute(cls, annotation: type[Any], default: Any) -> typing_extensions.Self:
+    @staticmethod
+    def from_annotated_attribute(annotation: type[Any], default: Any) -> FieldInfo:
         """Create `FieldInfo` from an annotation with a default value.
 
         This is used in cases like the following:
@@ -336,11 +334,11 @@ class FieldInfo(_repr.Representation):
             if annotation is not typing_extensions.Final:
                 annotation = typing_extensions.get_args(annotation)[0]
 
-        if isinstance(default, cls):
-            default.annotation, annotation_metadata = cls._extract_metadata(annotation)
+        if isinstance(default, FieldInfo):
+            default.annotation, annotation_metadata = FieldInfo._extract_metadata(annotation)
             default.metadata += annotation_metadata
             default = default.merge_field_infos(
-                *[x for x in annotation_metadata if isinstance(x, cls)], default, annotation=default.annotation
+                *[x for x in annotation_metadata if isinstance(x, FieldInfo)], default, annotation=default.annotation
             )
             default.frozen = final or default.frozen
             return default
@@ -356,7 +354,7 @@ class FieldInfo(_repr.Representation):
             pydantic_field.annotation, annotation_metadata = FieldInfo._extract_metadata(annotation)
             pydantic_field.metadata += annotation_metadata
             pydantic_field = pydantic_field.merge_field_infos(
-                *[x for x in annotation_metadata if isinstance(x, cls)],
+                *[x for x in annotation_metadata if isinstance(x, FieldInfo)],
                 pydantic_field,
                 annotation=pydantic_field.annotation,
             )
@@ -368,7 +366,7 @@ class FieldInfo(_repr.Representation):
             if _typing_extra.is_annotated(annotation):
                 first_arg, *extra_args = typing_extensions.get_args(annotation)
                 field_infos = [a for a in extra_args if isinstance(a, FieldInfo)]
-                field_info = cls.merge_field_infos(*field_infos, annotation=first_arg, default=default)
+                field_info = FieldInfo.merge_field_infos(*field_infos, annotation=first_arg, default=default)
                 metadata: list[Any] = []
                 for a in extra_args:
                     if not isinstance(a, FieldInfo):
@@ -378,10 +376,10 @@ class FieldInfo(_repr.Representation):
                 field_info.metadata = metadata
                 return field_info
 
-            return cls(annotation=annotation, default=default, frozen=final or None)
+            return FieldInfo(annotation=annotation, default=default, frozen=final or None)
 
-    @classmethod
-    def merge_field_infos(cls, *field_infos: FieldInfo, **overrides: Any) -> typing_extensions.Self:
+    @staticmethod
+    def merge_field_infos(*field_infos: FieldInfo, **overrides: Any) -> FieldInfo:
         """Merge `FieldInfo` instances keeping only explicitly set attributes.
 
         Later `FieldInfo` instances override earlier ones.
@@ -405,18 +403,12 @@ class FieldInfo(_repr.Representation):
         new_kwargs: dict[str, Any] = {}
         metadata = {}
         for field_info in field_infos:
-            if not isinstance(field_info, cls):
-                raise PydanticUserError(
-                    '`merge_field_infos` must be called on `FieldInfo` instances or subclasses, but all'
-                    'passed instances must be of the same type.',
-                    code='invalid-field-info-merge',
-                )
             new_kwargs.update(field_info._attributes_set)
             for x in field_info.metadata:
                 if not isinstance(x, FieldInfo):
                     metadata[type(x)] = x
         new_kwargs.update(overrides)
-        field_info = cls(**new_kwargs)
+        field_info = FieldInfo(**new_kwargs)
         field_info.metadata = list(metadata.values())
         return field_info
 
