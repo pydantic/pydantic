@@ -2726,9 +2726,17 @@ def test_init_false_with_default(input_data, extra, expected, field_constructor)
         assert dataclasses.asdict(MyDataclass(**input_data)) == expected
 
 
-def test_disallow_allow_and_init_false() -> None:
+def test_disallow_extra_allow_and_init_false() -> None:
     with pytest.raises(PydanticUserError, match='This combination is not allowed.'):
 
         @pydantic.dataclasses.dataclass(config=ConfigDict(extra='allow'))
         class A:
             a: int = Field(init=False, default=1)
+
+
+def test_disallow_init_false_and_init_var_true() -> None:
+    with pytest.raises(PydanticUserError, match='mutually exclusive.'):
+
+        @pydantic.dataclasses.dataclass
+        class Foo:
+            bar: str = Field(..., init=False, init_var=True)

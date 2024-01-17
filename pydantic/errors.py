@@ -60,6 +60,7 @@ PydanticErrorCodes = Literal[
     'root-model-extra',
     'unevaluable-type-annotation',
     'dataclass-init-false-extra-allow',
+    'clashing-init-and-init-var',
 ]
 
 

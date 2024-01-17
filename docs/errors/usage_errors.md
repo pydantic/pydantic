@@ -1070,4 +1070,23 @@ pydantic.errors.PydanticUserError: Field a has `init=False` and dataclass has co
 This combination is not allowed.
 ```
 
+## Incompatible `init` and `init_var` settings on `dataclass` field {#clashing-init-and-init-var}
+
+The `init=False` and `init_var=True` settings are mutually exclusive. Doing so results in the `PydanticUserError` shown in the example below.
+
+```py test="skip"
+from pydantic import Field
+from pydantic.dataclasses import dataclass
+
+
+@dataclass
+class Foo:
+    bar: str = Field(..., init=False, init_var=True)
+
+
+"""
+pydantic.errors.PydanticUserError: Dataclass field bar has init=False and init_var=True, but these are mutually exclusive.
+"""
+```
+
 {% endraw %}
