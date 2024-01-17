@@ -2985,6 +2985,7 @@ class DataclassField(TypedDict, total=False):
     name: Required[str]
     schema: Required[CoreSchema]
     kw_only: bool  # default: True
+    init: bool  # default: True
     init_only: bool  # default: False
     frozen: bool  # default: False
     validation_alias: Union[str, List[Union[str, int]], List[List[Union[str, int]]]]
@@ -2998,6 +2999,7 @@ def dataclass_field(
     schema: CoreSchema,
     *,
     kw_only: bool | None = None,
+    init: bool | None = None,
     init_only: bool | None = None,
     validation_alias: str | list[str | int] | list[list[str | int]] | None = None,
     serialization_alias: str | None = None,
@@ -3023,6 +3025,7 @@ def dataclass_field(
         name: The name to use for the argument parameter
         schema: The schema to use for the argument parameter
         kw_only: Whether the field can be set with a positional argument as well as a keyword argument
+        init: Whether the field should be validated during initialization
         init_only: Whether the field should be omitted  from `__dict__` and passed to `__post_init__`
         validation_alias: The alias(es) to use to find the field in the validation data
         serialization_alias: The alias to use as a key when serializing
@@ -3035,6 +3038,7 @@ def dataclass_field(
         name=name,
         schema=schema,
         kw_only=kw_only,
+        init=init,
         init_only=init_only,
         validation_alias=validation_alias,
         serialization_alias=serialization_alias,
