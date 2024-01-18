@@ -4122,11 +4122,27 @@ def test_secretdate(value, result):
     assert f.value.__class__.__name__ == 'SecretDate'
 
     # Assert str and repr are correct.
-    assert str(f.value) == '**/**/****'
-    assert repr(f.value) == "SecretDate('**/**/****')"
+    assert str(f.value) == '****/**/**'
+    assert repr(f.value) == "SecretDate('****/**/**')"
 
     # Assert retrieval of secret value is correct
     assert f.value.get_secret_value() == result
+
+
+@pytest.mark.parametrize(
+    'SecretField, value, error_msg',
+    [
+        (SecretDate, 0, r'Input should be a valid date \[type=date_type,'),
+        (SecretStr, 0, r'Input should be a valid  string \[type=string_type,'),
+        (SecretBytes, 0, r'Input should be a valid date \[type=bytes_type,'),
+    ],
+)
+def test_strict_secretfield(SecretField, value, error_msg):
+    class Foobar(BaseModel):
+        value: Annotated[SecretField, Strict()]
+
+    with pytest.raises(ValidationError, match=error_msg):
+        Foobar(value=value)
 
 
 @pytest.mark.parametrize(

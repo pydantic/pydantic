@@ -1445,19 +1445,15 @@ SecretType = TypeVar('SecretType', str, bytes, date)
 
 
 def _secret_display(value: SecretType) -> str:
-    secret_value_str = ''
-    if value:
-        if isinstance(value, (str, bytes)):
-            secret_value_str = '**********'
-        elif isinstance(value, date):
-            secret_value_str = '**/**/****'
-    return secret_value_str
+    if isinstance(value, date):
+        return '****/**/**'
+    else:
+        return '**********' if value else ''
 
 
 class _SecretField(Generic[SecretType]):
     _inner_schema: ClassVar[CoreSchema]
     _error_kind: ClassVar[str]
-    _strict: ClassVar[bool]
 
     def __init__(self, secret_value: SecretType) -> None:
         self._secret_value: SecretType = secret_value
@@ -1486,7 +1482,7 @@ class _SecretField(Generic[SecretType]):
         if isinstance(self._secret_value, (str, bytes)):
             return len(self._secret_value)
         else:
-            raise TypeError(f'len() of {self.__class__.__name__} is not supported')
+            raise TypeError(f"object of type '{self.__class__.__name__}' has no len()")
 
     def _display(self) -> str | bytes:
         raise NotImplementedError
@@ -1523,7 +1519,6 @@ class _SecretField(Generic[SecretType]):
                     core_schema.is_instance_schema(source),
                     json_schema,
                 ],
-                strict=cls._strict,
                 custom_error_type=cls._error_kind,
             ),
             json_schema=json_schema,
@@ -1564,7 +1559,6 @@ class SecretStr(_SecretField[str]):
 
     _inner_schema: ClassVar[CoreSchema] = core_schema.str_schema()
     _error_kind: ClassVar[str] = 'string_type'
-    _strict: ClassVar[bool] = True
 
     def _display(self) -> str:
         return _secret_display(self._secret_value)
@@ -1595,7 +1589,6 @@ class SecretBytes(_SecretField[bytes]):
 
     _inner_schema: ClassVar[CoreSchema] = core_schema.bytes_schema()
     _error_kind: ClassVar[str] = 'bytes_type'
-    _strict: ClassVar[bool] = True
 
     def _display(self) -> bytes:
         return _secret_display(self._secret_value).encode()
@@ -1604,7 +1597,7 @@ class SecretBytes(_SecretField[bytes]):
 class SecretDate(_SecretField[date]):
     """A date field used for storing sensitive information that you do not want to be visible in logging or tracebacks.
 
-    It displays `'**/**/**** instead of the date value on `repr()` and `str()` calls.
+    It displays `'****/**/**'` instead of the date value on `repr()` and `str()` calls.
 
     ```py
     from pydantic import BaseModel, SecretDate
@@ -1613,10 +1606,10 @@ class SecretDate(_SecretField[date]):
         date: SecretDate
 
     event = Event(date='2017-01-01')
-    #> Event(date=SecretDate('**/**/****'))
+    #> Event(date=SecretDate('****/**/**'))
 
     print(event.date)
-    #> **/**/****
+    #> ****/**/**
 
     event.date.get_secret_value()
     #> datetime.date(2017, 1, 1)
@@ -1625,7 +1618,6 @@ class SecretDate(_SecretField[date]):
 
     _inner_schema: ClassVar[CoreSchema] = core_schema.date_schema()
     _error_kind: ClassVar[str] = 'date_type'
-    _strict: ClassVar[bool] = False
 
     def _display(self) -> str:
         return _secret_display(self._secret_value)
