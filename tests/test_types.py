@@ -116,8 +116,6 @@ from pydantic import (
 )
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 
-from .conftest import Err
-
 try:
     import email_validator
 except ImportError:
@@ -4109,6 +4107,9 @@ def test_secretstr_idempotent():
         (b'2012-04-23', date(2012, 4, 23)),
         (date(2012, 4, 9), date(2012, 4, 9)),
         (datetime(2012, 4, 9, 0, 0), date(2012, 4, 9)),
+        (1_549_238_400, date(2019, 2, 4)),  # nowish in s
+        (1_549_238_400_000, date(2019, 2, 4)),  # nowish in ms
+        (19_999_958_400, date(2603, 10, 11)),  # just before watershed
     ],
 )
 def test_secretdate(value, result):
@@ -4129,43 +4130,28 @@ def test_secretdate(value, result):
 
 
 @pytest.mark.parametrize(
-    'value,result',
+    'value',
     [
-        # Valid inputs
-        (1_493_942_400, date(2017, 5, 5)),
-        (1_493_942_400_000, date(2017, 5, 5)),
-        (0, date(1970, 1, 1)),
-        ('2012-04-23', date(2012, 4, 23)),
-        (b'2012-04-23', date(2012, 4, 23)),
-        (date(2012, 4, 9), date(2012, 4, 9)),
-        (datetime(2012, 4, 9, 0, 0), date(2012, 4, 9)),
-        # Invalid inputs
-        (datetime(2012, 4, 9, 12, 15), Err('Input should be a valid date')),
-        ('x20120423', Err('Input should be a valid date')),
-        ('2012-04-56', Err('Input should be a valid date')),
-        (19_999_958_400, date(2603, 10, 11)),  # just before watershed
-        (20000044800, Err('Input should be a valid date')),  # just after watershed
-        (1_549_238_400, date(2019, 2, 4)),  # nowish in s
-        (1_549_238_400_000, date(2019, 2, 4)),  # nowish in ms
-        (1_549_238_400_000_000, Err('Input should be a valid date')),  # nowish in μs
-        (1_549_238_400_000_000_000, Err('Input should be a valid date')),  # nowish in ns
-        ('infinity', Err('Input should be a valid date')),
-        (float('inf'), Err('Input should be a valid date')),
-        (int('1' + '0' * 100), Err('Input should be a valid date')),
-        (1e1000, Err('Input should be a valid date')),
-        (float('-infinity'), Err('Input should be a valid date')),
-        (float('nan'), Err('Input should be a valid date')),
+        datetime(2012, 4, 9, 12, 15),
+        'x20120423',
+        '2012-04-56',
+        20000044800,  # just after watershed
+        1_549_238_400_000_000,  # nowish in μs
+        1_549_238_400_000_000_000,  # nowish in ns
+        'infinity',
+        float('inf'),
+        int('1' + '0' * 100),
+        1e1000,
+        float('-infinity'),
+        float('nan'),
     ],
 )
-def test_secretdate_parsing(value, result):
+def test_secretdate_parsing(value):
     class FooBar(BaseModel):
         d: SecretDate
 
-    if isinstance(result, Err):
-        with pytest.raises(ValidationError, match=result.message_escaped()):
-            FooBar(d=value)
-    else:
-        assert FooBar(d=value).d.get_secret_value() == result
+    with pytest.raises(ValidationError):
+        FooBar(d=value)
 
 
 def test_secretdate_equality():
