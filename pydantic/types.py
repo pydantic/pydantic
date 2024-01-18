@@ -1443,6 +1443,7 @@ else:
 
 SecretType = TypeVar('SecretType', str, bytes, date)
 
+
 def _secret_display(value: SecretType) -> str:
     secret_value_str = ''
     if value:
@@ -1476,13 +1477,13 @@ class _SecretField(Generic[SecretType]):
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self._display()!r})'
-    
+
     def __len__(self) -> int:
         if isinstance(self._secret_value, (str, bytes)):
             return len(self._secret_value)
         else:
             raise TypeError(f'len() of {self.__class__.__name__} is not supported')
-    
+
     def _display(self) -> SecretType:
         return _secret_display(self._secret_value)
 
@@ -1556,6 +1557,7 @@ class SecretStr(_SecretField[str]):
     #> (SecretStr('**********'), SecretStr(''))
     ```
     """
+
     _inner_schema: ClassVar[CoreSchema] = core_schema.str_schema()
     _error_kind: ClassVar[str] = 'string_type'
     _strict: ClassVar[bool] = True
@@ -1583,12 +1585,13 @@ class SecretBytes(_SecretField[bytes]):
     #> (SecretBytes(b'**********'), SecretBytes(b''))
     ```
     """
+
     _inner_schema: ClassVar[CoreSchema] = core_schema.bytes_schema()
     _error_kind: ClassVar[str] = 'bytes_type'
     _strict: ClassVar[bool] = True
-    
+
     def _display(self) -> bytes:
-        return _secret_display(self._secret_value).encode()
+        return super()._display().encode()
 
 
 class SecretDate(_SecretField[date]):
@@ -1612,6 +1615,7 @@ class SecretDate(_SecretField[date]):
     #> datetime.date(2017, 1, 1)
     ```
     """
+
     _inner_schema: ClassVar[CoreSchema] = core_schema.date_schema()
     _error_kind: ClassVar[str] = 'date_type'
     _strict: ClassVar[bool] = False
