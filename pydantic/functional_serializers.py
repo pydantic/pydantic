@@ -18,7 +18,7 @@ from .annotated_handlers import GetCoreSchemaHandler
 class PlainSerializer:
     """Plain serializers use a function to modify the output of serialization.
 
-    If you want to customize the serialization for annotated types.
+    This is particularly helpful when you want to customize the serialization for annotated types.
     Consider an input of `list`, which will be serialized into a space-delimited string.
 
     ```python
@@ -173,7 +173,7 @@ def field_serializer(
 ) -> Callable[[Any], Any]:
     """Decorator that enables custom field serialization.
 
-    For example, a field of `set` type to mitigate duplication. We want this field to be serialized as a sorted list.
+    In the below example, a field of type `set` is used to mitigate duplication. A `field_serializer` is used to serialize the data as a sorted list.
 
     ```python
     from typing import Set
@@ -185,7 +185,7 @@ def field_serializer(
         courses: Set[str]
 
         @field_serializer('courses', when_used='json')
-        def serialize_course_in_order(courses: Set[str]):
+        def serialize_courses_in_order(courses: Set[str]):
             return sorted(courses)
 
     student = StudentModel(courses={'Math', 'Chemistry', 'English'})
@@ -261,26 +261,26 @@ def model_serializer(
 
     This is useful when a model need to be serialized in a customized manner, allowing for flexibility beyond just specific fields.
 
-    Following [`field_serializer`][pydantic.functional_serializers.field_serializer] example, we not only want to sort courses field but also capitalize the name of student.
+    An example would be to serialize temperature to the same temperature scale, such as degrees Celsius.
 
     ```python
-    from typing import Set
+    from typing import Literal
 
     from pydantic import BaseModel, model_serializer
 
-    class StudentModel(BaseModel):
-        name: str
-        courses: Set[str]
+    class TemperatureModel(BaseModel):
+        unit: Literal['C', 'F']
+        value: int
 
-        @model_serializer(when_used='json')
+        @model_serializer()
         def serialize_model(self):
-            return {'name': self.name.title(), 'courses': sorted(self.courses)}
+            if self.unit == 'F':
+                return {'unit': 'C', 'value': int((self.value - 32) / 1.8)}
+            return {'unit': self.unit, 'value': self.value}
 
-    student = StudentModel(
-        name='jane doe', courses={'Math', 'Chemistry', 'English'}
-    )
-    print(student.model_dump_json())
-    #> {"name":"Jane Doe","courses":["Chemistry","English","Math"]}
+    temperature = TemperatureModel(unit='F', value=212)
+    print(temperature.model_dump())
+    #> {'unit': 'C', 'value': 100}
     ```
 
     See [Custom serializers](../concepts/serialization.md#custom-serializers) for more information.
