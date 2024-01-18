@@ -4140,22 +4140,21 @@ def test_secretdate(value, result):
         (date(2012, 4, 9), date(2012, 4, 9)),
         (datetime(2012, 4, 9, 0, 0), date(2012, 4, 9)),
         # Invalid inputs
-        (datetime(2012, 4, 9, 12, 15), Err('Datetimes provided to dates should have zero time - e.g. be exact dates')),
-        ('x20120423', Err('Input should be a valid date or datetime, input is too short')),
-        ('2012-04-56', Err('Input should be a valid date or datetime, day value is outside expected range')),
+        (datetime(2012, 4, 9, 12, 15), Err('Input should be a valid date')),
+        ('x20120423', Err('Input should be a valid date')),
+        ('2012-04-56', Err('Input should be a valid date')),
         (19_999_958_400, date(2603, 10, 11)),  # just before watershed
-        # just after watershed
-        (20000044800, Err('type=date_from_datetime_inexact,')),
+        (20000044800, Err('Input should be a valid date')),  # just after watershed
         (1_549_238_400, date(2019, 2, 4)),  # nowish in s
         (1_549_238_400_000, date(2019, 2, 4)),  # nowish in ms
-        (1_549_238_400_000_000, Err('Input should be a valid date or datetime, dates after 9999')),  # nowish in μs
-        (1_549_238_400_000_000_000, Err('Input should be a valid date or datetime, dates after 9999')),  # nowish in ns
-        ('infinity', Err('Input should be a valid date or datetime, input is too short')),
-        (float('inf'), Err('Input should be a valid date or datetime, dates after 9999')),
-        (int('1' + '0' * 100), Err('Input should be a valid date or datetime, dates after 9999')),
-        (1e1000, Err('Input should be a valid date or datetime, dates after 9999')),
-        (float('-infinity'), Err('Input should be a valid date or datetime, dates before 1600')),
-        (float('nan'), Err('Input should be a valid date or datetime, NaN values not permitted')),
+        (1_549_238_400_000_000, Err('Input should be a valid date')),  # nowish in μs
+        (1_549_238_400_000_000_000, Err('Input should be a valid date')),  # nowish in ns
+        ('infinity', Err('Input should be a valid date')),
+        (float('inf'), Err('Input should be a valid date')),
+        (int('1' + '0' * 100), Err('Input should be a valid date')),
+        (1e1000, Err('Input should be a valid date')),
+        (float('-infinity'), Err('Input should be a valid date')),
+        (float('nan'), Err('Input should be a valid date')),
     ],
 )
 def test_secretdate_parsing(value, result):

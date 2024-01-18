@@ -1455,6 +1455,10 @@ def _secret_display(value: SecretType) -> str:
 
 
 class _SecretField(Generic[SecretType]):
+    _inner_schema: ClassVar[CoreSchema]
+    _error_kind: ClassVar[str]
+    _strict: ClassVar[bool]
+
     def __init__(self, secret_value: SecretType) -> None:
         self._secret_value: SecretType = secret_value
 
@@ -1484,8 +1488,8 @@ class _SecretField(Generic[SecretType]):
         else:
             raise TypeError(f'len() of {self.__class__.__name__} is not supported')
 
-    def _display(self) -> SecretType:
-        return _secret_display(self._secret_value)
+    def _display(self) -> str | bytes:
+        raise NotImplementedError
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -1562,6 +1566,9 @@ class SecretStr(_SecretField[str]):
     _error_kind: ClassVar[str] = 'string_type'
     _strict: ClassVar[bool] = True
 
+    def _display(self) -> str:
+        return _secret_display(self._secret_value)
+
 
 class SecretBytes(_SecretField[bytes]):
     """A bytes used for storing sensitive information that you do not want to be visible in logging or tracebacks.
@@ -1591,7 +1598,7 @@ class SecretBytes(_SecretField[bytes]):
     _strict: ClassVar[bool] = True
 
     def _display(self) -> bytes:
-        return super()._display().encode()
+        return _secret_display(self._secret_value).encode()
 
 
 class SecretDate(_SecretField[date]):
@@ -1619,6 +1626,9 @@ class SecretDate(_SecretField[date]):
     _inner_schema: ClassVar[CoreSchema] = core_schema.date_schema()
     _error_kind: ClassVar[str] = 'date_type'
     _strict: ClassVar[bool] = False
+
+    def _display(self) -> str:
+        return _secret_display(self._secret_value)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PAYMENT CARD TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
