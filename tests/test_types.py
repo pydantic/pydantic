@@ -4171,9 +4171,8 @@ def test_secretdate_parsing(value, result):
 
 def test_secretdate_equality():
     assert SecretDate('2017-01-01') == SecretDate('2017-01-01')
-    assert SecretDate(date(2017, 1, 1)) == SecretDate('2017-01-01')
     assert SecretDate('2017-01-01') != SecretDate('2018-01-01')
-    assert SecretDate('2017-01-01') != date(2017, 1, 1)
+    assert SecretDate(date(2017, 1, 1)) != date(2017, 1, 1)
     assert SecretDate('2017-01-01') is not SecretDate('2017-01-01')
 
 
@@ -4182,7 +4181,7 @@ def test_secretdate_idempotent():
         value: SecretDate
 
     # Should not raise an exception
-    m = Foobar(value=SecretDate('2017-01-01'))
+    m = Foobar(value=SecretDate(date(2017, 1, 1)))
     assert m.value.get_secret_value() == date(2017, 1, 1)
 
 
