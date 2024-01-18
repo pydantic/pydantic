@@ -29,7 +29,7 @@ from uuid import UUID
 
 import annotated_types
 from annotated_types import BaseMetadata, MaxLen, MinLen
-from pydantic_core import CoreSchema, PydanticCustomError, SchemaValidator, core_schema
+from pydantic_core import CoreSchema, PydanticCustomError, core_schema
 from typing_extensions import Annotated, Literal, Protocol, TypeAlias, TypeAliasType, deprecated
 
 from ._internal import (
@@ -1443,6 +1443,15 @@ else:
 
 SecretType = TypeVar('SecretType', str, bytes, date)
 
+def _secret_display(value: SecretType) -> str:
+    secret_value_str = ''
+    if value:
+        if isinstance(value, (str, bytes)):
+            secret_value_str = '**********'
+        elif isinstance(value, date):
+            secret_value_str = '**/**/****'
+    return secret_value_str
+
 
 class _SecretField(Generic[SecretType]):
     def __init__(self, secret_value: SecretType) -> None:
@@ -1467,26 +1476,18 @@ class _SecretField(Generic[SecretType]):
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self._display()!r})'
-
+    
+    def __len__(self) -> int:
+        if isinstance(self._secret_value, (str, bytes)):
+            return len(self._secret_value)
+        else:
+            raise TypeError(f'len() of {self.__class__.__name__} is not supported')
+    
     def _display(self) -> SecretType:
-        raise NotImplementedError
+        return _secret_display(self._secret_value)
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        assert issubclass(cls, (SecretStr, SecretBytes, SecretDate))
-        inner_schema: CoreSchema = core_schema.str_schema()
-        error_kind = 'string_type'
-        strict: bool = True
-
-        if issubclass(source, SecretBytes):
-            inner_schema: CoreSchema = core_schema.bytes_schema()
-            error_kind = 'bytes_type'
-            strict: bool = True
-        elif issubclass(source, SecretDate):
-            inner_schema: CoreSchema = core_schema.date_schema()
-            error_kind = 'date_type'
-            strict: bool = False
-
         def serialize(
             value: _SecretField[SecretType], info: core_schema.SerializationInfo
         ) -> str | _SecretField[SecretType]:
@@ -1498,7 +1499,7 @@ class _SecretField(Generic[SecretType]):
                 return value
 
         def get_json_schema(_core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-            json_schema = handler(inner_schema)
+            json_schema = handler(cls._inner_schema)
             _utils.update_not_none(
                 json_schema,
                 type='string',
@@ -1509,7 +1510,7 @@ class _SecretField(Generic[SecretType]):
 
         json_schema = core_schema.no_info_after_validator_function(
             source,  # construct the type
-            inner_schema,
+            cls._inner_schema,
         )
         s = core_schema.json_or_python_schema(
             python_schema=core_schema.union_schema(
@@ -1517,8 +1518,8 @@ class _SecretField(Generic[SecretType]):
                     core_schema.is_instance_schema(source),
                     json_schema,
                 ],
-                strict=strict,
-                custom_error_type=error_kind,
+                strict=cls._strict,
+                custom_error_type=cls._error_kind,
             ),
             json_schema=json_schema,
             serialization=core_schema.plain_serializer_function_ser_schema(
@@ -1530,12 +1531,6 @@ class _SecretField(Generic[SecretType]):
         )
         s.setdefault('metadata', {}).setdefault('pydantic_js_functions', []).append(get_json_schema)
         return s
-
-
-def _secret_display(value: str | bytes | date) -> str:
-    if isinstance(value, (str, bytes)):
-        return '**********' if value else ''
-    return '**/**/****' if value else ''
 
 
 class SecretStr(_SecretField[str]):
@@ -1561,12 +1556,9 @@ class SecretStr(_SecretField[str]):
     #> (SecretStr('**********'), SecretStr(''))
     ```
     """
-
-    def __len__(self) -> int:
-        return len(self._secret_value)
-
-    def _display(self) -> str:
-        return _secret_display(self.get_secret_value())
+    _inner_schema: ClassVar[CoreSchema] = core_schema.str_schema()
+    _error_kind: ClassVar[str] = 'string_type'
+    _strict: ClassVar[bool] = True
 
 
 class SecretBytes(_SecretField[bytes]):
@@ -1591,12 +1583,12 @@ class SecretBytes(_SecretField[bytes]):
     #> (SecretBytes(b'**********'), SecretBytes(b''))
     ```
     """
-
-    def __len__(self) -> int:
-        return len(self._secret_value)
-
+    _inner_schema: ClassVar[CoreSchema] = core_schema.bytes_schema()
+    _error_kind: ClassVar[str] = 'bytes_type'
+    _strict: ClassVar[bool] = True
+    
     def _display(self) -> bytes:
-        return _secret_display(self.get_secret_value()).encode()
+        return _secret_display(self._secret_value).encode()
 
 
 class SecretDate(_SecretField[date]):
@@ -1620,14 +1612,9 @@ class SecretDate(_SecretField[date]):
     #> datetime.date(2017, 1, 1)
     ```
     """
-
-    def __init__(self, secret_value: SecretType) -> None:
-        schema = core_schema.date_schema()
-        v = SchemaValidator(schema)
-        self._secret_value: SecretType = v.validate_python(secret_value)
-
-    def _display(self) -> str:
-        return _secret_display(self.get_secret_value())
+    _inner_schema: ClassVar[CoreSchema] = core_schema.date_schema()
+    _error_kind: ClassVar[str] = 'date_type'
+    _strict: ClassVar[bool] = False
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PAYMENT CARD TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
