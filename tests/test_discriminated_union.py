@@ -1,6 +1,6 @@
 import re
 import sys
-from enum import Enum, IntEnum, auto
+from enum import Enum, IntEnum
 from types import SimpleNamespace
 from typing import Any, Callable, Generic, Optional, Sequence, TypeVar, Union
 
@@ -1701,9 +1701,9 @@ def test_callable_discriminated_union_with_missing_tag() -> None:
 
 
 def test_presence_of_discriminator_when_generating_type_adaptor_json_schema_definitions():
-    class ItemType(StrEnum):
-        ITEM1 = auto()
-        ITEM2 = auto()
+    class ItemType(str, Enum):
+        ITEM1 = 'ITEM1'
+        ITEM2 = 'ITEM2'
 
     class CreateItem1(BaseModel):
         item_type: Annotated[Literal[ItemType.ITEM1], Field(alias='type')]
