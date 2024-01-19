@@ -250,7 +250,7 @@ import dataclasses
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError
 
 
 @dataclasses.dataclass(frozen=True)
@@ -265,6 +265,9 @@ class File:
 
 
 class Foo(BaseModel):
+    # Required so that pydantic revalidates the model attributes
+    model_config = ConfigDict(revalidate_instances='always')
+
     file: File
     user: Optional[User] = None
 

@@ -45,7 +45,7 @@ if typing.TYPE_CHECKING:
     from .type_adapter import TypeAdapter
     from .types import *
     from .validate_call_decorator import validate_call
-    from .warnings import PydanticDeprecatedSince20, PydanticDeprecationWarning
+    from .warnings import PydanticDeprecatedSince20, PydanticDeprecatedSince26, PydanticDeprecationWarning
 
     # this encourages pycharm to import `ValidationError` from here, not pydantic_core
     ValidationError = pydantic_core.ValidationError
@@ -195,6 +195,7 @@ __all__ = (
     'VERSION',
     # warnings
     'PydanticDeprecatedSince20',
+    'PydanticDeprecatedSince26',
     'PydanticDeprecationWarning',
     # annotated handlers
     'GetCoreSchemaHandler',
@@ -339,6 +340,7 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'TypeAdapter': (__package__, '.type_adapter'),
     # warnings
     'PydanticDeprecatedSince20': (__package__, '.warnings'),
+    'PydanticDeprecatedSince26': (__package__, '.warnings'),
     'PydanticDeprecationWarning': (__package__, '.warnings'),
     # annotated handlers
     'GetCoreSchemaHandler': (__package__, '.annotated_handlers'),

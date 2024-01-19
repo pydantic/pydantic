@@ -8,16 +8,26 @@ from copy import copy, deepcopy
 from pydantic_core import PydanticUndefined
 
 from . import PydanticUserError
-from ._internal import _repr
+from ._internal import _model_construction, _repr
 from .main import BaseModel, _object_setattr
 
 if typing.TYPE_CHECKING:
     from typing import Any
 
-    from typing_extensions import Literal
+    from typing_extensions import Literal, dataclass_transform
+
+    from .fields import Field as PydanticModelField
+
+    # dataclass_transform could be applied to RootModel directly, but `ModelMetaclass`'s dataclass_transform
+    # takes priority (at least with pyright). We trick type checkers into thinking we apply dataclass_transform
+    # on a new metaclass.
+    @dataclass_transform(kw_only_default=False, field_specifiers=(PydanticModelField,))
+    class _RootModelMetaclass(_model_construction.ModelMetaclass):
+        ...
 
     Model = typing.TypeVar('Model', bound='BaseModel')
-
+else:
+    _RootModelMetaclass = _model_construction.ModelMetaclass
 
 __all__ = ('RootModel',)
 
@@ -25,7 +35,7 @@ __all__ = ('RootModel',)
 RootModelRootType = typing.TypeVar('RootModelRootType')
 
 
-class RootModel(BaseModel, typing.Generic[RootModelRootType]):
+class RootModel(BaseModel, typing.Generic[RootModelRootType], metaclass=_RootModelMetaclass):
     """Usage docs: https://docs.pydantic.dev/2.6/concepts/models/#rootmodel-and-custom-root-types
 
     A Pydantic `BaseModel` for the root object of the model.
@@ -62,10 +72,10 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
             root = data  # type: ignore
         self.__pydantic_validator__.validate_python(root, self_instance=self)
 
-    __init__.__pydantic_base_init__ = True
+    __init__.__pydantic_base_init__ = True  # pyright: ignore[reportFunctionMemberAccess]
 
     @classmethod
-    def model_construct(cls: type[Model], root: RootModelRootType, _fields_set: set[str] | None = None) -> Model:
+    def model_construct(cls: type[Model], root: RootModelRootType, _fields_set: set[str] | None = None) -> Model:  # type: ignore
         """Create a new model using the provided root object and update fields set.
 
         Args:
@@ -110,7 +120,7 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
 
     if typing.TYPE_CHECKING:
 
-        def model_dump(
+        def model_dump(  # type: ignore
             self,
             *,
             mode: Literal['json', 'python'] | str = 'python',

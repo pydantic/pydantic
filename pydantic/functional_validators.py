@@ -153,13 +153,17 @@ class PlainValidator:
     func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        schema = handler(source_type)
+        serialization = core_schema.wrap_serializer_function_ser_schema(function=lambda v, h: h(v), schema=schema)
         info_arg = _inspect_validator(self.func, 'plain')
         if info_arg:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
-            return core_schema.with_info_plain_validator_function(func, field_name=handler.field_name)
+            return core_schema.with_info_plain_validator_function(
+                func, field_name=handler.field_name, serialization=serialization
+            )
         else:
             func = cast(core_schema.NoInfoValidatorFunction, self.func)
-            return core_schema.no_info_plain_validator_function(func)
+            return core_schema.no_info_plain_validator_function(func, serialization=serialization)
 
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
@@ -216,20 +220,21 @@ class WrapValidator:
 if TYPE_CHECKING:
 
     class _OnlyValueValidatorClsMethod(Protocol):
-        def __call__(self, __cls: Any, __value: Any) -> Any:
+        def __call__(self, cls: Any, value: Any, /) -> Any:
             ...
 
     class _V2ValidatorClsMethod(Protocol):
-        def __call__(self, __cls: Any, __input_value: Any, __info: _core_schema.ValidationInfo) -> Any:
+        def __call__(self, cls: Any, value: Any, info: _core_schema.ValidationInfo, /) -> Any:
             ...
 
     class _V2WrapValidatorClsMethod(Protocol):
         def __call__(
             self,
-            __cls: Any,
-            __input_value: Any,
-            __validator: _core_schema.ValidatorFunctionWrapHandler,
-            __info: _core_schema.ValidationInfo,
+            cls: Any,
+            value: Any,
+            handler: _core_schema.ValidatorFunctionWrapHandler,
+            info: _core_schema.ValidationInfo,
+            /,
         ) -> Any:
             ...
 
@@ -379,7 +384,10 @@ class ModelWrapValidatorHandler(_core_schema.ValidatorFunctionWrapHandler, Proto
     """@model_validator decorated function handler argument type. This is used when `mode='wrap'`."""
 
     def __call__(  # noqa: D102
-        self, input_value: Any, outer_location: str | int | None = None
+        self,
+        value: Any,
+        outer_location: str | int | None = None,
+        /,
     ) -> _ModelTypeCo:  # pragma: no cover
         ...
 
@@ -395,8 +403,9 @@ class ModelWrapValidatorWithoutInfo(Protocol[_ModelType]):
         # this can be a dict, a model instance
         # or anything else that gets passed to validate_python
         # thus validators _must_ handle all cases
-        __value: Any,
-        __handler: ModelWrapValidatorHandler[_ModelType],
+        value: Any,
+        handler: ModelWrapValidatorHandler[_ModelType],
+        /,
     ) -> _ModelType:
         ...
 
@@ -410,9 +419,10 @@ class ModelWrapValidator(Protocol[_ModelType]):
         # this can be a dict, a model instance
         # or anything else that gets passed to validate_python
         # thus validators _must_ handle all cases
-        __value: Any,
-        __handler: ModelWrapValidatorHandler[_ModelType],
-        __info: _core_schema.ValidationInfo,
+        value: Any,
+        handler: ModelWrapValidatorHandler[_ModelType],
+        info: _core_schema.ValidationInfo,
+        /,
     ) -> _ModelType:
         ...
 
@@ -427,7 +437,8 @@ class FreeModelBeforeValidatorWithoutInfo(Protocol):
         # this can be a dict, a model instance
         # or anything else that gets passed to validate_python
         # thus validators _must_ handle all cases
-        __value: Any,
+        value: Any,
+        /,
     ) -> Any:
         ...
 
@@ -443,7 +454,8 @@ class ModelBeforeValidatorWithoutInfo(Protocol):
         # this can be a dict, a model instance
         # or anything else that gets passed to validate_python
         # thus validators _must_ handle all cases
-        __value: Any,
+        value: Any,
+        /,
     ) -> Any:
         ...
 
@@ -456,8 +468,9 @@ class FreeModelBeforeValidator(Protocol):
         # this can be a dict, a model instance
         # or anything else that gets passed to validate_python
         # thus validators _must_ handle all cases
-        __value: Any,
-        __info: _core_schema.ValidationInfo,
+        value: Any,
+        info: _core_schema.ValidationInfo,
+        /,
     ) -> Any:
         ...
 
@@ -471,8 +484,9 @@ class ModelBeforeValidator(Protocol):
         # this can be a dict, a model instance
         # or anything else that gets passed to validate_python
         # thus validators _must_ handle all cases
-        __value: Any,
-        __info: _core_schema.ValidationInfo,
+        value: Any,
+        info: _core_schema.ValidationInfo,
+        /,
     ) -> Any:
         ...
 

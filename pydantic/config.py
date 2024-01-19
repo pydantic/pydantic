@@ -125,7 +125,7 @@ class ConfigDict(TypedDict, total=False):
     attributes are hashable. Defaults to `False`.
 
     Note:
-        On V1, this setting was called `allow_mutation`, and was `True` by default.
+        On V1, the inverse of this setting was called `allow_mutation`, and was `True` by default.
     """
 
     populate_by_name: bool

@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic_core import PydanticUndefined
 
+from pydantic.errors import PydanticUserError
+
 from . import _typing_extra
 from ._config import ConfigWrapper
 from ._repr import Representation
@@ -264,6 +266,10 @@ def collect_dataclass_fields(
     dataclass_fields: dict[str, dataclasses.Field] = cls.__dataclass_fields__
     cls_localns = dict(vars(cls))  # this matches get_cls_type_hints_lenient, but all tests pass with `= None` instead
 
+    source_module = sys.modules.get(cls.__module__)
+    if source_module is not None:
+        types_namespace = {**source_module.__dict__, **(types_namespace or {})}
+
     for ann_name, dataclass_field in dataclass_fields.items():
         ann_type = _typing_extra.eval_type_lenient(dataclass_field.type, types_namespace, cls_localns)
         if is_classvar(ann_type):
@@ -280,11 +286,18 @@ def collect_dataclass_fields(
 
         if isinstance(dataclass_field.default, FieldInfo):
             if dataclass_field.default.init_var:
-                # TODO: same note as above
+                if dataclass_field.default.init is False:
+                    raise PydanticUserError(
+                        f'Dataclass field {ann_name} has init=False and init_var=True, but these are mutually exclusive.',
+                        code='clashing-init-and-init-var',
+                    )
+
+                # TODO: same note as above re validate_assignment
                 continue
             field_info = FieldInfo.from_annotated_attribute(ann_type, dataclass_field.default)
         else:
             field_info = FieldInfo.from_annotated_attribute(ann_type, dataclass_field)
+
         fields[ann_name] = field_info
 
         if field_info.default is not PydanticUndefined and isinstance(getattr(cls, ann_name, field_info), FieldInfo):
