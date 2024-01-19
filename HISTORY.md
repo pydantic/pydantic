@@ -43,7 +43,10 @@
 * Add Codspeed profiling Actions workflow  by @lambertsbennett in [#8054](https://github.com/pydantic/pydantic/pull/8054)
 * Improve `int` extraction by @samuelcolvin in [pydantic/pydantic-core#1155](https://github.com/pydantic/pydantic-core/pull/1155)
 * Improve performance of recursion guard by @samuelcolvin in [pydantic/pydantic-core#1156](https://github.com/pydantic/pydantic-core/pull/1156)
-* `dataclass` serialization speedups by @samuelcolvin in #1162 [pydantic/pydantic-core#1162](https://github.com/pydantic/pydantic-core/pull/1162)
+* `dataclass` serialization speedups by @samuelcolvin in [pydantic/pydantic-core#1162](https://github.com/pydantic/pydantic-core/pull/1162)
+* Avoid `HashMap` creation when looking up small JSON objects in `LazyIndexMaps` by @samuelcolvin in [pydantic/jiter#55](https://github.com/pydantic/jiter/pull/55)
+* use hashbrown to speedup python string caching by @davidhewitt in [pydantic/jiter#51](https://github.com/pydantic/jiter/pull/51)
+* Replace `Peak` with more efficient `Peek` by @davidhewitt in [pydantic/jiter#48](https://github.com/pydantic/jiter/pull/48)
 
 #### Fixes
 
