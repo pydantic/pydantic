@@ -66,14 +66,12 @@ impl TypeSerializer for DefinitionRefSerializer {
         value: &PyAny,
         include: Option<&PyAny>,
         exclude: Option<&PyAny>,
-        extra: &Extra,
+        mut extra: &Extra,
     ) -> PyResult<PyObject> {
         self.definition.read(|comb_serializer| {
             let comb_serializer = comb_serializer.unwrap();
-            let value_id = extra.rec_guard.add(value, self.definition.id())?;
-            let r = comb_serializer.to_python(value, include, exclude, extra);
-            extra.rec_guard.pop(value_id, self.definition.id());
-            r
+            let mut guard = extra.recursion_guard(value, self.definition.id())?;
+            comb_serializer.to_python(value, include, exclude, guard.state())
         })
     }
 
@@ -87,17 +85,14 @@ impl TypeSerializer for DefinitionRefSerializer {
         serializer: S,
         include: Option<&PyAny>,
         exclude: Option<&PyAny>,
-        extra: &Extra,
+        mut extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         self.definition.read(|comb_serializer| {
             let comb_serializer = comb_serializer.unwrap();
-            let value_id = extra
-                .rec_guard
-                .add(value, self.definition.id())
+            let mut guard = extra
+                .recursion_guard(value, self.definition.id())
                 .map_err(py_err_se_err)?;
-            let r = comb_serializer.serde_serialize(value, serializer, include, exclude, extra);
-            extra.rec_guard.pop(value_id, self.definition.id());
-            r
+            comb_serializer.serde_serialize(value, serializer, include, exclude, guard.state())
         })
     }
 

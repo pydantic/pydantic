@@ -10,20 +10,23 @@ use serde::ser::Error;
 use super::config::SerializationConfig;
 use super::errors::{PydanticSerializationUnexpectedValue, UNEXPECTED_TYPE_SER_MARKER};
 use super::ob_type::ObTypeLookup;
+use crate::recursion_guard::ContainsRecursionState;
+use crate::recursion_guard::RecursionError;
 use crate::recursion_guard::RecursionGuard;
+use crate::recursion_guard::RecursionState;
 
 /// this is ugly, would be much better if extra could be stored in `SerializationState`
 /// then `SerializationState` got a `serialize_infer` method, but I couldn't get it to work
 pub(crate) struct SerializationState {
     warnings: CollectWarnings,
-    rec_guard: SerRecursionGuard,
+    rec_guard: SerRecursionState,
     config: SerializationConfig,
 }
 
 impl SerializationState {
     pub fn new(timedelta_mode: &str, bytes_mode: &str, inf_nan_mode: &str) -> PyResult<Self> {
         let warnings = CollectWarnings::new(false);
-        let rec_guard = SerRecursionGuard::default();
+        let rec_guard = SerRecursionState::default();
         let config = SerializationConfig::from_args(timedelta_mode, bytes_mode, inf_nan_mode)?;
         Ok(Self {
             warnings,
@@ -77,7 +80,7 @@ pub(crate) struct Extra<'a> {
     pub exclude_none: bool,
     pub round_trip: bool,
     pub config: &'a SerializationConfig,
-    pub rec_guard: &'a SerRecursionGuard,
+    pub rec_guard: &'a SerRecursionState,
     // the next two are used for union logic
     pub check: SerCheck,
     // data representing the current model field
@@ -101,7 +104,7 @@ impl<'a> Extra<'a> {
         exclude_none: bool,
         round_trip: bool,
         config: &'a SerializationConfig,
-        rec_guard: &'a SerRecursionGuard,
+        rec_guard: &'a SerRecursionState,
         serialize_unknown: bool,
         fallback: Option<&'a PyAny>,
     ) -> Self {
@@ -122,6 +125,22 @@ impl<'a> Extra<'a> {
             serialize_unknown,
             fallback,
         }
+    }
+
+    pub fn recursion_guard<'x, 'y>(
+        // TODO: this double reference is a bit if a hack, but it's necessary because the recursion
+        // guard is not passed around with &mut reference
+        //
+        // See how validation has &mut ValidationState passed around; we should aim to refactor
+        // to match that.
+        self: &'x mut &'y Self,
+        value: &PyAny,
+        def_ref_id: usize,
+    ) -> PyResult<RecursionGuard<'x, &'y Self>> {
+        RecursionGuard::new(self, value.as_ptr() as usize, def_ref_id).map_err(|e| match e {
+            RecursionError::Depth => PyValueError::new_err("Circular reference detected (depth exceeded)"),
+            RecursionError::Cyclic => PyValueError::new_err("Circular reference detected (id repeated)"),
+        })
     }
 
     pub fn serialize_infer<'py>(&'py self, value: &'py PyAny) -> super::infer::SerializeInfer<'py> {
@@ -157,7 +176,7 @@ pub(crate) struct ExtraOwned {
     exclude_none: bool,
     round_trip: bool,
     config: SerializationConfig,
-    rec_guard: SerRecursionGuard,
+    rec_guard: SerRecursionState,
     check: SerCheck,
     model: Option<PyObject>,
     field_name: Option<String>,
@@ -340,29 +359,12 @@ impl CollectWarnings {
 
 #[derive(Default, Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub struct SerRecursionGuard {
-    guard: RefCell<RecursionGuard>,
+pub struct SerRecursionState {
+    guard: RefCell<RecursionState>,
 }
 
-impl SerRecursionGuard {
-    pub fn add(&self, value: &PyAny, def_ref_id: usize) -> PyResult<usize> {
-        let id = value.as_ptr() as usize;
-        let mut guard = self.guard.borrow_mut();
-
-        if guard.insert(id, def_ref_id) {
-            if guard.incr_depth() {
-                Err(PyValueError::new_err("Circular reference detected (depth exceeded)"))
-            } else {
-                Ok(id)
-            }
-        } else {
-            Err(PyValueError::new_err("Circular reference detected (id repeated)"))
-        }
-    }
-
-    pub fn pop(&self, id: usize, def_ref_id: usize) {
-        let mut guard = self.guard.borrow_mut();
-        guard.decr_depth();
-        guard.remove(id, def_ref_id);
+impl ContainsRecursionState for &'_ Extra<'_> {
+    fn access_recursion_state<R>(&mut self, f: impl FnOnce(&mut RecursionState) -> R) -> R {
+        f(&mut self.rec_guard.guard.borrow_mut())
     }
 }

@@ -1,4 +1,4 @@
-use crate::recursion_guard::RecursionGuard;
+use crate::recursion_guard::{ContainsRecursionState, RecursionState};
 
 use super::Extra;
 
@@ -10,14 +10,14 @@ pub enum Exactness {
 }
 
 pub struct ValidationState<'a> {
-    pub recursion_guard: &'a mut RecursionGuard,
+    pub recursion_guard: &'a mut RecursionState,
     pub exactness: Option<Exactness>,
     // deliberately make Extra readonly
     extra: Extra<'a>,
 }
 
 impl<'a> ValidationState<'a> {
-    pub fn new(extra: Extra<'a>, recursion_guard: &'a mut RecursionGuard) -> Self {
+    pub fn new(extra: Extra<'a>, recursion_guard: &'a mut RecursionState) -> Self {
         Self {
             recursion_guard, // Don't care about exactness unless doing union validation
             exactness: None,
@@ -81,6 +81,12 @@ impl<'a> ValidationState<'a> {
             }
             Some(Exactness::Exact) => self.exactness = Some(exactness),
         }
+    }
+}
+
+impl ContainsRecursionState for ValidationState<'_> {
+    fn access_recursion_state<R>(&mut self, f: impl FnOnce(&mut RecursionState) -> R) -> R {
+        f(self.recursion_guard)
     }
 }
 
