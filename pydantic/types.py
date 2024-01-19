@@ -1513,24 +1513,33 @@ class _SecretField(Generic[SecretType]):
             source,  # construct the type
             cls._inner_schema,
         )
-        s = core_schema.json_or_python_schema(
-            python_schema=core_schema.union_schema(
-                [
-                    core_schema.is_instance_schema(source),
-                    json_schema,
-                ],
-                custom_error_type=cls._error_kind,
-            ),
-            json_schema=json_schema,
-            serialization=core_schema.plain_serializer_function_ser_schema(
-                serialize,
-                info_arg=True,
-                return_schema=core_schema.str_schema(),
-                when_used='json',
-            ),
+
+        def get_secret_schema(strict: bool) -> CoreSchema:
+            return core_schema.json_or_python_schema(
+                python_schema=core_schema.union_schema(
+                    [
+                        core_schema.is_instance_schema(source),
+                        json_schema,
+                    ],
+                    custom_error_type=cls._error_kind,
+                    strict=strict,
+                ),
+                json_schema=json_schema,
+                serialization=core_schema.plain_serializer_function_ser_schema(
+                    serialize,
+                    info_arg=True,
+                    return_schema=core_schema.str_schema(),
+                    when_used='json',
+                ),
+            )
+
+        strict = get_secret_schema(strict=True)
+        lax = get_secret_schema(strict=False)
+        return core_schema.lax_or_strict_schema(
+            lax_schema=lax,
+            strict_schema=strict,
+            metadata={'pydantic_js_functions': [get_json_schema]},
         )
-        s.setdefault('metadata', {}).setdefault('pydantic_js_functions', []).append(get_json_schema)
-        return s
 
 
 class SecretStr(_SecretField[str]):

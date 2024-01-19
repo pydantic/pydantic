@@ -10,7 +10,13 @@ You can use the [`field_serializer`][pydantic.functional_serializers.field_seria
 secret as plain-text when serializing to json.
 
 ```py
-from pydantic import BaseModel, SecretBytes, SecretStr, SecretDate, field_serializer
+from pydantic import (
+    BaseModel,
+    SecretBytes,
+    SecretDate,
+    SecretStr,
+    field_serializer,
+)
 
 
 class Model(BaseModel):
@@ -18,29 +24,38 @@ class Model(BaseModel):
     password_bytes: SecretBytes
     date_of_birth: SecretDate
 
-    @field_serializer('password', 'password_bytes', 'date_of_birth', when_used='json')
+    @field_serializer(
+        'password', 'password_bytes', 'date_of_birth', when_used='json'
+    )
     def dump_secret(self, v):
         return v.get_secret_value()
 
 
-model = Model(password='IAmSensitive', password_bytes=b'IAmSensitiveBytes', date_of_birth='2017-01-01')
+model = Model(
+    password='IAmSensitive',
+    password_bytes=b'IAmSensitiveBytes',
+    date_of_birth='2017-01-01',
+)
 print(model)
-#> password=SecretStr('**********') password_bytes=SecretBytes(b'**********') date_of_birth=SecretDate('****/**/**')
+"""
+password=SecretStr('**********') password_bytes=SecretBytes(b'**********') date_of_birth=SecretDate('****/**/**')
+"""
 print(model.password)
 #> **********
 print(model.password_bytes)
-#> **********
+#> b'**********'
 print(model.date_of_birth)
 #> ****/**/**
 print(model.model_dump())
 """
-
 {
     'password': SecretStr('**********'),
     'password_bytes': SecretBytes(b'**********'),
-    'date_of_birth': SecretDate('****/**/**')
+    'date_of_birth': SecretDate('****/**/**'),
 }
 """
 print(model.model_dump_json())
-#> {"password":"IAmSensitive","password_bytes":"IAmSensitiveBytes","date_of_birth":"2017-01-01"}
+"""
+{"password":"IAmSensitive","password_bytes":"IAmSensitiveBytes","date_of_birth":"2017-01-01"}
+"""
 ```

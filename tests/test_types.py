@@ -4132,12 +4132,47 @@ def test_secretdate(value, result):
 @pytest.mark.parametrize(
     'SecretField, value, error_msg',
     [
-        (SecretDate, 0, r'Input should be a valid date \[type=date_type,'),
-        (SecretStr, 0, r'Input should be a valid  string \[type=string_type,'),
-        (SecretBytes, 0, r'Input should be a valid date \[type=bytes_type,'),
+        (SecretDate, 0, r'Input should be a valid date'),
+        (SecretStr, 0, r'Input should be a valid string'),
+        (SecretBytes, 0, r'Input should be a valid byte'),
     ],
 )
-def test_strict_secretfield(SecretField, value, error_msg):
+def test_strict_secretfield_by_config(SecretField, value, error_msg):
+    class Foobar(BaseModel):
+        model_config = ConfigDict(strict=True)
+
+        value: SecretField
+
+    with pytest.raises(ValidationError, match=error_msg):
+        Foobar(value=value)
+
+
+@pytest.mark.parametrize(
+    'SecretField, value, error_msg',
+    [
+        (SecretDate, 0, r'Input should be a valid date \[type=date_type,'),
+        (SecretStr, 0, r'Input should be a valid string \[type=string_type,'),
+        (SecretBytes, 0, r'Input should be a valid bytes \[type=bytes_type,'),
+    ],
+)
+def test_strict_secretfield_by_config(SecretField, value, error_msg):
+    class Foobar(BaseModel):
+        model_config = ConfigDict(strict=True)
+        value: SecretField
+
+    with pytest.raises(ValidationError, match=error_msg):
+        Foobar(value=value)
+
+
+@pytest.mark.parametrize(
+    'SecretField, value, error_msg',
+    [
+        (SecretDate, 0, r'Input should be a valid date \[type=date_type,'),
+        (SecretStr, 0, r'Input should be a valid string \[type=string_type,'),
+        (SecretBytes, 0, r'Input should be a valid bytes \[type=bytes_type,'),
+    ],
+)
+def test_strict_secretfield_annotated(SecretField, value, error_msg):
     class Foobar(BaseModel):
         value: Annotated[SecretField, Strict()]
 
@@ -4320,6 +4355,13 @@ def test_secret_str_min_max_length():
 
     value = '1' * 8
     assert Foobar(password=value).password.get_secret_value() == value
+
+
+def test_secretbytes_json():
+    class Foobar(BaseModel):
+        password: SecretBytes
+
+    assert Foobar(password='foo').model_dump_json() == '{"password":"**********"}'
 
 
 def test_secretbytes():
