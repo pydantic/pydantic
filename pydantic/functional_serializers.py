@@ -83,6 +83,38 @@ class WrapSerializer:
     """Wrap serializers receive the raw inputs along with a handler function that applies the standard serialization
     logic, and can modify the resulting value before returning it as the final output of serialization.
 
+    A scenario where a datetime field is converted to UTC if a timezone is specified; otherwise, it is serialized without timezone information.
+
+    ```python
+    from datetime import datetime, timezone
+    from typing import Any
+
+    from typing_extensions import Annotated
+
+    from pydantic import BaseModel, SerializerFunctionWrapHandler, WrapSerializer
+
+    def convert_to_utc(
+        value: Any, handler: SerializerFunctionWrapHandler
+    ) -> datetime:
+        if value.tzinfo is None:
+            return handler(value)
+        else:
+            return value.astimezone(timezone.utc)
+
+    CustomDatetime = Annotated[datetime, WrapSerializer(convert_to_utc)]
+
+    class EventModel(BaseModel):
+        dt: CustomDatetime
+
+    event = EventModel(dt='2024-01-01T00:00:00')
+    print(event.model_dump())
+    #> {'dt': datetime.datetime(2024, 1, 1, 0, 0)}
+
+    event = EventModel(dt='2024-01-01T00:00:00-08:00')
+    print(event.model_dump())
+    #> {'dt': datetime.datetime(2024, 1, 1, 8, 0, tzinfo=datetime.timezone.utc)}
+    ```
+
     Attributes:
         func: The serializer function to be wrapped.
         return_type: The return type for the function. If omitted it will be inferred from the type annotation.
