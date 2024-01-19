@@ -1,3 +1,10 @@
+## v1.10.14 (2024-01-19)
+
+* Update install.md by @dmontagu in https://github.com/pydantic/pydantic/pull/7690
+* Fixes ci to only deploy docs on release by @sydney-runkle in https://github.com/pydantic/pydantic/pull/7740
+* Ubuntu fixes for V1 by @sydney-runkle in https://github.com/pydantic/pydantic/pull/8540 and https://github.com/pydantic/pydantic/pull/8587
+* Fix cached_property handling in dataclasses when copied by @rdbisme in https://github.com/pydantic/pydantic/pull/8407
+
 ## v1.10.13 (2023-09-27)
 
 * Fix: Add max length check to `pydantic.validate_email`, #7673 by @hramezani
