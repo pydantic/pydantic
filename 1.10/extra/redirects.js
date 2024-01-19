@@ -88,8 +88,16 @@ const lookup = {
   'history': '/changelog/',
 }
 
+function sanitizeURL(url) {
+  // escape untrusted source by creating an anchor element and letting the browser parse it
+  let a = document.createElement('a');
+  a.href = url;
+  return a.href;
+}
+
 function main() {
-  const fragment = location.hash.substr(1)
+  // escape nonstandard characters to avoid XSS attacks
+  const fragment = location.hash.substr(1).replace(/[^a-zA-Z0-9-_]/g, '') 
   if (fragment === '' || location.pathname !== '/') {
     // no fragment or not called from root
     return
@@ -105,7 +113,7 @@ function main() {
       .replace(/(v\d)-(\d+-\d{4})/, '$1$2')
   }
 
-  window.location = new_url
+  window.location = sanitizeURL(new_url)
 }
 
 main()
