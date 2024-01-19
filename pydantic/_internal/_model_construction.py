@@ -18,13 +18,13 @@ from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..plugin._schema_validator import create_schema_validator
 from ..warnings import GenericBeforeBaseModelWarning, PydanticDeprecatedSince20
 from ._config import ConfigWrapper
-from ._constructor_signature_generators import generate_pydantic_signature
 from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_from_bases
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
 from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
 from ._mock_val_ser import MockValSer, set_model_mocks
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
+from ._signature import generate_pydantic_signature
 from ._typing_extra import get_cls_types_namespace, is_annotated, is_classvar, parent_frame_namespace
 from ._utils import ClassAttribute, SafeGetItemProxy
 from ._validate_call import ValidateCallWrapper
@@ -188,6 +188,11 @@ class ModelMetaclass(ABCMeta):
                 types_namespace=types_namespace,
                 create_model_module=_create_model_module,
             )
+
+            # If this is placed before the complete_model_class call above,
+            # the generic computed fields return type is set to PydanticUndefined
+            cls.model_computed_fields = {k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()}
+
             # using super(cls, cls) on the next line ensures we only call the parent class's __pydantic_init_subclass__
             # I believe the `type: ignore` is only necessary because mypy doesn't realize that this code branch is
             # only hit for _proper_ subclasses of BaseModel
@@ -242,11 +247,11 @@ class ModelMetaclass(ABCMeta):
         return field_names, class_vars, private_attributes
 
     @property
-    @deprecated(
-        'The `__fields__` attribute is deprecated, use `model_fields` instead.', category=PydanticDeprecatedSince20
-    )
+    @deprecated('The `__fields__` attribute is deprecated, use `model_fields` instead.', category=None)
     def __fields__(self) -> dict[str, FieldInfo]:
-        warnings.warn('The `__fields__` attribute is deprecated, use `model_fields` instead.', DeprecationWarning)
+        warnings.warn(
+            'The `__fields__` attribute is deprecated, use `model_fields` instead.', PydanticDeprecatedSince20
+        )
         return self.model_fields  # type: ignore
 
     def __dir__(self) -> list[str]:

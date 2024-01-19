@@ -378,7 +378,7 @@ class DayThisYear(date):
 
     @classmethod
     def validate(cls, v: int):
-        return date.today().replace(month=1, day=1) + timedelta(days=v)
+        return date(2023, 1, 1) + timedelta(days=v)
 
 
 class FooModel(BaseModel):

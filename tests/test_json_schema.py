@@ -6,7 +6,14 @@ import typing
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
-from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
+from ipaddress import (
+    IPv4Address,
+    IPv4Interface,
+    IPv4Network,
+    IPv6Address,
+    IPv6Interface,
+    IPv6Network,
+)
 from pathlib import Path
 from typing import (
     Any,
@@ -68,13 +75,22 @@ from pydantic.json_schema import (
     model_json_schema,
     models_json_schema,
 )
-from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, MultiHostUrl, NameEmail
+from pydantic.networks import (
+    AnyUrl,
+    EmailStr,
+    IPvAnyAddress,
+    IPvAnyInterface,
+    IPvAnyNetwork,
+    MultiHostUrl,
+    NameEmail,
+)
 from pydantic.type_adapter import TypeAdapter
 from pydantic.types import (
     UUID1,
     UUID3,
     UUID4,
     UUID5,
+    ByteSize,
     DirectoryPath,
     FilePath,
     Json,
@@ -1290,6 +1306,50 @@ def test_callable_type_with_fallback(default_value, properties):
     ):
         model_schema = Model.model_json_schema(schema_generator=MyGenerator)
     assert model_schema['properties'] == properties
+
+
+def test_byte_size_type():
+    class Model(BaseModel):
+        a: ByteSize
+        b: ByteSize = Field('1MB', validate_default=True)
+
+    model_json_schema_validation = Model.model_json_schema(mode='validation')
+    model_json_schema_serialization = Model.model_json_schema(mode='serialization')
+
+    print(model_json_schema_serialization)
+
+    assert model_json_schema_validation == {
+        'properties': {
+            'a': {
+                'anyOf': [
+                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
+                    {'minimum': 0, 'type': 'integer'},
+                ],
+                'title': 'A',
+            },
+            'b': {
+                'anyOf': [
+                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
+                    {'minimum': 0, 'type': 'integer'},
+                ],
+                'default': '1MB',
+                'title': 'B',
+            },
+        },
+        'required': ['a'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+    assert model_json_schema_serialization == {
+        'properties': {
+            'a': {'minimum': 0, 'title': 'A', 'type': 'integer'},
+            'b': {'default': '1MB', 'minimum': 0, 'title': 'B', 'type': 'integer'},
+        },
+        'required': ['a'],
+        'title': 'Model',
+        'type': 'object',
+    }
 
 
 @pytest.mark.parametrize(
@@ -2651,8 +2711,8 @@ def test_tuple_with_extra_schema():
     class MyTuple(Tuple[int, str]):
         @classmethod
         def __get_pydantic_core_schema__(cls, _source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.tuple_positional_schema(
-                [core_schema.int_schema(), core_schema.str_schema()], extras_schema=core_schema.int_schema()
+            return core_schema.tuple_schema(
+                [core_schema.int_schema(), core_schema.str_schema(), core_schema.int_schema()], variadic_item_index=2
             )
 
     class Model(BaseModel):

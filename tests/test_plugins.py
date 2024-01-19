@@ -360,6 +360,28 @@ def test_plugin_path_type_adapter_with_module() -> None:
         TypeAdapter(List[str], module='provided_module_by_type_adapter')
 
 
+def test_plugin_path_type_adapter_without_name_in_globals() -> None:
+    class CustomOnValidatePython(ValidatePythonHandlerProtocol):
+        pass
+
+    class Plugin:
+        def new_schema_validator(self, schema, schema_type, schema_type_path, schema_kind, config, plugin_settings):
+            assert str(schema_type) == 'typing.List[str]'
+            assert schema_type_path == SchemaTypePath('', 'typing.List[str]')
+            assert schema_kind == 'TypeAdapter'
+            return CustomOnValidatePython(), None, None
+
+    plugin = Plugin()
+    with install_plugin(plugin):
+        code = """
+from typing import List
+
+import pydantic
+pydantic.TypeAdapter(List[str])
+"""
+        exec(code, {'bar': 'baz'})
+
+
 def test_plugin_path_validate_call() -> None:
     class CustomOnValidatePython(ValidatePythonHandlerProtocol):
         pass

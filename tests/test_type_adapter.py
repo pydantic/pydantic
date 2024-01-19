@@ -320,7 +320,6 @@ def test_annotated_type_disallows_config() -> None:
         TypeAdapter(Annotated[Model, ...], config=ConfigDict(strict=False))
 
 
-@pytest.mark.xfail(reason='waiting for fix in core for ser_json_bytes application')
 def test_ta_config_with_annotated_type() -> None:
     class TestValidator(BaseModel):
         x: str
@@ -341,6 +340,34 @@ def test_ta_config_with_annotated_type() -> None:
 
     # cases where SchemaSerializer is constructed within TypeAdapter's __init__
     assert TypeAdapter(Annotated[TestSerializer, ...]).dump_python(result, mode='json') == {'some_bytes': 'qg=='}
-    assert TypeAdapter(Annotated[list[TestSerializer], ...]).dump_python([result], mode='json') == [
+    assert TypeAdapter(Annotated[List[TestSerializer], ...]).dump_python([result], mode='json') == [
         {'some_bytes': 'qg=='}
+    ]
+
+
+def test_eval_type_backport():
+    v = TypeAdapter('list[int | str]').validate_python
+    assert v([1, '2']) == [1, '2']
+    with pytest.raises(ValidationError) as exc_info:
+        v([{'not a str or int'}])
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_type',
+            'loc': (0, 'int'),
+            'msg': 'Input should be a valid integer',
+            'input': {'not a str or int'},
+        },
+        {
+            'type': 'string_type',
+            'loc': (0, 'str'),
+            'msg': 'Input should be a valid string',
+            'input': {'not a str or int'},
+        },
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        v('not a list')
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'list_type', 'loc': (), 'msg': 'Input should be a valid list', 'input': 'not a list'}
     ]

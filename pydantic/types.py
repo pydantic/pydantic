@@ -1535,7 +1535,8 @@ def _secret_display(value: str | bytes) -> str:
 class SecretStr(_SecretField[str]):
     """A string used for storing sensitive information that you do not want to be visible in logging or tracebacks.
 
-    It displays `'**********'` instead of the string value on `repr()` and `str()` calls.
+    When the secret value is nonempty, it is displayed as `'**********'` instead of the underlying value in
+    calls to `repr()` and `str()`. If the value _is_ empty, it is displayed as `''`.
 
     ```py
     from pydantic import BaseModel, SecretStr
@@ -1550,6 +1551,8 @@ class SecretStr(_SecretField[str]):
     #> username='scolvin' password=SecretStr('**********')
     print(user.password.get_secret_value())
     #> password1
+    print((SecretStr('password'), SecretStr('')))
+    #> (SecretStr('**********'), SecretStr(''))
     ```
     """
 
@@ -1561,6 +1564,8 @@ class SecretBytes(_SecretField[bytes]):
     """A bytes used for storing sensitive information that you do not want to be visible in logging or tracebacks.
 
     It displays `b'**********'` instead of the string value on `repr()` and `str()` calls.
+    When the secret value is nonempty, it is displayed as `b'**********'` instead of the underlying value in
+    calls to `repr()` and `str()`. If the value _is_ empty, it is displayed as `b''`.
 
     ```py
     from pydantic import BaseModel, SecretBytes
@@ -1573,6 +1578,8 @@ class SecretBytes(_SecretField[bytes]):
     #> username='scolvin' password=SecretBytes(b'**********')
     print(user.password.get_secret_value())
     #> b'password1'
+    print((SecretBytes(b'password'), SecretBytes(b'')))
+    #> (SecretBytes(b'**********'), SecretBytes(b''))
     ```
     """
 
@@ -1703,24 +1710,6 @@ class PaymentCardNumber(str):
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BYTE SIZE TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-BYTE_SIZES = {
-    'b': 1,
-    'kb': 10**3,
-    'mb': 10**6,
-    'gb': 10**9,
-    'tb': 10**12,
-    'pb': 10**15,
-    'eb': 10**18,
-    'kib': 2**10,
-    'mib': 2**20,
-    'gib': 2**30,
-    'tib': 2**40,
-    'pib': 2**50,
-    'eib': 2**60,
-}
-BYTE_SIZES.update({k.lower()[0]: v for k, v in BYTE_SIZES.items() if 'i' not in k})
-byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
-
 
 class ByteSize(int):
     """Converts a string representing a number of bytes with units (such as `'1KB'` or `'11.5MiB'`) into an integer.
@@ -1757,9 +1746,53 @@ class ByteSize(int):
     ```
     """
 
+    byte_sizes = {
+        'b': 1,
+        'kb': 10**3,
+        'mb': 10**6,
+        'gb': 10**9,
+        'tb': 10**12,
+        'pb': 10**15,
+        'eb': 10**18,
+        'kib': 2**10,
+        'mib': 2**20,
+        'gib': 2**30,
+        'tib': 2**40,
+        'pib': 2**50,
+        'eib': 2**60,
+        'bit': 1 / 8,
+        'kbit': 10**3 / 8,
+        'mbit': 10**6 / 8,
+        'gbit': 10**9 / 8,
+        'tbit': 10**12 / 8,
+        'pbit': 10**15 / 8,
+        'ebit': 10**18 / 8,
+        'kibit': 2**10 / 8,
+        'mibit': 2**20 / 8,
+        'gibit': 2**30 / 8,
+        'tibit': 2**40 / 8,
+        'pibit': 2**50 / 8,
+        'eibit': 2**60 / 8,
+    }
+    byte_sizes.update({k.lower()[0]: v for k, v in byte_sizes.items() if 'i' not in k})
+
+    byte_string_pattern = r'^\s*(\d*\.?\d+)\s*(\w+)?'
+    byte_string_re = re.compile(byte_string_pattern, re.IGNORECASE)
+
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        return core_schema.with_info_plain_validator_function(cls._validate)
+        return core_schema.with_info_after_validator_function(
+            function=cls._validate,
+            schema=core_schema.union_schema(
+                [
+                    core_schema.str_schema(pattern=cls.byte_string_pattern),
+                    core_schema.int_schema(ge=0),
+                ]
+            ),
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                int, return_schema=core_schema.int_schema(ge=0)
+            ),
+        )
 
     @classmethod
     def _validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> ByteSize:
@@ -1768,7 +1801,7 @@ class ByteSize(int):
         except ValueError:
             pass
 
-        str_match = byte_string_re.match(str(__input_value))
+        str_match = cls.byte_string_re.match(str(__input_value))
         if str_match is None:
             raise PydanticCustomError('byte_size', 'could not parse value and unit from byte string')
 
@@ -1777,7 +1810,7 @@ class ByteSize(int):
             unit = 'b'
 
         try:
-            unit_mult = BYTE_SIZES[unit.lower()]
+            unit_mult = cls.byte_sizes[unit.lower()]
         except KeyError:
             raise PydanticCustomError('byte_size_unit', 'could not interpret byte unit: {unit}', {'unit': unit})
 
@@ -1814,17 +1847,19 @@ class ByteSize(int):
         return f'{num:0.1f}{final_unit}'
 
     def to(self, unit: str) -> float:
-        """Converts a byte size to another unit.
+        """Converts a byte size to another unit, including both byte and bit units.
 
         Args:
-            unit: The unit to convert to. Must be one of the following: B, KB, MB, GB, TB, PB, EiB,
-                KiB, MiB, GiB, TiB, PiB, EiB.
+            unit: The unit to convert to. Must be one of the following: B, KB, MB, GB, TB, PB, EB,
+                KiB, MiB, GiB, TiB, PiB, EiB (byte units) and
+                bit, kbit, mbit, gbit, tbit, pbit, ebit,
+                kibit, mibit, gibit, tibit, pibit, eibit (bit units).
 
         Returns:
             The byte size in the new unit.
         """
         try:
-            unit_div = BYTE_SIZES[unit.lower()]
+            unit_div = self.byte_sizes[unit.lower()]
         except KeyError:
             raise PydanticCustomError('byte_size_unit', 'Could not interpret byte unit: {unit}', {'unit': unit})
 

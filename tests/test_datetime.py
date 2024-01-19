@@ -197,7 +197,6 @@ def test_datetime_parsing(DatetimeModel, value, result):
         assert DatetimeModel(dt=value).dt == result
 
 
-@pytest.mark.xfail(reason='needs new pydantic-core version')
 @pytest.mark.parametrize(
     'value,result',
     [
@@ -629,7 +628,6 @@ def test_tzinfo_could_be_reused():
     assert isinstance(now, datetime)
 
 
-@pytest.mark.xfail(reason='needs new pydantic-core version')
 def test_datetime_from_date_str():
     class Model(BaseModel):
         value: datetime

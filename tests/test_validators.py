@@ -63,6 +63,7 @@ def test_annotated_validator_before() -> None:
     assert Model(x='1.0').x == 1.0
 
 
+@pytest.mark.xfail(sys.version_info >= (3, 9) and sys.implementation.name == 'pypy', reason='PyPy 3.9+ bug')
 def test_annotated_validator_builtin() -> None:
     """https://github.com/pydantic/pydantic/issues/6752"""
     TruncatedFloat = Annotated[float, BeforeValidator(int)]
@@ -1602,7 +1603,6 @@ def test_assignment_validator_cls():
     assert validator_calls == 2
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592')
 def test_literal_validator():
     class Model(BaseModel):
         a: Literal['foo']
@@ -1643,9 +1643,6 @@ def test_literal_validator_str_enum():
     assert my_foo.fizfuz is Bar.FUZ
 
 
-@pytest.mark.skipif(
-    sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592', strict=False
-)
 def test_nested_literal_validator():
     L1 = Literal['foo']
     L2 = Literal['bar']
