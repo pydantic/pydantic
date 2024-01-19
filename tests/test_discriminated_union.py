@@ -1702,8 +1702,8 @@ def test_callable_discriminated_union_with_missing_tag() -> None:
 
 def test_presence_of_discriminator_when_generating_type_adaptor_json_schema_definitions():
     class ItemType(str, Enum):
-        ITEM1 = 'ITEM1'
-        ITEM2 = 'ITEM2'
+        ITEM1 = 'item1'
+        ITEM2 = 'item2'
 
     class CreateItem1(BaseModel):
         item_type: Annotated[Literal[ItemType.ITEM1], Field(alias='type')]
