@@ -4132,24 +4132,6 @@ def test_secretdate(value, result):
 @pytest.mark.parametrize(
     'SecretField, value, error_msg',
     [
-        (SecretDate, 0, r'Input should be a valid date'),
-        (SecretStr, 0, r'Input should be a valid string'),
-        (SecretBytes, 0, r'Input should be a valid byte'),
-    ],
-)
-def test_strict_secretfield_by_config(SecretField, value, error_msg):
-    class Foobar(BaseModel):
-        model_config = ConfigDict(strict=True)
-
-        value: SecretField
-
-    with pytest.raises(ValidationError, match=error_msg):
-        Foobar(value=value)
-
-
-@pytest.mark.parametrize(
-    'SecretField, value, error_msg',
-    [
         (SecretDate, 0, r'Input should be a valid date \[type=date_type,'),
         (SecretStr, 0, r'Input should be a valid string \[type=string_type,'),
         (SecretBytes, 0, r'Input should be a valid bytes \[type=bytes_type,'),
