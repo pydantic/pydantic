@@ -943,6 +943,7 @@ class GenerateSchema:
         return core_schema.dataclass_field(
             name,
             common_field['schema'],
+            init=field_info.init,
             init_only=field_info.init_var or None,
             kw_only=None if field_info.kw_only else False,
             serialization_exclude=common_field['serialization_exclude'],
@@ -1470,6 +1471,18 @@ class GenerateSchema:
                         self._types_namespace,
                         typevars_map=typevars_map,
                     )
+
+                # disallow combination of init=False on a dataclass field and extra='allow' on a dataclass
+                if config and config.get('extra') == 'allow':
+                    # disallow combination of init=False on a dataclass field and extra='allow' on a dataclass
+                    for field_name, field in fields.items():
+                        if field.init is False:
+                            raise PydanticUserError(
+                                f'Field {field_name} has `init=False` and dataclass has config setting `extra="allow"`. '
+                                f'This combination is not allowed.',
+                                code='dataclass-init-false-extra-allow',
+                            )
+
                 decorators = dataclass.__dict__.get('__pydantic_decorators__') or DecoratorInfos.build(dataclass)
                 # Move kw_only=False args to the start of the list, as this is how vanilla dataclasses work.
                 # Note that when kw_only is missing or None, it is treated as equivalent to kw_only=True

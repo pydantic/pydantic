@@ -459,6 +459,7 @@ print(foo)
 
 There are fields that can be used to constrain dataclasses:
 
+* `init`: Whether the field should be included in the `__init__` of the dataclass.
 * `init_var`: Whether the field should be seen as an [init-only field] in the dataclass.
 * `kw_only`: Whether the field should be a keyword-only argument in the constructor of the dataclass.
 

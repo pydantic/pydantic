@@ -68,7 +68,7 @@ def _process_param_defaults(param: Parameter) -> Parameter:
     return param
 
 
-def _generate_signature_parameters(
+def _generate_signature_parameters(  # noqa: C901 (ignore complexity, could use a refactor)
     init: Callable[..., None],
     fields: dict[str, FieldInfo],
     config_wrapper: ConfigWrapper,
@@ -85,6 +85,9 @@ def _generate_signature_parameters(
         # inspect does "clever" things to show annotations as strings because we have
         # `from __future__ import annotations` in main, we don't want that
         if fields.get(param.name):
+            # exclude params with init=False
+            if getattr(fields[param.name], 'init', True) is False:
+                continue
             param = param.replace(name=_field_name_for_signature(param.name, fields[param.name]))
         if param.annotation == 'Any':
             param = param.replace(annotation=Any)
