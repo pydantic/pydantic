@@ -3041,7 +3041,6 @@
 
 
 
-
 <h2 id="pydantic_extra_types.phone_numbers.PhoneNumber" class="doc doc-heading">
           <span class="doc doc-object-name doc-class-name">PhoneNumber</span>
 
@@ -3072,7 +3071,6 @@ is a Python port of Google's <a href="https://github.com/google/libphonenumber/"
 
 
 
-
 <h3 id="pydantic_extra_types.phone_numbers.PhoneNumber.supported_regions" class="doc doc-heading">
           <span class="doc doc-object-name doc-attribute-name">supported_regions</span>
 
@@ -3083,7 +3081,7 @@ is a Python port of Google's <a href="https://github.com/google/libphonenumber/"
   </span>
 
 <a href="#pydantic_extra_types.phone_numbers.PhoneNumber.supported_regions" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">supported_regions</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">phonenumbers</span><span class="o">.</span><span class="n">SUPPORTED_REGIONS</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">supported_regions</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">SUPPORTED_REGIONS</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3097,7 +3095,6 @@ is a Python port of Google's <a href="https://github.com/google/libphonenumber/"
 
 
 
-
 <h3 id="pydantic_extra_types.phone_numbers.PhoneNumber.supported_formats" class="doc doc-heading">
           <span class="doc doc-object-name doc-attribute-name">supported_formats</span>
 
@@ -3108,13 +3105,7 @@ is a Python port of Google's <a href="https://github.com/google/libphonenumber/"
   </span>
 
 <a href="#pydantic_extra_types.phone_numbers.PhoneNumber.supported_formats" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">supported_formats</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
-    <span class="p">[</span>
-        <span class="n">f</span>
-        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">phonenumbers</span><span class="o">.</span><span class="n">PhoneNumberFormat</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">isupper</span><span class="p">()</span>
-    <span class="p">]</span>
-<span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">supported_formats</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">isupper</span><span class="p">()])</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3125,7 +3116,6 @@ is a Python port of Google's <a href="https://github.com/google/libphonenumber/"
 </div>
 
 <div class="doc doc-object doc-attribute">
-
 
 
 
@@ -3149,7 +3139,6 @@ is a Python port of Google's <a href="https://github.com/google/libphonenumber/"
 </div>
 
 <div class="doc doc-object doc-attribute">
-
 
 
 
@@ -3177,7 +3166,6 @@ is a Python port of Google's <a href="https://github.com/google/libphonenumber/"
 
 
 
-
 <h3 id="pydantic_extra_types.phone_numbers.PhoneNumber.min_length" class="doc doc-heading">
           <span class="doc doc-object-name doc-attribute-name">min_length</span>
 
@@ -3199,7 +3187,6 @@ is a Python port of Google's <a href="https://github.com/google/libphonenumber/"
 </div>
 
 <div class="doc doc-object doc-attribute">
-
 
 
 
@@ -3231,6 +3218,7 @@ is a Python port of Google's <a href="https://github.com/google/libphonenumber/"
 
   </div>
 
+
 </div>
 
 
@@ -3250,7 +3238,7 @@ is a Python port of Google's <a href="https://github.com/google/libphonenumber/"
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.6.0a1", "pydantic-core==2.15.0"]
+    window.mkdocs_run_deps = ["pydantic==2.6.0a1", "pydantic-core==2.16.1"]
     </script>
 
               </article>

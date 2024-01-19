@@ -1855,7 +1855,7 @@
   <a href="#pydantic.functional_validators.field_validator" class="md-nav__link">
     <span class="md-ellipsis">
       
-        field_validator()
+        field_validator
       
     </span>
   </a>
@@ -1866,7 +1866,7 @@
   <a href="#pydantic.functional_validators.model_validator" class="md-nav__link">
     <span class="md-ellipsis">
       
-        model_validator()
+        model_validator
       
     </span>
   </a>
@@ -3183,7 +3183,7 @@
   <a href="#pydantic.functional_validators.field_validator" class="md-nav__link">
     <span class="md-ellipsis">
       
-        field_validator()
+        field_validator
       
     </span>
   </a>
@@ -3194,7 +3194,7 @@
   <a href="#pydantic.functional_validators.model_validator" class="md-nav__link">
     <span class="md-ellipsis">
       
-        model_validator()
+        model_validator
       
     </span>
   </a>
@@ -3246,7 +3246,6 @@
 
 
 
-
 <h2 id="pydantic.functional_validators.ModelAfterValidatorWithoutInfo" class="doc doc-heading">
           <span class="doc doc-object-name doc-attribute-name">ModelAfterValidatorWithoutInfo</span>
 
@@ -3273,7 +3272,6 @@ have info argument.</p>
 
 
 
-
 <h2 id="pydantic.functional_validators.ModelAfterValidator" class="doc doc-heading">
           <span class="doc doc-object-name doc-attribute-name">ModelAfterValidator</span>
 
@@ -3284,7 +3282,7 @@ have info argument.</p>
 
 <a href="#pydantic.functional_validators.ModelAfterValidator" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">ModelAfterValidator</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[</span>
-    <span class="p">[</span><span class="n">_ModelType</span><span class="p">,</span> <span class="n">_core_schema</span><span class="o">.</span><span class="n">ValidationInfo</span><span class="p">],</span> <span class="n">_ModelType</span>
+    <span class="p">[</span><span class="n">_ModelType</span><span class="p">,</span> <span class="n">ValidationInfo</span><span class="p">],</span> <span class="n">_ModelType</span>
 <span class="p">]</span>
 </code></pre></div>
 
@@ -3297,7 +3295,6 @@ have info argument.</p>
 
 
 <div class="doc doc-object doc-class">
-
 
 
 
@@ -3334,7 +3331,7 @@ have info argument.</p>
     </thead>
     <tbody>
         <tr>
-          <td><code>func</code></td>
+          <td><code><span title="pydantic.functional_validators.AfterValidator.func">func</span></code></td>
           <td>
                 <code><span title="pydantic_core.core_schema.NoInfoValidatorFunction">NoInfoValidatorFunction</span> | <span title="pydantic_core.core_schema.WithInfoValidatorFunction">WithInfoValidatorFunction</span></code>
           </td>
@@ -3399,10 +3396,10 @@ have info argument.</p>
 
   </div>
 
+
 </div>
 
 <div class="doc doc-object doc-class">
-
 
 
 
@@ -3439,7 +3436,7 @@ have info argument.</p>
     </thead>
     <tbody>
         <tr>
-          <td><code>func</code></td>
+          <td><code><span title="pydantic.functional_validators.BeforeValidator.func">func</span></code></td>
           <td>
                 <code><span title="pydantic_core.core_schema.NoInfoValidatorFunction">NoInfoValidatorFunction</span> | <span title="pydantic_core.core_schema.WithInfoValidatorFunction">WithInfoValidatorFunction</span></code>
           </td>
@@ -3492,10 +3489,10 @@ have info argument.</p>
 
   </div>
 
+
 </div>
 
 <div class="doc doc-object doc-class">
-
 
 
 
@@ -3532,7 +3529,7 @@ have info argument.</p>
     </thead>
     <tbody>
         <tr>
-          <td><code>func</code></td>
+          <td><code><span title="pydantic.functional_validators.PlainValidator.func">func</span></code></td>
           <td>
                 <code><span title="pydantic_core.core_schema.NoInfoValidatorFunction">NoInfoValidatorFunction</span> | <span title="pydantic_core.core_schema.WithInfoValidatorFunction">WithInfoValidatorFunction</span></code>
           </td>
@@ -3579,10 +3576,10 @@ have info argument.</p>
 
   </div>
 
+
 </div>
 
 <div class="doc doc-object doc-class">
-
 
 
 
@@ -3619,7 +3616,7 @@ have info argument.</p>
     </thead>
     <tbody>
         <tr>
-          <td><code>func</code></td>
+          <td><code><span title="pydantic.functional_validators.WrapValidator.func">func</span></code></td>
           <td>
                 <code><span title="pydantic_core.core_schema.NoInfoWrapValidatorFunction">NoInfoWrapValidatorFunction</span> | <span title="pydantic_core.core_schema.WithInfoWrapValidatorFunction">WithInfoWrapValidatorFunction</span></code>
           </td>
@@ -3677,10 +3674,10 @@ have info argument.</p>
 
   </div>
 
+
 </div>
 
 <div class="doc doc-object doc-class">
-
 
 
 
@@ -3717,10 +3714,10 @@ have info argument.</p>
 
   </div>
 
+
 </div>
 
 <div class="doc doc-object doc-class">
-
 
 
 
@@ -3758,10 +3755,10 @@ This is used when <code>mode='wrap'</code> and the function does not have info a
 
   </div>
 
+
 </div>
 
 <div class="doc doc-object doc-class">
-
 
 
 
@@ -3798,10 +3795,10 @@ This is used when <code>mode='wrap'</code> and the function does not have info a
 
   </div>
 
+
 </div>
 
 <div class="doc doc-object doc-class">
-
 
 
 
@@ -3839,10 +3836,10 @@ This is used when <code>mode='before'</code> and the function does not have info
 
   </div>
 
+
 </div>
 
 <div class="doc doc-object doc-class">
-
 
 
 
@@ -3880,10 +3877,10 @@ This is used when <code>mode='before'</code> and the function does not have info
 
   </div>
 
+
 </div>
 
 <div class="doc doc-object doc-class">
-
 
 
 
@@ -3920,10 +3917,10 @@ This is used when <code>mode='before'</code> and the function does not have info
 
   </div>
 
+
 </div>
 
 <div class="doc doc-object doc-class">
-
 
 
 
@@ -3960,10 +3957,10 @@ This is used when <code>mode='before'</code> and the function does not have info
 
   </div>
 
+
 </div>
 
 <div class="doc doc-object doc-class">
-
 
 
 
@@ -4031,10 +4028,10 @@ This is used when <code>mode='before'</code> and the function does not have info
 
   </div>
 
+
 </div>
 
 <div class="doc doc-object doc-class">
-
 
 
 
@@ -4079,12 +4076,12 @@ annotation applied to a type.</p>
 
   </div>
 
+
 </div>
 
 
 
 <div class="doc doc-object doc-function">
-
 
 
 
@@ -4458,7 +4455,6 @@ from <code>fields</code> to ensure an error is raised if you don't pass at least
 
 
 
-
 <h2 id="pydantic.functional_validators.model_validator" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">model_validator</span>
 
@@ -4692,7 +4688,7 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.6.0a1", "pydantic-core==2.15.0"]
+    window.mkdocs_run_deps = ["pydantic==2.6.0a1", "pydantic-core==2.16.1"]
     </script>
 
               </article>
