@@ -12,8 +12,59 @@ type RecursionKey = (
 
 /// This is used to avoid cyclic references in input data causing recursive validation and a nasty segmentation fault.
 /// It's used in `validators/definition` to detect when a reference is reused within itself.
+pub(crate) struct RecursionGuard<'a, S: ContainsRecursionState> {
+    state: &'a mut S,
+    obj_id: usize,
+    node_id: usize,
+}
+
+pub(crate) enum RecursionError {
+    /// Cyclic reference detected
+    Cyclic,
+    /// Recursion limit exceeded
+    Depth,
+}
+
+impl<S: ContainsRecursionState> RecursionGuard<'_, S> {
+    /// Creates a recursion guard for the given object and node id.
+    ///
+    /// When dropped, this will release the recursion for the given object and node id.
+    pub fn new(state: &'_ mut S, obj_id: usize, node_id: usize) -> Result<RecursionGuard<'_, S>, RecursionError> {
+        state.access_recursion_state(|state| {
+            if !state.insert(obj_id, node_id) {
+                return Err(RecursionError::Cyclic);
+            }
+            if state.incr_depth() {
+                return Err(RecursionError::Depth);
+            }
+            Ok(())
+        })?;
+        Ok(RecursionGuard { state, obj_id, node_id })
+    }
+
+    /// Retrieves the underlying state for further use.
+    pub fn state(&mut self) -> &mut S {
+        self.state
+    }
+}
+
+impl<S: ContainsRecursionState> Drop for RecursionGuard<'_, S> {
+    fn drop(&mut self) {
+        self.state.access_recursion_state(|state| {
+            state.decr_depth();
+            state.remove(self.obj_id, self.node_id);
+        });
+    }
+}
+
+/// This trait is used to retrieve the recursion state from some other type
+pub(crate) trait ContainsRecursionState {
+    fn access_recursion_state<R>(&mut self, f: impl FnOnce(&mut RecursionState) -> R) -> R;
+}
+
+/// State for the RecursionGuard. Can also be used directly to increase / decrease depth.
 #[derive(Debug, Clone, Default)]
-pub struct RecursionGuard {
+pub struct RecursionState {
     ids: RecursionStack,
     // depth could be a hashmap {validator_id => depth} but for simplicity and performance it's easier to just
     // use one number for all validators
@@ -31,11 +82,11 @@ pub const RECURSION_GUARD_LIMIT: u8 = if cfg!(any(target_family = "wasm", all(wi
     255
 };
 
-impl RecursionGuard {
+impl RecursionState {
     // insert a new value
     // * return `false` if the stack already had it in it
     // * return `true` if the stack didn't have it in it and it was inserted
-    pub fn insert(&mut self, obj_id: usize, node_id: usize) -> bool {
+    fn insert(&mut self, obj_id: usize, node_id: usize) -> bool {
         self.ids.insert((obj_id, node_id))
     }
 
@@ -68,7 +119,7 @@ impl RecursionGuard {
         self.depth = self.depth.saturating_sub(1);
     }
 
-    pub fn remove(&mut self, obj_id: usize, node_id: usize) {
+    fn remove(&mut self, obj_id: usize, node_id: usize) {
         self.ids.remove(&(obj_id, node_id));
     }
 }
@@ -98,7 +149,7 @@ impl RecursionStack {
     // insert a new value
     // * return `false` if the stack already had it in it
     // * return `true` if the stack didn't have it in it and it was inserted
-    pub fn insert(&mut self, v: RecursionKey) -> bool {
+    fn insert(&mut self, v: RecursionKey) -> bool {
         match self {
             Self::Array { data, len } => {
                 if *len < ARRAY_SIZE {
@@ -129,7 +180,7 @@ impl RecursionStack {
         }
     }
 
-    pub fn remove(&mut self, v: &RecursionKey) {
+    fn remove(&mut self, v: &RecursionKey) {
         match self {
             Self::Array { data, len } => {
                 *len = len.checked_sub(1).expect("remove from empty recursion guard");

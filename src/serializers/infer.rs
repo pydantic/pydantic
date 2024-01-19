@@ -40,19 +40,22 @@ pub(crate) fn infer_to_python_known(
     value: &PyAny,
     include: Option<&PyAny>,
     exclude: Option<&PyAny>,
-    extra: &Extra,
+    mut extra: &Extra,
 ) -> PyResult<PyObject> {
     let py = value.py();
-    let value_id = match extra.rec_guard.add(value, INFER_DEF_REF_ID) {
-        Ok(id) => id,
+
+    let mode = extra.mode;
+    let mut guard = match extra.recursion_guard(value, INFER_DEF_REF_ID) {
+        Ok(v) => v,
         Err(e) => {
-            return match extra.mode {
+            return match mode {
                 SerMode::Json => Err(e),
                 // if recursion is detected by we're serializing to python, we just return the value
                 _ => Ok(value.into_py(py)),
             };
         }
     };
+    let extra = guard.state();
 
     macro_rules! serialize_seq {
         ($t:ty) => {
@@ -220,7 +223,6 @@ pub(crate) fn infer_to_python_known(
                 if let Some(fallback) = extra.fallback {
                     let next_value = fallback.call1((value,))?;
                     let next_result = infer_to_python(next_value, include, exclude, extra);
-                    extra.rec_guard.pop(value_id, INFER_DEF_REF_ID);
                     return next_result;
                 } else if extra.serialize_unknown {
                     serialize_unknown(value).into_py(py)
@@ -267,7 +269,6 @@ pub(crate) fn infer_to_python_known(
                 if let Some(fallback) = extra.fallback {
                     let next_value = fallback.call1((value,))?;
                     let next_result = infer_to_python(next_value, include, exclude, extra);
-                    extra.rec_guard.pop(value_id, INFER_DEF_REF_ID);
                     return next_result;
                 }
                 value.into_py(py)
@@ -275,7 +276,6 @@ pub(crate) fn infer_to_python_known(
             _ => value.into_py(py),
         },
     };
-    extra.rec_guard.pop(value_id, INFER_DEF_REF_ID);
     Ok(value)
 }
 
@@ -332,18 +332,21 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
     serializer: S,
     include: Option<&PyAny>,
     exclude: Option<&PyAny>,
-    extra: &Extra,
+    mut extra: &Extra,
 ) -> Result<S::Ok, S::Error> {
-    let value_id = match extra.rec_guard.add(value, INFER_DEF_REF_ID).map_err(py_err_se_err) {
+    let extra_serialize_unknown = extra.serialize_unknown;
+    let mut guard = match extra.recursion_guard(value, INFER_DEF_REF_ID) {
         Ok(v) => v,
         Err(e) => {
-            return if extra.serialize_unknown {
+            return if extra_serialize_unknown {
                 serializer.serialize_str("...")
             } else {
-                Err(e)
-            }
+                Err(py_err_se_err(e))
+            };
         }
     };
+    let extra = guard.state();
+
     macro_rules! serialize {
         ($t:ty) => {
             match value.extract::<$t>() {
@@ -506,7 +509,6 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
             if let Some(fallback) = extra.fallback {
                 let next_value = fallback.call1((value,)).map_err(py_err_se_err)?;
                 let next_result = infer_serialize(next_value, serializer, include, exclude, extra);
-                extra.rec_guard.pop(value_id, INFER_DEF_REF_ID);
                 return next_result;
             } else if extra.serialize_unknown {
                 serializer.serialize_str(&serialize_unknown(value))
@@ -520,7 +522,6 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
             }
         }
     };
-    extra.rec_guard.pop(value_id, INFER_DEF_REF_ID);
     ser_result
 }
 

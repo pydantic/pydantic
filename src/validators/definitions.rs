@@ -6,6 +6,7 @@ use crate::definitions::DefinitionRef;
 use crate::errors::{ErrorTypeDefaults, ValError, ValResult};
 use crate::input::Input;
 
+use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
 use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
@@ -76,18 +77,10 @@ impl Validator for DefinitionRefValidator {
         self.definition.read(|validator| {
             let validator = validator.unwrap();
             if let Some(id) = input.identity() {
-                if state.recursion_guard.insert(id, self.definition.id()) {
-                    if state.recursion_guard.incr_depth() {
-                        return Err(ValError::new(ErrorTypeDefaults::RecursionLoop, input));
-                    }
-                    let output = validator.validate(py, input, state);
-                    state.recursion_guard.remove(id, self.definition.id());
-                    state.recursion_guard.decr_depth();
-                    output
-                } else {
-                    // we don't remove id here, we leave that to the validator which originally added id to `recursion_guard`
-                    Err(ValError::new(ErrorTypeDefaults::RecursionLoop, input))
-                }
+                let Ok(mut guard) = RecursionGuard::new(state, id, self.definition.id()) else {
+                    return Err(ValError::new(ErrorTypeDefaults::RecursionLoop, input));
+                };
+                validator.validate(py, input, guard.state())
             } else {
                 validator.validate(py, input, state)
             }
@@ -105,18 +98,10 @@ impl Validator for DefinitionRefValidator {
         self.definition.read(|validator| {
             let validator = validator.unwrap();
             if let Some(id) = obj.identity() {
-                if state.recursion_guard.insert(id, self.definition.id()) {
-                    if state.recursion_guard.incr_depth() {
-                        return Err(ValError::new(ErrorTypeDefaults::RecursionLoop, obj));
-                    }
-                    let output = validator.validate_assignment(py, obj, field_name, field_value, state);
-                    state.recursion_guard.remove(id, self.definition.id());
-                    state.recursion_guard.decr_depth();
-                    output
-                } else {
-                    // we don't remove id here, we leave that to the validator which originally added id to `recursion_guard`
-                    Err(ValError::new(ErrorTypeDefaults::RecursionLoop, obj))
-                }
+                let Ok(mut guard) = RecursionGuard::new(state, id, self.definition.id()) else {
+                    return Err(ValError::new(ErrorTypeDefaults::RecursionLoop, obj));
+                };
+                validator.validate_assignment(py, obj, field_name, field_value, guard.state())
             } else {
                 validator.validate_assignment(py, obj, field_name, field_value, state)
             }

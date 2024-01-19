@@ -13,7 +13,7 @@ use crate::definitions::{Definitions, DefinitionsBuilder};
 use crate::errors::{LocItem, ValError, ValResult, ValidationError};
 use crate::input::{Input, InputType, StringMapping};
 use crate::py_gc::PyGcTraverse;
-use crate::recursion_guard::RecursionGuard;
+use crate::recursion_guard::RecursionState;
 use crate::tools::SchemaDict;
 
 mod any;
@@ -263,7 +263,7 @@ impl SchemaValidator {
             self_instance: None,
         };
 
-        let guard = &mut RecursionGuard::default();
+        let guard = &mut RecursionState::default();
         let mut state = ValidationState::new(extra, guard);
         self.validator
             .validate_assignment(py, obj, field_name, field_value, &mut state)
@@ -280,7 +280,7 @@ impl SchemaValidator {
             context,
             self_instance: None,
         };
-        let recursion_guard = &mut RecursionGuard::default();
+        let recursion_guard = &mut RecursionState::default();
         let mut state = ValidationState::new(extra, recursion_guard);
         let r = self.validator.default_value(py, None::<i64>, &mut state);
         match r {
@@ -326,7 +326,7 @@ impl SchemaValidator {
     where
         's: 'data,
     {
-        let mut recursion_guard = RecursionGuard::default();
+        let mut recursion_guard = RecursionState::default();
         let mut state = ValidationState::new(
             Extra::new(strict, from_attributes, context, self_instance, input_type),
             &mut recursion_guard,
@@ -378,7 +378,7 @@ impl<'py> SelfValidator<'py> {
     }
 
     pub fn validate_schema(&self, py: Python<'py>, schema: &'py PyAny, strict: Option<bool>) -> PyResult<&'py PyAny> {
-        let mut recursion_guard = RecursionGuard::default();
+        let mut recursion_guard = RecursionState::default();
         let mut state = ValidationState::new(
             Extra::new(strict, None, None, None, InputType::Python),
             &mut recursion_guard,

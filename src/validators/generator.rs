@@ -6,7 +6,7 @@ use pyo3::types::PyDict;
 
 use crate::errors::{ErrorType, LocItem, ValError, ValResult};
 use crate::input::{GenericIterator, Input};
-use crate::recursion_guard::RecursionGuard;
+use crate::recursion_guard::RecursionState;
 use crate::tools::SchemaDict;
 use crate::ValidationError;
 
@@ -212,7 +212,7 @@ pub struct InternalValidator {
     from_attributes: Option<bool>,
     context: Option<PyObject>,
     self_instance: Option<PyObject>,
-    recursion_guard: RecursionGuard,
+    recursion_guard: RecursionState,
     pub(crate) exactness: Option<Exactness>,
     validation_mode: InputType,
     hide_input_in_errors: bool,

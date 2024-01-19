@@ -10,7 +10,7 @@ use crate::py_gc::PyGcTraverse;
 
 use config::SerializationConfig;
 pub use errors::{PydanticSerializationError, PydanticSerializationUnexpectedValue};
-use extra::{CollectWarnings, SerRecursionGuard};
+use extra::{CollectWarnings, SerRecursionState};
 pub(crate) use extra::{Extra, SerMode, SerializationState};
 pub use shared::CombinedSerializer;
 use shared::{to_json_bytes, BuildSerializer, TypeSerializer};
@@ -52,7 +52,7 @@ impl SchemaSerializer {
         exclude_defaults: bool,
         exclude_none: bool,
         round_trip: bool,
-        rec_guard: &'a SerRecursionGuard,
+        rec_guard: &'a SerRecursionState,
         serialize_unknown: bool,
         fallback: Option<&'a PyAny>,
     ) -> Extra<'b> {
@@ -113,7 +113,7 @@ impl SchemaSerializer {
     ) -> PyResult<PyObject> {
         let mode: SerMode = mode.into();
         let warnings = CollectWarnings::new(warnings);
-        let rec_guard = SerRecursionGuard::default();
+        let rec_guard = SerRecursionState::default();
         let extra = self.build_extra(
             py,
             &mode,
@@ -152,7 +152,7 @@ impl SchemaSerializer {
         fallback: Option<&PyAny>,
     ) -> PyResult<PyObject> {
         let warnings = CollectWarnings::new(warnings);
-        let rec_guard = SerRecursionGuard::default();
+        let rec_guard = SerRecursionState::default();
         let extra = self.build_extra(
             py,
             &SerMode::Json,
