@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic_core import PydanticUndefined
 
+from pydantic.errors import PydanticUserError
+
 from . import _typing_extra
 from ._config import ConfigWrapper
 from ._repr import Representation
@@ -284,11 +286,18 @@ def collect_dataclass_fields(
 
         if isinstance(dataclass_field.default, FieldInfo):
             if dataclass_field.default.init_var:
-                # TODO: same note as above
+                if dataclass_field.default.init is False:
+                    raise PydanticUserError(
+                        f'Dataclass field {ann_name} has init=False and init_var=True, but these are mutually exclusive.',
+                        code='clashing-init-and-init-var',
+                    )
+
+                # TODO: same note as above re validate_assignment
                 continue
             field_info = FieldInfo.from_annotated_attribute(ann_type, dataclass_field.default)
         else:
             field_info = FieldInfo.from_annotated_attribute(ann_type, dataclass_field)
+
         fields[ann_name] = field_info
 
         if field_info.default is not PydanticUndefined and isinstance(getattr(cls, ann_name, field_info), FieldInfo):

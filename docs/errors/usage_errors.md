@@ -1046,4 +1046,47 @@ class Model(BaseModel):
     date: datetime.date = Field(description='A date')
 ```
 
+## Incompatible `dataclass` `init` and `extra` settings {#dataclass-init-false-extra-allow}
+
+Pydantic does not allow the specification of the `extra='allow'` setting on a dataclass
+while any of the fields have `init=False` set.
+
+Thus, you may not do something like the following:
+
+```py test="skip"
+from pydantic import ConfigDict, Field
+from pydantic.dataclasses import dataclass
+
+
+@dataclass(config=ConfigDict(extra='allow'))
+class A:
+    a: int = Field(init=False, default=1)
+```
+
+The above snippet results in the following error during schema building for the `A` dataclass:
+
+```
+pydantic.errors.PydanticUserError: Field a has `init=False` and dataclass has config setting `extra="allow"`.
+This combination is not allowed.
+```
+
+## Incompatible `init` and `init_var` settings on `dataclass` field {#clashing-init-and-init-var}
+
+The `init=False` and `init_var=True` settings are mutually exclusive. Doing so results in the `PydanticUserError` shown in the example below.
+
+```py test="skip"
+from pydantic import Field
+from pydantic.dataclasses import dataclass
+
+
+@dataclass
+class Foo:
+    bar: str = Field(..., init=False, init_var=True)
+
+
+"""
+pydantic.errors.PydanticUserError: Dataclass field bar has init=False and init_var=True, but these are mutually exclusive.
+"""
+```
+
 {% endraw %}
