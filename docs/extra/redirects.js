@@ -96,7 +96,7 @@ function sanitizeURL(url) {
 }
 
 function main() {
-  const fragment = location.hash.substr(1)
+  const fragment = location.hash.substr(1).replace(/[^a-zA-Z0-9-_]/g, '') 
   if (fragment === '' || location.pathname !== '/') {
     // no fragment or not called from root
     return
