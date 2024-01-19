@@ -4829,6 +4829,9 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
 <span class="sd">        This replaces `Model.__fields__` from Pydantic V1.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
+        <span class="n">model_computed_fields</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ComputedFieldInfo</span><span class="p">]]</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A dictionary of computed field names and their corresponding `ComputedFieldInfo` objects.&quot;&quot;&quot;</span>
+
         <span class="n">__class_vars__</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span>
         <span class="n">__private_attributes__</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ModelPrivateAttr</span><span class="p">]]</span>
         <span class="n">__signature__</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Signature</span><span class="p">]</span>
@@ -4843,9 +4846,6 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
         <span class="n">__pydantic_root_model__</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span>
         <span class="n">__pydantic_serializer__</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">SchemaSerializer</span><span class="p">]</span>
         <span class="n">__pydantic_validator__</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">SchemaValidator</span><span class="p">]</span>
-
-        <span class="n">model_computed_fields</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ComputedFieldInfo</span><span class="p">]]</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;A dictionary of computed field names and their corresponding `ComputedFieldInfo` objects.&quot;&quot;&quot;</span>
 
         <span class="c1"># Instance attributes</span>
         <span class="c1"># Note: we use the non-existent kwarg `init=False` in pydantic.fields.Field below so that @dataclass_transform</span>
