@@ -3600,6 +3600,7 @@ you can use <code>Annotated</code>:</p>
 <h2 id="dataclass-constraints">Dataclass Constraints<a class="headerlink" href="#dataclass-constraints" title="Permanent link">&para;</a></h2>
 <p>There are fields that can be used to constrain dataclasses:</p>
 <ul>
+<li><code>init</code>: Whether the field should be included in the <code>__init__</code> of the dataclass.</li>
 <li><code>init_var</code>: Whether the field should be seen as an <a href="https://docs.python.org/3/library/dataclasses.html#init-only-variables">init-only field</a> in the dataclass.</li>
 <li><code>kw_only</code>: Whether the field should be a keyword-only argument in the constructor of the dataclass.</li>
 </ul>

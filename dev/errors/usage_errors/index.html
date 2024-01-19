@@ -2878,6 +2878,28 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#dataclass-init-false-extra-allow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Incompatible dataclass init and extra settings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clashing-init-and-init-var" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Incompatible init and init_var settings on dataclass field
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3609,6 +3631,28 @@
     <span class="md-ellipsis">
       
         Cannot evaluate type annotation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dataclass-init-false-extra-allow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Incompatible dataclass init and extra settings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clashing-init-and-init-var" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Incompatible init and init_var settings on dataclass field
       
     </span>
   </a>
@@ -4494,6 +4538,37 @@ that clashes with one of your fields. We raise an error in the following case:</
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">date</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;A date&#39;</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="dataclass-init-false-extra-allow">Incompatible <code>dataclass</code> <code>init</code> and <code>extra</code> settings<a class="headerlink" href="#dataclass-init-false-extra-allow" title="Permanent link">&para;</a></h2>
+<p>Pydantic does not allow the specification of the <code>extra='allow'</code> setting on a dataclass
+while any of the fields have <code>init=False</code> set.</p>
+<p>Thus, you may not do something like the following:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
+<span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+
+
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s1">&#39;allow&#39;</span><span class="p">))</span>
+<span class="k">class</span> <span class="nc">A</span><span class="p">:</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div>
+<p>The above snippet results in the following error during schema building for the <code>A</code> dataclass:</p>
+<div class="language-text highlight"><pre><span></span><code>pydantic.errors.PydanticUserError: Field a has `init=False` and dataclass has config setting `extra=&quot;allow&quot;`.
+This combination is not allowed.
+</code></pre></div>
+<h2 id="clashing-init-and-init-var">Incompatible <code>init</code> and <code>init_var</code> settings on <code>dataclass</code> field<a class="headerlink" href="#clashing-init-and-init-var" title="Permanent link">&para;</a></h2>
+<p>The <code>init=False</code> and <code>init_var=True</code> settings are mutually exclusive. Doing so results in the <code>PydanticUserError</code> shown in the example below.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span>
+<span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span>
+    <span class="n">bar</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">init_var</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">pydantic.errors.PydanticUserError: Dataclass field bar has init=False and init_var=True, but these are mutually exclusive.</span>
+<span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 
 
