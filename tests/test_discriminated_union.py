@@ -1700,7 +1700,7 @@ def test_callable_discriminated_union_with_missing_tag() -> None:
         assert exc_info.code == 'callable-discriminator-no-tag'
 
 
-def test_presence_of_discriminator_when_generating_type_adaptor_json_schema_definitions():
+def test_presence_of_discriminator_when_generating_type_adaptor_json_schema_definitions() -> None:
     class ItemType(str, Enum):
         ITEM1 = 'item1'
         ITEM2 = 'item2'
