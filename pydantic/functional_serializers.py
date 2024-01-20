@@ -83,7 +83,7 @@ class WrapSerializer:
     """Wrap serializers receive the raw inputs along with a handler function that applies the standard serialization
     logic, and can modify the resulting value before returning it as the final output of serialization.
 
-    A scenario in which a model's subclass containing datetime fields is transformed to UTC without modifying subclass.
+    For example, here's a scenario in which a wrap serializer transforms timezones to UTC **and** utilizes the existing `datetime` serialization logic.
 
     ```python
     from datetime import datetime, timezone
