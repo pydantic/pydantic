@@ -2,7 +2,7 @@ import re
 import sys
 from enum import Enum, IntEnum
 from types import SimpleNamespace
-from typing import Any, Callable, Generic, Optional, Sequence, TypeVar, Union
+from typing import Any, Callable, Generic, List, Optional, Sequence, TypeVar, Union
 
 import pytest
 from dirty_equals import HasRepr, IsStr
@@ -1715,7 +1715,7 @@ def test_presence_of_discriminator_when_generating_type_adaptor_json_schema_defi
 
     class CreateObjectDto(BaseModel):
         id: int
-        items: list[
+        items: List[
             Annotated[
                 Union[
                     CreateItem1,
