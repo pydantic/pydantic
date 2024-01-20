@@ -83,36 +83,57 @@ class WrapSerializer:
     """Wrap serializers receive the raw inputs along with a handler function that applies the standard serialization
     logic, and can modify the resulting value before returning it as the final output of serialization.
 
-    A scenario where a datetime field is converted to UTC if a timezone is specified; otherwise, it is serialized without timezone information.
+    A scenario in which a model's subclass containing datetime fields is transformed to UTC without modifying subclass.
 
     ```python
     from datetime import datetime, timezone
-    from typing import Any
+    from typing import Any, Dict
 
     from typing_extensions import Annotated
 
-    from pydantic import BaseModel, SerializerFunctionWrapHandler, WrapSerializer
+    from pydantic import BaseModel, WrapSerializer
 
-    def convert_to_utc(
-        value: Any, handler: SerializerFunctionWrapHandler
-    ) -> datetime:
-        if value.tzinfo is None:
-            return handler(value)
-        else:
-            return value.astimezone(timezone.utc)
+    class EventDatetime(BaseModel):
+        start: datetime
+        end: datetime
 
-    CustomDatetime = Annotated[datetime, WrapSerializer(convert_to_utc)]
+    def convert_to_utc(value: Any, handler, info) -> Dict[str, datetime]:
+        # Note that `helper` can actually help serialize the `value` for further custom serialization in case it's a subclass.
+        partial_result = handler(value, info)
+        if info.mode == 'json':
+            return {
+                k: datetime.fromisoformat(v).astimezone(timezone.utc)
+                for k, v in partial_result.items()
+            }
+        return {k: v.astimezone(timezone.utc) for k, v in partial_result.items()}
+
+    UTCEventDatetime = Annotated[EventDatetime, WrapSerializer(convert_to_utc)]
 
     class EventModel(BaseModel):
-        dt: CustomDatetime
+        event_datetime: UTCEventDatetime
 
-    event = EventModel(dt='2024-01-01T00:00:00')
+    dt = EventDatetime(
+        start='2024-01-01T07:00:00-08:00', end='2024-01-03T20:00:00+06:00'
+    )
+    event = EventModel(event_datetime=dt)
     print(event.model_dump())
-    #> {'dt': datetime.datetime(2024, 1, 1, 0, 0)}
+    '''
+    {
+        'event_datetime': {
+            'start': datetime.datetime(
+                2024, 1, 1, 15, 0, tzinfo=datetime.timezone.utc
+            ),
+            'end': datetime.datetime(
+                2024, 1, 3, 14, 0, tzinfo=datetime.timezone.utc
+            ),
+        }
+    }
+    '''
 
-    event = EventModel(dt='2024-01-01T00:00:00-08:00')
-    print(event.model_dump())
-    #> {'dt': datetime.datetime(2024, 1, 1, 8, 0, tzinfo=datetime.timezone.utc)}
+    print(event.model_dump_json())
+    '''
+    {"event_datetime":{"start":"2024-01-01T15:00:00Z","end":"2024-01-03T14:00:00Z"}}
+    '''
     ```
 
     Attributes:
