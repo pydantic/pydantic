@@ -2976,6 +2976,25 @@
 
   
       <p>Plain serializers use a function to modify the output of serialization.</p>
+<p>This is particularly helpful when you want to customize the serialization for annotated types.
+Consider an input of <code>list</code>, which will be serialized into a space-delimited string.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PlainSerializer</span>
+
+<span class="n">CustomStr</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
+    <span class="n">List</span><span class="p">,</span> <span class="n">PlainSerializer</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">return_type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+<span class="p">]</span>
+
+<span class="k">class</span> <span class="nc">StudentModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">courses</span><span class="p">:</span> <span class="n">CustomStr</span>
+
+<span class="n">student</span> <span class="o">=</span> <span class="n">StudentModel</span><span class="p">(</span><span class="n">courses</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Math&#39;</span><span class="p">,</span> <span class="s1">&#39;Chemistry&#39;</span><span class="p">,</span> <span class="s1">&#39;English&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">student</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;courses&#39;: &#39;Math Chemistry English&#39;}</span>
+</code></pre></div>
 
 
 
@@ -3068,6 +3087,56 @@
   
       <p>Wrap serializers receive the raw inputs along with a handler function that applies the standard serialization
 logic, and can modify the resulting value before returning it as the final output of serialization.</p>
+<p>For example, here's a scenario in which a wrap serializer transforms timezones to UTC <strong>and</strong> utilizes the existing <code>datetime</code> serialization logic.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span>
+
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">WrapSerializer</span>
+
+<span class="k">class</span> <span class="nc">EventDatetime</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">start</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="n">end</span><span class="p">:</span> <span class="n">datetime</span>
+
+<span class="k">def</span> <span class="nf">convert_to_utc</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">datetime</span><span class="p">]:</span>
+    <span class="c1"># Note that `helper` can actually help serialize the `value` for further custom serialization in case it&#39;s a subclass.</span>
+    <span class="n">partial_result</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;json&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">partial_result</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">partial_result</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+<span class="n">UTCEventDatetime</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">EventDatetime</span><span class="p">,</span> <span class="n">WrapSerializer</span><span class="p">(</span><span class="n">convert_to_utc</span><span class="p">)]</span>
+
+<span class="k">class</span> <span class="nc">EventModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">event_datetime</span><span class="p">:</span> <span class="n">UTCEventDatetime</span>
+
+<span class="n">dt</span> <span class="o">=</span> <span class="n">EventDatetime</span><span class="p">(</span>
+    <span class="n">start</span><span class="o">=</span><span class="s1">&#39;2024-01-01T07:00:00-08:00&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;2024-01-03T20:00:00+06:00&#39;</span>
+<span class="p">)</span>
+<span class="n">event</span> <span class="o">=</span> <span class="n">EventModel</span><span class="p">(</span><span class="n">event_datetime</span><span class="o">=</span><span class="n">dt</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;event_datetime&#39;: {</span>
+<span class="sd">        &#39;start&#39;: datetime.datetime(</span>
+<span class="sd">            2024, 1, 1, 15, 0, tzinfo=datetime.timezone.utc</span>
+<span class="sd">        ),</span>
+<span class="sd">        &#39;end&#39;: datetime.datetime(</span>
+<span class="sd">            2024, 1, 3, 14, 0, tzinfo=datetime.timezone.utc</span>
+<span class="sd">        ),</span>
+<span class="sd">    }</span>
+<span class="sd">}</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">{&quot;event_datetime&quot;:{&quot;start&quot;:&quot;2024-01-01T15:00:00Z&quot;,&quot;end&quot;:&quot;2024-01-03T14:00:00Z&quot;}}</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</code></pre></div>
 
 
 
@@ -3163,6 +3232,23 @@ logic, and can modify the resulting value before returning it as the final outpu
   <div class="doc doc-contents ">
   
       <p>Decorator that enables custom field serialization.</p>
+<p>In the below example, a field of type <code>set</code> is used to mitigate duplication. A <code>field_serializer</code> is used to serialize the data as a sorted list.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Set</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_serializer</span>
+
+<span class="k">class</span> <span class="nc">StudentModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Jane&#39;</span>
+    <span class="n">courses</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+    <span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;courses&#39;</span><span class="p">,</span> <span class="n">when_used</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">serialize_courses_in_order</span><span class="p">(</span><span class="n">courses</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+        <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">courses</span><span class="p">)</span>
+
+<span class="n">student</span> <span class="o">=</span> <span class="n">StudentModel</span><span class="p">(</span><span class="n">courses</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Math&#39;</span><span class="p">,</span> <span class="s1">&#39;Chemistry&#39;</span><span class="p">,</span> <span class="s1">&#39;English&#39;</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">student</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>
+<span class="c1">#&gt; {&quot;name&quot;:&quot;Jane&quot;,&quot;courses&quot;:[&quot;Chemistry&quot;,&quot;English&quot;,&quot;Math&quot;]}</span>
+</code></pre></div>
 <p>See <a href="../../concepts/serialization/#custom-serializers">Custom serializers</a> for more information.</p>
 <p>Four signatures are supported:</p>
 <ul>
@@ -3289,52 +3375,72 @@ logic, and can modify the resulting value before returning it as the final outpu
 
           <details class="quote">
             <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span>
-<span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span>
-<span class="normal">153</span>
-<span class="normal">154</span>
-<span class="normal">155</span>
-<span class="normal">156</span>
-<span class="normal">157</span>
-<span class="normal">158</span>
-<span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span>
-<span class="normal">178</span>
-<span class="normal">179</span>
-<span class="normal">180</span>
-<span class="normal">181</span>
-<span class="normal">182</span>
-<span class="normal">183</span>
-<span class="normal">184</span>
-<span class="normal">185</span>
-<span class="normal">186</span>
-<span class="normal">187</span>
-<span class="normal">188</span>
-<span class="normal">189</span>
-<span class="normal">190</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">field_serializer</span><span class="p">(</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">field_serializer</span><span class="p">(</span>
     <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;plain&#39;</span><span class="p">,</span> <span class="s1">&#39;wrap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;plain&#39;</span><span class="p">,</span>
     <span class="n">return_type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
@@ -3342,6 +3448,26 @@ logic, and can modify the resulting value before returning it as the final outpu
     <span class="n">check_fields</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator that enables custom field serialization.</span>
+
+<span class="sd">    In the below example, a field of type `set` is used to mitigate duplication. A `field_serializer` is used to serialize the data as a sorted list.</span>
+
+<span class="sd">    ```python</span>
+<span class="sd">    from typing import Set</span>
+
+<span class="sd">    from pydantic import BaseModel, field_serializer</span>
+
+<span class="sd">    class StudentModel(BaseModel):</span>
+<span class="sd">        name: str = &#39;Jane&#39;</span>
+<span class="sd">        courses: Set[str]</span>
+
+<span class="sd">        @field_serializer(&#39;courses&#39;, when_used=&#39;json&#39;)</span>
+<span class="sd">        def serialize_courses_in_order(courses: Set[str]):</span>
+<span class="sd">            return sorted(courses)</span>
+
+<span class="sd">    student = StudentModel(courses={&#39;Math&#39;, &#39;Chemistry&#39;, &#39;English&#39;})</span>
+<span class="sd">    print(student.model_dump_json())</span>
+<span class="sd">    #&gt; {&quot;name&quot;:&quot;Jane&quot;,&quot;courses&quot;:[&quot;Chemistry&quot;,&quot;English&quot;,&quot;Math&quot;]}</span>
+<span class="sd">    ```</span>
 
 <span class="sd">    See [Custom serializers](../concepts/serialization.md#custom-serializers) for more information.</span>
 
@@ -3408,6 +3534,26 @@ logic, and can modify the resulting value before returning it as the final outpu
   <div class="doc doc-contents ">
   
       <p>Decorator that enables custom model serialization.</p>
+<p>This is useful when a model need to be serialized in a customized manner, allowing for flexibility beyond just specific fields.</p>
+<p>An example would be to serialize temperature to the same temperature scale, such as degrees Celsius.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">model_serializer</span>
+
+<span class="k">class</span> <span class="nc">TemperatureModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">unit</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;F&#39;</span><span class="p">]</span>
+    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="nd">@model_serializer</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">serialize_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span> <span class="o">==</span> <span class="s1">&#39;F&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;unit&#39;</span><span class="p">:</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">-</span> <span class="mi">32</span><span class="p">)</span> <span class="o">/</span> <span class="mf">1.8</span><span class="p">)}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;unit&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">}</span>
+
+<span class="n">temperature</span> <span class="o">=</span> <span class="n">TemperatureModel</span><span class="p">(</span><span class="n">unit</span><span class="o">=</span><span class="s1">&#39;F&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">212</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">temperature</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;unit&#39;: &#39;C&#39;, &#39;value&#39;: 100}</span>
+</code></pre></div>
 <p>See <a href="../../concepts/serialization/#custom-serializers">Custom serializers</a> for more information.</p>
 
 
@@ -3513,39 +3659,63 @@ logic, and can modify the resulting value before returning it as the final outpu
 
           <details class="quote">
             <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">211</span>
-<span class="normal">212</span>
-<span class="normal">213</span>
-<span class="normal">214</span>
-<span class="normal">215</span>
-<span class="normal">216</span>
-<span class="normal">217</span>
-<span class="normal">218</span>
-<span class="normal">219</span>
-<span class="normal">220</span>
-<span class="normal">221</span>
-<span class="normal">222</span>
-<span class="normal">223</span>
-<span class="normal">224</span>
-<span class="normal">225</span>
-<span class="normal">226</span>
-<span class="normal">227</span>
-<span class="normal">228</span>
-<span class="normal">229</span>
-<span class="normal">230</span>
-<span class="normal">231</span>
-<span class="normal">232</span>
-<span class="normal">233</span>
-<span class="normal">234</span>
-<span class="normal">235</span>
-<span class="normal">236</span>
-<span class="normal">237</span>
-<span class="normal">238</span>
-<span class="normal">239</span>
-<span class="normal">240</span>
-<span class="normal">241</span>
-<span class="normal">242</span>
-<span class="normal">243</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_serializer</span><span class="p">(</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span>
+<span class="normal">358</span>
+<span class="normal">359</span>
+<span class="normal">360</span>
+<span class="normal">361</span>
+<span class="normal">362</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_serializer</span><span class="p">(</span>
     <span class="n">__f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;plain&#39;</span><span class="p">,</span> <span class="s1">&#39;wrap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;plain&#39;</span><span class="p">,</span>
@@ -3553,6 +3723,30 @@ logic, and can modify the resulting value before returning it as the final outpu
     <span class="n">return_type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator that enables custom model serialization.</span>
+
+<span class="sd">    This is useful when a model need to be serialized in a customized manner, allowing for flexibility beyond just specific fields.</span>
+
+<span class="sd">    An example would be to serialize temperature to the same temperature scale, such as degrees Celsius.</span>
+
+<span class="sd">    ```python</span>
+<span class="sd">    from typing import Literal</span>
+
+<span class="sd">    from pydantic import BaseModel, model_serializer</span>
+
+<span class="sd">    class TemperatureModel(BaseModel):</span>
+<span class="sd">        unit: Literal[&#39;C&#39;, &#39;F&#39;]</span>
+<span class="sd">        value: int</span>
+
+<span class="sd">        @model_serializer()</span>
+<span class="sd">        def serialize_model(self):</span>
+<span class="sd">            if self.unit == &#39;F&#39;:</span>
+<span class="sd">                return {&#39;unit&#39;: &#39;C&#39;, &#39;value&#39;: int((self.value - 32) / 1.8)}</span>
+<span class="sd">            return {&#39;unit&#39;: self.unit, &#39;value&#39;: self.value}</span>
+
+<span class="sd">    temperature = TemperatureModel(unit=&#39;F&#39;, value=212)</span>
+<span class="sd">    print(temperature.model_dump())</span>
+<span class="sd">    #&gt; {&#39;unit&#39;: &#39;C&#39;, &#39;value&#39;: 100}</span>
+<span class="sd">    ```</span>
 
 <span class="sd">    See [Custom serializers](../concepts/serialization.md#custom-serializers) for more information.</span>
 
