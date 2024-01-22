@@ -219,6 +219,7 @@ pub(crate) fn infer_to_python_known(
                 PyList::new(py, items).into_py(py)
             }
             ObType::Path => value.str()?.into_py(py),
+            ObType::Pattern => value.getattr(intern!(py, "pattern"))?.into_py(py),
             ObType::Unknown => {
                 if let Some(fallback) = extra.fallback {
                     let next_value = fallback.call1((value,))?;
@@ -505,6 +506,16 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
             let s = value.str().map_err(py_err_se_err)?.to_str().map_err(py_err_se_err)?;
             serializer.serialize_str(s)
         }
+        ObType::Pattern => {
+            let s = value
+                .getattr(intern!(value.py(), "pattern"))
+                .map_err(py_err_se_err)?
+                .str()
+                .map_err(py_err_se_err)?
+                .to_str()
+                .map_err(py_err_se_err)?;
+            serializer.serialize_str(s)
+        }
         ObType::Unknown => {
             if let Some(fallback) = extra.fallback {
                 let next_value = fallback.call1((value,)).map_err(py_err_se_err)?;
@@ -628,6 +639,7 @@ pub(crate) fn infer_json_key_known<'py>(ob_type: ObType, key: &'py PyAny, extra:
             infer_json_key(k, extra)
         }
         ObType::Path => Ok(key.str()?.to_string_lossy()),
+        ObType::Pattern => Ok(key.getattr(intern!(key.py(), "pattern"))?.str()?.to_string_lossy()),
         ObType::Unknown => {
             if let Some(fallback) = extra.fallback {
                 let next_key = fallback.call1((key,))?;

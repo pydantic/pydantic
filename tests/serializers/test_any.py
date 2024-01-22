@@ -1,6 +1,7 @@
 import dataclasses
 import json
 import platform
+import re
 import sys
 from collections import namedtuple
 from datetime import date, datetime, time, timedelta, timezone
@@ -437,7 +438,7 @@ def test_base64():
         (lambda: MyEnum.a, {}, b'1'),
         (lambda: MyEnum.b, {}, b'"b"'),
         (lambda: [MyDataclass(1, 'a', 2), MyModel(a=2, b='b')], {}, b'[{"a":1,"b":"a"},{"a":2,"b":"b"}]'),
-        # # (lambda: re.compile('^regex$'), b'"^regex$"'),
+        (lambda: re.compile('^regex$'), {}, b'"^regex$"'),
     ],
 )
 def test_encoding(any_serializer, gen_input, kwargs, expected_json):
