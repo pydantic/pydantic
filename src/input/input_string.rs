@@ -3,7 +3,7 @@ use pyo3::types::{PyDict, PyString};
 
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 
-use crate::errors::{AsLocItem, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
+use crate::errors::{ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::input::py_string_str;
 use crate::tools::safe_repr;
 use crate::validators::decimal::create_decimal;
@@ -17,7 +17,7 @@ use super::{
     GenericIterator, GenericMapping, Input, ValidationMatch,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum StringMapping<'py> {
     String(&'py PyString),
     Mapping(&'py PyDict),
@@ -52,11 +52,11 @@ impl<'py> StringMapping<'py> {
     }
 }
 
-impl AsLocItem for StringMapping<'_> {
-    fn as_loc_item(&self) -> LocItem {
-        match self {
-            Self::String(s) => s.to_string_lossy().as_ref().into(),
-            Self::Mapping(d) => safe_repr(d).to_string().into(),
+impl From<StringMapping<'_>> for LocItem {
+    fn from(string_mapping: StringMapping<'_>) -> Self {
+        match string_mapping {
+            StringMapping::String(s) => s.to_string_lossy().as_ref().into(),
+            StringMapping::Mapping(d) => safe_repr(d).to_string().into(),
         }
     }
 }

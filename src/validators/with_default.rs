@@ -170,7 +170,7 @@ impl Validator for WithDefaultValidator {
                         Ok(v) => Ok(Some(v)),
                         Err(e) => {
                             if let Some(outer_loc) = outer_loc {
-                                Err(e.with_outer_location(outer_loc.into()))
+                                Err(e.with_outer_location(outer_loc))
                             } else {
                                 Err(e)
                             }

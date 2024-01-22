@@ -4,7 +4,7 @@ use pyo3::exceptions::PyValueError;
 use pyo3::types::{PyDict, PyType};
 use pyo3::{intern, prelude::*};
 
-use crate::errors::{AsLocItem, ErrorTypeDefaults, InputValue, ValError, ValResult};
+use crate::errors::{ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::tools::py_err;
 use crate::{PyMultiHostUrl, PyUrl};
 
@@ -46,7 +46,7 @@ impl TryFrom<&str> for InputType {
 /// the convention is to either implement:
 /// * `strict_*` & `lax_*` if they have different behavior
 /// * or, `validate_*` and `strict_*` to just call `validate_*` if the behavior for strict and lax is the same
-pub trait Input<'a>: fmt::Debug + ToPyObject + AsLocItem + Sized {
+pub trait Input<'a>: fmt::Debug + ToPyObject + Into<LocItem> + Sized {
     fn as_error_value(&self) -> InputValue;
 
     fn identity(&self) -> Option<usize> {

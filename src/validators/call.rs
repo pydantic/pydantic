@@ -93,7 +93,7 @@ impl Validator for CallValidator {
         if let Some(return_validator) = &self.return_validator {
             return_validator
                 .validate(py, return_value.into_ref(py), state)
-                .map_err(|e| e.with_outer_location("return".into()))
+                .map_err(|e| e.with_outer_location("return"))
         } else {
             Ok(return_value.to_object(py))
         }

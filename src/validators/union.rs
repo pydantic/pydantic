@@ -8,7 +8,7 @@ use smallvec::SmallVec;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{is_strict, schema_or_config};
-use crate::errors::{AsLocItem, ErrorType, ValError, ValLineError, ValResult};
+use crate::errors::{ErrorType, ValError, ValLineError, ValResult};
 use crate::input::{GenericMapping, Input};
 use crate::lookup_key::LookupKey;
 use crate::py_gc::PyGcTraverse;
@@ -263,7 +263,7 @@ impl<'a> MaybeErrors<'a> {
                          }| {
                             line_errors.into_iter().map(move |err| {
                                 let case_label = label.unwrap_or(choice.get_name());
-                                err.with_outer_location(case_label.into())
+                                err.with_outer_location(case_label)
                             })
                         },
                     )
@@ -486,7 +486,7 @@ impl TaggedUnionValidator {
         if let Ok(Some((tag, validator))) = self.lookup.validate(py, tag) {
             return match validator.validate(py, input, state) {
                 Ok(res) => Ok(res),
-                Err(err) => Err(err.with_outer_location(tag.as_loc_item())),
+                Err(err) => Err(err.with_outer_location(tag)),
             };
         }
         match self.custom_error {

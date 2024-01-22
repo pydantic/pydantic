@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::is_strict;
-use crate::errors::{AsLocItem, ValError, ValLineError, ValResult};
+use crate::errors::{LocItem, ValError, ValLineError, ValResult};
 use crate::input::BorrowInput;
 use crate::input::{
     DictGenericIterator, GenericMapping, Input, JsonObjectGenericIterator, MappingGenericIterator,
@@ -103,7 +103,12 @@ impl DictValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        mapping_iter: impl Iterator<Item = ValResult<(impl BorrowInput + AsLocItem + 'data, impl BorrowInput + 'data)>>,
+        mapping_iter: impl Iterator<
+            Item = ValResult<(
+                impl BorrowInput + Clone + Into<LocItem> + 'data,
+                impl BorrowInput + 'data,
+            )>,
+        >,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         let output = PyDict::new(py);
@@ -118,10 +123,7 @@ impl DictValidator {
                 Err(ValError::LineErrors(line_errors)) => {
                     for err in line_errors {
                         // these are added in reverse order so [key] is shunted along by the second call
-                        errors.push(
-                            err.with_outer_location("[key]".into())
-                                .with_outer_location(key.as_loc_item()),
-                        );
+                        errors.push(err.with_outer_location("[key]").with_outer_location(key.clone()));
                     }
                     None
                 }
@@ -132,7 +134,7 @@ impl DictValidator {
                 Ok(value) => Some(value),
                 Err(ValError::LineErrors(line_errors)) => {
                     for err in line_errors {
-                        errors.push(err.with_outer_location(key.as_loc_item()));
+                        errors.push(err.with_outer_location(key.clone()));
                     }
                     None
                 }

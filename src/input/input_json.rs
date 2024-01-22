@@ -6,7 +6,7 @@ use pyo3::types::{PyDict, PyString};
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 use strum::EnumMessage;
 
-use crate::errors::{AsLocItem, ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
+use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::validators::decimal::create_decimal;
 
 use super::datetime::{
@@ -21,9 +21,9 @@ use super::{
 };
 
 /// This is required but since JSON object keys are always strings, I don't think it can be called
-impl AsLocItem for JsonValue {
-    fn as_loc_item(&self) -> LocItem {
-        match self {
+impl From<&JsonValue> for LocItem {
+    fn from(json_value: &JsonValue) -> Self {
+        match json_value {
             JsonValue::Int(i) => (*i).into(),
             JsonValue::Str(s) => s.as_str().into(),
             v => format!("{v:?}").into(),
@@ -31,9 +31,9 @@ impl AsLocItem for JsonValue {
     }
 }
 
-impl AsLocItem for &JsonValue {
-    fn as_loc_item(&self) -> LocItem {
-        AsLocItem::as_loc_item(*self)
+impl From<JsonValue> for LocItem {
+    fn from(json_value: JsonValue) -> Self {
+        (&json_value).into()
     }
 }
 
@@ -81,13 +81,6 @@ impl<'a> Input<'a> for JsonValue {
                     self,
                 ))
             }
-        }
-    }
-
-    fn exact_str(&'a self) -> ValResult<EitherString<'a>> {
-        match self {
-            JsonValue::Str(s) => Ok(s.as_str().into()),
-            _ => Err(ValError::new(ErrorTypeDefaults::StringType, self)),
         }
     }
 
@@ -141,6 +134,13 @@ impl<'a> Input<'a> for JsonValue {
             JsonValue::Float(f) if !strict => float_as_int(self, *f).map(ValidationMatch::lax),
             JsonValue::Str(str) if !strict => str_as_int(self, str).map(ValidationMatch::lax),
             _ => Err(ValError::new(ErrorTypeDefaults::IntType, self)),
+        }
+    }
+
+    fn exact_str(&'a self) -> ValResult<EitherString<'a>> {
+        match self {
+            JsonValue::Str(s) => Ok(s.as_str().into()),
+            _ => Err(ValError::new(ErrorTypeDefaults::StringType, self)),
         }
     }
 
@@ -316,18 +316,6 @@ impl BorrowInput for &'_ JsonValue {
     type Input<'a> = JsonValue where Self: 'a;
     fn borrow_input(&self) -> &Self::Input<'_> {
         self
-    }
-}
-
-impl AsLocItem for String {
-    fn as_loc_item(&self) -> LocItem {
-        self.to_string().into()
-    }
-}
-
-impl AsLocItem for &String {
-    fn as_loc_item(&self) -> LocItem {
-        AsLocItem::as_loc_item(*self)
     }
 }
 

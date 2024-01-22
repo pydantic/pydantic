@@ -8,7 +8,7 @@ use ahash::AHashSet;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{is_strict, schema_or_config, schema_or_config_same, ExtraBehavior};
-use crate::errors::{AsLocItem, ErrorTypeDefaults, ValError, ValLineError, ValResult};
+use crate::errors::{ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::{
     AttributesGenericIterator, BorrowInput, DictGenericIterator, GenericMapping, Input, JsonObjectGenericIterator,
     MappingGenericIterator, StringMappingGenericIterator, ValidationMatch,
@@ -183,7 +183,7 @@ impl Validator for TypedDictValidator {
                             Ok(v) => v,
                             Err(ValError::LineErrors(line_errors)) => {
                                 for err in line_errors {
-                                    errors.push(err.with_outer_location(field.name.as_loc_item()));
+                                    errors.push(err.with_outer_location(&field.name));
                                 }
                                 continue;
                             }
@@ -256,7 +256,7 @@ impl Validator for TypedDictValidator {
                             Err(ValError::LineErrors(line_errors)) => {
                                 for err in line_errors {
                                     errors.push(
-                                        err.with_outer_location(raw_key.as_loc_item())
+                                        err.with_outer_location(raw_key.clone())
                                             .with_type(ErrorTypeDefaults::InvalidKey)
 
                                     );
@@ -278,7 +278,7 @@ impl Validator for TypedDictValidator {
                                     ValLineError::new_with_loc(
                                         ErrorTypeDefaults::ExtraForbidden,
                                         value,
-                                        raw_key.as_loc_item(),
+                                        raw_key,
                                     )
 
                                 );
@@ -294,9 +294,7 @@ impl Validator for TypedDictValidator {
                                         Err(ValError::LineErrors(line_errors)) => {
                                             for err in line_errors {
                                                 errors.push(
-                                                    err
-                                                    .with_outer_location(raw_key.as_loc_item())
-
+                                                    err.with_outer_location(raw_key.clone())
                                                 );
                                             }
                                         }
