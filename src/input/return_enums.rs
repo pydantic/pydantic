@@ -205,7 +205,7 @@ fn validate_iter_to_vec<'a, 's>(
             }
             Err(ValError::LineErrors(line_errors)) => {
                 max_length_check.incr()?;
-                errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index.into())));
+                errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
             }
             Err(ValError::Omit) => (),
             Err(err) => return Err(err),
@@ -284,7 +284,7 @@ fn validate_iter_to_set<'a, 's>(
                 }
             }
             Err(ValError::LineErrors(line_errors)) => {
-                errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index.into())));
+                errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
             }
             Err(ValError::Omit) => (),
             Err(err) => return Err(err),

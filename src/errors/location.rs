@@ -34,15 +34,15 @@ impl fmt::Display for LocItem {
     }
 }
 
-// TODO rename to ToLocItem
-pub trait AsLocItem {
-    // TODO rename to to_loc_item
-    fn as_loc_item(&self) -> LocItem;
-}
-
 impl From<String> for LocItem {
     fn from(s: String) -> Self {
         Self::S(s)
+    }
+}
+
+impl From<&String> for LocItem {
+    fn from(s: &String) -> Self {
+        s.to_string().into()
     }
 }
 
@@ -201,9 +201,9 @@ impl TryFrom<Option<&PyAny>> for Location {
     fn try_from(location: Option<&PyAny>) -> PyResult<Self> {
         if let Some(location) = location {
             let mut loc_vec: Vec<LocItem> = if let Ok(tuple) = location.downcast::<PyTuple>() {
-                tuple.iter().map(AsLocItem::as_loc_item).collect()
+                tuple.iter().map(Into::into).collect()
             } else if let Ok(list) = location.downcast::<PyList>() {
-                list.iter().map(AsLocItem::as_loc_item).collect()
+                list.iter().map(Into::into).collect()
             } else {
                 return Err(PyTypeError::new_err(
                     "Location must be a list or tuple of strings and ints",

@@ -366,11 +366,11 @@ impl LookupPath {
     pub fn apply_error_loc(&self, mut line_error: ValLineError, loc_by_alias: bool, field_name: &str) -> ValLineError {
         if loc_by_alias {
             for path_item in self.iter().rev() {
-                line_error = line_error.with_outer_location(path_item.clone().into());
+                line_error = line_error.with_outer_location(path_item.clone());
             }
             line_error
         } else {
-            line_error.with_outer_location(field_name.to_string().into())
+            line_error.with_outer_location(field_name)
         }
     }
 

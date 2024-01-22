@@ -6,7 +6,7 @@ use pyo3::types::{PyAny, PyDict, PyString};
 use pyo3::{intern, PyTraverseError, PyVisit};
 
 use crate::errors::{
-    AsLocItem, ErrorType, PydanticCustomError, PydanticKnownError, PydanticOmit, ValError, ValResult, ValidationError,
+    ErrorType, PydanticCustomError, PydanticKnownError, PydanticOmit, ValError, ValResult, ValidationError,
 };
 use crate::input::Input;
 use crate::py_gc::PyGcTraverse;
@@ -371,7 +371,7 @@ struct ValidatorCallable {
 #[pymethods]
 impl ValidatorCallable {
     fn __call__(&mut self, py: Python, input_value: &PyAny, outer_location: Option<&PyAny>) -> PyResult<PyObject> {
-        let outer_location = outer_location.map(AsLocItem::as_loc_item);
+        let outer_location = outer_location.map(Into::into);
         self.validator.validate(py, input_value, outer_location)
     }
 
@@ -399,7 +399,7 @@ struct AssignmentValidatorCallable {
 #[pymethods]
 impl AssignmentValidatorCallable {
     fn __call__(&mut self, py: Python, input_value: &PyAny, outer_location: Option<&PyAny>) -> PyResult<PyObject> {
-        let outer_location = outer_location.map(AsLocItem::as_loc_item);
+        let outer_location = outer_location.map(Into::into);
         self.validator.validate_assignment(
             py,
             input_value,

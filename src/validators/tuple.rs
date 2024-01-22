@@ -76,7 +76,7 @@ impl TupleValidator {
                 Some((index, input_item)) => match validator.validate(py, input_item, state) {
                     Ok(item) => self.push_output_item(input, output, item, actual_length)?,
                     Err(ValError::LineErrors(line_errors)) => {
-                        errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index.into())));
+                        errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
                     }
                     Err(ValError::Omit) => (),
                     Err(err) => return Err(err),
@@ -136,7 +136,7 @@ impl TupleValidator {
                     match variable_validator.validate(py, input_item, state) {
                         Ok(item) => self.push_output_item(input, &mut output, item, actual_length)?,
                         Err(ValError::LineErrors(line_errors)) => {
-                            errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index.into())));
+                            errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
                         }
                         Err(ValError::Omit) => (),
                         Err(err) => return Err(err),
@@ -167,7 +167,7 @@ impl TupleValidator {
                             errors.extend(
                                 line_errors
                                     .into_iter()
-                                    .map(|err| err.with_outer_location(buffer_item_index.into())),
+                                    .map(|err| err.with_outer_location(buffer_item_index)),
                             );
                         }
                         Err(ValError::Omit) => (),

@@ -61,7 +61,8 @@ impl ValError {
     }
 
     /// helper function to call with_outer on line items if applicable
-    pub fn with_outer_location(self, loc_item: LocItem) -> Self {
+    pub fn with_outer_location(self, into_loc_item: impl Into<LocItem>) -> Self {
+        let loc_item = into_loc_item.into();
         match self {
             Self::LineErrors(mut line_errors) => {
                 for line_error in &mut line_errors {
@@ -120,8 +121,8 @@ impl ValLineError {
 
     /// location is stored reversed so it's quicker to add "outer" items as that's what we always do
     /// hence `push` here instead of `insert`
-    pub fn with_outer_location(mut self, loc_item: LocItem) -> Self {
-        self.location.with_outer(loc_item);
+    pub fn with_outer_location(mut self, into_loc_item: impl Into<LocItem>) -> Self {
+        self.location.with_outer(into_loc_item.into());
         self
     }
 
