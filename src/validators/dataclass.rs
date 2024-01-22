@@ -7,7 +7,7 @@ use ahash::AHashSet;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{is_strict, schema_or_config_same, ExtraBehavior};
-use crate::errors::{AsLocItem, ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
+use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::InputType;
 use crate::input::{BorrowInput, GenericArguments, Input, ValidationMatch};
 use crate::lookup_key::LookupKey;
@@ -231,7 +231,7 @@ impl Validator for DataclassArgsValidator {
                                         errors.extend(
                                             line_errors
                                                 .into_iter()
-                                                .map(|err| err.with_outer_location(index.into())),
+                                                .map(|err| err.with_outer_location(index)),
                                         );
                                     }
                                     Err(err) => return Err(err),
@@ -310,7 +310,7 @@ impl Validator for DataclassArgsValidator {
                                                             ValLineError::new_with_loc(
                                                                 ErrorTypeDefaults::UnexpectedKeywordArgument,
                                                                 value,
-                                                                raw_key.as_loc_item(),
+                                                                raw_key,
                                                             ),
                                                         );
                                                     }
@@ -322,9 +322,7 @@ impl Validator for DataclassArgsValidator {
                                                                     .set_item(either_str.as_py_string(py), value)?,
                                                                 Err(ValError::LineErrors(line_errors)) => {
                                                                     for err in line_errors {
-                                                                        errors.push(err.with_outer_location(
-                                                                            raw_key.as_loc_item(),
-                                                                        ));
+                                                                        errors.push(err.with_outer_location(raw_key));
                                                                     }
                                                                 }
                                                                 Err(err) => return Err(err),
@@ -339,7 +337,7 @@ impl Validator for DataclassArgsValidator {
                                         Err(ValError::LineErrors(line_errors)) => {
                                             for err in line_errors {
                                                 errors.push(
-                                                    err.with_outer_location(raw_key.as_loc_item())
+                                                    err.with_outer_location(raw_key)
                                                         .with_type(ErrorTypeDefaults::InvalidKey),
                                                 );
                                             }
@@ -430,7 +428,7 @@ impl Validator for DataclassArgsValidator {
                 Err(ValError::LineErrors(line_errors)) => {
                     let errors = line_errors
                         .into_iter()
-                        .map(|e| e.with_outer_location(field_name.into()))
+                        .map(|e| e.with_outer_location(field_name))
                         .collect();
                     Err(ValError::LineErrors(errors))
                 }

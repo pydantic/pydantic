@@ -6,7 +6,7 @@ use ahash::AHashSet;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{schema_or_config_same, ExtraBehavior};
-use crate::errors::{AsLocItem, ErrorTypeDefaults, ValError, ValLineError, ValResult};
+use crate::errors::{ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::{GenericArguments, Input, ValidationMatch};
 use crate::lookup_key::LookupKey;
 
@@ -209,7 +209,7 @@ impl Validator for ArgumentsValidator {
                             {
                                 Ok(value) => output_args.push(value),
                                 Err(ValError::LineErrors(line_errors)) => {
-                                    errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index.into())));
+                                    errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
                                 }
                                 Err(err) => return Err(err),
                             }
@@ -263,7 +263,7 @@ impl Validator for ArgumentsValidator {
                                         errors.extend(
                                             line_errors
                                                 .into_iter()
-                                                .map(|err| err.with_outer_location((index + self.positional_params_count).into())),
+                                                .map(|err| err.with_outer_location(index + self.positional_params_count)),
                                         );
                                     }
                                     Err(err) => return Err(err),
@@ -289,7 +289,7 @@ impl Validator for ArgumentsValidator {
                                 Err(ValError::LineErrors(line_errors)) => {
                                     for err in line_errors {
                                         errors.push(
-                                            err.with_outer_location(raw_key.as_loc_item())
+                                            err.with_outer_location(raw_key)
                                                 .with_type(ErrorTypeDefaults::InvalidKey),
                                         );
                                     }
@@ -303,7 +303,7 @@ impl Validator for ArgumentsValidator {
                                         Ok(value) => output_kwargs.set_item(either_str.as_py_string(py), value)?,
                                         Err(ValError::LineErrors(line_errors)) => {
                                             for err in line_errors {
-                                                errors.push(err.with_outer_location(raw_key.as_loc_item()));
+                                                errors.push(err.with_outer_location(raw_key));
                                             }
                                         }
                                         Err(err) => return Err(err),
@@ -313,7 +313,7 @@ impl Validator for ArgumentsValidator {
                                             errors.push(ValLineError::new_with_loc(
                                                 ErrorTypeDefaults::UnexpectedKeywordArgument,
                                                 value,
-                                                raw_key.as_loc_item(),
+                                                raw_key,
                                             ));
                                         }
                                     }

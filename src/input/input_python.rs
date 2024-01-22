@@ -12,7 +12,7 @@ use pyo3::{intern, PyTypeInfo};
 
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 
-use crate::errors::{AsLocItem, ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
+use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::tools::{extract_i64, safe_repr};
 use crate::validators::decimal::{create_decimal, get_decimal_type};
 use crate::validators::Exactness;
@@ -92,21 +92,21 @@ macro_rules! extract_dict_items {
     };
 }
 
-impl AsLocItem for PyAny {
-    fn as_loc_item(&self) -> LocItem {
-        if let Ok(py_str) = self.downcast::<PyString>() {
+impl From<&PyAny> for LocItem {
+    fn from(py_any: &PyAny) -> Self {
+        if let Ok(py_str) = py_any.downcast::<PyString>() {
             py_str.to_string_lossy().as_ref().into()
-        } else if let Some(key_int) = extract_i64(self) {
+        } else if let Some(key_int) = extract_i64(py_any) {
             key_int.into()
         } else {
-            safe_repr(self).to_string().into()
+            safe_repr(py_any).to_string().into()
         }
     }
 }
 
-impl AsLocItem for &'_ PyAny {
-    fn as_loc_item(&self) -> LocItem {
-        AsLocItem::as_loc_item(*self)
+impl From<PyAny> for LocItem {
+    fn from(py_any: PyAny) -> Self {
+        (&py_any).into()
     }
 }
 
@@ -244,22 +244,6 @@ impl<'a> Input<'a> for PyAny {
         Err(ValError::new(ErrorTypeDefaults::StringType, self))
     }
 
-    fn exact_str(&'a self) -> ValResult<EitherString<'a>> {
-        if let Ok(py_str) = <PyString as PyTryFrom>::try_from_exact(self) {
-            Ok(EitherString::Py(py_str))
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::IntType, self))
-        }
-    }
-
-    fn exact_int(&'a self) -> ValResult<EitherInt<'a>> {
-        if PyInt::is_exact_type_of(self) {
-            Ok(EitherInt::Py(self))
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::IntType, self))
-        }
-    }
-
     fn validate_bytes(&'a self, strict: bool) -> ValResult<ValidationMatch<EitherBytes<'a>>> {
         if let Ok(py_bytes) = self.downcast_exact::<PyBytes>() {
             return Ok(ValidationMatch::exact(py_bytes.into()));
@@ -345,6 +329,22 @@ impl<'a> Input<'a> for PyAny {
         }
 
         Err(ValError::new(ErrorTypeDefaults::IntType, self))
+    }
+
+    fn exact_int(&'a self) -> ValResult<EitherInt<'a>> {
+        if PyInt::is_exact_type_of(self) {
+            Ok(EitherInt::Py(self))
+        } else {
+            Err(ValError::new(ErrorTypeDefaults::IntType, self))
+        }
+    }
+
+    fn exact_str(&'a self) -> ValResult<EitherString<'a>> {
+        if let Ok(py_str) = <PyString as PyTryFrom>::try_from_exact(self) {
+            Ok(EitherString::Py(py_str))
+        } else {
+            Err(ValError::new(ErrorTypeDefaults::IntType, self))
+        }
     }
 
     fn validate_float(&'a self, strict: bool) -> ValResult<ValidationMatch<EitherFloat<'a>>> {
