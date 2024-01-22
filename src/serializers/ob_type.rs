@@ -44,6 +44,8 @@ pub struct ObTypeLookup {
     generator_object: PyObject,
     // path
     path_object: PyObject,
+    // pattern
+    pattern_object: PyObject,
     // uuid type
     uuid_object: PyObject,
 }
@@ -87,6 +89,7 @@ impl ObTypeLookup {
                 .unwrap()
                 .to_object(py),
             path_object: py.import("pathlib").unwrap().getattr("Path").unwrap().to_object(py),
+            pattern_object: py.import("re").unwrap().getattr("Pattern").unwrap().to_object(py),
             uuid_object: py.import("uuid").unwrap().getattr("UUID").unwrap().to_object(py),
         }
     }
@@ -150,6 +153,7 @@ impl ObTypeLookup {
             ObType::Enum => self.enum_object.as_ptr() as usize == ob_type,
             ObType::Generator => self.generator_object.as_ptr() as usize == ob_type,
             ObType::Path => self.path_object.as_ptr() as usize == ob_type,
+            ObType::Pattern => self.path_object.as_ptr() as usize == ob_type,
             ObType::Uuid => self.uuid_object.as_ptr() as usize == ob_type,
             ObType::Unknown => false,
         };
@@ -242,6 +246,8 @@ impl ObTypeLookup {
             ObType::Generator
         } else if ob_type == self.path_object.as_ptr() as usize {
             ObType::Path
+        } else if ob_type == self.pattern_object.as_ptr() as usize {
+            ObType::Pattern
         } else {
             // this allows for subtypes of the supported class types,
             // if `ob_type` didn't match any member of self, we try again with the next base type pointer
@@ -319,6 +325,8 @@ impl ObTypeLookup {
             ObType::Generator
         } else if value.is_instance(self.path_object.as_ref(py)).unwrap_or(false) {
             ObType::Path
+        } else if value.is_instance(self.pattern_object.as_ref(py)).unwrap_or(false) {
+            ObType::Pattern
         } else {
             ObType::Unknown
         }
@@ -396,6 +404,8 @@ pub enum ObType {
     Generator,
     // Path
     Path,
+    //Pattern,
+    Pattern,
     // Uuid
     Uuid,
     // unknown type
