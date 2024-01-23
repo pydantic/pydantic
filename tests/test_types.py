@@ -86,8 +86,8 @@ from pydantic import (
     PositiveInt,
     PydanticInvalidForJsonSchema,
     PydanticSchemaGenerationError,
+    Secret,
     SecretBytes,
-    SecretDate,
     SecretStr,
     SerializeAsAny,
     SkipValidation,
@@ -4096,6 +4096,11 @@ def test_secretstr_idempotent():
     assert m.password.get_secret_value() == '1234'
 
 
+class SecretDate(Secret[date]):
+    def _display(self) -> str:
+        return '****/**/**'
+
+
 @pytest.mark.parametrize(
     'value, result',
     [
@@ -4132,7 +4137,7 @@ def test_secretdate(value, result):
 @pytest.mark.parametrize(
     'SecretField, value, error_msg',
     [
-        (SecretDate, 0, r'Input should be a valid date \[type=date_type,'),
+        (SecretDate, 'not-a-date', r'Input should be a valid SecretDate or date'),
         (SecretStr, 0, r'Input should be a valid string \[type=string_type,'),
         (SecretBytes, 0, r'Input should be a valid bytes \[type=bytes_type,'),
     ],
@@ -4149,7 +4154,7 @@ def test_strict_secretfield_by_config(SecretField, value, error_msg):
 @pytest.mark.parametrize(
     'SecretField, value, error_msg',
     [
-        (SecretDate, 0, r'Input should be a valid date \[type=date_type,'),
+        (SecretDate, 'not-a-date', r'Input should be a valid SecretDate or date'),
         (SecretStr, 0, r'Input should be a valid string \[type=string_type,'),
         (SecretBytes, 0, r'Input should be a valid bytes \[type=bytes_type,'),
     ],
@@ -4212,9 +4217,9 @@ def test_secretdate_error():
 
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'date_type',
+            'type': 'secret_type',
             'loc': ('value',),
-            'msg': 'Input should be a valid date',
+            'msg': 'Input should be a valid SecretDate or date.',
             'input': 'foobar',
         }
     ]
@@ -4239,11 +4244,11 @@ def test_secretdate_error():
         StrictFloat,
         FiniteFloat,
         conbytes,
+        Secret,
         SecretBytes,
         constr,
         StrictStr,
         SecretStr,
-        SecretDate,
         ImportString,
         conset,
         confrozenset,

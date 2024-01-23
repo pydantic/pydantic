@@ -24,6 +24,8 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    get_args,
+    get_origin,
 )
 from uuid import UUID
 
@@ -75,8 +77,8 @@ __all__ = (
     'DirectoryPath',
     'NewPath',
     'Json',
+    'Secret',
     'SecretStr',
-    'SecretDate',
     'SecretBytes',
     'StrictBool',
     'StrictBytes',
@@ -1441,20 +1443,10 @@ else:
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SECRET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-SecretType = TypeVar('SecretType', str, bytes, date)
+SecretType = TypeVar('SecretType')
 
 
-def _secret_display(value: SecretType) -> str:
-    if isinstance(value, date):
-        return '****/**/**'
-    else:
-        return '**********' if value else ''
-
-
-class _SecretField(Generic[SecretType]):
-    _inner_schema: ClassVar[CoreSchema]
-    _error_kind: ClassVar[str]
-
+class _SecretBase(Generic[SecretType]):
     def __init__(self, secret_value: SecretType) -> None:
         self._secret_value: SecretType = secret_value
 
@@ -1486,6 +1478,77 @@ class _SecretField(Generic[SecretType]):
 
     def _display(self) -> str | bytes:
         raise NotImplementedError
+
+
+class Secret(_SecretBase[SecretType]):
+    """#TODO: add docstring here."""
+
+    def _display(self) -> str | bytes:
+        return '**********' if self._secret_value else ''
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        inner_type = None
+        # if origin_type is Secret, then cls is a GenericAlias, and we can extract the inner type directly
+        origin_type = get_origin(source)
+        if origin_type is not None:
+            inner_type = get_args(source)[0]
+        # otherwise, we need to get the inner type from the base class
+        else:
+            bases = getattr(cls, '__orig_bases__', getattr(cls, '__bases__', []))
+            for base in bases:
+                if get_origin(base) is Secret:
+                    inner_type = get_args(base)[0]
+            if bases is None or inner_type is None:
+                raise TypeError(
+                    f"Can't get secret type from {cls.__name__}. "
+                    'Please use Secret[<type>], or subclass from Secret[<type>] instead.'
+                )
+
+        inner_schema = handler.generate_schema(inner_type)  # type: ignore
+
+        json_schema = core_schema.no_info_after_validator_function(
+            function=lambda x: cls(x),
+            schema=inner_schema,
+        )
+
+        def get_secret_schema(strict: bool) -> CoreSchema:
+            return core_schema.json_or_python_schema(
+                python_schema=core_schema.union_schema(
+                    [
+                        core_schema.chain_schema(
+                            [
+                                core_schema.is_instance_schema(Secret),
+                                core_schema.no_info_wrap_validator_function(
+                                    lambda v, h: cls(h(v.get_secret_value())), inner_schema
+                                ),
+                            ]
+                        ),
+                        json_schema,
+                    ],
+                    custom_error_type='secret_type',
+                    custom_error_message=f'Input should be a valid {cls.__name__} or {inner_type.__name__}.',
+                    strict=strict,
+                ),
+                json_schema=json_schema,
+                serialization=core_schema.plain_serializer_function_ser_schema(
+                    str, return_schema=core_schema.str_schema(), when_used='json'
+                ),
+            )
+
+        return core_schema.lax_or_strict_schema(
+            lax_schema=get_secret_schema(strict=False),
+            strict_schema=get_secret_schema(strict=True),
+        )
+
+
+def _secret_display(value: SecretType) -> str:  # type: ignore
+    return '**********' if value else ''
+
+
+class _SecretField(_SecretBase[SecretType]):
+    _inner_schema: ClassVar[CoreSchema]
+    _error_kind: ClassVar[str]
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -1601,35 +1664,6 @@ class SecretBytes(_SecretField[bytes]):
 
     def _display(self) -> bytes:
         return _secret_display(self._secret_value).encode()
-
-
-class SecretDate(_SecretField[date]):
-    """A date field used for storing sensitive information that you do not want to be visible in logging or tracebacks.
-
-    It displays `'****/**/**'` instead of the date value on `repr()` and `str()` calls.
-
-    ```py
-    from pydantic import BaseModel, SecretDate
-
-    class Event(BaseModel):
-        date: SecretDate
-
-    event = Event(date='2017-01-01')
-    #> Event(date=SecretDate('****/**/**'))
-
-    print(event.date)
-    #> ****/**/**
-
-    event.date.get_secret_value()
-    #> datetime.date(2017, 1, 1)
-    ```
-    """
-
-    _inner_schema: ClassVar[CoreSchema] = core_schema.date_schema()
-    _error_kind: ClassVar[str] = 'date_type'
-
-    def _display(self) -> str:
-        return _secret_display(self._secret_value)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PAYMENT CARD TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
