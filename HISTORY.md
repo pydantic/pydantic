@@ -1,6 +1,8 @@
-## v2.6.0b1 (2024-01-19)
+## v2.6.0 (2024-01-23)
 
-[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.6.0b1)
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.6.0)
+
+The code released in v2.5.0 is practically identical to that of v2.6.0b1.
 
 ### What's Changed
 
@@ -83,6 +85,7 @@
 * Fix ordering bug of PlainValidator annotation by @Anvil in [#8567](https://github.com/pydantic/pydantic/pull/8567)
 * Fix `exclude_none` for json serialization of `computed_field`s by @sydney-runkle in [pydantic/pydantic-core#1098](https://github.com/pydantic/pydantic-core/pull/1098)
 * Support yyyy-MM-DD string for datetimes by @sydney-runkle in [pydantic/pydantic-core#1124](https://github.com/pydantic/pydantic-core/pull/1124)
+* Tweak ordering of definitions in generated schemas by @StrawHatDrag0n in [#8583](https://github.com/pydantic/pydantic/pull/8583)
 
 
 ### New Contributors
@@ -117,11 +120,17 @@
 * @tigeryy2 made their first contribution in [#8511](https://github.com/pydantic/pydantic/pull/8511)
 * @geospackle made their first contribution in [#8537](https://github.com/pydantic/pydantic/pull/8537)
 * @Anvil made their first contribution in [#8567](https://github.com/pydantic/pydantic/pull/8567)
+* @hungtsetse made their first contribution in [#8546](https://github.com/pydantic/pydantic/pull/8546)
+* @StrawHatDrag0n made their first contribution in [#8583](https://github.com/pydantic/pydantic/pull/8583)
 
 #### `pydantic-core`
 * @mariuswinger made their first contribution in [pydantic/pydantic-core#1087](https://github.com/pydantic/pydantic-core/pull/1087)
 * @adamchainz made their first contribution in [pydantic/pydantic-core#1090](https://github.com/pydantic/pydantic-core/pull/1090)
 * @akx made their first contribution in [pydantic/pydantic-core#1123](https://github.com/pydantic/pydantic-core/pull/1123)
+
+## v2.6.0b1 (2024-01-19)
+
+Pre-release, see [the GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.5.0b1) for details.
 
 ## v2.5.3 (2023-12-22)
 
