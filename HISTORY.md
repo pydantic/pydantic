@@ -130,7 +130,7 @@ The code released in v2.5.0 is practically identical to that of v2.6.0b1.
 
 ## v2.6.0b1 (2024-01-19)
 
-Pre-release, see [the GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.5.0b1) for details.
+Pre-release, see [the GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.6.0b1) for details.
 
 ## v2.5.3 (2023-12-22)
 
