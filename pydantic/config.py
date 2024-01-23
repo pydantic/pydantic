@@ -1,7 +1,7 @@
 """Configuration for Pydantic models."""
 from __future__ import annotations as _annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, TypeVar, Union
 
 from typing_extensions import Literal, TypeAlias, TypedDict
 
@@ -11,7 +11,7 @@ from .aliases import AliasGenerator
 if TYPE_CHECKING:
     from ._internal._generate_schema import GenerateSchema as _GenerateSchema
 
-__all__ = ('ConfigDict',)
+__all__ = ('ConfigDict', 'with_config')
 
 
 JsonValue: TypeAlias = Union[int, float, str, bool, None, List['JsonValue'], 'JsonDict']
@@ -907,6 +907,19 @@ class ConfigDict(TypedDict, total=False):
     Note:
         The structure of validation errors are likely to change in future pydantic versions. Pydantic offers no guarantees about the structure of validation errors. Should be used for visual traceback debugging only.
     """
+
+
+_TypeT = TypeVar('_TypeT', bound=type)
+
+
+def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
+    """A convenience decorator to set a Pydantic configuration on a `TypedDict`."""
+
+    def inner(typed_dict: _TypeT, /) -> _TypeT:
+        setattr(typed_dict, '__pydantic_config__', config)
+        return typed_dict
+
+    return inner
 
 
 __getattr__ = getattr_migration(__name__)
