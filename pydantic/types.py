@@ -1499,7 +1499,7 @@ class Secret(_SecretBase[SecretType]):
             for base in bases:
                 if get_origin(base) is Secret:
                     inner_type = get_args(base)[0]
-            if bases is None or inner_type is None:
+            if bases == [] or inner_type is None:
                 raise TypeError(
                     f"Can't get secret type from {cls.__name__}. "
                     'Please use Secret[<type>], or subclass from Secret[<type>] instead.'
