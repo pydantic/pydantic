@@ -2,7 +2,7 @@
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.6.0)
 
-The code released in v2.5.0 is practically identical to that of v2.6.0b1.
+The code released in v2.6.0 is practically identical to that of v2.6.0b1.
 
 ### What's Changed
 
