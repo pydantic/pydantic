@@ -2389,6 +2389,10 @@ def test_sequence_fails(cls, value, errors):
     assert exc_info.value.errors(include_url=False) == errors
 
 
+def test_sequence_strict():
+    assert TypeAdapter(Sequence[int]).validate_python((), strict=True) == ()
+
+
 def test_int_validation():
     class Model(BaseModel):
         a: PositiveInt = None
