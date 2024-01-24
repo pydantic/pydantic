@@ -7,4 +7,5 @@ from pydantic import ConfigDict, with_config
 class Model(TypedDict):
     a: str
 
+
 model = Model(a='ABC')

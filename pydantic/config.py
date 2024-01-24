@@ -921,9 +921,9 @@ def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
     !!! example "Usage"
 
         ```py
-        from typing import TypedDict
+        from typing_extensions import TypedDict
 
-        from pydantic import ConfigDict, with_config
+        from pydantic import ConfigDict, TypeAdapter, with_config
 
         @with_config(ConfigDict(str_to_lower=True))
         class Model(TypedDict):
