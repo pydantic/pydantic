@@ -32,6 +32,7 @@ from pydantic import (
     field_serializer,
     field_validator,
     model_validator,
+    with_config,
 )
 from pydantic._internal._mock_val_ser import MockValSer
 from pydantic.dataclasses import is_pydantic_dataclass, rebuild_dataclass
@@ -2404,6 +2405,24 @@ def test_model_config_override_in_decorator_empty_config() -> None:
 
     ta = TypeAdapter(Model)
     assert ta.validate_python({'x': 'ABC '}).x == 'ABC '
+
+
+def test_dataclasses_with_config_decorator():
+    @dataclasses.dataclass
+    @with_config(ConfigDict(str_to_lower=True))
+    class Model1:
+        x: str
+
+    ta = TypeAdapter(Model1)
+    assert ta.validate_python({'x': 'ABC'}).x == 'abc'
+
+    @with_config(ConfigDict(str_to_lower=True))
+    @dataclasses.dataclass
+    class Model2:
+        x: str
+
+    ta = TypeAdapter(Model2)
+    assert ta.validate_python({'x': 'ABC'}).x == 'abc'
 
 
 def test_pydantic_field_annotation():

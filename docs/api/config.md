@@ -3,6 +3,7 @@
       group_by_category: false
       members:
         - ConfigDict
+        - with_config
         - ExtraValues
         - BaseConfig
 

@@ -913,11 +913,32 @@ _TypeT = TypeVar('_TypeT', bound=type)
 
 
 def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
-    """A convenience decorator to set a Pydantic configuration on a `TypedDict`."""
+    """A convenience decorator to set a [Pydantic configuration](config.md) on a `TypedDict` or a `dataclass` from the standard library.
 
-    def inner(typed_dict: _TypeT, /) -> _TypeT:
-        setattr(typed_dict, '__pydantic_config__', config)
-        return typed_dict
+    Although the configuration can be set using the `__pydantic_config__` attribute, it does not play well with type checkers,
+    especially with `TypedDict`.
+
+    !!! example "Usage"
+
+        ```py
+        from typing import TypedDict
+
+        from pydantic import ConfigDict, with_config
+
+        @with_config(ConfigDict(str_to_lower=True))
+        class Model(TypedDict):
+            x: str
+
+        ta = TypeAdapter(Model)
+
+        print(ta.validate_python({'x': 'ABC'}))
+        #> {'x': 'abc'}
+        ```
+    """
+
+    def inner(TypedDictClass: _TypeT, /) -> _TypeT:
+        TypedDictClass.__pydantic_config__ = config
+        return TypedDictClass
 
     return inner
 
