@@ -299,8 +299,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             mode: The mode in which `to_python` should run.
                 If mode is 'json', the output will only contain JSON serializable types.
                 If mode is 'python', the output may contain non-JSON-serializable Python objects.
-            include: A list of fields to include in the output.
-            exclude: A list of fields to exclude from the output.
+            include: A set of fields to include in the output.
+            exclude: A set of fields to exclude from the output.
             by_alias: Whether to use the field's alias in the dictionary key if defined.
             exclude_unset: Whether to exclude fields that have not been explicitly set.
             exclude_defaults: Whether to exclude fields that are set to their default value.
