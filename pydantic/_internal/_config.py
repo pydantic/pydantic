@@ -1,13 +1,11 @@
 from __future__ import annotations as _annotations
 
 import warnings
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    ContextManager,
-    Iterator,
     cast,
 )
 
@@ -17,7 +15,8 @@ from typing_extensions import (
     Self,
 )
 
-from ..config import ConfigDict, ExtraValues, JsonEncoder, JsonSchemaExtraCallable
+from ..aliases import AliasGenerator
+from ..config import ConfigDict, ExtraValues, JsonDict, JsonEncoder, JsonSchemaExtraCallable
 from ..errors import PydanticUserError
 from ..warnings import PydanticDeprecatedSince20
 
@@ -57,10 +56,10 @@ class ConfigWrapper:
     # whether to use the actual key provided in the data (e.g. alias or first alias for "field required" errors) instead of field_names
     # to construct error `loc`s, default `True`
     loc_by_alias: bool
-    alias_generator: Callable[[str], str] | None
+    alias_generator: Callable[[str], str] | AliasGenerator | None
     ignored_types: tuple[type, ...]
     allow_inf_nan: bool
-    json_schema_extra: dict[str, object] | JsonSchemaExtraCallable | None
+    json_schema_extra: JsonDict | JsonSchemaExtraCallable | None
     json_encoders: dict[type[object], JsonEncoder] | None
 
     # new in V2
@@ -69,6 +68,7 @@ class ConfigWrapper:
     revalidate_instances: Literal['always', 'never', 'subclass-instances']
     ser_json_timedelta: Literal['iso8601', 'float']
     ser_json_bytes: Literal['utf8', 'base64']
+    ser_json_inf_nan: Literal['null', 'constants']
     # whether to validate default values during validation, default False
     validate_default: bool
     validate_return: bool
@@ -80,6 +80,8 @@ class ConfigWrapper:
     json_schema_serialization_defaults_required: bool
     json_schema_mode_override: Literal['validation', 'serialization', None]
     coerce_numbers_to_str: bool
+    regex_engine: Literal['rust-regex', 'python-re']
+    validation_error_cause: bool
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
         if check:
@@ -118,8 +120,7 @@ class ConfigWrapper:
 
         config_from_namespace = config_dict_from_namespace or prepare_config(config_class_from_namespace)
 
-        if config_from_namespace is not None:
-            config_new.update(config_from_namespace)
+        config_new.update(config_from_namespace)
 
         for k in list(kwargs.keys()):
             if k in config_keys:
@@ -128,7 +129,7 @@ class ConfigWrapper:
         return cls(config_new)
 
     # we don't show `__getattr__` to type checkers so missing attributes cause errors
-    if not TYPE_CHECKING:
+    if not TYPE_CHECKING:  # pragma: no branch
 
         def __getattr__(self, name: str) -> Any:
             try:
@@ -168,6 +169,7 @@ class ConfigWrapper:
                 strict=self.config_dict.get('strict'),
                 ser_json_timedelta=self.config_dict.get('ser_json_timedelta'),
                 ser_json_bytes=self.config_dict.get('ser_json_bytes'),
+                ser_json_inf_nan=self.config_dict.get('ser_json_inf_nan'),
                 from_attributes=self.config_dict.get('from_attributes'),
                 loc_by_alias=self.config_dict.get('loc_by_alias'),
                 revalidate_instances=self.config_dict.get('revalidate_instances'),
@@ -176,6 +178,8 @@ class ConfigWrapper:
                 str_min_length=self.config_dict.get('str_min_length'),
                 hide_input_in_errors=self.config_dict.get('hide_input_in_errors'),
                 coerce_numbers_to_str=self.config_dict.get('coerce_numbers_to_str'),
+                regex_engine=self.config_dict.get('regex_engine'),
+                validation_error_cause=self.config_dict.get('validation_error_cause'),
             )
         )
         return core_config
@@ -195,22 +199,20 @@ class ConfigWrapperStack:
     def tail(self) -> ConfigWrapper:
         return self._config_wrapper_stack[-1]
 
-    def push(self, config_wrapper: ConfigWrapper | ConfigDict | None) -> ContextManager[None]:
+    @contextmanager
+    def push(self, config_wrapper: ConfigWrapper | ConfigDict | None):
         if config_wrapper is None:
-            return nullcontext()
+            yield
+            return
 
         if not isinstance(config_wrapper, ConfigWrapper):
             config_wrapper = ConfigWrapper(config_wrapper, check=False)
 
-        @contextmanager
-        def _context_manager() -> Iterator[None]:
-            self._config_wrapper_stack.append(config_wrapper)
-            try:
-                yield
-            finally:
-                self._config_wrapper_stack.pop()
-
-        return _context_manager()
+        self._config_wrapper_stack.append(config_wrapper)
+        try:
+            yield
+        finally:
+            self._config_wrapper_stack.pop()
 
 
 config_defaults = ConfigDict(
@@ -237,6 +239,7 @@ config_defaults = ConfigDict(
     revalidate_instances='never',
     ser_json_timedelta='iso8601',
     ser_json_bytes='utf8',
+    ser_json_inf_nan='null',
     validate_default=False,
     validate_return=False,
     protected_namespaces=('model_',),
@@ -248,6 +251,8 @@ config_defaults = ConfigDict(
     json_schema_serialization_defaults_required=False,
     json_schema_mode_override=None,
     coerce_numbers_to_str=False,
+    regex_engine='rust-regex',
+    validation_error_cause=False,
 )
 
 

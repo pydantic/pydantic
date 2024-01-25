@@ -93,6 +93,8 @@ def display_as_type(obj: Any) -> str:
         return '...'
     elif isinstance(obj, Representation):
         return repr(obj)
+    elif isinstance(obj, typing_extensions.TypeAliasType):
+        return str(obj)
 
     if not isinstance(obj, (_typing_extra.typing_base, _typing_extra.WithArgsTypes, type)):
         obj = obj.__class__
@@ -105,7 +107,10 @@ def display_as_type(obj: Any) -> str:
             args = ', '.join(map(repr, typing_extensions.get_args(obj)))
         else:
             args = ', '.join(map(display_as_type, typing_extensions.get_args(obj)))
-        return f'{obj.__qualname__}[{args}]'
+        try:
+            return f'{obj.__qualname__}[{args}]'
+        except AttributeError:
+            return str(obj)  # handles TypeAliasType in 3.12
     elif isinstance(obj, type):
         return obj.__qualname__
     else:

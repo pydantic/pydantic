@@ -89,6 +89,7 @@ CONFIGFILE_KEY = 'pydantic-mypy'
 METADATA_KEY = 'pydantic-mypy-metadata'
 BASEMODEL_FULLNAME = 'pydantic.main.BaseModel'
 BASESETTINGS_FULLNAME = 'pydantic_settings.main.BaseSettings'
+ROOT_MODEL_FULLNAME = 'pydantic.root_model.RootModel'
 MODEL_METACLASS_FULLNAME = 'pydantic._internal._model_construction.ModelMetaclass'
 FIELD_FULLNAME = 'pydantic.fields.Field'
 DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
@@ -123,6 +124,10 @@ def plugin(version: str) -> type[Plugin]:
         The Pydantic mypy plugin type.
     """
     return PydanticPlugin
+
+
+class _DeferAnalysis(Exception):
+    pass
 
 
 class PydanticPlugin(Plugin):
@@ -346,12 +351,16 @@ class PydanticModelField:
 
     def expand_type(self, current_info: TypeInfo) -> Type | None:
         """Based on mypy.plugins.dataclasses.DataclassAttribute.expand_type."""
-        if self.type is not None and self.info.self_type is not None:
+        # The getattr in the next line is used to prevent errors in legacy versions of mypy without this attribute
+        if self.type is not None and getattr(self.info, 'self_type', None) is not None:
             # In general, it is not safe to call `expand_type()` during semantic analyzis,
             # however this plugin is called very late, so all types should be fully ready.
             # Also, it is tricky to avoid eager expansion of Self types here (e.g. because
             # we serialize attributes).
-            return expand_type(self.type, {self.info.self_type.id: fill_typevars(current_info)})
+            expanded_type = expand_type(self.type, {self.info.self_type.id: fill_typevars(current_info)})
+            if isinstance(self.type, UnionType) and not isinstance(expanded_type, UnionType):
+                raise _DeferAnalysis()
+            return expanded_type
         return self.type
 
     def to_var(self, current_info: TypeInfo, use_alias: bool) -> Var:
@@ -389,6 +398,31 @@ class PydanticModelField:
         """
         if self.type is not None:
             self.type = map_type_from_supertype(self.type, sub_type, self.info)
+
+
+class PydanticModelClassVar:
+    """Based on mypy.plugins.dataclasses.DataclassAttribute.
+
+    ClassVars are ignored by subclasses.
+
+    Attributes:
+        name: the ClassVar name
+    """
+
+    def __init__(self, name):
+        self.name = name
+
+    @classmethod
+    def deserialize(cls, data: JsonDict) -> PydanticModelClassVar:
+        """Based on mypy.plugins.dataclasses.DataclassAttribute.deserialize."""
+        data = data.copy()
+        return cls(**data)
+
+    def serialize(self) -> JsonDict:
+        """Based on mypy.plugins.dataclasses.DataclassAttribute.serialize."""
+        return {
+            'name': self.name,
+        }
 
 
 class PydanticModelTransformer:
@@ -430,9 +464,10 @@ class PydanticModelTransformer:
         * stores the fields, config, and if the class is settings in the mypy metadata for access by subclasses
         """
         info = self._cls.info
+        is_root_model = any(ROOT_MODEL_FULLNAME in base.fullname for base in info.mro[:-1])
         config = self.collect_config()
-        fields = self.collect_fields(config)
-        if fields is None:
+        fields, class_vars = self.collect_fields_and_class_vars(config, is_root_model)
+        if fields is None or class_vars is None:
             # Some definitions are not ready. We need another pass.
             return False
         for field in fields:
@@ -440,14 +475,19 @@ class PydanticModelTransformer:
                 return False
 
         is_settings = any(base.fullname == BASESETTINGS_FULLNAME for base in info.mro[:-1])
-        self.add_initializer(fields, config, is_settings)
+        self.add_initializer(fields, config, is_settings, is_root_model)
         self.add_model_construct_method(fields, config, is_settings)
-        self.set_frozen(fields, frozen=config.frozen is True)
+        try:
+            self.set_frozen(fields, frozen=config.frozen is True)
+        except _DeferAnalysis:
+            if not self._api.final_iteration:
+                self._api.defer()
 
         self.adjust_decorator_signatures()
 
         info.metadata[METADATA_KEY] = {
             'fields': {field.name: field.serialize() for field in fields},
+            'class_vars': {class_var.name: class_var.serialize() for class_var in class_vars},
             'config': config.get_values_dict(),
         }
 
@@ -556,11 +596,13 @@ class PydanticModelTransformer:
                 config.setdefault(name, value)
         return config
 
-    def collect_fields(self, model_config: ModelConfigData) -> list[PydanticModelField] | None:
+    def collect_fields_and_class_vars(
+        self, model_config: ModelConfigData, is_root_model: bool
+    ) -> tuple[list[PydanticModelField] | None, list[PydanticModelClassVar] | None]:
         """Collects the fields for the model, accounting for parent classes."""
         cls = self._cls
 
-        # First, collect fields belonging to any class in the MRO, ignoring duplicates.
+        # First, collect fields and ClassVars belonging to any class in the MRO, ignoring duplicates.
         #
         # We iterate through the MRO in reverse because attrs defined in the parent must appear
         # earlier in the attributes list than attrs defined in the child. See:
@@ -570,10 +612,11 @@ class PydanticModelTransformer:
         # in the parent. We can implement this via a dict without disrupting the attr order
         # because dicts preserve insertion order in Python 3.7+.
         found_fields: dict[str, PydanticModelField] = {}
+        found_class_vars: dict[str, PydanticModelClassVar] = {}
         for info in reversed(cls.info.mro[1:-1]):  # 0 is the current class, -2 is BaseModel, -1 is object
             # if BASEMODEL_METADATA_TAG_KEY in info.metadata and BASEMODEL_METADATA_KEY not in info.metadata:
             #     # We haven't processed the base class yet. Need another pass.
-            #     return None
+            #     return None, None
             if METADATA_KEY not in info.metadata:
                 continue
 
@@ -596,17 +639,28 @@ class PydanticModelTransformer:
                         'BaseModel field may only be overridden by another field',
                         sym_node.node,
                     )
+            # Collect ClassVars
+            for name, data in info.metadata[METADATA_KEY]['class_vars'].items():
+                found_class_vars[name] = PydanticModelClassVar.deserialize(data)
 
-        # Second, collect fields belonging to the current class.
+        # Second, collect fields and ClassVars belonging to the current class.
         current_field_names: set[str] = set()
+        current_class_vars_names: set[str] = set()
         for stmt in self._get_assignment_statements_from_block(cls.defs):
-            maybe_field = self.collect_field_from_stmt(stmt, model_config)
-            if maybe_field is not None:
+            maybe_field = self.collect_field_or_class_var_from_stmt(stmt, model_config, found_class_vars)
+            if isinstance(maybe_field, PydanticModelField):
                 lhs = stmt.lvalues[0]
-                current_field_names.add(lhs.name)
-                found_fields[lhs.name] = maybe_field
+                if is_root_model and lhs.name != 'root':
+                    error_extra_fields_on_root_model(self._api, stmt)
+                else:
+                    current_field_names.add(lhs.name)
+                    found_fields[lhs.name] = maybe_field
+            elif isinstance(maybe_field, PydanticModelClassVar):
+                lhs = stmt.lvalues[0]
+                current_class_vars_names.add(lhs.name)
+                found_class_vars[lhs.name] = maybe_field
 
-        return list(found_fields.values())
+        return list(found_fields.values()), list(found_class_vars.values())
 
     def _get_assignment_statements_from_if_statement(self, stmt: IfStmt) -> Iterator[AssignmentStmt]:
         for body in stmt.body:
@@ -622,14 +676,15 @@ class PydanticModelTransformer:
             elif isinstance(stmt, IfStmt):
                 yield from self._get_assignment_statements_from_if_statement(stmt)
 
-    def collect_field_from_stmt(  # noqa C901
-        self, stmt: AssignmentStmt, model_config: ModelConfigData
-    ) -> PydanticModelField | None:
+    def collect_field_or_class_var_from_stmt(  # noqa C901
+        self, stmt: AssignmentStmt, model_config: ModelConfigData, class_vars: dict[str, PydanticModelClassVar]
+    ) -> PydanticModelField | PydanticModelClassVar | None:
         """Get pydantic model field from statement.
 
         Args:
             stmt: The statement.
             model_config: Configuration settings for the model.
+            class_vars: ClassVars already known to be defined on the model.
 
         Returns:
             A pydantic model field if it could find the field in statement. Otherwise, `None`.
@@ -650,6 +705,10 @@ class PydanticModelTransformer:
                 # This is a (possibly-reused) validator or serializer, not a field
                 # In particular, it looks something like: my_validator = validator('my_field')(f)
                 # Eventually, we may want to attempt to respect model_config['ignored_types']
+                return None
+
+            if lhs.name in class_vars:
+                # Class vars are not fields and are not required to be annotated
                 return None
 
             # The assignment does not have an annotation, and it's not anything else we recognize
@@ -696,7 +755,7 @@ class PydanticModelTransformer:
 
         # x: ClassVar[int] is not a field
         if node.is_classvar:
-            return None
+            return PydanticModelClassVar(lhs.name)
 
         # x: InitVar[int] is not supported in BaseModel
         node_type = get_proper_type(node.type)
@@ -780,7 +839,9 @@ class PydanticModelTransformer:
 
         return default
 
-    def add_initializer(self, fields: list[PydanticModelField], config: ModelConfigData, is_settings: bool) -> None:
+    def add_initializer(
+        self, fields: list[PydanticModelField], config: ModelConfigData, is_settings: bool, is_root_model: bool
+    ) -> None:
         """Adds a fields-aware `__init__` method to the class.
 
         The added `__init__` will be annotated with types vs. all `Any` depending on the plugin settings.
@@ -799,6 +860,12 @@ class PydanticModelTransformer:
                 use_alias=use_alias,
                 is_settings=is_settings,
             )
+
+            if is_root_model and MYPY_VERSION_TUPLE <= (1, 0, 1):
+                # convert root argument to positional argument
+                # This is needed because mypy support for `dataclass_transform` isn't complete on 1.0.1
+                args[0].kind = ARG_POS if args[0].kind == ARG_NAMED else ARG_OPT
+
             if is_settings:
                 base_settings_node = self._api.lookup_fully_qualified(BASESETTINGS_FULLNAME).node
                 if '__init__' in base_settings_node.names:
@@ -1048,6 +1115,7 @@ ERROR_ALIAS = ErrorCode('pydantic-alias', 'Dynamic alias disallowed', 'Pydantic'
 ERROR_UNEXPECTED = ErrorCode('pydantic-unexpected', 'Unexpected behavior', 'Pydantic')
 ERROR_UNTYPED = ErrorCode('pydantic-field', 'Untyped field disallowed', 'Pydantic')
 ERROR_FIELD_DEFAULTS = ErrorCode('pydantic-field', 'Invalid Field defaults', 'Pydantic')
+ERROR_EXTRA_FIELD_ROOT_MODEL = ErrorCode('pydantic-field', 'Extra field on RootModel subclass', 'Pydantic')
 
 
 def error_from_attributes(model_name: str, api: CheckerPluginInterface, context: Context) -> None:
@@ -1082,6 +1150,11 @@ def error_unexpected_behavior(
 def error_untyped_fields(api: SemanticAnalyzerPluginInterface, context: Context) -> None:
     """Emits an error when there is an untyped field in the model."""
     api.fail('Untyped fields disallowed', context, code=ERROR_UNTYPED)
+
+
+def error_extra_fields_on_root_model(api: CheckerPluginInterface, context: Context) -> None:
+    """Emits an error when there is more than just a root field defined for a subclass of RootModel."""
+    api.fail('Only `root` is allowed as a field of a `RootModel`', context, code=ERROR_EXTRA_FIELD_ROOT_MODEL)
 
 
 def error_default_and_default_factory_specified(api: CheckerPluginInterface, context: Context) -> None:
@@ -1119,6 +1192,16 @@ def add_method(
         first = [Argument(Var('_cls'), self_type, None, ARG_POS, True)]
     else:
         self_type = self_type or fill_typevars(info)
+        # `self` is positional *ONLY* here, but this can't be expressed
+        # fully in the mypy internal API. ARG_POS is the closest we can get.
+        # Using ARG_POS will, however, give mypy errors if a `self` field
+        # is present on a model:
+        #
+        #     Name "self" already defined (possibly by an import)  [no-redef]
+        #
+        # As a workaround, we give this argument a name that will
+        # never conflict. By its positional nature, this name will not
+        # be used or exposed to users.
         first = [Argument(Var('__pydantic_self__'), self_type, None, ARG_POS)]
     args = first + args
 

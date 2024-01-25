@@ -1,5 +1,5 @@
 ??? api "API Documentation"
-    [`pydantic.validate_call.validate_call`][pydantic.validate_call.validate_call]<br>
+    [`pydantic.validate_call_decorator.validate_call`][pydantic.validate_call_decorator.validate_call]<br>
 
 The [`@validate_call`][pydantic.validate_call] decorator allows the arguments passed to a function to be parsed
 and validated using the function's annotations before the function is called.
@@ -24,7 +24,7 @@ a = repeat('hello', 3)
 print(a)
 #> b'hellohellohello'
 
-b = repeat('x', '4', separator=' ')
+b = repeat('x', '4', separator=b' ')
 print(b)
 #> b'x x x x'
 

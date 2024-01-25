@@ -27,7 +27,7 @@ _inspect_validator = _decorators.inspect_validator
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class AfterValidator:
-    '''Usage docs: https://docs.pydantic.dev/2.2/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **after** the inner validation logic.
 
@@ -36,10 +36,9 @@ class AfterValidator:
 
     Example:
         ```py
-        from typing import Annotated
+        from typing_extensions import Annotated
 
-        from pydantic import BaseModel, AfterValidator, ValidationError
-
+        from pydantic import AfterValidator, BaseModel, ValidationError
 
         MyInt = Annotated[int, AfterValidator(lambda v: v + 1)]
 
@@ -47,27 +46,27 @@ class AfterValidator:
             a: MyInt
 
         print(Model(a=1).a)
-        # > 2
+        #> 2
 
         try:
             Model(a='a')
         except ValidationError as e:
             print(e.json(indent=2))
-        """
-        [
-            {
+            '''
+            [
+              {
                 "type": "int_parsing",
                 "loc": [
-                    "a"
+                  "a"
                 ],
                 "msg": "Input should be a valid integer, unable to parse string as an integer",
                 "input": "a",
-                "url": "https://errors.pydantic.dev/0.38.0/v/int_parsing"
-            }
-        ]
-        """
+                "url": "https://errors.pydantic.dev/2/v/int_parsing"
+              }
+            ]
+            '''
         ```
-    '''
+    """
 
     func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
 
@@ -84,7 +83,7 @@ class AfterValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class BeforeValidator:
-    """Usage docs: https://docs.pydantic.dev/2.4/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **before** the inner validation logic.
 
@@ -128,7 +127,7 @@ class BeforeValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class PlainValidator:
-    """Usage docs: https://docs.pydantic.dev/2.4/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **instead** of the inner validation logic.
 
@@ -154,18 +153,22 @@ class PlainValidator:
     func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        schema = handler(source_type)
+        serialization = core_schema.wrap_serializer_function_ser_schema(function=lambda v, h: h(v), schema=schema)
         info_arg = _inspect_validator(self.func, 'plain')
         if info_arg:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
-            return core_schema.with_info_plain_validator_function(func, field_name=handler.field_name)
+            return core_schema.with_info_plain_validator_function(
+                func, field_name=handler.field_name, serialization=serialization
+            )
         else:
             func = cast(core_schema.NoInfoValidatorFunction, self.func)
-            return core_schema.no_info_plain_validator_function(func)
+            return core_schema.no_info_plain_validator_function(func, serialization=serialization)
 
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class WrapValidator:
-    """Usage docs: https://docs.pydantic.dev/2.4/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **around** the inner validation logic.
 
@@ -217,20 +220,21 @@ class WrapValidator:
 if TYPE_CHECKING:
 
     class _OnlyValueValidatorClsMethod(Protocol):
-        def __call__(self, __cls: Any, __value: Any) -> Any:
+        def __call__(self, cls: Any, value: Any, /) -> Any:
             ...
 
     class _V2ValidatorClsMethod(Protocol):
-        def __call__(self, __cls: Any, __input_value: Any, __info: _core_schema.ValidationInfo) -> Any:
+        def __call__(self, cls: Any, value: Any, info: _core_schema.ValidationInfo, /) -> Any:
             ...
 
     class _V2WrapValidatorClsMethod(Protocol):
         def __call__(
             self,
-            __cls: Any,
-            __input_value: Any,
-            __validator: _core_schema.ValidatorFunctionWrapHandler,
-            __info: _core_schema.ValidationInfo,
+            cls: Any,
+            value: Any,
+            handler: _core_schema.ValidatorFunctionWrapHandler,
+            info: _core_schema.ValidationInfo,
+            /,
         ) -> Any:
             ...
 
@@ -285,9 +289,45 @@ def field_validator(
     mode: FieldValidatorModes = 'after',
     check_fields: bool | None = None,
 ) -> Callable[[Any], Any]:
-    """Usage docs: https://docs.pydantic.dev/2.4/concepts/validators/#field-validators
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/validators/#field-validators
 
     Decorate methods on the class indicating that they should be used to validate fields.
+
+    Example usage:
+    ```py
+    from typing import Any
+
+    from pydantic import (
+        BaseModel,
+        ValidationError,
+        field_validator,
+    )
+
+    class Model(BaseModel):
+        a: str
+
+        @field_validator('a')
+        @classmethod
+        def ensure_foobar(cls, v: Any):
+            if 'foobar' not in v:
+                raise ValueError('"foobar" not found in a')
+            return v
+
+    print(repr(Model(a='this is foobar good')))
+    #> Model(a='this is foobar good')
+
+    try:
+        Model(a='snap')
+    except ValidationError as exc_info:
+        print(exc_info)
+        '''
+        1 validation error for Model
+        a
+          Value error, "foobar" not found in a [type=value_error, input_value='snap', input_type=str]
+        '''
+    ```
+
+    For more in depth examples, see [Field Validators](../concepts/validators.md#field-validators).
 
     Args:
         __field: The first field the `field_validator` should be called on; this is separate
@@ -344,7 +384,10 @@ class ModelWrapValidatorHandler(_core_schema.ValidatorFunctionWrapHandler, Proto
     """@model_validator decorated function handler argument type. This is used when `mode='wrap'`."""
 
     def __call__(  # noqa: D102
-        self, input_value: Any, outer_location: str | int | None = None
+        self,
+        value: Any,
+        outer_location: str | int | None = None,
+        /,
     ) -> _ModelTypeCo:  # pragma: no cover
         ...
 
@@ -360,8 +403,9 @@ class ModelWrapValidatorWithoutInfo(Protocol[_ModelType]):
         # this can be a dict, a model instance
         # or anything else that gets passed to validate_python
         # thus validators _must_ handle all cases
-        __value: Any,
-        __handler: ModelWrapValidatorHandler[_ModelType],
+        value: Any,
+        handler: ModelWrapValidatorHandler[_ModelType],
+        /,
     ) -> _ModelType:
         ...
 
@@ -375,10 +419,27 @@ class ModelWrapValidator(Protocol[_ModelType]):
         # this can be a dict, a model instance
         # or anything else that gets passed to validate_python
         # thus validators _must_ handle all cases
-        __value: Any,
-        __handler: ModelWrapValidatorHandler[_ModelType],
-        __info: _core_schema.ValidationInfo,
+        value: Any,
+        handler: ModelWrapValidatorHandler[_ModelType],
+        info: _core_schema.ValidationInfo,
+        /,
     ) -> _ModelType:
+        ...
+
+
+class FreeModelBeforeValidatorWithoutInfo(Protocol):
+    """A @model_validator decorated function signature.
+    This is used when `mode='before'` and the function does not have info argument.
+    """
+
+    def __call__(  # noqa: D102
+        self,
+        # this can be a dict, a model instance
+        # or anything else that gets passed to validate_python
+        # thus validators _must_ handle all cases
+        value: Any,
+        /,
+    ) -> Any:
         ...
 
 
@@ -393,7 +454,23 @@ class ModelBeforeValidatorWithoutInfo(Protocol):
         # this can be a dict, a model instance
         # or anything else that gets passed to validate_python
         # thus validators _must_ handle all cases
-        __value: Any,
+        value: Any,
+        /,
+    ) -> Any:
+        ...
+
+
+class FreeModelBeforeValidator(Protocol):
+    """A `@model_validator` decorated function signature. This is used when `mode='before'`."""
+
+    def __call__(  # noqa: D102
+        self,
+        # this can be a dict, a model instance
+        # or anything else that gets passed to validate_python
+        # thus validators _must_ handle all cases
+        value: Any,
+        info: _core_schema.ValidationInfo,
+        /,
     ) -> Any:
         ...
 
@@ -407,8 +484,9 @@ class ModelBeforeValidator(Protocol):
         # this can be a dict, a model instance
         # or anything else that gets passed to validate_python
         # thus validators _must_ handle all cases
-        __value: Any,
-        __info: _core_schema.ValidationInfo,
+        value: Any,
+        info: _core_schema.ValidationInfo,
+        /,
     ) -> Any:
         ...
 
@@ -422,7 +500,9 @@ ModelAfterValidator = Callable[[_ModelType, _core_schema.ValidationInfo], _Model
 """A `@model_validator` decorated function signature. This is used when `mode='after'`."""
 
 _AnyModelWrapValidator = Union[ModelWrapValidator[_ModelType], ModelWrapValidatorWithoutInfo[_ModelType]]
-_AnyModeBeforeValidator = Union[ModelBeforeValidator, ModelBeforeValidatorWithoutInfo]
+_AnyModeBeforeValidator = Union[
+    FreeModelBeforeValidator, ModelBeforeValidator, FreeModelBeforeValidatorWithoutInfo, ModelBeforeValidatorWithoutInfo
+]
 _AnyModelAfterValidator = Union[ModelAfterValidator[_ModelType], ModelAfterValidatorWithoutInfo[_ModelType]]
 
 
@@ -458,7 +538,41 @@ def model_validator(
     *,
     mode: Literal['wrap', 'before', 'after'],
 ) -> Any:
-    """Decorate model methods for validation purposes.
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/validators/#model-validators
+
+    Decorate model methods for validation purposes.
+
+    Example usage:
+    ```py
+    from typing_extensions import Self
+
+    from pydantic import BaseModel, ValidationError, model_validator
+
+    class Square(BaseModel):
+        width: float
+        height: float
+
+        @model_validator(mode='after')
+        def verify_square(self) -> Self:
+            if self.width != self.height:
+                raise ValueError('width and height do not match')
+            return self
+
+    s = Square(width=1, height=1)
+    print(repr(s))
+    #> Square(width=1.0, height=1.0)
+
+    try:
+        Square(width=1, height=2)
+    except ValidationError as e:
+        print(e)
+        '''
+        1 validation error for Square
+          Value error, width and height do not match [type=value_error, input_value={'width': 1, 'height': 2}, input_type=dict]
+        '''
+    ```
+
+    For more in depth examples, see [Model Validators](../concepts/validators.md#model-validators).
 
     Args:
         mode: A required string literal that specifies the validation mode.

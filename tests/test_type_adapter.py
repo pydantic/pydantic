@@ -6,10 +6,11 @@ from typing import Any, Dict, ForwardRef, Generic, List, NamedTuple, Tuple, Type
 
 import pytest
 from pydantic_core import ValidationError
-from typing_extensions import TypeAlias, TypedDict
+from typing_extensions import Annotated, TypeAlias, TypedDict
 
 from pydantic import BaseModel, TypeAdapter, ValidationInfo, field_validator
 from pydantic.config import ConfigDict
+from pydantic.errors import PydanticUserError
 
 ItemType = TypeVar('ItemType')
 
@@ -309,3 +310,64 @@ def test_validate_strings_dict(strict):
         1: date(2017, 1, 1),
         2: date(2017, 1, 2),
     }
+
+
+def test_annotated_type_disallows_config() -> None:
+    class Model(BaseModel):
+        x: int
+
+    with pytest.raises(PydanticUserError, match='Cannot use `config`'):
+        TypeAdapter(Annotated[Model, ...], config=ConfigDict(strict=False))
+
+
+def test_ta_config_with_annotated_type() -> None:
+    class TestValidator(BaseModel):
+        x: str
+
+        model_config = ConfigDict(str_to_lower=True)
+
+    assert TestValidator(x='ABC').x == 'abc'
+    assert TypeAdapter(TestValidator).validate_python({'x': 'ABC'}).x == 'abc'
+    assert TypeAdapter(Annotated[TestValidator, ...]).validate_python({'x': 'ABC'}).x == 'abc'
+
+    class TestSerializer(BaseModel):
+        some_bytes: bytes
+        model_config = ConfigDict(ser_json_bytes='base64')
+
+    result = TestSerializer(some_bytes=b'\xaa')
+    assert result.model_dump(mode='json') == {'some_bytes': 'qg=='}
+    assert TypeAdapter(TestSerializer).dump_python(result, mode='json') == {'some_bytes': 'qg=='}
+
+    # cases where SchemaSerializer is constructed within TypeAdapter's __init__
+    assert TypeAdapter(Annotated[TestSerializer, ...]).dump_python(result, mode='json') == {'some_bytes': 'qg=='}
+    assert TypeAdapter(Annotated[List[TestSerializer], ...]).dump_python([result], mode='json') == [
+        {'some_bytes': 'qg=='}
+    ]
+
+
+def test_eval_type_backport():
+    v = TypeAdapter('list[int | str]').validate_python
+    assert v([1, '2']) == [1, '2']
+    with pytest.raises(ValidationError) as exc_info:
+        v([{'not a str or int'}])
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_type',
+            'loc': (0, 'int'),
+            'msg': 'Input should be a valid integer',
+            'input': {'not a str or int'},
+        },
+        {
+            'type': 'string_type',
+            'loc': (0, 'str'),
+            'msg': 'Input should be a valid string',
+            'input': {'not a str or int'},
+        },
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        v('not a list')
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'list_type', 'loc': (), 'msg': 'Input should be a valid list', 'input': 'not a list'}
+    ]

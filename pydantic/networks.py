@@ -3,6 +3,7 @@ from __future__ import annotations as _annotations
 
 import dataclasses as _dataclasses
 import re
+from importlib.metadata import version
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import TYPE_CHECKING, Any
 
@@ -40,6 +41,7 @@ __all__ = [
     'RedisDsn',
     'MongoDsn',
     'KafkaDsn',
+    'NatsDsn',
     'validate_email',
     'MySQLDsn',
     'MariaDBDsn',
@@ -309,6 +311,16 @@ KafkaDsn = Annotated[Url, UrlConstraints(allowed_schemes=['kafka'], default_host
 * TLD not required
 * Host required
 """
+NatsDsn = Annotated[
+    MultiHostUrl, UrlConstraints(allowed_schemes=['nats', 'tls', 'ws'], default_host='localhost', default_port=4222)
+]
+"""A type that will accept any NATS DSN.
+
+NATS is a connective technology built for the ever increasingly hyper-connected world.
+It is a single technology that enables applications to securely communicate across
+any combination of cloud vendors, on-premise, edge, web and mobile, and devices.
+More: https://nats.io
+"""
 MySQLDsn = Annotated[
     Url,
     UrlConstraints(
@@ -352,6 +364,8 @@ def import_email_validator() -> None:
         import email_validator
     except ImportError as e:
         raise ImportError('email-validator is not installed, run `pip install pydantic[email]`') from e
+    if not version('email-validator').partition('.')[0] == '2':
+        raise ImportError('email-validator version >= 2.0 required, run pip install -U email-validator')
 
 
 if TYPE_CHECKING:
@@ -636,7 +650,7 @@ class IPvAnyNetwork:
 
 def _build_pretty_email_regex() -> re.Pattern[str]:
     name_chars = r'[\w!#$%&\'*+\-/=?^_`{|}~]'
-    unquoted_name_group = fr'((?:{name_chars}+\s+)*{name_chars}+)'
+    unquoted_name_group = rf'((?:{name_chars}+\s+)*{name_chars}+)'
     quoted_name_group = r'"((?:[^"]|\")+)"'
     email_group = r'<\s*(.+)\s*>'
     return re.compile(rf'\s*(?:{unquoted_name_group}|{quoted_name_group})?\s*{email_group}\s*')

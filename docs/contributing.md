@@ -7,6 +7,10 @@ vulnerability, please see our [security policy](https://github.com/pydantic/pyda
 To make it as simple as possible for us to help you, please include the output of the following call in your issue:
 
 ```bash
+python -c "import pydantic.version; print(pydantic.version.version_info())"
+```
+If you're using Pydantic prior to **v2.0** please use:
+```bash
 python -c "import pydantic.utils; print(pydantic.utils.version_info())"
 ```
 If you're using Pydantic prior to **v1.3** (when `version_info()` was added), please manually include OS, Python
@@ -18,7 +22,7 @@ to your question or feature request.
 ## Pull Requests
 
 It should be extremely simple to get started and create a Pull Request.
-Pydantic is released regularly so you should see your improvements release in a matter of days or weeks.
+Pydantic is released regularly so you should see your improvements release in a matter of days or weeks 🚀.
 
 Unless your change is trivial (typo, docs tweak etc.), please create an issue to discuss the change before
 creating a pull request.
@@ -45,7 +49,7 @@ Because of this, setting up and running the tests should be very simple.
 
 You'll need the following prerequisites:
 
-- Any Python version between **Python 3.7 and 3.11**
+- Any Python version between **Python 3.8 and 3.11**
 - **virtualenv** or other virtual environment tool
 - **git**
 - **make**
@@ -90,8 +94,8 @@ Run tests and linting locally to make sure everything is working as expected.
 ```bash
 # Run automated code formatting and linting
 make format
-# Pydantic uses black and ruff
-# (https://github.com/ambv/black, https://github.com/charliermarsh/ruff)
+# Pydantic uses ruff, an awesome Python linter written in rust
+# https://github.com/astral-sh/ruff
 
 # Run tests and linting
 make
@@ -108,7 +112,7 @@ If you've made any changes to the documentation (including changes to function s
 # Build documentation
 make docs
 # If you have changed the documentation, make sure it builds successfully.
-# You can also use `make docs-serve` to serve the documentation at localhost:8000
+# You can also use `pdm run mkdocs serve` to serve the documentation at localhost:8000
 ```
 
 ### Commit and push your changes

@@ -11,7 +11,7 @@ from typing import Any, Callable, Deque, Dict, FrozenSet, List, NamedTuple, Opti
 from unittest.mock import MagicMock
 
 import pytest
-from dirty_equals import HasRepr
+from dirty_equals import HasRepr, IsInstance
 from pydantic_core import core_schema
 from typing_extensions import Annotated, Literal, TypedDict
 
@@ -20,6 +20,7 @@ from pydantic import (
     ConfigDict,
     Field,
     GetCoreSchemaHandler,
+    PlainSerializer,
     PydanticDeprecatedSince20,
     PydanticUserError,
     TypeAdapter,
@@ -33,6 +34,7 @@ from pydantic import (
     validate_call,
     validator,
 )
+from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.functional_validators import AfterValidator, BeforeValidator, PlainValidator, WrapValidator
 
 V1_VALIDATOR_DEPRECATION_MATCH = r'Pydantic V1 style `@validator` validators are deprecated'
@@ -62,6 +64,7 @@ def test_annotated_validator_before() -> None:
     assert Model(x='1.0').x == 1.0
 
 
+@pytest.mark.xfail(sys.version_info >= (3, 9) and sys.implementation.name == 'pypy', reason='PyPy 3.9+ bug')
 def test_annotated_validator_builtin() -> None:
     """https://github.com/pydantic/pydantic/issues/6752"""
     TruncatedFloat = Annotated[float, BeforeValidator(int)]
@@ -1601,7 +1604,6 @@ def test_assignment_validator_cls():
     assert validator_calls == 2
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592')
 def test_literal_validator():
     class Model(BaseModel):
         a: Literal['foo']
@@ -1642,9 +1644,6 @@ def test_literal_validator_str_enum():
     assert my_foo.fizfuz is Bar.FUZ
 
 
-@pytest.mark.skipif(
-    sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592', strict=False
-)
 def test_nested_literal_validator():
     L1 = Literal['foo']
     L2 = Literal['bar']
@@ -1919,8 +1918,7 @@ def test_v1_validator_deprecated():
     # parameter to warnings.warn in _decorators.py
     assert w.filename == __file__
     source = _get_source_line(w.filename, w.lineno)
-    # the reported location varies slightly from 3.7 to 3.11
-    assert 'check_x' in source or "@validator('x')" in source
+    assert "@validator('x')" in source
 
 
 def test_info_field_name_data_before():
@@ -2736,3 +2734,92 @@ def test_wrap_validator_field_name():
     m = MyModel(x='123', foobar='1')
     # insert_assert(m.foobar)
     assert m.foobar == {'value': 1, 'field_name': 'foobar', 'data': {'x': 123}}
+
+
+def test_validate_default_raises_for_basemodel() -> None:
+    class Model(BaseModel):
+        value_0: str
+        value_a: Annotated[Optional[str], Field(None, validate_default=True)]
+        value_b: Annotated[Optional[str], Field(None, validate_default=True)]
+
+        @field_validator('value_a', mode='after')
+        def value_a_validator(cls, value):
+            raise AssertionError
+
+        @field_validator('value_b', mode='after')
+        def value_b_validator(cls, value):
+            raise AssertionError
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model()
+
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'missing', 'loc': ('value_0',), 'msg': 'Field required', 'input': {}},
+        {
+            'type': 'assertion_error',
+            'loc': ('value_a',),
+            'msg': 'Assertion failed, ',
+            'input': None,
+            'ctx': {'error': IsInstance(AssertionError)},
+        },
+        {
+            'type': 'assertion_error',
+            'loc': ('value_b',),
+            'msg': 'Assertion failed, ',
+            'input': None,
+            'ctx': {'error': IsInstance(AssertionError)},
+        },
+    ]
+
+
+def test_validate_default_raises_for_dataclasses() -> None:
+    @pydantic_dataclass
+    class Model:
+        value_0: str
+        value_a: Annotated[Optional[str], Field(None, validate_default=True)]
+        value_b: Annotated[Optional[str], Field(None, validate_default=True)]
+
+        @field_validator('value_a', mode='after')
+        def value_a_validator(cls, value):
+            raise AssertionError
+
+        @field_validator('value_b', mode='after')
+        def value_b_validator(cls, value):
+            raise AssertionError
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model()
+
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'missing', 'loc': ('value_0',), 'msg': 'Field required', 'input': HasRepr('ArgsKwargs(())')},
+        {
+            'type': 'assertion_error',
+            'loc': ('value_a',),
+            'msg': 'Assertion failed, ',
+            'input': None,
+            'ctx': {'error': IsInstance(AssertionError)},
+        },
+        {
+            'type': 'assertion_error',
+            'loc': ('value_b',),
+            'msg': 'Assertion failed, ',
+            'input': None,
+            'ctx': {'error': IsInstance(AssertionError)},
+        },
+    ]
+
+
+def test_plain_validator_plain_serializer() -> None:
+    """https://github.com/pydantic/pydantic/issues/8512"""
+    ser_type = str
+    serializer = PlainSerializer(lambda x: ser_type(int(x)), return_type=ser_type)
+    validator = PlainValidator(lambda x: bool(int(x)))
+
+    class Blah(BaseModel):
+        foo: Annotated[bool, validator, serializer]
+        bar: Annotated[bool, serializer, validator]
+
+    blah = Blah(foo='0', bar='1')
+    data = blah.model_dump()
+    assert isinstance(data['foo'], ser_type)
+    assert isinstance(data['bar'], ser_type)

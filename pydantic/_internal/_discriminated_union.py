@@ -1,6 +1,6 @@
 from __future__ import annotations as _annotations
 
-from typing import Any, Hashable, Sequence
+from typing import TYPE_CHECKING, Any, Hashable, Sequence
 
 from pydantic_core import CoreSchema, core_schema
 
@@ -12,6 +12,9 @@ from ._core_utils import (
     collect_definitions,
     simplify_schema_references,
 )
+
+if TYPE_CHECKING:
+    from ..types import Discriminator
 
 CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY = 'pydantic.internal.union_discriminator'
 
@@ -58,7 +61,9 @@ def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSche
 
 
 def apply_discriminator(
-    schema: core_schema.CoreSchema, discriminator: str, definitions: dict[str, core_schema.CoreSchema] | None = None
+    schema: core_schema.CoreSchema,
+    discriminator: str | Discriminator,
+    definitions: dict[str, core_schema.CoreSchema] | None = None,
 ) -> core_schema.CoreSchema:
     """Applies the discriminator and returns a new core schema.
 
@@ -83,6 +88,14 @@ def apply_discriminator(
             - If discriminator fields have different aliases.
             - If discriminator field not of type `Literal`.
     """
+    from ..types import Discriminator
+
+    if isinstance(discriminator, Discriminator):
+        if isinstance(discriminator.discriminator, str):
+            discriminator = discriminator.discriminator
+        else:
+            return discriminator._convert_schema(schema)
+
     return _ApplyInferredDiscriminator(discriminator, definitions or {}).apply(schema)
 
 

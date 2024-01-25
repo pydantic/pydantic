@@ -1,1 +1,1 @@
-::: pydantic.type_adapter
+::: pydantic.type_adapter.TypeAdapter

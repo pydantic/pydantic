@@ -1,3 +1,6 @@
+??? api "API Documentation"
+    [`pydantic.types.Strict`][pydantic.types.Strict]<br>
+
 By default, Pydantic will attempt to coerce values to the desired type when possible.
 For example, you can pass the string `"123"` as the input to an `int` field, and it will be converted to `123`.
 This coercion behavior is useful in many scenarios — think: UUIDs, URL parameters, HTTP headers, environment variables,
@@ -280,6 +283,9 @@ except ValidationError as exc:
 
 ## Strict mode with `Annotated[..., Strict()]`
 
+??? api "API Documentation"
+    [`pydantic.types.Strict`][pydantic.types.Strict]<br>
+
 Pydantic also provides the [`Strict`](../api/types.md#pydantic.types.Strict) class, which is intended for use as
 metadata with `typing.Annotated` class; this annotation indicates that the annotated field should be validated in
 strict mode:
@@ -490,7 +496,7 @@ except ValidationError as exc:
 
 ### `@validate_call`
 
-Strict mode is also usable with the [`@validate_call`](../api/validate_call.md#pydantic.validate_call.validate_call)
+Strict mode is also usable with the [`@validate_call`](../api/validate_call.md#pydantic.validate_call_decorator.validate_call)
 decorator by passing the `config` keyword argument:
 
 ```python

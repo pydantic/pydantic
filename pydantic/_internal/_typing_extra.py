@@ -8,9 +8,9 @@ import typing
 from collections.abc import Callable
 from functools import partial
 from types import GetSetDescriptorType
-from typing import TYPE_CHECKING, Any, ForwardRef
+from typing import TYPE_CHECKING, Any, Final
 
-from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypeGuard, get_args, get_origin
+from typing_extensions import Annotated, Literal, TypeAliasType, TypeGuard, get_args, get_origin
 
 if TYPE_CHECKING:
     from ._dataclasses import StandardDataclass
@@ -213,7 +213,7 @@ def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None)
     return hints
 
 
-def eval_type_lenient(value: Any, globalns: dict[str, Any] | None, localns: dict[str, Any] | None) -> Any:
+def eval_type_lenient(value: Any, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None) -> Any:
     """Behaves like typing._eval_type, except it won't raise an error if a forward reference can't be resolved."""
     if value is None:
         value = NoneType
@@ -221,10 +221,44 @@ def eval_type_lenient(value: Any, globalns: dict[str, Any] | None, localns: dict
         value = _make_forward_ref(value, is_argument=False, is_class=True)
 
     try:
-        return typing._eval_type(value, globalns, localns)  # type: ignore
+        return eval_type_backport(value, globalns, localns)
     except NameError:
         # the point of this function is to be tolerant to this case
         return value
+
+
+def eval_type_backport(
+    value: Any, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None
+) -> Any:
+    """Like `typing._eval_type`, but falls back to the `eval_type_backport` package if it's
+    installed to let older Python versions use newer typing features.
+    Specifically, this transforms `X | Y` into `typing.Union[X, Y]`
+    and `list[X]` into `typing.List[X]` etc. (for all the types made generic in PEP 585)
+    if the original syntax is not supported in the current Python version.
+    """
+    try:
+        return typing._eval_type(  # type: ignore
+            value, globalns, localns
+        )
+    except TypeError as e:
+        if not (isinstance(value, typing.ForwardRef) and is_backport_fixable_error(e)):
+            raise
+        try:
+            from eval_type_backport import eval_type_backport
+        except ImportError:
+            raise TypeError(
+                f'You have a type annotation {value.__forward_arg__!r} '
+                f'which makes use of newer typing features than are supported in your version of Python. '
+                f'To handle this error, you should either remove the use of new syntax '
+                f'or install the `eval_type_backport` package.'
+            ) from e
+
+        return eval_type_backport(value, globalns, localns, try_default=False)
+
+
+def is_backport_fixable_error(e: TypeError) -> bool:
+    msg = str(e)
+    return msg.startswith('unsupported operand type(s) for |: ') or "' object is not subscriptable" in msg
 
 
 def get_function_type_hints(
@@ -248,7 +282,7 @@ def get_function_type_hints(
         elif isinstance(value, str):
             value = _make_forward_ref(value)
 
-        type_hints[name] = typing._eval_type(value, globalns, types_namespace)  # type: ignore
+        type_hints[name] = eval_type_backport(value, globalns, types_namespace)
 
     return type_hints
 
@@ -363,11 +397,15 @@ else:
                     if isinstance(value, str):
                         value = _make_forward_ref(value, is_argument=False, is_class=True)
 
-                    value = typing._eval_type(value, base_globals, base_locals)  # type: ignore
+                    value = eval_type_backport(value, base_globals, base_locals)
                     hints[name] = value
-            return (
-                hints if include_extras else {k: typing._strip_annotations(t) for k, t in hints.items()}  # type: ignore
-            )
+            if not include_extras and hasattr(typing, '_strip_annotations'):
+                return {
+                    k: typing._strip_annotations(t)  # type: ignore
+                    for k, t in hints.items()
+                }
+            else:
+                return hints
 
         if globalns is None:
             if isinstance(obj, types.ModuleType):
@@ -403,26 +441,11 @@ else:
                     is_argument=not isinstance(obj, types.ModuleType),
                     is_class=False,
                 )
-            value = typing._eval_type(value, globalns, localns)  # type: ignore
+            value = eval_type_backport(value, globalns, localns)
             if name in defaults and defaults[name] is None:
                 value = typing.Optional[value]
             hints[name] = value
         return hints if include_extras else {k: typing._strip_annotations(t) for k, t in hints.items()}  # type: ignore
-
-
-if sys.version_info < (3, 9):
-
-    def evaluate_fwd_ref(
-        ref: ForwardRef, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None
-    ) -> Any:
-        return ref._evaluate(globalns=globalns, localns=localns)
-
-else:
-
-    def evaluate_fwd_ref(
-        ref: ForwardRef, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None
-    ) -> Any:
-        return ref._evaluate(globalns=globalns, localns=localns, recursive_guard=frozenset())
 
 
 def is_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
@@ -433,3 +456,14 @@ def is_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
 
 def origin_is_type_alias_type(origin: Any) -> TypeGuard[TypeAliasType]:
     return isinstance(origin, TypeAliasType)
+
+
+if sys.version_info >= (3, 10):
+
+    def is_generic_alias(type_: type[Any]) -> bool:
+        return isinstance(type_, (types.GenericAlias, typing._GenericAlias))  # type: ignore[attr-defined]
+
+else:
+
+    def is_generic_alias(type_: type[Any]) -> bool:
+        return isinstance(type_, typing._GenericAlias)  # type: ignore

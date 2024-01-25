@@ -1,17 +1,18 @@
 import json
 import platform
 import re
-import sys
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import date, datetime
 from enum import Enum
+from functools import partial
 from typing import (
     Any,
     Callable,
     ClassVar,
     Dict,
+    Final,
     Generic,
     List,
     Mapping,
@@ -26,7 +27,7 @@ from uuid import UUID, uuid4
 
 import pytest
 from pydantic_core import CoreSchema, core_schema
-from typing_extensions import Annotated, Final, Literal
+from typing_extensions import Annotated, Literal
 
 from pydantic import (
     AfterValidator,
@@ -36,7 +37,6 @@ from pydantic import (
     GenerateSchema,
     GetCoreSchemaHandler,
     PrivateAttr,
-    PydanticDeprecatedSince20,
     PydanticUndefinedAnnotation,
     PydanticUserError,
     SecretStr,
@@ -342,6 +342,25 @@ def test_extra_allowed():
     assert model.c == 1
 
 
+def test_reassign_instance_method_with_extra_allow():
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+        name: str
+
+        def not_extra_func(self) -> str:
+            return f'hello {self.name}'
+
+    def not_extra_func_replacement(self_sub: Model) -> str:
+        return f'hi {self_sub.name}'
+
+    m = Model(name='james')
+    assert m.not_extra_func() == 'hello james'
+
+    m.not_extra_func = partial(not_extra_func_replacement, m)
+    assert m.not_extra_func() == 'hi james'
+    assert 'not_extra_func' in m.__dict__
+
+
 def test_extra_ignored():
     class Model(BaseModel):
         model_config = ConfigDict(extra='ignore')
@@ -495,13 +514,21 @@ def test_frozen_model():
         a: int = 10
 
     m = FrozenModel()
-
     assert m.a == 10
+
     with pytest.raises(ValidationError) as exc_info:
         m.a = 11
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'frozen_instance', 'loc': ('a',), 'msg': 'Instance is frozen', 'input': 11}
     ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        del m.a
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'frozen_instance', 'loc': ('a',), 'msg': 'Instance is frozen', 'input': None}
+    ]
+
+    assert m.a == 10
 
 
 def test_frozen_field():
@@ -509,12 +536,21 @@ def test_frozen_field():
         a: int = Field(10, frozen=True)
 
     m = FrozenModel()
+    assert m.a == 10
 
     with pytest.raises(ValidationError) as exc_info:
         m.a = 11
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'frozen_field', 'loc': ('a',), 'msg': 'Field is frozen', 'input': 11}
     ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        del m.a
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'frozen_field', 'loc': ('a',), 'msg': 'Field is frozen', 'input': None}
+    ]
+
+    assert m.a == 10
 
 
 def test_not_frozen_are_not_hashable():
@@ -570,6 +606,16 @@ def test_frozen_with_unhashable_fields_are_not_hashable():
     assert "unhashable type: 'list'" in exc_info.value.args[0]
 
 
+def test_hash_function_empty_model():
+    class TestModel(BaseModel):
+        model_config = ConfigDict(frozen=True)
+
+    m = TestModel()
+    m2 = TestModel()
+    assert m == m2
+    assert hash(m) == hash(m2)
+
+
 def test_hash_function_give_different_result_for_different_object():
     class TestModel(BaseModel):
         model_config = ConfigDict(frozen=True)
@@ -582,13 +628,47 @@ def test_hash_function_give_different_result_for_different_object():
     assert hash(m) == hash(m2)
     assert hash(m) != hash(m3)
 
-    # Redefined `TestModel`
+
+def test_hash_function_works_when_instance_dict_modified():
     class TestModel(BaseModel):
         model_config = ConfigDict(frozen=True)
-        a: int = 10
 
-    m4 = TestModel()
-    assert hash(m) != hash(m4)
+        a: int
+        b: int
+
+    m = TestModel(a=1, b=2)
+    h = hash(m)
+
+    # Test edge cases where __dict__ is modified
+    # @functools.cached_property can add keys to __dict__, these should be ignored.
+    m.__dict__['c'] = 1
+    assert hash(m) == h
+
+    # Order of keys can be changed, e.g. with the deprecated copy method, which shouldn't matter.
+    m.__dict__ = {'b': 2, 'a': 1}
+    assert hash(m) == h
+
+    # Keys can be missing, e.g. when using the deprecated copy method.
+    # This could change the hash, and more importantly hashing shouldn't raise a KeyError
+    # We don't assert here, because a hash collision is possible: the hash is not guaranteed to change
+    # However, hashing must not raise an exception, which simply calling hash() checks for
+    del m.__dict__['a']
+    hash(m)
+
+
+def test_default_hash_function_overrides_default_hash_function():
+    class A(BaseModel):
+        model_config = ConfigDict(frozen=True)
+
+        x: int
+
+    class B(A):
+        model_config = ConfigDict(frozen=True)
+
+        y: int
+
+    assert A.__hash__ != B.__hash__
+    assert hash(A(x=1)) != hash(B(x=1, y=2)) != hash(B(x=1, y=3))
 
 
 def test_hash_method_is_inherited_for_frozen_models():
@@ -656,7 +736,7 @@ def test_validating_assignment_fail(ValidateAssignmentModel):
         {
             'type': 'string_too_short',
             'loc': ('b',),
-            'msg': 'String should have at least 1 characters',
+            'msg': 'String should have at least 1 character',
             'input': '',
             'ctx': {'min_length': 1},
         }
@@ -1452,7 +1532,7 @@ def test_model_export_inclusion_inheritance():
         s4: str = 'v4'
 
     class Parent(BaseModel):
-        # b will be included since fields are set idependently
+        # b will be included since fields are set independently
         model_config = ConfigDict(fields={'b': {'include': ...}})
         a: int
         b: int
@@ -1474,8 +1554,8 @@ def test_untyped_fields_warning():
     with pytest.raises(
         PydanticUserError,
         match=re.escape(
-            "A non-annotated attribute was detected: `x = 1`. All model fields require a type annotation; "
-            "if `x` is not meant to be a field, you may be able to resolve this error by annotating it "
+            'A non-annotated attribute was detected: `x = 1`. All model fields require a type annotation; '
+            'if `x` is not meant to be a field, you may be able to resolve this error by annotating it '
             "as a `ClassVar` or updating `model_config['ignored_types']`."
         ),
     ):
@@ -1804,22 +1884,21 @@ def test_class_kwargs_custom_config():
             a: int
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='need 3.10 version')
 def test_new_union_origin():
     """On 3.10+, origin of `int | str` is `types.UnionType`, not `typing.Union`"""
 
     class Model(BaseModel):
-        x: int | str
+        x: 'int | str'
 
     assert Model(x=3).x == 3
     assert Model(x='3').x == '3'
     assert Model(x='pika').x == 'pika'
-    # assert Model.model_json_schema() == {
-    #     'title': 'Model',
-    #     'type': 'object',
-    #     'properties': {'x': {'title': 'X', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
-    #     'required': ['x'],
-    # }
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'x': {'title': 'X', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
+        'required': ['x'],
+    }
 
 
 @pytest.mark.parametrize(
@@ -1999,6 +2078,38 @@ def test_model_post_init_subclass_private_attrs():
     C()
 
     assert calls == ['C.model_post_init']
+
+
+def test_model_post_init_subclass_setting_private_attrs():
+    """https://github.com/pydantic/pydantic/issues/7091"""
+
+    class Model(BaseModel):
+        _priv1: int = PrivateAttr(91)
+        _priv2: int = PrivateAttr(92)
+
+        def model_post_init(self, __context) -> None:
+            self._priv1 = 100
+
+    class SubModel(Model):
+        _priv3: int = PrivateAttr(93)
+        _priv4: int = PrivateAttr(94)
+        _priv5: int = PrivateAttr()
+        _priv6: int = PrivateAttr()
+
+        def model_post_init(self, __context) -> None:
+            self._priv3 = 200
+            self._priv5 = 300
+            super().model_post_init(__context)
+
+    m = SubModel()
+
+    assert m._priv1 == 100
+    assert m._priv2 == 92
+    assert m._priv3 == 200
+    assert m._priv4 == 94
+    assert m._priv5 == 300
+    with pytest.raises(AttributeError):
+        assert m._priv6 == 94
 
 
 def test_model_post_init_correct_mro():
@@ -2200,7 +2311,7 @@ def test_model_parametrized_name_not_generic():
 def test_model_equality_generics():
     T = TypeVar('T')
 
-    class GenericModel(BaseModel, Generic[T]):
+    class GenericModel(BaseModel, Generic[T], frozen=True):
         x: T
 
     class ConcreteModel(BaseModel):
@@ -2213,20 +2324,22 @@ def test_model_equality_generics():
     assert GenericModel(x=1) != GenericModel(x=2)
 
     S = TypeVar('S')
-    assert GenericModel(x=1) == GenericModel(x=1)
-    assert GenericModel(x=1) == GenericModel[S](x=1)
-    assert GenericModel(x=1) == GenericModel[Any](x=1)
-    assert GenericModel(x=1) == GenericModel[float](x=1)
-
-    assert GenericModel[int](x=1) == GenericModel[int](x=1)
-    assert GenericModel[int](x=1) == GenericModel[S](x=1)
-    assert GenericModel[int](x=1) == GenericModel[Any](x=1)
-    assert GenericModel[int](x=1) == GenericModel[float](x=1)
-
-    # Test that it works with nesting as well
-    nested_any = GenericModel[GenericModel[Any]](x=GenericModel[Any](x=1))
-    nested_int = GenericModel[GenericModel[int]](x=GenericModel[int](x=1))
-    assert nested_any == nested_int
+    models = [
+        GenericModel(x=1),
+        GenericModel[S](x=1),
+        GenericModel[Any](x=1),
+        GenericModel[int](x=1),
+        GenericModel[float](x=1),
+    ]
+    for m1 in models:
+        for m2 in models:
+            # Test that it works with nesting as well
+            m3 = GenericModel[type(m1)](x=m1)
+            m4 = GenericModel[type(m2)](x=m2)
+            assert m1 == m2
+            assert m3 == m4
+            assert hash(m1) == hash(m2)
+            assert hash(m3) == hash(m4)
 
 
 def test_model_validate_strict() -> None:
@@ -2862,12 +2975,9 @@ def test_deferred_core_schema() -> None:
 
 
 def test_help(create_module):
-    # since pydoc/help access all attributes to generate their documentation,
-    # this triggers the deprecation warnings.
-    with pytest.warns(PydanticDeprecatedSince20):
-        module = create_module(
-            # language=Python
-            """
+    module = create_module(
+        # language=Python
+        """
 import pydoc
 
 from pydantic import BaseModel
@@ -2878,8 +2988,7 @@ class Model(BaseModel):
 
 help_result_string = pydoc.render_doc(Model)
 """
-        )
-
+    )
     assert 'class Model' in module.help_result_string
 
 
@@ -2976,7 +3085,7 @@ def test_schema_generator_customize_type_constraints_order() -> None:
         {
             'type': 'string_too_long',
             'loc': ('y',),
-            'msg': 'String should have at most 1 characters',
+            'msg': 'String should have at most 1 character',
             'input': ' 1 ',
             'ctx': {'max_length': 1},
         }
@@ -3016,3 +3125,39 @@ def test_shadow_attribute() -> None:
     assert getattr(One, 'foo', None) == ' edited!'
     assert getattr(Two, 'foo', None) == ' edited! edited!'
     assert getattr(Three, 'foo', None) == ' edited! edited!'
+
+
+def test_eval_type_backport():
+    class Model(BaseModel):
+        foo: 'list[int | str]'
+
+    assert Model(foo=[1, '2']).model_dump() == {'foo': [1, '2']}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo='not a list')
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'list_type',
+            'loc': ('foo',),
+            'msg': 'Input should be a valid list',
+            'input': 'not a list',
+        }
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=[{'not a str or int'}])
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_type',
+            'loc': ('foo', 0, 'int'),
+            'msg': 'Input should be a valid integer',
+            'input': {'not a str or int'},
+        },
+        {
+            'type': 'string_type',
+            'loc': ('foo', 0, 'str'),
+            'msg': 'Input should be a valid string',
+            'input': {'not a str or int'},
+        },
+    ]

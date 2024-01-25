@@ -88,8 +88,6 @@ model = Model(a=1)
         done: bool = False
     ```
 
-===
-
 ## Use tagged union, not union
 
 Tagged union (or discriminated union) is a union with a field that indicates which type it is.
@@ -131,6 +129,8 @@ class Html(BaseModel):
         discriminator='el_type'
     )
 ```
+
+See [Discriminated Unions] for more details.
 
 ## Use `Literal` not `Enum`
 
@@ -207,3 +207,5 @@ Instead of using nested models, use `TypedDict` to define the structure of the d
 ## Avoid wrap validators if you really care about performance
 
 <!-- TODO: I need help on this one. -->
+
+[Discriminated Unions]: ../concepts/unions.md#discriminated-unions

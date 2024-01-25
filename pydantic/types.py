@@ -14,6 +14,7 @@ from typing import (
     Any,
     Callable,
     ClassVar,
+    Dict,
     FrozenSet,
     Generic,
     Hashable,
@@ -21,6 +22,7 @@ from typing import (
     List,
     Set,
     TypeVar,
+    Union,
     cast,
 )
 from uuid import UUID
@@ -28,9 +30,16 @@ from uuid import UUID
 import annotated_types
 from annotated_types import BaseMetadata, MaxLen, MinLen
 from pydantic_core import CoreSchema, PydanticCustomError, core_schema
-from typing_extensions import Annotated, Literal, Protocol, deprecated
+from typing_extensions import Annotated, Literal, Protocol, TypeAlias, TypeAliasType, deprecated
 
-from ._internal import _fields, _internal_dataclass, _utils, _validators
+from ._internal import (
+    _core_utils,
+    _fields,
+    _internal_dataclass,
+    _typing_extra,
+    _utils,
+    _validators,
+)
 from ._migration import getattr_migration
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .errors import PydanticUserError
@@ -92,12 +101,21 @@ __all__ = (
     'Base64UrlStr',
     'GetPydanticSchema',
     'StringConstraints',
+    'Tag',
+    'Discriminator',
+    'JsonValue',
+    'OnErrorOmit',
 )
+
+
+T = TypeVar('T')
 
 
 @_dataclasses.dataclass
 class Strict(_fields.PydanticMetadata, BaseMetadata):
-    """A field metadata class to indicate that a field should be validated in strict mode.
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/strict_mode/#strict-mode-with-annotated-strict
+
+    A field metadata class to indicate that a field should be validated in strict mode.
 
     Attributes:
         strict: Whether to validate the field in strict mode.
@@ -402,6 +420,7 @@ def confloat(
         === ":white_check_mark: Do this"
             ```py
             from typing_extensions import Annotated
+
             from pydantic import BaseModel, Field
 
             class Foo(BaseModel):
@@ -654,7 +673,9 @@ StrictBytes = Annotated[bytes, Strict()]
 
 @_dataclasses.dataclass(frozen=True)
 class StringConstraints(annotated_types.GroupedMetadata):
-    """Apply constraints to `str` types.
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/fields/#string-constraints
+
+    Apply constraints to `str` types.
 
     Attributes:
         strip_whitespace: Whether to strip whitespace from the string.
@@ -687,7 +708,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
             or self.to_lower is not None
             or self.to_upper is not None
         ):
-            yield _fields.PydanticGeneralMetadata(
+            yield _fields.pydantic_general_metadata(
                 strip_whitespace=self.strip_whitespace,
                 to_upper=self.to_upper,
                 to_lower=self.to_lower,
@@ -725,7 +746,9 @@ def constr(
 
         === ":white_check_mark: Do this"
             ```py
-            from pydantic import BaseModel, Annotated, StringConstraints
+            from typing_extensions import Annotated
+
+            from pydantic import BaseModel, StringConstraints
 
             class Foo(BaseModel):
                 bar: Annotated[str, StringConstraints(strip_whitespace=True, to_upper=True, pattern=r'^[A-Z]+$')]
@@ -828,6 +851,9 @@ def conlist(
         min_length: The minimum length of the list. Defaults to None.
         max_length: The maximum length of the list. Defaults to None.
         unique_items: Whether the items in the list must be unique. Defaults to None.
+            !!! warning Deprecated
+                The `unique_items` parameter is deprecated, use `Set` instead.
+                See [this issue](https://github.com/pydantic/pydantic-core/issues/296) for more details.
 
     Returns:
         The wrapped list type.
@@ -861,15 +887,11 @@ else:
         On model instantiation, pointers will be evaluated and imported. There is
         some nuance to this behavior, demonstrated in the examples below.
 
-        > A known limitation: setting a default value to a string
-        > won't result in validation (thus evaluation). This is actively
-        > being worked on.
-
         **Good behavior:**
         ```py
         from math import cos
 
-        from pydantic import BaseModel, ImportString, ValidationError
+        from pydantic import BaseModel, Field, ImportString, ValidationError
 
 
         class ImportThings(BaseModel):
@@ -899,7 +921,31 @@ else:
         # Actual python objects can be assigned as well
         my_cos = ImportThings(obj=cos)
         my_cos_2 = ImportThings(obj='math.cos')
-        assert my_cos == my_cos_2
+        my_cos_3 = ImportThings(obj='math:cos')
+        assert my_cos == my_cos_2 == my_cos_3
+
+
+        # You can set default field value either as Python object:
+        class ImportThingsDefaultPyObj(BaseModel):
+            obj: ImportString = math.cos
+
+
+        # or as a string value (but only if used with `validate_default=True`)
+        class ImportThingsDefaultString(BaseModel):
+            obj: ImportString = Field(default='math.cos', validate_default=True)
+
+
+        my_cos_default1 = ImportThingsDefaultPyObj()
+        my_cos_default2 = ImportThingsDefaultString()
+        assert my_cos_default1.obj == my_cos_default2.obj == math.cos
+
+
+        # note: this will not work!
+        class ImportThingsMissingValidateDefault(BaseModel):
+            obj: ImportString = 'math.cos'
+
+        my_cos_default3 = ImportThingsMissingValidateDefault()
+        assert my_cos_default3.obj == 'math.cos'  # just string, not evaluated
         ```
 
         Serializing an `ImportString` type to json is also possible.
@@ -913,7 +959,7 @@ else:
 
 
         # Create an instance
-        m = ImportThings(obj='math:cos')
+        m = ImportThings(obj='math.cos')
         print(m)
         #> obj=<built-in function cos>
         print(m.model_dump_json())
@@ -989,6 +1035,7 @@ def condecimal(
         === ":white_check_mark: Do this"
             ```py
             from decimal import Decimal
+
             from typing_extensions import Annotated
 
             from pydantic import BaseModel, Field
@@ -1045,7 +1092,7 @@ def condecimal(
         Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
         annotated_types.MultipleOf(multiple_of) if multiple_of is not None else None,
-        _fields.PydanticGeneralMetadata(max_digits=max_digits, decimal_places=decimal_places),
+        _fields.pydantic_general_metadata(max_digits=max_digits, decimal_places=decimal_places),
         AllowInfNan(allow_inf_nan) if allow_inf_nan is not None else None,
     ]
 
@@ -1068,7 +1115,15 @@ class UuidVersion:
         return field_schema
 
     def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        return core_schema.uuid_schema(version=self.uuid_version)
+        if isinstance(self, source):
+            # used directly as a type
+            return core_schema.uuid_schema(version=self.uuid_version)
+        else:
+            # update existing schema with self.uuid_version
+            schema = handler(source)
+            _check_annotated_type(schema['type'], 'uuid', self.__class__.__name__)
+            schema['version'] = self.uuid_version  # type: ignore
+            return schema
 
     def __hash__(self) -> int:
         return hash(type(self.uuid_version))
@@ -1080,7 +1135,7 @@ UUID1 = Annotated[UUID, UuidVersion(1)]
 ```py
 import uuid
 
-from pydantic import BaseModel, UUID1
+from pydantic import UUID1, BaseModel
 
 class Model(BaseModel):
     uuid1: UUID1
@@ -1094,7 +1149,7 @@ UUID3 = Annotated[UUID, UuidVersion(3)]
 ```py
 import uuid
 
-from pydantic import BaseModel, UUID3
+from pydantic import UUID3, BaseModel
 
 class Model(BaseModel):
     uuid3: UUID3
@@ -1108,7 +1163,7 @@ UUID4 = Annotated[UUID, UuidVersion(4)]
 ```py
 import uuid
 
-from pydantic import BaseModel, UUID4
+from pydantic import UUID4, BaseModel
 
 class Model(BaseModel):
     uuid4: UUID4
@@ -1122,7 +1177,7 @@ UUID5 = Annotated[UUID, UuidVersion(5)]
 ```py
 import uuid
 
-from pydantic import BaseModel, UUID5
+from pydantic import UUID5, BaseModel
 
 class Model(BaseModel):
     uuid5: UUID5
@@ -1448,16 +1503,20 @@ class _SecretField(Generic[SecretType]):
             )
             return json_schema
 
-        s = core_schema.union_schema(
-            [
-                core_schema.is_instance_schema(source),
-                core_schema.no_info_after_validator_function(
-                    source,  # construct the type
-                    inner_schema,
-                ),
-            ],
-            strict=True,
-            custom_error_type=error_kind,
+        json_schema = core_schema.no_info_after_validator_function(
+            source,  # construct the type
+            inner_schema,
+        )
+        s = core_schema.json_or_python_schema(
+            python_schema=core_schema.union_schema(
+                [
+                    core_schema.is_instance_schema(source),
+                    json_schema,
+                ],
+                strict=True,
+                custom_error_type=error_kind,
+            ),
+            json_schema=json_schema,
             serialization=core_schema.plain_serializer_function_ser_schema(
                 serialize,
                 info_arg=True,
@@ -1470,15 +1529,14 @@ class _SecretField(Generic[SecretType]):
 
 
 def _secret_display(value: str | bytes) -> str:
-    if isinstance(value, bytes):
-        value = value.decode()
     return '**********' if value else ''
 
 
 class SecretStr(_SecretField[str]):
     """A string used for storing sensitive information that you do not want to be visible in logging or tracebacks.
 
-    It displays `'**********'` instead of the string value on `repr()` and `str()` calls.
+    When the secret value is nonempty, it is displayed as `'**********'` instead of the underlying value in
+    calls to `repr()` and `str()`. If the value _is_ empty, it is displayed as `''`.
 
     ```py
     from pydantic import BaseModel, SecretStr
@@ -1493,6 +1551,8 @@ class SecretStr(_SecretField[str]):
     #> username='scolvin' password=SecretStr('**********')
     print(user.password.get_secret_value())
     #> password1
+    print((SecretStr('password'), SecretStr('')))
+    #> (SecretStr('**********'), SecretStr(''))
     ```
     """
 
@@ -1504,6 +1564,8 @@ class SecretBytes(_SecretField[bytes]):
     """A bytes used for storing sensitive information that you do not want to be visible in logging or tracebacks.
 
     It displays `b'**********'` instead of the string value on `repr()` and `str()` calls.
+    When the secret value is nonempty, it is displayed as `b'**********'` instead of the underlying value in
+    calls to `repr()` and `str()`. If the value _is_ empty, it is displayed as `b''`.
 
     ```py
     from pydantic import BaseModel, SecretBytes
@@ -1516,6 +1578,8 @@ class SecretBytes(_SecretField[bytes]):
     #> username='scolvin' password=SecretBytes(b'**********')
     print(user.password.get_secret_value())
     #> b'password1'
+    print((SecretBytes(b'password'), SecretBytes(b'')))
+    #> (SecretBytes(b'**********'), SecretBytes(b''))
     ```
     """
 
@@ -1646,24 +1710,6 @@ class PaymentCardNumber(str):
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BYTE SIZE TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-BYTE_SIZES = {
-    'b': 1,
-    'kb': 10**3,
-    'mb': 10**6,
-    'gb': 10**9,
-    'tb': 10**12,
-    'pb': 10**15,
-    'eb': 10**18,
-    'kib': 2**10,
-    'mib': 2**20,
-    'gib': 2**30,
-    'tib': 2**40,
-    'pib': 2**50,
-    'eib': 2**60,
-}
-BYTE_SIZES.update({k.lower()[0]: v for k, v in BYTE_SIZES.items() if 'i' not in k})
-byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
-
 
 class ByteSize(int):
     """Converts a string representing a number of bytes with units (such as `'1KB'` or `'11.5MiB'`) into an integer.
@@ -1700,9 +1746,53 @@ class ByteSize(int):
     ```
     """
 
+    byte_sizes = {
+        'b': 1,
+        'kb': 10**3,
+        'mb': 10**6,
+        'gb': 10**9,
+        'tb': 10**12,
+        'pb': 10**15,
+        'eb': 10**18,
+        'kib': 2**10,
+        'mib': 2**20,
+        'gib': 2**30,
+        'tib': 2**40,
+        'pib': 2**50,
+        'eib': 2**60,
+        'bit': 1 / 8,
+        'kbit': 10**3 / 8,
+        'mbit': 10**6 / 8,
+        'gbit': 10**9 / 8,
+        'tbit': 10**12 / 8,
+        'pbit': 10**15 / 8,
+        'ebit': 10**18 / 8,
+        'kibit': 2**10 / 8,
+        'mibit': 2**20 / 8,
+        'gibit': 2**30 / 8,
+        'tibit': 2**40 / 8,
+        'pibit': 2**50 / 8,
+        'eibit': 2**60 / 8,
+    }
+    byte_sizes.update({k.lower()[0]: v for k, v in byte_sizes.items() if 'i' not in k})
+
+    byte_string_pattern = r'^\s*(\d*\.?\d+)\s*(\w+)?'
+    byte_string_re = re.compile(byte_string_pattern, re.IGNORECASE)
+
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        return core_schema.with_info_plain_validator_function(cls._validate)
+        return core_schema.with_info_after_validator_function(
+            function=cls._validate,
+            schema=core_schema.union_schema(
+                [
+                    core_schema.str_schema(pattern=cls.byte_string_pattern),
+                    core_schema.int_schema(ge=0),
+                ]
+            ),
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                int, return_schema=core_schema.int_schema(ge=0)
+            ),
+        )
 
     @classmethod
     def _validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> ByteSize:
@@ -1711,7 +1801,7 @@ class ByteSize(int):
         except ValueError:
             pass
 
-        str_match = byte_string_re.match(str(__input_value))
+        str_match = cls.byte_string_re.match(str(__input_value))
         if str_match is None:
             raise PydanticCustomError('byte_size', 'could not parse value and unit from byte string')
 
@@ -1720,7 +1810,7 @@ class ByteSize(int):
             unit = 'b'
 
         try:
-            unit_mult = BYTE_SIZES[unit.lower()]
+            unit_mult = cls.byte_sizes[unit.lower()]
         except KeyError:
             raise PydanticCustomError('byte_size_unit', 'could not interpret byte unit: {unit}', {'unit': unit})
 
@@ -1757,17 +1847,19 @@ class ByteSize(int):
         return f'{num:0.1f}{final_unit}'
 
     def to(self, unit: str) -> float:
-        """Converts a byte size to another unit.
+        """Converts a byte size to another unit, including both byte and bit units.
 
         Args:
-            unit: The unit to convert to. Must be one of the following: B, KB, MB, GB, TB, PB, EiB,
-                KiB, MiB, GiB, TiB, PiB, EiB.
+            unit: The unit to convert to. Must be one of the following: B, KB, MB, GB, TB, PB, EB,
+                KiB, MiB, GiB, TiB, PiB, EiB (byte units) and
+                bit, kbit, mbit, gbit, tbit, pbit, ebit,
+                kibit, mibit, gibit, tibit, pibit, eibit (bit units).
 
         Returns:
             The byte size in the new unit.
         """
         try:
-            unit_div = BYTE_SIZES[unit.lower()]
+            unit_div = self.byte_sizes[unit.lower()]
         except KeyError:
             raise PydanticCustomError('byte_size_unit', 'Could not interpret byte unit: {unit}', {'unit': unit})
 
@@ -2371,7 +2463,9 @@ __getattr__ = getattr_migration(__name__)
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class GetPydanticSchema:
-    """A convenience class for creating an annotation that provides pydantic custom type hooks.
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/types/#using-getpydanticschema-to-reduce-boilerplate
+
+    A convenience class for creating an annotation that provides pydantic custom type hooks.
 
     This class is intended to eliminate the need to create a custom "marker" which defines the
      `__get_pydantic_core_schema__` and `__get_pydantic_json_schema__` custom hook methods.
@@ -2413,3 +2507,371 @@ class GetPydanticSchema:
                 return object.__getattribute__(self, item)
 
     __hash__ = object.__hash__
+
+
+@_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
+class Tag:
+    """Provides a way to specify the expected tag to use for a case of a (callable) discriminated union.
+
+    Also provides a way to label a union case in error messages.
+
+    When using a callable `Discriminator`, attach a `Tag` to each case in the `Union` to specify the tag that
+    should be used to identify that case. For example, in the below example, the `Tag` is used to specify that
+    if `get_discriminator_value` returns `'apple'`, the input should be validated as an `ApplePie`, and if it
+    returns `'pumpkin'`, the input should be validated as a `PumpkinPie`.
+
+    The primary role of the `Tag` here is to map the return value from the callable `Discriminator` function to
+    the appropriate member of the `Union` in question.
+
+    ```py
+    from typing import Any, Union
+
+    from typing_extensions import Annotated, Literal
+
+    from pydantic import BaseModel, Discriminator, Tag
+
+    class Pie(BaseModel):
+        time_to_cook: int
+        num_ingredients: int
+
+    class ApplePie(Pie):
+        fruit: Literal['apple'] = 'apple'
+
+    class PumpkinPie(Pie):
+        filling: Literal['pumpkin'] = 'pumpkin'
+
+    def get_discriminator_value(v: Any) -> str:
+        if isinstance(v, dict):
+            return v.get('fruit', v.get('filling'))
+        return getattr(v, 'fruit', getattr(v, 'filling', None))
+
+    class ThanksgivingDinner(BaseModel):
+        dessert: Annotated[
+            Union[
+                Annotated[ApplePie, Tag('apple')],
+                Annotated[PumpkinPie, Tag('pumpkin')],
+            ],
+            Discriminator(get_discriminator_value),
+        ]
+
+    apple_variation = ThanksgivingDinner.model_validate(
+        {'dessert': {'fruit': 'apple', 'time_to_cook': 60, 'num_ingredients': 8}}
+    )
+    print(repr(apple_variation))
+    '''
+    ThanksgivingDinner(dessert=ApplePie(time_to_cook=60, num_ingredients=8, fruit='apple'))
+    '''
+
+    pumpkin_variation = ThanksgivingDinner.model_validate(
+        {
+            'dessert': {
+                'filling': 'pumpkin',
+                'time_to_cook': 40,
+                'num_ingredients': 6,
+            }
+        }
+    )
+    print(repr(pumpkin_variation))
+    '''
+    ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, filling='pumpkin'))
+    '''
+    ```
+
+    !!! note
+        You must specify a `Tag` for every case in a `Tag` that is associated with a
+        callable `Discriminator`. Failing to do so will result in a `PydanticUserError` with code
+        [`callable-discriminator-no-tag`](../errors/usage_errors.md#callable-discriminator-no-tag).
+
+    See the [Discriminated Unions] concepts docs for more details on how to use `Tag`s.
+
+    [Discriminated Unions]: ../concepts/unions.md#discriminated-unions
+    """
+
+    tag: str
+
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        schema = handler(source_type)
+        metadata = schema.setdefault('metadata', {})
+        assert isinstance(metadata, dict)
+        metadata[_core_utils.TAGGED_UNION_TAG_KEY] = self.tag
+        return schema
+
+
+@_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
+class Discriminator:
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/unions/#discriminated-unions-with-callable-discriminator
+
+    Provides a way to use a custom callable as the way to extract the value of a union discriminator.
+
+    This allows you to get validation behavior like you'd get from `Field(discriminator=<field_name>)`,
+    but without needing to have a single shared field across all the union choices. This also makes it
+    possible to handle unions of models and primitive types with discriminated-union-style validation errors.
+    Finally, this allows you to use a custom callable as the way to identify which member of a union a value
+    belongs to, while still seeing all the performance benefits of a discriminated union.
+
+    Consider this example, which is much more performant with the use of `Discriminator` and thus a `TaggedUnion`
+    than it would be as a normal `Union`.
+
+    ```py
+    from typing import Any, Union
+
+    from typing_extensions import Annotated, Literal
+
+    from pydantic import BaseModel, Discriminator, Tag
+
+    class Pie(BaseModel):
+        time_to_cook: int
+        num_ingredients: int
+
+    class ApplePie(Pie):
+        fruit: Literal['apple'] = 'apple'
+
+    class PumpkinPie(Pie):
+        filling: Literal['pumpkin'] = 'pumpkin'
+
+    def get_discriminator_value(v: Any) -> str:
+        if isinstance(v, dict):
+            return v.get('fruit', v.get('filling'))
+        return getattr(v, 'fruit', getattr(v, 'filling', None))
+
+    class ThanksgivingDinner(BaseModel):
+        dessert: Annotated[
+            Union[
+                Annotated[ApplePie, Tag('apple')],
+                Annotated[PumpkinPie, Tag('pumpkin')],
+            ],
+            Discriminator(get_discriminator_value),
+        ]
+
+    apple_variation = ThanksgivingDinner.model_validate(
+        {'dessert': {'fruit': 'apple', 'time_to_cook': 60, 'num_ingredients': 8}}
+    )
+    print(repr(apple_variation))
+    '''
+    ThanksgivingDinner(dessert=ApplePie(time_to_cook=60, num_ingredients=8, fruit='apple'))
+    '''
+
+    pumpkin_variation = ThanksgivingDinner.model_validate(
+        {
+            'dessert': {
+                'filling': 'pumpkin',
+                'time_to_cook': 40,
+                'num_ingredients': 6,
+            }
+        }
+    )
+    print(repr(pumpkin_variation))
+    '''
+    ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, filling='pumpkin'))
+    '''
+    ```
+
+    See the [Discriminated Unions] concepts docs for more details on how to use `Discriminator`s.
+
+    [Discriminated Unions]: ../concepts/unions.md#discriminated-unions
+    """
+
+    discriminator: str | Callable[[Any], Hashable]
+    """The callable or field name for discriminating the type in a tagged union.
+
+    A `Callable` discriminator must extract the value of the discriminator from the input.
+    A `str` discriminator must be the name of a field to discriminate against.
+    """
+    custom_error_type: str | None = None
+    """Type to use in [custom errors](../errors/errors.md#custom-errors) replacing the standard discriminated union
+    validation errors.
+    """
+    custom_error_message: str | None = None
+    """Message to use in custom errors."""
+    custom_error_context: dict[str, int | str | float] | None = None
+    """Context to use in custom errors."""
+
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        origin = _typing_extra.get_origin(source_type)
+        if not origin or not _typing_extra.origin_is_union(origin):
+            raise TypeError(f'{type(self).__name__} must be used with a Union type, not {source_type}')
+
+        if isinstance(self.discriminator, str):
+            from pydantic import Field
+
+            return handler(Annotated[source_type, Field(discriminator=self.discriminator)])
+        else:
+            original_schema = handler(source_type)
+            return self._convert_schema(original_schema)
+
+    def _convert_schema(self, original_schema: core_schema.CoreSchema) -> core_schema.TaggedUnionSchema:
+        if original_schema['type'] != 'union':
+            # This likely indicates that the schema was a single-item union that was simplified.
+            # In this case, we do the same thing we do in
+            # `pydantic._internal._discriminated_union._ApplyInferredDiscriminator._apply_to_root`, namely,
+            # package the generated schema back into a single-item union.
+            original_schema = core_schema.union_schema([original_schema])
+
+        tagged_union_choices = {}
+        for i, choice in enumerate(original_schema['choices']):
+            tag = None
+            if isinstance(choice, tuple):
+                choice, tag = choice
+            metadata = choice.get('metadata')
+            if metadata is not None:
+                metadata_tag = metadata.get(_core_utils.TAGGED_UNION_TAG_KEY)
+                if metadata_tag is not None:
+                    tag = metadata_tag
+            if tag is None:
+                raise PydanticUserError(
+                    f'`Tag` not provided for choice {choice} used with `Discriminator`',
+                    code='callable-discriminator-no-tag',
+                )
+            tagged_union_choices[tag] = choice
+
+        # Have to do these verbose checks to ensure falsy values ('' and {}) don't get ignored
+        custom_error_type = self.custom_error_type
+        if custom_error_type is None:
+            custom_error_type = original_schema.get('custom_error_type')
+
+        custom_error_message = self.custom_error_message
+        if custom_error_message is None:
+            custom_error_message = original_schema.get('custom_error_message')
+
+        custom_error_context = self.custom_error_context
+        if custom_error_context is None:
+            custom_error_context = original_schema.get('custom_error_context')
+
+        custom_error_type = original_schema.get('custom_error_type') if custom_error_type is None else custom_error_type
+        return core_schema.tagged_union_schema(
+            tagged_union_choices,
+            self.discriminator,
+            custom_error_type=custom_error_type,
+            custom_error_message=custom_error_message,
+            custom_error_context=custom_error_context,
+            strict=original_schema.get('strict'),
+            ref=original_schema.get('ref'),
+            metadata=original_schema.get('metadata'),
+            serialization=original_schema.get('serialization'),
+        )
+
+
+_JSON_TYPES = {int, float, str, bool, list, dict, type(None)}
+
+
+def _get_type_name(x: Any) -> str:
+    type_ = type(x)
+    if type_ in _JSON_TYPES:
+        return type_.__name__
+
+    # Handle proper subclasses; note we don't need to handle None or bool here
+    if isinstance(x, int):
+        return 'int'
+    if isinstance(x, float):
+        return 'float'
+    if isinstance(x, str):
+        return 'str'
+    if isinstance(x, list):
+        return 'list'
+    if isinstance(x, dict):
+        return 'dict'
+
+    # Fail by returning the type's actual name
+    return getattr(type_, '__name__', '<no type name>')
+
+
+class _AllowAnyJson:
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        python_schema = handler(source_type)
+        return core_schema.json_or_python_schema(json_schema=core_schema.any_schema(), python_schema=python_schema)
+
+
+if TYPE_CHECKING:
+    # This seems to only be necessary for mypy
+    JsonValue: TypeAlias = Union[
+        List['JsonValue'],
+        Dict[str, 'JsonValue'],
+        str,
+        bool,
+        int,
+        float,
+        None,
+    ]
+    """A `JsonValue` is used to represent a value that can be serialized to JSON.
+
+    It may be one of:
+
+    * `List['JsonValue']`
+    * `Dict[str, 'JsonValue']`
+    * `str`
+    * `bool`
+    * `int`
+    * `float`
+    * `None`
+
+    The following example demonstrates how to use `JsonValue` to validate JSON data,
+    and what kind of errors to expect when input data is not json serializable.
+
+    ```py
+    import json
+
+    from pydantic import BaseModel, JsonValue, ValidationError
+
+    class Model(BaseModel):
+        j: JsonValue
+
+    valid_json_data = {'j': {'a': {'b': {'c': 1, 'd': [2, None]}}}}
+    invalid_json_data = {'j': {'a': {'b': ...}}}
+
+    print(repr(Model.model_validate(valid_json_data)))
+    #> Model(j={'a': {'b': {'c': 1, 'd': [2, None]}}})
+    print(repr(Model.model_validate_json(json.dumps(valid_json_data))))
+    #> Model(j={'a': {'b': {'c': 1, 'd': [2, None]}}})
+
+    try:
+        Model.model_validate(invalid_json_data)
+    except ValidationError as e:
+        print(e)
+        '''
+        1 validation error for Model
+        j.dict.a.dict.b
+          input was not a valid JSON value [type=invalid-json-value, input_value=Ellipsis, input_type=ellipsis]
+        '''
+    ```
+    """
+
+else:
+    JsonValue = TypeAliasType(
+        'JsonValue',
+        Annotated[
+            Union[
+                Annotated[List['JsonValue'], Tag('list')],
+                Annotated[Dict[str, 'JsonValue'], Tag('dict')],
+                Annotated[str, Tag('str')],
+                Annotated[bool, Tag('bool')],
+                Annotated[int, Tag('int')],
+                Annotated[float, Tag('float')],
+                Annotated[None, Tag('NoneType')],
+            ],
+            Discriminator(
+                _get_type_name,
+                custom_error_type='invalid-json-value',
+                custom_error_message='input was not a valid JSON value',
+            ),
+            _AllowAnyJson,
+        ],
+    )
+
+
+class _OnErrorOmit:
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        # there is no actual default value here but we use with_default_schema since it already has the on_error
+        # behavior implemented and it would be no more efficient to implement it on every other validator
+        # or as a standalone validator
+        return core_schema.with_default_schema(schema=handler(source_type), on_error='omit')
+
+
+OnErrorOmit = Annotated[T, _OnErrorOmit]
+"""
+When used as an item in a list, the key type in a dict, optional values of a TypedDict, etc.
+this annotation omits the item from the iteration if there is any error validating it.
+That is, instead of a [`ValidationError`][pydantic_core.ValidationError] being propagated up and the entire iterable being discarded
+any invalid items are discarded and the valid ones are returned.
+"""

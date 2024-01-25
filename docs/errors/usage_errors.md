@@ -38,14 +38,19 @@ class Foo(BaseModel):
     a: Optional['Bar'] = None
 
 
+try:
+    # this doesn't work, see raised error
+    foo = Foo(a={'b': {'a': None}})
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'class-not-fully-defined'
+
+
 class Bar(BaseModel):
     b: 'Foo'
 
 
-try:
-    foo = Foo(a={'b': {'a': None}})
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'class-not-fully-defined'
+# this works, though
+foo = Foo(a={'b': {'a': None}})
 ```
 
 For BaseModel subclasses, it can be fixed by defining the type and then calling `.model_rebuild()`:
@@ -358,6 +363,62 @@ class Model(BaseModel):
 
 
 assert Model(pet={'pet_type': 'kitten'}).pet.pet_type == 'cat'
+```
+
+## Callable discriminator case with no tag {#callable-discriminator-no-tag}
+
+This error is raised when a `Union` that uses a callable `Discriminator` doesn't have `Tag` annotations for all cases.
+
+```py
+from typing import Union
+
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, Discriminator, PydanticUserError, Tag
+
+
+def model_x_discriminator(v):
+    if isinstance(v, str):
+        return 'str'
+    if isinstance(v, (dict, BaseModel)):
+        return 'model'
+
+
+# tag missing for both union choices
+try:
+
+    class DiscriminatedModel(BaseModel):
+        x: Annotated[
+            Union[str, 'DiscriminatedModel'],
+            Discriminator(model_x_discriminator),
+        ]
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'callable-discriminator-no-tag'
+
+# tag missing for `'DiscriminatedModel'` union choice
+try:
+
+    class DiscriminatedModel(BaseModel):
+        x: Annotated[
+            Union[Annotated[str, Tag('str')], 'DiscriminatedModel'],
+            Discriminator(model_x_discriminator),
+        ]
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'callable-discriminator-no-tag'
+
+# tag missing for `str` union choice
+try:
+
+    class DiscriminatedModel(BaseModel):
+        x: Annotated[
+            Union[str, Annotated['DiscriminatedModel', Tag('model')]],
+            Discriminator(model_x_discriminator),
+        ]
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'callable-discriminator-no-tag'
 ```
 
 
@@ -957,5 +1018,75 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'root-model-extra'
 ```
 
+## Cannot evaluate type annotation {#unevaluable-type-annotation}
+
+Because type annotations are evaluated *after* assignments, you might get unexpected results when using a type annotation name
+that clashes with one of your fields. We raise an error in the following case:
+
+```py test="skip"
+from datetime import date
+
+from pydantic import BaseModel, Field
+
+
+class Model(BaseModel):
+    date: date = Field(description='A date')
+```
+
+As a workaround, you can either use an alias or change your import:
+
+```py lint="skip"
+import datetime
+# Or `from datetime import date as _date`
+
+from pydantic import BaseModel, Field
+
+
+class Model(BaseModel):
+    date: datetime.date = Field(description='A date')
+```
+
+## Incompatible `dataclass` `init` and `extra` settings {#dataclass-init-false-extra-allow}
+
+Pydantic does not allow the specification of the `extra='allow'` setting on a dataclass
+while any of the fields have `init=False` set.
+
+Thus, you may not do something like the following:
+
+```py test="skip"
+from pydantic import ConfigDict, Field
+from pydantic.dataclasses import dataclass
+
+
+@dataclass(config=ConfigDict(extra='allow'))
+class A:
+    a: int = Field(init=False, default=1)
+```
+
+The above snippet results in the following error during schema building for the `A` dataclass:
+
+```
+pydantic.errors.PydanticUserError: Field a has `init=False` and dataclass has config setting `extra="allow"`.
+This combination is not allowed.
+```
+
+## Incompatible `init` and `init_var` settings on `dataclass` field {#clashing-init-and-init-var}
+
+The `init=False` and `init_var=True` settings are mutually exclusive. Doing so results in the `PydanticUserError` shown in the example below.
+
+```py test="skip"
+from pydantic import Field
+from pydantic.dataclasses import dataclass
+
+
+@dataclass
+class Foo:
+    bar: str = Field(..., init=False, init_var=True)
+
+
+"""
+pydantic.errors.PydanticUserError: Dataclass field bar has init=False and init_var=True, but these are mutually exclusive.
+"""
+```
 
 {% endraw %}

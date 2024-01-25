@@ -26,6 +26,11 @@ This is the primary way of converting a model to a dictionary. Sub-models will b
     and its subclasses will have the `root` field value dumped directly, without a wrapping dictionary. This is also
     done recursively.
 
+
+!!! note
+    You can use [computed fields](../api/fields.md#pydantic.fields.computed_field) to include `property` and
+    `cached_property` data in the `model.model_dump(...)` output.
+
 Example:
 
 ```py
@@ -373,7 +378,7 @@ class DayThisYear(date):
 
     @classmethod
     def validate(cls, v: int):
-        return date.today().replace(month=1, day=1) + timedelta(days=v)
+        return date(2023, 1, 1) + timedelta(days=v)
 
 
 class FooModel(BaseModel):

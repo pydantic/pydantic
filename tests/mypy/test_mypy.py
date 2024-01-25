@@ -70,6 +70,13 @@ cases = (
         pytest.mark.skipif(MYPY_VERSION_TUPLE > (1, 0, 1), reason='Need to handle some more things for mypy >=1.1.1'),
     ).build()
     + MypyCasesBuilder(
+        ['mypy-default.ini', 'pyproject-default.toml'],
+        'root_models.py',
+        pytest.mark.skipif(
+            MYPY_VERSION_TUPLE < (1, 1, 1), reason='`dataclass_transform` only supported on mypy >= 1.1.1'
+        ),
+    ).build()
+    + MypyCasesBuilder(
         'mypy-default.ini', ['plugin_success.py', 'plugin_success_baseConfig.py', 'metaclass_args.py']
     ).build()
     # Default plugin config
@@ -98,17 +105,11 @@ cases = (
     + [
         ('mypy-plugin.ini', 'custom_constructor.py'),
         ('mypy-plugin.ini', 'generics.py'),
+        ('mypy-plugin.ini', 'root_models.py'),
         ('mypy-plugin-strict.ini', 'plugin_default_factory.py'),
         ('mypy-plugin-strict-no-any.ini', 'dataclass_no_any.py'),
         ('mypy-plugin-very-strict.ini', 'metaclass_args.py'),
-        pytest.param(
-            'pyproject-default.toml',
-            'computed_fields.py',
-            marks=pytest.mark.skipif(
-                sys.version_info < (3, 8),
-                reason='cached_property is only available in Python 3.8+, errors are different with mypy 0.971',
-            ),
-        ),
+        ('pyproject-default.toml', 'computed_fields.py'),
     ]
 )
 
@@ -154,6 +155,7 @@ def get_test_config(module_path: Path, config_path: Path) -> MypyTestConfig:
     return MypyTestConfig(existing, current)
 
 
+@pytest.mark.filterwarnings('ignore:ast.:DeprecationWarning')  # these are produced by mypy in python 3.12
 @pytest.mark.parametrize('config_filename,python_filename', cases)
 def test_mypy_results(config_filename: str, python_filename: str, request: pytest.FixtureRequest) -> None:
     input_path = PYDANTIC_ROOT / 'tests/mypy/modules' / python_filename
@@ -172,9 +174,6 @@ def test_mypy_results(config_filename: str, python_filename: str, request: pytes
         '--show-error-codes',
         '--show-traceback',
     ]
-    if MYPY_VERSION_TUPLE < (1, 4, 1):
-        # I don't know exactly what version this got fixed in, but it definitely works in 1.4.1
-        command.append('--disable-recursive-aliases')
     print(f"\nExecuting: mypy {' '.join(command)}")  # makes it easier to debug as necessary
     mypy_out, mypy_err, mypy_returncode = mypy_api.run(command)
 

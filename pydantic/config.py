@@ -1,11 +1,12 @@
 """Configuration for Pydantic models."""
 from __future__ import annotations as _annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Dict, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, Union
 
 from typing_extensions import Literal, TypeAlias, TypedDict
 
 from ._migration import getattr_migration
+from .aliases import AliasGenerator
 
 if TYPE_CHECKING:
     from ._internal._generate_schema import GenerateSchema as _GenerateSchema
@@ -13,11 +14,14 @@ if TYPE_CHECKING:
 __all__ = ('ConfigDict',)
 
 
+JsonValue: TypeAlias = Union[int, float, str, bool, None, List['JsonValue'], 'JsonDict']
+JsonDict: TypeAlias = Dict[str, JsonValue]
+
 JsonEncoder = Callable[[Any], Any]
 
 JsonSchemaExtraCallable: TypeAlias = Union[
-    Callable[[Dict[str, Any]], None],
-    Callable[[Dict[str, Any], Type[Any]], None],
+    Callable[[JsonDict], None],
+    Callable[[JsonDict, Type[Any]], None],
 ]
 
 ExtraValues = Literal['allow', 'ignore', 'forbid']
@@ -116,12 +120,12 @@ class ConfigDict(TypedDict, total=False):
 
     frozen: bool
     """
-    Whether or not models are faux-immutable, i.e. whether `__setattr__` is allowed, and also generates
+    Whether models are faux-immutable, i.e. whether `__setattr__` is allowed, and also generates
     a `__hash__()` method for the model. This makes instances of the model potentially hashable if all the
     attributes are hashable. Defaults to `False`.
 
     Note:
-        On V1, this setting was called `allow_mutation`, and was `True` by default.
+        On V1, the inverse of this setting was called `allow_mutation`, and was `True` by default.
     """
 
     populate_by_name: bool
@@ -131,7 +135,7 @@ class ConfigDict(TypedDict, total=False):
 
     Note:
         The name of this configuration setting was changed in **v2.0** from
-        `allow_population_by_alias` to `populate_by_name`.
+        `allow_population_by_field_name` to `populate_by_name`.
 
     ```py
     from pydantic import BaseModel, ConfigDict, Field
@@ -161,6 +165,40 @@ class ConfigDict(TypedDict, total=False):
     """
     Whether to populate models with the `value` property of enums, rather than the raw enum.
     This may be useful if you want to serialize `model.model_dump()` later. Defaults to `False`.
+
+    !!! note
+        If you have an `Optional[Enum]` value that you set a default for, you need to use `validate_default=True`
+        for said Field to ensure that the `use_enum_values` flag takes effect on the default, as extracting an
+        enum's value occurs during validation, not serialization.
+
+    ```py
+    from enum import Enum
+    from typing import Optional
+
+    from pydantic import BaseModel, ConfigDict, Field
+
+
+    class SomeEnum(Enum):
+        FOO = 'foo'
+        BAR = 'bar'
+        BAZ = 'baz'
+
+
+    class SomeModel(BaseModel):
+        model_config = ConfigDict(use_enum_values=True)
+
+        some_enum: SomeEnum
+        another_enum: Optional[SomeEnum] = Field(default=SomeEnum.FOO, validate_default=True)
+
+
+    model1 = SomeModel(some_enum=SomeEnum.BAR)
+    print(model1.model_dump())
+    # {'some_enum': 'bar', 'another_enum': 'foo'}
+
+    model2 = SomeModel(some_enum=SomeEnum.BAR, another_enum=SomeEnum.BAZ)
+    print(model2.model_dump())
+    #> {'some_enum': 'bar', 'another_enum': 'baz'}
+    ```
     """
 
     validate_assignment: bool
@@ -278,12 +316,18 @@ class ConfigDict(TypedDict, total=False):
     loc_by_alias: bool
     """Whether to use the actual key provided in the data (e.g. alias) for error `loc`s rather than the field's name. Defaults to `True`."""
 
-    alias_generator: Callable[[str], str] | None
+    alias_generator: Callable[[str], str] | AliasGenerator | None
     """
-    A callable that takes a field name and returns an alias for it.
+    A callable that takes a field name and returns an alias for it
+    or an instance of [`AliasGenerator`][pydantic.aliases.AliasGenerator]. Defaults to `None`.
+
+    When using a callable, the alias generator is used for both validation and serialization.
+    If you want to use different alias generators for validation and serialization, you can use
+    [`AliasGenerator`][pydantic.aliases.AliasGenerator] instead.
 
     If data source field names do not match your code style (e. g. CamelCase fields),
-    you can automatically generate aliases using `alias_generator`:
+    you can automatically generate aliases using `alias_generator`. Here's an example with
+    a basic callable:
 
     ```py
     from pydantic import BaseModel, ConfigDict
@@ -302,6 +346,30 @@ class ConfigDict(TypedDict, total=False):
     #> {'Name': 'Filiz', 'LanguageCode': 'tr-TR'}
     ```
 
+    If you want to use different alias generators for validation and serialization, you can use
+    [`AliasGenerator`][pydantic.aliases.AliasGenerator].
+
+    ```py
+    from pydantic import AliasGenerator, BaseModel, ConfigDict
+    from pydantic.alias_generators import to_camel, to_pascal
+
+    class Athlete(BaseModel):
+        first_name: str
+        last_name: str
+        sport: str
+
+        model_config = ConfigDict(
+            alias_generator=AliasGenerator(
+                validation_alias=to_camel,
+                serialization_alias=to_pascal,
+            )
+        )
+
+    athlete = Athlete(firstName='John', lastName='Doe', sport='track')
+    print(athlete.model_dump(by_alias=True))
+    #> {'FirstName': 'John', 'LastName': 'Doe', 'Sport': 'track'}
+    ```
+
     Note:
         Pydantic offers three built-in alias generators: [`to_pascal`][pydantic.alias_generators.to_pascal],
         [`to_camel`][pydantic.alias_generators.to_camel], and [`to_snake`][pydantic.alias_generators.to_snake].
@@ -317,7 +385,7 @@ class ConfigDict(TypedDict, total=False):
     allow_inf_nan: bool
     """Whether to allow infinity (`+inf` an `-inf`) and NaN values to float fields. Defaults to `True`."""
 
-    json_schema_extra: dict[str, object] | JsonSchemaExtraCallable | None
+    json_schema_extra: JsonDict | JsonSchemaExtraCallable | None
     """A dict or callable to provide extra JSON schema properties. Defaults to `None`."""
 
     json_encoders: dict[type[object], JsonEncoder] | None
@@ -501,6 +569,15 @@ class ConfigDict(TypedDict, total=False):
 
     - `'utf8'` will serialize bytes to UTF-8 strings.
     - `'base64'` will serialize bytes to URL safe base64 strings.
+    """
+
+    ser_json_inf_nan: Literal['null', 'constants']
+    """
+    The encoding of JSON serialized infinity and NaN float values. Accepts the string values of `'null'` and `'constants'`.
+    Defaults to `'null'`.
+
+    - `'null'` will serialize infinity and NaN values as `null`.
+    - `'constants'` will serialize infinity and NaN values as `Infinity` and `NaN`.
     """
 
     # whether to validate default values during validation, default False
@@ -785,6 +862,50 @@ class ConfigDict(TypedDict, total=False):
     repr(Model(value=Decimal('42.13')).value)
     #> "42.13"
     ```
+    """
+
+    regex_engine: Literal['rust-regex', 'python-re']
+    """
+    The regex engine to used for pattern validation
+    Defaults to `'rust-regex'`.
+
+    - `rust-regex` uses the [`regex`](https://docs.rs/regex) Rust crate,
+      which is non-backtracking and therefore more DDoS resistant, but does not support all regex features.
+    - `python-re` use the [`re`](https://docs.python.org/3/library/re.html) module,
+      which supports all regex features, but may be slower.
+
+    ```py
+    from pydantic import BaseModel, ConfigDict, Field, ValidationError
+
+    class Model(BaseModel):
+        model_config = ConfigDict(regex_engine='python-re')
+
+        value: str = Field(pattern=r'^abc(?=def)')
+
+    print(Model(value='abcdef').value)
+    #> abcdef
+
+    try:
+        print(Model(value='abxyzcdef'))
+    except ValidationError as e:
+        print(e)
+        '''
+        1 validation error for Model
+        value
+          String should match pattern '^abc(?=def)' [type=string_pattern_mismatch, input_value='abxyzcdef', input_type=str]
+        '''
+    ```
+    """
+
+    validation_error_cause: bool
+    """
+    If `True`, python exceptions that were part of a validation failure will be shown as an exception group as a cause. Can be useful for debugging. Defaults to `False`.
+
+    Note:
+        Python 3.10 and older don't support exception groups natively. <=3.10, backport must be installed: `pip install exceptiongroup`.
+
+    Note:
+        The structure of validation errors are likely to change in future pydantic versions. Pydantic offers no guarantees about the structure of validation errors. Should be used for visual traceback debugging only.
     """
 
 

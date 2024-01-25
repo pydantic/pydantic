@@ -8,15 +8,14 @@ from typing import (
     Hashable,
     TypeVar,
     Union,
-    _GenericAlias,  # type: ignore
-    cast,
 )
 
 from pydantic_core import CoreSchema, core_schema
 from pydantic_core import validate_core_schema as _validate_core_schema
-from typing_extensions import TypeAliasType, TypeGuard, get_args
+from typing_extensions import TypeAliasType, TypeGuard, get_args, get_origin
 
 from . import _repr
+from ._typing_extra import is_generic_alias
 
 AnyFunctionSchema = Union[
     core_schema.AfterValidatorFunctionSchema,
@@ -39,7 +38,7 @@ CoreSchemaOrField = Union[core_schema.CoreSchema, CoreSchemaField]
 
 _CORE_SCHEMA_FIELD_TYPES = {'typed-dict-field', 'dataclass-field', 'model-field', 'computed-field'}
 _FUNCTION_WITH_INNER_SCHEMA_TYPES = {'function-before', 'function-after', 'function-wrap'}
-_LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'tuple-variable', 'set', 'frozenset'}
+_LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'set', 'frozenset'}
 
 _DEFINITIONS_CACHE_METADATA_KEY = 'pydantic.definitions_cache'
 
@@ -47,6 +46,10 @@ NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY = 'pydantic.internal.needs_apply_di
 """Used to mark a schema that has a discriminated union that needs to be checked for validity at the end of
 schema building because one of it's members refers to a definition that was not yet defined when the union
 was first encountered.
+"""
+TAGGED_UNION_TAG_KEY = 'pydantic.internal.tagged_union_tag'
+"""
+Used in a `Tag` schema to specify the tag used for a discriminated union.
 """
 HAS_INVALID_SCHEMAS_METADATA_KEY = 'pydantic.internal.invalid'
 """Used to mark a schema that is invalid because it refers to a definition that was not yet defined when the
@@ -74,9 +77,7 @@ def is_function_with_inner_schema(
 
 def is_list_like_schema_with_items_schema(
     schema: CoreSchema,
-) -> TypeGuard[
-    core_schema.ListSchema | core_schema.TupleVariableSchema | core_schema.SetSchema | core_schema.FrozenSetSchema
-]:
+) -> TypeGuard[core_schema.ListSchema | core_schema.SetSchema | core_schema.FrozenSetSchema]:
     return schema['type'] in _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES
 
 
@@ -86,8 +87,9 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
     This `args_override` argument was added for the purpose of creating valid recursive references
     when creating generic models without needing to create a concrete class.
     """
-    origin = type_
-    args = get_args(type_) if isinstance(type_, _GenericAlias) else (args_override or ())
+    origin = get_origin(type_) or type_
+
+    args = get_args(type_) if is_generic_alias(type_) else (args_override or ())
     generic_metadata = getattr(type_, '__pydantic_generic_metadata__', None)
     if generic_metadata:
         origin = generic_metadata['origin'] or origin
@@ -95,7 +97,7 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
 
     module_name = getattr(origin, '__module__', '<No __module__>')
     if isinstance(origin, TypeAliasType):
-        type_ref = f'{module_name}.{origin.__name__}'
+        type_ref = f'{module_name}.{origin.__name__}:{id(origin)}'
     else:
         try:
             qualname = getattr(origin, '__qualname__', f'<No __qualname__: {origin}>')
@@ -226,6 +228,14 @@ class _WalkCoreSchema:
     def handle_definitions_schema(self, schema: core_schema.DefinitionsSchema, f: Walk) -> core_schema.CoreSchema:
         new_definitions: list[core_schema.CoreSchema] = []
         for definition in schema['definitions']:
+            if 'schema_ref' and 'ref' in definition:
+                # This indicates a purposely indirect reference
+                # We want to keep such references around for implications related to JSON schema, etc.:
+                new_definitions.append(definition)
+                # However, we still need to walk the referenced definition:
+                self.walk(definition, f)
+                continue
+
             updated_definition = self.walk(definition, f)
             if 'ref' in updated_definition:
                 # If the updated definition schema doesn't have a 'ref', it shouldn't go in the definitions
@@ -267,23 +277,8 @@ class _WalkCoreSchema:
             schema['items_schema'] = self.walk(items_schema, f)
         return schema
 
-    def handle_tuple_variable_schema(
-        self, schema: core_schema.TupleVariableSchema | core_schema.TuplePositionalSchema, f: Walk
-    ) -> core_schema.CoreSchema:
-        schema = cast(core_schema.TupleVariableSchema, schema)
-        items_schema = schema.get('items_schema')
-        if items_schema is not None:
-            schema['items_schema'] = self.walk(items_schema, f)
-        return schema
-
-    def handle_tuple_positional_schema(
-        self, schema: core_schema.TupleVariableSchema | core_schema.TuplePositionalSchema, f: Walk
-    ) -> core_schema.CoreSchema:
-        schema = cast(core_schema.TuplePositionalSchema, schema)
+    def handle_tuple_schema(self, schema: core_schema.TupleSchema, f: Walk) -> core_schema.CoreSchema:
         schema['items_schema'] = [self.walk(v, f) for v in schema['items_schema']]
-        extras_schema = schema.get('extras_schema')
-        if extras_schema is not None:
-            schema['extras_schema'] = self.walk(extras_schema, f)
         return schema
 
     def handle_dict_schema(self, schema: core_schema.DictSchema, f: Walk) -> core_schema.CoreSchema:

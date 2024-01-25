@@ -6,7 +6,7 @@ Do a little skipping about with types to demonstrate its usage.
 import os
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path, PurePath
-from typing import Any, Dict, ForwardRef, Generic, List, Optional, Type, TypeVar
+from typing import Any, ClassVar, Dict, ForwardRef, Generic, List, Optional, Type, TypeVar
 from uuid import UUID
 
 from typing_extensions import Annotated, TypedDict
@@ -42,6 +42,7 @@ from pydantic import (
     WrapValidator,
     create_model,
     field_validator,
+    model_validator,
     root_validator,
     validate_call,
 )
@@ -306,3 +307,23 @@ def double(value: Any, handler: Any) -> int:
 
 class WrapValidatorModel(BaseModel):
     x: Annotated[int, WrapValidator(double)]
+
+
+class Abstract(BaseModel):
+    class_id: ClassVar
+
+
+class Concrete(Abstract):
+    class_id = 1
+
+
+def two_dim_shape_validator(v: Dict[str, Any]) -> Dict[str, Any]:
+    assert 'volume' not in v, 'shape is 2d, cannot have volume'
+    return v
+
+
+class Square(BaseModel):
+    width: float
+    height: float
+
+    free_validator = model_validator(mode='before')(two_dim_shape_validator)

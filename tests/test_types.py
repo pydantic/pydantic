@@ -38,15 +38,17 @@ from uuid import UUID
 import annotated_types
 import dirty_equals
 import pytest
-from dirty_equals import HasRepr, IsOneOf, IsStr
+from dirty_equals import HasRepr, IsFloatNan, IsOneOf, IsStr
 from pydantic_core import CoreSchema, PydanticCustomError, SchemaError, core_schema
-from typing_extensions import Annotated, Literal, TypedDict, get_args
+from typing_extensions import Annotated, Literal, NotRequired, TypedDict, get_args
 
 from pydantic import (
     UUID1,
     UUID3,
     UUID4,
     UUID5,
+    AfterValidator,
+    AllowInfNan,
     AwareDatetime,
     Base64Bytes,
     Base64Str,
@@ -63,8 +65,11 @@ from pydantic import (
     FutureDate,
     FutureDatetime,
     GetCoreSchemaHandler,
+    GetPydanticSchema,
+    ImportString,
     InstanceOf,
     Json,
+    JsonValue,
     NaiveDatetime,
     NameEmail,
     NegativeFloat,
@@ -74,20 +79,25 @@ from pydantic import (
     NonNegativeInt,
     NonPositiveFloat,
     NonPositiveInt,
+    OnErrorOmit,
     PastDate,
     PastDatetime,
     PositiveFloat,
     PositiveInt,
     PydanticInvalidForJsonSchema,
+    PydanticSchemaGenerationError,
     SecretBytes,
     SecretStr,
     SerializeAsAny,
     SkipValidation,
+    Strict,
     StrictBool,
     StrictBytes,
     StrictFloat,
     StrictInt,
     StrictStr,
+    StringConstraints,
+    Tag,
     TypeAdapter,
     ValidationError,
     conbytes,
@@ -103,9 +113,7 @@ from pydantic import (
     field_validator,
     validate_call,
 )
-from pydantic.errors import PydanticSchemaGenerationError
-from pydantic.functional_validators import AfterValidator
-from pydantic.types import AllowInfNan, GetPydanticSchema, ImportString, Strict, StringConstraints
+from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 try:
     import email_validator
@@ -869,6 +877,8 @@ def test_string_import_callable(annotation):
     [
         ('math:cos', 'math.cos', 'json'),
         ('math:cos', math.cos, 'python'),
+        ('math.cos', 'math.cos', 'json'),
+        ('math.cos', math.cos, 'python'),
         pytest.param(
             'os.path', 'posixpath', 'json', marks=pytest.mark.skipif(sys.platform == 'win32', reason='different output')
         ),
@@ -893,6 +903,22 @@ def test_string_import_any(value: Any, expected: Any, mode: Literal['json', 'pyt
         thing: ImportString
 
     assert PyObjectModel(thing=value).model_dump(mode=mode) == {'thing': expected}
+
+
+@pytest.mark.parametrize(
+    ('value', 'validate_default', 'expected'),
+    [
+        (math.cos, True, math.cos),
+        ('math:cos', True, math.cos),
+        (math.cos, False, math.cos),
+        ('math:cos', False, 'math:cos'),
+    ],
+)
+def test_string_import_default_value(value: Any, validate_default: bool, expected: Any):
+    class PyObjectModel(BaseModel):
+        thing: ImportString = Field(default=value, validate_default=validate_default)
+
+    assert PyObjectModel().thing == expected
 
 
 @pytest.mark.parametrize('value', ['oss', 'os.os', f'{__name__}.x'])
@@ -1452,9 +1478,9 @@ def test_datetime_errors(DatetimeModel):
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'datetime_parsing',
+            'type': 'datetime_from_date_parsing',
             'loc': ('dt',),
-            'msg': 'Input should be a valid datetime, month value is outside expected range of 1-12',
+            'msg': 'Input should be a valid datetime or date, month value is outside expected range of 1-12',
             'input': '2017-13-05T19:47:07',
             'ctx': {'error': 'month value is outside expected range of 1-12'},
         },
@@ -1620,12 +1646,6 @@ def test_enum_type():
         }
     ]
 
-    with pytest.raises(
-        PydanticInvalidForJsonSchema,
-        match=re.escape("Cannot generate a JsonSchema for core_schema.IsInstanceSchema (<enum 'Enum'>)"),
-    ):
-        Model.model_json_schema()
-
 
 def test_int_enum_type():
     class Model(BaseModel):
@@ -1653,12 +1673,6 @@ def test_int_enum_type():
             'type': 'is_instance_of',
         }
     ]
-
-    with pytest.raises(
-        PydanticInvalidForJsonSchema,
-        match=re.escape("Cannot generate a JsonSchema for core_schema.IsInstanceSchema (<enum 'IntEnum'>)"),
-    ):
-        Model.model_json_schema()
 
 
 @pytest.mark.parametrize('enum_base,strict', [(Enum, False), (IntEnum, False), (IntEnum, True)])
@@ -1698,6 +1712,39 @@ def test_enum_from_json(enum_base, strict):
                 'type': 'enum',
             }
         ]
+
+
+def test_strict_enum() -> None:
+    class Demo(Enum):
+        A = 0
+        B = 1
+
+    class User(BaseModel):
+        model_config = ConfigDict(strict=True)
+
+        demo_strict: Demo
+        demo_not_strict: Demo = Field(strict=False)
+
+    user = User(demo_strict=Demo.A, demo_not_strict=1)
+
+    assert isinstance(user.demo_strict, Demo)
+    assert isinstance(user.demo_not_strict, Demo)
+    assert user.demo_strict.value == 0
+    assert user.demo_not_strict.value == 1
+
+    with pytest.raises(ValidationError, match='Input should be an instance of test_strict_enum.<locals>.Demo'):
+        User(demo_strict=0, demo_not_strict=1)
+
+
+def test_enum_with_no_cases() -> None:
+    class MyEnum(Enum):
+        pass
+
+    class MyModel(BaseModel):
+        e: MyEnum
+
+    json_schema = MyModel.model_json_schema()
+    assert json_schema['properties']['e']['enum'] == []
 
 
 @pytest.mark.parametrize(
@@ -2342,6 +2389,10 @@ def test_sequence_fails(cls, value, errors):
     assert exc_info.value.errors(include_url=False) == errors
 
 
+def test_sequence_strict():
+    assert TypeAdapter(Sequence[int]).validate_python((), strict=True) == ()
+
+
 def test_int_validation():
     class Model(BaseModel):
         a: PositiveInt = None
@@ -2504,13 +2555,34 @@ def test_float_validation():
     ]
 
 
-def test_finite_float_validation():
+def test_infinite_float_validation():
     class Model(BaseModel):
         a: float = None
 
     assert Model(a=float('inf')).a == float('inf')
     assert Model(a=float('-inf')).a == float('-inf')
     assert math.isnan(Model(a=float('nan')).a)
+
+
+@pytest.mark.parametrize(
+    ('ser_json_inf_nan', 'input', 'output', 'python_roundtrip'),
+    (
+        ('null', float('inf'), 'null', None),
+        ('null', float('-inf'), 'null', None),
+        ('null', float('nan'), 'null', None),
+        ('constants', float('inf'), 'Infinity', float('inf')),
+        ('constants', float('-inf'), '-Infinity', float('-inf')),
+        ('constants', float('nan'), 'NaN', IsFloatNan),
+    ),
+)
+def test_infinite_float_json_serialization(ser_json_inf_nan, input, output, python_roundtrip):
+    class Model(BaseModel):
+        model_config = ConfigDict(ser_json_inf_nan=ser_json_inf_nan)
+        a: float
+
+    json_string = Model(a=input).model_dump_json()
+    assert json_string == f'{{"a":{output}}}'
+    assert json.loads(json_string) == {'a': python_roundtrip}
 
 
 @pytest.mark.parametrize('value', [float('inf'), float('-inf'), float('nan')])
@@ -2838,22 +2910,29 @@ def test_uuid_validation():
 
 
 def test_uuid_strict() -> None:
-    class UUIDModel(BaseModel):
+    class StrictByConfig(BaseModel):
         a: UUID1
         b: UUID3
         c: UUID4
         d: UUID5
+        e: uuid.UUID
 
         model_config = ConfigDict(strict=True)
+
+    class StrictByField(BaseModel):
+        a: UUID1 = Field(..., strict=True)
+        b: UUID3 = Field(..., strict=True)
+        c: UUID4 = Field(..., strict=True)
+        d: UUID5 = Field(..., strict=True)
+        e: uuid.UUID = Field(..., strict=True)
 
     a = uuid.UUID('7fb48116-ca6b-11ed-a439-3274d3adddac')  # uuid1
     b = uuid.UUID('6fa459ea-ee8a-3ca4-894e-db77e160355e')  # uuid3
     c = uuid.UUID('260d1600-3680-4f4f-a968-f6fa622ffd8d')  # uuid4
     d = uuid.UUID('886313e1-3b8a-5372-9b90-0c9aee199e5d')  # uuid5
+    e = uuid.UUID('7fb48116-ca6b-11ed-a439-3274d3adddac')  # any uuid
 
-    with pytest.raises(ValidationError) as exc_info:
-        UUIDModel(a=str(a), b=str(b), c=str(c), d=str(d))
-    assert exc_info.value.errors(include_url=False) == [
+    strict_errors = [
         {
             'type': 'is_instance_of',
             'loc': ('a',),
@@ -2882,13 +2961,26 @@ def test_uuid_strict() -> None:
             'input': '886313e1-3b8a-5372-9b90-0c9aee199e5d',
             'ctx': {'class': 'UUID'},
         },
+        {
+            'type': 'is_instance_of',
+            'loc': ('e',),
+            'msg': 'Input should be an instance of UUID',
+            'input': '7fb48116-ca6b-11ed-a439-3274d3adddac',
+            'ctx': {'class': 'UUID'},
+        },
     ]
 
-    m = UUIDModel(a=a, b=b, c=c, d=d)
-    assert isinstance(m.a, type(a)) and m.a == a
-    assert isinstance(m.b, type(b)) and m.b == b
-    assert isinstance(m.c, type(c)) and m.c == c
-    assert isinstance(m.d, type(d)) and m.d == d
+    for model in [StrictByConfig, StrictByField]:
+        with pytest.raises(ValidationError) as exc_info:
+            model(a=str(a), b=str(b), c=str(c), d=str(d), e=str(e))
+        assert exc_info.value.errors(include_url=False) == strict_errors
+
+        m = model(a=a, b=b, c=c, d=d, e=e)
+        assert isinstance(m.a, type(a)) and m.a == a
+        assert isinstance(m.b, type(b)) and m.b == b
+        assert isinstance(m.c, type(c)) and m.c == c
+        assert isinstance(m.d, type(d)) and m.d == d
+        assert isinstance(m.e, type(e)) and m.e == e
 
 
 @pytest.mark.parametrize(
@@ -3015,14 +3107,14 @@ ANY_THING = object()
             ],
         ),
         (dict(max_digits=2, decimal_places=2), Decimal('0.99'), Decimal('0.99')),
-        (
+        pytest.param(
             dict(max_digits=2, decimal_places=1),
             Decimal('0.99'),
             [
                 {
                     'type': 'decimal_max_places',
                     'loc': ('foo',),
-                    'msg': 'Decimal input should have no more than 1 decimal places',
+                    'msg': 'Decimal input should have no more than 1 decimal place',
                     'input': Decimal('0.99'),
                     'ctx': {
                         'decimal_places': 1,
@@ -3921,13 +4013,25 @@ def test_pattern_error(pattern_type, pattern_value, error_type, error_msg):
     ]
 
 
-def test_secretstr():
+@pytest.mark.parametrize('validate_json', [True, False])
+def test_secretstr(validate_json):
     class Foobar(BaseModel):
         password: SecretStr
         empty_password: SecretStr
 
-    # Initialize the model.
-    f = Foobar(password='1234', empty_password='')
+    if validate_json:
+        f = Foobar.model_validate_json('{"password": "1234", "empty_password": ""}')
+        with pytest.raises(ValidationError) as exc_info:
+            Foobar.model_validate_json('{"password": 1234, "empty_password": null}')
+    else:
+        f = Foobar(password='1234', empty_password='')
+        with pytest.raises(ValidationError) as exc_info:
+            Foobar(password=1234, empty_password=None)
+
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'string_type', 'loc': ('password',), 'msg': 'Input should be a valid string', 'input': 1234},
+        {'type': 'string_type', 'loc': ('empty_password',), 'msg': 'Input should be a valid string', 'input': None},
+    ]
 
     # Assert correct types.
     assert f.password.__class__.__name__ == 'SecretStr'
@@ -4119,7 +4223,9 @@ def test_secretbytes():
         empty_password: SecretBytes
 
     # Initialize the model.
-    f = Foobar(password=b'wearebytes', empty_password=b'')
+    # Use bytes that can't be decoded with UTF8 (https://github.com/pydantic/pydantic/issues/7971)
+    password = b'\x89PNG\r\n\x1a\n'
+    f = Foobar(password=password, empty_password=b'')
 
     # Assert correct types.
     assert f.password.__class__.__name__ == 'SecretBytes'
@@ -4132,7 +4238,7 @@ def test_secretbytes():
     assert repr(f.empty_password) == "SecretBytes(b'')"
 
     # Assert retrieval of secret value is correct
-    assert f.password.get_secret_value() == b'wearebytes'
+    assert f.password.get_secret_value() == password
     assert f.empty_password.get_secret_value() == b''
 
     # Assert that SecretBytes is equal to SecretBytes if the secret is the same.
@@ -4332,6 +4438,7 @@ def test_frozenset_field_not_convertible():
 @pytest.mark.parametrize(
     'input_value,output,human_bin,human_dec',
     (
+        (1, 1, '1B', '1B'),
         ('1', 1, '1B', '1B'),
         ('1.0', 1, '1B', '1B'),
         ('1b', 1, '1B', '1B'),
@@ -4341,6 +4448,8 @@ def test_frozenset_field_not_convertible():
         ('1.5 M', int(1.5e6), '1.4MiB', '1.5MB'),
         ('5.1kib', 5222, '5.1KiB', '5.2KB'),
         ('6.2EiB', 7148113328562451456, '6.2EiB', '7.1EB'),
+        ('8bit', 1, '1B', '1B'),
+        ('1kbit', 125, '125B', '125B'),
     ),
 )
 def test_bytesize_conversions(input_value, output, human_bin, human_dec):
@@ -4364,13 +4473,15 @@ def test_bytesize_to():
     assert m.size.to('MiB') == pytest.approx(1024)
     assert m.size.to('MB') == pytest.approx(1073.741824)
     assert m.size.to('TiB') == pytest.approx(0.0009765625)
+    assert m.size.to('bit') == pytest.approx(8589934592)
+    assert m.size.to('kbit') == pytest.approx(8589934.592)
 
 
 def test_bytesize_raises():
     class Model(BaseModel):
         size: ByteSize
 
-    with pytest.raises(ValidationError, match='parse value'):
+    with pytest.raises(ValidationError, match='should match'):
         Model(size='d1MB')
 
     with pytest.raises(ValidationError, match='byte unit'):
@@ -4383,6 +4494,9 @@ def test_bytesize_raises():
     m = Model(size='1MB')
     with pytest.raises(PydanticCustomError, match='byte unit'):
         m.size.to('bad_unit')
+
+    with pytest.raises(PydanticCustomError, match='byte unit'):
+        m.size.to('1ZiB')
 
 
 def test_deque_success():
@@ -4798,7 +4912,7 @@ def test_union_uuid_str_left_to_right():
 
     # in smart mode JSON and python are currently validated differently in this
     # case, because in Python this is a str but in JSON a str is also a UUID
-    assert TypeAdapter(IdOrSlug).validate_json('\"f4fe10b4-e0c8-4232-ba26-4acd491c2414\"') == UUID(
+    assert TypeAdapter(IdOrSlug).validate_json('"f4fe10b4-e0c8-4232-ba26-4acd491c2414"') == UUID(
         'f4fe10b4-e0c8-4232-ba26-4acd491c2414'
     )
     assert (
@@ -4809,7 +4923,7 @@ def test_union_uuid_str_left_to_right():
     IdOrSlugLTR = Annotated[Union[UUID, str], Field(union_mode='left_to_right')]
 
     # in left to right mode both JSON and python are validated as UUID
-    assert TypeAdapter(IdOrSlugLTR).validate_json('\"f4fe10b4-e0c8-4232-ba26-4acd491c2414\"') == UUID(
+    assert TypeAdapter(IdOrSlugLTR).validate_json('"f4fe10b4-e0c8-4232-ba26-4acd491c2414"') == UUID(
         'f4fe10b4-e0c8-4232-ba26-4acd491c2414'
     )
     assert TypeAdapter(IdOrSlugLTR).validate_python('f4fe10b4-e0c8-4232-ba26-4acd491c2414') == UUID(
@@ -5561,7 +5675,6 @@ def test_typing_extension_literal_field():
     assert Model(foo='foo').foo == 'foo'
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason='`typing.Literal` is available for python 3.8 and above.')
 def test_typing_literal_field():
     from typing import Literal
 
@@ -5919,6 +6032,28 @@ def test_coerce_numbers_to_str_disabled_in_strict_mode() -> None:
         Model.model_validate_json('{"value": 42}')
 
 
+@pytest.mark.parametrize('value_param', [True, False])
+def test_coerce_numbers_to_str_raises_for_bool(value_param: bool) -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(coerce_numbers_to_str=True)
+        value: str
+
+    with pytest.raises(ValidationError, match='value'):
+        Model.model_validate({'value': value_param})
+    with pytest.raises(ValidationError, match='value'):
+        if value_param is True:
+            Model.model_validate_json('{"value": true}')
+        elif value_param is False:
+            Model.model_validate_json('{"value": false}')
+
+    @pydantic_dataclass(config=ConfigDict(coerce_numbers_to_str=True))
+    class Model:
+        value: str
+
+    with pytest.raises(ValidationError, match='value'):
+        Model(value=value_param)
+
+
 @pytest.mark.parametrize(
     ('number', 'expected_str'),
     [
@@ -5949,3 +6084,138 @@ def test_coerce_numbers_to_str_from_json(number: str, expected_str: str) -> None
         value: str
 
     assert Model.model_validate_json(f'{{"value": {number}}}').model_dump() == {'value': expected_str}
+
+
+def test_union_tags_in_errors():
+    DoubledList = Annotated[List[int], AfterValidator(lambda x: x * 2)]
+    StringsMap = Dict[str, str]
+
+    adapter = TypeAdapter(Union[DoubledList, StringsMap])
+
+    with pytest.raises(ValidationError) as exc_info:
+        adapter.validate_python(['a'])
+
+    assert '2 validation errors for union[function-after[<lambda>(), list[int]],dict[str,str]]' in str(exc_info)  # yuck
+    # the loc's are bad here:
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': 'a',
+            'loc': ('function-after[<lambda>(), list[int]]', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        },
+        {
+            'input': ['a'],
+            'loc': ('dict[str,str]',),
+            'msg': 'Input should be a valid dictionary',
+            'type': 'dict_type',
+        },
+    ]
+
+    tag_adapter = TypeAdapter(
+        Union[Annotated[DoubledList, Tag('DoubledList')], Annotated[StringsMap, Tag('StringsMap')]]
+    )
+    with pytest.raises(ValidationError) as exc_info:
+        tag_adapter.validate_python(['a'])
+
+    assert '2 validation errors for union[DoubledList,StringsMap]' in str(exc_info)  # nice
+    # the loc's are good here:
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': 'a',
+            'loc': ('DoubledList', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        },
+        {
+            'input': ['a'],
+            'loc': ('StringsMap',),
+            'msg': 'Input should be a valid dictionary',
+            'type': 'dict_type',
+        },
+    ]
+
+
+def test_json_value():
+    adapter = TypeAdapter(JsonValue)
+    valid_json_data = {'a': {'b': {'c': 1, 'd': [2, None]}}}
+    invalid_json_data = {'a': {'b': ...}}  # would pass validation as a dict[str, Any]
+
+    assert adapter.validate_python(valid_json_data) == valid_json_data
+    assert adapter.validate_json(json.dumps(valid_json_data)) == valid_json_data
+
+    with pytest.raises(ValidationError) as exc_info:
+        adapter.validate_python(invalid_json_data)
+    assert exc_info.value.errors() == [
+        {
+            'input': Ellipsis,
+            'loc': ('dict', 'a', 'dict', 'b'),
+            'msg': 'input was not a valid JSON value',
+            'type': 'invalid-json-value',
+        }
+    ]
+
+
+def test_json_value_with_subclassed_types():
+    class IntType(int):
+        pass
+
+    class FloatType(float):
+        pass
+
+    class StrType(str):
+        pass
+
+    class ListType(list):
+        pass
+
+    class DictType(dict):
+        pass
+
+    adapter = TypeAdapter(JsonValue)
+    valid_json_data = {'int': IntType(), 'float': FloatType(), 'str': StrType(), 'list': ListType(), 'dict': DictType()}
+    assert adapter.validate_python(valid_json_data) == valid_json_data
+
+
+def test_json_value_roundtrip() -> None:
+    # see https://github.com/pydantic/pydantic/issues/8175
+    class MyModel(BaseModel):
+        val: Union[str, JsonValue]
+
+    round_trip_value = json.loads(MyModel(val=True).model_dump_json())['val']
+    assert round_trip_value is True, round_trip_value
+
+
+def test_on_error_omit() -> None:
+    OmittableInt = OnErrorOmit[int]
+
+    class MyTypedDict(TypedDict):
+        a: NotRequired[OmittableInt]
+        b: NotRequired[OmittableInt]
+
+    class Model(BaseModel):
+        a_list: List[OmittableInt]
+        a_dict: Dict[OmittableInt, OmittableInt]
+        a_typed_dict: MyTypedDict
+
+    actual = Model(
+        a_list=[1, 2, 'a', 3],
+        a_dict={1: 1, 2: 2, 'a': 'a', 'b': 0, 3: 'c', 4: 4},
+        a_typed_dict=MyTypedDict(a=1, b='xyz'),  # type: ignore
+    )
+
+    expected = Model(a_list=[1, 2, 3], a_dict={1: 1, 2: 2, 4: 4}, a_typed_dict=MyTypedDict(a=1))
+
+    assert actual == expected
+
+
+def test_on_error_omit_top_level() -> None:
+    ta = TypeAdapter(OnErrorOmit[int])
+
+    assert ta.validate_python(1) == 1
+    assert ta.validate_python('1') == 1
+
+    # we might want to just raise the OmitError or convert it to a ValidationError
+    # if it hits the top level, but this documents the current behavior at least
+    with pytest.raises(SchemaError, match='Uncaught Omit error'):
+        ta.validate_python('a')

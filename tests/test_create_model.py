@@ -1,4 +1,5 @@
 import platform
+import re
 from typing import Generic, Optional, Tuple, TypeVar
 
 import pytest
@@ -31,7 +32,7 @@ def test_create_model():
     assert not model.__pydantic_decorators__.field_validators
     assert not model.__pydantic_decorators__.field_serializers
 
-    assert model.__module__ == 'pydantic.main'
+    assert model.__module__ == 'tests.test_create_model'
 
 
 def test_create_model_usage():
@@ -76,6 +77,38 @@ def test_create_model_multi_inheritance():
     FooModel = create_model('FooModel', value=(int, ...), __base__=(BaseModel, Generic_T))
 
     assert FooModel.__orig_bases__ == (BaseModel, Generic_T)
+
+
+def test_create_model_must_not_reset_parent_namespace():
+    # It's important to use the annotation `'namespace'` as this is a particular string that is present
+    # in the parent namespace if you reset the parent namespace in the call to `create_model`.
+
+    AbcModel = create_model('AbcModel', abc=('namespace', None))
+    with pytest.raises(
+        PydanticUserError,
+        match=re.escape(
+            '`AbcModel` is not fully defined; you should define `namespace`, then call `AbcModel.model_rebuild()`.'
+        ),
+    ):
+        AbcModel(abc=1)
+
+    # Rebuild the model now that `namespace` is defined
+    namespace = int  # noqa F841
+    AbcModel.model_rebuild()
+
+    assert AbcModel(abc=1).abc == 1
+
+    with pytest.raises(ValidationError) as exc_info:
+        AbcModel(abc='a')
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': ('abc',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        }
+    ]
 
 
 def test_invalid_name():
@@ -254,13 +287,20 @@ def test_create_model_field_and_model_title():
 
 
 def test_create_model_field_description():
-    m = create_model('M', a=(str, Field(description='descr')))
+    m = create_model('M', a=(str, Field(description='descr')), __doc__='Some doc')
     assert m.model_json_schema() == {
         'properties': {'a': {'description': 'descr', 'title': 'A', 'type': 'string'}},
         'required': ['a'],
         'title': 'M',
         'type': 'object',
+        'description': 'Some doc',
     }
+
+
+def test_create_model_with_doc():
+    model = create_model('FooModel', foo=(str, ...), bar=(int, 123), __doc__='The Foo model')
+    assert model.__name__ == 'FooModel'
+    assert model.__doc__ == 'The Foo model'
 
 
 @pytest.mark.parametrize('base', [ModelPrivateAttr, object])
@@ -541,3 +581,23 @@ def test_json_schema_with_inner_models_with_duplicate_names():
         'title': 'a',
         'type': 'object',
     }
+
+
+def test_resolving_forward_refs_across_modules(create_module):
+    module = create_module(
+        # language=Python
+        """\
+from __future__ import annotations
+from dataclasses import dataclass
+from pydantic import BaseModel
+
+class X(BaseModel):
+    pass
+
+@dataclass
+class Y:
+    x: X
+        """
+    )
+    Z = create_model('Z', y=(module.Y, ...))
+    assert Z(y={'x': {}}).y is not None

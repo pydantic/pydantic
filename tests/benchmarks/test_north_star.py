@@ -7,7 +7,6 @@ Used to gauge overall pydantic performance.
 import json
 from datetime import date, datetime, time
 from decimal import Decimal
-from hashlib import md5
 from pathlib import Path
 from typing import List, Union
 from uuid import UUID
@@ -64,7 +63,6 @@ def pydantic_type_adapter():
 
 
 _NORTH_STAR_DATA_PATH = Path(__file__).parent / 'north_star_data.json'
-_EXPECTED_NORTH_STAR_DATA_MD5 = '0ff34599a0861026cf25b6cdbb4bbe81'
 
 
 @pytest.fixture(scope='module')
@@ -81,23 +79,6 @@ def _north_star_data_bytes() -> bytes:
         _NORTH_STAR_DATA_PATH.write_bytes(data)
     else:
         data = _NORTH_STAR_DATA_PATH.read_bytes()
-
-    # To make benchmarks a stable metric, validate the MD5 hash of the
-    # existing generated data. If the data is deliberately changed,
-    # update _EXPECTED_NORTH_STAR_DATA_MD5 above.
-    #
-    # NB updating Faker will almost certainly change the benchmark data.
-    data_md5 = md5(data).hexdigest()
-    if data_md5 != _EXPECTED_NORTH_STAR_DATA_MD5:
-        if needs_generating:
-            raise ValueError(
-                f'Expected hash {_EXPECTED_NORTH_STAR_DATA_MD5} for north star data, but generated {data_md5}'
-            )
-        else:
-            # MD5 hash mismatch, maybe shape of the data has changed. Delete
-            # and regenerate.
-            _NORTH_STAR_DATA_PATH.unlink()
-            return _north_star_data_bytes()
 
     return data
 

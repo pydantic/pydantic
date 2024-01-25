@@ -12,7 +12,7 @@ from ._internal import _config, _decorators, _typing_extra
 from ._internal import _dataclasses as _pydantic_dataclasses
 from ._migration import getattr_migration
 from .config import ConfigDict
-from .fields import Field
+from .fields import Field, FieldInfo
 
 if TYPE_CHECKING:
     from ._internal._dataclasses import PydanticDataclass
@@ -107,7 +107,7 @@ def dataclass(
     kw_only: bool = False,
     slots: bool = False,
 ) -> Callable[[type[_T]], type[PydanticDataclass]] | type[PydanticDataclass]:
-    """Usage docs: https://docs.pydantic.dev/2.4/concepts/dataclasses/
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/dataclasses/
 
     A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclass`,
     but with added validation.
@@ -119,13 +119,13 @@ def dataclass(
         init: Included for signature compatibility with `dataclasses.dataclass`, and is passed through to
             `dataclasses.dataclass` when appropriate. If specified, must be set to `False`, as pydantic inserts its
             own  `__init__` function.
-        repr: A boolean indicating whether or not to include the field in the `__repr__` output.
-        eq: Determines if a `__eq__` should be generated for the class.
+        repr: A boolean indicating whether to include the field in the `__repr__` output.
+        eq: Determines if a `__eq__` method should be generated for the class.
         order: Determines if comparison magic methods should be generated, such as `__lt__`, but not `__eq__`.
-        unsafe_hash: Determines if an unsafe hashing function should be included in the class.
+        unsafe_hash: Determines if a `__hash__` method should be included in the class, as in `dataclasses.dataclass`.
         frozen: Determines if the generated class should be a 'frozen' `dataclass`, which does not allow its
-            attributes to be modified from its constructor.
-        config: A configuration for the `dataclass` generation.
+            attributes to be modified after it has been initialized.
+        config: The Pydantic config to use for the `dataclass`.
         validate_on_init: A deprecated parameter included for backwards compatibility; in V2, all Pydantic dataclasses
             are validated on init.
         kw_only: Determines if `__init__` method parameters must be specified by keyword only. Defaults to `False`.
@@ -145,6 +145,34 @@ def dataclass(
         kwargs = dict(kw_only=kw_only, slots=slots)
     else:
         kwargs = {}
+
+    def make_pydantic_fields_compatible(cls: type[Any]) -> None:
+        """Make sure that stdlib `dataclasses` understands `Field` kwargs like `kw_only`
+        To do that, we simply change
+          `x: int = pydantic.Field(..., kw_only=True)`
+        into
+          `x: int = dataclasses.field(default=pydantic.Field(..., kw_only=True), kw_only=True)`
+        """
+        # In Python < 3.9, `__annotations__` might not be present if there are no fields.
+        # we therefore need to use `getattr` to avoid an `AttributeError`.
+        for field_name in getattr(cls, '__annotations__', []):
+            field_value = getattr(cls, field_name, None)
+            # Process only if this is an instance of `FieldInfo`.
+            if not isinstance(field_value, FieldInfo):
+                continue
+
+            # Initialize arguments for the standard `dataclasses.field`.
+            field_args: dict = {'default': field_value}
+
+            # Handle `kw_only` for Python 3.10+
+            if sys.version_info >= (3, 10) and field_value.kw_only:
+                field_args['kw_only'] = True
+
+            # Set `repr` attribute if it's explicitly specified to be not `True`.
+            if field_value.repr is not True:
+                field_args['repr'] = field_value.repr
+
+            setattr(cls, field_name, dataclasses.field(**field_args))
 
     def create_dataclass(cls: type[Any]) -> type[PydanticDataclass]:
         """Create a Pydantic dataclass from a regular dataclass.
@@ -184,6 +212,8 @@ def dataclass(
                 generic_base = Generic[cls.__parameters__]  # type: ignore
                 bases = bases + (generic_base,)
             cls = types.new_class(cls.__name__, bases)
+
+        make_pydantic_fields_compatible(cls)
 
         cls = dataclasses.dataclass(  # type: ignore[call-overload]
             cls,
@@ -245,8 +275,8 @@ def rebuild_dataclass(
     This is analogous to `BaseModel.model_rebuild`.
 
     Args:
-        cls: The class to build the dataclass core schema for.
-        force: Whether to force the rebuilding of the model schema, defaults to `False`.
+        cls: The class to rebuild the pydantic-core schema for.
+        force: Whether to force the rebuilding of the schema, defaults to `False`.
         raise_errors: Whether to raise errors, defaults to `True`.
         _parent_namespace_depth: The depth level of the parent namespace, defaults to 2.
         _types_namespace: The types namespace, defaults to `None`.

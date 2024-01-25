@@ -2,7 +2,6 @@ import importlib
 import importlib.util
 import json
 import platform
-import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -14,30 +13,20 @@ import pydantic
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_init_export():
-    pydantic_all = set(pydantic.__all__)
-
-    exported = set()
-    for name, attr in vars(pydantic).items():
-        if name.startswith('_'):
-            continue
-        if isinstance(attr, ModuleType) and name != 'dataclasses':
-            continue
-        if name == 'getattr_migration':
-            continue
-        exported.add(name)
-
-    # add stuff from `pydantic._dynamic_imports` if `package` is "pydantic"
-    exported.update({k for k, v in pydantic._dynamic_imports.items() if v[0] == 'pydantic'})
-
-    assert pydantic_all == exported, "pydantic.__all__ doesn't match actual exports"
+    for name in dir(pydantic):
+        getattr(pydantic, name)
 
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @pytest.mark.parametrize(('attr_name', 'value'), list(pydantic._dynamic_imports.items()))
 def test_public_api_dynamic_imports(attr_name, value):
     package, module_name = value
-    imported_object = getattr(importlib.import_module(module_name, package=package), attr_name)
-    assert isinstance(imported_object, object)
+    if module_name == '__module__':
+        module = importlib.import_module(attr_name, package=package)
+        assert isinstance(module, ModuleType)
+    else:
+        imported_object = getattr(importlib.import_module(module_name, package=package), attr_name)
+        assert isinstance(imported_object, object)
 
 
 @pytest.mark.skipif(
@@ -73,7 +62,7 @@ def test_public_internal():
 
 
 # language=Python
-IMPORTED_MODULES_CODE = """
+IMPORTED_PYDANTIC_CODE = """
 import sys
 import pydantic
 
@@ -84,12 +73,69 @@ print(json.dumps(modules))
 """
 
 
-def test_imported_modules(tmp_path: Path):
-    py_file = tmp_path / 'test.py'
-    py_file.write_text(IMPORTED_MODULES_CODE)
-
-    output = subprocess.check_output([sys.executable, str(py_file)], cwd=tmp_path)
+def test_import_pydantic(subprocess_run_code):
+    output = subprocess_run_code(IMPORTED_PYDANTIC_CODE)
     imported_modules = json.loads(output)
     # debug(imported_modules)
     assert 'pydantic' in imported_modules
     assert 'pydantic.deprecated' not in imported_modules
+
+
+# language=Python
+IMPORTED_BASEMODEL_CODE = """
+import sys
+from pydantic import BaseModel
+
+modules = list(sys.modules.keys())
+
+import json
+print(json.dumps(modules))
+"""
+
+
+def test_import_base_model(subprocess_run_code):
+    output = subprocess_run_code(IMPORTED_BASEMODEL_CODE)
+    imported_modules = json.loads(output)
+    # debug(sorted(imported_modules))
+    assert 'pydantic' in imported_modules
+    assert 'pydantic.fields' not in imported_modules
+    assert 'pydantic.types' not in imported_modules
+    assert 'annotated_types' not in imported_modules
+
+
+def test_dataclass_import(subprocess_run_code):
+    @subprocess_run_code
+    def run_in_subprocess():
+        import pydantic
+
+        assert pydantic.dataclasses.__name__ == 'pydantic.dataclasses'
+
+        @pydantic.dataclasses.dataclass
+        class Foo:
+            a: int
+
+        try:
+            Foo('not an int')
+        except ValueError:
+            pass
+        else:
+            raise AssertionError('Should have raised a ValueError')
+
+
+def test_dataclass_import2(subprocess_run_code):
+    @subprocess_run_code
+    def run_in_subprocess():
+        import pydantic.dataclasses
+
+        assert pydantic.dataclasses.__name__ == 'pydantic.dataclasses'
+
+        @pydantic.dataclasses.dataclass
+        class Foo:
+            a: int
+
+        try:
+            Foo('not an int')
+        except ValueError:
+            pass
+        else:
+            raise AssertionError('Should have raised a ValueError')

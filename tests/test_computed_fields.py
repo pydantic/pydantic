@@ -62,6 +62,13 @@ def test_computed_fields_get():
     assert rect.model_dump() == {'width': 10, 'length': 5, 'area': 50, 'area2': 50}
     assert rect.model_dump_json() == '{"width":10,"length":5,"area":50,"area2":50}'
 
+    assert set(Rectangle.model_fields) == {'width', 'length'}
+    assert set(Rectangle.model_computed_fields) == {'area', 'area2'}
+
+    assert Rectangle.model_computed_fields['area'].description == 'An awesome area'
+    assert Rectangle.model_computed_fields['area2'].title == 'Pikarea'
+    assert Rectangle.model_computed_fields['area2'].description == 'Another area'
+
 
 def test_computed_fields_json_schema():
     class Rectangle(BaseModel):
@@ -73,7 +80,12 @@ def test_computed_fields_json_schema():
             """An awesome area"""
             return self.width * self.length
 
-        @computed_field(title='Pikarea', description='Another area')
+        @computed_field(
+            title='Pikarea',
+            description='Another area',
+            examples=[100, 200],
+            json_schema_extra={'foo': 42},
+        )
         @property
         def area2(self) -> int:
             return self.width * self.length
@@ -103,6 +115,8 @@ def test_computed_fields_json_schema():
             'area2': {
                 'title': 'Pikarea',
                 'description': 'Another area',
+                'examples': [100, 200],
+                'foo': 42,
                 'type': 'integer',
                 'readOnly': True,
             },
@@ -735,6 +749,10 @@ def test_generic_computed_field():
 
     assert A[int](x=1).model_dump() == {'x': 1, 'double_x': 2}
     assert A[str](x='abc').model_dump() == {'x': 'abc', 'double_x': 'abcabc'}
+
+    assert A(x='xxxxxx').model_computed_fields['double_x'].return_type == T
+    assert A[int](x=123).model_computed_fields['double_x'].return_type == int
+    assert A[str](x='x').model_computed_fields['double_x'].return_type == str
 
     class B(BaseModel, Generic[T]):
         @computed_field

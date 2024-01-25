@@ -21,6 +21,7 @@
         - Some
         - TzInfo
         - to_json
+        - from_json
         - to_jsonable_python
         - list_all_errors
         - ErrorTypeInfo

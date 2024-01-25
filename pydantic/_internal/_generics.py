@@ -60,10 +60,6 @@ else:
                 for key in to_remove:
                     del self[key]
 
-        def __class_getitem__(cls, *args: Any) -> Any:
-            # to avoid errors with 3.7
-            return cls
-
 
 # weak dictionaries allow the dynamically created parametrized versions of generic models to get collected
 # once they are no longer referenced by the caller.
@@ -171,7 +167,7 @@ def _get_caller_frame_info(depth: int = 2) -> tuple[str | None, bool]:
         depth: The depth to get the frame.
 
     Returns:
-        A tuple contains `module_nam` and `called_globally`.
+        A tuple contains `module_name` and `called_globally`.
 
     Raises:
         RuntimeError: If the function is not called inside a function.
@@ -311,7 +307,8 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
         # We also cannot use isinstance() since we have to compare types.
         if sys.version_info >= (3, 10) and origin_type is types.UnionType:
             return _UnionGenericAlias(origin_type, resolved_type_args)
-        return origin_type[resolved_type_args]
+        # NotRequired[T] and Required[T] don't support tuple type resolved_type_args, hence the condition below
+        return origin_type[resolved_type_args[0] if len(resolved_type_args) == 1 else resolved_type_args]
 
     # We handle pydantic generic models separately as they don't have the same
     # semantics as "typing" classes or generic aliases

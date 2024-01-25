@@ -6,7 +6,14 @@ import typing
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
-from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
+from ipaddress import (
+    IPv4Address,
+    IPv4Interface,
+    IPv4Network,
+    IPv6Address,
+    IPv6Interface,
+    IPv6Network,
+)
 from pathlib import Path
 from typing import (
     Any,
@@ -33,10 +40,11 @@ from uuid import UUID
 import pytest
 from dirty_equals import HasRepr
 from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_json
-from typing_extensions import Annotated, Literal, TypedDict
+from typing_extensions import Annotated, Literal, Self, TypedDict
 
 import pydantic
 from pydantic import (
+    AfterValidator,
     BaseModel,
     Field,
     GetCoreSchemaHandler,
@@ -67,13 +75,22 @@ from pydantic.json_schema import (
     model_json_schema,
     models_json_schema,
 )
-from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, MultiHostUrl, NameEmail
+from pydantic.networks import (
+    AnyUrl,
+    EmailStr,
+    IPvAnyAddress,
+    IPvAnyInterface,
+    IPvAnyNetwork,
+    MultiHostUrl,
+    NameEmail,
+)
 from pydantic.type_adapter import TypeAdapter
 from pydantic.types import (
     UUID1,
     UUID3,
     UUID4,
     UUID5,
+    ByteSize,
     DirectoryPath,
     FilePath,
     Json,
@@ -1291,6 +1308,50 @@ def test_callable_type_with_fallback(default_value, properties):
     assert model_schema['properties'] == properties
 
 
+def test_byte_size_type():
+    class Model(BaseModel):
+        a: ByteSize
+        b: ByteSize = Field('1MB', validate_default=True)
+
+    model_json_schema_validation = Model.model_json_schema(mode='validation')
+    model_json_schema_serialization = Model.model_json_schema(mode='serialization')
+
+    print(model_json_schema_serialization)
+
+    assert model_json_schema_validation == {
+        'properties': {
+            'a': {
+                'anyOf': [
+                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
+                    {'minimum': 0, 'type': 'integer'},
+                ],
+                'title': 'A',
+            },
+            'b': {
+                'anyOf': [
+                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
+                    {'minimum': 0, 'type': 'integer'},
+                ],
+                'default': '1MB',
+                'title': 'B',
+            },
+        },
+        'required': ['a'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+    assert model_json_schema_serialization == {
+        'properties': {
+            'a': {'minimum': 0, 'title': 'A', 'type': 'integer'},
+            'b': {'default': '1MB', 'minimum': 0, 'title': 'B', 'type': 'integer'},
+        },
+        'required': ['a'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 @pytest.mark.parametrize(
     'type_,default_value,properties',
     (
@@ -2406,6 +2467,23 @@ def test_typeddict_with_extra_allow():
     }
 
 
+def test_typeddict_with_extra_behavior_allow():
+    class Model:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.typed_dict_schema(
+                {'a': core_schema.typed_dict_field(core_schema.str_schema())},
+                extra_behavior='allow',
+            )
+
+    assert TypeAdapter(Model).json_schema() == {
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'additionalProperties': True,
+    }
+
+
 def test_typeddict_with_extra_ignore():
     class Model(TypedDict):
         __pydantic_config__ = ConfigDict(extra='ignore')  # type: ignore
@@ -2413,6 +2491,22 @@ def test_typeddict_with_extra_ignore():
 
     assert TypeAdapter(Model).json_schema() == {
         'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }
+
+
+def test_typeddict_with_extra_behavior_ignore():
+    class Model:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.typed_dict_schema(
+                {'a': core_schema.typed_dict_field(core_schema.str_schema())},
+                extra_behavior='ignore',
+            )
+
+    assert TypeAdapter(Model).json_schema() == {
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string'}},
         'required': ['a'],
@@ -2427,6 +2521,23 @@ def test_typeddict_with_extra_forbid():
 
     assert TypeAdapter(Model).json_schema() == {
         'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'additionalProperties': False,
+    }
+
+
+def test_typeddict_with_extra_behavior_forbid():
+    class Model:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.typed_dict_schema(
+                {'a': core_schema.typed_dict_field(core_schema.str_schema())},
+                extra_behavior='forbid',
+            )
+
+    assert TypeAdapter(Model).json_schema() == {
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string'}},
         'required': ['a'],
@@ -2600,8 +2711,8 @@ def test_tuple_with_extra_schema():
     class MyTuple(Tuple[int, str]):
         @classmethod
         def __get_pydantic_core_schema__(cls, _source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.tuple_positional_schema(
-                [core_schema.int_schema(), core_schema.str_schema()], extras_schema=core_schema.int_schema()
+            return core_schema.tuple_schema(
+                [core_schema.int_schema(), core_schema.str_schema(), core_schema.int_schema()], variadic_item_index=2
             )
 
     class Model(BaseModel):
@@ -5260,7 +5371,7 @@ def test_json_schema_keys_sorting() -> None:
         a: str
 
     class OuterModel(BaseModel):
-        inner: List[Model]
+        inner: List[Model] = Field(default=[Model(b=1, a='fruit')])
 
     # verify the schema contents
     # this is just to get a nicer error message / diff if it fails
@@ -5273,8 +5384,14 @@ def test_json_schema_keys_sorting() -> None:
                 'type': 'object',
             }
         },
-        'properties': {'inner': {'items': {'$ref': '#/$defs/Model'}, 'title': 'Inner', 'type': 'array'}},
-        'required': ['inner'],
+        'properties': {
+            'inner': {
+                'default': [{'b': 1, 'a': 'fruit'}],
+                'items': {'$ref': '#/$defs/Model'},
+                'title': 'Inner',
+                'type': 'array',
+            }
+        },
         'title': 'OuterModel',
         'type': 'object',
     }
@@ -5363,24 +5480,25 @@ def test_multiple_models_with_same_qualname():
         outer_a2=(model_a2, ...),
     )
 
+    # insert_assert(model_c.model_json_schema())
     assert model_c.model_json_schema() == {
         '$defs': {
-            'pydantic__main__A__1': {
-                'properties': {'inner_a1': {'title': 'Inner ' 'A1', 'type': 'string'}},
+            'tests__test_json_schema__A__1': {
+                'properties': {'inner_a1': {'title': 'Inner A1', 'type': 'string'}},
                 'required': ['inner_a1'],
                 'title': 'A',
                 'type': 'object',
             },
-            'pydantic__main__A__2': {
-                'properties': {'inner_a2': {'title': 'Inner ' 'A2', 'type': 'string'}},
+            'tests__test_json_schema__A__2': {
+                'properties': {'inner_a2': {'title': 'Inner A2', 'type': 'string'}},
                 'required': ['inner_a2'],
                 'title': 'A',
                 'type': 'object',
             },
         },
         'properties': {
-            'outer_a1': {'$ref': '#/$defs/pydantic__main__A__1'},
-            'outer_a2': {'$ref': '#/$defs/pydantic__main__A__2'},
+            'outer_a1': {'$ref': '#/$defs/tests__test_json_schema__A__1'},
+            'outer_a2': {'$ref': '#/$defs/tests__test_json_schema__A__2'},
         },
         'required': ['outer_a1', 'outer_a2'],
         'title': 'B',
@@ -5696,3 +5814,68 @@ def test_recursive_non_generic_model() -> None:
         },
         'allOf': [{'$ref': '#/$defs/Bar'}],
     }
+
+
+def test_module_with_colon_in_name(create_module):
+    module = create_module(
+        # language=Python
+        """
+from pydantic import BaseModel
+
+class Foo(BaseModel):
+    x: int
+        """,
+        module_name_prefix='C:\\',
+    )
+
+    foo_model = module.Foo
+    _, v_schema = models_json_schema([(foo_model, 'validation')])
+    assert v_schema == {
+        '$defs': {
+            'Foo': {
+                'properties': {'x': {'title': 'X', 'type': 'integer'}},
+                'required': ['x'],
+                'title': 'Foo',
+                'type': 'object',
+            }
+        }
+    }
+
+
+def test_repeated_custom_type():
+    class Numeric(pydantic.BaseModel):
+        value: float
+
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: pydantic.GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.no_info_before_validator_function(cls.validate, handler(source_type))
+
+        @classmethod
+        def validate(cls, v: Any) -> Union[Dict[str, Any], Self]:
+            if isinstance(v, (str, float, int)):
+                return cls(value=v)
+            if isinstance(v, Numeric):
+                return v
+            if isinstance(v, dict):
+                return v
+            raise ValueError(f'Invalid value for {cls}: {v}')
+
+    def is_positive(value: Numeric):
+        assert value.value > 0.0, 'Must be positive'
+
+    class OuterModel(pydantic.BaseModel):
+        x: Numeric
+        y: Numeric
+        z: Annotated[Numeric, AfterValidator(is_positive)]
+
+    assert OuterModel(x=2, y=-1, z=1)
+
+    with pytest.raises(ValidationError):
+        OuterModel(x=2, y=-1, z=-1)
+
+
+def test_description_not_included_for_basemodel() -> None:
+    class Model(BaseModel):
+        x: BaseModel
+
+    assert 'description' not in Model.model_json_schema()['$defs']['BaseModel']

@@ -221,14 +221,12 @@ You can use [PEP 695]'s `TypeAliasType` via its [typing-extensions] backport to 
 This new type can be as simple as a name or have complex validation logic attached to it:
 
 ```py
-from typing import List, TypeVar
+from typing import List
 
 from annotated_types import Gt
 from typing_extensions import Annotated, TypeAliasType
 
 from pydantic import BaseModel
-
-T = TypeVar('T')  # or a `bound=SupportGt`
 
 ImplicitAliasPositiveIntList = List[Annotated[int, Gt(0)]]
 
@@ -297,7 +295,7 @@ from typing_extensions import Annotated, TypeAliasType
 
 from pydantic import BaseModel, ValidationError
 
-T = TypeVar('T')  # or a bound=SupportGt
+T = TypeVar('T')  # or a `bound=SupportGt`
 
 PositiveList = TypeAliasType(
     'PositiveList', List[Annotated[T, Gt(0)]], type_params=(T,)
@@ -603,6 +601,9 @@ assert Model.model_json_schema() == {
 You can use this approach to e.g. define behavior for Pandas or Numpy types.
 
 #### Using `GetPydanticSchema` to reduce boilerplate
+
+??? api "API Documentation"
+    [`pydantic.types.GetPydanticSchema`][pydantic.types.GetPydanticSchema]<br>
 
 You may notice that the above examples where we create a marker class require a good amount of boilerplate.
 For many simple cases you can greatly minimize this by using `pydantic.GetPydanticSchema`:

@@ -43,7 +43,7 @@ Using type hints also means that Pydantic integrates well with static typing too
 
     1. The `name` field is simply annotated with `str` - any string is allowed.
     2. The [`Literal`](https://docs.python.org/3/library/typing.html#typing.Literal) type is used to enforce that `color` is either `'red'` or `'green'`.
-    3. Even when we want to apply constraints not encapsulated in python types, we can use [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Literal) and [`annotated-types`](https://github.com/annotated-types/annotated-types) to enforce constraints without breaking type hints.
+    3. Even when we want to apply constraints not encapsulated in python types, we can use [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated) and [`annotated-types`](https://github.com/annotated-types/annotated-types) to enforce constraints without breaking type hints.
     4. I'm not claiming "bazam" is really an attribute of fruit, but rather to show that arbitrarily complex types can easily be validated.
 
 !!! tip "Learn more"

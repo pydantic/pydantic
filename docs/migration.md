@@ -92,6 +92,7 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
 | `json_schema()` | `model_json_schema()` |
 | `json()` | `model_dump_json()` |
 | `parse_obj()` | `model_validate()` |
+| `update_forward_refs()` | `model_rebuild()` |
 
 * Some of the built-in data-loading functionality has been slated for removal. In particular,
     `parse_raw` and `parse_file` are now deprecated. In Pydantic V2, `model_validate_json` works like `parse_raw`. Otherwise, you should load the data and then pass it to `model_validate`.
@@ -127,6 +128,39 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
   [Subclass instances for fields of BaseModel, dataclasses, TypedDict](concepts/serialization.md#subclass-instances-for-fields-of-basemodel-dataclasses-typeddict)
   section of the model exporting docs.
 * `GetterDict` has been removed as it was just an implementation detail of `orm_mode`, which has been removed.
+* In many cases, arguments passed to the constructor will be **copied** in order to perform validation and, where necessary, coercion.
+  This is notable in the case of passing mutable objects as arguments to a constructor.
+  You can see an example + more detail [here](https://docs.pydantic.dev/latest/concepts/models/#attribute-copies).
+* The `.json()` method is deprecated, and attempting to use this deprecated method with arguments such as
+`indent` or `ensure_ascii` may lead to confusing errors. For best results, switch to V2's equivalent, `model_dump_json()`.
+* JSON serialization of non-string key values is generally done with `str(key)`, leading to some changes in behavior such as the following:
+
+```py
+from typing import Dict, Optional
+
+from pydantic import BaseModel as V2BaseModel
+from pydantic.v1 import BaseModel as V1BaseModel
+
+
+class V1Model(V1BaseModel):
+    a: Dict[Optional[str], int]
+
+
+class V2Model(V2BaseModel):
+    a: Dict[Optional[str], int]
+
+
+v1_model = V1Model(a={None: 123})
+v2_model = V2Model(a={None: 123})
+
+# V1
+print(v1_model.json())
+#> {"a": {"null": 123}}
+
+# V2
+print(v2_model.model_dump_json())
+#> {"a":{"None":123}}
+```
 
 ### Changes to `pydantic.generics.GenericModel`
 
@@ -165,6 +199,8 @@ The following properties have been removed from or changed in `Field`:
 - `allow_mutation` (use `frozen` instead)
 - `regex` (use `pattern` instead)
 - `final` (use the `typing.Final` type hint instead)
+
+Field constraints are no longer automatically pushed down to the parameters of generics.  For example, you can no longer validate every element of a list matches a regex by providing `my_list: list[str] = Field(pattern=".*")`.  Instead, use `typing.Annotated` to provide an annotation on the `str` itself: `my_list: list[Annotated[str, Field(pattern=".*")]]`
 
 * [TODO: Need to document any other backwards-incompatible changes to `pydantic.Field`]
 
@@ -515,7 +551,7 @@ In Pydantic V1, the printed result would have been `x=1`, since the value would 
 In Pydantic V2, we recognize that the value is an instance of one of the cases and short-circuit the standard union validation.
 
 To revert to the non-short-circuiting left-to-right behavior of V1, annotate the union with `Field(union_mode='left_to_right')`.
-See [Union Mode](./api/standard_library_types.md#union-mode) for more details.
+See [Union Mode](./concepts/unions.md#union-modes) for more details.
 
 #### Required, optional, and nullable fields
 
@@ -575,72 +611,8 @@ This crate is not just a "Rust version of regular expressions", it's a completel
 In particular, it promises linear time searching of strings in exchange for dropping a couple of features (namely look arounds and backreferences).
 We believe this is a tradeoff worth making, in particular because Pydantic is used to validate untrusted input where ensuring things don't accidentally run in exponential time depending on the untrusted input is important.
 On the flipside, for anyone not using these features complex regex validation should be orders of magnitude faster because it's done in Rust and in linear time.
-If you need those regex features you can create a custom validator that does the regex validation in Python:
 
-```py
-import re
-from dataclasses import dataclass
-from typing import Any
-
-from pydantic_core import CoreSchema, PydanticCustomError, core_schema
-from typing_extensions import Annotated
-
-from pydantic import (
-    GetCoreSchemaHandler,
-    GetJsonSchemaHandler,
-    TypeAdapter,
-    ValidationError,
-)
-from pydantic.json_schema import JsonSchemaValue
-
-
-@dataclass
-class Regex:
-    pattern: str
-
-    def __get_pydantic_core_schema__(
-        self, source_type: Any, handler: GetCoreSchemaHandler
-    ) -> CoreSchema:
-        regex = re.compile(self.pattern)
-
-        def match(v: str) -> str:
-            if not regex.match(v):
-                raise PydanticCustomError(
-                    'string_pattern_mismatch',
-                    "String should match pattern '{pattern}'",
-                    {'pattern': self.pattern},
-                )
-            return v
-
-        return core_schema.no_info_after_validator_function(
-            match,
-            handler(source_type),
-        )
-
-    def __get_pydantic_json_schema__(
-        self, core_schema: CoreSchema, handler: GetJsonSchemaHandler
-    ) -> JsonSchemaValue:
-        json_schema = handler(core_schema)
-        json_schema['pattern'] = self.pattern
-        return json_schema
-
-
-ta = TypeAdapter(Annotated[str, Regex('^(?!_)(?!.*__)[a-z_]{1,64}(?<!_)$')])
-
-print(ta.json_schema())
-#> {'pattern': '^(?!_)(?!.*__)[a-z_]{1,64}(?<!_)$', 'type': 'string'}
-
-ta.validate_python('hello_world')
-
-try:
-    ta.validate_python('_invalid_')
-except ValidationError as exc:
-    print(exc)
-    """
-    1 validation error for function-after[match(), str]
-      String should match pattern '^(?!_)(?!.*__)[a-z_]{1,64}(?<!_)$' [type=string_pattern_mismatch, input_value='_invalid_', input_type=str]
-    """
-```
+If you still want to use Python's regex library, you can use the [`regex_engine`](./api/config.md#pydantic.config.ConfigDict.regex_engine) config setting.
 
 [regex crate]: https://github.com/rust-lang/regex
 
@@ -764,6 +736,23 @@ classes using `Annotated`.
 Inheriting from `str` had upsides and downsides, and for V2 we decided it would be better to remove this. To use these
 types in APIs which expect `str` you'll now need to convert them (with `str(url)`).
 
+Pydantic V2 uses Rust's [Url](https://crates.io/crates/url) crate for URL validation.
+Some of the URL validation differs slightly from the previous behavior in V1.
+One notable difference is that the new `Url` types append slashes to the validated version if no path is included,
+even if a slash is not specified in the argument to a `Url` type constructor. See the example below for this behavior:
+
+```py
+from pydantic import AnyUrl
+
+assert str(AnyUrl(url='https://google.com')) == 'https://google.com/'
+assert str(AnyUrl(url='https://google.com/')) == 'https://google.com/'
+assert str(AnyUrl(url='https://google.com/api')) == 'https://google.com/api'
+assert str(AnyUrl(url='https://google.com/api/')) == 'https://google.com/api/'
+```
+
+If you still want to use the old behavior without the appended slash, take a look at this [solution](https://github.com/pydantic/pydantic/issues/7186#issuecomment-1690235887).
+
+
 ### Constrained types
 
 The `Constrained*` classes were _removed_, and you should replace them by `Annotated[<type>, Field(...)]`, for example:
@@ -799,6 +788,11 @@ docs.
 
 For `ConstrainedStr` you can use [`StringConstraints`][pydantic.types.StringConstraints] instead.
 
+## Other changes
+
+* Dropped support for [`email-validator<2.0.0`](https://github.com/JoshData/python-email-validator). Make sure to update
+  using `pip install -U email-validator`.
+
 ## Moved in Pydantic V2
 
 | Pydantic V1 | Pydantic V2 |
@@ -823,6 +817,7 @@ For `ConstrainedStr` you can use [`StringConstraints`][pydantic.types.StringCons
 | `pydantic.json.pydantic_encoder` | `pydantic.deprecated.json.pydantic_encoder` |
 | `pydantic.validate_arguments` | `pydantic.deprecated.decorator.validate_arguments` |
 | `pydantic.json.custom_pydantic_encoder` | `pydantic.deprecated.json.custom_pydantic_encoder` |
+| `pydantic.json.ENCODERS_BY_TYPE` | `pydantic.deprecated.json.ENCODERS_BY_TYPE` |
 | `pydantic.json.timedelta_isoformat` | `pydantic.deprecated.json.timedelta_isoformat` |
 | `pydantic.decorator.validate_arguments` | `pydantic.deprecated.decorator.validate_arguments` |
 | `pydantic.class_validators.validator` | `pydantic.deprecated.class_validators.validator` |

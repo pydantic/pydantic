@@ -2,6 +2,10 @@
 
 **Note:** _This should only apply to maintainers when prepare for and publishing a new release._
 
+Prerequisites:
+* `gh` cli is installed - see installation instructions [here](https://docs.github.com/en/github-cli/github-cli/quickstart)
+  * Run `gh auth login` to authenticate with GitHub, which is needed for the API calls made in the release process.
+
 To create a new release:
 1. Edit `pydantic/version.py` to set the new version number.
 2. **(If the new version is a new minor or major release)** run `pre-commit run -a usage_docs` to update the usage links in docstrings.

@@ -37,6 +37,12 @@ extra:
   version:
     provider: mike
 
+# https://www.mkdocs.org/user-guide/configuration/#validation
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+
 extra_css:
   - 'extra/terminal.css'
   - 'extra/tweaks.css'
@@ -58,7 +64,9 @@ nav:
   - Models: concepts/models.md
   - Fields: concepts/fields.md
   - JSON Schema: concepts/json_schema.md
+  - JSON: concepts/json.md
   - Types: concepts/types.md
+  - Unions: concepts/unions.md
   - Alias: concepts/alias.md
   - Configuration: concepts/config.md
   - Serialization: concepts/serialization.md
@@ -66,6 +74,7 @@ nav:
   - Dataclasses: concepts/dataclasses.md
   - Postponed Annotations: concepts/postponed_annotations.md
   - Strict Mode: concepts/strict_mode.md
+  - Type Adapter: concepts/type_adapter.md
   - Validation Decorator: concepts/validation_decorator.md
   - Conversion Table: concepts/conversion_table.md
   - Settings Management: concepts/pydantic_settings.md
@@ -77,8 +86,9 @@ nav:
     - RootModel: api/root_model.md
     - Pydantic Dataclasses: api/dataclasses.md
     - TypeAdapter: api/type_adapter.md
-    - Validation Decorator: api/validate_call.md
+    - Validate Call: api/validate_call.md
     - Fields: api/fields.md
+    - Aliases: api/aliases.md
     - Configuration: api/config.md
     - JSON Schema: api/json_schema.md
     - Errors: api/errors.md
@@ -102,6 +112,7 @@ nav:
     - Routing Numbers: api/pydantic_extra_types_routing_numbers.md
     - Coordinate: api/pydantic_extra_types_coordinate.md
     - Mac Address: api/pydantic_extra_types_mac_address.md
+    - ISBN: api/pydantic_extra_types_isbn.md
 - Examples:
   - Secrets: examples/secrets.md
 - Error Messages:
@@ -116,10 +127,8 @@ nav:
   - datamodel-code-generator: integrations/datamodel_code_generator.md
   - devtools: integrations/devtools.md
   - Rich: integrations/rich.md
-- Blog:
-  - blog/pydantic-v2-final.md
-  - blog/pydantic-v2-alpha.md
-  - blog/pydantic-v2.md
+- Blog: https://blog.pydantic.dev/
+- Pydantic People: pydantic_people.md
 
 markdown_extensions:
 - tables
@@ -133,8 +142,8 @@ markdown_extensions:
     pygments_lang_class: true
 - pymdownx.extra
 - pymdownx.emoji:
-    emoji_index: !!python/name:materialx.emoji.twemoji
-    emoji_generator: !!python/name:materialx.emoji.to_svg
+    emoji_index: !!python/name:material.extensions.emoji.twemoji
+    emoji_generator: !!python/name:material.extensions.emoji.to_svg
 - pymdownx.tabbed:
     alternate_style: true
 
@@ -223,7 +232,7 @@ plugins:
       'usage/pydantic_settings.md': 'concepts/pydantic_settings.md'
       'usage/serialization.md': 'concepts/serialization.md'
       'usage/strict_mode.md': 'concepts/strict_mode.md'
-      'usage/type_adapter.md': 'api/type_adapter.md'
+      'usage/type_adapter.md': 'concepts/type_adapter.md'
       'usage/validation_decorator.md': 'concepts/validation_decorator.md'
       'usage/validators.md': 'concepts/validators.md'
       'usage/types/bytesize.md': 'api/types.md#pydantic.types.ByteSize'
@@ -234,4 +243,7 @@ plugins:
       'usage/types/sequence_iterable.md': 'api/standard_library_types.md#other-iterables'
       'usage/types/set_types.md': 'api/standard_library_types.md#sets'
       'usage/types/uuids.md': 'api/standard_library_types.md#uuid'
+      'blog/pydantic-v2-alpha.md': 'https://blog.pydantic.dev/blog/2023/04/03/pydantic-v2-pre-release/'
+      'blog/pydantic-v2-final.md': 'https://blog.pydantic.dev/blog/2023/06/30/pydantic-v2-is-here/'
+      'blog/pydantic-v2.md': 'https://blog.pydantic.dev/blog/2022/07/10/pydantic-v2-plan/'
 - external-markdown:

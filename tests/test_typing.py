@@ -6,9 +6,10 @@ from typing import Callable, ClassVar, ForwardRef, NamedTuple
 import pytest
 from typing_extensions import Literal, get_origin
 
-from pydantic import Field  # noqa: F401
+from pydantic import BaseModel, Field  # noqa: F401
 from pydantic._internal._typing_extra import (
     NoneType,
+    eval_type_lenient,
     get_function_type_hints,
     is_classvar,
     is_literal_type,
@@ -28,13 +29,7 @@ try:
 except ImportError:
     typing_extensions_TypedDict = None
 
-
-try:
-    from mypy_extensions import TypedDict as mypy_extensions_TypedDict
-except ImportError:
-    mypy_extensions_TypedDict = None
-
-ALL_TYPEDDICT_KINDS = (typing_TypedDict, typing_extensions_TypedDict, mypy_extensions_TypedDict)
+ALL_TYPEDDICT_KINDS = (typing_TypedDict, typing_extensions_TypedDict)
 
 
 def test_is_namedtuple():
@@ -65,15 +60,17 @@ def test_is_none_type():
     assert is_none_type(Callable) is False
 
 
-@pytest.mark.parametrize('union_gen', [lambda: typing.Union[int, str], lambda: int | str])
-def test_is_union(union_gen):
-    try:
-        union = union_gen()
-    except TypeError:
-        pytest.skip('not supported in this python version')
-    else:
-        origin = get_origin(union)
-        assert origin_is_union(origin)
+@pytest.mark.parametrize(
+    'union',
+    [
+        typing.Union[int, str],
+        eval_type_lenient('int | str'),
+        *([int | str] if sys.version_info >= (3, 10) else []),
+    ],
+)
+def test_is_union(union):
+    origin = get_origin(union)
+    assert origin_is_union(origin)
 
 
 def test_is_literal_with_typing_extension_literal():
@@ -83,7 +80,6 @@ def test_is_literal_with_typing_extension_literal():
     assert is_literal_type(Literal['foo']) is True
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason='`typing.Literal` is available for python 3.8 and above.')
 def test_is_literal_with_typing_literal():
     from typing import Literal
 
@@ -121,3 +117,23 @@ def test_get_function_type_hints_none_type():
         return x
 
     assert get_function_type_hints(f) == {'return': int, 'x': int, 'y': NoneType}
+
+
+@pytest.mark.skipif(sys.version_info[:2] > (3, 9), reason='testing using a feature not supported by older Python')
+def test_eval_type_backport_not_installed():
+    sys.modules['eval_type_backport'] = None
+    try:
+        with pytest.raises(TypeError) as exc_info:
+
+            class _Model(BaseModel):
+                foo: 'int | str'
+
+        assert str(exc_info.value) == (
+            "You have a type annotation 'int | str' which makes use of newer typing "
+            'features than are supported in your version of Python. To handle this error, '
+            'you should either remove the use of new syntax or install the '
+            '`eval_type_backport` package.'
+        )
+
+    finally:
+        del sys.modules['eval_type_backport']

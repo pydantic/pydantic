@@ -1,7 +1,7 @@
 ??? api "API Documentation"
     [`pydantic.fields.Field`][pydantic.fields.Field]<br>
 
-The `Field` function is used to customize and add metadata to fields of models.
+The [`Field`][pydantic.fields.Field] function is used to customize and add metadata to fields of models.
 
 ## Default values
 
@@ -40,7 +40,7 @@ class User(BaseModel):
 
 ## Using `Annotated`
 
-The `Field` function can also be used together with `Annotated`.
+The [`Field`][pydantic.fields.Field] function can also be used together with [`Annotated`][annotated].
 
 ```py
 from uuid import uuid4
@@ -53,6 +53,11 @@ from pydantic import BaseModel, Field
 class User(BaseModel):
     id: Annotated[str, Field(default_factory=lambda: uuid4().hex)]
 ```
+
+!!! note
+    Defaults can be set outside [`Annotated`][annotated] as the assigned value or with `Field.default_factory` inside
+    [`Annotated`][annotated]. The `Field.default` argument is not supported inside [`Annotated`][annotated].
+
 
 ## Field aliases
 
@@ -68,7 +73,7 @@ The `alias` parameter is used for both validation _and_ serialization. If you wa
 _different_ aliases for validation and serialization respectively, you can use the`validation_alias`
 and `serialization_alias` parameters, which will apply only in their respective use cases.
 
-Here is some example usage of the `alias` parameter:
+Here is an example of using the `alias` parameter:
 
 ```py
 from pydantic import BaseModel, Field
@@ -180,9 +185,10 @@ print(user.model_dump(by_alias=True))  # (2)!
     user = User(name='johndoe')  # (1)!
     ```
 
-    2. VSCode will show a warning here.
+    1. VSCode will show a warning here.
 
-    To "trick" VSCode into preferring the field name, you can use the `str` function to wrap the alias value:
+    To "trick" VSCode into preferring the field name, you can use the `str` function to wrap the alias value.
+    With this approach, though, a warning is shown when instantiating a model using the alias for the field:
 
     ```py
     from pydantic import BaseModel, ConfigDict, Field
@@ -191,10 +197,17 @@ print(user.model_dump(by_alias=True))  # (2)!
     class User(BaseModel):
         model_config = ConfigDict(populate_by_name=True)
 
-        name: str = Field(..., alias='username')
+        name: str = Field(..., alias=str('username'))  # noqa: UP018
+
+
+    user = User(name='johndoe')  # (1)!
+    user = User(username='johndoe')  # (2)!
     ```
 
-     This is discussed in more detail in [this issue](https://github.com/pydantic/pydantic/issues/5893).
+    1. Now VSCode will NOT show a warning
+    2. VSCode will show a warning here, though
+
+    This is discussed in more detail in [this issue](https://github.com/pydantic/pydantic/issues/5893).
 
     ### Validation Alias
 
@@ -232,80 +245,7 @@ print(user.model_dump(by_alias=True))  # (2)!
     [`@typing.dataclass_transform`](https://docs.python.org/3/library/typing.html#typing.dataclass_transform)
     decorator, such as Pyright.
 
-### `AliasPath` and `AliasChoices`
-
-??? api "API Documentation"
-
-    [`pydantic.fields.AliasPath`][pydantic.fields.AliasPath]<br>
-    [`pydantic.fields.AliasChoices`][pydantic.fields.AliasChoices]<br>
-
-Pydantic provides two special types for convenience when using `validation_alias`: `AliasPath` and `AliasChoices`.
-
-The `AliasPath` is used to specify a path to a field using aliases. For example:
-
-```py lint="skip"
-from pydantic import BaseModel, Field, AliasPath
-
-
-class User(BaseModel):
-    first_name: str = Field(validation_alias=AliasPath('names', 0))
-    last_name: str = Field(validation_alias=AliasPath('names', 1))
-
-user = User.model_validate({'names': ['John', 'Doe']})  # (1)!
-print(user)
-#> first_name='John' last_name='Doe'
-```
-
-1. We are using `model_validate` to validate a dictionary using the field aliases.
-
-    You can see more details about [`model_validate`][pydantic.main.BaseModel.model_validate] in the API reference.
-
-In the `'first_name'` field, we are using the alias `'names'` and the index `0` to specify the path to the first name.
-In the `'last_name'` field, we are using the alias `'names'` and the index `1` to specify the path to the last name.
-
-`AliasChoices` is used to specify a choice of aliases. For example:
-
-```py lint="skip"
-from pydantic import BaseModel, Field, AliasChoices
-
-
-class User(BaseModel):
-    first_name: str = Field(validation_alias=AliasChoices('first_name', 'fname'))
-    last_name: str = Field(validation_alias=AliasChoices('last_name', 'lname'))
-
-user = User.model_validate({'fname': 'John', 'lname': 'Doe'})  # (1)!
-print(user)
-#> first_name='John' last_name='Doe'
-user = User.model_validate({'first_name': 'John', 'lname': 'Doe'})  # (2)!
-print(user)
-#> first_name='John' last_name='Doe'
-```
-
-1. We are using the second alias choice for both fields.
-2. We are using the first alias choice for the field `'first_name'` and the second alias choice
-   for the field `'last_name'`.
-
-You can also use `AliasChoices` with `AliasPath`:
-
-```py lint="skip"
-from pydantic import BaseModel, Field, AliasPath, AliasChoices
-
-
-class User(BaseModel):
-    first_name: str = Field(validation_alias=AliasChoices('first_name', AliasPath('names', 0)))
-    last_name: str = Field(validation_alias=AliasChoices('last_name', AliasPath('names', 1)))
-
-
-user = User.model_validate({'first_name': 'John', 'last_name': 'Doe'})
-print(user)
-#> first_name='John' last_name='Doe'
-user = User.model_validate({'names': ['John', 'Doe']})
-print(user)
-#> first_name='John' last_name='Doe'
-user = User.model_validate({'names': ['John'], 'last_name': 'Doe'})
-print(user)
-#> first_name='John' last_name='Doe'
-```
+For more information on alias usage, see the [Alias] concepts page.
 
 ## Numeric Constraints
 
@@ -424,6 +364,9 @@ positive=1 non_negative=0 negative=-1 non_positive=0 even=2 love_for_pydantic=in
 
 ## String Constraints
 
+??? api "API Documentation"
+    [`pydantic.types.StringConstraints`][pydantic.types.StringConstraints]<br>
+
 There are fields that can be used to constrain strings:
 
 * `min_length`: Minimum length of the string.
@@ -516,6 +459,7 @@ print(foo)
 
 There are fields that can be used to constrain dataclasses:
 
+* `init`: Whether the field should be included in the `__init__` of the dataclass.
 * `init_var`: Whether the field should be seen as an [init-only field] in the dataclass.
 * `kw_only`: Whether the field should be a keyword-only argument in the constructor of the dataclass.
 
@@ -593,7 +537,10 @@ print(user)
 ## Discriminator
 
 The parameter `discriminator` can be used to control the field that will be used to discriminate between different
-models in a union.
+models in a union. It takes either the name of a field or a `Discriminator` instance. The `Discriminator`
+approach can be useful when the discriminator fields aren't the same for all the models in the `Union`.
+
+The following example shows how to use `discriminator` with a field name:
 
 ```py requires="3.8"
 from typing import Literal, Union
@@ -621,11 +568,51 @@ print(Model.model_validate({'pet': {'pet_type': 'cat', 'age': 12}}))  # (1)!
 
 1. See more about [Helper Functions] in the [Models] page.
 
-See the [Discriminated Unions] for more details.
+The following example shows how to use the `discriminator` keyword argument with a `Discriminator` instance:
+
+```py requires="3.8"
+from typing import Literal, Union
+
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, Discriminator, Field, Tag
+
+
+class Cat(BaseModel):
+    pet_type: Literal['cat']
+    age: int
+
+
+class Dog(BaseModel):
+    pet_kind: Literal['dog']
+    age: int
+
+
+def pet_discriminator(v):
+    if isinstance(v, dict):
+        return v.get('pet_type', v.get('pet_kind'))
+    return getattr(v, 'pet_type', getattr(v, 'pet_kind', None))
+
+
+class Model(BaseModel):
+    pet: Union[Annotated[Cat, Tag('cat')], Annotated[Dog, Tag('dog')]] = Field(
+        discriminator=Discriminator(pet_discriminator)
+    )
+
+
+print(repr(Model.model_validate({'pet': {'pet_type': 'cat', 'age': 12}})))
+#> Model(pet=Cat(pet_type='cat', age=12))
+
+print(repr(Model.model_validate({'pet': {'pet_kind': 'dog', 'age': 12}})))
+#> Model(pet=Dog(pet_kind='dog', age=12))
+```
+
+You can also take advantage of `Annotated` to define your discriminated unions.
+See the [Discriminated Unions] docs for more details.
 
 ## Strict Mode
 
-The `strict` parameter on a `Field` specifies whether the field should be validated in "strict mode".
+The `strict` parameter on a [`Field`][pydantic.fields.Field] specifies whether the field should be validated in "strict mode".
 In strict mode, Pydantic throws an error during validation instead of coercing data on the field where `strict=True`.
 
 ```py
@@ -651,7 +638,7 @@ See [Conversion Table](conversion_table.md) for more details on how Pydantic con
 
 ## Immutability
 
-The parameter `frozen` is used to emulate the [frozen dataclass] behaviour. It is used to prevent the field from being
+The parameter `frozen` is used to emulate the frozen dataclass behaviour. It is used to prevent the field from being
 assigned a new value after the model is created (immutability).
 
 See the [frozen dataclass documentation] for more details.
@@ -707,70 +694,54 @@ See the [Serialization] section for more details.
 
 ## Customizing JSON Schema
 
-There are fields that exclusively to customise the generated JSON Schema:
+Some field parameters are used exclusively to customize the generated JSON schema. The parameters in question are:
 
-* `title`: The title of the field.
-* `description`: The description of the field.
-* `examples`: The examples of the field.
-* `json_schema_extra`: Extra JSON Schema properties to be added to the field.
+* `title`
+* `description`
+* `examples`
+* `json_schema_extra`
+
+Read more about JSON schema customization / modification with fields in the [Customizing JSON Schema] section of the JSON schema docs.
+
+## The `computed_field` decorator
+
+??? api "API Documentation"
+    [`pydantic.fields.computed_field`][pydantic.fields.computed_field]<br>
+
+The `computed_field` decorator can be used to include `property` or `cached_property` attributes when serializing a
+model or dataclass. This can be useful for fields that are computed from other fields, or for fields that
+are expensive to computed (and thus, are cached).
 
 Here's an example:
 
 ```py
-from pydantic import BaseModel, EmailStr, Field, SecretStr
+from pydantic import BaseModel, computed_field
 
 
-class User(BaseModel):
-    age: int = Field(description='Age of the user')
-    email: EmailStr = Field(examples=['marcelo@mail.com'])
-    name: str = Field(title='Username')
-    password: SecretStr = Field(
-        json_schema_extra={
-            'title': 'Password',
-            'description': 'Password of the user',
-            'examples': ['123456'],
-        }
-    )
+class Box(BaseModel):
+    width: float
+    height: float
+    depth: float
+
+    @computed_field
+    def volume(self) -> float:
+        return self.width * self.height * self.depth
 
 
-print(User.model_json_schema())
-"""
-{
-    'properties': {
-        'age': {
-            'description': 'Age of the user',
-            'title': 'Age',
-            'type': 'integer',
-        },
-        'email': {
-            'examples': ['marcelo@mail.com'],
-            'format': 'email',
-            'title': 'Email',
-            'type': 'string',
-        },
-        'name': {'title': 'Username', 'type': 'string'},
-        'password': {
-            'description': 'Password of the user',
-            'examples': ['123456'],
-            'format': 'password',
-            'title': 'Password',
-            'type': 'string',
-            'writeOnly': True,
-        },
-    },
-    'required': ['age', 'email', 'name', 'password'],
-    'title': 'User',
-    'type': 'object',
-}
-"""
+b = Box(width=1, height=2, depth=3)
+print(b.model_dump())
+#> {'width': 1.0, 'height': 2.0, 'depth': 3.0, 'volume': 6.0}
 ```
 
 
 [JSON Schema Draft 2020-12]: https://json-schema.org/understanding-json-schema/reference/numeric.html#numeric-types
-[Discriminated Unions]: ../api/standard_library_types.md#discriminated-unions-aka-tagged-unions
+[Discriminated Unions]: ../concepts/unions.md#discriminated-unions
 [Helper Functions]: models.md#helper-functions
 [Models]: models.md
 [init-only field]: https://docs.python.org/3/library/dataclasses.html#init-only-variables
 [frozen dataclass documentation]: https://docs.python.org/3/library/dataclasses.html#frozen-instances
 [Validate Assignment]: models.md#validate-assignment
 [Serialization]: serialization.md#model-and-field-level-include-and-exclude
+[Customizing JSON Schema]: json_schema.md#field-level-customization
+[annotated]: https://docs.python.org/3/library/typing.html#typing.Annotated
+[Alias]: ../concepts/alias.md

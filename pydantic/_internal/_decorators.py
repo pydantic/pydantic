@@ -3,7 +3,7 @@ from __future__ import annotations as _annotations
 
 from collections import deque
 from dataclasses import dataclass, field
-from functools import partial, partialmethod
+from functools import cached_property, partial, partialmethod
 from inspect import Parameter, Signature, isdatadescriptor, ismethoddescriptor, signature
 from itertools import islice
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Iterable, TypeVar, Union
@@ -12,19 +12,13 @@ from pydantic_core import PydanticUndefined, core_schema
 from typing_extensions import Literal, TypeAlias, is_typeddict
 
 from ..errors import PydanticUserError
-from ..fields import ComputedFieldInfo
 from ._core_utils import get_type_ref
 from ._internal_dataclass import slots_true
 from ._typing_extra import get_function_type_hints
 
 if TYPE_CHECKING:
+    from ..fields import ComputedFieldInfo
     from ..functional_validators import FieldValidatorModes
-
-try:
-    from functools import cached_property  # type: ignore
-except ImportError:
-    # python 3.7
-    cached_property = None
 
 
 @dataclass(**slots_true)
@@ -140,7 +134,7 @@ class ModelValidatorDecoratorInfo:
     mode: Literal['wrap', 'before', 'after']
 
 
-DecoratorInfo = Union[
+DecoratorInfo: TypeAlias = """Union[
     ValidatorDecoratorInfo,
     FieldValidatorDecoratorInfo,
     RootValidatorDecoratorInfo,
@@ -148,7 +142,7 @@ DecoratorInfo = Union[
     ModelSerializerDecoratorInfo,
     ModelValidatorDecoratorInfo,
     ComputedFieldInfo,
-]
+]"""
 
 ReturnType = TypeVar('ReturnType')
 DecoratedType: TypeAlias = (
@@ -194,7 +188,7 @@ class PydanticDescriptorProxy(Generic[ReturnType]):
 
     def __set_name__(self, instance: Any, name: str) -> None:
         if hasattr(self.wrapped, '__set_name__'):
-            self.wrapped.__set_name__(instance, name)
+            self.wrapped.__set_name__(instance, name)  # pyright: ignore[reportFunctionMemberAccess]
 
     def __getattr__(self, __name: str) -> Any:
         """Forward checks for __isabstractmethod__ and such."""
@@ -488,6 +482,8 @@ class DecoratorInfos:
                         model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
                     )
                 else:
+                    from ..fields import ComputedFieldInfo
+
                     isinstance(var_value, ComputedFieldInfo)
                     res.computed_fields[var_name] = Decorator.build(
                         model_dc, cls_var_name=var_name, shim=None, info=info
@@ -723,17 +719,10 @@ def unwrap_wrapped_function(
     Returns:
         The underlying function of the wrapped function.
     """
-    all: set[Any] = {property}
+    all: set[Any] = {property, cached_property}
 
     if unwrap_partial:
         all.update({partial, partialmethod})
-
-    try:
-        from functools import cached_property  # type: ignore
-    except ImportError:
-        cached_property = type('', (), {})
-    else:
-        all.add(cached_property)
 
     if unwrap_class_static_method:
         all.update({staticmethod, classmethod})

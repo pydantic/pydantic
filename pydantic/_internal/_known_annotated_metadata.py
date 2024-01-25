@@ -5,12 +5,10 @@ from copy import copy
 from functools import partial
 from typing import TYPE_CHECKING, Any, Callable, Iterable
 
-import annotated_types as at
 from pydantic_core import CoreSchema, PydanticCustomError, to_jsonable_python
 from pydantic_core import core_schema as cs
 
-from . import _validators
-from ._fields import PydanticGeneralMetadata, PydanticMetadata
+from ._fields import PydanticMetadata
 
 if TYPE_CHECKING:
     from ..annotated_handlers import GetJsonSchemaHandler
@@ -33,10 +31,12 @@ GENERATOR_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT}
 FLOAT_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
 INT_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
 BOOL_CONSTRAINTS = STRICT
+UUID_CONSTRAINTS = STRICT
 
 DATE_TIME_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
 TIMEDELTA_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
 TIME_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
+LAX_OR_STRICT_CONSTRAINTS = STRICT
 
 UNION_CONSTRAINTS = {'union_mode'}
 URL_CONSTRAINTS = {
@@ -85,6 +85,10 @@ for constraint in URL_CONSTRAINTS:
     CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('url', 'multi-host-url'))
 for constraint in BOOL_CONSTRAINTS:
     CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('bool',))
+for constraint in UUID_CONSTRAINTS:
+    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('uuid',))
+for constraint in LAX_OR_STRICT_CONSTRAINTS:
+    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('lax-or-strict',))
 
 
 def add_js_update_schema(s: cs.CoreSchema, f: Callable[[], dict[str, Any]]) -> None:
@@ -128,6 +132,8 @@ def expand_grouped_metadata(annotations: Iterable[Any]) -> Iterable[Any]:
         #> [Ge(ge=4), MinLen(min_length=5)]
         ```
     """
+    import annotated_types as at
+
     from pydantic.fields import FieldInfo  # circular import
 
     for annotation in annotations:
@@ -166,6 +172,10 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
     Raises:
         PydanticCustomError: If `Predicate` fails.
     """
+    import annotated_types as at
+
+    from . import _validators
+
     schema = schema.copy()
     schema_update, other_metadata = collect_known_metadata([annotation])
     schema_type = schema['type']
@@ -343,17 +353,15 @@ def collect_known_metadata(annotations: Iterable[Any]) -> tuple[dict[str, Any], 
         #> ({'gt': 1, 'min_length': 42}, [Ellipsis])
         ```
     """
+    import annotated_types as at
+
     annotations = expand_grouped_metadata(annotations)
 
     res: dict[str, Any] = {}
     remaining: list[Any] = []
     for annotation in annotations:
-        # Do we really want to consume any `BaseMetadata`?
-        # It does let us give a better error when there is an annotation that doesn't apply
-        # But it seems dangerous!
-        if isinstance(annotation, PydanticGeneralMetadata):
-            res.update(annotation.__dict__)
-        elif isinstance(annotation, PydanticMetadata):
+        # isinstance(annotation, PydanticMetadata) also covers ._fields:_PydanticGeneralMetadata
+        if isinstance(annotation, PydanticMetadata):
             res.update(annotation.__dict__)
         # we don't use dataclasses.asdict because that recursively calls asdict on the field values
         elif isinstance(annotation, at.MinLen):

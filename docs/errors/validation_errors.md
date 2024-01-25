@@ -365,6 +365,31 @@ except ValidationError as exc:
 
 This error is also raised for strict fields when the input value is not an instance of `date`.
 
+## `datetime_from_date_parsing`
+
+!!! note
+    Support for this error, along with support for parsing datetimes from `yyyy-MM-DD` dates will be added in `v2.6.0`
+
+This error is raised when the input value is a string that cannot be parsed for a `datetime` field:
+
+```py
+from datetime import datetime
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: datetime
+
+
+try:
+    # there is no 13th month
+    Model(x='2023-13-01')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'datetime_from_date_parsing'
+```
+
 ## `datetime_future`
 
 This error is raised when the value provided for a `FutureDatetime` field is not in the future:
@@ -419,17 +444,18 @@ except ValidationError as exc:
 This error is raised when the value is a string that cannot be parsed for a `datetime` field:
 
 ```py
+import json
 from datetime import datetime
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 
 class Model(BaseModel):
-    x: datetime
+    x: datetime = Field(strict=True)
 
 
 try:
-    Model(x='test')
+    Model.model_validate_json(json.dumps({'x': 'not a datetime'}))
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'datetime_parsing'
@@ -715,7 +741,7 @@ except ValidationError as exc:
 
 ## `frozen_field`
 
-This error is raised when you attempt to assign a value to a field with `frozen=True`:
+This error is raised when you attempt to assign a value to a field with `frozen=True`, or to delete such a field:
 
 ```py
 from pydantic import BaseModel, Field, ValidationError
@@ -726,8 +752,15 @@ class Model(BaseModel):
 
 
 model = Model()
+
 try:
     model.x = 'test1'
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'frozen_field'
+
+try:
+    del model.x
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'frozen_field'
@@ -735,7 +768,7 @@ except ValidationError as exc:
 
 ## `frozen_instance`
 
-This error is raised when `model_config['frozen] == True` and you attempt to assign a new value to
+This error is raised when `model_config['frozen] == True` and you attempt to delete or assign a new value to
 any of the fields:
 
 ```py
@@ -749,8 +782,15 @@ class Model(BaseModel):
 
 
 m = Model(x=1)
+
 try:
     m.x = 2
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'frozen_instance'
+
+try:
+    del m.x
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'frozen_instance'
@@ -1816,6 +1856,25 @@ try:
     foo(a=2)
 except ValidationError as exc:
     print(repr(exc.errors()[1]['type']))
+    #> 'unexpected_keyword_argument'
+```
+
+It is also raised when using pydantic.dataclasses and `extra=forbid`:
+
+```py
+from pydantic import TypeAdapter, ValidationError
+from pydantic.dataclasses import dataclass
+
+
+@dataclass(config={'extra': 'forbid'})
+class Foo:
+    bar: int
+
+
+try:
+    TypeAdapter(Foo).validate_python({'bar': 1, 'foobar': 2})
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
     #> 'unexpected_keyword_argument'
 ```
 

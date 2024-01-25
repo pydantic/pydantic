@@ -1,10 +1,7 @@
-import sys
-from dataclasses import InitVar
-
 import pytest
 
 import pydantic.dataclasses
-from pydantic import BaseModel, Field, RootModel, ValidationError, fields
+from pydantic import BaseModel, Field, PydanticUserError, RootModel, ValidationError, fields
 
 
 def test_field_info_annotation_keyword_argument():
@@ -20,15 +17,18 @@ def test_field_info_annotation_keyword_argument():
     assert e.value.args == ('"annotation" is not permitted as a Field keyword argument',)
 
 
-@pytest.mark.skipif(sys.version_info >= (3, 8), reason='No error is thrown for `InitVar` for Python 3.8+')
-def test_init_var_does_not_work():
-    with pytest.raises(RuntimeError) as e:
+def test_field_info_annotated_attribute_name_clashing():
+    """This tests that `FieldInfo.from_annotated_attribute` will raise a `PydanticUserError` if attribute names clashes
+    with a type.
+    """
 
-        @pydantic.dataclasses.dataclass
-        class Model:
-            some_field: InitVar[str]
+    with pytest.raises(PydanticUserError):
 
-    assert e.value.args == ('InitVar is not supported in Python 3.7 as type information is lost',)
+        class SubModel(BaseModel):
+            a: int = 1
+
+        class Model(BaseModel):
+            SubModel: SubModel = Field()
 
 
 def test_init_var_field():

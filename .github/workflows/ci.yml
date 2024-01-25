@@ -20,9 +20,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: pdm-project/setup-pdm@v3
         with:
@@ -32,7 +32,7 @@ jobs:
 
       - name: install
         run: |
-          pdm use -f $PYTHON
+          pdm venv create --with-pip --force $PYTHON
           pdm install -G linting -G email
 
       - uses: pre-commit/action@v3.0.0
@@ -44,7 +44,7 @@ jobs:
   docs-build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - uses: pdm-project/setup-pdm@v3
       with:
@@ -56,7 +56,7 @@ jobs:
       # Because the secret for accessing the library is not accessible from forks, but we still want to run
       # this job on public CI runs.
       run: |
-        pdm venv create --with-pip $PYTHON
+        pdm venv create --with-pip --force $PYTHON
         pdm install -G docs
 
     - run: pdm run python -c 'import docs.plugins.main'
@@ -77,7 +77,7 @@ jobs:
     name: test memray
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: pdm-project/setup-pdm@v3
         with:
@@ -86,7 +86,7 @@ jobs:
 
       - name: install deps
         run: |
-          pdm use -f $PYTHON
+          pdm venv create --with-pip --force $PYTHON
           pdm install -G testing -G testing-extra -G email -G memray
           pdm add pytest-memray
 
@@ -99,13 +99,11 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu, macos, windows]
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         include:
           # no pydantic-core binaries for pypy on windows, so tests take absolute ages
           # macos tests with pypy take ages (>10mins) since pypy is very slow
           # so we only test pypy on ubuntu
-          - os: ubuntu
-            python-version: 'pypy3.7'
           - os: ubuntu
             python-version: 'pypy3.8'
           - os: ubuntu
@@ -120,7 +118,7 @@ jobs:
     runs-on: ${{ matrix.os }}-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - uses: pdm-project/setup-pdm@v3
       with:
@@ -130,7 +128,7 @@ jobs:
 
     - name: install deps
       run: |
-        pdm use -f $PYTHON
+        pdm venv create --with-pip --force $PYTHON
         pdm install -G testing -G email
 
     - run: pdm info && pdm list
@@ -157,9 +155,9 @@ jobs:
         CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-with-deps
 
     - name: store coverage files
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: coverage
+        name: coverage-${{ matrix.os }}-${{ matrix.python-version }}
         path: coverage
 
   test-fastapi:
@@ -168,10 +166,10 @@ jobs:
     name: test fastapi
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: set up python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
@@ -182,7 +180,7 @@ jobs:
     name: test pydantic plugin
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: pdm-project/setup-pdm@v3
         with:
@@ -191,7 +189,7 @@ jobs:
 
       - name: install deps
         run: |
-          pdm use -f $PYTHON
+          pdm venv create --with-pip --force $PYTHON
           pdm install -G testing
 
       - name: install example plugin
@@ -218,8 +216,6 @@ jobs:
         python-version: ['3.10']
         include:
           - mypy-version: 'lockfile'
-            python-version: '3.7'
-          - mypy-version: 'lockfile'
             python-version: '3.8'
           - mypy-version: 'lockfile'
             python-version: '3.9'
@@ -230,7 +226,7 @@ jobs:
             python-version: '3.12'
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - uses: pdm-project/setup-pdm@v3
       with:
@@ -240,16 +236,12 @@ jobs:
 
     - name: install deps
       run: |
-        pdm use -f $PYTHON
+        pdm venv create --with-pip --force $PYTHON
         pdm install -G testing -G mypy
 
     - name: install mypy
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
-        if [ ${{ matrix.mypy-version }} == '1.5.1' ]; then
-          # mypy 1.5.0 only supports 3.8 and newer, so adjust pyproject.toml
-          sed -i "s/requires-python = '>=3.7'/requires-python = '>=3.8'/g" pyproject.toml
-        fi
         if [ ${{ matrix.mypy-version }} != 'lockfile' ]; then
           pdm remove -G linting mypy && pdm remove -G mypy mypy && pdm add mypy==${{ matrix.mypy-version }}
         fi
@@ -264,12 +256,12 @@ jobs:
         CONTEXT: linux-py${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
 
     - name: install node for pyright
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: '18'
 
     - name: install pyright
-      run: npm install -g pyright@1.1.322  # try to keep this in sync with .pre-commit-config.yaml
+      run: npm install -g pyright@1.1.345  # try to keep this in sync with .pre-commit-config.yaml
 
     - name: run pyright tests
       run: make test-pyright
@@ -278,9 +270,9 @@ jobs:
         CONTEXT: linux-py${{ matrix.python-version }}-pyright
 
     - name: store coverage files
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: coverage
+        name: coverage-${{ matrix.os }}-${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
         path: coverage
 
   coverage-combine:
@@ -288,16 +280,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.8'
 
       - name: get coverage files
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: coverage
+          merge-multiple: true
+          pattern: coverage-*
           path: coverage
 
       - run: pip install coverage[toml]
@@ -308,7 +301,7 @@ jobs:
       - run: coverage html --show-contexts --title "pydantic coverage for ${{ github.sha }}"
 
       - name: Store coverage html
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-html
           path: htmlcov
@@ -322,12 +315,9 @@ jobs:
         # test the oldest supported version and main
         typing-extensions-version: ['4.6.1', 'main']
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-        include:
-          - typing-extensions-version: '4.6.1'
-            python-version: '3.7'
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - uses: pdm-project/setup-pdm@v3
       with:
@@ -337,14 +327,12 @@ jobs:
 
     - name: install deps
       run: |
-        pdm use -f $PYTHON
+        pdm venv create --with-pip --force $PYTHON
         pdm install -G testing -G email
 
     - name: install typing-extensions
       run: |
         if [ ${{ matrix.typing-extensions-version }} == 'main' ]; then
-          # typing-extensions main only supports 3.8 and newer, so adjust pyproject.toml
-          sed -i "s/requires-python = '>=3.7'/requires-python = '>=3.8'/g" pyproject.toml
           pdm remove typing-extensions && pdm add 'typing-extensions @ git+https://github.com/python/typing_extensions.git'
         else
           pdm remove typing-extensions && pdm add 'typing-extensions==${{ matrix.typing-extensions-version }}'
@@ -392,10 +380,10 @@ jobs:
       pydantic-version: ${{ steps.check-tag.outputs.VERSION }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: set up python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
@@ -421,7 +409,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
       - name: Install dependencies
