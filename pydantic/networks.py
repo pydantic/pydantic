@@ -119,7 +119,7 @@ from pydantic import BaseModel, HttpUrl, ValidationError
 class MyModel(BaseModel):
     url: HttpUrl
 
-m = MyModel(url='http://www.example.com')
+m = MyModel(url='http://www.example.com') # (1)!
 print(m.url)
 #> http://www.example.com/
 
@@ -165,6 +165,7 @@ print(m3.url)
 #> https://www.example.xn--pbt977c/
 ```
 
+1. Note: mypy would prefer `m = MyModel(url=HttpUrl('http://www.example.com'))`, but Pydantic will convert the string to an HttpUrl instance anyway.
 
 !!! warning "Underscores in Hostnames"
     In Pydantic, underscores are allowed in all parts of a domain except the TLD.
