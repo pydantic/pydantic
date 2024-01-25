@@ -2,8 +2,6 @@
 Test pydantic model type hints (annotations) and that they can be
 queried by :py:meth:`typing.get_type_hints`.
 """
-from __future__ import annotations
-
 import inspect
 from typing import (
     Any,
@@ -13,14 +11,15 @@ from typing import (
     Set,
     TypeVar,
 )
+import typing_extensions
 
 import pytest
 
-import pydantic
 from pydantic import (
     BaseModel,
     RootModel,
 )
+from pydantic.dataclasses import dataclass
 
 DEPRECATED_MODEL_MEMBERS = {
     'construct',
@@ -131,7 +130,7 @@ def test_generics():
 
 
 def test_dataclasses():
-    @pydantic.dataclasses.dataclass
+    @dataclass
     class MyDataclass:
         a: int
         b: float
