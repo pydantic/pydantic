@@ -24,6 +24,7 @@ from ..conftest import Err, PyAndJson
         ('886313e1-3b8a-5372-9b90-0c9aee199e5d', UUID('886313e1-3b8a-5372-9b90-0c9aee199e5d')),
         ('c0a8f9a8-aa5e-482b-a067-9cb3a51f5c11', UUID('c0a8f9a8-aa5e-482b-a067-9cb3a51f5c11')),
         ('00000000-8000-4000-8000-000000000000', UUID('00000000-8000-4000-8000-000000000000')),
+        ('00000000-0000-4000-0000-000000000000', UUID('00000000-0000-4000-0000-000000000000')),
         (b'\x12\x34\x56\x78' * 4, UUID('12345678-1234-5678-1234-567812345678')),
         (b'\x00\x00\x00\x00' * 4, UUID('00000000-0000-0000-0000-000000000000')),
         (b'ebcdab58-6eb8-46fb-a190-d07a33e9eac8', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
@@ -123,6 +124,8 @@ def test_uuid_strict(input_value, expected):
         # `UUID.version` makes sense for RFC 4122 UUIDs only. For non RFC 4122 UUIDs Python uses `UUID.version=None`
         ('00000000-8000-4000-8000-000000000000', 4, UUID('00000000-8000-4000-8000-000000000000')),
         (UUID('00000000-8000-4000-8000-000000000000'), 4, UUID('00000000-8000-4000-8000-000000000000')),
+        ('00000000-0000-4000-0000-000000000000', None, UUID('00000000-0000-4000-0000-000000000000')),
+        (UUID('00000000-0000-4000-0000-000000000000'), None, UUID('00000000-0000-4000-0000-000000000000')),
         ('00000000-7fff-4000-7fff-000000000000', None, UUID('00000000-7fff-4000-7fff-000000000000')),
         (UUID('00000000-7fff-4000-7fff-000000000000'), None, UUID('00000000-7fff-4000-7fff-000000000000')),
         (UUID('00000000-7fff-4000-7fff-000000000000'), 4, Err('UUID version 4 expected')),
@@ -138,6 +141,8 @@ def test_uuid_strict(input_value, expected):
         (UUID('0e7ac198-9acd-4c0c-b4b4-761974bf71d7'), 3, Err('UUID version 3 expected')),
         ('08ed0736-fb95-5cc5-85ed-37e4f3df9b29', 1, Err('UUID version 1 expected')),
         (UUID('08ed0736-fb95-5cc5-85ed-37e4f3df9b29'), 1, Err('UUID version 1 expected')),
+        ('00000000-0000-4000-0000-000000000000', 4, Err('UUID version 4 expected')),
+        (UUID('00000000-0000-4000-0000-000000000000'), 4, Err('UUID version 4 expected')),
     ],
 )
 def test_uuid_version(input_value, version, expected):
