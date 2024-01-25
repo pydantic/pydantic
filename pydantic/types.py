@@ -1471,10 +1471,13 @@ class _SecretBase(Generic[SecretType]):
         return f'{self.__class__.__name__}({self._display()!r})'
 
     def __len__(self) -> int:
-        if isinstance(self._secret_value, (str, bytes)):
-            return len(self._secret_value)
-        else:
-            raise TypeError(f"object of type '{self.__class__.__name__}' has no len()")
+        try:
+            # Preserve the len() behavior for SecretStr and SecretBytes
+            return len(self._secret_value)  # type: ignore
+        except TypeError:
+            # TODO: remove this branch when we figure out why serialization to JSON
+            # requires a length check on the field value
+            return len(str(self))
 
     def _display(self) -> str | bytes:
         raise NotImplementedError
@@ -1531,9 +1534,7 @@ class Secret(_SecretBase[SecretType]):
                     strict=strict,
                 ),
                 json_schema=json_schema,
-                serialization=core_schema.plain_serializer_function_ser_schema(
-                    str, return_schema=core_schema.str_schema(), when_used='json'
-                ),
+                serialization=core_schema.to_string_ser_schema(when_used='json'),
             )
 
         return core_schema.lax_or_strict_schema(
@@ -1596,11 +1597,9 @@ class _SecretField(_SecretBase[SecretType]):
                 ),
             )
 
-        strict = get_secret_schema(strict=True)
-        lax = get_secret_schema(strict=False)
         return core_schema.lax_or_strict_schema(
-            lax_schema=lax,
-            strict_schema=strict,
+            lax_schema=get_secret_schema(strict=False),
+            strict_schema=get_secret_schema(strict=True),
             metadata={'pydantic_js_functions': [get_json_schema]},
         )
 
