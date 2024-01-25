@@ -911,7 +911,7 @@ class ConfigDict(TypedDict, total=False):
     use_attribute_docstrings: bool
     '''
     Whether docstrings of attributes (bare string literals immediately following the attribute declaration)
-    should be used for field descriptions.
+    should be used for field descriptions. Defaults to `False`.
 
     ```py
     from pydantic import BaseModel, ConfigDict, Field
