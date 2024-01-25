@@ -5020,8 +5020,8 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
 <span class="sd">            mode: The mode in which `to_python` should run.</span>
 <span class="sd">                If mode is &#39;json&#39;, the output will only contain JSON serializable types.</span>
 <span class="sd">                If mode is &#39;python&#39;, the output may contain non-JSON-serializable Python objects.</span>
-<span class="sd">            include: A list of fields to include in the output.</span>
-<span class="sd">            exclude: A list of fields to exclude from the output.</span>
+<span class="sd">            include: A set of fields to include in the output.</span>
+<span class="sd">            exclude: A set of fields to exclude from the output.</span>
 <span class="sd">            by_alias: Whether to use the field&#39;s alias in the dictionary key if defined.</span>
 <span class="sd">            exclude_unset: Whether to exclude fields that have not been explicitly set.</span>
 <span class="sd">            exclude_defaults: Whether to exclude fields that are set to their default value.</span>
@@ -6783,7 +6783,7 @@ If mode is 'python', the output may contain non-JSON-serializable Python objects
           </td>
           <td>
             <div class="doc-md-description">
-              <p>A list of fields to include in the output.</p>
+              <p>A set of fields to include in the output.</p>
             </div>
           </td>
           <td>
@@ -6797,7 +6797,7 @@ If mode is 'python', the output may contain non-JSON-serializable Python objects
           </td>
           <td>
             <div class="doc-md-description">
-              <p>A list of fields to exclude from the output.</p>
+              <p>A set of fields to exclude from the output.</p>
             </div>
           </td>
           <td>
@@ -6982,8 +6982,8 @@ If mode is 'python', the output may contain non-JSON-serializable Python objects
 <span class="sd">        mode: The mode in which `to_python` should run.</span>
 <span class="sd">            If mode is &#39;json&#39;, the output will only contain JSON serializable types.</span>
 <span class="sd">            If mode is &#39;python&#39;, the output may contain non-JSON-serializable Python objects.</span>
-<span class="sd">        include: A list of fields to include in the output.</span>
-<span class="sd">        exclude: A list of fields to exclude from the output.</span>
+<span class="sd">        include: A set of fields to include in the output.</span>
+<span class="sd">        exclude: A set of fields to exclude from the output.</span>
 <span class="sd">        by_alias: Whether to use the field&#39;s alias in the dictionary key if defined.</span>
 <span class="sd">        exclude_unset: Whether to exclude fields that have not been explicitly set.</span>
 <span class="sd">        exclude_defaults: Whether to exclude fields that are set to their default value.</span>
