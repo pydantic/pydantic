@@ -31,6 +31,11 @@ def sequence_validator(
             {'type_name': value_type.__name__},
         )
 
+    # TODO: refactor sequence validation to validate with either a list or a tuple
+    # schema, depending on the type of the value.
+    # Additionally, we should be able to remove one of either this validator or the
+    # SequenceValidator in _std_types_schema.py (preferably this one, while porting over some logic).
+    # Effectively, a refactor for sequence validation is needed.
     if value_type == tuple:
         __input_value = list(__input_value)
 
