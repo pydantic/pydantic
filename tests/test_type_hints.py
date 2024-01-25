@@ -2,6 +2,8 @@
 Test pydantic model type hints (annotations) and that they can be
 queried by :py:meth:`typing.get_type_hints`.
 """
+from __future__ import annotations
+
 import inspect
 from typing import (
     Any,
@@ -13,7 +15,6 @@ from typing import (
 )
 
 import pytest
-import typing_extensions
 
 import pydantic
 from pydantic import (
@@ -83,6 +84,7 @@ def inspect_type_hints(
 
             if inspect.isclass(member_obj) or inspect.isfunction(member_obj):
                 # Inspect all child members (can"t exclude specific ones)
+                print(f'Inspecting {obj_type}.{member_name}')  # Add this line
                 inspect_type_hints(member_obj, recursion_limit=recursion_limit - 1)
 
 
@@ -117,7 +119,6 @@ def test_root_model_as_field():
 
     inspect_type_hints(MyRootModel, None, DEPRECATED_MODEL_MEMBERS)
     inspect_type_hints(MyModel, None, DEPRECATED_MODEL_MEMBERS)
-
 
 def test_generics():
     data_type = TypeVar('data_type')
