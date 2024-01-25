@@ -2016,6 +2016,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.use_attribute_docstrings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        use_attribute_docstrings
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3703,6 +3714,17 @@
     <span class="md-ellipsis">
       
         validation_error_cause
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.use_attribute_docstrings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        use_attribute_docstrings
       
     </span>
   </a>
@@ -5445,7 +5467,7 @@ from being added to the definition references.</p>
 
   <div class="doc doc-contents ">
   
-      <p>The regex engine to used for pattern validation
+      <p>The regex engine to be used for pattern validation.
 Defaults to <code>'rust-regex'</code>.</p>
 <ul>
 <li><code>rust-regex</code> uses the <a href="https://docs.rs/regex"><code>regex</code></a> Rust crate,
@@ -5500,7 +5522,7 @@ Defaults to <code>'rust-regex'</code>.</p>
 
   <div class="doc doc-contents ">
   
-      <p>If <code>True</code>, python exceptions that were part of a validation failure will be shown as an exception group as a cause. Can be useful for debugging. Defaults to <code>False</code>.</p>
+      <p>If <code>True</code>, Python exceptions that were part of a validation failure will be shown as an exception group as a cause. Can be useful for debugging. Defaults to <code>False</code>.</p>
 
 <details class="note" open>
   <summary>Note</summary>
@@ -5508,8 +5530,66 @@ Defaults to <code>'rust-regex'</code>.</p>
 </details>
 <details class="note" open>
   <summary>Note</summary>
-  <p>The structure of validation errors are likely to change in future pydantic versions. Pydantic offers no guarantees about the structure of validation errors. Should be used for visual traceback debugging only.</p>
+  <p>The structure of validation errors are likely to change in future Pydantic versions. Pydantic offers no guarantees about their structure. Should be used for visual traceback debugging only.</p>
 </details>  </div>
+
+</div>
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic.config.ConfigDict.use_attribute_docstrings" class="doc doc-heading">
+          <span class="doc doc-object-name doc-attribute-name">use_attribute_docstrings</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#pydantic.config.ConfigDict.use_attribute_docstrings" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">use_attribute_docstrings</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Whether docstrings of attributes (bare string literals immediately following the attribute declaration)
+should be used for field descriptions.</p>
+<p><div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">use_attribute_docstrings</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">x</span><span class="p">:</span> <span class="nb">str</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Example of an attribute docstring</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">y</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Description in Field&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Description in Field overrides attribute docstring</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_fields</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">description</span><span class="p">)</span>
+<span class="c1"># &gt; Example of an attribute docstring</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_fields</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">description</span><span class="p">)</span>
+<span class="c1"># &gt; Description in Field</span>
+</code></pre></div>
+This requires the source code of the class to be available at runtime.</p>
+<div class="admonition warning">
+<p class="admonition-title">Usage with <code>TypedDict</code></p>
+<p>Due to current limitations, attribute docstrings detection may not work as expected when using <code>TypedDict</code>
+(in particular when multiple <code>TypedDict</code> classes have the same name in the same source file). The behavior
+can be different depending on the Python version used.</p>
+</div>
+  </div>
 
 </div>
 
