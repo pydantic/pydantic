@@ -400,6 +400,8 @@ Validation can also be performed on the entire model's data using `@model_valida
 ```py
 from typing import Any
 
+from typing_extensions import Self
+
 from pydantic import BaseModel, ValidationError, model_validator
 
 
@@ -418,7 +420,7 @@ class UserModel(BaseModel):
         return data
 
     @model_validator(mode='after')
-    def check_passwords_match(self) -> 'UserModel':
+    def check_passwords_match(self) -> Self:
         pw1 = self.password1
         pw2 = self.password2
         if pw1 is not None and pw2 is not None and pw1 != pw2:

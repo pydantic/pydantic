@@ -119,7 +119,7 @@ from pydantic import BaseModel, HttpUrl, ValidationError
 class MyModel(BaseModel):
     url: HttpUrl
 
-m = MyModel(url='http://www.example.com') # (1)!
+m = MyModel(url='http://www.example.com')  # (1)!
 print(m.url)
 #> http://www.example.com/
 
