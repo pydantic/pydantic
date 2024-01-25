@@ -5,6 +5,7 @@ use pyo3::prelude::*;
 use pyo3::sync::GILOnceCell;
 use pyo3::types::{PyDict, PyType};
 use uuid::Uuid;
+use uuid::Variant;
 
 use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
@@ -125,6 +126,20 @@ impl Validator for UuidValidator {
                 state.floor_exactness(Exactness::Lax);
             }
             let uuid = self.get_uuid(input)?;
+            // This block checks if the UUID version matches the expected version and
+            // if the UUID variant conforms to RFC 4122. When dealing with Python inputs,
+            // UUIDs must adhere to RFC 4122 standards.
+            if let Some(expected_version) = self.version {
+                if uuid.get_version_num() != expected_version || uuid.get_variant() != Variant::RFC4122 {
+                    return Err(ValError::new(
+                        ErrorType::UuidVersion {
+                            expected_version,
+                            context: None,
+                        },
+                        input,
+                    ));
+                }
+            }
             self.create_py_uuid(py, class, &uuid)
         }
     }
