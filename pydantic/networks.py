@@ -144,6 +144,8 @@ except ValidationError as e:
     '''
 ```
 
+1. Note: mypy would prefer `m = MyModel(url=HttpUrl('http://www.example.com'))`, but Pydantic will convert the string to an HttpUrl instance anyway.
+
 "International domains" (e.g. a URL where the host or TLD includes non-ascii characters) will be encoded via
 [punycode](https://en.wikipedia.org/wiki/Punycode) (see
 [this article](https://www.xudongz.com/blog/2017/idn-phishing/) for a good description of why this is important):
@@ -165,7 +167,6 @@ print(m3.url)
 #> https://www.example.xn--pbt977c/
 ```
 
-1. Note: mypy would prefer `m = MyModel(url=HttpUrl('http://www.example.com'))`, but Pydantic will convert the string to an HttpUrl instance anyway.
 
 !!! warning "Underscores in Hostnames"
     In Pydantic, underscores are allowed in all parts of a domain except the TLD.
