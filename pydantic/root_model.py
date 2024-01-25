@@ -138,9 +138,9 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType], metaclass=_RootMod
 
             See the documentation of `BaseModel.model_dump` for more details about the arguments.
 
-            Generally, this method will return `RootModelRootType`, assuming that `RootModelRootType` is
+            Generally, this method will have a return type of `RootModelRootType`, assuming that `RootModelRootType` is
             not a `BaseModel` subclass. If `RootModelRootType` is a `BaseModel` subclass, then the return
-            value will likely be `dict[str, Any]`, as `model_dump` calls are recursive. The return type could
+            type will likely be `dict[str, Any]`, as `model_dump` calls are recursive. The return type could
             even be something different, in the case of a custom serializer on a `BaseModel` subclass.
             Thus, `Any` is used here to catch all of these cases.
             """
