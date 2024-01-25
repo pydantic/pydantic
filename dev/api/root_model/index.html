@@ -3239,6 +3239,11 @@
       <p>This method is included just to get a more accurate return type for type checkers.
 It is included in this <code>if TYPE_CHECKING:</code> block since no override is actually necessary.</p>
 <p>See the documentation of <code>BaseModel.model_dump</code> for more details about the arguments.</p>
+<p>Generally, this method will have a return type of <code>RootModelRootType</code>, assuming that <code>RootModelRootType</code> is
+not a <code>BaseModel</code> subclass. If <code>RootModelRootType</code> is a <code>BaseModel</code> subclass, then the return
+type will likely be <code>dict[str, Any]</code>, as <code>model_dump</code> calls are recursive. The return type could
+even be something different, in the case of a custom serializer.
+Thus, <code>Any</code> is used here to catch all of these cases.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/root_model.py</code></summary>
@@ -3260,7 +3265,13 @@ It is included in this <code>if TYPE_CHECKING:</code> block since no override is
 <span class="normal">138</span>
 <span class="normal">139</span>
 <span class="normal">140</span>
-<span class="normal">141</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_dump</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_dump</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="s1">&#39;python&#39;</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;python&#39;</span><span class="p">,</span>
@@ -3272,11 +3283,17 @@ It is included in this <code>if TYPE_CHECKING:</code> block since no override is
     <span class="n">exclude_none</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">round_trip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RootModelRootType</span><span class="p">:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;This method is included just to get a more accurate return type for type checkers.</span>
 <span class="sd">    It is included in this `if TYPE_CHECKING:` block since no override is actually necessary.</span>
 
 <span class="sd">    See the documentation of `BaseModel.model_dump` for more details about the arguments.</span>
+
+<span class="sd">    Generally, this method will have a return type of `RootModelRootType`, assuming that `RootModelRootType` is</span>
+<span class="sd">    not a `BaseModel` subclass. If `RootModelRootType` is a `BaseModel` subclass, then the return</span>
+<span class="sd">    type will likely be `dict[str, Any]`, as `model_dump` calls are recursive. The return type could</span>
+<span class="sd">    even be something different, in the case of a custom serializer.</span>
+<span class="sd">    Thus, `Any` is used here to catch all of these cases.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="o">...</span>
 </code></pre></div></td></tr></table></div>

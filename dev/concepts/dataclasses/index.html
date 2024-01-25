@@ -3446,6 +3446,8 @@ In this case you can simply add <code>arbitrary_types_allowed</code> in the conf
 with the help of the <a href="../validators/#model-validators"><code>@model_validator</code></a> decorator <code>mode</code> parameter.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span>
 
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Self</span>
+
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">model_validator</span>
 <span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 
@@ -3470,7 +3472,7 @@ with the help of the <a href="../validators/#model-validators"><code>@model_vali
         <span class="k">return</span> <span class="n">values</span>
 
     <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;after&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">post_root</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;User&#39;</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">post_root</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Third: </span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="c1">#&gt; Third: User(birth=Birth(year=1995, month=3, day=2))</span>
         <span class="k">return</span> <span class="bp">self</span>

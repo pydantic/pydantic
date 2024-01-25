@@ -3433,7 +3433,7 @@ the types export the following properties:</p>
 <span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">url</span><span class="p">:</span> <span class="n">HttpUrl</span>
 
-<span class="n">m</span> <span class="o">=</span> <span class="n">MyModel</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">&#39;http://www.example.com&#39;</span><span class="p">)</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">MyModel</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">&#39;http://www.example.com&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">url</span><span class="p">)</span>
 <span class="c1">#&gt; http://www.example.com/</span>
 
@@ -3457,6 +3457,9 @@ the types export the following properties:</p>
 <span class="sd">      Input should be a valid URL, relative URL without a base [type=url_parsing, input_value=&#39;not a url&#39;, input_type=str]</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 </code></pre></div>
+<ol>
+<li>Note: mypy would prefer <code>m = MyModel(url=HttpUrl('http://www.example.com'))</code>, but Pydantic will convert the string to an HttpUrl instance anyway.</li>
+</ol>
 <p>"International domains" (e.g. a URL where the host or TLD includes non-ascii characters) will be encoded via
 <a href="https://en.wikipedia.org/wiki/Punycode">punycode</a> (see
 <a href="https://www.xudongz.com/blog/2017/idn-phishing/">this article</a> for a good description of why this is important):</p>
@@ -4154,9 +4157,9 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 
                 <details class="quote">
                   <summary>Source code in <code>pydantic/networks.py</code></summary>
-                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">458</span>
-<span class="normal">459</span>
-<span class="normal">460</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">email</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">email</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">email</span> <span class="o">=</span> <span class="n">email</span>
 </code></pre></div></td></tr></table></div>
@@ -4350,9 +4353,7 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 </details>
           <details class="quote">
             <summary>Source code in <code>pydantic/networks.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">667</span>
-<span class="normal">668</span>
-<span class="normal">669</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">669</span>
 <span class="normal">670</span>
 <span class="normal">671</span>
 <span class="normal">672</span>
@@ -4388,7 +4389,9 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 <span class="normal">702</span>
 <span class="normal">703</span>
 <span class="normal">704</span>
-<span class="normal">705</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_email</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="normal">705</span>
+<span class="normal">706</span>
+<span class="normal">707</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_email</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Email address validation using [email-validator](https://pypi.org/project/email-validator/).</span>
 
 <span class="sd">    Note:</span>
