@@ -866,7 +866,7 @@ class ConfigDict(TypedDict, total=False):
 
     regex_engine: Literal['rust-regex', 'python-re']
     """
-    The regex engine to used for pattern validation
+    The regex engine to be used for pattern validation.
     Defaults to `'rust-regex'`.
 
     - `rust-regex` uses the [`regex`](https://docs.rs/regex) Rust crate,
@@ -899,14 +899,50 @@ class ConfigDict(TypedDict, total=False):
 
     validation_error_cause: bool
     """
-    If `True`, python exceptions that were part of a validation failure will be shown as an exception group as a cause. Can be useful for debugging. Defaults to `False`.
+    If `True`, Python exceptions that were part of a validation failure will be shown as an exception group as a cause. Can be useful for debugging. Defaults to `False`.
 
     Note:
         Python 3.10 and older don't support exception groups natively. <=3.10, backport must be installed: `pip install exceptiongroup`.
 
     Note:
-        The structure of validation errors are likely to change in future pydantic versions. Pydantic offers no guarantees about the structure of validation errors. Should be used for visual traceback debugging only.
+        The structure of validation errors are likely to change in future Pydantic versions. Pydantic offers no guarantees about their structure. Should be used for visual traceback debugging only.
     """
+
+    use_attribute_docstrings: bool
+    '''
+    Whether docstrings of attributes (bare string literals immediately following the attribute declaration)
+    should be used for field descriptions.
+
+    ```py
+    from pydantic import BaseModel, ConfigDict, Field
+
+
+    class Model(BaseModel):
+        model_config = ConfigDict(use_attribute_docstrings=True)
+
+        x: str
+        """
+        Example of an attribute docstring
+        """
+
+        y: int = Field(description="Description in Field")
+        """
+        Description in Field overrides attribute docstring
+        """
+
+
+    print(Model.model_fields["x"].description)
+    # > Example of an attribute docstring
+    print(Model.model_fields["y"].description)
+    # > Description in Field
+    ```
+    This requires the source code of the class to be available at runtime.
+
+    !!! warning "Usage with `TypedDict`"
+        Due to current limitations, attribute docstrings detection may not work as expected when using `TypedDict`
+        (in particular when multiple `TypedDict` classes have the same name in the same source file). The behavior
+        can be different depending on the Python version used.
+    '''
 
 
 __getattr__ = getattr_migration(__name__)

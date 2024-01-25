@@ -14,6 +14,7 @@ from pydantic.errors import PydanticUserError
 
 from . import _typing_extra
 from ._config import ConfigWrapper
+from ._docs_extraction import extract_docstrings_from_cls
 from ._repr import Representation
 from ._typing_extra import get_cls_type_hints_lenient, get_type_hints, is_classvar, is_finalvar
 
@@ -85,6 +86,14 @@ def _general_metadata_cls() -> type[BaseMetadata]:
             self.__dict__ = metadata
 
     return _PydanticGeneralMetadata  # type: ignore
+
+
+def _update_fields_from_docstrings(cls: type[Any], fields: dict[str, FieldInfo], config_wrapper: ConfigWrapper) -> None:
+    if config_wrapper.use_attribute_docstrings:
+        fields_docs = extract_docstrings_from_cls(cls)
+        for ann_name, field_info in fields.items():
+            if field_info.description is None and ann_name in fields_docs:
+                field_info.description = fields_docs[ann_name]
 
 
 def collect_model_fields(  # noqa: C901
@@ -231,6 +240,8 @@ def collect_model_fields(  # noqa: C901
         for field in fields.values():
             field.apply_typevars_map(typevars_map, types_namespace)
 
+    _update_fields_from_docstrings(cls, fields, config_wrapper)
+
     return fields, class_vars
 
 
@@ -248,7 +259,11 @@ def _is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:
 
 
 def collect_dataclass_fields(
-    cls: type[StandardDataclass], types_namespace: dict[str, Any] | None, *, typevars_map: dict[Any, Any] | None = None
+    cls: type[StandardDataclass],
+    types_namespace: dict[str, Any] | None,
+    *,
+    typevars_map: dict[Any, Any] | None = None,
+    config_wrapper: ConfigWrapper | None = None,
 ) -> dict[str, FieldInfo]:
     """Collect the fields of a dataclass.
 
@@ -256,6 +271,7 @@ def collect_dataclass_fields(
         cls: dataclass.
         types_namespace: Optional extra namespace to look for types in.
         typevars_map: A dictionary mapping type variables to their concrete types.
+        config_wrapper: The config wrapper instance.
 
     Returns:
         The dataclass fields.
@@ -307,6 +323,9 @@ def collect_dataclass_fields(
     if typevars_map:
         for field in fields.values():
             field.apply_typevars_map(typevars_map, types_namespace)
+
+    if config_wrapper is not None:
+        _update_fields_from_docstrings(cls, fields, config_wrapper)
 
     return fields
 
