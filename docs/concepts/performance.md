@@ -7,7 +7,7 @@ In most cases Pydantic won't be your bottle neck, only follow this if you're sur
 On `model_validate(json.loads(...))`, the JSON is parsed in Python, then converted to a dict, then it's validated internally.
 On the other hand, `model_validate_json()` already performs the validation internally.
 
-There are a few cases where `model_validate(json.loads(...))` may be faster. Specifically, when using a `'before'` validator
+There are a few cases where `model_validate(json.loads(...))` may be faster. Specifically, when using a `'before'` or `'wrap'` validator
 on a model, validation may be faster with the two step method. You can read more about these special cases in
 [this discussion](https://github.com/pydantic/pydantic/discussions/6388#discussioncomment-8193105).
 
