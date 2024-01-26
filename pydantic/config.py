@@ -1,7 +1,7 @@
 """Configuration for Pydantic models."""
 from __future__ import annotations as _annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, TypeVar, Union
 
 from typing_extensions import Literal, TypeAlias, TypedDict
 
@@ -11,7 +11,7 @@ from .aliases import AliasGenerator
 if TYPE_CHECKING:
     from ._internal._generate_schema import GenerateSchema as _GenerateSchema
 
-__all__ = ('ConfigDict',)
+__all__ = ('ConfigDict', 'with_config')
 
 
 JsonValue: TypeAlias = Union[int, float, str, bool, None, List['JsonValue'], 'JsonDict']
@@ -943,6 +943,42 @@ class ConfigDict(TypedDict, total=False):
         (in particular when multiple `TypedDict` classes have the same name in the same source file). The behavior
         can be different depending on the Python version used.
     '''
+
+
+_TypeT = TypeVar('_TypeT', bound=type)
+
+
+def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict
+
+    A convenience decorator to set a [Pydantic configuration](config.md) on a `TypedDict` or a `dataclass` from the standard library.
+
+    Although the configuration can be set using the `__pydantic_config__` attribute, it does not play well with type checkers,
+    especially with `TypedDict`.
+
+    !!! example "Usage"
+
+        ```py
+        from typing_extensions import TypedDict
+
+        from pydantic import ConfigDict, TypeAdapter, with_config
+
+        @with_config(ConfigDict(str_to_lower=True))
+        class Model(TypedDict):
+            x: str
+
+        ta = TypeAdapter(Model)
+
+        print(ta.validate_python({'x': 'ABC'}))
+        #> {'x': 'abc'}
+        ```
+    """
+
+    def inner(TypedDictClass: _TypeT, /) -> _TypeT:
+        TypedDictClass.__pydantic_config__ = config
+        return TypedDictClass
+
+    return inner
 
 
 __getattr__ = getattr_migration(__name__)
