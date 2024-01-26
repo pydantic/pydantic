@@ -607,4 +607,6 @@ def test_type_field_in_the_same_module():
     class A:
         pass
 
-    create_model('B', a_cls=(type, A))
+    B = create_model('B', a_cls=(type, A))
+    b = B()
+    assert b.a_cls == A
