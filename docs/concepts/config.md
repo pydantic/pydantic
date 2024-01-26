@@ -98,6 +98,17 @@ class User:
 
 Alternatively, the [`with_config`][pydantic.config.with_config] decorator can be used to comply with type checkers.
 
+```py
+from typing_extensions import TypedDict
+
+from pydantic import ConfigDict, with_config
+
+
+@with_config(ConfigDict(str_to_lower=True))
+class Model(TypedDict):
+    x: str
+```
+
 ## Change behaviour globally
 
 If you wish to change the behaviour of Pydantic globally, you can create your own custom `BaseModel`
