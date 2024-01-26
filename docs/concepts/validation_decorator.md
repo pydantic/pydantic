@@ -364,6 +364,30 @@ except ValidationError as e:
     """
 ```
 
+## Extension - validating arguments before calling a function
+
+In some cases, it may be helpful to separate validation of a function's arguments from the function call itself.
+This might be useful when a particular function is costly / time consuming.
+
+Here's an example of a workaround you can use for that pattern:
+
+```py
+from pydantic import validate_call
+
+
+@validate_call
+def validate_foo(a: int, b: int):
+    def foo():
+        return a + b
+
+    return foo
+
+
+foo = validate_foo(a=1, b=2)
+print(foo())
+#> 3
+```
+
 ## Limitations
 
 ### Validation exception
