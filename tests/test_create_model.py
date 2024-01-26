@@ -601,3 +601,10 @@ class Y:
     )
     Z = create_model('Z', y=(module.Y, ...))
     assert Z(y={'x': {}}).y is not None
+
+
+def test_type_field_in_the_same_module():
+    class A:
+        pass
+
+    create_model('B', a_cls=(type, A))
