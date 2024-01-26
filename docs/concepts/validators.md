@@ -754,3 +754,38 @@ with init_context({'multiplier': 3}):
 print(Model(my_number=2))
 #> my_number=2
 ```
+
+## Reusing Validators
+
+Occasionally, you will want to use the same validator on multiple fields/models (e.g. to normalize some input data).
+The "naive" approach would be to write a separate function, then call it from multiple decorators.
+Obviously, this entails a lot of repetition and boiler plate code.
+The following approach demonstrates how you can reuse a validator so that redundancy is minimized and the models become again almost declarative.
+
+```py
+from pydantic import BaseModel, field_validator
+
+
+def normalize(name: str) -> str:
+    return ' '.join((word.capitalize()) for word in name.split(' '))
+
+
+class Producer(BaseModel):
+    name: str
+
+    _normalize_name = field_validator('name')(normalize)
+
+
+class Consumer(BaseModel):
+    name: str
+
+    _normalize_name = field_validator('name')(normalize)
+
+
+jane_doe = Producer(name='JaNe DOE')
+print(repr(jane_doe))
+#> Producer(name='Jane Doe')
+john_doe = Consumer(name='joHN dOe')
+print(repr(john_doe))
+#> Consumer(name='John Doe')
+```
