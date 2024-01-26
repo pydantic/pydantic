@@ -3466,8 +3466,6 @@ If you have multiple variables with the same structure they will be merged.</p>
 </ol>
 <p><code>env_nested_delimiter</code> can be configured via the <code>model_config</code> as shown above, or via the
 <code>_env_nested_delimiter</code> keyword argument on instantiation.</p>
-<p>JSON is only parsed in top-level fields, if you need to parse JSON in sub-models, you will need to implement
-validators on those models.</p>
 <p>Nested environment variables take precedence over the top-level environment variable JSON
 (e.g. in the example above, <code>SUB_MODEL__V2</code> trumps <code>SUB_MODEL</code>).</p>
 <p>You may also populate a complex type by providing your own source class.</p>

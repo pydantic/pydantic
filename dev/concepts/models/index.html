@@ -4725,24 +4725,28 @@ immutability of <code>foobar</code> doesn't stop <code>b</code> from being chang
 <span class="c1">#&gt; [(&#39;a&#39;,), (&#39;b&#39;,), (&#39;c&#39;,), (&#39;d&#39;,), (&#39;e&#39;,)]</span>
 </code></pre></div>
 <h2 id="required-fields">Required fields<a class="headerlink" href="#required-fields" title="Permanent link">&para;</a></h2>
-<p>To declare a field as required, you may declare it using just an annotation, or you may use <code>Ellipsis</code>/<code>...</code>
-as the value:</p>
+<p>To declare a field as required, you may declare it using an annotation, or an annotation in combination with a <code>Field</code> specification.
+You may also use <code>Ellipsis</code>/<code>...</code> to emphasize that a field is required, especially when using the <code>Field</code> constructor.</p>
+<p>The <a href="../fields/"><code>Field</code></a> function is primarily used to configure settings like <code>alias</code> or <code>description</code> for an attribute.
+The constructor supports <code>Ellipsis</code>/<code>...</code> as the sole positional argument.
+This is used as a way to indicate that said field is mandatory, though it's the type hint that enforces this requirement.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">b</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">...</span>
-    <span class="n">c</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+    <span class="n">c</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;C&#39;</span><span class="p">)</span>
 </code></pre></div>
-<p>Where <code>Field</code> refers to the <a href="../json_schema/#field-customization">field function</a>.</p>
-<p>Here <code>a</code>, <code>b</code> and <code>c</code> are all required. However, this use of <code>b: int = ...</code> does not work properly
-with <a href="../../integrations/mypy/">mypy</a>, and as of <strong>v1.0</strong> should be avoided in most cases.</p>
+<p>Here <code>a</code>, <code>b</code> and <code>c</code> are all required. However, this use of <code>b: int = ...</code> does not work properly with
+<a href="../../integrations/mypy/">mypy</a>, and as of <strong>v1.0</strong> should be avoided in most cases.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>In Pydantic V1, fields annotated with <code>Optional</code> or <code>Any</code> would be given an implicit default of <code>None</code> even if no
 default was explicitly specified. This behavior has changed in Pydantic V2, and there are no longer any type
 annotations that will result in a field having an implicit default value.</p>
+<p>See <a href="../../migration/#required-optional-and-nullable-fields">the migration guide</a> for more details on changes
+to required and nullable fields.</p>
 </div>
 <h2 id="fields-with-non-hashable-default-values">Fields with non-hashable default values<a class="headerlink" href="#fields-with-non-hashable-default-values" title="Permanent link">&para;</a></h2>
 <p>A common source of bugs in python is to use a mutable object as a default value for a function or method argument,

@@ -1262,10 +1262,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#use-model_validate_json-not-model_validatejsonloads" class="md-nav__link">
+  <a href="#in-general-use-model_validate_json-not-model_validatejsonloads" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Use model_validate_json() not model_validate(json.loads(...))
+        In general, use model_validate_json() not model_validate(json.loads(...))
       
     </span>
   </a>
@@ -2907,10 +2907,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#use-model_validate_json-not-model_validatejsonloads" class="md-nav__link">
+  <a href="#in-general-use-model_validate_json-not-model_validatejsonloads" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Use model_validate_json() not model_validate(json.loads(...))
+        In general, use model_validate_json() not model_validate(json.loads(...))
       
     </span>
   </a>
@@ -3027,9 +3027,15 @@
 
 <h1 id="performance-tips">Performance tips<a class="headerlink" href="#performance-tips" title="Permanent link">&para;</a></h1>
 <p>In most cases Pydantic won't be your bottle neck, only follow this if you're sure it's necessary.</p>
-<h2 id="use-model_validate_json-not-model_validatejsonloads">Use <code>model_validate_json()</code> not <code>model_validate(json.loads(...))</code><a class="headerlink" href="#use-model_validate_json-not-model_validatejsonloads" title="Permanent link">&para;</a></h2>
+<h2 id="in-general-use-model_validate_json-not-model_validatejsonloads">In general, use <code>model_validate_json()</code> not <code>model_validate(json.loads(...))</code><a class="headerlink" href="#in-general-use-model_validate_json-not-model_validatejsonloads" title="Permanent link">&para;</a></h2>
 <p>On <code>model_validate(json.loads(...))</code>, the JSON is parsed in Python, then converted to a dict, then it's validated internally.
 On the other hand, <code>model_validate_json()</code> already performs the validation internally.</p>
+<p>There are a few cases where <code>model_validate(json.loads(...))</code> may be faster. Specifically, when using a <code>'before'</code> validator
+on a model, validation may be faster with the two step method. You can read more about these special cases in
+<a href="https://github.com/pydantic/pydantic/discussions/6388#discussioncomment-8193105">this discussion</a>.</p>
+<p>Many performance improvements are currently in the works for <code>pydantic-core</code>, as discussed
+<a href="https://github.com/pydantic/pydantic/discussions/6388#discussioncomment-8194048">here</a>. Once these changes are merged, we should be at
+the point where <code>model_validate_json()</code> is always faster than <code>model_validate(json.loads(...))</code>.</p>
 <h2 id="typeadapter-instantiated-once"><code>TypeAdapter</code> instantiated once<a class="headerlink" href="#typeadapter-instantiated-once" title="Permanent link">&para;</a></h2>
 <p>The idea here is to avoid constructing validators and serializers more than necessary. Each time a <code>TypeAdapter</code> is instantiated,
 it will construct a new validator and serializer. If you're using a <code>TypeAdapter</code> in a function, it will be instantiated each time
