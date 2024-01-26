@@ -1471,13 +1471,10 @@ class _SecretBase(Generic[SecretType]):
         return f'{self.__class__.__name__}({self._display()!r})'
 
     def __len__(self) -> int:
-        try:
-            # Preserve the len() behavior for SecretStr and SecretBytes
-            return len(self._secret_value)  # type: ignore
-        except TypeError:
-            # TODO: remove this branch when we figure out why serialization to JSON
-            # requires a length check on the field value
-            return len(str(self))
+        if isinstance(self._secret_value, (str, bytes)):
+            return len(self._secret_value)
+        else:
+            raise TypeError(f"object of type '{self.__class__.__name__}' has no len()")
 
     def _display(self) -> str | bytes:
         raise NotImplementedError
@@ -1510,36 +1507,16 @@ class Secret(_SecretBase[SecretType]):
 
         inner_schema = handler.generate_schema(inner_type)  # type: ignore
 
-        json_schema = core_schema.no_info_after_validator_function(
-            function=lambda x: cls(x),
-            schema=inner_schema,
-        )
+        def validate_secret_value(value, handler) -> Secret[SecretType]:
+            if isinstance(value, Secret):
+                value = value.get_secret_value()
+            validated_inner = handler(value)
+            return cls(validated_inner)
 
-        def get_secret_schema(strict: bool) -> CoreSchema:
-            return core_schema.json_or_python_schema(
-                python_schema=core_schema.union_schema(
-                    [
-                        core_schema.chain_schema(
-                            [
-                                core_schema.is_instance_schema(Secret),
-                                core_schema.no_info_wrap_validator_function(
-                                    lambda v, h: cls(h(v.get_secret_value())), inner_schema
-                                ),
-                            ]
-                        ),
-                        json_schema,
-                    ],
-                    custom_error_type='secret_type',
-                    custom_error_message=f'Input should be a valid {cls.__name__} or {inner_type.__name__}.',
-                    strict=strict,
-                ),
-                json_schema=json_schema,
-                serialization=core_schema.to_string_ser_schema(when_used='json'),
-            )
-
-        return core_schema.lax_or_strict_schema(
-            lax_schema=get_secret_schema(strict=False),
-            strict_schema=get_secret_schema(strict=True),
+        return core_schema.json_or_python_schema(
+            python_schema=core_schema.no_info_wrap_validator_function(validate_secret_value, inner_schema),
+            json_schema=core_schema.no_info_after_validator_function(lambda x: cls(x), inner_schema),
+            serialization=core_schema.to_string_ser_schema(when_used='json'),
         )
 
 
