@@ -3030,7 +3030,7 @@
 <h2 id="in-general-use-model_validate_json-not-model_validatejsonloads">In general, use <code>model_validate_json()</code> not <code>model_validate(json.loads(...))</code><a class="headerlink" href="#in-general-use-model_validate_json-not-model_validatejsonloads" title="Permanent link">&para;</a></h2>
 <p>On <code>model_validate(json.loads(...))</code>, the JSON is parsed in Python, then converted to a dict, then it's validated internally.
 On the other hand, <code>model_validate_json()</code> already performs the validation internally.</p>
-<p>There are a few cases where <code>model_validate(json.loads(...))</code> may be faster. Specifically, when using a <code>'before'</code> validator
+<p>There are a few cases where <code>model_validate(json.loads(...))</code> may be faster. Specifically, when using a <code>'before'</code> or <code>'wrap'</code> validator
 on a model, validation may be faster with the two step method. You can read more about these special cases in
 <a href="https://github.com/pydantic/pydantic/discussions/6388#discussioncomment-8193105">this discussion</a>.</p>
 <p>Many performance improvements are currently in the works for <code>pydantic-core</code>, as discussed

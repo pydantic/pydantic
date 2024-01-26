@@ -1193,6 +1193,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#reusing-validators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reusing Validators
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3089,6 +3100,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#reusing-validators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reusing Validators
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3813,6 +3835,37 @@ the use of <code>contextvars.ContextVar</code> and a custom <code>__init__</code
 
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">my_number</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
 <span class="c1">#&gt; my_number=2</span>
+</code></pre></div>
+<h2 id="reusing-validators">Reusing Validators<a class="headerlink" href="#reusing-validators" title="Permanent link">&para;</a></h2>
+<p>Occasionally, you will want to use the same validator on multiple fields/models (e.g. to normalize some input data).
+The "naive" approach would be to write a separate function, then call it from multiple decorators.
+Obviously, this entails a lot of repetition and boiler plate code.
+The following approach demonstrates how you can reuse a validator so that redundancy is minimized and the models become again almost declarative.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>
+
+
+<span class="k">def</span> <span class="nf">normalize</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="n">word</span><span class="o">.</span><span class="n">capitalize</span><span class="p">())</span> <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">))</span>
+
+
+<span class="k">class</span> <span class="nc">Producer</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="n">_normalize_name</span> <span class="o">=</span> <span class="n">field_validator</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)(</span><span class="n">normalize</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Consumer</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="n">_normalize_name</span> <span class="o">=</span> <span class="n">field_validator</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)(</span><span class="n">normalize</span><span class="p">)</span>
+
+
+<span class="n">jane_doe</span> <span class="o">=</span> <span class="n">Producer</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;JaNe DOE&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">jane_doe</span><span class="p">))</span>
+<span class="c1">#&gt; Producer(name=&#39;Jane Doe&#39;)</span>
+<span class="n">john_doe</span> <span class="o">=</span> <span class="n">Consumer</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;joHN dOe&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">john_doe</span><span class="p">))</span>
+<span class="c1">#&gt; Consumer(name=&#39;John Doe&#39;)</span>
 </code></pre></div>
 
 
