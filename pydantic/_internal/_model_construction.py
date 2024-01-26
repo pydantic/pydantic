@@ -334,6 +334,7 @@ def inspect_namespace(  # noqa C901
         elif (
             isinstance(value, type)
             and value.__module__ == namespace['__module__']
+            and '__qualname__' in namespace
             and value.__qualname__.startswith(namespace['__qualname__'])
         ):
             # `value` is a nested type defined in this namespace; don't error
