@@ -364,7 +364,7 @@ except ValidationError as e:
     """
 ```
 
-## Extension - validating arguments before calling a function
+## Extension — validating arguments before calling a function
 
 In some cases, it may be helpful to separate validation of a function's arguments from the function call itself.
 This might be useful when a particular function is costly / time consuming.
