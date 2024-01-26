@@ -1471,10 +1471,13 @@ class _SecretBase(Generic[SecretType]):
         return f'{self.__class__.__name__}({self._display()!r})'
 
     def __len__(self) -> int:
-        if isinstance(self._secret_value, (str, bytes)):
-            return len(self._secret_value)
-        else:
-            raise TypeError(f"object of type '{self.__class__.__name__}' has no len()")
+        try:
+            # Preserve the len() behavior for SecretStr and SecretBytes
+            return len(self._secret_value)  # type: ignore
+        except TypeError:
+            # TODO: remove this branch when we figure out why serialization to JSON
+            # requires a length check on the field value
+            return len(str(self))
 
     def _display(self) -> str | bytes:
         raise NotImplementedError
