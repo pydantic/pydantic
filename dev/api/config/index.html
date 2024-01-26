@@ -2033,6 +2033,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.config.with_config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        with_config
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.config.ExtraValues" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3733,6 +3744,17 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.config.with_config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        with_config
+      
+    </span>
+  </a>
   
 </li>
       
@@ -5600,6 +5622,119 @@ can be different depending on the Python version used.</p>
 
   </div>
 
+
+</div>
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 id="pydantic.config.with_config" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">with_config</span>
+
+
+<a href="#pydantic.config.with_config" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <div class="admonition abstract">
+<p class="admonition-title">Usage Documentation</p>
+<p><a href="../../concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict">Configuration with <code>dataclass</code> from the standard library or <code>TypedDict</code></a></p>
+</div>
+<p>A convenience decorator to set a <a href="./">Pydantic configuration</a> on a <code>TypedDict</code> or a <code>dataclass</code> from the standard library.</p>
+<p>Although the configuration can be set using the <code>__pydantic_config__</code> attribute, it does not play well with type checkers,
+especially with <code>TypedDict</code>.</p>
+<div class="admonition example">
+<p class="admonition-title">Usage</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypedDict</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">with_config</span>
+
+<span class="nd">@with_config</span><span class="p">(</span><span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_to_lower</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">str</span>
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Model</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;ABC&#39;</span><span class="p">}))</span>
+<span class="c1">#&gt; {&#39;x&#39;: &#39;abc&#39;}</span>
+</code></pre></div>
+</div>
+
+          <details class="quote">
+            <summary>Source code in <code>pydantic/config.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">951</span>
+<span class="normal">952</span>
+<span class="normal">953</span>
+<span class="normal">954</span>
+<span class="normal">955</span>
+<span class="normal">956</span>
+<span class="normal">957</span>
+<span class="normal">958</span>
+<span class="normal">959</span>
+<span class="normal">960</span>
+<span class="normal">961</span>
+<span class="normal">962</span>
+<span class="normal">963</span>
+<span class="normal">964</span>
+<span class="normal">965</span>
+<span class="normal">966</span>
+<span class="normal">967</span>
+<span class="normal">968</span>
+<span class="normal">969</span>
+<span class="normal">970</span>
+<span class="normal">971</span>
+<span class="normal">972</span>
+<span class="normal">973</span>
+<span class="normal">974</span>
+<span class="normal">975</span>
+<span class="normal">976</span>
+<span class="normal">977</span>
+<span class="normal">978</span>
+<span class="normal">979</span>
+<span class="normal">980</span>
+<span class="normal">981</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.6/concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict</span>
+
+<span class="sd">    A convenience decorator to set a [Pydantic configuration](config.md) on a `TypedDict` or a `dataclass` from the standard library.</span>
+
+<span class="sd">    Although the configuration can be set using the `__pydantic_config__` attribute, it does not play well with type checkers,</span>
+<span class="sd">    especially with `TypedDict`.</span>
+
+<span class="sd">    !!! example &quot;Usage&quot;</span>
+
+<span class="sd">        ```py</span>
+<span class="sd">        from typing_extensions import TypedDict</span>
+
+<span class="sd">        from pydantic import ConfigDict, TypeAdapter, with_config</span>
+
+<span class="sd">        @with_config(ConfigDict(str_to_lower=True))</span>
+<span class="sd">        class Model(TypedDict):</span>
+<span class="sd">            x: str</span>
+
+<span class="sd">        ta = TypeAdapter(Model)</span>
+
+<span class="sd">        print(ta.validate_python({&#39;x&#39;: &#39;ABC&#39;}))</span>
+<span class="sd">        #&gt; {&#39;x&#39;: &#39;abc&#39;}</span>
+<span class="sd">        ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">inner</span><span class="p">(</span><span class="n">TypedDictClass</span><span class="p">:</span> <span class="n">_TypeT</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_TypeT</span><span class="p">:</span>
+        <span class="n">TypedDictClass</span><span class="o">.</span><span class="n">__pydantic_config__</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="k">return</span> <span class="n">TypedDictClass</span>
+
+    <span class="k">return</span> <span class="n">inner</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+  </div>
 
 </div>
 

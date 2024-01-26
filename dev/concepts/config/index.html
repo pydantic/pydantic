@@ -84,7 +84,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#change-behaviour-globally" class="md-skip">
+        <a href="#configuration-with-dataclass-from-the-standard-library-or-typeddict" class="md-skip">
           Skip to content
         </a>
       
@@ -996,6 +996,17 @@
       Page contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-with-dataclass-from-the-standard-library-or-typeddict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration with dataclass from the standard library or TypedDict
+      
+    </span>
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#change-behaviour-globally" class="md-nav__link">
@@ -2813,6 +2824,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#configuration-with-dataclass-from-the-standard-library-or-typeddict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration with dataclass from the standard library or TypedDict
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#change-behaviour-globally" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2900,7 +2922,7 @@ and as an argument to <a class="autorefs autorefs-internal" href="../../api/type
 <span class="n">config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">validate_assignment</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 
-<span class="nd">@dataclass</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">User</span><span class="p">:</span>
     <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
@@ -2918,10 +2940,8 @@ and as an argument to <a class="autorefs autorefs-internal" href="../../api/type
 <span class="sd">      String should have at most 10 characters [type=string_too_long, input_value=&#39;xxxxxxxxxxxxxxxxxxxx&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div></p>
-<ol>
-<li>
-<p>If using the <code>dataclass</code> from the standard library or <code>TypedDict</code>, you should use <code>__pydantic_config__</code> instead.
-   See:</p>
+<h2 id="configuration-with-dataclass-from-the-standard-library-or-typeddict">Configuration with <code>dataclass</code> from the standard library or <code>TypedDict</code><a class="headerlink" href="#configuration-with-dataclass-from-the-standard-library-or-typeddict" title="Permanent link">&para;</a></h2>
+<p>If using the <code>dataclass</code> from the standard library or <code>TypedDict</code>, you should use <code>__pydantic_config__</code> instead.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
@@ -2936,8 +2956,16 @@ and as an argument to <a class="autorefs autorefs-internal" href="../../api/type
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
     <span class="n">signup_ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="kc">None</span>
 </code></pre></div>
-</li>
-</ol>
+<p>Alternatively, the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.with_config"><code>with_config</code></a> decorator can be used to comply with type checkers.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypedDict</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">with_config</span>
+
+
+<span class="nd">@with_config</span><span class="p">(</span><span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_to_lower</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">str</span>
+</code></pre></div>
 <h2 id="change-behaviour-globally">Change behaviour globally<a class="headerlink" href="#change-behaviour-globally" title="Permanent link">&para;</a></h2>
 <p>If you wish to change the behaviour of Pydantic globally, you can create your own custom <code>BaseModel</code>
 with custom <code>model_config</code> since the config is inherited:</p>
