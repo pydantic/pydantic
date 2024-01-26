@@ -2,10 +2,18 @@
 
 In most cases Pydantic won't be your bottle neck, only follow this if you're sure it's necessary.
 
-## Use `model_validate_json()` not `model_validate(json.loads(...))`
+## In general, use `model_validate_json()` not `model_validate(json.loads(...))`
 
 On `model_validate(json.loads(...))`, the JSON is parsed in Python, then converted to a dict, then it's validated internally.
 On the other hand, `model_validate_json()` already performs the validation internally.
+
+There are a few cases where `model_validate(json.loads(...))` may be faster. Specifically, when using a `'before'` validator
+on a model, validation may be faster with the two step method. You can read more about these special cases in
+[this discussion](https://github.com/pydantic/pydantic/discussions/6388#discussioncomment-8193105).
+
+Many performance improvements are currently in the works for `pydantic-core`, as discussed
+[here](https://github.com/pydantic/pydantic/discussions/6388#discussioncomment-8194048). Once these changes are merged, we should be at
+the point where `model_validate_json()` is always faster than `model_validate(json.loads(...))`.
 
 ## `TypeAdapter` instantiated once
 
