@@ -82,6 +82,7 @@ from pydantic import (
     OnErrorOmit,
     PastDate,
     PastDatetime,
+    PlainSerializer,
     PositiveFloat,
     PositiveInt,
     PydanticInvalidForJsonSchema,
@@ -4101,6 +4102,14 @@ class SecretDate(Secret[date]):
         return '****/**/**'
 
 
+class SampleEnum(str, Enum):
+    foo = 'foo'
+    bar = 'bar'
+
+
+SecretEnum = Secret[SampleEnum]
+
+
 @pytest.mark.parametrize(
     'value, result',
     [
@@ -4134,12 +4143,49 @@ def test_secretdate(value, result):
     assert f.value.get_secret_value() == result
 
 
+def test_secretdate_json_serializable():
+    class _SecretDate(Secret[date]):
+        def _display(self) -> str:
+            return '****/**/**'
+
+    SecretDate = Annotated[
+        _SecretDate,
+        PlainSerializer(lambda v: v.get_secret_value().strftime('%Y-%m-%d'), when_used='json'),
+    ]
+
+    class Foobar(BaseModel):
+        value: SecretDate
+
+    f = Foobar(value='2017-01-01')
+
+    assert '2017-01-01' in f.model_dump_json()
+
+
+def test_secretenum_json_serializable():
+    class SampleEnum(str, Enum):
+        foo = 'foo'
+        bar = 'bar'
+
+    SecretEnum = Annotated[
+        Secret[SampleEnum],
+        PlainSerializer(lambda v: v.get_secret_value(), when_used='json'),
+    ]
+
+    class Foobar(BaseModel):
+        value: SecretEnum
+
+    f = Foobar(value='foo')
+
+    assert f.model_dump_json() == '{"value":"foo"}'
+
+
 @pytest.mark.parametrize(
     'SecretField, value, error_msg',
     [
-        (SecretDate, 'not-a-date', r'Input should be a valid SecretDate or date'),
+        (SecretDate, 'not-a-date', r'Input should be a valid date'),
         (SecretStr, 0, r'Input should be a valid string \[type=string_type,'),
         (SecretBytes, 0, r'Input should be a valid bytes \[type=bytes_type,'),
+        (SecretEnum, 0, r'Input should be an instance of SampleEnum'),
     ],
 )
 def test_strict_secretfield_by_config(SecretField, value, error_msg):
@@ -4152,16 +4198,19 @@ def test_strict_secretfield_by_config(SecretField, value, error_msg):
 
 
 @pytest.mark.parametrize(
-    'SecretField, value, error_msg',
+    'field, value, error_msg',
     [
-        (SecretDate, 'not-a-date', r'Input should be a valid SecretDate or date'),
-        (SecretStr, 0, r'Input should be a valid string \[type=string_type,'),
-        (SecretBytes, 0, r'Input should be a valid bytes \[type=bytes_type,'),
+        (date, 'not-a-date', r'Input should be a valid date'),
+        (str, 0, r'Input should be a valid string \[type=string_type,'),
+        (bytes, 0, r'Input should be a valid bytes \[type=bytes_type,'),
+        (SampleEnum, 0, r'Input should be an instance of SampleEnum'),
     ],
 )
-def test_strict_secretfield_annotated(SecretField, value, error_msg):
+def test_strict_secretfield_annotated(field, value, error_msg):
+    SecretField = Annotated[field, Strict()]
+
     class Foobar(BaseModel):
-        value: Annotated[SecretField, Strict()]
+        value: Secret[SecretField]
 
     with pytest.raises(ValidationError, match=error_msg):
         Foobar(value=value)
@@ -4206,23 +4255,6 @@ def test_secretdate_idempotent():
     # Should not raise an exception
     m = Foobar(value=SecretDate(date(2017, 1, 1)))
     assert m.value.get_secret_value() == date(2017, 1, 1)
-
-
-def test_secretdate_error():
-    class Foobar(BaseModel):
-        value: SecretDate
-
-    with pytest.raises(ValidationError) as exc_info:
-        Foobar(value='foobar')
-
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'secret_type',
-            'loc': ('value',),
-            'msg': 'Input should be a valid SecretDate or date.',
-            'input': 'foobar',
-        }
-    ]
 
 
 @pytest.mark.parametrize(

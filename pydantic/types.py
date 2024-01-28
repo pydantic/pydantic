@@ -1484,10 +1484,26 @@ class _SecretBase(Generic[SecretType]):
 
 
 class Secret(_SecretBase[SecretType]):
-    """#TODO: add docstring here."""
+    """A generic base class used for defining a field with sensitive information that you do not want to be visible in logging or tracebacks.
+
+    ```py
+    from datetime import date
+
+    from pydantic import Secret
+
+    class SecretDate(Secret[date]):
+        def _display(self) -> str:
+            return '****/**/**'
+
+    # Alternative way without overwriting the representation
+    SecretFloat = Secret[float]
+    ```
+
+    Same as for other secret fields, the value returned by the `_display` will be used for `repr()` and `str`.
+    """
 
     def _display(self) -> str | bytes:
-        return '**********' if self._secret_value else ''
+        return '**********' if self.get_secret_value() else ''
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
