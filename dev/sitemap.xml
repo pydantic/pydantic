@@ -146,6 +146,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_pendulum_dt/</loc>
+         <lastmod>2024-01-29</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_phone_numbers/</loc>
          <lastmod>2024-01-29</lastmod>
          <changefreq>daily</changefreq>
