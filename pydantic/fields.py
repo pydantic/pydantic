@@ -65,6 +65,7 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     frozen: bool | None
     validate_default: bool | None
     repr: bool
+    init: bool | None
     init_var: bool | None
     kw_only: bool | None
 
@@ -103,7 +104,8 @@ class FieldInfo(_repr.Representation):
         frozen: Whether the field is frozen.
         validate_default: Whether to validate the default value of the field.
         repr: Whether to include the field in representation of the model.
-        init_var: Whether the field should be included in the constructor of the dataclass.
+        init: Whether the field should be included in the constructor of the dataclass.
+        init_var: Whether the field should _only_ be included in the constructor of the dataclass, and not stored.
         kw_only: Whether the field should be a keyword-only argument in the constructor of the dataclass.
         metadata: List of metadata constraints.
     """
@@ -125,6 +127,7 @@ class FieldInfo(_repr.Representation):
     frozen: bool | None
     validate_default: bool | None
     repr: bool
+    init: bool | None
     init_var: bool | None
     kw_only: bool | None
     metadata: list[Any]
@@ -147,6 +150,7 @@ class FieldInfo(_repr.Representation):
         'frozen',
         'validate_default',
         'repr',
+        'init',
         'init_var',
         'kw_only',
         'metadata',
@@ -208,6 +212,7 @@ class FieldInfo(_repr.Representation):
         self.validate_default = kwargs.pop('validate_default', None)
         self.frozen = kwargs.pop('frozen', None)
         # currently only used on dataclasses
+        self.init = kwargs.pop('init', None)
         self.init_var = kwargs.pop('init_var', None)
         self.kw_only = kwargs.pop('kw_only', None)
 
@@ -328,6 +333,13 @@ class FieldInfo(_repr.Representation):
         Returns:
             A field object with the passed values.
         """
+        if annotation is default:
+            raise PydanticUserError(
+                'Error when building FieldInfo from annotated attribute. '
+                "Make sure you don't have any field name clashing with a type annotation ",
+                code='unevaluable-type-annotation',
+            )
+
         final = False
         if _typing_extra.is_finalvar(annotation):
             final = True
@@ -360,6 +372,7 @@ class FieldInfo(_repr.Representation):
             )
             pydantic_field.frozen = final or pydantic_field.frozen
             pydantic_field.init_var = init_var
+            pydantic_field.init = getattr(default, 'init', None)
             pydantic_field.kw_only = getattr(default, 'kw_only', None)
             return pydantic_field
         else:
@@ -548,7 +561,7 @@ class FieldInfo(_repr.Representation):
             pydantic._internal._generics.replace_types is used for replacing the typevars with
                 their concrete types.
         """
-        annotation = _typing_extra.eval_type_lenient(self.annotation, types_namespace, None)
+        annotation = _typing_extra.eval_type_lenient(self.annotation, types_namespace)
         self.annotation = _generics.replace_types(annotation, typevars_map)
 
     def __repr_args__(self) -> ReprArgs:
@@ -598,6 +611,7 @@ _DefaultValues = dict(
     frozen=None,
     validate_default=None,
     repr=True,
+    init=None,
     init_var=None,
     kw_only=None,
     pattern=None,
@@ -633,6 +647,7 @@ def Field(  # noqa: C901
     frozen: bool | None = _Unset,
     validate_default: bool | None = _Unset,
     repr: bool = _Unset,
+    init: bool | None = _Unset,
     init_var: bool | None = _Unset,
     kw_only: bool | None = _Unset,
     pattern: str | None = _Unset,
@@ -679,7 +694,9 @@ def Field(  # noqa: C901
         validate_default: If `True`, apply validation to the default value every time you create an instance.
             Otherwise, for performance reasons, the default value of the field is trusted and not validated.
         repr: A boolean indicating whether to include the field in the `__repr__` output.
-        init_var: Whether the field should be included in the constructor of the dataclass.
+        init: Whether the field should be included in the constructor of the dataclass.
+            (Only applies to dataclasses.)
+        init_var: Whether the field should _only_ be included in the constructor of the dataclass.
             (Only applies to dataclasses.)
         kw_only: Whether the field should be a keyword-only argument in the constructor of the dataclass.
             (Only applies to dataclasses.)
@@ -789,6 +806,7 @@ def Field(  # noqa: C901
         pattern=pattern,
         validate_default=validate_default,
         repr=repr,
+        init=init,
         init_var=init_var,
         kw_only=kw_only,
         strict=strict,

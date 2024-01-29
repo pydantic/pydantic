@@ -109,6 +109,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         This replaces `Model.__fields__` from Pydantic V1.
         """
 
+        model_computed_fields: ClassVar[dict[str, ComputedFieldInfo]]
+        """A dictionary of computed field names and their corresponding `ComputedFieldInfo` objects."""
+
         __class_vars__: ClassVar[set[str]]
         __private_attributes__: ClassVar[dict[str, ModelPrivateAttr]]
         __signature__: ClassVar[Signature]
@@ -124,9 +127,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_root_model__: ClassVar[bool]
         __pydantic_serializer__: ClassVar[SchemaSerializer]
         __pydantic_validator__: ClassVar[SchemaValidator]
-
-        model_computed_fields: ClassVar[dict[str, ComputedFieldInfo]]
-        """A dictionary of computed field names and their corresponding `ComputedFieldInfo` objects."""
 
         # Instance attributes
         # Note: we use the non-existent kwarg `init=False` in pydantic.fields.Field below so that @dataclass_transform
@@ -302,8 +302,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             mode: The mode in which `to_python` should run.
                 If mode is 'json', the output will only contain JSON serializable types.
                 If mode is 'python', the output may contain non-JSON-serializable Python objects.
-            include: A list of fields to include in the output.
-            exclude: A list of fields to exclude from the output.
+            include: A set of fields to include in the output.
+            exclude: A set of fields to exclude from the output.
             by_alias: Whether to use the field's alias in the dictionary key if defined.
             exclude_unset: Whether to exclude fields that have not been explicitly set.
             exclude_defaults: Whether to exclude fields that are set to their default value.

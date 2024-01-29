@@ -1319,8 +1319,12 @@ print(error_locations)
 
 ## Required fields
 
-To declare a field as required, you may declare it using just an annotation, or you may use `Ellipsis`/`...`
-as the value:
+To declare a field as required, you may declare it using an annotation, or an annotation in combination with a `Field` specification.
+You may also use `Ellipsis`/`...` to emphasize that a field is required, especially when using the `Field` constructor.
+
+The [`Field`](fields.md) function is primarily used to configure settings like `alias` or `description` for an attribute.
+The constructor supports `Ellipsis`/`...` as the sole positional argument.
+This is used as a way to indicate that said field is mandatory, though it's the type hint that enforces this requirement.
 
 ```py
 from pydantic import BaseModel, Field
@@ -1329,18 +1333,19 @@ from pydantic import BaseModel, Field
 class Model(BaseModel):
     a: int
     b: int = ...
-    c: int = Field(...)
+    c: int = Field(..., alias='C')
 ```
 
-Where `Field` refers to the [field function](json_schema.md#field-customization).
-
-Here `a`, `b` and `c` are all required. However, this use of `b: int = ...` does not work properly
-with [mypy](../integrations/mypy.md), and as of **v1.0** should be avoided in most cases.
+Here `a`, `b` and `c` are all required. However, this use of `b: int = ...` does not work properly with
+[mypy](../integrations/mypy.md), and as of **v1.0** should be avoided in most cases.
 
 !!! note
     In Pydantic V1, fields annotated with `Optional` or `Any` would be given an implicit default of `None` even if no
     default was explicitly specified. This behavior has changed in Pydantic V2, and there are no longer any type
     annotations that will result in a field having an implicit default value.
+
+    See [the migration guide](../migration.md#required-optional-and-nullable-fields) for more details on changes
+    to required and nullable fields.
 
 ## Fields with non-hashable default values
 

@@ -20,6 +20,7 @@ from pydantic import (
     ConfigDict,
     Field,
     GetCoreSchemaHandler,
+    PlainSerializer,
     PydanticDeprecatedSince20,
     PydanticUserError,
     TypeAdapter,
@@ -1603,7 +1604,6 @@ def test_assignment_validator_cls():
     assert validator_calls == 2
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592')
 def test_literal_validator():
     class Model(BaseModel):
         a: Literal['foo']
@@ -1644,9 +1644,6 @@ def test_literal_validator_str_enum():
     assert my_foo.fizfuz is Bar.FUZ
 
 
-@pytest.mark.skipif(
-    sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592', strict=False
-)
 def test_nested_literal_validator():
     L1 = Literal['foo']
     L2 = Literal['bar']
@@ -2810,3 +2807,19 @@ def test_validate_default_raises_for_dataclasses() -> None:
             'ctx': {'error': IsInstance(AssertionError)},
         },
     ]
+
+
+def test_plain_validator_plain_serializer() -> None:
+    """https://github.com/pydantic/pydantic/issues/8512"""
+    ser_type = str
+    serializer = PlainSerializer(lambda x: ser_type(int(x)), return_type=ser_type)
+    validator = PlainValidator(lambda x: bool(int(x)))
+
+    class Blah(BaseModel):
+        foo: Annotated[bool, validator, serializer]
+        bar: Annotated[bool, serializer, validator]
+
+    blah = Blah(foo='0', bar='1')
+    data = blah.model_dump()
+    assert isinstance(data['foo'], ser_type)
+    assert isinstance(data['bar'], ser_type)

@@ -73,6 +73,7 @@ from ._decorators import (
     inspect_model_serializer,
     inspect_validator,
 )
+from ._docs_extraction import extract_docstrings_from_cls
 from ._fields import collect_dataclass_fields, get_type_hints_infer_globalns
 from ._forward_ref import PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, has_instance_in_type, recursively_defined_type_refs, replace_types
@@ -437,6 +438,8 @@ class GenerateSchema:
         if collect_invalid_schemas(schema):
             raise self.CollectedInvalid()
         schema = validate_core_schema(schema)
+        if 'definitions' in schema:
+            schema['definitions'] = list(reversed(schema['definitions']))
         return schema
 
     def collect_definitions(self, schema: CoreSchema) -> CoreSchema:
@@ -674,7 +677,7 @@ class GenerateSchema:
         # class Model(BaseModel):
         #   x: SomeImportedTypeAliasWithAForwardReference
         try:
-            obj = _typing_extra.evaluate_fwd_ref(obj, globalns=self._types_namespace)
+            obj = _typing_extra.eval_type_backport(obj, globalns=self._types_namespace)
         except NameError as e:
             raise PydanticUndefinedAnnotation.from_name_error(e) from e
 
@@ -941,6 +944,7 @@ class GenerateSchema:
         return core_schema.dataclass_field(
             name,
             common_field['schema'],
+            init=field_info.init,
             init_only=field_info.init_var or None,
             kw_only=None if field_info.kw_only else False,
             serialization_exclude=common_field['serialization_exclude'],
@@ -1014,7 +1018,7 @@ class GenerateSchema:
                 # Ensure that typevars get mapped to their concrete types:
                 types_namespace.update({k.__name__: v for k, v in self._typevars_map.items()})
 
-            evaluated = _typing_extra.eval_type_lenient(field_info.annotation, types_namespace, None)
+            evaluated = _typing_extra.eval_type_lenient(field_info.annotation, types_namespace)
             if evaluated is not field_info.annotation and not has_instance_in_type(evaluated, PydanticRecursiveRef):
                 new_field_info = FieldInfo.from_annotation(evaluated)
                 field_info.annotation = new_field_info.annotation
@@ -1144,8 +1148,9 @@ class GenerateSchema:
 
             annotation = origin.__value__
             typevars_map = get_standard_typevars_map(obj)
+
             with self._types_namespace_stack.push(origin):
-                annotation = _typing_extra.eval_type_lenient(annotation, self._types_namespace, None)
+                annotation = _typing_extra.eval_type_lenient(annotation, self._types_namespace)
                 annotation = replace_types(annotation, typevars_map)
                 schema = self.generate_schema(annotation)
                 assert schema['type'] != 'definitions'
@@ -1207,6 +1212,11 @@ class GenerateSchema:
 
                 decorators = DecoratorInfos.build(typed_dict_cls)
 
+                if self._config_wrapper.use_attribute_docstrings:
+                    field_docstrings = extract_docstrings_from_cls(typed_dict_cls, use_inspect=True)
+                else:
+                    field_docstrings = None
+
                 for field_name, annotation in get_type_hints_infer_globalns(
                     typed_dict_cls, localns=self._types_namespace, include_extras=True
                 ).items():
@@ -1227,6 +1237,12 @@ class GenerateSchema:
                         )[0]
 
                     field_info = FieldInfo.from_annotation(annotation)
+                    if (
+                        field_docstrings is not None
+                        and field_info.description is None
+                        and field_name in field_docstrings
+                    ):
+                        field_info.description = field_docstrings[field_name]
                     fields[field_name] = self._generate_td_field_schema(
                         field_name, field_info, decorators, required=required
                     )
@@ -1385,8 +1401,9 @@ class GenerateSchema:
     def _sequence_schema(self, sequence_type: Any) -> core_schema.CoreSchema:
         """Generate schema for a Sequence, e.g. `Sequence[int]`."""
         item_type = self._get_first_arg_or_any(sequence_type)
+        item_type_schema = self.generate_schema(item_type)
+        list_schema = core_schema.list_schema(item_type_schema)
 
-        list_schema = core_schema.list_schema(self.generate_schema(item_type))
         python_schema = core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence')
         if item_type != Any:
             from ._validators import sequence_validator
@@ -1468,6 +1485,18 @@ class GenerateSchema:
                         self._types_namespace,
                         typevars_map=typevars_map,
                     )
+
+                # disallow combination of init=False on a dataclass field and extra='allow' on a dataclass
+                if config and config.get('extra') == 'allow':
+                    # disallow combination of init=False on a dataclass field and extra='allow' on a dataclass
+                    for field_name, field in fields.items():
+                        if field.init is False:
+                            raise PydanticUserError(
+                                f'Field {field_name} has `init=False` and dataclass has config setting `extra="allow"`. '
+                                f'This combination is not allowed.',
+                                code='dataclass-init-false-extra-allow',
+                            )
+
                 decorators = dataclass.__dict__.get('__pydantic_decorators__') or DecoratorInfos.build(dataclass)
                 # Move kw_only=False args to the start of the list, as this is how vanilla dataclasses work.
                 # Note that when kw_only is missing or None, it is treated as equivalent to kw_only=True

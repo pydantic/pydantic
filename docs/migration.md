@@ -162,6 +162,45 @@ print(v2_model.model_dump_json())
 #> {"a":{"None":123}}
 ```
 
+* `model_dump_json()` results are compacted in order to save space, and don't always exactly match that of `json.dumps()` output.
+That being said, you can easily modify the separators used in `json.dumps()` results in order to align the two outputs:
+
+```py
+import json
+from typing import List
+
+from pydantic import BaseModel as V2BaseModel
+from pydantic.v1 import BaseModel as V1BaseModel
+
+
+class V1Model(V1BaseModel):
+    a: List[str]
+
+
+class V2Model(V2BaseModel):
+    a: List[str]
+
+
+v1_model = V1Model(a=['fancy', 'sushi'])
+v2_model = V2Model(a=['fancy', 'sushi'])
+
+# V1
+print(v1_model.json())
+#> {"a": ["fancy", "sushi"]}
+
+# V2
+print(v2_model.model_dump_json())
+#> {"a":["fancy","sushi"]}
+
+# Plain json.dumps
+print(json.dumps(v2_model.model_dump()))
+#> {"a": ["fancy", "sushi"]}
+
+# Modified json.dumps
+print(json.dumps(v2_model.model_dump(), separators=(',', ':')))
+#> {"a":["fancy","sushi"]}
+```
+
 ### Changes to `pydantic.generics.GenericModel`
 
 The `pydantic.generics.GenericModel` class is no longer necessary, and has been removed. Instead, you can now
@@ -817,6 +856,7 @@ For `ConstrainedStr` you can use [`StringConstraints`][pydantic.types.StringCons
 | `pydantic.json.pydantic_encoder` | `pydantic.deprecated.json.pydantic_encoder` |
 | `pydantic.validate_arguments` | `pydantic.deprecated.decorator.validate_arguments` |
 | `pydantic.json.custom_pydantic_encoder` | `pydantic.deprecated.json.custom_pydantic_encoder` |
+| `pydantic.json.ENCODERS_BY_TYPE` | `pydantic.deprecated.json.ENCODERS_BY_TYPE` |
 | `pydantic.json.timedelta_isoformat` | `pydantic.deprecated.json.timedelta_isoformat` |
 | `pydantic.decorator.validate_arguments` | `pydantic.deprecated.decorator.validate_arguments` |
 | `pydantic.class_validators.validator` | `pydantic.deprecated.class_validators.validator` |
