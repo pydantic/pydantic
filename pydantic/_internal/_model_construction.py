@@ -194,13 +194,13 @@ class ModelMetaclass(ABCMeta):
             cls.model_computed_fields = {k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()}
 
             cls.__pydantic_deprecated_messages__ = {
-                field: field_info.deprecated
+                field: field_info.deprecation_message
                 for field, field_info in cls.model_fields.items()
                 if field_info.deprecated is not None
             }
             cls.__pydantic_deprecated_messages__.update(
                 {
-                    field: computed_field_info.deprecated
+                    field: computed_field_info.deprecation_message
                     for field, computed_field_info in cls.model_computed_fields.items()
                     if computed_field_info.deprecated is not None
                     if not computed_field_info.from_deprecated_decorator  # Avoid having two warnings emitted

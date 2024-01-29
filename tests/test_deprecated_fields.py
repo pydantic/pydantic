@@ -12,14 +12,16 @@ def test_deprecated_fields_field_function():
         a: Annotated[int, Field(deprecated='')]
         b: Annotated[int, Field(deprecated='This is deprecated')]
         c: Annotated[int, Field(deprecated=None)]
+        d: Annotated[int, Field(deprecated=deprecated('This is deprecated'))]
 
     assert Model.model_json_schema() == {
         'properties': {
             'a': {'deprecated': True, 'title': 'A', 'type': 'integer'},
             'b': {'deprecated': True, 'title': 'B', 'type': 'integer'},
             'c': {'title': 'C', 'type': 'integer'},
+            'd': {'deprecated': True, 'title': 'D', 'type': 'integer'},
         },
-        'required': ['a', 'b', 'c'],
+        'required': ['a', 'b', 'c', 'd'],
         'title': 'Model',
         'type': 'object',
     }
@@ -79,9 +81,14 @@ def test_computed_field_deprecated():
         def p4(self) -> int:
             return 1
 
+        @computed_field(deprecated=deprecated('This is deprecated'))
+        @property
+        def p5(self) -> int:
+            return 1
+
         @computed_field
         @deprecated('This is deprecated')
-        def p5(self) -> int:
+        def p6(self) -> int:
             return 1
 
     assert Model.model_json_schema(mode='serialization') == {
@@ -90,9 +97,10 @@ def test_computed_field_deprecated():
             'p2': {'deprecated': True, 'readOnly': True, 'title': 'P2', 'type': 'integer'},
             'p3': {'deprecated': True, 'readOnly': True, 'title': 'P3', 'type': 'integer'},
             'p4': {'deprecated': True, 'readOnly': True, 'title': 'P4', 'type': 'integer'},
-            'p5': {'deprecated': True, 'readOnly': True, 'title': 'P5', 'type': 'integer'},
+            'p5': {'deprecated': True, 'readOnly': True, 'title': 'P4', 'type': 'integer'},
+            'p6': {'deprecated': True, 'readOnly': True, 'title': 'P6', 'type': 'integer'},
         },
-        'required': ['p1', 'p2', 'p3', 'p4', 'p5'],
+        'required': ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'],
         'title': 'Model',
         'type': 'object',
     }
@@ -103,6 +111,7 @@ def test_computed_field_deprecated():
     pytest.warns(DeprecationWarning, lambda: instance.p2, match='^This is deprecated$')
     pytest.warns(DeprecationWarning, lambda: instance.p4, match='^This is deprecated$')
     pytest.warns(DeprecationWarning, lambda: instance.p5, match='^This is deprecated$')
+    pytest.warns(DeprecationWarning, lambda: instance.p6, match='^This is deprecated$')
 
     with pytest.warns(DeprecationWarning, match='^$'):
         instance.p3
