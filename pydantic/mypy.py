@@ -475,9 +475,9 @@ class PydanticModelTransformer:
                 return False
 
         is_settings = any(base.fullname == BASESETTINGS_FULLNAME for base in info.mro[:-1])
-        self.add_initializer(fields, config, is_settings, is_root_model)
-        self.add_model_construct_method(fields, config, is_settings)
         try:
+            self.add_initializer(fields, config, is_settings, is_root_model)
+            self.add_model_construct_method(fields, config, is_settings)
             self.set_frozen(fields, frozen=config.frozen is True)
         except _DeferAnalysis:
             if not self._api.final_iteration:
