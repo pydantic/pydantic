@@ -692,6 +692,45 @@ print(user.model_dump())  # (1)!
 
 See the [Serialization] section for more details.
 
+## Deprecated fields
+
+The `deprecated` parameter can be used to mark a field as being deprecated. Doing so will result in:
+
+* a runtime deprecation warning emitted when accessing the field.
+* `"deprecated": true` being set in the generated JSON schema.
+
+```py
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, Field
+
+
+class Model(BaseModel):
+    deprecated_field: Annotated[int, Field(deprecated="This is deprecated")]
+
+print(Model.model_json_schema()['properties']['deprecated_field'])
+#> {'deprecated': True, 'title': 'Deprecated Field', 'type': 'integer'}
+```
+
+Alternatively, the `warnings.deprecated` decorator (and the `typing_extensions` backport) can be used:
+
+```py
+from typing_extensions import deprecated
+
+from pydantic import BaseModel
+
+
+class Model(BaseModel):
+    deprecated_field: Annotated[int, deprecated("This is deprecated")]
+
+    # Or explicitly using `Field`:
+    alt_form: Annotated[int, Field(deprecated=deprecated("This is deprecated"))]
+```
+
+!!! note "Support for `category` and `stacklevel`"
+    The current implementation of this feature does not take into account the `category` and `stacklevel`
+    arguments to the `deprecated` decorator. This might land in a future version of Pydantic.
+
 ## Customizing JSON Schema
 
 Some field parameters are used exclusively to customize the generated JSON schema. The parameters in question are:
@@ -731,6 +770,25 @@ class Box(BaseModel):
 b = Box(width=1, height=2, depth=3)
 print(b.model_dump())
 #> {'width': 1.0, 'height': 2.0, 'depth': 3.0, 'volume': 6.0}
+```
+
+As with regular fields, computed fields can be marked as being deprecated:
+
+```py
+from typing_extensions import deprecated
+
+from pydantic import BaseModel, computed_field
+
+
+class Box(BaseModel):
+    width: float
+    height: float
+    depth: float
+
+    @computed_field
+    @deprecated("'volume' is deprecated")
+    def volume(self) -> float:
+        return self.width * self.height * self.depth
 ```
 
 
