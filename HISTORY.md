@@ -1,4 +1,4 @@
-## v2.6.0 (2024-01-23)
+## v2.6.0 (2024-01-29)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.6.0)
 
