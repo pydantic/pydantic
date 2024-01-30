@@ -4481,11 +4481,28 @@ def test_bytesize_raises():
     class Model(BaseModel):
         size: ByteSize
 
-    with pytest.raises(ValidationError, match='parse value'):
+    with pytest.raises(ValidationError, match='parse value') as exc_info:
         Model(size='d1MB')
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': 'd1MB',
+            'loc': ('size',),
+            'msg': 'could not parse value and unit from byte string',
+            'type': 'byte_size',
+        }
+    ]
 
-    with pytest.raises(ValidationError, match='byte unit'):
+    with pytest.raises(ValidationError, match='byte unit') as exc_info:
         Model(size='1LiB')
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'ctx': {'unit': 'LiB'},
+            'input': '1LiB',
+            'loc': ('size',),
+            'msg': 'could not interpret byte unit: LiB',
+            'type': 'byte_size_unit',
+        }
+    ]
 
     # 1Gi is not a valid unit unlike 1G
     with pytest.raises(ValidationError, match='byte unit'):
