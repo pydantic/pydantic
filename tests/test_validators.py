@@ -556,11 +556,9 @@ def test_use_no_fields():
         class Model(BaseModel):
             a: str
 
-            with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
-
-                @validator()
-                def checker(cls, v):
-                    return v
+            @validator()
+            def checker(cls, v):
+                return v
 
 
 def test_use_no_fields_field_validator():
