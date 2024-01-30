@@ -2771,5 +2771,4 @@ def test_annotations_valid_for_field_inheritance() -> None:
     class B(A):
         ...
 
-    assert 'a' in B.__pydantic_fields__
-    assert 'a' in B.__annotations__
+    assert B.__pydantic_fields__['a'].annotation is int
