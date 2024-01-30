@@ -1789,7 +1789,7 @@ class ByteSize(int):
                     core_schema.int_schema(ge=0),
                 ],
                 custom_error_type='byte_size',
-                custom_error_message='could not parse value and unit from byte string or integer',
+                custom_error_message='could not parse value and unit from byte string',
             ),
             serialization=core_schema.plain_serializer_function_ser_schema(
                 int, return_schema=core_schema.int_schema(ge=0)
