@@ -153,7 +153,7 @@ def dataclass(  # noqa: C901
         into
           `x: int = dataclasses.field(default=pydantic.Field(..., kw_only=True), kw_only=True)`
         """
-        for annotation_cls in cls.__mro__[::-1]:
+        for annotation_cls in cls.__mro__:
             # In Python < 3.9, `__annotations__` might not be present if there are no fields.
             # we therefore need to use `getattr` to avoid an `AttributeError`.
             for field_name in getattr(annotation_cls, '__annotations__', []):

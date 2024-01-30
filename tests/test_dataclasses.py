@@ -2792,3 +2792,23 @@ def test_annotations_valid_for_field_inheritance_with_existing_field() -> None:
     b = B(a=1, b='b')
     assert b.a == 1
     assert b.b == 'b'
+
+
+def test_annotations_with_override() -> None:
+    class A:
+        a: int = pydantic.dataclasses.Field()
+        b: int = pydantic.dataclasses.Field()
+        c: int
+        d: int
+
+    @pydantic.dataclasses.dataclass()
+    class B(A):
+        a: str = pydantic.dataclasses.Field()
+        b: str
+        c: str = pydantic.dataclasses.Field()
+        d: str
+
+    b = B(a='a', b='b', c='c', d='d')
+    for field_name in ['a', 'b', 'c', 'd']:
+        assert B.__pydantic_fields__[field_name].annotation is str
+        assert getattr(b, field_name) == field_name
