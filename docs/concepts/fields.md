@@ -706,7 +706,7 @@ from pydantic import BaseModel, Field
 
 
 class Model(BaseModel):
-    deprecated_field: Annotated[int, Field(deprecated="This is deprecated")]
+    deprecated_field: Annotated[int, Field(deprecated='This is deprecated')]
 
 print(Model.model_json_schema()['properties']['deprecated_field'])
 #> {'deprecated': True, 'title': 'Deprecated Field', 'type': 'integer'}
@@ -721,10 +721,10 @@ from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    deprecated_field: Annotated[int, deprecated("This is deprecated")]
+    deprecated_field: Annotated[int, deprecated('This is deprecated')]
 
     # Or explicitly using `Field`:
-    alt_form: Annotated[int, Field(deprecated=deprecated("This is deprecated"))]
+    alt_form: Annotated[int, Field(deprecated=deprecated('This is deprecated'))]
 ```
 
 !!! note "Support for `category` and `stacklevel`"
