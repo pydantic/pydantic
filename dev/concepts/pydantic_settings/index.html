@@ -3386,12 +3386,12 @@ you like through <code>Field(validation_alias=...)</code>.</p>
 <p>In case of nested models, the <code>case_sensitive</code> setting will be applied to all nested models.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">os</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 <span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
 
 
-<span class="k">class</span> <span class="nc">RedisSettings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">RedisSettings</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">host</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">port</span><span class="p">:</span> <span class="nb">int</span>
 
@@ -3409,13 +3409,10 @@ you like through <code>Field(validation_alias=...)</code>.</p>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    2 validation errors for Settings</span>
+<span class="sd">    1 validation error for Settings</span>
 <span class="sd">    redis.host</span>
 <span class="sd">      Field required [type=missing, input_value={&#39;HOST&#39;: &#39;localhost&#39;, &#39;port&#39;: 6379}, input_type=dict]</span>
 <span class="sd">        For further information visit https://errors.pydantic.dev/2/v/missing</span>
-<span class="sd">    redis.HOST</span>
-<span class="sd">      Extra inputs are not permitted [type=extra_forbidden, input_value=&#39;localhost&#39;, input_type=str]</span>
-<span class="sd">        For further information visit https://errors.pydantic.dev/2/v/extra_forbidden</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <ol>
@@ -3440,6 +3437,11 @@ config setting, then use an environment variable with a name pointing to the nes
 What it does is simply explodes your variable into nested models or dicts.
 So if you define a variable <code>FOO__BAR__BAZ=123</code> it will convert it into <code>FOO={'BAR': {'BAZ': 123}}</code>
 If you have multiple variables with the same structure they will be merged.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Sub model has to inherit from <code>pydantic.BaseModel</code>, Otherwise <code>pydantic-settings</code> will initialize sub model,
+collects values for sub model fields separately, and you may get unexpected results.</p>
+</div>
 <p>As an example, given the following environment variables:
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># your environment</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">V0</span><span class="o">=</span><span class="m">0</span>
@@ -3482,12 +3484,10 @@ If you have multiple variables with the same structure they will be merged.</p>
 </code></pre></div>
 <ol>
 <li>
-<p>Sub model has to inherit from <code>pydantic.BaseModel</code>, Otherwise <code>pydantic-settings</code> will initialize sub model,
-   collects values for sub model fields separately, and you may get unexpected results.</p>
+<p>Sub model has to inherit from <code>pydantic.BaseModel</code>.</p>
 </li>
 <li>
-<p>Sub model has to inherit from <code>pydantic.BaseModel</code>, Otherwise <code>pydantic-settings</code> will initialize sub model,
-   collects values for sub model fields separately, and you may get unexpected results.</p>
+<p>Sub model has to inherit from <code>pydantic.BaseModel</code>.</p>
 </li>
 </ol>
 <p><code>env_nested_delimiter</code> can be configured via the <code>model_config</code> as shown above, or via the
@@ -3607,6 +3607,12 @@ it will raise <code>ValidationError</code> in settings construction.</p>
 <span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_file</span><span class="o">=</span><span class="s1">&#39;.env&#39;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
 </code></pre></div></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Pydantic settings loads all the values from dotenv file and passes it to the model, regardless of the model's <code>env_prefix</code>.
+So if you provide extra values in a dotenv file, whether they start with <code>env_prefix</code> or not,
+a <code>ValidationError</code> will be raised.</p>
+</div>
 <h2 id="secrets">Secrets<a class="headerlink" href="#secrets" title="Permanent link">&para;</a></h2>
 <p>Placing secret values in files is a common pattern to provide sensitive configuration to an application.</p>
 <p>A secret file follows the same principal as a dotenv file except it only contains a single value and the file name
