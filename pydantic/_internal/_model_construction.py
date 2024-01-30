@@ -193,12 +193,12 @@ class ModelMetaclass(ABCMeta):
             # the generic computed fields return type is set to PydanticUndefined
             cls.model_computed_fields = {k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()}
 
-            cls.__pydantic_deprecated_messages__ = {
+            cls.__pydantic_deprecated_fields__ = {
                 field: field_info.deprecation_message
                 for field, field_info in cls.model_fields.items()
                 if field_info.deprecation_message is not None
             }
-            cls.__pydantic_deprecated_messages__.update(
+            cls.__pydantic_deprecated_fields__.update(
                 {
                     field: computed_field_info.deprecation_message
                     for field, computed_field_info in cls.model_computed_fields.items()
@@ -224,8 +224,8 @@ class ModelMetaclass(ABCMeta):
             private_attributes = self.__dict__.get('__private_attributes__')
             if private_attributes and item in private_attributes:
                 return private_attributes[item]
-            if item == '__pydantic_deprecated_messages__':
-                return self.__dict__.get('__pydantic_deprecated_messages__')
+            if item == '__pydantic_deprecated_fields__':
+                return self.__dict__.get('__pydantic_deprecated_fields__')
             if item == '__pydantic_core_schema__':
                 # This means the class didn't get a schema generated for it, likely because there was an undefined reference
                 maybe_mock_validator = getattr(self, '__pydantic_validator__', None)
