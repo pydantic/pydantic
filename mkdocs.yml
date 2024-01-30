@@ -113,6 +113,7 @@ nav:
     - Coordinate: api/pydantic_extra_types_coordinate.md
     - Mac Address: api/pydantic_extra_types_mac_address.md
     - ISBN: api/pydantic_extra_types_isbn.md
+    - Pendulum: api/pydantic_extra_types_pendulum_dt.md
 - Examples:
   - Secrets: examples/secrets.md
 - Error Messages:

@@ -538,16 +538,23 @@ class GenerateSchema:
 
             extras_schema = None
             if core_config.get('extra_fields_behavior') == 'allow':
-                for tp in (cls, *cls.__mro__):
-                    extras_annotation = cls.__annotations__.get('__pydantic_extra__', None)
+                assert cls.__mro__[0] is cls
+                assert cls.__mro__[-1] is object
+                for candidate_cls in cls.__mro__[:-1]:
+                    extras_annotation = candidate_cls.__annotations__.get('__pydantic_extra__', None)
                     if extras_annotation is not None:
+                        if isinstance(extras_annotation, str):
+                            extras_annotation = _typing_extra.eval_type_backport(
+                                _typing_extra._make_forward_ref(extras_annotation, is_argument=False, is_class=True),
+                                self._types_namespace,
+                            )
                         tp = get_origin(extras_annotation)
                         if tp not in (Dict, dict):
                             raise PydanticSchemaGenerationError(
                                 'The type annotation for `__pydantic_extra__` must be `Dict[str, ...]`'
                             )
                         extra_items_type = self._get_args_resolving_forward_refs(
-                            cls.__annotations__['__pydantic_extra__'],
+                            extras_annotation,
                             required=True,
                         )[1]
                         if extra_items_type is not Any:
