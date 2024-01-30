@@ -2796,17 +2796,17 @@ def test_annotations_valid_for_field_inheritance_with_existing_field() -> None:
 
 def test_annotations_with_override() -> None:
     class A:
-        a: int = pydantic.dataclasses.Field()
-        b: int = pydantic.dataclasses.Field()
-        c: int
-        d: int
+        a: int
+        b: int
+        c: int = pydantic.dataclasses.Field()
+        d: int = pydantic.dataclasses.Field()
 
     @pydantic.dataclasses.dataclass()
     class B(A):
-        a: str = pydantic.dataclasses.Field()
-        b: str
-        c: str = pydantic.dataclasses.Field()
-        d: str
+        a: str
+        c: str
+        b: str = pydantic.dataclasses.Field()
+        d: str = pydantic.dataclasses.Field()
 
     b = B(a='a', b='b', c='c', d='d')
     for field_name in ['a', 'b', 'c', 'd']:
