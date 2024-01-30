@@ -51,7 +51,7 @@ except ValidationError as e:
 Pydantic supports the following [datetime](https://docs.python.org/library/datetime.html#available-types)
 types:
 
-### `datetime.datetime`
+### [`datetime.datetime`][]
 * `datetime` fields will accept values of type:
 
     * `datetime`; an existing `datetime` object
@@ -79,7 +79,7 @@ print(event.model_dump())
 """
 ```
 
-### `datetime.date`
+### [`datetime.date`][]
 * `date` fields will accept values of type:
 
     * `date`; an existing `date` object
@@ -104,7 +104,7 @@ print(my_birthday.model_dump())
 #> {'d': datetime.date(2023, 3, 24)}
 ```
 
-### `datetime.time`
+### [`datetime.time`][]
 * `time` fields will accept values of type:
 
     * `time`; an existing `time` object
@@ -127,7 +127,7 @@ print(m.model_dump())
 #> {'t': datetime.time(4, 8, 16)}
 ```
 
-### `datetime.timedelta`
+### [`datetime.timedelta`][]
 * `timedelta` fields will accept values of type:
 
     * `timedelta`; an existing `timedelta` object
@@ -166,16 +166,16 @@ Pydantic supports the following numeric types from the Python standard library:
 
 * Pydantic uses `float(v)` to coerce values to floats.
 
-### `enum.IntEnum`
+### [`enum.IntEnum`][]
 
 * Validation: Pydantic checks that the value is a valid `IntEnum` instance.
 * Validation for subclass of `enum.IntEnum`: checks that the value is a valid member of the integer enum;
   see [Enums and Choices](#enum) for more details.
 
-### `decimal.Decimal`
+### [`decimal.Decimal`][]
 
 * Validation: Pydantic attempts to convert the value to a string, then passes the string to `Decimal(v)`.
-* Serialization: Pydantic serializes `Decimal` types as strings.
+* Serialization: Pydantic serializes [`Decimal`][decimal.Decimal] types as strings.
 You can use a custom serializer to override this behavior if desired. For example:
 
 ```py
@@ -210,9 +210,9 @@ print(my_model.model_dump_json())  # (3)!
 2. Using [`model_dump`][pydantic.main.BaseModel.model_dump] with `mode='json'`, `x` is serialized as a `string`, and `y` is serialized as a `float` because of the custom serializer applied.
 3. Using [`model_dump_json`][pydantic.main.BaseModel.model_dump_json], `x` is serialized as a `string`, and `y` is serialized as a `float` because of the custom serializer applied.
 
-## `Enum`
+## [`Enum`][enum.Enum]
 
-Pydantic uses Python's standard `enum` classes to define choices.
+Pydantic uses Python's standard [`enum`][] classes to define choices.
 
 `enum.Enum` checks that the value is a valid `Enum` instance.
 Subclass of `enum.Enum` checks that the value is a valid member of the enum.
@@ -255,12 +255,12 @@ except ValidationError as e:
 
 ## Lists and Tuples
 
-### `list`
+### [`list`][]
 
-Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a `list`.
+Allows [`list`][], [`tuple`][], [`set`][], [`frozenset`][], [`deque`][collections.deque], or generators and casts to a [`list`][].
 When a generic parameter is provided, the appropriate validation is applied to all items of the list.
 
-### `typing.List`
+### [`typing.List`][]
 
 Handled the same as `list` above.
 
@@ -281,12 +281,12 @@ print(Model(list_of_ints=['1', '2', '3']).list_of_ints)
 #> [1, 2, 3]
 ```
 
-### `tuple`
+### [`tuple`][]
 
-Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a `tuple`.
+Allows [`list`][], [`tuple`][], [`set`][], [`frozenset`][], [`deque`][collections.deque], or generators and casts to a [`tuple`][].
 When generic parameters are provided, the appropriate validation is applied to the respective items of the tuple
 
-### `typing.Tuple`
+### [`typing.Tuple`][]
 
 Handled the same as `tuple` above.
 
@@ -307,12 +307,12 @@ print(Model(tuple_of_different_types=[3, 2, 1]).tuple_of_different_types)
 #> (3, 2.0, True)
 ```
 
-### `typing.NamedTuple`
+### [`typing.NamedTuple`][]
 
-Subclasses of `typing.NamedTuple` are similar to `tuple`, but create instances of the given `namedtuple` class.
+Subclasses of [`typing.NamedTuple`][] are similar to `tuple`, but create instances of the given `namedtuple` class.
 
-Subclasses of `collections.namedtuple` are similar to subclass of `typing.NamedTuple`, but since field types are not specified,
-all fields are treated as having type `Any`.
+Subclasses of [`collections.namedtuple`][] are similar to subclass of [`typing.NamedTuple`][], but since field types are not specified,
+all fields are treated as having type [`Any`][typing.Any].
 
 ```py
 from typing import NamedTuple
@@ -342,12 +342,12 @@ except ValidationError as e:
 
 ## Deque
 
-### `deque`
+### [`deque`][collections.deque]
 
-Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a `deque`.
-When generic parameters are provided, the appropriate validation is applied to the respective items of the `deque`
+Allows [`list`][], [`tuple`][], [`set`][], [`frozenset`][], [`deque`][collections.deque], or generators and casts to a [`deque`][collections.deque].
+When generic parameters are provided, the appropriate validation is applied to the respective items of the `deque`.
 
-### `typing.Deque`
+### [`typing.Deque`][]
 
 Handled the same as `deque` above.
 
@@ -367,12 +367,12 @@ print(Model(deque=[1, 2, 3]).deque)
 
 ## Sets
 
-### `set`
+### [`set`][]
 
-Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a `set`.
+Allows [`list`][], [`tuple`][], [`set`][], [`frozenset`][], [`deque`][collections.deque], or generators and casts to a [`set`][].
 When a generic parameter is provided, the appropriate validation is applied to all items of the set.
 
-### `typing.Set`
+### [`typing.Set`][]
 
 Handled the same as `set` above.
 
@@ -395,12 +395,12 @@ print(Model(set_of_ints=['1', '2', '3']).set_of_ints)
 #> {1, 2, 3}
 ```
 
-### `frozenset`
+### [`frozenset`][]
 
-Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a `frozenset`.
+Allows [`list`][], [`tuple`][], [`set`][], [`frozenset`][], [`deque`][collections.deque], or generators and casts to a [`frozenset`][].
 When a generic parameter is provided, the appropriate validation is applied to all items of the frozen set.
 
-### `typing.FrozenSet`
+### [`typing.FrozenSet`][]
 
 Handled the same as `frozenset` above.
 
@@ -431,23 +431,23 @@ print(sorted(m2.frozenset_of_ints))
 
 ## Other Iterables
 
-### `typing.Sequence`
+### [`typing.Sequence`][]
 
-This is intended for use when the provided value should meet the requirements of the `Sequence` protocol, and it is
+This is intended for use when the provided value should meet the requirements of the `Sequence` ABC, and it is
 desirable to do eager validation of the values in the container. Note that when validation must be performed on the
 values of the container, the type of the container may not be preserved since validation may end up replacing values.
-We guarantee that the validated value will be a valid `typing.Sequence`, but it may have a different type than was
+We guarantee that the validated value will be a valid [`typing.Sequence`][], but it may have a different type than was
 provided (generally, it will become a `list`).
 
-### `typing.Iterable`
+### [`typing.Iterable`][]
 
 This is intended for use when the provided value may be an iterable that shouldn't be consumed.
 See [Infinite Generators](#infinite-generators) below for more detail on parsing and validation.
-Similar to `typing.Sequence`, we guarantee that the validated result will be a valid `typing.Iterable`,
+Similar to [`typing.Sequence`][], we guarantee that the validated result will be a valid [`typing.Iterable`][],
 but it may have a different type than was provided. In particular, even if a non-generator type such as a `list`
-is provided, the post-validation value of a field of type `typing.Iterable` will be a generator.
+is provided, the post-validation value of a field of type [`typing.Iterable`][] will be a generator.
 
-Here is a simple example using `typing.Sequence`:
+Here is a simple example using [`typing.Sequence`][]:
 
 ```py
 from typing import Sequence
@@ -472,7 +472,7 @@ In that case, the generator will be consumed and stored on the model as a list a
 validated against the type parameter of the `Sequence` (e.g. `int` in `Sequence[int]`).
 
 However, if you have a generator that you _don't_ want to be eagerly consumed (e.g. an infinite
-generator or a remote data loader), you can use a field of type `Iterable`:
+generator or a remote data loader), you can use a field of type [`Iterable`][typing.Iterable]:
 
 ```py
 from typing import Iterable
@@ -556,9 +556,9 @@ except ValidationError as e:
 
 ## Mapping Types
 
-### `dict`
+### [`dict`][]
 
-`dict(v)` is used to attempt to convert a dictionary. see `typing.Dict` below for sub-type constraints.
+`dict(v)` is used to attempt to convert a dictionary. see [`typing.Dict`][] below for sub-type constraints.
 
 ```py
 from pydantic import BaseModel, ValidationError
@@ -583,7 +583,7 @@ except ValidationError as e:
     """
 ```
 
-### `typing.Dict`
+### [`typing.Dict`][]
 
 ```py
 from typing import Dict
@@ -614,14 +614,14 @@ except ValidationError as e:
 
 !!! note
     This is a new feature of the Python standard library as of Python 3.8.
-    Because of limitations in `typing.TypedDict` before 3.12, the [typing-extensions](https://pypi.org/project/typing-extensions/)
+    Because of limitations in [typing.TypedDict][] before 3.12, the [typing-extensions](https://pypi.org/project/typing-extensions/)
     package is required for Python <3.12. You'll need to import `TypedDict` from `typing_extensions` instead of `typing` and will
     get a build time error if you don't.
 
-[TypedDict](https://docs.python.org/3/library/typing.html#typing.TypedDict) declares a dictionary type that expects all of
+[`TypedDict`][typing.TypedDict] declares a dictionary type that expects all of
 its instances to have a certain set of keys, where each key is associated with a value of a consistent type.
 
-It is same as `dict` but Pydantic will validate the dictionary since keys are annotated.
+It is same as [`dict`][] but Pydantic will validate the dictionary since keys are annotated.
 
 ```py
 from typing_extensions import TypedDict
@@ -650,7 +650,7 @@ except ValidationError as e:
     """
 ```
 
-You can define `__pydantic_config__` to change the model inherited from `TypedDict`.
+You can define `__pydantic_config__` to change the model inherited from [`TypedDict`][typing.TypedDict].
 See the [`ConfigDict` API reference][pydantic.config.ConfigDict] for more details.
 
 ```py
@@ -727,7 +727,7 @@ except ValidationError as e:
 
 See below for more detail on parsing and validation
 
-Fields can also be of type `Callable`:
+Fields can also be of type [`Callable`][typing.Callable]:
 
 ```py
 from typing import Callable
@@ -751,12 +751,12 @@ print(m)
 
 ## IP Address Types
 
-* `ipaddress.IPv4Address`: Uses the type itself for validation by passing the value to `IPv4Address(v)`.
-* `ipaddress.IPv4Interface`: Uses the type itself for validation by passing the value to `IPv4Address(v)`.
-* `ipaddress.IPv4Network`: Uses the type itself for validation by passing the value to `IPv4Network(v)`.
-* `ipaddress.IPv6Address`: Uses the type itself for validation by passing the value to `IPv6Address(v)`.
-* `ipaddress.IPv6Interface`: Uses the type itself for validation by passing the value to `IPv6Interface(v)`.
-* `ipaddress.IPv6Network`: Uses the type itself for validation by passing the value to `IPv6Network(v)`.
+* [`ipaddress.IPv4Address`][]: Uses the type itself for validation by passing the value to `IPv4Address(v)`.
+* [`ipaddress.IPv4Interface`][]: Uses the type itself for validation by passing the value to `IPv4Address(v)`.
+* [`ipaddress.IPv4Network`][]: Uses the type itself for validation by passing the value to `IPv4Network(v)`.
+* [`ipaddress.IPv6Address`][]: Uses the type itself for validation by passing the value to `IPv6Address(v)`.
+* [`ipaddress.IPv6Interface`][]: Uses the type itself for validation by passing the value to `IPv6Interface(v)`.
+* [`ipaddress.IPv6Network`][]: Uses the type itself for validation by passing the value to `IPv6Network(v)`.
 
 See [Network Types](../api/networks.md) for other custom IP address types.
 
@@ -774,17 +774,17 @@ In case you want to constrain the UUID version, you can check the following type
 
 ## Union
 
-Pydantic has extensive support for union validation, both `typing.Union` and Python 3.10's pipe syntax (`A | B`) are supported.
+Pydantic has extensive support for union validation, both [`typing.Union`][] and Python 3.10's pipe syntax (`A | B`) are supported.
 Read more in the [`Unions`](../concepts/unions.md) section of the concepts docs.
 
-## `Type` and `TypeVar`
+## [`Type`][typing.Type] and [`TypeVar`][typing.TypeVar]
 
-### `type`
+### [`type`][]
 
 Pydantic supports the use of `type[T]` to specify that a field may only accept classes (not instances)
 that are subclasses of `T`.
 
-### `typing.Type`
+### [`typing.Type`][]
 
 Handled the same as `type` above.
 
@@ -852,9 +852,9 @@ except ValidationError as e:
     """
 ```
 
-### `typing.TypeVar`
+### [`typing.TypeVar`][]
 
-`TypeVar` is supported either unconstrained, constrained or with a bound.
+[`TypeVar`][typing.TypeVar] is supported either unconstrained, constrained or with a bound.
 
 ```py
 from typing import TypeVar
@@ -882,7 +882,7 @@ print(Model(a=None, b=1, c=1))
 
 ## None Types
 
-`None`, `type(None)`, or `Literal[None]` are all equivalent according to [PEP 484](https://www.python.org/dev/peps/pep-0484/#using-none).
+[`None`][], `type(None)`, or `Literal[None]` are all equivalent according to [the typing specification](https://typing.readthedocs.io/en/latest/spec/special-types.html#none).
 Allows only `None` value.
 
 ## Strings
@@ -945,16 +945,11 @@ except ValidationError as e:
 `bytes` are accepted as-is. `bytearray` is converted using `bytes(v)`. `str` are converted using `v.encode()`. `int`, `float`, and `Decimal` are coerced using `str(v).encode()`. See [ByteSize](types.md#pydantic.types.ByteSize) for more details.
 
 
-## `typing.Literal`
+## [`typing.Literal`][]
 
-!!! note
-    This is a new feature of the Python standard library as of Python 3.8;
-    prior to Python 3.8, it requires the [typing-extensions](https://pypi.org/project/typing-extensions/) package.
+Pydantic supports the use of [`typing.Literal`][] as a lightweight way to specify that a field may accept only specific literal values:
 
-Pydantic supports the use of `typing.Literal` (or `typing_extensions.Literal` prior to Python 3.8)
-as a lightweight way to specify that a field may accept only specific literal values:
-
-```py requires="3.8"
+```py
 from typing import Literal
 
 from pydantic import BaseModel, ValidationError
@@ -1056,21 +1051,21 @@ print(type(Meal(dessert={'kind': 'cake'}).dessert).__name__)
 #> Dessert
 ```
 
-## `typing.Any`
+## [`typing.Any`][]
 
 Allows any value, including `None`.
 
 
-## `typing.Annotated`
+## [`typing.Annotated`][]
 
 Allows wrapping another type with arbitrary metadata, as per [PEP-593](https://www.python.org/dev/peps/pep-0593/). The `Annotated` hint may contain a single call to the [`Field` function](../concepts/json_schema.md#typingannotated-fields), but otherwise the additional metadata is ignored and the root type is used.
 
 
-## `typing.Pattern`
+## [`typing.Pattern`][]
 
 Will cause the input value to be passed to `re.compile(v)` to create a regular expression pattern.
 
 
-## `pathlib.Path`
+## [`pathlib.Path`][]
 
 Simply uses the type itself for validation by passing the value to `Path(v)`.
