@@ -2759,3 +2759,17 @@ def test_disallow_init_false_and_init_var_true() -> None:
         @pydantic.dataclasses.dataclass
         class Foo:
             bar: str = Field(..., init=False, init_var=True)
+
+
+def test_annotations_valid_for_field_inheritance() -> None:
+    # testing https://github.com/pydantic/pydantic/issues/8670
+
+    class A:
+        a: int = pydantic.dataclasses.Field()
+
+    @pydantic.dataclasses.dataclass()
+    class B(A):
+        ...
+
+    assert 'a' in B.__pydantic_fields__
+    assert 'a' in B.__annotations__
