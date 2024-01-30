@@ -2772,3 +2772,23 @@ def test_annotations_valid_for_field_inheritance() -> None:
         ...
 
     assert B.__pydantic_fields__['a'].annotation is int
+
+    assert B(a=1).a == 1
+
+
+def test_annotations_valid_for_field_inheritance_with_existing_field() -> None:
+    # variation on testing https://github.com/pydantic/pydantic/issues/8670
+
+    class A:
+        a: int = pydantic.dataclasses.Field()
+
+    @pydantic.dataclasses.dataclass()
+    class B(A):
+        b: str
+
+    assert B.__pydantic_fields__['a'].annotation is int
+    assert B.__pydantic_fields__['b'].annotation is str
+
+    b = B(a=1, b='b')
+    assert b.a == 1
+    assert b.b == 'b'
