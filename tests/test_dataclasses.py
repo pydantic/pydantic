@@ -2808,7 +2808,12 @@ def test_annotations_with_override() -> None:
         b: str = pydantic.dataclasses.Field()
         d: str = pydantic.dataclasses.Field()
 
-    b = B(a='a', b='b', c='c', d='d')
-    for field_name in ['a', 'b', 'c', 'd']:
-        assert B.__pydantic_fields__[field_name].annotation is str
-        assert getattr(b, field_name) == field_name
+    @pydantic.dataclasses.dataclass()
+    class C(B):
+        pass
+
+    for _dataclass in [B, C]:
+        instance = _dataclass(a='a', b='b', c='c', d='d')
+        for field_name in ['a', 'b', 'c', 'd']:
+            assert _dataclass.__pydantic_fields__[field_name].annotation is str
+            assert getattr(instance, field_name) == field_name
