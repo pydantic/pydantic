@@ -111,6 +111,7 @@ cases = (
         ('mypy-plugin-very-strict.ini', 'metaclass_args.py'),
         ('pyproject-default.toml', 'computed_fields.py'),
         ('pyproject-default.toml', 'with_config_decorator.py'),
+        ('pyproject-plugin-no-strict-optional.toml', 'no_strict_optional.py'),
     ]
 )
 
