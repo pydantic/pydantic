@@ -93,7 +93,7 @@ else:
 
 
 @dataclass_transform(field_specifiers=(dataclasses.field, Field))
-def dataclass(
+def dataclass(  # noqa: C901
     _cls: type[_T] | None = None,
     *,
     init: Literal[False] = False,
@@ -155,12 +155,15 @@ def dataclass(
         """
         # In Python 3.8, dataclasses checks cls.__dict__['__annotations__'] for annotations,
         # so we start from there as well.
-        annotations = cls.__dict__.get('__annotations__') or {}
+        annotations = getattr(cls, '__annotations__', None) or cls.__dict__.get('__annotations__') or {}
 
         for annotation_cls in cls.__mro__:
             # In Python < 3.9, `__annotations__` might not be present if there are no fields.
             # we therefore need to use `getattr` to avoid an `AttributeError`.
             for field_name in getattr(annotation_cls, '__annotations__', []):
+                if annotations.get(field_name) is None:
+                    annotations[field_name] = annotation_cls.__annotations__[field_name]
+
                 field_value = getattr(cls, field_name, None)
                 # Process only if this is an instance of `FieldInfo`.
                 if not isinstance(field_value, FieldInfo):
@@ -178,8 +181,6 @@ def dataclass(
                     field_args['repr'] = field_value.repr
 
                 setattr(cls, field_name, dataclasses.field(**field_args))
-
-                annotations[field_name] = annotation_cls.__annotations__[field_name]
 
         cls.__annotations__ = annotations
 
