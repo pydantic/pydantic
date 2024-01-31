@@ -153,17 +153,11 @@ def dataclass(  # noqa: C901
         into
           `x: int = dataclasses.field(default=pydantic.Field(..., kw_only=True), kw_only=True)`
         """
-        # In Python 3.8, dataclasses checks cls.__dict__['__annotations__'] for annotations,
-        # so we start from there as well.
-        annotations = getattr(cls, '__annotations__', None) or cls.__dict__.get('__annotations__') or {}
-
         for annotation_cls in cls.__mro__:
             # In Python < 3.9, `__annotations__` might not be present if there are no fields.
             # we therefore need to use `getattr` to avoid an `AttributeError`.
-            for field_name in getattr(annotation_cls, '__annotations__', []):
-                if annotations.get(field_name) is None:
-                    annotations[field_name] = annotation_cls.__annotations__[field_name]
-
+            annotations = getattr(annotation_cls, '__annotations__', [])
+            for field_name in annotations:
                 field_value = getattr(cls, field_name, None)
                 # Process only if this is an instance of `FieldInfo`.
                 if not isinstance(field_value, FieldInfo):
@@ -181,8 +175,11 @@ def dataclass(  # noqa: C901
                     field_args['repr'] = field_value.repr
 
                 setattr(cls, field_name, dataclasses.field(**field_args))
-
-        cls.__annotations__ = annotations
+                # In Python 3.8, dataclasses checks cls.__dict__['__annotations__'] for annotations,
+                # so we must make sure it's initialized before we add to it.
+                if cls.__dict__.get('__annotations__') is None:
+                    cls.__annotations__ = {}
+                cls.__annotations__[field_name] = annotations[field_name]
 
     def create_dataclass(cls: type[Any]) -> type[PydanticDataclass]:
         """Create a Pydantic dataclass from a regular dataclass.
