@@ -3371,8 +3371,15 @@ new attributes after instantiation.</p>
 <span class="normal">240</span>
 <span class="normal">241</span>
 <span class="normal">242</span>
-<span class="normal">243</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass_transform</span><span class="p">(</span><span class="n">field_specifiers</span><span class="o">=</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">,</span> <span class="n">Field</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">dataclass</span><span class="p">(</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass_transform</span><span class="p">(</span><span class="n">field_specifiers</span><span class="o">=</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">,</span> <span class="n">Field</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">dataclass</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">_T</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">init</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -3432,26 +3439,33 @@ new attributes after instantiation.</p>
 <span class="sd">        into</span>
 <span class="sd">          `x: int = dataclasses.field(default=pydantic.Field(..., kw_only=True), kw_only=True)`</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># In Python &lt; 3.9, `__annotations__` might not be present if there are no fields.</span>
-        <span class="c1"># we therefore need to use `getattr` to avoid an `AttributeError`.</span>
-        <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s1">&#39;__annotations__&#39;</span><span class="p">,</span> <span class="p">[]):</span>
-            <span class="n">field_value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-            <span class="c1"># Process only if this is an instance of `FieldInfo`.</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">field_value</span><span class="p">,</span> <span class="n">FieldInfo</span><span class="p">):</span>
-                <span class="k">continue</span>
+        <span class="k">for</span> <span class="n">annotation_cls</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__mro__</span><span class="p">:</span>
+            <span class="c1"># In Python &lt; 3.9, `__annotations__` might not be present if there are no fields.</span>
+            <span class="c1"># we therefore need to use `getattr` to avoid an `AttributeError`.</span>
+            <span class="n">annotations</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">annotation_cls</span><span class="p">,</span> <span class="s1">&#39;__annotations__&#39;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="n">annotations</span><span class="p">:</span>
+                <span class="n">field_value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="c1"># Process only if this is an instance of `FieldInfo`.</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">field_value</span><span class="p">,</span> <span class="n">FieldInfo</span><span class="p">):</span>
+                    <span class="k">continue</span>
 
-            <span class="c1"># Initialize arguments for the standard `dataclasses.field`.</span>
-            <span class="n">field_args</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="n">field_value</span><span class="p">}</span>
+                <span class="c1"># Initialize arguments for the standard `dataclasses.field`.</span>
+                <span class="n">field_args</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="n">field_value</span><span class="p">}</span>
 
-            <span class="c1"># Handle `kw_only` for Python 3.10+</span>
-            <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span> <span class="ow">and</span> <span class="n">field_value</span><span class="o">.</span><span class="n">kw_only</span><span class="p">:</span>
-                <span class="n">field_args</span><span class="p">[</span><span class="s1">&#39;kw_only&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="c1"># Handle `kw_only` for Python 3.10+</span>
+                <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span> <span class="ow">and</span> <span class="n">field_value</span><span class="o">.</span><span class="n">kw_only</span><span class="p">:</span>
+                    <span class="n">field_args</span><span class="p">[</span><span class="s1">&#39;kw_only&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
-            <span class="c1"># Set `repr` attribute if it&#39;s explicitly specified to be not `True`.</span>
-            <span class="k">if</span> <span class="n">field_value</span><span class="o">.</span><span class="n">repr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
-                <span class="n">field_args</span><span class="p">[</span><span class="s1">&#39;repr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">field_value</span><span class="o">.</span><span class="n">repr</span>
+                <span class="c1"># Set `repr` attribute if it&#39;s explicitly specified to be not `True`.</span>
+                <span class="k">if</span> <span class="n">field_value</span><span class="o">.</span><span class="n">repr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="n">field_args</span><span class="p">[</span><span class="s1">&#39;repr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">field_value</span><span class="o">.</span><span class="n">repr</span>
 
-            <span class="nb">setattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="o">**</span><span class="n">field_args</span><span class="p">))</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="o">**</span><span class="n">field_args</span><span class="p">))</span>
+                <span class="c1"># In Python 3.8, dataclasses checks cls.__dict__[&#39;__annotations__&#39;] for annotations,</span>
+                <span class="c1"># so we must make sure it&#39;s initialized before we add to it.</span>
+                <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;__annotations__&#39;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="bp">cls</span><span class="o">.</span><span class="vm">__annotations__</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="bp">cls</span><span class="o">.</span><span class="vm">__annotations__</span><span class="p">[</span><span class="n">field_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">annotations</span><span class="p">[</span><span class="n">field_name</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">create_dataclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">PydanticDataclass</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a Pydantic dataclass from a regular dataclass.</span>
@@ -3675,14 +3689,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/dataclasses.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">262</span>
-<span class="normal">263</span>
-<span class="normal">264</span>
-<span class="normal">265</span>
-<span class="normal">266</span>
-<span class="normal">267</span>
-<span class="normal">268</span>
-<span class="normal">269</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">269</span>
 <span class="normal">270</span>
 <span class="normal">271</span>
 <span class="normal">272</span>
@@ -3721,7 +3728,14 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <span class="normal">305</span>
 <span class="normal">306</span>
 <span class="normal">307</span>
-<span class="normal">308</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">rebuild_dataclass</span><span class="p">(</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">rebuild_dataclass</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">PydanticDataclass</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -3847,16 +3861,16 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/dataclasses.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">311</span>
-<span class="normal">312</span>
-<span class="normal">313</span>
-<span class="normal">314</span>
-<span class="normal">315</span>
-<span class="normal">316</span>
-<span class="normal">317</span>
-<span class="normal">318</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">318</span>
 <span class="normal">319</span>
-<span class="normal">320</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">is_pydantic_dataclass</span><span class="p">(</span><span class="n">__cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">TypeGuard</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">PydanticDataclass</span><span class="p">]]:</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">is_pydantic_dataclass</span><span class="p">(</span><span class="n">__cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">TypeGuard</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">PydanticDataclass</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Whether a class is a pydantic dataclass.</span>
 
 <span class="sd">    Args:</span>
