@@ -650,6 +650,51 @@ def test_computed_field_exclude_none():
     assert s.to_json(Model(3, 4), exclude_none=True) == b'{"width":3,"height":4,"Area":12}'
 
 
+def test_computed_field_exclude_none_different_order():
+    # verify that order of computed fields doesn't matter
+    # issue originally reported via: https://github.com/pydantic/pydantic/issues/8691
+
+    @dataclasses.dataclass
+    class Model:
+        width: int
+        height: int
+
+        @property
+        def volume(self) -> None:
+            return None
+
+        @property
+        def area(self) -> int:
+            return self.width * self.height
+
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            Model,
+            core_schema.model_fields_schema(
+                {
+                    'width': core_schema.model_field(core_schema.int_schema()),
+                    'height': core_schema.model_field(core_schema.int_schema()),
+                },
+                computed_fields=[
+                    core_schema.computed_field('volume', core_schema.int_schema()),
+                    core_schema.computed_field('area', core_schema.int_schema(), alias='Area'),
+                ],
+            ),
+        )
+    )
+    assert s.to_python(Model(3, 4), exclude_none=False) == {'width': 3, 'height': 4, 'Area': 12, 'volume': None}
+    assert s.to_python(Model(3, 4), exclude_none=True) == {'width': 3, 'height': 4, 'Area': 12}
+    assert s.to_python(Model(3, 4), mode='json', exclude_none=False) == {
+        'width': 3,
+        'height': 4,
+        'Area': 12,
+        'volume': None,
+    }
+    assert s.to_python(Model(3, 4), mode='json', exclude_none=True) == {'width': 3, 'height': 4, 'Area': 12}
+    assert s.to_json(Model(3, 4), exclude_none=False) == b'{"width":3,"height":4,"volume":null,"Area":12}'
+    assert s.to_json(Model(3, 4), exclude_none=True) == b'{"width":3,"height":4,"Area":12}'
+
+
 @pytest.mark.skipif(cached_property is None, reason='cached_property is not available')
 def test_cached_property_alias():
     @dataclasses.dataclass
