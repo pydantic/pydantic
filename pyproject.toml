@@ -34,6 +34,7 @@ authors = [
     {name = 'Marcelo Trylesinski', email = 'marcelotryle@gmail.com'},
     {name = 'Sydney Runkle', email = 'sydneymarierunkle@gmail.com'},
     {name = 'David Hewitt', email = 'mail@davidhewitt.io'},
+    {name = 'Alex Hall', email='alex.mojaki@gmail.com'},
 ]
 license = 'MIT'
 classifiers = [
@@ -172,7 +173,7 @@ addopts = [
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
 assignees = []
-reviewers = ['samuelcolvin', 'adriangb', 'dmontagu', 'hramezani', 'lig', 'Kludex', 'davidhewitt', 'sydney-runkle']
+reviewers = ['samuelcolvin', 'adriangb', 'dmontagu', 'hramezani', 'lig', 'Kludex', 'davidhewitt', 'sydney-runkle', 'alexmojaki']
 require_change_file = false
 unconfirmed_label = 'pending'
 
