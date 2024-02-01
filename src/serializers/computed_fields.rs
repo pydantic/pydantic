@@ -75,7 +75,7 @@ impl ComputedFields {
             let property_name_py = computed_field.property_name_py.as_ref(model.py());
             let value = model.getattr(property_name_py).map_err(py_err_se_err)?;
             if extra.exclude_none && value.is_none() {
-                return Ok(());
+                continue;
             }
             if let Some((next_include, next_exclude)) = filter
                 .key_filter(property_name_py, include, exclude)
