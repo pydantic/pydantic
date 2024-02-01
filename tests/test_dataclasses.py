@@ -2796,29 +2796,6 @@ def test_annotations_valid_for_field_inheritance_with_existing_field() -> None:
     assert b.b == 'b'
 
 
-def test_annotations_with_override() -> None:
-    @pydantic.dataclasses.dataclass()
-    class A:
-        a: int
-        b: int
-        c: int = pydantic.dataclasses.Field()
-        d: int = pydantic.dataclasses.Field()
-
-    # note, the order of fields is different here, as to test that the annotation
-    # is correctly set on the field no matter the base's default / current class's default
-    @pydantic.dataclasses.dataclass()
-    class B(A):
-        a: str
-        c: str
-        b: str = pydantic.dataclasses.Field()
-        d: str = pydantic.dataclasses.Field()
-
-    b = B(a='a', b='b', c='c', d='d')
-    for field_name in ['a', 'b', 'c', 'd']:
-        assert B.__pydantic_fields__[field_name].annotation is str
-        assert getattr(b, field_name) == field_name
-
-
 def test_annotation_with_double_override() -> None:
     @pydantic.dataclasses.dataclass()
     class A:
@@ -2840,7 +2817,8 @@ def test_annotation_with_double_override() -> None:
     class C(B):
         ...
 
-    c = C(a='a', b='b', c='c', d='d')
-    for field_name in ['a', 'b', 'c', 'd']:
-        assert C.__pydantic_fields__[field_name].annotation is str
-        assert getattr(c, field_name) == field_name
+    for class_ in [B, C]:
+        instance = class_(a='a', b='b', c='c', d='d')
+        for field_name in ['a', 'b', 'c', 'd']:
+            assert class_.__pydantic_fields__[field_name].annotation is str
+            assert getattr(instance, field_name) == field_name
