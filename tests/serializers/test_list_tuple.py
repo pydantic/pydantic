@@ -411,3 +411,29 @@ def test_tuple_pos_dict_key():
     assert s.to_python({(1, 'a', 2): 1}, mode='json') == {'1,a,2': 1}
     assert s.to_json({(1, 'a'): 1}) == b'{"1,a":1}'
     assert s.to_json({(1, 'a', 2): 1}) == b'{"1,a,2":1}'
+
+
+def test_tuple_wrong_size_union():
+    # See https://github.com/pydantic/pydantic/issues/8677
+
+    f = core_schema.float_schema()
+    s = SchemaSerializer(
+        core_schema.union_schema([core_schema.tuple_schema([f, f]), core_schema.tuple_schema([f, f, f])])
+    )
+    assert s.to_python((1.0, 2.0)) == (1.0, 2.0)
+    assert s.to_python((1.0, 2.0, 3.0)) == (1.0, 2.0, 3.0)
+
+    with pytest.warns(UserWarning, match='Unexpected extra items present in tuple'):
+        s.to_python((1.0, 2.0, 3.0, 4.0))
+
+    assert s.to_python((1.0, 2.0), mode='json') == [1.0, 2.0]
+    assert s.to_python((1.0, 2.0, 3.0), mode='json') == [1.0, 2.0, 3.0]
+
+    with pytest.warns(UserWarning, match='Unexpected extra items present in tuple'):
+        s.to_python((1.0, 2.0, 3.0, 4.0), mode='json')
+
+    assert s.to_json((1.0, 2.0)) == b'[1.0,2.0]'
+    assert s.to_json((1.0, 2.0, 3.0)) == b'[1.0,2.0,3.0]'
+
+    with pytest.warns(UserWarning, match='Unexpected extra items present in tuple'):
+        s.to_json((1.0, 2.0, 3.0, 4.0))
