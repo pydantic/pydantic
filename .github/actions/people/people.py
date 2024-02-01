@@ -525,7 +525,7 @@ if __name__ == "__main__":
         settings=settings
     )
     authors = {**question_authors, **pr_authors}
-    maintainers_logins = {'samuelcolvin', 'adriangb', 'dmontagu', 'hramezani', 'Kludex', 'davidhewitt', 'sydney-runkle'}
+    maintainers_logins = {'samuelcolvin', 'adriangb', 'dmontagu', 'hramezani', 'Kludex', 'davidhewitt', 'sydney-runkle', 'alexmojaki'}
     bot_names = {"codecov", "github-actions", "pre-commit-ci", "dependabot"}
     maintainers = []
     for login in maintainers_logins:
