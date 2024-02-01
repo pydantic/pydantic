@@ -2759,3 +2759,66 @@ def test_disallow_init_false_and_init_var_true() -> None:
         @pydantic.dataclasses.dataclass
         class Foo:
             bar: str = Field(..., init=False, init_var=True)
+
+
+def test_annotations_valid_for_field_inheritance() -> None:
+    # testing https://github.com/pydantic/pydantic/issues/8670
+
+    @pydantic.dataclasses.dataclass()
+    class A:
+        a: int = pydantic.dataclasses.Field()
+
+    @pydantic.dataclasses.dataclass()
+    class B(A):
+        ...
+
+    assert B.__pydantic_fields__['a'].annotation is int
+
+    assert B(a=1).a == 1
+
+
+def test_annotations_valid_for_field_inheritance_with_existing_field() -> None:
+    # variation on testing https://github.com/pydantic/pydantic/issues/8670
+
+    @pydantic.dataclasses.dataclass()
+    class A:
+        a: int = pydantic.dataclasses.Field()
+
+    @pydantic.dataclasses.dataclass()
+    class B(A):
+        b: str = pydantic.dataclasses.Field()
+
+    assert B.__pydantic_fields__['a'].annotation is int
+    assert B.__pydantic_fields__['b'].annotation is str
+
+    b = B(a=1, b='b')
+    assert b.a == 1
+    assert b.b == 'b'
+
+
+def test_annotation_with_double_override() -> None:
+    @pydantic.dataclasses.dataclass()
+    class A:
+        a: int
+        b: int
+        c: int = pydantic.dataclasses.Field()
+        d: int = pydantic.dataclasses.Field()
+
+    # note, the order of fields is different here, as to test that the annotation
+    # is correctly set on the field no matter the base's default / current class's default
+    @pydantic.dataclasses.dataclass()
+    class B(A):
+        a: str
+        c: str
+        b: str = pydantic.dataclasses.Field()
+        d: str = pydantic.dataclasses.Field()
+
+    @pydantic.dataclasses.dataclass()
+    class C(B):
+        ...
+
+    for class_ in [B, C]:
+        instance = class_(a='a', b='b', c='c', d='d')
+        for field_name in ['a', 'b', 'c', 'd']:
+            assert class_.__pydantic_fields__[field_name].annotation is str
+            assert getattr(instance, field_name) == field_name
