@@ -258,7 +258,7 @@ class TypeAdapter(Generic[T]):
     def validate_json(
         self, __data: str | bytes, *, strict: bool | None = None, context: dict[str, Any] | None = None
     ) -> T:
-        """Usage docs: https://docs.pydantic.dev/2.6/concepts/json/#json-parsing
+        """Usage docs: https://docs.pydantic.dev/2.7/concepts/json/#json-parsing
 
         Validate a JSON string or bytes against the model.
 
@@ -355,7 +355,7 @@ class TypeAdapter(Generic[T]):
         round_trip: bool = False,
         warnings: bool = True,
     ) -> bytes:
-        """Usage docs: https://docs.pydantic.dev/2.6/concepts/json/#json-serialization
+        """Usage docs: https://docs.pydantic.dev/2.7/concepts/json/#json-serialization
 
         Serialize an instance of the adapted type to JSON.
 
