@@ -153,8 +153,19 @@ class PlainValidator:
     func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        schema = handler(source_type)
-        serialization = core_schema.wrap_serializer_function_ser_schema(function=lambda v, h: h(v), schema=schema)
+        # Note that for some valid uses of PlainValidator, it is not possible to generate a core schema for the
+        # source_type, so calling `handler(source_type)` will error, which prevents us from generating a proper
+        # serialization schema. To work around this for use cases that will not involve serialization, we simply
+        # catch any PydanticSchemaGenerationError that may be raised while attempting to build the serialization schema
+        # and abort any attempts to handle special serialization.
+        from pydantic import PydanticSchemaGenerationError
+
+        try:
+            schema = handler(source_type)
+            serialization = core_schema.wrap_serializer_function_ser_schema(function=lambda v, h: h(v), schema=schema)
+        except PydanticSchemaGenerationError:
+            serialization = None
+
         info_arg = _inspect_validator(self.func, 'plain')
         if info_arg:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
