@@ -1826,7 +1826,7 @@ class ByteSize(int):
         Args:
             decimal: If True, use decimal units (e.g. 1000 bytes per KB). If False, use binary units
                 (e.g. 1024 bytes per KiB).
-            separator: If True, the result will be separated by a space (` `) between the value and 
+            separator: If True, the result will be separated by a space (` `) between the value and
                 unit. If False, the result will remain inseparate.
 
         Returns:
