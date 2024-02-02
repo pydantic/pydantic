@@ -437,8 +437,6 @@ class GenerateSchema:
         if collect_invalid_schemas(schema):
             raise self.CollectedInvalid()
         schema = validate_core_schema(schema)
-        if 'definitions' in schema:
-            schema['definitions'] = list(reversed(schema['definitions']))
         return schema
 
     def collect_definitions(self, schema: CoreSchema) -> CoreSchema:
