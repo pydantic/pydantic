@@ -1768,7 +1768,7 @@ def test_presence_of_discriminator_when_generating_type_adaptor_json_schema_defi
 def test_nested_discriminator() -> None:
     """
     The exact details of the JSON schema produced are not necessarily important; the test was added in response to a
-    regression that caused the inner union was losing its discriminator. Even if the schema changes, the important
+    regression that caused the inner union to lose its discriminator. Even if the schema changes, the important
     thing is that the core schema (and therefore JSON schema) produced has an actual discriminated union in it.
     """
 
@@ -1782,7 +1782,7 @@ def test_nested_discriminator() -> None:
 
     class MyModel(BaseModel):
         type: Literal['mixed']
-        sub_models: list['SubModel']
+        sub_models: List['SubModel']
         steps: Union[Step_A, Step_B] = Field(
             default=None,
             discriminator='type',
