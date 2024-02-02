@@ -1770,6 +1770,7 @@ def test_nested_discriminator() -> None:
     The exact details of the JSON schema produced are not necessarily important; the test was added in response to a
     regression that caused the inner union to lose its discriminator. Even if the schema changes, the important
     thing is that the core schema (and therefore JSON schema) produced has an actual discriminated union in it.
+    For more context, see: https://github.com/pydantic/pydantic/issues/8688.
     """
 
     class Step_A(BaseModel):
