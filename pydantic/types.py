@@ -1740,7 +1740,7 @@ class ByteSize(int):
     #> 44.4PiB
     print(m.size.human_readable(decimal=True))
     #> 50.0PB
-    print(m.size.human_readable(separator=True))
+    print(m.size.human_readable(separator=' '))
     #> 44.4 PiB
 
     print(m.size.to('TiB'))
@@ -1820,14 +1820,13 @@ class ByteSize(int):
 
         return cls(int(float(scalar) * unit_mult))
 
-    def human_readable(self, decimal: bool = False, separator: bool = False) -> str:
+    def human_readable(self, decimal: bool = False, separator: str = '') -> str:
         """Converts a byte size to a human readable string.
 
         Args:
             decimal: If True, use decimal units (e.g. 1000 bytes per KB). If False, use binary units
                 (e.g. 1024 bytes per KiB).
-            separator: If True, the result will be separated by a space (` `) between the value and
-                unit. If False, the result will remain inseparate.
+            separator: Split the value and unit with a specific separator.
 
         Returns:
             A human readable string representation of the byte size.
@@ -1841,18 +1840,16 @@ class ByteSize(int):
             units = 'B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'
             final_unit = 'EiB'
 
-        sep = ' ' if separator else ''
-
         num = float(self)
         for unit in units:
             if abs(num) < divisor:
                 if unit == 'B':
-                    return f'{num:0.0f}{sep}{unit}'
+                    return f'{num:0.0f}{separator}{unit}'
                 else:
-                    return f'{num:0.1f}{sep}{unit}'
+                    return f'{num:0.1f}{separator}{unit}'
             num /= divisor
 
-        return f'{num:0.1f}{sep}{final_unit}'
+        return f'{num:0.1f}{separator}{final_unit}'
 
     def to(self, unit: str) -> float:
         """Converts a byte size to another unit, including both byte and bit units.

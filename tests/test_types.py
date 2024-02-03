@@ -4462,7 +4462,7 @@ def test_bytesize_conversions(input_value, output, human_bin, human_dec, human_s
 
     assert m.size.human_readable() == human_bin
     assert m.size.human_readable(decimal=True) == human_dec
-    assert m.size.human_readable(separator=True) == human_sep
+    assert m.size.human_readable(separator=' ') == human_sep
 
 
 def test_bytesize_to():
