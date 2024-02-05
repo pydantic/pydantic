@@ -55,7 +55,7 @@ jobs:
 
       - run: coverage-prepare lcov python/pydantic_core/*.so
 
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
 
   # See https://github.com/PyO3/pyo3/discussions/2781
   # tests intermittently segfault with pypy and cpython 3.7 when using `coverage run ...`, hence separate job
