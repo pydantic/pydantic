@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: cache-py
         name: cache python
         with:
