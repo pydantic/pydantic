@@ -27,7 +27,7 @@ include = [
 
 [dependencies]
 pyo3 = { version = "0.20.2", features = ["generate-import-lib", "num-bigint"] }
-regex = "1.10.2"
+regex = "1.10.3"
 strum = { version = "0.25.0", features = ["derive"] }
 strum_macros = "0.25.3"
 serde_json = {version = "1.0.109", features = ["arbitrary_precision", "preserve_order"]}
