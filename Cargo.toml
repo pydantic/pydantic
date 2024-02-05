@@ -34,7 +34,7 @@ serde_json = {version = "1.0.109", features = ["arbitrary_precision", "preserve_
 enum_dispatch = "0.3.8"
 serde = { version = "1.0.195", features = ["derive"] }
 speedate = "0.13.0"
-smallvec = "1.11.2"
+smallvec = "1.13.1"
 ahash = "0.8.7"
 url = "2.5.0"
 # idna is already required by url, added here to be explicit
