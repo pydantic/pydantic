@@ -1,4 +1,4 @@
-griffe==0.38.1
-pyright==1.1.345
-ruff==0.1.13
+griffe==0.40.0
+pyright==1.1.349
+ruff==0.1.15
 mypy==1.8.0
