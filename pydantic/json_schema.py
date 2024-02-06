@@ -1214,18 +1214,24 @@ class GenerateJsonSchema:
         ]
         if self.mode == 'serialization':
             named_required_fields.extend(self._name_required_computed_fields(schema.get('computed_fields', [])))
-
-        config = _get_typed_dict_config(schema)
+        cls = _get_typed_dict_cls(schema)
+        config = _get_typed_dict_config(cls)
         with self._config_wrapper_stack.push(config):
             json_schema = self._named_required_fields_schema(named_required_fields)
 
+        json_schema_extra = config.get('json_schema_extra')
         extra = schema.get('extra_behavior')
         if extra is None:
             extra = config.get('extra', 'ignore')
-        if extra == 'forbid':
-            json_schema['additionalProperties'] = False
-        elif extra == 'allow':
-            json_schema['additionalProperties'] = True
+
+        if cls is not None:
+            title = config.get('title') or cls.__name__
+            json_schema = self._update_class_schema(json_schema, title, extra, cls, json_schema_extra)
+        else:
+            if extra == 'forbid':
+                json_schema['additionalProperties'] = False
+            elif extra == 'allow':
+                json_schema['additionalProperties'] = True
 
         return json_schema
 
@@ -2414,9 +2420,13 @@ else:
             return hash(type(self))
 
 
-def _get_typed_dict_config(schema: core_schema.TypedDictSchema) -> ConfigDict:
+def _get_typed_dict_cls(schema: core_schema.TypedDictSchema) -> type[Any] | None:
     metadata = _core_metadata.CoreMetadataHandler(schema).metadata
     cls = metadata.get('pydantic_typed_dict_cls')
+    return cls
+
+
+def _get_typed_dict_config(cls: type[Any] | None) -> ConfigDict:
     if cls is not None:
         try:
             return _decorators.get_attribute_from_bases(cls, '__pydantic_config__')
