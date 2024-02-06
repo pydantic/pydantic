@@ -4436,23 +4436,23 @@ def test_frozenset_field_not_convertible():
 
 
 @pytest.mark.parametrize(
-    'input_value,output,human_bin,human_dec',
+    'input_value,output,human_bin,human_dec,human_sep',
     (
-        (1, 1, '1B', '1B'),
-        ('1', 1, '1B', '1B'),
-        ('1.0', 1, '1B', '1B'),
-        ('1b', 1, '1B', '1B'),
-        ('1.5 KB', int(1.5e3), '1.5KiB', '1.5KB'),
-        ('1.5 K', int(1.5e3), '1.5KiB', '1.5KB'),
-        ('1.5 MB', int(1.5e6), '1.4MiB', '1.5MB'),
-        ('1.5 M', int(1.5e6), '1.4MiB', '1.5MB'),
-        ('5.1kib', 5222, '5.1KiB', '5.2KB'),
-        ('6.2EiB', 7148113328562451456, '6.2EiB', '7.1EB'),
-        ('8bit', 1, '1B', '1B'),
-        ('1kbit', 125, '125B', '125B'),
+        (1, 1, '1B', '1B', '1 B'),
+        ('1', 1, '1B', '1B', '1 B'),
+        ('1.0', 1, '1B', '1B', '1 B'),
+        ('1b', 1, '1B', '1B', '1 B'),
+        ('1.5 KB', int(1.5e3), '1.5KiB', '1.5KB', '1.5 KiB'),
+        ('1.5 K', int(1.5e3), '1.5KiB', '1.5KB', '1.5 KiB'),
+        ('1.5 MB', int(1.5e6), '1.4MiB', '1.5MB', '1.4 MiB'),
+        ('1.5 M', int(1.5e6), '1.4MiB', '1.5MB', '1.4 MiB'),
+        ('5.1kib', 5222, '5.1KiB', '5.2KB', '5.1 KiB'),
+        ('6.2EiB', 7148113328562451456, '6.2EiB', '7.1EB', '6.2 EiB'),
+        ('8bit', 1, '1B', '1B', '1 B'),
+        ('1kbit', 125, '125B', '125B', '125 B'),
     ),
 )
-def test_bytesize_conversions(input_value, output, human_bin, human_dec):
+def test_bytesize_conversions(input_value, output, human_bin, human_dec, human_sep):
     class Model(BaseModel):
         size: ByteSize
 
@@ -4462,6 +4462,7 @@ def test_bytesize_conversions(input_value, output, human_bin, human_dec):
 
     assert m.size.human_readable() == human_bin
     assert m.size.human_readable(decimal=True) == human_dec
+    assert m.size.human_readable(separator=' ') == human_sep
 
 
 def test_bytesize_to():
