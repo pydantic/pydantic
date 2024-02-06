@@ -2545,6 +2545,46 @@ def test_typeddict_with_extra_behavior_forbid():
     }
 
 
+def test_typeddict_with_title():
+    class Model(TypedDict):
+        __pydantic_config__ = ConfigDict(title='Test')  # type: ignore
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {
+        'title': 'Test',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }
+
+
+def test_typeddict_with_json_schema_extra():
+    class Model(TypedDict):
+        __pydantic_config__ = ConfigDict(title='Test', json_schema_extra={'foobar': 'hello'})  # type: ignore
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {
+        'title': 'Test',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'foobar': 'hello',
+    }
+
+
+def test_typeddict_with__callable_json_schema_extra():
+    def json_schema_extra(schema, model_class):
+        schema.pop('properties')
+        schema['type'] = 'override'
+        assert model_class is Model
+
+    class Model(TypedDict):
+        __pydantic_config__ = ConfigDict(title='Test', json_schema_extra=json_schema_extra)  # type: ignore
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {'title': 'Test', 'type': 'override', 'required': ['a']}
+
+
 @pytest.mark.parametrize(
     'annotation,kwargs,field_schema',
     [
