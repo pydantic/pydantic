@@ -3486,7 +3486,7 @@ You can force them to run with <code>Field(validate_default=True)</code>. Settin
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">UserModel</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">UserModel</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s1">&#39;abc&#39;</span><span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
