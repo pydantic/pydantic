@@ -1826,7 +1826,7 @@ class ByteSize(int):
         Args:
             decimal: If True, use decimal units (e.g. 1000 bytes per KB). If False, use binary units
                 (e.g. 1024 bytes per KiB).
-            separator: Split the value and unit with a specific separator.
+            separator: A string used to split the value and unit. Defaults to an empty string ('').
 
         Returns:
             A human readable string representation of the byte size.
