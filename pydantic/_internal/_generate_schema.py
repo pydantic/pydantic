@@ -8,7 +8,7 @@ import re
 import sys
 import typing
 import warnings
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from copy import copy, deepcopy
 from enum import Enum
 from functools import partial
@@ -1471,7 +1471,12 @@ class GenerateSchema:
                 dataclass = origin
 
             config = getattr(dataclass, '__pydantic_config__', None)
-            with self._config_wrapper_stack.push(config), self._types_namespace_stack.push(dataclass):
+            dataclass_bases_stack = ExitStack()
+            with self._config_wrapper_stack.push(config), dataclass_bases_stack:
+                for dataclass_base in reversed(dataclass.__mro__):
+                    if dataclasses.is_dataclass(dataclass_base):
+                        dataclass_bases_stack.enter_context(self._types_namespace_stack.push(dataclass_base))
+
                 core_config = self._config_wrapper.core_config(dataclass)
 
                 self = self._current_generate_schema
@@ -1539,6 +1544,8 @@ class GenerateSchema:
                 schema = apply_model_validators(schema, model_validators, 'outer')
                 self.defs.definitions[dataclass_ref] = self._post_process_generated_schema(schema)
                 return core_schema.definition_reference_schema(dataclass_ref)
+
+            assert False, 'Unreachable'
 
     def _callable_schema(self, function: Callable[..., Any]) -> core_schema.CallSchema:
         """Generate schema for a Callable.

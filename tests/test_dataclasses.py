@@ -1622,6 +1622,30 @@ def test_cross_module_cyclic_reference_dataclass(create_module):
     ]
 
 
+def test_base_dataclasses_annotations_resolving(create_module):
+    # Have to use a string due to the __future__ import
+    module_a = create_module(
+        """
+from __future__ import annotations
+
+import dataclasses
+from typing import NewType
+
+OddInt = NewType('OddInt', int)
+
+@dataclasses.dataclass
+class D1:
+    d1: OddInt
+"""
+    )
+
+    @dataclasses.dataclass
+    class D2(module_a.D1):
+        d2: int
+
+    assert TypeAdapter(D2).validate_python({'d1': 1, 'd2': 2}) == D2(d1=1, d2=2)
+
+
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python < 3.10')
 def test_kw_only():
     @pydantic.dataclasses.dataclass(kw_only=True)
