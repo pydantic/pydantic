@@ -10,8 +10,11 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic_core import PydanticUndefined
 
+from pydantic.errors import PydanticUserError
+
 from . import _typing_extra
 from ._config import ConfigWrapper
+from ._docs_extraction import extract_docstrings_from_cls
 from ._repr import Representation
 from ._typing_extra import get_cls_type_hints_lenient, get_type_hints, is_classvar, is_finalvar
 
@@ -83,6 +86,14 @@ def _general_metadata_cls() -> type[BaseMetadata]:
             self.__dict__ = metadata
 
     return _PydanticGeneralMetadata  # type: ignore
+
+
+def _update_fields_from_docstrings(cls: type[Any], fields: dict[str, FieldInfo], config_wrapper: ConfigWrapper) -> None:
+    if config_wrapper.use_attribute_docstrings:
+        fields_docs = extract_docstrings_from_cls(cls)
+        for ann_name, field_info in fields.items():
+            if field_info.description is None and ann_name in fields_docs:
+                field_info.description = fields_docs[ann_name]
 
 
 def collect_model_fields(  # noqa: C901
@@ -229,6 +240,8 @@ def collect_model_fields(  # noqa: C901
         for field in fields.values():
             field.apply_typevars_map(typevars_map, types_namespace)
 
+    _update_fields_from_docstrings(cls, fields, config_wrapper)
+
     return fields, class_vars
 
 
@@ -246,7 +259,11 @@ def _is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:
 
 
 def collect_dataclass_fields(
-    cls: type[StandardDataclass], types_namespace: dict[str, Any] | None, *, typevars_map: dict[Any, Any] | None = None
+    cls: type[StandardDataclass],
+    types_namespace: dict[str, Any] | None,
+    *,
+    typevars_map: dict[Any, Any] | None = None,
+    config_wrapper: ConfigWrapper | None = None,
 ) -> dict[str, FieldInfo]:
     """Collect the fields of a dataclass.
 
@@ -254,6 +271,7 @@ def collect_dataclass_fields(
         cls: dataclass.
         types_namespace: Optional extra namespace to look for types in.
         typevars_map: A dictionary mapping type variables to their concrete types.
+        config_wrapper: The config wrapper instance.
 
     Returns:
         The dataclass fields.
@@ -263,6 +281,10 @@ def collect_dataclass_fields(
     fields: dict[str, FieldInfo] = {}
     dataclass_fields: dict[str, dataclasses.Field] = cls.__dataclass_fields__
     cls_localns = dict(vars(cls))  # this matches get_cls_type_hints_lenient, but all tests pass with `= None` instead
+
+    source_module = sys.modules.get(cls.__module__)
+    if source_module is not None:
+        types_namespace = {**source_module.__dict__, **(types_namespace or {})}
 
     for ann_name, dataclass_field in dataclass_fields.items():
         ann_type = _typing_extra.eval_type_lenient(dataclass_field.type, types_namespace, cls_localns)
@@ -280,11 +302,18 @@ def collect_dataclass_fields(
 
         if isinstance(dataclass_field.default, FieldInfo):
             if dataclass_field.default.init_var:
-                # TODO: same note as above
+                if dataclass_field.default.init is False:
+                    raise PydanticUserError(
+                        f'Dataclass field {ann_name} has init=False and init_var=True, but these are mutually exclusive.',
+                        code='clashing-init-and-init-var',
+                    )
+
+                # TODO: same note as above re validate_assignment
                 continue
             field_info = FieldInfo.from_annotated_attribute(ann_type, dataclass_field.default)
         else:
             field_info = FieldInfo.from_annotated_attribute(ann_type, dataclass_field)
+
         fields[ann_name] = field_info
 
         if field_info.default is not PydanticUndefined and isinstance(getattr(cls, ann_name, field_info), FieldInfo):
@@ -294,6 +323,9 @@ def collect_dataclass_fields(
     if typevars_map:
         for field in fields.values():
             field.apply_typevars_map(typevars_map, types_namespace)
+
+    if config_wrapper is not None:
+        _update_fields_from_docstrings(cls, fields, config_wrapper)
 
     return fields
 

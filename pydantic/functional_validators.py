@@ -27,7 +27,7 @@ _inspect_validator = _decorators.inspect_validator
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class AfterValidator:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **after** the inner validation logic.
 
@@ -83,7 +83,7 @@ class AfterValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class BeforeValidator:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **before** the inner validation logic.
 
@@ -127,7 +127,7 @@ class BeforeValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class PlainValidator:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **instead** of the inner validation logic.
 
@@ -153,18 +153,33 @@ class PlainValidator:
     func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        # Note that for some valid uses of PlainValidator, it is not possible to generate a core schema for the
+        # source_type, so calling `handler(source_type)` will error, which prevents us from generating a proper
+        # serialization schema. To work around this for use cases that will not involve serialization, we simply
+        # catch any PydanticSchemaGenerationError that may be raised while attempting to build the serialization schema
+        # and abort any attempts to handle special serialization.
+        from pydantic import PydanticSchemaGenerationError
+
+        try:
+            schema = handler(source_type)
+            serialization = core_schema.wrap_serializer_function_ser_schema(function=lambda v, h: h(v), schema=schema)
+        except PydanticSchemaGenerationError:
+            serialization = None
+
         info_arg = _inspect_validator(self.func, 'plain')
         if info_arg:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
-            return core_schema.with_info_plain_validator_function(func, field_name=handler.field_name)
+            return core_schema.with_info_plain_validator_function(
+                func, field_name=handler.field_name, serialization=serialization
+            )
         else:
             func = cast(core_schema.NoInfoValidatorFunction, self.func)
-            return core_schema.no_info_plain_validator_function(func)
+            return core_schema.no_info_plain_validator_function(func, serialization=serialization)
 
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class WrapValidator:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **around** the inner validation logic.
 
@@ -216,20 +231,21 @@ class WrapValidator:
 if TYPE_CHECKING:
 
     class _OnlyValueValidatorClsMethod(Protocol):
-        def __call__(self, __cls: Any, __value: Any) -> Any:
+        def __call__(self, cls: Any, value: Any, /) -> Any:
             ...
 
     class _V2ValidatorClsMethod(Protocol):
-        def __call__(self, __cls: Any, __input_value: Any, __info: _core_schema.ValidationInfo) -> Any:
+        def __call__(self, cls: Any, value: Any, info: _core_schema.ValidationInfo, /) -> Any:
             ...
 
     class _V2WrapValidatorClsMethod(Protocol):
         def __call__(
             self,
-            __cls: Any,
-            __input_value: Any,
-            __validator: _core_schema.ValidatorFunctionWrapHandler,
-            __info: _core_schema.ValidationInfo,
+            cls: Any,
+            value: Any,
+            handler: _core_schema.ValidatorFunctionWrapHandler,
+            info: _core_schema.ValidationInfo,
+            /,
         ) -> Any:
             ...
 
@@ -284,7 +300,7 @@ def field_validator(
     mode: FieldValidatorModes = 'after',
     check_fields: bool | None = None,
 ) -> Callable[[Any], Any]:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/validators/#field-validators
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/validators/#field-validators
 
     Decorate methods on the class indicating that they should be used to validate fields.
 
@@ -379,7 +395,10 @@ class ModelWrapValidatorHandler(_core_schema.ValidatorFunctionWrapHandler, Proto
     """@model_validator decorated function handler argument type. This is used when `mode='wrap'`."""
 
     def __call__(  # noqa: D102
-        self, input_value: Any, outer_location: str | int | None = None
+        self,
+        value: Any,
+        outer_location: str | int | None = None,
+        /,
     ) -> _ModelTypeCo:  # pragma: no cover
         ...
 
@@ -395,8 +414,9 @@ class ModelWrapValidatorWithoutInfo(Protocol[_ModelType]):
         # this can be a dict, a model instance
         # or anything else that gets passed to validate_python
         # thus validators _must_ handle all cases
-        __value: Any,
-        __handler: ModelWrapValidatorHandler[_ModelType],
+        value: Any,
+        handler: ModelWrapValidatorHandler[_ModelType],
+        /,
     ) -> _ModelType:
         ...
 
@@ -410,9 +430,10 @@ class ModelWrapValidator(Protocol[_ModelType]):
         # this can be a dict, a model instance
         # or anything else that gets passed to validate_python
         # thus validators _must_ handle all cases
-        __value: Any,
-        __handler: ModelWrapValidatorHandler[_ModelType],
-        __info: _core_schema.ValidationInfo,
+        value: Any,
+        handler: ModelWrapValidatorHandler[_ModelType],
+        info: _core_schema.ValidationInfo,
+        /,
     ) -> _ModelType:
         ...
 
@@ -427,7 +448,8 @@ class FreeModelBeforeValidatorWithoutInfo(Protocol):
         # this can be a dict, a model instance
         # or anything else that gets passed to validate_python
         # thus validators _must_ handle all cases
-        __value: Any,
+        value: Any,
+        /,
     ) -> Any:
         ...
 
@@ -443,7 +465,8 @@ class ModelBeforeValidatorWithoutInfo(Protocol):
         # this can be a dict, a model instance
         # or anything else that gets passed to validate_python
         # thus validators _must_ handle all cases
-        __value: Any,
+        value: Any,
+        /,
     ) -> Any:
         ...
 
@@ -456,8 +479,9 @@ class FreeModelBeforeValidator(Protocol):
         # this can be a dict, a model instance
         # or anything else that gets passed to validate_python
         # thus validators _must_ handle all cases
-        __value: Any,
-        __info: _core_schema.ValidationInfo,
+        value: Any,
+        info: _core_schema.ValidationInfo,
+        /,
     ) -> Any:
         ...
 
@@ -471,8 +495,9 @@ class ModelBeforeValidator(Protocol):
         # this can be a dict, a model instance
         # or anything else that gets passed to validate_python
         # thus validators _must_ handle all cases
-        __value: Any,
-        __info: _core_schema.ValidationInfo,
+        value: Any,
+        info: _core_schema.ValidationInfo,
+        /,
     ) -> Any:
         ...
 
@@ -524,7 +549,7 @@ def model_validator(
     *,
     mode: Literal['wrap', 'before', 'after'],
 ) -> Any:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/validators/#model-validators
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/validators/#model-validators
 
     Decorate model methods for validation purposes.
 

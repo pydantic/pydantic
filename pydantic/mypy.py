@@ -475,9 +475,9 @@ class PydanticModelTransformer:
                 return False
 
         is_settings = any(base.fullname == BASESETTINGS_FULLNAME for base in info.mro[:-1])
-        self.add_initializer(fields, config, is_settings, is_root_model)
-        self.add_model_construct_method(fields, config, is_settings)
         try:
+            self.add_initializer(fields, config, is_settings, is_root_model)
+            self.add_model_construct_method(fields, config, is_settings)
             self.set_frozen(fields, frozen=config.frozen is True)
         except _DeferAnalysis:
             if not self._api.final_iteration:
@@ -860,8 +860,10 @@ class PydanticModelTransformer:
                 use_alias=use_alias,
                 is_settings=is_settings,
             )
-            if is_root_model:
+
+            if is_root_model and MYPY_VERSION_TUPLE <= (1, 0, 1):
                 # convert root argument to positional argument
+                # This is needed because mypy support for `dataclass_transform` isn't complete on 1.0.1
                 args[0].kind = ARG_POS if args[0].kind == ARG_NAMED else ARG_OPT
 
             if is_settings:

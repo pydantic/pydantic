@@ -4,7 +4,7 @@ Usage docs: https://docs.pydantic.dev/2.5/concepts/json_schema/
 The `json_schema` module contains classes and functions to allow the way [JSON Schema](https://json-schema.org/)
 is generated to be customized.
 
-In general you shouldn't need to use this module directly; instead, you can
+In general you shouldn't need to use this module directly; instead, you can use
 [`BaseModel.model_json_schema`][pydantic.BaseModel.model_json_schema] and
 [`TypeAdapter.json_schema`][pydantic.TypeAdapter.json_schema].
 """
@@ -38,7 +38,9 @@ from typing import (
 import pydantic_core
 from pydantic_core import CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
-from typing_extensions import Annotated, Literal, TypeAlias, assert_never
+from typing_extensions import Annotated, Literal, TypeAlias, assert_never, deprecated, final
+
+from pydantic.warnings import PydanticDeprecatedSince26
 
 from ._internal import (
     _config,
@@ -222,7 +224,7 @@ class _DefinitionsRemapping:
 
 
 class GenerateJsonSchema:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/json_schema/#customizing-the-json-schema-generation-process
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/json_schema/#customizing-the-json-schema-generation-process
 
     A class for generating JSON schemas.
 
@@ -803,8 +805,31 @@ class GenerateJsonSchema:
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
         return json_schema
 
-    def tuple_positional_schema(self, schema: core_schema.TuplePositionalSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a positional tuple schema e.g. `Tuple[int, str, bool]`.
+    @deprecated('`tuple_positional_schema` is deprecated. Use `tuple_schema` instead.', category=None)
+    @final
+    def tuple_positional_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
+        """Replaced by `tuple_schema`."""
+        warnings.warn(
+            '`tuple_positional_schema` is deprecated. Use `tuple_schema` instead.',
+            PydanticDeprecatedSince26,
+            stacklevel=2,
+        )
+        return self.tuple_schema(schema)
+
+    @deprecated('`tuple_variable_schema` is deprecated. Use `tuple_schema` instead.', category=None)
+    @final
+    def tuple_variable_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
+        """Replaced by `tuple_schema`."""
+        warnings.warn(
+            '`tuple_variable_schema` is deprecated. Use `tuple_schema` instead.',
+            PydanticDeprecatedSince26,
+            stacklevel=2,
+        )
+        return self.tuple_schema(schema)
+
+    def tuple_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a tuple schema e.g. `Tuple[int,
+        str, bool]` or `Tuple[int, ...]`.
 
         Args:
             schema: The core schema.
@@ -813,28 +838,27 @@ class GenerateJsonSchema:
             The generated JSON schema.
         """
         json_schema: JsonSchemaValue = {'type': 'array'}
-        json_schema['minItems'] = len(schema['items_schema'])
-        prefixItems = [self.generate_inner(item) for item in schema['items_schema']]
-        if prefixItems:
-            json_schema['prefixItems'] = prefixItems
-        if 'extras_schema' in schema:
-            json_schema['items'] = self.generate_inner(schema['extras_schema'])
+        if 'variadic_item_index' in schema:
+            variadic_item_index = schema['variadic_item_index']
+            if variadic_item_index > 0:
+                json_schema['minItems'] = variadic_item_index
+                json_schema['prefixItems'] = [
+                    self.generate_inner(item) for item in schema['items_schema'][:variadic_item_index]
+                ]
+            if variadic_item_index + 1 == len(schema['items_schema']):
+                # if the variadic item is the last item, then represent it faithfully
+                json_schema['items'] = self.generate_inner(schema['items_schema'][variadic_item_index])
+            else:
+                # otherwise, 'items' represents the schema for the variadic
+                # item plus the suffix, so just allow anything for simplicity
+                # for now
+                json_schema['items'] = True
         else:
-            json_schema['maxItems'] = len(schema['items_schema'])
-        self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
-        return json_schema
-
-    def tuple_variable_schema(self, schema: core_schema.TupleVariableSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a variable tuple schema e.g. `Tuple[int, ...]`.
-
-        Args:
-            schema: The core schema.
-
-        Returns:
-            The generated JSON schema.
-        """
-        items_schema = {} if 'items_schema' not in schema else self.generate_inner(schema['items_schema'])
-        json_schema = {'type': 'array', 'items': items_schema}
+            prefixItems = [self.generate_inner(item) for item in schema['items_schema']]
+            if prefixItems:
+                json_schema['prefixItems'] = prefixItems
+            json_schema['minItems'] = len(prefixItems)
+            json_schema['maxItems'] = len(prefixItems)
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
         return json_schema
 
@@ -1190,18 +1214,24 @@ class GenerateJsonSchema:
         ]
         if self.mode == 'serialization':
             named_required_fields.extend(self._name_required_computed_fields(schema.get('computed_fields', [])))
-
-        config = _get_typed_dict_config(schema)
+        cls = _get_typed_dict_cls(schema)
+        config = _get_typed_dict_config(cls)
         with self._config_wrapper_stack.push(config):
             json_schema = self._named_required_fields_schema(named_required_fields)
 
+        json_schema_extra = config.get('json_schema_extra')
         extra = schema.get('extra_behavior')
         if extra is None:
             extra = config.get('extra', 'ignore')
-        if extra == 'forbid':
-            json_schema['additionalProperties'] = False
-        elif extra == 'allow':
-            json_schema['additionalProperties'] = True
+
+        if cls is not None:
+            title = config.get('title') or cls.__name__
+            json_schema = self._update_class_schema(json_schema, title, extra, cls, json_schema_extra)
+        else:
+            if extra == 'forbid':
+                json_schema['additionalProperties'] = False
+            elif extra == 'allow':
+                json_schema['additionalProperties'] = True
 
         return json_schema
 
@@ -2240,7 +2270,7 @@ def _sort_json_schema(value: JsonSchemaValue, parent_key: str | None = None) -> 
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
 class WithJsonSchema:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/json_schema/#withjsonschema-annotation
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/json_schema/#withjsonschema-annotation
 
     Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
     This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
@@ -2329,7 +2359,7 @@ else:
 
     @dataclasses.dataclass(**_internal_dataclass.slots_true)
     class SkipJsonSchema:
-        """Usage docs: https://docs.pydantic.dev/2.6/concepts/json_schema/#skipjsonschema-annotation
+        """Usage docs: https://docs.pydantic.dev/2.7/concepts/json_schema/#skipjsonschema-annotation
 
         Add this as an annotation on a field to skip generating a JSON schema for that field.
 
@@ -2390,9 +2420,13 @@ else:
             return hash(type(self))
 
 
-def _get_typed_dict_config(schema: core_schema.TypedDictSchema) -> ConfigDict:
+def _get_typed_dict_cls(schema: core_schema.TypedDictSchema) -> type[Any] | None:
     metadata = _core_metadata.CoreMetadataHandler(schema).metadata
     cls = metadata.get('pydantic_typed_dict_cls')
+    return cls
+
+
+def _get_typed_dict_config(cls: type[Any] | None) -> ConfigDict:
     if cls is not None:
         try:
             return _decorators.get_attribute_from_bases(cls, '__pydantic_config__')

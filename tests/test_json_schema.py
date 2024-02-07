@@ -6,7 +6,14 @@ import typing
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
-from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
+from ipaddress import (
+    IPv4Address,
+    IPv4Interface,
+    IPv4Network,
+    IPv6Address,
+    IPv6Interface,
+    IPv6Network,
+)
 from pathlib import Path
 from typing import (
     Any,
@@ -68,13 +75,22 @@ from pydantic.json_schema import (
     model_json_schema,
     models_json_schema,
 )
-from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, MultiHostUrl, NameEmail
+from pydantic.networks import (
+    AnyUrl,
+    EmailStr,
+    IPvAnyAddress,
+    IPvAnyInterface,
+    IPvAnyNetwork,
+    MultiHostUrl,
+    NameEmail,
+)
 from pydantic.type_adapter import TypeAdapter
 from pydantic.types import (
     UUID1,
     UUID3,
     UUID4,
     UUID5,
+    ByteSize,
     DirectoryPath,
     FilePath,
     Json,
@@ -1292,6 +1308,50 @@ def test_callable_type_with_fallback(default_value, properties):
     assert model_schema['properties'] == properties
 
 
+def test_byte_size_type():
+    class Model(BaseModel):
+        a: ByteSize
+        b: ByteSize = Field('1MB', validate_default=True)
+
+    model_json_schema_validation = Model.model_json_schema(mode='validation')
+    model_json_schema_serialization = Model.model_json_schema(mode='serialization')
+
+    print(model_json_schema_serialization)
+
+    assert model_json_schema_validation == {
+        'properties': {
+            'a': {
+                'anyOf': [
+                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
+                    {'minimum': 0, 'type': 'integer'},
+                ],
+                'title': 'A',
+            },
+            'b': {
+                'anyOf': [
+                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
+                    {'minimum': 0, 'type': 'integer'},
+                ],
+                'default': '1MB',
+                'title': 'B',
+            },
+        },
+        'required': ['a'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+    assert model_json_schema_serialization == {
+        'properties': {
+            'a': {'minimum': 0, 'title': 'A', 'type': 'integer'},
+            'b': {'default': '1MB', 'minimum': 0, 'title': 'B', 'type': 'integer'},
+        },
+        'required': ['a'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 @pytest.mark.parametrize(
     'type_,default_value,properties',
     (
@@ -2485,6 +2545,46 @@ def test_typeddict_with_extra_behavior_forbid():
     }
 
 
+def test_typeddict_with_title():
+    class Model(TypedDict):
+        __pydantic_config__ = ConfigDict(title='Test')  # type: ignore
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {
+        'title': 'Test',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }
+
+
+def test_typeddict_with_json_schema_extra():
+    class Model(TypedDict):
+        __pydantic_config__ = ConfigDict(title='Test', json_schema_extra={'foobar': 'hello'})  # type: ignore
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {
+        'title': 'Test',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'foobar': 'hello',
+    }
+
+
+def test_typeddict_with__callable_json_schema_extra():
+    def json_schema_extra(schema, model_class):
+        schema.pop('properties')
+        schema['type'] = 'override'
+        assert model_class is Model
+
+    class Model(TypedDict):
+        __pydantic_config__ = ConfigDict(title='Test', json_schema_extra=json_schema_extra)  # type: ignore
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {'title': 'Test', 'type': 'override', 'required': ['a']}
+
+
 @pytest.mark.parametrize(
     'annotation,kwargs,field_schema',
     [
@@ -2651,8 +2751,8 @@ def test_tuple_with_extra_schema():
     class MyTuple(Tuple[int, str]):
         @classmethod
         def __get_pydantic_core_schema__(cls, _source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.tuple_positional_schema(
-                [core_schema.int_schema(), core_schema.str_schema()], extras_schema=core_schema.int_schema()
+            return core_schema.tuple_schema(
+                [core_schema.int_schema(), core_schema.str_schema(), core_schema.int_schema()], variadic_item_index=2
             )
 
     class Model(BaseModel):
@@ -5819,3 +5919,31 @@ def test_description_not_included_for_basemodel() -> None:
         x: BaseModel
 
     assert 'description' not in Model.model_json_schema()['$defs']['BaseModel']
+
+
+def test_recursive_json_schema_build() -> None:
+    """
+    Schema build for this case is a bit complicated due to the recursive nature of the models.
+    This was reported as broken in https://github.com/pydantic/pydantic/issues/8689, which was
+    originally caused by the change made in https://github.com/pydantic/pydantic/pull/8583, which has
+    since been reverted.
+    """
+
+    class AllowedValues(str, Enum):
+        VAL1 = 'Val1'
+        VAL2 = 'Val2'
+
+    class ModelA(BaseModel):
+        modelA_1: AllowedValues = Field(..., max_length=60)
+
+    class ModelB(ModelA):
+        modelB_1: typing.List[ModelA]
+
+    class ModelC(BaseModel):
+        modelC_1: ModelB
+
+    class Model(BaseModel):
+        b: ModelB
+        c: ModelC
+
+    assert Model.model_json_schema()

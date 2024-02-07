@@ -112,6 +112,8 @@ nav:
     - Routing Numbers: api/pydantic_extra_types_routing_numbers.md
     - Coordinate: api/pydantic_extra_types_coordinate.md
     - Mac Address: api/pydantic_extra_types_mac_address.md
+    - ISBN: api/pydantic_extra_types_isbn.md
+    - Pendulum: api/pydantic_extra_types_pendulum_dt.md
 - Examples:
   - Secrets: examples/secrets.md
 - Error Messages:
@@ -126,10 +128,7 @@ nav:
   - datamodel-code-generator: integrations/datamodel_code_generator.md
   - devtools: integrations/devtools.md
   - Rich: integrations/rich.md
-- Blog:
-  - blog/pydantic-v2-final.md
-  - blog/pydantic-v2-alpha.md
-  - blog/pydantic-v2.md
+- Blog: https://blog.pydantic.dev/
 - Pydantic People: pydantic_people.md
 
 markdown_extensions:
@@ -245,4 +244,7 @@ plugins:
       'usage/types/sequence_iterable.md': 'api/standard_library_types.md#other-iterables'
       'usage/types/set_types.md': 'api/standard_library_types.md#sets'
       'usage/types/uuids.md': 'api/standard_library_types.md#uuid'
+      'blog/pydantic-v2-alpha.md': 'https://blog.pydantic.dev/blog/2023/04/03/pydantic-v2-pre-release/'
+      'blog/pydantic-v2-final.md': 'https://blog.pydantic.dev/blog/2023/06/30/pydantic-v2-is-here/'
+      'blog/pydantic-v2.md': 'https://blog.pydantic.dev/blog/2022/07/10/pydantic-v2-plan/'
 - external-markdown:

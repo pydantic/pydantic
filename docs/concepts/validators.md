@@ -347,7 +347,7 @@ except ValidationError as e:
     """
 
 try:
-    UserModel(name='John Doe', id=1)
+    UserModel(name='John Doe', id='abc')
 except ValidationError as e:
     print(e)
     """
@@ -400,6 +400,8 @@ Validation can also be performed on the entire model's data using `@model_valida
 ```py
 from typing import Any
 
+from typing_extensions import Self
+
 from pydantic import BaseModel, ValidationError, model_validator
 
 
@@ -418,7 +420,7 @@ class UserModel(BaseModel):
         return data
 
     @model_validator(mode='after')
-    def check_passwords_match(self) -> 'UserModel':
+    def check_passwords_match(self) -> Self:
         pw1 = self.password1
         pw2 = self.password2
         if pw1 is not None and pw2 is not None and pw1 != pw2:
@@ -751,4 +753,39 @@ with init_context({'multiplier': 3}):
 
 print(Model(my_number=2))
 #> my_number=2
+```
+
+## Reusing Validators
+
+Occasionally, you will want to use the same validator on multiple fields/models (e.g. to normalize some input data).
+The "naive" approach would be to write a separate function, then call it from multiple decorators.
+Obviously, this entails a lot of repetition and boiler plate code.
+The following approach demonstrates how you can reuse a validator so that redundancy is minimized and the models become again almost declarative.
+
+```py
+from pydantic import BaseModel, field_validator
+
+
+def normalize(name: str) -> str:
+    return ' '.join((word.capitalize()) for word in name.split(' '))
+
+
+class Producer(BaseModel):
+    name: str
+
+    _normalize_name = field_validator('name')(normalize)
+
+
+class Consumer(BaseModel):
+    name: str
+
+    _normalize_name = field_validator('name')(normalize)
+
+
+jane_doe = Producer(name='JaNe DOE')
+print(repr(jane_doe))
+#> Producer(name='Jane Doe')
+john_doe = Consumer(name='joHN dOe')
+print(repr(john_doe))
+#> Consumer(name='John Doe')
 ```

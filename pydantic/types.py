@@ -113,7 +113,7 @@ T = TypeVar('T')
 
 @_dataclasses.dataclass
 class Strict(_fields.PydanticMetadata, BaseMetadata):
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/strict_mode/#strict-mode-with-annotated-strict
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/strict_mode/#strict-mode-with-annotated-strict
 
     A field metadata class to indicate that a field should be validated in strict mode.
 
@@ -673,7 +673,7 @@ StrictBytes = Annotated[bytes, Strict()]
 
 @_dataclasses.dataclass(frozen=True)
 class StringConstraints(annotated_types.GroupedMetadata):
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/fields/#string-constraints
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/fields/#string-constraints
 
     Apply constraints to `str` types.
 
@@ -1710,24 +1710,6 @@ class PaymentCardNumber(str):
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BYTE SIZE TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-BYTE_SIZES = {
-    'b': 1,
-    'kb': 10**3,
-    'mb': 10**6,
-    'gb': 10**9,
-    'tb': 10**12,
-    'pb': 10**15,
-    'eb': 10**18,
-    'kib': 2**10,
-    'mib': 2**20,
-    'gib': 2**30,
-    'tib': 2**40,
-    'pib': 2**50,
-    'eib': 2**60,
-}
-BYTE_SIZES.update({k.lower()[0]: v for k, v in BYTE_SIZES.items() if 'i' not in k})
-byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
-
 
 class ByteSize(int):
     """Converts a string representing a number of bytes with units (such as `'1KB'` or `'11.5MiB'`) into an integer.
@@ -1758,15 +1740,63 @@ class ByteSize(int):
     #> 44.4PiB
     print(m.size.human_readable(decimal=True))
     #> 50.0PB
+    print(m.size.human_readable(separator=' '))
+    #> 44.4 PiB
 
     print(m.size.to('TiB'))
     #> 45474.73508864641
     ```
     """
 
+    byte_sizes = {
+        'b': 1,
+        'kb': 10**3,
+        'mb': 10**6,
+        'gb': 10**9,
+        'tb': 10**12,
+        'pb': 10**15,
+        'eb': 10**18,
+        'kib': 2**10,
+        'mib': 2**20,
+        'gib': 2**30,
+        'tib': 2**40,
+        'pib': 2**50,
+        'eib': 2**60,
+        'bit': 1 / 8,
+        'kbit': 10**3 / 8,
+        'mbit': 10**6 / 8,
+        'gbit': 10**9 / 8,
+        'tbit': 10**12 / 8,
+        'pbit': 10**15 / 8,
+        'ebit': 10**18 / 8,
+        'kibit': 2**10 / 8,
+        'mibit': 2**20 / 8,
+        'gibit': 2**30 / 8,
+        'tibit': 2**40 / 8,
+        'pibit': 2**50 / 8,
+        'eibit': 2**60 / 8,
+    }
+    byte_sizes.update({k.lower()[0]: v for k, v in byte_sizes.items() if 'i' not in k})
+
+    byte_string_pattern = r'^\s*(\d*\.?\d+)\s*(\w+)?'
+    byte_string_re = re.compile(byte_string_pattern, re.IGNORECASE)
+
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        return core_schema.with_info_plain_validator_function(cls._validate)
+        return core_schema.with_info_after_validator_function(
+            function=cls._validate,
+            schema=core_schema.union_schema(
+                [
+                    core_schema.str_schema(pattern=cls.byte_string_pattern),
+                    core_schema.int_schema(ge=0),
+                ],
+                custom_error_type='byte_size',
+                custom_error_message='could not parse value and unit from byte string',
+            ),
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                int, return_schema=core_schema.int_schema(ge=0)
+            ),
+        )
 
     @classmethod
     def _validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> ByteSize:
@@ -1775,7 +1805,7 @@ class ByteSize(int):
         except ValueError:
             pass
 
-        str_match = byte_string_re.match(str(__input_value))
+        str_match = cls.byte_string_re.match(str(__input_value))
         if str_match is None:
             raise PydanticCustomError('byte_size', 'could not parse value and unit from byte string')
 
@@ -1784,18 +1814,19 @@ class ByteSize(int):
             unit = 'b'
 
         try:
-            unit_mult = BYTE_SIZES[unit.lower()]
+            unit_mult = cls.byte_sizes[unit.lower()]
         except KeyError:
             raise PydanticCustomError('byte_size_unit', 'could not interpret byte unit: {unit}', {'unit': unit})
 
         return cls(int(float(scalar) * unit_mult))
 
-    def human_readable(self, decimal: bool = False) -> str:
+    def human_readable(self, decimal: bool = False, separator: str = '') -> str:
         """Converts a byte size to a human readable string.
 
         Args:
             decimal: If True, use decimal units (e.g. 1000 bytes per KB). If False, use binary units
                 (e.g. 1024 bytes per KiB).
+            separator: A string used to split the value and unit. Defaults to an empty string ('').
 
         Returns:
             A human readable string representation of the byte size.
@@ -1813,25 +1844,27 @@ class ByteSize(int):
         for unit in units:
             if abs(num) < divisor:
                 if unit == 'B':
-                    return f'{num:0.0f}{unit}'
+                    return f'{num:0.0f}{separator}{unit}'
                 else:
-                    return f'{num:0.1f}{unit}'
+                    return f'{num:0.1f}{separator}{unit}'
             num /= divisor
 
-        return f'{num:0.1f}{final_unit}'
+        return f'{num:0.1f}{separator}{final_unit}'
 
     def to(self, unit: str) -> float:
-        """Converts a byte size to another unit.
+        """Converts a byte size to another unit, including both byte and bit units.
 
         Args:
-            unit: The unit to convert to. Must be one of the following: B, KB, MB, GB, TB, PB, EiB,
-                KiB, MiB, GiB, TiB, PiB, EiB.
+            unit: The unit to convert to. Must be one of the following: B, KB, MB, GB, TB, PB, EB,
+                KiB, MiB, GiB, TiB, PiB, EiB (byte units) and
+                bit, kbit, mbit, gbit, tbit, pbit, ebit,
+                kibit, mibit, gibit, tibit, pibit, eibit (bit units).
 
         Returns:
             The byte size in the new unit.
         """
         try:
-            unit_div = BYTE_SIZES[unit.lower()]
+            unit_div = self.byte_sizes[unit.lower()]
         except KeyError:
             raise PydanticCustomError('byte_size_unit', 'Could not interpret byte unit: {unit}', {'unit': unit})
 
@@ -2435,7 +2468,7 @@ __getattr__ = getattr_migration(__name__)
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class GetPydanticSchema:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/types/#using-getpydanticschema-to-reduce-boilerplate
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/types/#using-getpydanticschema-to-reduce-boilerplate
 
     A convenience class for creating an annotation that provides pydantic custom type hooks.
 
@@ -2571,7 +2604,7 @@ class Tag:
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
 class Discriminator:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/unions/#discriminated-unions-with-callable-discriminator
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/unions/#discriminated-unions-with-callable-discriminator
 
     Provides a way to use a custom callable as the way to extract the value of a union discriminator.
 

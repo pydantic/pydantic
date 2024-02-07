@@ -20,6 +20,7 @@ from pydantic import (
     ConfigDict,
     Field,
     GetCoreSchemaHandler,
+    PlainSerializer,
     PydanticDeprecatedSince20,
     PydanticUserError,
     TypeAdapter,
@@ -63,6 +64,7 @@ def test_annotated_validator_before() -> None:
     assert Model(x='1.0').x == 1.0
 
 
+@pytest.mark.xfail(sys.version_info >= (3, 9) and sys.implementation.name == 'pypy', reason='PyPy 3.9+ bug')
 def test_annotated_validator_builtin() -> None:
     """https://github.com/pydantic/pydantic/issues/6752"""
     TruncatedFloat = Annotated[float, BeforeValidator(int)]
@@ -554,11 +556,9 @@ def test_use_no_fields():
         class Model(BaseModel):
             a: str
 
-            with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
-
-                @validator()
-                def checker(cls, v):
-                    return v
+            @validator()
+            def checker(cls, v):
+                return v
 
 
 def test_use_no_fields_field_validator():
@@ -1602,7 +1602,6 @@ def test_assignment_validator_cls():
     assert validator_calls == 2
 
 
-@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592')
 def test_literal_validator():
     class Model(BaseModel):
         a: Literal['foo']
@@ -1643,9 +1642,6 @@ def test_literal_validator_str_enum():
     assert my_foo.fizfuz is Bar.FUZ
 
 
-@pytest.mark.skipif(
-    sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592', strict=False
-)
 def test_nested_literal_validator():
     L1 = Literal['foo']
     L2 = Literal['bar']
@@ -2809,3 +2805,35 @@ def test_validate_default_raises_for_dataclasses() -> None:
             'ctx': {'error': IsInstance(AssertionError)},
         },
     ]
+
+
+def test_plain_validator_plain_serializer() -> None:
+    """https://github.com/pydantic/pydantic/issues/8512"""
+    ser_type = str
+    serializer = PlainSerializer(lambda x: ser_type(int(x)), return_type=ser_type)
+    validator = PlainValidator(lambda x: bool(int(x)))
+
+    class Blah(BaseModel):
+        foo: Annotated[bool, validator, serializer]
+        bar: Annotated[bool, serializer, validator]
+
+    blah = Blah(foo='0', bar='1')
+    data = blah.model_dump()
+    assert isinstance(data['foo'], ser_type)
+    assert isinstance(data['bar'], ser_type)
+
+
+def test_plain_validator_with_unsupported_type() -> None:
+    class UnsupportedClass:
+        pass
+
+    PreviouslySupportedType = Annotated[
+        UnsupportedClass,
+        PlainValidator(lambda _: UnsupportedClass()),
+    ]
+
+    type_adapter = TypeAdapter(PreviouslySupportedType)
+
+    model = type_adapter.validate_python('abcdefg')
+    assert isinstance(model, UnsupportedClass)
+    assert isinstance(type_adapter.dump_python(model), UnsupportedClass)

@@ -581,3 +581,32 @@ def test_json_schema_with_inner_models_with_duplicate_names():
         'title': 'a',
         'type': 'object',
     }
+
+
+def test_resolving_forward_refs_across_modules(create_module):
+    module = create_module(
+        # language=Python
+        """\
+from __future__ import annotations
+from dataclasses import dataclass
+from pydantic import BaseModel
+
+class X(BaseModel):
+    pass
+
+@dataclass
+class Y:
+    x: X
+        """
+    )
+    Z = create_model('Z', y=(module.Y, ...))
+    assert Z(y={'x': {}}).y is not None
+
+
+def test_type_field_in_the_same_module():
+    class A:
+        pass
+
+    B = create_model('B', a_cls=(type, A))
+    b = B()
+    assert b.a_cls == A

@@ -119,7 +119,7 @@ from pydantic import BaseModel, HttpUrl, ValidationError
 class MyModel(BaseModel):
     url: HttpUrl
 
-m = MyModel(url='http://www.example.com')
+m = MyModel(url='http://www.example.com')  # (1)!
 print(m.url)
 #> http://www.example.com/
 
@@ -143,6 +143,8 @@ except ValidationError as e:
       Input should be a valid URL, relative URL without a base [type=url_parsing, input_value='not a url', input_type=str]
     '''
 ```
+
+1. Note: mypy would prefer `m = MyModel(url=HttpUrl('http://www.example.com'))`, but Pydantic will convert the string to an HttpUrl instance anyway.
 
 "International domains" (e.g. a URL where the host or TLD includes non-ascii characters) will be encoded via
 [punycode](https://en.wikipedia.org/wiki/Punycode) (see
@@ -477,14 +479,18 @@ class NameEmail(_repr.Representation):
         _handler: GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
         import_email_validator()
+
         return core_schema.no_info_after_validator_function(
             cls._validate,
-            core_schema.union_schema(
-                [core_schema.is_instance_schema(cls), core_schema.str_schema()],
-                custom_error_type='name_email_type',
-                custom_error_message='Input is not a valid NameEmail',
+            core_schema.json_or_python_schema(
+                json_schema=core_schema.str_schema(),
+                python_schema=core_schema.union_schema(
+                    [core_schema.is_instance_schema(cls), core_schema.str_schema()],
+                    custom_error_type='name_email_type',
+                    custom_error_message='Input is not a valid NameEmail',
+                ),
+                serialization=core_schema.to_string_ser_schema(),
             ),
-            serialization=core_schema.to_string_ser_schema(),
         )
 
     @classmethod
