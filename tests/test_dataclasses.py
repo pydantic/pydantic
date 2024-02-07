@@ -1622,28 +1622,55 @@ def test_cross_module_cyclic_reference_dataclass(create_module):
     ]
 
 
-def test_base_dataclasses_annotations_resolving(create_module):
-    # Have to use a string due to the __future__ import
-    module_a = create_module(
-        """
-from __future__ import annotations
+@pytest.mark.parametrize('dataclass_decorator', [pydantic.dataclasses.dataclass, dataclasses.dataclass])
+def test_base_dataclasses_annotations_resolving(create_module, dataclass_decorator: Callable):
+    @create_module
+    def module():
+        import dataclasses
+        from typing import NewType
 
-import dataclasses
-from typing import NewType
+        OddInt = NewType('OddInt', int)
 
-OddInt = NewType('OddInt', int)
+        @dataclasses.dataclass
+        class D1:
+            d1: 'OddInt'
 
-@dataclasses.dataclass
-class D1:
-    d1: OddInt
-"""
-    )
-
-    @dataclasses.dataclass
-    class D2(module_a.D1):
+    @dataclass_decorator
+    class D2(module.D1):
         d2: int
 
     assert TypeAdapter(D2).validate_python({'d1': 1, 'd2': 2}) == D2(d1=1, d2=2)
+
+
+@pytest.mark.parametrize('dataclass_decorator', [pydantic.dataclasses.dataclass, dataclasses.dataclass])
+def test_base_dataclasses_annotations_resolving_with_override(create_module, dataclass_decorator: Callable):
+    @create_module
+    def module1():
+        import dataclasses
+        from typing import NewType
+
+        IDType = NewType('IDType', int)
+
+        @dataclasses.dataclass
+        class D1:
+            db_id: 'IDType'
+
+    @create_module
+    def module2():
+        import dataclasses
+        from typing import NewType
+
+        IDType = NewType('IDType', str)
+
+        @dataclasses.dataclass
+        class D2:
+            db_id: 'IDType'
+
+    @dataclass_decorator
+    class D3(module1.D1, module2.D2):
+        ...
+
+    assert TypeAdapter(D3).validate_python({'db_id': 42}) == D3(db_id=42)
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python < 3.10')

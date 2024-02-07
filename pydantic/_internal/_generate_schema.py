@@ -1471,9 +1471,8 @@ class GenerateSchema:
                 dataclass = origin
 
             config = getattr(dataclass, '__pydantic_config__', None)
-            dataclass_bases_stack = ExitStack()
-            with self._config_wrapper_stack.push(config), dataclass_bases_stack:
-                for dataclass_base in reversed(dataclass.__mro__):
+            with self._config_wrapper_stack.push(config), ExitStack() as dataclass_bases_stack:
+                for dataclass_base in dataclass.__mro__:
                     if dataclasses.is_dataclass(dataclass_base):
                         dataclass_bases_stack.enter_context(self._types_namespace_stack.push(dataclass_base))
 
@@ -1545,6 +1544,8 @@ class GenerateSchema:
                 self.defs.definitions[dataclass_ref] = self._post_process_generated_schema(schema)
                 return core_schema.definition_reference_schema(dataclass_ref)
 
+            # Type checkers seem to assume ExitStack may suppress exceptions and therefore
+            # control flow can exit the `with` block without returning.
             assert False, 'Unreachable'
 
     def _callable_schema(self, function: Callable[..., Any]) -> core_schema.CallSchema:
