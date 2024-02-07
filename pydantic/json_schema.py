@@ -4,7 +4,7 @@ Usage docs: https://docs.pydantic.dev/2.5/concepts/json_schema/
 The `json_schema` module contains classes and functions to allow the way [JSON Schema](https://json-schema.org/)
 is generated to be customized.
 
-In general you shouldn't need to use this module directly; instead, you can
+In general you shouldn't need to use this module directly; instead, you can use
 [`BaseModel.model_json_schema`][pydantic.BaseModel.model_json_schema] and
 [`TypeAdapter.json_schema`][pydantic.TypeAdapter.json_schema].
 """
