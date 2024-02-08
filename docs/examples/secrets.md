@@ -56,6 +56,7 @@ from pydantic import BaseModel, Secret
 # Using the default representation
 SecretDate = Secret[date]
 
+
 # Overwriting the representation
 class SecretSalary(Secret[float]):
     def _display(self) -> str:
@@ -102,19 +103,19 @@ class Model(BaseModel):
 
 m = Model(sensitive_int=42)
 print(m.model_dump())
-# > {'sensitive_int': Secret('**********')}
+#> {'sensitive_int': Secret('**********')}
 
 try:
     m = Model(sensitive_int=-42)  # (1)!
 except ValidationError as exc_info:
     print(exc_info.errors(include_url=False, include_input=False))
-    # > [{'type': 'greater_than', 'loc': ('sensitive_int',), 'msg': 'Input should be greater than 0', 'ctx': {'gt': 0}}]
+    #> [{'type': 'greater_than', 'loc': ('sensitive_int',), 'msg': 'Input should be greater than 0', 'ctx': {'gt': 0}}]
 
 try:
     m = Model(sensitive_int='42')  # (2)!
 except ValidationError as exc_info:
     print(exc_info.errors(include_url=False, include_input=False))
-    # > [{'type': 'int_type', 'loc': ('sensitive_int',), 'msg': 'Input should be a valid integer'}]
+    #> [{'type': 'int_type', 'loc': ('sensitive_int',), 'msg': 'Input should be a valid integer'}]
 ```
 
 1. The input value is not greater than 0, so it raises a validation error.

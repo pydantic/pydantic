@@ -1496,7 +1496,7 @@ class Secret(_SecretBase[SecretType]):
     #> {'secret_bool': Secret('**********')}
 
     print(m.model_dump_json())
-    #> {"secret_bool": "**********"}
+    #> {"secret_bool":"**********"}
 
     print(m.secret_bool.get_secret_value())
     #> True
