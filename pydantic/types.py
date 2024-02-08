@@ -1477,20 +1477,57 @@ class _SecretBase(Generic[SecretType]):
 class Secret(_SecretBase[SecretType]):
     """A generic base class used for defining a field with sensitive information that you do not want to be visible in logging or tracebacks.
 
+    You may either directly parametrize `Secret` with a type, or subclass from `Secret` with a parametrized type. The benefit of subclassing
+    is that you can define a custom `_display` method, which will be used for `repr()` and `str()` methods. The examples below demonstrate both
+    ways of using `Secret` to create a new secret type.
+
+    1. Directly parametrizing `Secret` with a type:
+
+    ```py
+    from pydantic import BaseModel, Secret
+
+    SecretBool = Secret[bool]
+
+    class Model(BaseModel):
+        secret_bool: SecretBool
+
+    m = Model(secret_bool=True)
+    print(m.model_dump())
+    #> {'secret_bool': Secret('**********')}
+
+    print(m.model_dump_json())
+    #> {"secret_bool": "**********"}
+
+    print(m.secret_bool.get_secret_value())
+    #> True
+    ```
+
+    2. Subclassing from parametrized `Secret`:
+
     ```py
     from datetime import date
 
-    from pydantic import Secret
+    from pydantic import BaseModel, Secret
 
     class SecretDate(Secret[date]):
         def _display(self) -> str:
             return '****/**/**'
 
-    # Alternative way without overwriting the representation
-    SecretFloat = Secret[float]
+    class Model(BaseModel):
+        secret_date: SecretDate
+
+    m = Model(secret_date=date(2022, 1, 1))
+    print(m.model_dump())
+    #> {'secret_date': SecretDate('****/**/**')}
+
+    print(m.model_dump_json())
+    #> {"secret_date":"****/**/**"}
+
+    print(m.secret_date.get_secret_value())
+    #> 2022-01-01
     ```
 
-    Same as for other secret fields, the value returned by the `_display` will be used for `repr()` and `str`.
+    The value returned by the `_display` method will be used for `repr()` and `str()`.
     """
 
     def _display(self) -> str | bytes:
