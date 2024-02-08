@@ -28,7 +28,7 @@ def get_plugins() -> Iterable[PydanticPluginProtocol]:
     if _loading_plugins:
         # this happens when plugins themselves use pydantic, we return no plugins
         return ()
-    if disabled_plugins == '__all__' or disabled_plugins == '1':
+    elif disabled_plugins == '__all__' or disabled_plugins == '1':
         return ()
     elif _plugins is None:
         _plugins = {}

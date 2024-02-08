@@ -121,7 +121,7 @@ On each validation call, the `plugin_settings` will be passed to a callable regi
 You can use environment variable `PYDANTIC_DISABLE_PLUGINS` to disable all or specific plugin(s).
 
 
-| Environment Variable          | Allowed Values    | Description                       |                               |
+| Environment Variable          | Allowed Values                                        | Description                   |
 |-------------------------------|-------------------------------------------------------|-------------------------------|
 | `PYDANTIC_DISABLE_PLUGINS`    | `__all__`, `1`                                        | Disables all plugins          |
-|                               | Comma-separated string (e.g. `my-plugin-1,my-plugin2` | Disables specified plugin(s)  |
+|                               | Comma-separated string (e.g. `my-plugin-1,my-plugin2`)| Disables specified plugin(s)  |
