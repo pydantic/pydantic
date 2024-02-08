@@ -1590,9 +1590,6 @@ class _SecretField(_SecretBase[SecretType]):
             metadata={'pydantic_js_functions': [get_json_schema]},
         )
 
-    def __len__(self) -> int:
-        return len(self._secret_value)
-
 
 class SecretStr(_SecretField[str]):
     """A string used for storing sensitive information that you do not want to be visible in logging or tracebacks.
@@ -1620,6 +1617,9 @@ class SecretStr(_SecretField[str]):
 
     _inner_schema: ClassVar[CoreSchema] = core_schema.str_schema()
     _error_kind: ClassVar[str] = 'string_type'
+
+    def __len__(self) -> int:
+        return len(self._secret_value)
 
     def _display(self) -> str:
         return _secret_display(self._secret_value)
@@ -1650,6 +1650,9 @@ class SecretBytes(_SecretField[bytes]):
 
     _inner_schema: ClassVar[CoreSchema] = core_schema.bytes_schema()
     _error_kind: ClassVar[str] = 'bytes_type'
+
+    def __len__(self) -> int:
+        return len(self._secret_value)
 
     def _display(self) -> bytes:
         return _secret_display(self._secret_value).encode()
