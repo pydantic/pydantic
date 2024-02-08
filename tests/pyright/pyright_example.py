@@ -35,4 +35,4 @@ class Settings(BaseSettings):
 
 s1 = Settings.parse_obj({})
 
-s2 = Settings()  # pyright: ignore[reportGeneralTypeIssues]
+s2 = Settings()  # pyright: ignore[reportCallIssue]
