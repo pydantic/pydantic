@@ -1470,15 +1470,6 @@ class _SecretBase(Generic[SecretType]):
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self._display()!r})'
 
-    def __len__(self) -> int:
-        try:
-            # Preserve the len() behavior for SecretStr and SecretBytes
-            return len(self._secret_value)  # type: ignore
-        except TypeError:
-            # TODO: remove this branch when we figure out why serialization to JSON
-            # requires a length check on the field value
-            return len(str(self))
-
     def _display(self) -> str | bytes:
         raise NotImplementedError
 
@@ -1598,6 +1589,9 @@ class _SecretField(_SecretBase[SecretType]):
             strict_schema=get_secret_schema(strict=True),
             metadata={'pydantic_js_functions': [get_json_schema]},
         )
+
+    def __len__(self) -> int:
+        return len(self._secret_value)
 
 
 class SecretStr(_SecretField[str]):
