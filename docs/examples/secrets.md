@@ -85,7 +85,7 @@ print(employee.date_of_birth.get_secret_value())
 #> 1990-01-01
 ```
 
-Pydantic currently supports enforcing constraints on the underlying type of a secret type, but not the secret type itself. 
+Pydantic currently supports enforcing constraints on the underlying type of a secret type, but not the secret type itself.
 For example:
 
 ```py
