@@ -90,7 +90,7 @@ Pydantic currently supports enforcing constraints on the underlying type of a se
 For example:
 
 ```py
-from typing import Annotated
+from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field, Secret, ValidationError
 
