@@ -1560,9 +1560,6 @@ class Secret(_SecretBase[SecretType]):
             validated_inner = handler(value)
             return cls(validated_inner)
 
-        def _serialize(value: Secret[SecretType]) -> str | bytes:
-            return value._display()
-
         return core_schema.json_or_python_schema(
             python_schema=core_schema.no_info_wrap_validator_function(
                 validate_secret_value,
@@ -1570,7 +1567,7 @@ class Secret(_SecretBase[SecretType]):
                 serialization=core_schema.plain_serializer_function_ser_schema(lambda x: x),
             ),
             json_schema=core_schema.no_info_after_validator_function(
-                validate_secret_value, inner_schema, serialization=core_schema.to_string_ser_schema(when_used='json')
+                lambda x: cls(x), inner_schema, serialization=core_schema.to_string_ser_schema(when_used='json')
             ),
         )
 

@@ -39,8 +39,14 @@ print(model.model_dump_json())
 ```
 
 ## Create your own Secret field
-It is possible to create your own secret field. To do this inherit from the Generic Secret class with your underlying type.
-Overwrite the `_display` method to choose the string representation.
+
+Pydantic provides the generic `Secret` class as a mechanism for creating custom secret types.
+
+??? api "API Documentation"
+    [`pydantic.types.Secret`][pydantic.types.Secret]<br>
+
+Pydantic provides the generic `Secret` class as a mechanism for creating custom secret types.
+You can either directly parametrize `Secret`, or subclass from a parametrized `Secret` to customize the `str()` and `repr()` of a secret type.
 
 ```py
 from datetime import date
@@ -49,7 +55,6 @@ from pydantic import BaseModel, Secret
 
 # Using the default representation
 SecretDate = Secret[date]
-
 
 # Overwriting the representation
 class SecretSalary(Secret[float]):
@@ -80,36 +85,37 @@ print(employee.date_of_birth.get_secret_value())
 #> 1990-01-01
 ```
 
-To make a secret field reveal the data while serializing to JSON, you can use a `PlainSerializer`
-
-```py
-from datetime import date
-
-from typing_extensions import Annotated
-
-from pydantic import PlainSerializer, Secret
-
-
-class _SecretDate(Secret[date]):
-    def _display(self) -> str:
-        return '****/**/**'
-
-
-SecretDate = Annotated[
-    _SecretDate,
-    PlainSerializer(
-        lambda v: v.get_secret_value().strftime('%Y-%m-%d') if v else None,
-        when_used='json',
-    ),
-]
-```
-
-Secrets can't be `Strict`, but the underlying types can.
-
+Pydantic currently supports enforcing constraints on the underlying type of a secret type, but not the secret type itself. 
 For example:
 
 ```py
-from pydantic import Secret, StrictStr
+from typing import Annotated
 
-StrictSecretStr = Secret[StrictStr]
+from pydantic import BaseModel, Field, Secret, ValidationError
+
+SecretPosInt = Secret[Annotated[int, Field(gt=0, strict=True)]]
+
+
+class Model(BaseModel):
+    sensitive_int: SecretPosInt
+
+
+m = Model(sensitive_int=42)
+print(m.model_dump())
+# > {'sensitive_int': Secret('**********')}
+
+try:
+    m = Model(sensitive_int=-42)  # (1)!
+except ValidationError as exc_info:
+    print(exc_info.errors(include_url=False, include_input=False))
+    # > [{'type': 'greater_than', 'loc': ('sensitive_int',), 'msg': 'Input should be greater than 0', 'ctx': {'gt': 0}}]
+
+try:
+    m = Model(sensitive_int='42')  # (2)!
+except ValidationError as exc_info:
+    print(exc_info.errors(include_url=False, include_input=False))
+    # > [{'type': 'int_type', 'loc': ('sensitive_int',), 'msg': 'Input should be a valid integer'}]
 ```
+
+1. The input value is not greater than 0, so it raises a validation error.
+2. The input value is not an integer, so it raises a validation error because the SecretPOsInt type has strict mode enabled.
