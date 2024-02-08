@@ -86,7 +86,7 @@ print(employee.date_of_birth.get_secret_value())
 #> 1990-01-01
 ```
 
-Pydantic currently supports enforcing constraints on the underlying type of a secret type, but not the secret type itself.
+You can enforce constraints on the underlying type through annotations:
 For example:
 
 ```py
@@ -136,4 +136,4 @@ except ValidationError as exc_info:
 ```
 
 1. The input value is not greater than 0, so it raises a validation error.
-2. The input value is not an integer, so it raises a validation error because the SecretPOsInt type has strict mode enabled.
+2. The input value is not an integer, so it raises a validation error because the `SecretPosInt` type has strict mode enabled.
