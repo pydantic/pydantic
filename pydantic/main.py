@@ -1,7 +1,6 @@
 """Logic for creating models."""
 from __future__ import annotations as _annotations
 
-import builtins
 import operator
 import sys
 import types
@@ -42,7 +41,7 @@ if typing.TYPE_CHECKING:
 
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
     from .deprecated.parse import Protocol as DeprecatedParseProtocol
-    from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
+    from .fields import ComputedFieldInfo, Deprecated, FieldInfo, ModelPrivateAttr
     from .fields import Field as _Field
 
     TupleGenerator = typing.Generator[typing.Tuple[str, Any], None, None]
@@ -120,7 +119,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_core_schema__: ClassVar[CoreSchema]
         __pydantic_custom_init__: ClassVar[bool]
         __pydantic_decorators__: ClassVar[_decorators.DecoratorInfos]
-        __pydantic_deprecated_fields__: ClassVar[dict[str, str]]
+        __pydantic_deprecated_fields__: ClassVar[dict[str, Deprecated]]
         __pydantic_generic_metadata__: ClassVar[_generics.PydanticGenericMetadata]
         __pydantic_parent_namespace__: ClassVar[dict[str, Any] | None]
         __pydantic_post_init__: ClassVar[None | Literal['model_post_init']]
@@ -772,8 +771,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         def __getattribute__(self, item: str) -> Any:
             try:
-                msg = type(self).__pydantic_deprecated_fields__[item]
-                warnings.warn(msg, builtins.DeprecationWarning, stacklevel=2)
+                deprecated_inst = type(self).__pydantic_deprecated_fields__[item]
+                if deprecated_inst.category is not None:
+                    warnings.warn(
+                        deprecated_inst.message, deprecated_inst.category, stacklevel=deprecated_inst.stacklevel
+                    )
             except (KeyError, TypeError):  # `TypeError` raised if `BaseModel` instantiated directly.
                 pass
             return object.__getattribute__(self, item)

@@ -14,7 +14,8 @@ from warnings import warn
 import annotated_types
 import typing_extensions
 from pydantic_core import PydanticUndefined
-from typing_extensions import Literal, TypeAlias, Unpack, deprecated
+from typing_extensions import Literal, TypeAlias, Unpack
+from typing_extensions import deprecated as te_deprecated
 
 from . import types
 from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils
@@ -36,9 +37,9 @@ _Unset: Any = PydanticUndefined
 if sys.version_info >= (3, 13):
     import warnings
 
-    Deprecated: TypeAlias = warnings.deprecated | deprecated
+    Deprecated: TypeAlias = warnings.deprecated | te_deprecated
 else:
-    Deprecated: TypeAlias = deprecated
+    Deprecated: TypeAlias = te_deprecated
 
 
 class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
@@ -131,7 +132,7 @@ class FieldInfo(_repr.Representation):
     examples: list[Any] | None
     exclude: bool | None
     discriminator: str | types.Discriminator | None
-    deprecated: Deprecated | str | None
+    deprecated: Deprecated | None
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
     frozen: bool | None
     validate_default: bool | None
@@ -215,7 +216,10 @@ class FieldInfo(_repr.Representation):
         self.examples = kwargs.pop('examples', None)
         self.exclude = kwargs.pop('exclude', None)
         self.discriminator = kwargs.pop('discriminator', None)
-        self.deprecated = kwargs.pop('deprecated', None)
+        _dep = kwargs.pop('deprecated', None)
+        self.deprecated = (
+            _dep if _typing_extra.is_deprecated_instance(_dep) or _dep is None else te_deprecated(_dep)  # type: ignore | PEP 724/742
+        )
         self.repr = kwargs.pop('repr', True)
         self.json_schema_extra = kwargs.pop('json_schema_extra', None)
         self.validate_default = kwargs.pop('validate_default', None)
@@ -307,7 +311,7 @@ class FieldInfo(_repr.Representation):
                 metadata: list[Any] = []
                 for a in extra_args:
                     if _typing_extra.is_deprecated_instance(a):
-                        new_field_info.deprecated = a.message
+                        new_field_info.deprecated = a
                     elif not isinstance(a, FieldInfo):
                         metadata.append(a)
                     else:
@@ -392,7 +396,7 @@ class FieldInfo(_repr.Representation):
                 metadata: list[Any] = []
                 for a in extra_args:
                     if _typing_extra.is_deprecated_instance(a):
-                        field_info.deprecated = a.message
+                        field_info.deprecated = a
                     elif not isinstance(a, FieldInfo):
                         metadata.append(a)
                     else:
@@ -507,13 +511,6 @@ class FieldInfo(_repr.Representation):
         if general_metadata:
             metadata.append(_fields.pydantic_general_metadata(**general_metadata))
         return metadata
-
-    @property
-    def deprecation_message(self) -> str | None:
-        """The deprecation message to be emitted, or `None` if not set."""
-        if self.deprecated is None:
-            return None
-        return self.deprecated if isinstance(self.deprecated, str) else self.deprecated.message
 
     def get_default(self, *, call_default_factory: bool = False) -> Any:
         """Get the default value.
@@ -968,19 +965,12 @@ class ComputedFieldInfo:
     alias_priority: int | None
     title: str | None
     description: str | None
-    deprecated: Deprecated | str | None
+    deprecated: Deprecated | None
     # This is necessary to avoid emitting two runtime warnings:
     from_deprecated_decorator: bool
     examples: list[Any] | None
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
     repr: bool
-
-    @property
-    def deprecation_message(self) -> str | None:
-        """The deprecation message to be emitted, or `None` if not set."""
-        if self.deprecated is None:
-            return None
-        return self.deprecated if isinstance(self.deprecated, str) else self.deprecated.message
 
 
 def _wrapped_property_is_private(property_: cached_property | property) -> bool:  # type: ignore
@@ -1184,8 +1174,10 @@ def computed_field(
 
         from_deprecated_decorator = False
         if deprecated is None and hasattr(unwrapped, '__deprecated__'):
-            deprecated = unwrapped.__deprecated__
+            deprecated = te_deprecated(unwrapped.__deprecated__)
             from_deprecated_decorator = True
+        elif isinstance(deprecated, str):
+            deprecated = te_deprecated(deprecated)
 
         # if the function isn't already decorated with `@property` (or another descriptor), then we wrap it now
         f = _decorators.ensure_property(f)
