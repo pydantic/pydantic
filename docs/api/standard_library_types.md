@@ -157,12 +157,12 @@ print(m.model_dump())
 
 Pydantic supports the following numeric types from the Python standard library:
 
-### `int`
+### [`int`][]
 
 * Pydantic uses `int(v)` to coerce types to an `int`;
   see [Data conversion](../concepts/models.md#data-conversion) for details on loss of information during data conversion.
 
-### `float`
+### [`float`][]
 
 * Pydantic uses `float(v)` to coerce values to floats.
 
@@ -942,7 +942,7 @@ except ValidationError as e:
 
 ## Bytes
 
-`bytes` are accepted as-is. `bytearray` is converted using `bytes(v)`. `str` are converted using `v.encode()`. `int`, `float`, and `Decimal` are coerced using `str(v).encode()`. See [ByteSize](types.md#pydantic.types.ByteSize) for more details.
+[`bytes`][] are accepted as-is. [`bytearray`][] is converted using `bytes(v)`. `str` are converted using `v.encode()`. `int`, `float`, and `Decimal` are coerced using `str(v).encode()`. See [ByteSize](types.md#pydantic.types.ByteSize) for more details.
 
 
 ## [`typing.Literal`][]
