@@ -82,10 +82,12 @@ from pydantic import (
     OnErrorOmit,
     PastDate,
     PastDatetime,
+    PlainSerializer,
     PositiveFloat,
     PositiveInt,
     PydanticInvalidForJsonSchema,
     PydanticSchemaGenerationError,
+    Secret,
     SecretBytes,
     SecretStr,
     SerializeAsAny,
@@ -4099,6 +4101,166 @@ def test_secretstr_idempotent():
     assert m.password.get_secret_value() == '1234'
 
 
+class SecretDate(Secret[date]):
+    def _display(self) -> str:
+        return '****/**/**'
+
+
+class SampleEnum(str, Enum):
+    foo = 'foo'
+    bar = 'bar'
+
+
+SecretEnum = Secret[SampleEnum]
+
+
+@pytest.mark.parametrize(
+    'value, result',
+    [
+        # Valid inputs
+        (1_493_942_400, date(2017, 5, 5)),
+        (1_493_942_400_000, date(2017, 5, 5)),
+        (0, date(1970, 1, 1)),
+        ('2012-04-23', date(2012, 4, 23)),
+        (b'2012-04-23', date(2012, 4, 23)),
+        (date(2012, 4, 9), date(2012, 4, 9)),
+        (datetime(2012, 4, 9, 0, 0), date(2012, 4, 9)),
+        (1_549_238_400, date(2019, 2, 4)),  # nowish in s
+        (1_549_238_400_000, date(2019, 2, 4)),  # nowish in ms
+        (19_999_958_400, date(2603, 10, 11)),  # just before watershed
+    ],
+)
+def test_secretdate(value, result):
+    class Foobar(BaseModel):
+        value: SecretDate
+
+    f = Foobar(value=value)
+
+    # Assert correct type.
+    assert f.value.__class__.__name__ == 'SecretDate'
+
+    # Assert str and repr are correct.
+    assert str(f.value) == '****/**/**'
+    assert repr(f.value) == "SecretDate('****/**/**')"
+
+    # Assert retrieval of secret value is correct
+    assert f.value.get_secret_value() == result
+
+
+def test_secretdate_json_serializable():
+    class _SecretDate(Secret[date]):
+        def _display(self) -> str:
+            return '****/**/**'
+
+    SecretDate = Annotated[
+        _SecretDate,
+        PlainSerializer(lambda v: v.get_secret_value().strftime('%Y-%m-%d'), when_used='json'),
+    ]
+
+    class Foobar(BaseModel):
+        value: SecretDate
+
+    f = Foobar(value='2017-01-01')
+
+    assert '2017-01-01' in f.model_dump_json()
+
+
+def test_secretenum_json_serializable():
+    class SampleEnum(str, Enum):
+        foo = 'foo'
+        bar = 'bar'
+
+    SecretEnum = Annotated[
+        Secret[SampleEnum],
+        PlainSerializer(lambda v: v.get_secret_value(), when_used='json'),
+    ]
+
+    class Foobar(BaseModel):
+        value: SecretEnum
+
+    f = Foobar(value='foo')
+
+    assert f.model_dump_json() == '{"value":"foo"}'
+
+
+@pytest.mark.parametrize(
+    'SecretField, value, error_msg',
+    [
+        (SecretDate, 'not-a-date', r'Input should be a valid date'),
+        (SecretStr, 0, r'Input should be a valid string \[type=string_type,'),
+        (SecretBytes, 0, r'Input should be a valid bytes \[type=bytes_type,'),
+        (SecretEnum, 0, r'Input should be an instance of SampleEnum'),
+    ],
+)
+def test_strict_secretfield_by_config(SecretField, value, error_msg):
+    class Foobar(BaseModel):
+        model_config = ConfigDict(strict=True)
+        value: SecretField
+
+    with pytest.raises(ValidationError, match=error_msg):
+        Foobar(value=value)
+
+
+@pytest.mark.parametrize(
+    'field, value, error_msg',
+    [
+        (date, 'not-a-date', r'Input should be a valid date'),
+        (str, 0, r'Input should be a valid string \[type=string_type,'),
+        (bytes, 0, r'Input should be a valid bytes \[type=bytes_type,'),
+        (SampleEnum, 0, r'Input should be an instance of SampleEnum'),
+    ],
+)
+def test_strict_secretfield_annotated(field, value, error_msg):
+    SecretField = Annotated[field, Strict()]
+
+    class Foobar(BaseModel):
+        value: Secret[SecretField]
+
+    with pytest.raises(ValidationError, match=error_msg):
+        Foobar(value=value)
+
+
+@pytest.mark.parametrize(
+    'value',
+    [
+        datetime(2012, 4, 9, 12, 15),
+        'x20120423',
+        '2012-04-56',
+        20000044800,  # just after watershed
+        1_549_238_400_000_000,  # nowish in μs
+        1_549_238_400_000_000_000,  # nowish in ns
+        'infinity',
+        float('inf'),
+        int('1' + '0' * 100),
+        1e1000,
+        float('-infinity'),
+        float('nan'),
+    ],
+)
+def test_secretdate_parsing(value):
+    class FooBar(BaseModel):
+        d: SecretDate
+
+    with pytest.raises(ValidationError):
+        FooBar(d=value)
+
+
+def test_secretdate_equality():
+    assert SecretDate('2017-01-01') == SecretDate('2017-01-01')
+    assert SecretDate('2017-01-01') != SecretDate('2018-01-01')
+    assert SecretDate(date(2017, 1, 1)) != date(2017, 1, 1)
+    assert SecretDate('2017-01-01') is not SecretDate('2017-01-01')
+
+
+def test_secretdate_idempotent():
+    class Foobar(BaseModel):
+        value: SecretDate
+
+    # Should not raise an exception
+    m = Foobar(value=SecretDate(date(2017, 1, 1)))
+    assert m.value.get_secret_value() == date(2017, 1, 1)
+
+
 @pytest.mark.parametrize(
     'pydantic_type',
     [
@@ -4118,6 +4280,7 @@ def test_secretstr_idempotent():
         StrictFloat,
         FiniteFloat,
         conbytes,
+        Secret,
         SecretBytes,
         constr,
         StrictStr,
@@ -4215,6 +4378,13 @@ def test_secret_str_min_max_length():
 
     value = '1' * 8
     assert Foobar(password=value).password.get_secret_value() == value
+
+
+def test_secretbytes_json():
+    class Foobar(BaseModel):
+        password: SecretBytes
+
+    assert Foobar(password='foo').model_dump_json() == '{"password":"**********"}'
 
 
 def test_secretbytes():
@@ -5704,7 +5874,8 @@ def test_typing_literal_field():
 
 def test_instance_of_annotation():
     class Model(BaseModel):
-        x: InstanceOf[Sequence[int]]  # Note: the generic parameter gets ignored by runtime validation
+        # Note: the generic parameter gets ignored by runtime validation
+        x: InstanceOf[Sequence[int]]
 
     class MyList(list):
         pass
@@ -6113,7 +6284,8 @@ def test_union_tags_in_errors():
     with pytest.raises(ValidationError) as exc_info:
         adapter.validate_python(['a'])
 
-    assert '2 validation errors for union[function-after[<lambda>(), list[int]],dict[str,str]]' in str(exc_info)  # yuck
+    # yuck
+    assert '2 validation errors for union[function-after[<lambda>(), list[int]],dict[str,str]]' in str(exc_info)
     # the loc's are bad here:
     assert exc_info.value.errors(include_url=False) == [
         {
@@ -6157,7 +6329,8 @@ def test_union_tags_in_errors():
 def test_json_value():
     adapter = TypeAdapter(JsonValue)
     valid_json_data = {'a': {'b': {'c': 1, 'd': [2, None]}}}
-    invalid_json_data = {'a': {'b': ...}}  # would pass validation as a dict[str, Any]
+    # would pass validation as a dict[str, Any]
+    invalid_json_data = {'a': {'b': ...}}
 
     assert adapter.validate_python(valid_json_data) == valid_json_data
     assert adapter.validate_json(json.dumps(valid_json_data)) == valid_json_data
