@@ -59,7 +59,7 @@ _object_setattr = _model_construction.object_setattr
 
 
 class BaseModel(metaclass=_model_construction.ModelMetaclass):
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/models/
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/models/
 
     A base class for creating Pydantic models.
 
@@ -251,7 +251,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return m
 
     def model_copy(self: Model, *, update: dict[str, Any] | None = None, deep: bool = False) -> Model:
-        """Usage docs: https://docs.pydantic.dev/2.6/concepts/serialization/#model_copy
+        """Usage docs: https://docs.pydantic.dev/2.7/concepts/serialization/#model_copy
 
         Returns a copy of the model.
 
@@ -291,7 +291,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         round_trip: bool = False,
         warnings: bool = True,
     ) -> dict[str, Any]:
-        """Usage docs: https://docs.pydantic.dev/2.6/concepts/serialization/#modelmodel_dump
+        """Usage docs: https://docs.pydantic.dev/2.7/concepts/serialization/#modelmodel_dump
 
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
 
@@ -337,7 +337,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         round_trip: bool = False,
         warnings: bool = True,
     ) -> str:
-        """Usage docs: https://docs.pydantic.dev/2.6/concepts/serialization/#modelmodel_dump_json
+        """Usage docs: https://docs.pydantic.dev/2.7/concepts/serialization/#modelmodel_dump_json
 
         Generates a JSON representation of the model using Pydantic's `to_json` method.
 
@@ -518,7 +518,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         strict: bool | None = None,
         context: dict[str, Any] | None = None,
     ) -> Model:
-        """Usage docs: https://docs.pydantic.dev/2.6/concepts/json/#json-parsing
+        """Usage docs: https://docs.pydantic.dev/2.7/concepts/json/#json-parsing
 
         Validate the given JSON data against the Pydantic model.
 
@@ -733,6 +733,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     if not typing.TYPE_CHECKING:
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
+        # The same goes for __setattr__ and __delattr__, see: https://github.com/pydantic/pydantic/issues/8643
 
         def __getattr__(self, item: str) -> Any:
             private_attributes = object.__getattribute__(self, '__private_attributes__')
@@ -766,74 +767,74 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                         # this is the current error
                         raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
 
-    def __setattr__(self, name: str, value: Any) -> None:
-        if name in self.__class_vars__:
-            raise AttributeError(
-                f'{name!r} is a ClassVar of `{self.__class__.__name__}` and cannot be set on an instance. '
-                f'If you want to set a value on the class, use `{self.__class__.__name__}.{name} = value`.'
-            )
-        elif not _fields.is_valid_field_name(name):
-            if self.__pydantic_private__ is None or name not in self.__private_attributes__:
-                _object_setattr(self, name, value)
-            else:
-                attribute = self.__private_attributes__[name]
-                if hasattr(attribute, '__set__'):
-                    attribute.__set__(self, value)  # type: ignore
+        def __setattr__(self, name: str, value: Any) -> None:
+            if name in self.__class_vars__:
+                raise AttributeError(
+                    f'{name!r} is a ClassVar of `{self.__class__.__name__}` and cannot be set on an instance. '
+                    f'If you want to set a value on the class, use `{self.__class__.__name__}.{name} = value`.'
+                )
+            elif not _fields.is_valid_field_name(name):
+                if self.__pydantic_private__ is None or name not in self.__private_attributes__:
+                    _object_setattr(self, name, value)
                 else:
-                    self.__pydantic_private__[name] = value
-            return
+                    attribute = self.__private_attributes__[name]
+                    if hasattr(attribute, '__set__'):
+                        attribute.__set__(self, value)  # type: ignore
+                    else:
+                        self.__pydantic_private__[name] = value
+                return
 
-        self._check_frozen(name, value)
+            self._check_frozen(name, value)
 
-        attr = getattr(self.__class__, name, None)
-        if isinstance(attr, property):
-            attr.__set__(self, value)
-        elif self.model_config.get('validate_assignment', None):
-            self.__pydantic_validator__.validate_assignment(self, name, value)
-        elif self.model_config.get('extra') != 'allow' and name not in self.model_fields:
-            # TODO - matching error
-            raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
-        elif self.model_config.get('extra') == 'allow' and name not in self.model_fields:
-            if self.model_extra and name in self.model_extra:
-                self.__pydantic_extra__[name] = value  # type: ignore
-            else:
-                try:
-                    getattr(self, name)
-                except AttributeError:
-                    # attribute does not already exist on instance, so put it in extra
+            attr = getattr(self.__class__, name, None)
+            if isinstance(attr, property):
+                attr.__set__(self, value)
+            elif self.model_config.get('validate_assignment', None):
+                self.__pydantic_validator__.validate_assignment(self, name, value)
+            elif self.model_config.get('extra') != 'allow' and name not in self.model_fields:
+                # TODO - matching error
+                raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
+            elif self.model_config.get('extra') == 'allow' and name not in self.model_fields:
+                if self.model_extra and name in self.model_extra:
                     self.__pydantic_extra__[name] = value  # type: ignore
                 else:
-                    # attribute _does_ already exist on instance, and was not in extra, so update it
-                    _object_setattr(self, name, value)
-        else:
-            self.__dict__[name] = value
-            self.__pydantic_fields_set__.add(name)
+                    try:
+                        getattr(self, name)
+                    except AttributeError:
+                        # attribute does not already exist on instance, so put it in extra
+                        self.__pydantic_extra__[name] = value  # type: ignore
+                    else:
+                        # attribute _does_ already exist on instance, and was not in extra, so update it
+                        _object_setattr(self, name, value)
+            else:
+                self.__dict__[name] = value
+                self.__pydantic_fields_set__.add(name)
 
-    def __delattr__(self, item: str) -> Any:
-        if item in self.__private_attributes__:
-            attribute = self.__private_attributes__[item]
-            if hasattr(attribute, '__delete__'):
-                attribute.__delete__(self)  # type: ignore
-                return
+        def __delattr__(self, item: str) -> Any:
+            if item in self.__private_attributes__:
+                attribute = self.__private_attributes__[item]
+                if hasattr(attribute, '__delete__'):
+                    attribute.__delete__(self)  # type: ignore
+                    return
 
-            try:
-                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
-                del self.__pydantic_private__[item]  # type: ignore
-                return
-            except KeyError as exc:
-                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+                try:
+                    # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                    del self.__pydantic_private__[item]  # type: ignore
+                    return
+                except KeyError as exc:
+                    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
 
-        self._check_frozen(item, None)
+            self._check_frozen(item, None)
 
-        if item in self.model_fields:
-            object.__delattr__(self, item)
-        elif self.__pydantic_extra__ is not None and item in self.__pydantic_extra__:
-            del self.__pydantic_extra__[item]
-        else:
-            try:
+            if item in self.model_fields:
                 object.__delattr__(self, item)
-            except AttributeError:
-                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+            elif self.__pydantic_extra__ is not None and item in self.__pydantic_extra__:
+                del self.__pydantic_extra__[item]
+            else:
+                try:
+                    object.__delattr__(self, item)
+                except AttributeError:
+                    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
 
     def _check_frozen(self, name: str, value: Any) -> None:
         if self.model_config.get('frozen', None):
@@ -1406,7 +1407,7 @@ def create_model(  # noqa: C901
     __slots__: tuple[str, ...] | None = None,
     **field_definitions: Any,
 ) -> type[Model]:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/models/#dynamic-model-creation
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/models/#dynamic-model-creation
 
     Dynamically creates and returns a new Pydantic model, in other words, `create_model` dynamically creates a
     subclass of [`BaseModel`][pydantic.BaseModel].

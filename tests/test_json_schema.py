@@ -2545,6 +2545,46 @@ def test_typeddict_with_extra_behavior_forbid():
     }
 
 
+def test_typeddict_with_title():
+    class Model(TypedDict):
+        __pydantic_config__ = ConfigDict(title='Test')  # type: ignore
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {
+        'title': 'Test',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }
+
+
+def test_typeddict_with_json_schema_extra():
+    class Model(TypedDict):
+        __pydantic_config__ = ConfigDict(title='Test', json_schema_extra={'foobar': 'hello'})  # type: ignore
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {
+        'title': 'Test',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'foobar': 'hello',
+    }
+
+
+def test_typeddict_with__callable_json_schema_extra():
+    def json_schema_extra(schema, model_class):
+        schema.pop('properties')
+        schema['type'] = 'override'
+        assert model_class is Model
+
+    class Model(TypedDict):
+        __pydantic_config__ = ConfigDict(title='Test', json_schema_extra=json_schema_extra)  # type: ignore
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {'title': 'Test', 'type': 'override', 'required': ['a']}
+
+
 @pytest.mark.parametrize(
     'annotation,kwargs,field_schema',
     [
@@ -5879,3 +5919,31 @@ def test_description_not_included_for_basemodel() -> None:
         x: BaseModel
 
     assert 'description' not in Model.model_json_schema()['$defs']['BaseModel']
+
+
+def test_recursive_json_schema_build() -> None:
+    """
+    Schema build for this case is a bit complicated due to the recursive nature of the models.
+    This was reported as broken in https://github.com/pydantic/pydantic/issues/8689, which was
+    originally caused by the change made in https://github.com/pydantic/pydantic/pull/8583, which has
+    since been reverted.
+    """
+
+    class AllowedValues(str, Enum):
+        VAL1 = 'Val1'
+        VAL2 = 'Val2'
+
+    class ModelA(BaseModel):
+        modelA_1: AllowedValues = Field(..., max_length=60)
+
+    class ModelB(ModelA):
+        modelB_1: typing.List[ModelA]
+
+    class ModelC(BaseModel):
+        modelC_1: ModelB
+
+    class Model(BaseModel):
+        b: ModelB
+        c: ModelC
+
+    assert Model.model_json_schema()

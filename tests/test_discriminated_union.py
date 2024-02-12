@@ -1700,6 +1700,7 @@ def test_callable_discriminated_union_with_missing_tag() -> None:
         assert exc_info.code == 'callable-discriminator-no-tag'
 
 
+@pytest.mark.xfail(reason='Issue not yet fixed, see: https://github.com/pydantic/pydantic/issues/8271.')
 def test_presence_of_discriminator_when_generating_type_adaptor_json_schema_definitions() -> None:
     class ItemType(str, Enum):
         ITEM1 = 'item1'
@@ -1762,4 +1763,92 @@ def test_presence_of_discriminator_when_generating_type_adaptor_json_schema_defi
             'title': 'CreateObjectDto',
             'type': 'object',
         },
+    }
+
+
+def test_nested_discriminator() -> None:
+    """
+    The exact details of the JSON schema produced are not necessarily important; the test was added in response to a
+    regression that caused the inner union to lose its discriminator. Even if the schema changes, the important
+    thing is that the core schema (and therefore JSON schema) produced has an actual discriminated union in it.
+    For more context, see: https://github.com/pydantic/pydantic/issues/8688.
+    """
+
+    class Step_A(BaseModel):
+        type: Literal['stepA']
+        count: int
+
+    class Step_B(BaseModel):
+        type: Literal['stepB']
+        value: float
+
+    class MyModel(BaseModel):
+        type: Literal['mixed']
+        sub_models: List['SubModel']
+        steps: Union[Step_A, Step_B] = Field(
+            default=None,
+            discriminator='type',
+        )
+
+    class SubModel(MyModel):
+        type: Literal['mixed']
+        blending: float
+
+    MyModel.model_rebuild()
+    assert MyModel.model_json_schema() == {
+        '$defs': {
+            'Step_A': {
+                'properties': {
+                    'count': {'title': 'Count', 'type': 'integer'},
+                    'type': {'const': 'stepA', 'title': 'Type'},
+                },
+                'required': ['type', 'count'],
+                'title': 'Step_A',
+                'type': 'object',
+            },
+            'Step_B': {
+                'properties': {
+                    'type': {'const': 'stepB', 'title': 'Type'},
+                    'value': {'title': 'Value', 'type': 'number'},
+                },
+                'required': ['type', 'value'],
+                'title': 'Step_B',
+                'type': 'object',
+            },
+            'SubModel': {
+                'properties': {
+                    'blending': {'title': 'Blending', 'type': 'number'},
+                    'steps': {
+                        'default': None,
+                        'discriminator': {
+                            'mapping': {'stepA': '#/$defs/Step_A', 'stepB': '#/$defs/Step_B'},
+                            'propertyName': 'type',
+                        },
+                        'oneOf': [{'$ref': '#/$defs/Step_A'}, {'$ref': '#/$defs/Step_B'}],
+                        'title': 'Steps',
+                    },
+                    'sub_models': {'items': {'$ref': '#/$defs/SubModel'}, 'title': 'Sub Models', 'type': 'array'},
+                    'type': {'const': 'mixed', 'title': 'Type'},
+                },
+                'required': ['type', 'sub_models', 'blending'],
+                'title': 'SubModel',
+                'type': 'object',
+            },
+        },
+        'properties': {
+            'steps': {
+                'default': None,
+                'discriminator': {
+                    'mapping': {'stepA': '#/$defs/Step_A', 'stepB': '#/$defs/Step_B'},
+                    'propertyName': 'type',
+                },
+                'oneOf': [{'$ref': '#/$defs/Step_A'}, {'$ref': '#/$defs/Step_B'}],
+                'title': 'Steps',
+            },
+            'sub_models': {'items': {'$ref': '#/$defs/SubModel'}, 'title': 'Sub Models', 'type': 'array'},
+            'type': {'const': 'mixed', 'title': 'Type'},
+        },
+        'required': ['type', 'sub_models'],
+        'title': 'MyModel',
+        'type': 'object',
     }

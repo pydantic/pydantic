@@ -1,3 +1,25 @@
+## v2.6.1 (2024-02-05)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.6.1)
+
+### What's Changed
+
+#### Packaging
+
+* Upgrade to `pydantic-core` 2.16.2 by @sydney-runkle in [#8717](https://github.com/pydantic/pydantic/pull/8717)
+
+#### Fixes
+
+* Fix bug with `mypy` plugin and `no_strict_optional = True` by @dmontagu in [#8666](https://github.com/pydantic/pydantic/pull/8666)
+* Fix `ByteSize` error `type` change by @sydney-runkle in [#8681](https://github.com/pydantic/pydantic/pull/8681)
+* Fix inheriting `Field` annotations in dataclasses by @sydney-runkle in [#8679](https://github.com/pydantic/pydantic/pull/8679)
+* Fix regression in core schema generation for indirect definition references by @dmontagu in [#8702](https://github.com/pydantic/pydantic/pull/8702)
+* Fix unsupported types bug with `PlainValidator` by @sydney-runkle in [#8710](https://github.com/pydantic/pydantic/pull/8710)
+* Reverting problematic fix from 2.6 release, fixing schema building bug by @sydney-runkle in [#8718](https://github.com/pydantic/pydantic/pull/8718)
+* Fix warning for tuple of wrong size in `Union` by @davidhewitt in [pydantic/pydantic-core#1174](https://github.com/pydantic/pydantic-core/pull/1174)
+* Fix `computed_field` JSON serializer `exclude_none` behavior by @sydney-runkle in [pydantic/pydantic-core#1187](https://github.com/pydantic/pydantic-core/pull/1187)
+
+
 ## v2.6.0 (2024-01-23)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.6.0)
@@ -707,6 +729,14 @@ First pre-release of Pydantic V2!
 See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more details.
 
 <!-- package description limit -->
+
+
+## v1.10.14 (2024-01-19)
+
+* Update install.md by @dmontagu in #7690
+* Fix ci to only deploy docs on release by @sydney-runkle in #7740
+* Ubuntu fixes for V1 by @sydney-runkle in #8540 and #8587
+* Fix cached_property handling in dataclasses when copied by @rdbisme in #8407
 
 ## v1.10.13 (2023-09-27)
 
