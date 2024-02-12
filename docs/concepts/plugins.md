@@ -123,5 +123,5 @@ You can use environment variable `PYDANTIC_DISABLE_PLUGINS` to disable all or sp
 
 | Environment Variable          | Allowed Values                                        | Description                   |
 |-------------------------------|-------------------------------------------------------|-------------------------------|
-| `PYDANTIC_DISABLE_PLUGINS`    | `__all__`, `1`                                        | Disables all plugins          |
+| `PYDANTIC_DISABLE_PLUGINS`    | `__all__`, `1`, `true`                                | Disables all plugins          |
 |                               | Comma-separated string (e.g. `my-plugin-1,my-plugin2`)| Disables specified plugin(s)  |

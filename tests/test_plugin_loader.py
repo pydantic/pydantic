@@ -59,6 +59,12 @@ def test_disable_all_1():
     assert res == ()
 
 
+def test_disable_true():
+    os.environ['PYDANTIC_DISABLE_PLUGINS'] = 'true'
+    res = loader.get_plugins()
+    assert res == ()
+
+
 def test_disable_one():
     os.environ['PYDANTIC_DISABLE_PLUGINS'] = 'test_plugin1'
     res = loader.get_plugins()
