@@ -118,6 +118,7 @@ class Foo(BaseModel, plugin_settings={'observer': 'all'}):
 On each validation call, the `plugin_settings` will be passed to a callable registered for the events.
 
 ## Disabling Plugins
+
 You can use environment variable `PYDANTIC_DISABLE_PLUGINS` to disable all or specific plugin(s).
 
 
