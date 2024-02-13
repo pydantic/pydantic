@@ -64,7 +64,9 @@ def test_forward_ref_auto_update_no_model(create_module):
     assert b.model_dump() == {'b': {'a': {'b': {'a': None}}}}
 
     # model_fields is complete on Foo
-    assert repr(module.Foo.model_fields['a']) == ('FieldInfo(annotation=Union[Bar, NoneType], required=False)')
+    assert repr(module.Foo.model_fields['a']) == (
+        'FieldInfo(annotation=Union[Bar, NoneType], required=False, default=None)'
+    )
 
     assert module.Foo.__pydantic_complete__ is False
     # Foo gets auto-rebuilt during the first attempt at validation
@@ -159,7 +161,7 @@ def test_self_forward_ref_collection(create_module):
     ]
 
     assert repr(module.Foo.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default=123)'
-    assert repr(module.Foo.model_fields['b']) == 'FieldInfo(annotation=Foo, required=False)'
+    assert repr(module.Foo.model_fields['b']) == 'FieldInfo(annotation=Foo, required=False, default=None)'
     if sys.version_info < (3, 10):
         return
     assert repr(module.Foo.model_fields['c']) == ('FieldInfo(annotation=List[Foo], required=False, ' 'default=[])')

@@ -107,3 +107,16 @@ def test_frozen_field_repr():
 
     assert repr(Model.model_fields['non_frozen_field']) == 'FieldInfo(annotation=int, required=True)'
     assert repr(Model.model_fields['frozen_field']) == 'FieldInfo(annotation=int, required=True, frozen=True)'
+
+
+def test_model_field_default_info():
+    """Test that __repr_args__ of FieldInfo includes the default value when it's set to None."""
+
+    class Model(BaseModel):
+        a: int | None = Field(default=None)
+        b: int | None = None
+
+    assert str(Model.model_fields) == (
+        "{'a': FieldInfo(annotation=Union[int, NoneType], required=False, default=None), "
+        "'b': FieldInfo(annotation=Union[int, NoneType], required=False, default=None)}"
+    )
