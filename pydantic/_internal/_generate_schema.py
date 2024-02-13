@@ -1470,11 +1470,17 @@ class GenerateSchema:
             if origin is not None:
                 dataclass = origin
 
-            config = getattr(dataclass, '__pydantic_config__', None)
-            with self._config_wrapper_stack.push(config), ExitStack() as dataclass_bases_stack:
+            with ExitStack() as dataclass_bases_stack:
+                # Pushing a namespace prioritises items already in the stack, so iterate though the MRO forwards
                 for dataclass_base in dataclass.__mro__:
                     if dataclasses.is_dataclass(dataclass_base):
                         dataclass_bases_stack.enter_context(self._types_namespace_stack.push(dataclass_base))
+
+                # Pushing a config overwrites the previous config, so iterate though the MRO backwards
+                for dataclass_base in reversed(dataclass.__mro__):
+                    if dataclasses.is_dataclass(dataclass_base):
+                        config = getattr(dataclass_base, '__pydantic_config__', None)
+                        dataclass_bases_stack.enter_context(self._config_wrapper_stack.push(config))
 
                 core_config = self._config_wrapper.core_config(dataclass)
 
@@ -1495,7 +1501,7 @@ class GenerateSchema:
                     )
 
                 # disallow combination of init=False on a dataclass field and extra='allow' on a dataclass
-                if config and config.get('extra') == 'allow':
+                if self._config_wrapper_stack.tail.extra == 'allow':
                     # disallow combination of init=False on a dataclass field and extra='allow' on a dataclass
                     for field_name, field in fields.items():
                         if field.init is False:
