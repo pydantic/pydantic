@@ -7,7 +7,7 @@ import types
 import typing
 import warnings
 from copy import copy, deepcopy
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Dict, Set, Tuple
 
 import pydantic_core
 import typing_extensions
@@ -32,13 +32,17 @@ from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema
 from .warnings import PydanticDeprecatedSince20
 
+if sys.version_info < (3, 10):
+    TypeAlias = typing_extensions.TypeAlias
+else:
+    from typing import TypeAlias
+
 # Always define certain types that are needed to resolve method type hints/annotations
 # (even when not type checking) via typing.get_type_hints.
 Model = typing.TypeVar('Model', bound='BaseModel')
-TupleGenerator = typing.Generator[typing.Tuple[str, Any], None, None]
-IncEx: typing_extensions.TypeAlias = typing.Union[
-    typing.Set[int], typing.Set[str], typing.Dict[int, Any], typing.Dict[str, Any], None
-]
+TupleGenerator = typing.Generator[Tuple[str, Any], None, None]
+# should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
+IncEx: TypeAlias = typing.Union[Set[int], Set[str], Dict[int, Any], Dict[str, Any], None]
 
 
 if typing.TYPE_CHECKING:
