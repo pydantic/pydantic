@@ -86,7 +86,7 @@ def inspect_type_hints(
                 continue
 
             if inspect.isclass(member_obj) or inspect.isfunction(member_obj):
-                # Inspect all child members (can"t exclude specific ones)
+                # Inspect all child members (can't exclude specific ones)
                 inspect_type_hints(member_obj, recursion_limit=recursion_limit - 1)
 
 
