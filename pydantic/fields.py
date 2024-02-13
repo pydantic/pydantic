@@ -581,7 +581,9 @@ class FieldInfo(_repr.Representation):
                 continue
             if s == 'serialization_alias' and self.serialization_alias == self.alias:
                 continue
-            if s == 'default_factory' and self.default_factory is not None:
+            if s == 'default' and self.default is not PydanticUndefined:
+                yield 'default', self.default
+            elif s == 'default_factory' and self.default_factory is not None:
                 yield 'default_factory', _repr.PlainRepr(_repr.display_as_type(self.default_factory))
             else:
                 value = getattr(self, s)
