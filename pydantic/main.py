@@ -202,7 +202,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         Creates a new model setting `__dict__` and `__pydantic_fields_set__` from trusted or pre-validated data.
         Default values are respected, but no other validation is performed.
-        Behaves as if `Config.extra = 'allow'` was set since it adds all passed values
+
+        !!! note
+            `model_construct()` generally respects the `model_config.extra` setting on the provided model.
+            That is, if `model_config.extra == 'allow'`, then all extra passed values are added to the model instance's `__dict__`
+            and `__pydantic_extra__` fields. If `model_config.extra == 'ignore'` (the default), then all extra passed values are ignored.
+            Because no validation is performed with a call to `model_construct()`, having `model_config.extra == 'forbid'` does not result in
+            an error if extra values are passed, but they will be ignored.
 
         Args:
             _fields_set: The set of field names accepted for the Model instance.
@@ -232,8 +238,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             _extra = {}
             for k, v in values.items():
                 _extra[k] = v
-        else:
-            fields_values.update(values)
         _object_setattr(m, '__dict__', fields_values)
         _object_setattr(m, '__pydantic_fields_set__', _fields_set)
         if not cls.__pydantic_root_model__:
