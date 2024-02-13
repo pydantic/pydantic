@@ -24,11 +24,14 @@ class Dist:
         self.entry_points = entry_points
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def reset_plugins():
     global loader
+    initial_plugins = loader._plugins
     loader._plugins = None
     yield
+    # teardown
+    loader._plugins = initial_plugins
 
 
 @pytest.fixture(autouse=True)
@@ -42,37 +45,37 @@ def mock():
         yield
 
 
-def test_loader():
+def test_loader(reset_plugins):
     res = loader.get_plugins()
     assert list(res) == ['test_plugin:plugin1', 'test_plugin:plugin2', 'test_plugin:plugin3']
 
 
-def test_disable_all():
+def test_disable_all(reset_plugins):
     os.environ['PYDANTIC_DISABLE_PLUGINS'] = '__all__'
     res = loader.get_plugins()
     assert res == ()
 
 
-def test_disable_all_1():
+def test_disable_all_1(reset_plugins):
     os.environ['PYDANTIC_DISABLE_PLUGINS'] = '1'
     res = loader.get_plugins()
     assert res == ()
 
 
-def test_disable_true():
+def test_disable_true(reset_plugins):
     os.environ['PYDANTIC_DISABLE_PLUGINS'] = 'true'
     res = loader.get_plugins()
     assert res == ()
 
 
-def test_disable_one():
+def test_disable_one(reset_plugins):
     os.environ['PYDANTIC_DISABLE_PLUGINS'] = 'test_plugin1'
     res = loader.get_plugins()
     assert len(list(res)) == 2
     assert 'test_plugin:plugin1' not in list(res)
 
 
-def test_disable_multiple():
+def test_disable_multiple(reset_plugins):
     os.environ['PYDANTIC_DISABLE_PLUGINS'] = 'test_plugin1,test_plugin2'
     res = loader.get_plugins()
     assert len(list(res)) == 1
