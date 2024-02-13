@@ -702,3 +702,26 @@ def test_all_alias_kinds_specified() -> None:
     assert f.a == 'a'
     assert f.model_dump(by_alias=True) == {'a_ser_alias': 'a'}
     assert f.model_dump(by_alias=False) == {'a': 'a'}
+
+
+def test_alias_generator_with_computed_field_for_serialization() -> None:
+    """Tests that the alias generator is used for computed fields, with serialization_alias taking precedence over alias."""
+
+    class Rectangle(BaseModel):
+        model_config = ConfigDict(
+            alias_generator=AliasGenerator(
+                validation_alias=lambda field_name: f'{field_name}_val_alias',
+                alias=lambda field_name: f'{field_name}_alias',
+                serialization_alias=lambda field_name: f'{field_name}_ser_alias',
+            )
+        )
+
+        width: int
+        height: int
+
+        @computed_field
+        def area(self) -> int:
+            return self.width * self.height
+
+    r = Rectangle(width_val_alias=10, height_val_alias=20)
+    assert r.model_dump(by_alias=True) == {'width_ser_alias': 10, 'height_ser_alias': 20, 'area_ser_alias': 200}
