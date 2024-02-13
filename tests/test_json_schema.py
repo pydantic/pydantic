@@ -6,14 +6,7 @@ import typing
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
-from ipaddress import (
-    IPv4Address,
-    IPv4Interface,
-    IPv4Network,
-    IPv6Address,
-    IPv6Interface,
-    IPv6Network,
-)
+from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from typing import (
     Any,
@@ -75,15 +68,7 @@ from pydantic.json_schema import (
     model_json_schema,
     models_json_schema,
 )
-from pydantic.networks import (
-    AnyUrl,
-    EmailStr,
-    IPvAnyAddress,
-    IPvAnyInterface,
-    IPvAnyNetwork,
-    MultiHostUrl,
-    NameEmail,
-)
+from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, MultiHostUrl, NameEmail
 from pydantic.type_adapter import TypeAdapter
 from pydantic.types import (
     UUID1,
@@ -5947,3 +5932,23 @@ def test_recursive_json_schema_build() -> None:
         c: ModelC
 
     assert Model.model_json_schema()
+
+
+def test_json_schema_annotated_with_field() -> None:
+    """Check if the ellipsis in the signature is considered as a required field."""
+
+    from pydantic import create_model
+
+    Model = create_model(
+        'test_model',
+        bar=(Annotated[int, Field(description='Bar description')], ...),
+    )
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'bar': {'description': 'Bar description', 'title': 'Bar', 'type': 'integer'},
+        },
+        'required': ['bar'],
+        'title': 'test_model',
+        'type': 'object',
+    }
