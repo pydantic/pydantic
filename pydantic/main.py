@@ -36,7 +36,9 @@ from .warnings import PydanticDeprecatedSince20
 # (even when not type checking) via typing.get_type_hints.
 Model = typing.TypeVar('Model', bound='BaseModel')
 TupleGenerator = typing.Generator[typing.Tuple[str, Any], None, None]
-IncEx: typing_extensions.TypeAlias = typing.Union[typing.Set[int], typing.Set[str], typing.Dict[int, Any], typing.Dict[str, Any], None]
+IncEx: typing_extensions.TypeAlias = typing.Union[
+    typing.Set[int], typing.Set[str], typing.Dict[int, Any], typing.Dict[str, Any], None
+]
 
 
 if typing.TYPE_CHECKING:

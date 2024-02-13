@@ -3,6 +3,7 @@ Test pydantic model type hints (annotations) and that they can be
 queried by :py:meth:`typing.get_type_hints`.
 """
 import inspect
+import sys
 from typing import (
     Any,
     Dict,
@@ -11,9 +12,9 @@ from typing import (
     Set,
     TypeVar,
 )
-import typing_extensions
 
 import pytest
+import typing_extensions
 
 from pydantic import (
     BaseModel,
@@ -35,7 +36,11 @@ DEPRECATED_MODEL_MEMBERS = {
 # Disable deprecation warnings, as we enumerate members that may be
 # i.e. pydantic.warnings.PydanticDeprecatedSince20: The `__fields__` attribute is deprecated,
 #      use `model_fields` instead.
-pytestmark = pytest.mark.filterwarnings('ignore::DeprecationWarning')
+# Additionally, only run these tests for 3.10+
+pytestmark = [
+    pytest.mark.filterwarnings('ignore::DeprecationWarning'),
+    pytest.mark.skipif(sys.version_info < (3, 10), reason='requires python3.10 or higher to work properly'),
+]
 
 
 @pytest.fixture(name='ParentModel', scope='session')
@@ -56,7 +61,6 @@ def inspect_type_hints(
 ):
     """
     Test an object and its members to make sure type hints can be resolved.
-
     :param obj_type: Type to check
     :param members: Explicit set of members to check, None to check all
     :param exclude_members: Set of member names to exclude
@@ -97,7 +101,6 @@ def inspect_type_hints(
 def test_obj_type_hints(obj_type, members: Optional[Set[str]], exclude_members: Optional[Set[str]]):
     """
     Test an object and its members to make sure type hints can be resolved.
-
     :param obj_type: Type to check
     :param members: Explicit set of members to check, None to check all
     :param exclude_members: Set of member names to exclude
@@ -118,6 +121,7 @@ def test_root_model_as_field():
 
     inspect_type_hints(MyRootModel, None, DEPRECATED_MODEL_MEMBERS)
     inspect_type_hints(MyModel, None, DEPRECATED_MODEL_MEMBERS)
+
 
 def test_generics():
     data_type = TypeVar('data_type')
