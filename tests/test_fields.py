@@ -1,3 +1,5 @@
+from typing import Union
+
 import pytest
 
 import pydantic.dataclasses
@@ -113,8 +115,8 @@ def test_model_field_default_info():
     """Test that __repr_args__ of FieldInfo includes the default value when it's set to None."""
 
     class Model(BaseModel):
-        a: int | None = Field(default=None)
-        b: int | None = None
+        a: Union[int, None] = Field(default=None)
+        b: Union[int, None] = None
 
     assert str(Model.model_fields) == (
         "{'a': FieldInfo(annotation=Union[int, NoneType], required=False, default=None), "
