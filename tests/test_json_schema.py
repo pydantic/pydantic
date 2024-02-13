@@ -5954,7 +5954,7 @@ def test_json_schema_annotated_with_field() -> None:
     }
 
 
-def test_required_fields_in_annotated_model() -> None:
+def test_required_fields_in_annotated_with_create_model() -> None:
     """Ensure multiple field specified with Annotated in create_model call is still marked as required."""
 
     from pydantic import create_model
@@ -5976,3 +5976,18 @@ def test_required_fields_in_annotated_model() -> None:
         'title': 'test_model',
         'type': 'object',
     }
+
+
+def test_required_fields_in_annotated_with_basemodel() -> None:
+    """
+    Ensure multiple field specified with Annotated in BaseModel is marked as required.
+    """
+
+    class Model(BaseModel):
+        a: int = ...
+        b: Annotated[int, 'placeholder'] = ...
+        c: Annotated[int, Field()] = ...
+
+    assert Model.model_fields['a'].is_required()
+    assert Model.model_fields['b'].is_required()
+    assert Model.model_fields['c'].is_required()
