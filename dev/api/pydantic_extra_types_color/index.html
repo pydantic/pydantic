@@ -3272,7 +3272,7 @@ eg. <code>Color((0, 255, 255)).as_named() == 'cyan'</code> because "cyan" comes 
 
 
 <a href="#pydantic_extra_types.color.RGBA" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">RGBA</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">RGBA</span><span class="p">(</span><span class="n">r</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">,</span> <span class="n">g</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3328,7 +3328,7 @@ eg. <code>Color((0, 255, 255)).as_named() == 'cyan'</code> because "cyan" comes 
 
 
 <a href="#pydantic_extra_types.color.Color" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">Color</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">Color</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n"><span title="pydantic_extra_types.color.ColorType">ColorType</span></span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3400,7 +3400,7 @@ eg. <code>Color((0, 255, 255)).as_named() == 'cyan'</code> because "cyan" comes 
 
 
 <a href="#pydantic_extra_types.color.Color.original" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">original</span><span class="p">()</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">original</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><span title="pydantic_extra_types.color.ColorType">ColorType</span></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3434,7 +3434,7 @@ eg. <code>Color((0, 255, 255)).as_named() == 'cyan'</code> because "cyan" comes 
 
 
 <a href="#pydantic_extra_types.color.Color.as_named" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">as_named</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">fallback</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">as_named</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">fallback</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3458,7 +3458,7 @@ otherwise returns the hexadecimal representation of the color or raises <code>Va
         <tr>
           <td><code>fallback</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3486,7 +3486,7 @@ the color instead of raising a ValueError when no named color is found.</p>
     <tbody>
         <tr>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3510,7 +3510,7 @@ the color instead of raising a ValueError when no named color is found.</p>
     <tbody>
         <tr>
           <td>
-                <code>ValueError</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError">ValueError</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3590,7 +3590,7 @@ the color instead of raising a ValueError when no named color is found.</p>
 
 
 <a href="#pydantic_extra_types.color.Color.as_hex" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">as_hex</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="s1">&#39;short&#39;</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">as_hex</span><span class="p">(</span><span class="nb">format</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s1">&#39;short&#39;</span><span class="p">,</span> <span class="s1">&#39;long&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;short&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3612,7 +3612,7 @@ a "short" representation of the color is possible and whether there's an alpha c
     <tbody>
         <tr>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3674,7 +3674,7 @@ a "short" representation of the color is possible and whether there's an alpha c
 
 
 <a href="#pydantic_extra_types.color.Color.as_rgb" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">as_rgb</span><span class="p">()</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">as_rgb</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3720,7 +3720,7 @@ a "short" representation of the color is possible and whether there's an alpha c
 
 
 <a href="#pydantic_extra_types.color.Color.as_rgb_tuple" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">as_rgb_tuple</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">as_rgb_tuple</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pydantic_extra_types.color.ColorTuple">ColorTuple</span></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3743,7 +3743,7 @@ a "short" representation of the color is possible and whether there's an alpha c
         <tr>
           <td><code>alpha</code></td>
           <td>
-                <code>bool | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3856,7 +3856,7 @@ If alpha is included, it is in the range 0 to 1.</p>
 
 
 <a href="#pydantic_extra_types.color.Color.as_hsl" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">as_hsl</span><span class="p">()</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">as_hsl</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3900,7 +3900,7 @@ If alpha is included, it is in the range 0 to 1.</p>
 
 
 <a href="#pydantic_extra_types.color.Color.as_hsl_tuple" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">as_hsl_tuple</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">as_hsl_tuple</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pydantic_extra_types.color.HslColorTuple">HslColorTuple</span></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3923,7 +3923,7 @@ If alpha is included, it is in the range 0 to 1.</p>
         <tr>
           <td><code>alpha</code></td>
           <td>
-                <code>bool | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4056,7 +4056,7 @@ All elements are in the range 0 to 1.</p>
 
 
 <a href="#pydantic_extra_types.color.parse_tuple" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">parse_tuple</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">parse_tuple</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_extra_types.color.RGBA" href="#pydantic_extra_types.color.RGBA">RGBA</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4079,7 +4079,7 @@ All elements are in the range 0 to 1.</p>
         <tr>
           <td><code>value</code></td>
           <td>
-                <code>tuple[<span title="typing.Any">Any</span>, ...]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>, ...]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4198,7 +4198,7 @@ All elements are in the range 0 to 1.</p>
 
 
 <a href="#pydantic_extra_types.color.parse_str" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">parse_str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">parse_str</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_extra_types.color.RGBA" href="#pydantic_extra_types.color.RGBA">RGBA</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4230,7 +4230,7 @@ All elements are in the range 0 to 1.</p>
         <tr>
           <td><code>value</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4281,7 +4281,7 @@ All elements are in the range 0 to 1.</p>
     <tbody>
         <tr>
           <td>
-                <code>ValueError</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError">ValueError</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4439,7 +4439,12 @@ All elements are in the range 0 to 1.</p>
 
 
 <a href="#pydantic_extra_types.color.ints_to_rgba" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">ints_to_rgba</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">ints_to_rgba</span><span class="p">(</span>
+    <span class="n">r</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">g</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">b</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">alpha</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_extra_types.color.RGBA" href="#pydantic_extra_types.color.RGBA">RGBA</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4462,7 +4467,7 @@ All elements are in the range 0 to 1.</p>
         <tr>
           <td><code>r</code></td>
           <td>
-                <code>int | str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4476,7 +4481,7 @@ All elements are in the range 0 to 1.</p>
         <tr>
           <td><code>g</code></td>
           <td>
-                <code>int | str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4490,7 +4495,7 @@ All elements are in the range 0 to 1.</p>
         <tr>
           <td><code>b</code></td>
           <td>
-                <code>int | str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4504,7 +4509,7 @@ All elements are in the range 0 to 1.</p>
         <tr>
           <td><code>alpha</code></td>
           <td>
-                <code>float | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4607,7 +4612,9 @@ All elements are in the range 0 to 1.</p>
 
 
 <a href="#pydantic_extra_types.color.parse_color_value" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">parse_color_value</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">max_val</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">parse_color_value</span><span class="p">(</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">max_val</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">255</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4630,7 +4637,7 @@ All elements are in the range 0 to 1.</p>
         <tr>
           <td><code>value</code></td>
           <td>
-                <code>int | str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4644,7 +4651,7 @@ All elements are in the range 0 to 1.</p>
         <tr>
           <td><code>max_val</code></td>
           <td>
-                <code>int</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4695,7 +4702,7 @@ All elements are in the range 0 to 1.</p>
     <tbody>
         <tr>
           <td>
-                <code>float</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4781,7 +4788,9 @@ All elements are in the range 0 to 1.</p>
 
 
 <a href="#pydantic_extra_types.color.parse_float_alpha" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">parse_float_alpha</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">parse_float_alpha</span><span class="p">(</span>
+    <span class="n">value</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4804,7 +4813,7 @@ All elements are in the range 0 to 1.</p>
         <tr>
           <td><code>value</code></td>
           <td>
-                <code>None | str | float | int</code>
+                <code>None | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4831,7 +4840,7 @@ All elements are in the range 0 to 1.</p>
     <tbody>
         <tr>
           <td>
-                <code>float | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4953,7 +4962,13 @@ All elements are in the range 0 to 1.</p>
 
 
 <a href="#pydantic_extra_types.color.parse_hsl" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">parse_hsl</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">h_units</span><span class="p">,</span> <span class="n">sat</span><span class="p">,</span> <span class="n">light</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">parse_hsl</span><span class="p">(</span>
+    <span class="n">h</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">h_units</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">sat</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">light</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">alpha</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_extra_types.color.RGBA" href="#pydantic_extra_types.color.RGBA">RGBA</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4976,7 +4991,7 @@ All elements are in the range 0 to 1.</p>
         <tr>
           <td><code>h</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4990,7 +5005,7 @@ All elements are in the range 0 to 1.</p>
         <tr>
           <td><code>h_units</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5004,7 +5019,7 @@ All elements are in the range 0 to 1.</p>
         <tr>
           <td><code>sat</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5018,7 +5033,7 @@ All elements are in the range 0 to 1.</p>
         <tr>
           <td><code>light</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5032,7 +5047,7 @@ All elements are in the range 0 to 1.</p>
         <tr>
           <td><code>alpha</code></td>
           <td>
-                <code>float | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5141,7 +5156,7 @@ All elements are in the range 0 to 1.</p>
 
 
 <a href="#pydantic_extra_types.color.float_to_255" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">float_to_255</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">float_to_255</span><span class="p">(</span><span class="n">c</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -5164,7 +5179,7 @@ All elements are in the range 0 to 1.</p>
         <tr>
           <td><code>c</code></td>
           <td>
-                <code>float</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5191,7 +5206,7 @@ All elements are in the range 0 to 1.</p>
     <tbody>
         <tr>
           <td>
-                <code>int</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
           </td>
           <td>
             <div class="doc-md-description">

@@ -4885,8 +4885,8 @@ is generated to be customized.</p>
   </span>
 
 <a href="#pydantic.json_schema.CoreSchemaOrFieldType" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">CoreSchemaOrFieldType</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span>
-    <span class="n">CoreSchemaType</span><span class="p">,</span> <span class="n">CoreSchemaFieldType</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">CoreSchemaOrFieldType</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span>
+    <span class="n"><span title="pydantic_core.core_schema.CoreSchemaType">CoreSchemaType</span></span><span class="p">,</span> <span class="n"><span title="pydantic_core.core_schema.CoreSchemaFieldType">CoreSchemaFieldType</span></span>
 <span class="p">]</span>
 </code></pre></div>
 
@@ -4912,7 +4912,7 @@ is generated to be customized.</p>
   </span>
 
 <a href="#pydantic.json_schema.JsonSchemaValue" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">JsonSchemaValue</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">JsonSchemaValue</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Dict" href="https://docs.python.org/3/library/typing.html#typing.Dict">Dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4935,7 +4935,7 @@ is generated to be customized.</p>
   </span>
 
 <a href="#pydantic.json_schema.JsonSchemaMode" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">JsonSchemaMode</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;validation&#39;</span><span class="p">,</span> <span class="s1">&#39;serialization&#39;</span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">JsonSchemaMode</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span><span class="s1">&#39;validation&#39;</span><span class="p">,</span> <span class="s1">&#39;serialization&#39;</span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4962,7 +4962,7 @@ for validation inputs, or that will be matched by serialization outputs.</p>
   </span>
 
 <a href="#pydantic.json_schema.JsonSchemaWarningKind" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">JsonSchemaWarningKind</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">JsonSchemaWarningKind</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span>
     <span class="s2">&quot;skipped-choice&quot;</span><span class="p">,</span> <span class="s2">&quot;non-serializable-default&quot;</span>
 <span class="p">]</span>
 </code></pre></div>
@@ -5013,7 +5013,7 @@ for more details.</p>
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code>UserWarning</code></p>
+            Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#UserWarning">UserWarning</a></code></p>
 
   
       <p>This class is used to emit warnings produced during JSON schema generation.
@@ -5037,7 +5037,8 @@ methods for more details; these can be overridden to control warning behavior.</
 
 <a href="#pydantic.json_schema.GenerateJsonSchema" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">GenerateJsonSchema</span><span class="p">(</span>
-    <span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ref_template</span><span class="o">=</span><span class="n">DEFAULT_REF_TEMPLATE</span>
+    <span class="n">by_alias</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">ref_template</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -5081,7 +5082,7 @@ in the JSON Schema documentation for more information about dialects.</p>
         <tr>
           <td><code><span title="pydantic.json_schema.GenerateJsonSchema.ignored_warning_kinds">ignored_warning_kinds</span></code></td>
           <td>
-                <code>set[<a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaWarningKind" href="#pydantic.json_schema.JsonSchemaWarningKind">JsonSchemaWarningKind</a>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#set">set</a>[<a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaWarningKind" href="#pydantic.json_schema.JsonSchemaWarningKind">JsonSchemaWarningKind</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5114,7 +5115,7 @@ this value can be modified on subclasses to easily control which warnings are em
         <tr>
           <td><code><span title="pydantic.json_schema.GenerateJsonSchema.core_to_json_refs">core_to_json_refs</span></code></td>
           <td>
-                <code>dict[<span title="pydantic.json_schema.CoreModeRef">CoreModeRef</span>, <span title="pydantic.json_schema.JsonRef">JsonRef</span>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<span title="pydantic.json_schema.CoreModeRef">CoreModeRef</span>, <span title="pydantic.json_schema.JsonRef">JsonRef</span>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5125,7 +5126,7 @@ this value can be modified on subclasses to easily control which warnings are em
         <tr>
           <td><code><span title="pydantic.json_schema.GenerateJsonSchema.core_to_defs_refs">core_to_defs_refs</span></code></td>
           <td>
-                <code>dict[<span title="pydantic.json_schema.CoreModeRef">CoreModeRef</span>, <span title="pydantic.json_schema.DefsRef">DefsRef</span>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<span title="pydantic.json_schema.CoreModeRef">CoreModeRef</span>, <span title="pydantic.json_schema.DefsRef">DefsRef</span>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5136,7 +5137,7 @@ this value can be modified on subclasses to easily control which warnings are em
         <tr>
           <td><code><span title="pydantic.json_schema.GenerateJsonSchema.defs_to_core_refs">defs_to_core_refs</span></code></td>
           <td>
-                <code>dict[<span title="pydantic.json_schema.DefsRef">DefsRef</span>, <span title="pydantic.json_schema.CoreModeRef">CoreModeRef</span>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<span title="pydantic.json_schema.DefsRef">DefsRef</span>, <span title="pydantic.json_schema.CoreModeRef">CoreModeRef</span>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5147,7 +5148,7 @@ this value can be modified on subclasses to easily control which warnings are em
         <tr>
           <td><code><span title="pydantic.json_schema.GenerateJsonSchema.json_to_defs_refs">json_to_defs_refs</span></code></td>
           <td>
-                <code>dict[<span title="pydantic.json_schema.JsonRef">JsonRef</span>, <span title="pydantic.json_schema.DefsRef">DefsRef</span>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<span title="pydantic.json_schema.JsonRef">JsonRef</span>, <span title="pydantic.json_schema.DefsRef">DefsRef</span>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5158,7 +5159,7 @@ this value can be modified on subclasses to easily control which warnings are em
         <tr>
           <td><code><span title="pydantic.json_schema.GenerateJsonSchema.definitions">definitions</span></code></td>
           <td>
-                <code>dict[<span title="pydantic.json_schema.DefsRef">DefsRef</span>, <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<span title="pydantic.json_schema.DefsRef">DefsRef</span>, <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5185,7 +5186,7 @@ this value can be modified on subclasses to easily control which warnings are em
         <tr>
           <td><code>by_alias</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5199,7 +5200,7 @@ this value can be modified on subclasses to easily control which warnings are em
         <tr>
           <td><code>ref_template</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5374,7 +5375,12 @@ GenerateJsonSchema.ValidationsMapping) to change these mappings.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.build_schema_type_to_method" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">build_schema_type_to_method</span><span class="p">()</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">build_schema_type_to_method</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="p">(</span>
+    <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span>
+        <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.CoreSchemaOrFieldType" href="#pydantic.json_schema.CoreSchemaOrFieldType">CoreSchemaOrFieldType</a></span><span class="p">,</span>
+        <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic._internal._core_utils.CoreSchemaOrField">CoreSchemaOrField</span></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span><span class="p">],</span>
+    <span class="p">]</span>
+<span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -5394,7 +5400,7 @@ GenerateJsonSchema.ValidationsMapping) to change these mappings.</p>
     <tbody>
         <tr>
           <td>
-                <code>dict[<a class="autorefs autorefs-internal" title="pydantic.json_schema.CoreSchemaOrFieldType" href="#pydantic.json_schema.CoreSchemaOrFieldType">CoreSchemaOrFieldType</a>, <span title="typing.Callable">Callable</span>[[<span title="pydantic._internal._core_utils.CoreSchemaOrField">CoreSchemaOrField</span>], <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a>]]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-internal" title="pydantic.json_schema.CoreSchemaOrFieldType" href="#pydantic.json_schema.CoreSchemaOrFieldType">CoreSchemaOrFieldType</a>, <a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<span title="pydantic._internal._core_utils.CoreSchemaOrField">CoreSchemaOrField</span>], <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a>]]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5418,7 +5424,7 @@ GenerateJsonSchema.ValidationsMapping) to change these mappings.</p>
     <tbody>
         <tr>
           <td>
-                <code>TypeError</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#TypeError">TypeError</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5496,7 +5502,17 @@ GenerateJsonSchema.ValidationsMapping) to change these mappings.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.generate_definitions" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">generate_definitions</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">generate_definitions</span><span class="p">(</span>
+    <span class="n">inputs</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Sequence" href="https://docs.python.org/3/library/typing.html#typing.Sequence">Sequence</a></span><span class="p">[</span>
+        <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><span title="pydantic.json_schema.JsonSchemaKeyT">JsonSchemaKeyT</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a></span><span class="p">,</span> <span class="n"><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></span><span class="p">]</span>
+    <span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span>
+    <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span>
+        <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><span title="pydantic.json_schema.JsonSchemaKeyT">JsonSchemaKeyT</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a></span><span class="p">],</span>
+        <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><span title="pydantic.json_schema.DefsRef">DefsRef</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span><span class="p">],</span>
+<span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -5520,7 +5536,7 @@ mapping that links the input keys to the definition references.</p>
         <tr>
           <td><code>inputs</code></td>
           <td>
-                <code><span title="typing.Sequence">Sequence</span>[tuple[<span title="pydantic.json_schema.JsonSchemaKeyT">JsonSchemaKeyT</span>, <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a>, <span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span>]]</code>
+                <code><a class="autorefs autorefs-external" title="typing.Sequence" href="https://docs.python.org/3/library/typing.html#typing.Sequence">Sequence</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<span title="pydantic.json_schema.JsonSchemaKeyT">JsonSchemaKeyT</span>, <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a>, <span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span>]]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5552,7 +5568,7 @@ mapping that links the input keys to the definition references.</p>
     <tbody>
         <tr>
           <td>
-                <code>tuple[dict[tuple[<span title="pydantic.json_schema.JsonSchemaKeyT">JsonSchemaKeyT</span>, <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a>], <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a>], dict[<span title="pydantic.json_schema.DefsRef">DefsRef</span>, <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a>]]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<span title="pydantic.json_schema.JsonSchemaKeyT">JsonSchemaKeyT</span>, <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a>], <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a>], <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<span title="pydantic.json_schema.DefsRef">DefsRef</span>, <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a>]]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5707,7 +5723,9 @@ mapping that links the input keys to the definition references.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.generate" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">generate</span><span class="p">(</span><span class="n">schema</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;validation&#39;</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">generate</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.CoreSchema">CoreSchema</span></span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a></span> <span class="o">=</span> <span class="s2">&quot;validation&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -5925,7 +5943,9 @@ mapping that links the input keys to the definition references.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.generate_inner" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">generate_inner</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">generate_inner</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic._internal._core_utils.CoreSchemaOrField">CoreSchemaOrField</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -6229,7 +6249,7 @@ mapping that links the input keys to the definition references.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.any_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">any_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">any_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.AnySchema">AnySchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -6327,7 +6347,7 @@ mapping that links the input keys to the definition references.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.none_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">none_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">none_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.NoneSchema">NoneSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -6425,7 +6445,7 @@ mapping that links the input keys to the definition references.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.bool_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">bool_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">bool_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.BoolSchema">BoolSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -6523,7 +6543,7 @@ mapping that links the input keys to the definition references.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.int_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">int_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">int_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.IntSchema">IntSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -6627,7 +6647,7 @@ mapping that links the input keys to the definition references.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.float_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">float_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">float_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.FloatSchema">FloatSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -6731,7 +6751,7 @@ mapping that links the input keys to the definition references.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.decimal_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">decimal_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">decimal_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.DecimalSchema">DecimalSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -6873,7 +6893,7 @@ mapping that links the input keys to the definition references.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.str_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">str_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">str_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.StringSchema">StringSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -6975,7 +6995,7 @@ mapping that links the input keys to the definition references.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.bytes_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">bytes_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">bytes_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.BytesSchema">BytesSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -7077,7 +7097,7 @@ mapping that links the input keys to the definition references.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.date_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">date_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">date_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.DateSchema">DateSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -7179,7 +7199,7 @@ mapping that links the input keys to the definition references.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.time_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">time_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">time_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.TimeSchema">TimeSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -7277,7 +7297,7 @@ mapping that links the input keys to the definition references.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.datetime_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">datetime_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">datetime_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.DatetimeSchema">DatetimeSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -7375,7 +7395,9 @@ mapping that links the input keys to the definition references.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.timedelta_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">timedelta_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">timedelta_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.TimedeltaSchema">TimedeltaSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -7477,7 +7499,7 @@ mapping that links the input keys to the definition references.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.literal_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">literal_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">literal_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.LiteralSchema">LiteralSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -7617,7 +7639,9 @@ mapping that links the input keys to the definition references.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.is_instance_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">is_instance_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">is_instance_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.IsInstanceSchema">IsInstanceSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -7720,7 +7744,9 @@ mapping that links the input keys to the definition references.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.is_subclass_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">is_subclass_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">is_subclass_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.IsSubclassSchema">IsSubclassSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -7825,7 +7851,7 @@ mapping that links the input keys to the definition references.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.callable_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">callable_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">callable_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.CallableSchema">CallableSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -7928,7 +7954,7 @@ mapping that links the input keys to the definition references.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.list_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">list_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">list_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.ListSchema">ListSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -8032,7 +8058,9 @@ mapping that links the input keys to the definition references.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.tuple_positional_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">tuple_positional_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">tuple_positional_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.TupleSchema">TupleSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -8076,7 +8104,9 @@ mapping that links the input keys to the definition references.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.tuple_variable_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">tuple_variable_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">tuple_variable_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.TupleSchema">TupleSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -8120,7 +8150,7 @@ mapping that links the input keys to the definition references.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.tuple_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">tuple_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">tuple_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.TupleSchema">TupleSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -8267,7 +8297,7 @@ str, bool]</code> or <code>Tuple[int, ...]</code>.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.set_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">set_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">set_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.SetSchema">SetSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -8365,7 +8395,9 @@ str, bool]</code> or <code>Tuple[int, ...]</code>.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.frozenset_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">frozenset_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">frozenset_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.FrozenSetSchema">FrozenSetSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -8463,7 +8495,9 @@ str, bool]</code> or <code>Tuple[int, ...]</code>.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.generator_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">generator_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">generator_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.GeneratorSchema">GeneratorSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -8567,7 +8601,7 @@ str, bool]</code> or <code>Tuple[int, ...]</code>.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.dict_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">dict_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">dict_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.DictSchema">DictSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -8693,7 +8727,9 @@ str, bool]</code> or <code>Tuple[int, ...]</code>.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.function_before_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">function_before_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">function_before_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.BeforeValidatorFunctionSchema">BeforeValidatorFunctionSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -8791,7 +8827,9 @@ str, bool]</code> or <code>Tuple[int, ...]</code>.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.function_after_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">function_after_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">function_after_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.AfterValidatorFunctionSchema">AfterValidatorFunctionSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -8889,7 +8927,9 @@ str, bool]</code> or <code>Tuple[int, ...]</code>.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.function_plain_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">function_plain_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">function_plain_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.PlainValidatorFunctionSchema">PlainValidatorFunctionSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -8987,7 +9027,9 @@ str, bool]</code> or <code>Tuple[int, ...]</code>.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.function_wrap_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">function_wrap_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">function_wrap_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.WrapValidatorFunctionSchema">WrapValidatorFunctionSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -9085,7 +9127,9 @@ str, bool]</code> or <code>Tuple[int, ...]</code>.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.default_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">default_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">default_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.WithDefaultSchema">WithDefaultSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -9241,7 +9285,7 @@ str, bool]</code> or <code>Tuple[int, ...]</code>.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.nullable_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">nullable_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">nullable_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.NullableSchema">NullableSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -9355,7 +9399,7 @@ str, bool]</code> or <code>Tuple[int, ...]</code>.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.union_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">union_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">union_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.UnionSchema">UnionSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -9481,7 +9525,9 @@ str, bool]</code> or <code>Tuple[int, ...]</code>.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.tagged_union_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">tagged_union_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">tagged_union_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.TaggedUnionSchema">TaggedUnionSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -9633,7 +9679,7 @@ the value.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.chain_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">chain_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">chain_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.ChainSchema">ChainSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -9741,7 +9787,9 @@ For serialization, we return the serialization JSON schema for the last step in 
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.lax_or_strict_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">lax_or_strict_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">lax_or_strict_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.LaxOrStrictSchema">LaxOrStrictSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -9856,7 +9904,9 @@ strict schema.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.json_or_python_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">json_or_python_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">json_or_python_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.JsonOrPythonSchema">JsonOrPythonSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -9965,7 +10015,9 @@ this method.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.typed_dict_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">typed_dict_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">typed_dict_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.TypedDictSchema">TypedDictSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -10117,7 +10169,9 @@ this method.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.typed_dict_field_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">typed_dict_field_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">typed_dict_field_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.TypedDictField">TypedDictField</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -10215,7 +10269,9 @@ this method.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.dataclass_field_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">dataclass_field_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">dataclass_field_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.DataclassField">DataclassField</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -10313,7 +10369,7 @@ this method.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.model_field_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">model_field_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">model_field_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.ModelField">ModelField</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -10411,7 +10467,9 @@ this method.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.computed_field_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">computed_field_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">computed_field_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.ComputedField">ComputedField</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -10509,7 +10567,7 @@ this method.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.model_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">model_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">model_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.ModelSchema">ModelSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -10651,7 +10709,9 @@ this method.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.resolve_schema_to_update" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">resolve_schema_to_update</span><span class="p">(</span><span class="n">json_schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">resolve_schema_to_update</span><span class="p">(</span>
+    <span class="n">json_schema</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -10763,7 +10823,9 @@ this method.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.model_fields_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">model_fields_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">model_fields_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.ModelFieldsSchema">ModelFieldsSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -10885,7 +10947,7 @@ this method.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.field_is_present" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">field_is_present</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">field_is_present</span><span class="p">(</span><span class="n">field</span><span class="p">:</span> <span class="n"><span title="pydantic._internal._core_utils.CoreSchemaField">CoreSchemaField</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -10935,7 +10997,7 @@ this method.</p>
     <tbody>
         <tr>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -10997,7 +11059,10 @@ this method.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.field_is_required" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">field_is_required</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">total</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">field_is_required</span><span class="p">(</span>
+    <span class="n">field</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.ModelField">ModelField</span></span> <span class="o">|</span> <span class="n"><span title="pydantic_core.core_schema.DataclassField">DataclassField</span></span> <span class="o">|</span> <span class="n"><span title="pydantic_core.core_schema.TypedDictField">TypedDictField</span></span><span class="p">,</span>
+    <span class="n">total</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -11035,7 +11100,7 @@ this method.</p>
         <tr>
           <td><code>total</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -11064,7 +11129,7 @@ explicitly specify <code>required=False</code> are required.</p>
     <tbody>
         <tr>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -11140,7 +11205,9 @@ explicitly specify <code>required=False</code> are required.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.dataclass_args_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">dataclass_args_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">dataclass_args_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.DataclassArgsSchema">DataclassArgsSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -11252,7 +11319,9 @@ explicitly specify <code>required=False</code> are required.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.dataclass_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">dataclass_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">dataclass_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.DataclassSchema">DataclassSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -11388,7 +11457,9 @@ explicitly specify <code>required=False</code> are required.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.arguments_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">arguments_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">arguments_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.ArgumentsSchema">ArgumentsSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -11538,7 +11609,10 @@ explicitly specify <code>required=False</code> are required.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.kw_arguments_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">kw_arguments_schema</span><span class="p">(</span><span class="n">arguments</span><span class="p">,</span> <span class="n">var_kwargs_schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">kw_arguments_schema</span><span class="p">(</span>
+    <span class="n">arguments</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><span title="pydantic_core.core_schema.ArgumentsParameter">ArgumentsParameter</span></span><span class="p">],</span>
+    <span class="n">var_kwargs_schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.CoreSchema">CoreSchema</span></span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -11561,7 +11635,7 @@ explicitly specify <code>required=False</code> are required.</p>
         <tr>
           <td><code>arguments</code></td>
           <td>
-                <code>list[<span title="pydantic_core.core_schema.ArgumentsParameter">ArgumentsParameter</span>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<span title="pydantic_core.core_schema.ArgumentsParameter">ArgumentsParameter</span>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -11688,7 +11762,10 @@ explicitly specify <code>required=False</code> are required.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.p_arguments_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">p_arguments_schema</span><span class="p">(</span><span class="n">arguments</span><span class="p">,</span> <span class="n">var_args_schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">p_arguments_schema</span><span class="p">(</span>
+    <span class="n">arguments</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><span title="pydantic_core.core_schema.ArgumentsParameter">ArgumentsParameter</span></span><span class="p">],</span>
+    <span class="n">var_args_schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.CoreSchema">CoreSchema</span></span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -11711,7 +11788,7 @@ explicitly specify <code>required=False</code> are required.</p>
         <tr>
           <td><code>arguments</code></td>
           <td>
-                <code>list[<span title="pydantic_core.core_schema.ArgumentsParameter">ArgumentsParameter</span>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<span title="pydantic_core.core_schema.ArgumentsParameter">ArgumentsParameter</span>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -11844,7 +11921,7 @@ explicitly specify <code>required=False</code> are required.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.get_argument_name" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">get_argument_name</span><span class="p">(</span><span class="n">argument</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">get_argument_name</span><span class="p">(</span><span class="n">argument</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.ArgumentsParameter">ArgumentsParameter</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -11894,7 +11971,7 @@ explicitly specify <code>required=False</code> are required.</p>
     <tbody>
         <tr>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -11956,7 +12033,7 @@ explicitly specify <code>required=False</code> are required.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.call_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">call_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">call_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.CallSchema">CallSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -12054,7 +12131,9 @@ explicitly specify <code>required=False</code> are required.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.custom_error_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">custom_error_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">custom_error_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.CustomErrorSchema">CustomErrorSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -12152,7 +12231,7 @@ explicitly specify <code>required=False</code> are required.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.json_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">json_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">json_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.JsonSchema">JsonSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -12262,7 +12341,7 @@ explicitly specify <code>required=False</code> are required.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.url_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">url_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">url_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.UrlSchema">UrlSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -12364,7 +12443,9 @@ explicitly specify <code>required=False</code> are required.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.multi_host_url_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">multi_host_url_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">multi_host_url_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.MultiHostUrlSchema">MultiHostUrlSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -12468,7 +12549,7 @@ explicitly specify <code>required=False</code> are required.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.uuid_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">uuid_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">uuid_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.UuidSchema">UuidSchema</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -12566,7 +12647,9 @@ explicitly specify <code>required=False</code> are required.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.definitions_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">definitions_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">definitions_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.DefinitionsSchema">DefinitionsSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -12678,7 +12761,9 @@ explicitly specify <code>required=False</code> are required.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.definition_ref_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">definition_ref_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">definition_ref_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.DefinitionReferenceSchema">DefinitionReferenceSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -12780,7 +12865,11 @@ explicitly specify <code>required=False</code> are required.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.ser_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">ser_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">ser_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.SerSchema">SerSchema</span></span>
+    <span class="o">|</span> <span class="n"><span title="pydantic_core.core_schema.IncExSeqSerSchema">IncExSeqSerSchema</span></span>
+    <span class="o">|</span> <span class="n"><span title="pydantic_core.core_schema.IncExDictSerSchema">IncExDictSerSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -12906,7 +12995,7 @@ explicitly specify <code>required=False</code> are required.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.get_title_from_name" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">get_title_from_name</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">get_title_from_name</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -12929,7 +13018,7 @@ explicitly specify <code>required=False</code> are required.</p>
         <tr>
           <td><code>name</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -12956,7 +13045,7 @@ explicitly specify <code>required=False</code> are required.</p>
     <tbody>
         <tr>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -13004,7 +13093,9 @@ explicitly specify <code>required=False</code> are required.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.field_title_should_be_set" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">field_title_should_be_set</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">field_title_should_be_set</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic._internal._core_utils.CoreSchemaOrField">CoreSchemaOrField</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -13056,7 +13147,7 @@ explicitly specify <code>required=False</code> are required.</p>
     <tbody>
         <tr>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -13152,7 +13243,7 @@ explicitly specify <code>required=False</code> are required.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.normalize_name" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">normalize_name</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">normalize_name</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -13175,7 +13266,7 @@ explicitly specify <code>required=False</code> are required.</p>
         <tr>
           <td><code>name</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -13202,7 +13293,7 @@ explicitly specify <code>required=False</code> are required.</p>
     <tbody>
         <tr>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -13250,7 +13341,7 @@ explicitly specify <code>required=False</code> are required.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.get_defs_ref" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">get_defs_ref</span><span class="p">(</span><span class="n">core_mode_ref</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">get_defs_ref</span><span class="p">(</span><span class="n">core_mode_ref</span><span class="p">:</span> <span class="n"><span title="pydantic.json_schema.CoreModeRef">CoreModeRef</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pydantic.json_schema.DefsRef">DefsRef</span></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -13422,7 +13513,9 @@ explicitly specify <code>required=False</code> are required.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.get_cache_defs_ref_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">get_cache_defs_ref_schema</span><span class="p">(</span><span class="n">core_ref</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">get_cache_defs_ref_schema</span><span class="p">(</span>
+    <span class="n">core_ref</span><span class="p">:</span> <span class="n"><span title="pydantic.json_schema.CoreRef">CoreRef</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><span title="pydantic.json_schema.DefsRef">DefsRef</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -13473,7 +13566,7 @@ and returns both the produced defs_ref and the JSON schema that will refer to th
     <tbody>
         <tr>
           <td>
-                <code>tuple[<span title="pydantic.json_schema.DefsRef">DefsRef</span>, <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<span title="pydantic.json_schema.DefsRef">DefsRef</span>, <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -13555,7 +13648,9 @@ and returns both the produced defs_ref and the JSON schema that will refer to th
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.handle_ref_overrides" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">handle_ref_overrides</span><span class="p">(</span><span class="n">json_schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">handle_ref_overrides</span><span class="p">(</span>
+    <span class="n">json_schema</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -13664,7 +13759,7 @@ any remain, we transform the schema from a top-level '$ref' to use allOf to move
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.encode_default" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">encode_default</span><span class="p">(</span><span class="n">dft</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">encode_default</span><span class="p">(</span><span class="n">dft</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -13688,7 +13783,7 @@ any remain, we transform the schema from a top-level '$ref' to use allOf to move
         <tr>
           <td><code>dft</code></td>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -13715,7 +13810,7 @@ any remain, we transform the schema from a top-level '$ref' to use allOf to move
     <tbody>
         <tr>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -13777,7 +13872,11 @@ any remain, we transform the schema from a top-level '$ref' to use allOf to move
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.update_with_validations" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">update_with_validations</span><span class="p">(</span><span class="n">json_schema</span><span class="p">,</span> <span class="n">core_schema</span><span class="p">,</span> <span class="n">mapping</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">update_with_validations</span><span class="p">(</span>
+    <span class="n">json_schema</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span><span class="p">,</span>
+    <span class="n">core_schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.CoreSchema">CoreSchema</span></span><span class="p">,</span>
+    <span class="n">mapping</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -13829,7 +13928,7 @@ using the provided mapping to translate keys in core_schema to the appropriate k
         <tr>
           <td><code>mapping</code></td>
           <td>
-                <code>dict[str, str]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -13888,7 +13987,9 @@ using the provided mapping to translate keys in core_schema to the appropriate k
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.get_json_ref_counts" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">get_json_ref_counts</span><span class="p">(</span><span class="n">json_schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">get_json_ref_counts</span><span class="p">(</span>
+    <span class="n">json_schema</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><span title="pydantic.json_schema.JsonRef">JsonRef</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -13966,7 +14067,9 @@ using the provided mapping to translate keys in core_schema to the appropriate k
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.emit_warning" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">emit_warning</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">detail</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">emit_warning</span><span class="p">(</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaWarningKind" href="#pydantic.json_schema.JsonSchemaWarningKind">JsonSchemaWarningKind</a></span><span class="p">,</span> <span class="n">detail</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -14000,7 +14103,9 @@ using the provided mapping to translate keys in core_schema to the appropriate k
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.render_warning_message" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">render_warning_message</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">detail</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">render_warning_message</span><span class="p">(</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaWarningKind" href="#pydantic.json_schema.JsonSchemaWarningKind">JsonSchemaWarningKind</a></span><span class="p">,</span> <span class="n">detail</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -14044,7 +14149,7 @@ just return None in situations where you don't want warnings to be emitted.</p>
         <tr>
           <td><code>detail</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -14071,7 +14176,7 @@ just return None in situations where you don't want warnings to be emitted.</p>
     <tbody>
         <tr>
           <td>
-                <code>str | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -14339,7 +14444,9 @@ allowing you to add different examples for validation and serialization.</p>
 
 
 <a href="#pydantic.json_schema.update_json_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">update_json_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">,</span> <span class="n">updates</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">update_json_schema</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span><span class="p">,</span> <span class="n">updates</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -14377,7 +14484,7 @@ allowing you to add different examples for validation and serialization.</p>
         <tr>
           <td><code>updates</code></td>
           <td>
-                <code>dict[str, <span title="typing.Any">Any</span>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -14461,12 +14568,14 @@ allowing you to add different examples for validation and serialization.</p>
 
 <a href="#pydantic.json_schema.model_json_schema" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">model_json_schema</span><span class="p">(</span>
-    <span class="bp">cls</span><span class="p">,</span>
-    <span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">ref_template</span><span class="o">=</span><span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
-    <span class="n">schema_generator</span><span class="o">=</span><span class="n">GenerateJsonSchema</span><span class="p">,</span>
-    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;validation&quot;</span><span class="p">,</span>
-<span class="p">)</span>
+    <span class="bp">cls</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="pydantic.main.BaseModel" href="../base_model/#pydantic.BaseModel">BaseModel</a></span><span class="p">]</span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span></span><span class="p">],</span>
+    <span class="n">by_alias</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">ref_template</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
+    <span class="n">schema_generator</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span>
+        <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a></span>
+    <span class="p">]</span> <span class="o">=</span> <span class="n">GenerateJsonSchema</span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a></span> <span class="o">=</span> <span class="s2">&quot;validation&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -14489,7 +14598,7 @@ allowing you to add different examples for validation and serialization.</p>
         <tr>
           <td><code>cls</code></td>
           <td>
-                <code>type[<a class="autorefs autorefs-internal" title="pydantic.main.BaseModel" href="../base_model/#pydantic.BaseModel">BaseModel</a>] | type[<span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<a class="autorefs autorefs-internal" title="pydantic.main.BaseModel" href="../base_model/#pydantic.BaseModel">BaseModel</a>] | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -14503,7 +14612,7 @@ allowing you to add different examples for validation and serialization.</p>
         <tr>
           <td><code>by_alias</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -14518,7 +14627,7 @@ If <code>False</code>, fields will be serialized according to their attribute na
         <tr>
           <td><code>ref_template</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -14532,7 +14641,7 @@ If <code>False</code>, fields will be serialized according to their attribute na
         <tr>
           <td><code>schema_generator</code></td>
           <td>
-                <code>type[<a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -14577,7 +14686,7 @@ If <code>False</code>, fields will be serialized according to their attribute na
     <tbody>
         <tr>
           <td>
-                <code>dict[str, <span title="typing.Any">Any</span>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -14662,14 +14771,30 @@ If <code>False</code>, fields will be serialized according to their attribute na
 
 <a href="#pydantic.json_schema.models_json_schema" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">models_json_schema</span><span class="p">(</span>
-    <span class="n">models</span><span class="p">,</span>
+    <span class="n">models</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Sequence" href="https://docs.python.org/3/library/typing.html#typing.Sequence">Sequence</a></span><span class="p">[</span>
+        <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span>
+            <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="pydantic.main.BaseModel" href="../base_model/#pydantic.BaseModel">BaseModel</a></span><span class="p">]</span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span></span><span class="p">],</span>
+            <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a></span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">ref_template</span><span class="o">=</span><span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
-    <span class="n">schema_generator</span><span class="o">=</span><span class="n">GenerateJsonSchema</span>
-<span class="p">)</span>
+    <span class="n">by_alias</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">description</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">ref_template</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
+    <span class="n">schema_generator</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span>
+        <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a></span>
+    <span class="p">]</span> <span class="o">=</span> <span class="n">GenerateJsonSchema</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span>
+    <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span>
+        <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span>
+            <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="pydantic.main.BaseModel" href="../base_model/#pydantic.BaseModel">BaseModel</a></span><span class="p">]</span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span></span><span class="p">],</span>
+            <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a></span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span><span class="p">,</span>
+<span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -14692,7 +14817,7 @@ If <code>False</code>, fields will be serialized according to their attribute na
         <tr>
           <td><code>models</code></td>
           <td>
-                <code><span title="typing.Sequence">Sequence</span>[tuple[type[<a class="autorefs autorefs-internal" title="pydantic.main.BaseModel" href="../base_model/#pydantic.BaseModel">BaseModel</a>] | type[<span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span>], <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a>]]</code>
+                <code><a class="autorefs autorefs-external" title="typing.Sequence" href="https://docs.python.org/3/library/typing.html#typing.Sequence">Sequence</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<a class="autorefs autorefs-internal" title="pydantic.main.BaseModel" href="../base_model/#pydantic.BaseModel">BaseModel</a>] | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span>], <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a>]]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -14706,7 +14831,7 @@ If <code>False</code>, fields will be serialized according to their attribute na
         <tr>
           <td><code>by_alias</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -14720,7 +14845,7 @@ If <code>False</code>, fields will be serialized according to their attribute na
         <tr>
           <td><code>title</code></td>
           <td>
-                <code>str | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -14734,7 +14859,7 @@ If <code>False</code>, fields will be serialized according to their attribute na
         <tr>
           <td><code>description</code></td>
           <td>
-                <code>str | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -14748,7 +14873,7 @@ If <code>False</code>, fields will be serialized according to their attribute na
         <tr>
           <td><code>ref_template</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -14762,7 +14887,7 @@ If <code>False</code>, fields will be serialized according to their attribute na
         <tr>
           <td><code>schema_generator</code></td>
           <td>
-                <code>type[<a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -14789,7 +14914,7 @@ If <code>False</code>, fields will be serialized according to their attribute na
     <tbody>
         <tr>
           <td>
-                <code>tuple[dict[tuple[type[<a class="autorefs autorefs-internal" title="pydantic.main.BaseModel" href="../base_model/#pydantic.BaseModel">BaseModel</a>] | type[<span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span>], <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a>], <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a>], <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<a class="autorefs autorefs-internal" title="pydantic.main.BaseModel" href="../base_model/#pydantic.BaseModel">BaseModel</a>] | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span>], <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a>], <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a>], <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">

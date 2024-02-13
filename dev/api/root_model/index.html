@@ -2982,12 +2982,14 @@
 
 
 <a href="#pydantic.root_model.RootModel" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">RootModel</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">PydanticUndefined</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">RootModel</span><span class="p">(</span>
+    <span class="n">root</span><span class="p">:</span> <span class="n"><span title="pydantic.root_model.RootModelRootType">RootModelRootType</span></span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span>
+<span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-internal" title="pydantic.main.BaseModel" href="../base_model/#pydantic.BaseModel">BaseModel</a></code>, <code><span title="typing.Generic">Generic</span>[<span title="pydantic.root_model.RootModelRootType">RootModelRootType</span>]</code></p>
+            Bases: <code><a class="autorefs autorefs-internal" title="pydantic.main.BaseModel" href="../base_model/#pydantic.BaseModel">BaseModel</a></code>, <code><a class="autorefs autorefs-external" title="typing.Generic" href="https://docs.python.org/3/library/typing.html#typing.Generic">Generic</a>[<span title="pydantic.root_model.RootModelRootType">RootModelRootType</span>]</code></p>
 
   
       <div class="admonition abstract">
@@ -3100,7 +3102,10 @@
   </span>
 
 <a href="#pydantic.root_model.RootModel.model_construct" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">model_construct</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">_fields_set</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">model_construct</span><span class="p">(</span>
+    <span class="n">root</span><span class="p">:</span> <span class="n"><span title="pydantic.root_model.RootModelRootType">RootModelRootType</span></span><span class="p">,</span>
+    <span class="n">_fields_set</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#set">set</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pydantic.root_model.Model">Model</span></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3137,7 +3142,7 @@
         <tr>
           <td><code>_fields_set</code></td>
           <td>
-                <code>set[str] | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#set">set</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>] | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3188,7 +3193,7 @@
     <tbody>
         <tr>
           <td>
-                <code>NotImplemented</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/constants.html#NotImplemented">NotImplemented</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3248,16 +3253,16 @@
 <a href="#pydantic.root_model.RootModel.model_dump" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">model_dump</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;python&quot;</span><span class="p">,</span>
-    <span class="n">include</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">exclude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">by_alias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">exclude_unset</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">exclude_defaults</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">exclude_none</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">round_trip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">warnings</span><span class="o">=</span><span class="kc">True</span>
-<span class="p">)</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span><span class="s2">&quot;json&quot;</span><span class="p">,</span> <span class="s2">&quot;python&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;python&quot;</span><span class="p">,</span>
+    <span class="n">include</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">exclude</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">by_alias</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">exclude_unset</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">exclude_defaults</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">exclude_none</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">round_trip</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">warnings</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">

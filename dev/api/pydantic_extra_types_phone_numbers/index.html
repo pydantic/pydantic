@@ -3076,7 +3076,7 @@
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code>str</code></p>
+            Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code></p>
 
   
       <p>A wrapper around <a href="https://pypi.org/project/phonenumbers/">phonenumbers</a> package, which
@@ -3107,7 +3107,7 @@ is a Python port of Google's <a href="https://github.com/google/libphonenumber/"
   </span>
 
 <a href="#pydantic_extra_types.phone_numbers.PhoneNumber.supported_regions" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">supported_regions</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">SUPPORTED_REGIONS</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">supported_regions</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#sorted">sorted</a></span><span class="p">(</span><span class="n"><span title="phonenumbers.SUPPORTED_REGIONS">SUPPORTED_REGIONS</span></span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3131,7 +3131,9 @@ is a Python port of Google's <a href="https://github.com/google/libphonenumber/"
   </span>
 
 <a href="#pydantic_extra_types.phone_numbers.PhoneNumber.supported_formats" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">supported_formats</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">isupper</span><span class="p">()])</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">supported_formats</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#sorted">sorted</a></span><span class="p">(</span>
+    <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n"><span title="phonenumbers.PhoneNumberFormat.__dict__.keys">keys</span></span><span class="p">()</span> <span class="k">if</span> <span class="n"><span title="f.isupper">isupper</span></span><span class="p">()]</span>
+<span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3154,7 +3156,7 @@ is a Python port of Google's <a href="https://github.com/google/libphonenumber/"
   </span>
 
 <a href="#pydantic_extra_types.phone_numbers.PhoneNumber.default_region_code" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">default_region_code</span> <span class="o">=</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">default_region_code</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3178,7 +3180,7 @@ is a Python port of Google's <a href="https://github.com/google/libphonenumber/"
   </span>
 
 <a href="#pydantic_extra_types.phone_numbers.PhoneNumber.phone_format" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">phone_format</span> <span class="o">=</span> <span class="s1">&#39;RFC3966&#39;</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">phone_format</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;RFC3966&#39;</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3202,7 +3204,7 @@ is a Python port of Google's <a href="https://github.com/google/libphonenumber/"
   </span>
 
 <a href="#pydantic_extra_types.phone_numbers.PhoneNumber.min_length" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">min_length</span> <span class="o">=</span> <span class="mi">7</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">min_length</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">7</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3226,7 +3228,7 @@ is a Python port of Google's <a href="https://github.com/google/libphonenumber/"
   </span>
 
 <a href="#pydantic_extra_types.phone_numbers.PhoneNumber.max_length" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">max_length</span> <span class="o">=</span> <span class="mi">64</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">max_length</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">64</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">

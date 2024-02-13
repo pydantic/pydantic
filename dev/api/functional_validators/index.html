@@ -3281,8 +3281,8 @@
   </span>
 
 <a href="#pydantic.functional_validators.ModelAfterValidatorWithoutInfo" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">ModelAfterValidatorWithoutInfo</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[</span>
-    <span class="p">[</span><span class="n">_ModelType</span><span class="p">],</span> <span class="n">_ModelType</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">ModelAfterValidatorWithoutInfo</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[</span>
+    <span class="p">[</span><span class="n"><span title="pydantic.functional_validators._ModelType">_ModelType</span></span><span class="p">],</span> <span class="n"><span title="pydantic.functional_validators._ModelType">_ModelType</span></span>
 <span class="p">]</span>
 </code></pre></div>
 
@@ -3307,8 +3307,8 @@ have info argument.</p>
   </span>
 
 <a href="#pydantic.functional_validators.ModelAfterValidator" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">ModelAfterValidator</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[</span>
-    <span class="p">[</span><span class="n">_ModelType</span><span class="p">,</span> <span class="n">ValidationInfo</span><span class="p">],</span> <span class="n">_ModelType</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">ModelAfterValidator</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[</span>
+    <span class="p">[</span><span class="n"><span title="pydantic.functional_validators._ModelType">_ModelType</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.core_schema.ValidationInfo" href="../pydantic_core_schema/#pydantic_core.core_schema.ValidationInfo">ValidationInfo</a></span><span class="p">],</span> <span class="n"><span title="pydantic.functional_validators._ModelType">_ModelType</span></span>
 <span class="p">]</span>
 </code></pre></div>
 
@@ -3716,7 +3716,7 @@ have info argument.</p>
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code><span title="pydantic_core.core_schema.ValidatorFunctionWrapHandler">ValidatorFunctionWrapHandler</span></code>, <code><span title="typing.Protocol">Protocol</span>[<span title="pydantic.functional_validators._ModelTypeCo">_ModelTypeCo</span>]</code></p>
+            Bases: <code><span title="pydantic_core.core_schema.ValidatorFunctionWrapHandler">ValidatorFunctionWrapHandler</span></code>, <code><a class="autorefs autorefs-external" title="typing.Protocol" href="https://docs.python.org/3/library/typing.html#typing.Protocol">Protocol</a>[<span title="pydantic.functional_validators._ModelTypeCo">_ModelTypeCo</span>]</code></p>
 
   
       <p>@model_validator decorated function handler argument type. This is used when <code>mode='wrap'</code>.</p>
@@ -3756,7 +3756,7 @@ have info argument.</p>
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code><span title="typing.Protocol">Protocol</span>[<span title="pydantic.functional_validators._ModelType">_ModelType</span>]</code></p>
+            Bases: <code><a class="autorefs autorefs-external" title="typing.Protocol" href="https://docs.python.org/3/library/typing.html#typing.Protocol">Protocol</a>[<span title="pydantic.functional_validators._ModelType">_ModelType</span>]</code></p>
 
   
       <p>A @model_validator decorated function signature.
@@ -3797,7 +3797,7 @@ This is used when <code>mode='wrap'</code> and the function does not have info a
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code><span title="typing.Protocol">Protocol</span>[<span title="pydantic.functional_validators._ModelType">_ModelType</span>]</code></p>
+            Bases: <code><a class="autorefs autorefs-external" title="typing.Protocol" href="https://docs.python.org/3/library/typing.html#typing.Protocol">Protocol</a>[<span title="pydantic.functional_validators._ModelType">_ModelType</span>]</code></p>
 
   
       <p>A @model_validator decorated function signature. This is used when <code>mode='wrap'</code>.</p>
@@ -3837,7 +3837,7 @@ This is used when <code>mode='wrap'</code> and the function does not have info a
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code><span title="typing.Protocol">Protocol</span></code></p>
+            Bases: <code><a class="autorefs autorefs-external" title="typing.Protocol" href="https://docs.python.org/3/library/typing.html#typing.Protocol">Protocol</a></code></p>
 
   
       <p>A @model_validator decorated function signature.
@@ -3878,7 +3878,7 @@ This is used when <code>mode='before'</code> and the function does not have info
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code><span title="typing.Protocol">Protocol</span></code></p>
+            Bases: <code><a class="autorefs autorefs-external" title="typing.Protocol" href="https://docs.python.org/3/library/typing.html#typing.Protocol">Protocol</a></code></p>
 
   
       <p>A @model_validator decorated function signature.
@@ -3919,7 +3919,7 @@ This is used when <code>mode='before'</code> and the function does not have info
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code><span title="typing.Protocol">Protocol</span></code></p>
+            Bases: <code><a class="autorefs autorefs-external" title="typing.Protocol" href="https://docs.python.org/3/library/typing.html#typing.Protocol">Protocol</a></code></p>
 
   
       <p>A <code>@model_validator</code> decorated function signature. This is used when <code>mode='before'</code>.</p>
@@ -3959,7 +3959,7 @@ This is used when <code>mode='before'</code> and the function does not have info
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code><span title="typing.Protocol">Protocol</span></code></p>
+            Bases: <code><a class="autorefs autorefs-external" title="typing.Protocol" href="https://docs.python.org/3/library/typing.html#typing.Protocol">Protocol</a></code></p>
 
   
       <p>A <code>@model_validator</code> decorated function signature. This is used when <code>mode='before'</code>.</p>
@@ -4117,8 +4117,11 @@ annotation applied to a type.</p>
 
 <a href="#pydantic.functional_validators.field_validator" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">field_validator</span><span class="p">(</span>
-    <span class="n">__field</span><span class="p">,</span> <span class="o">*</span><span class="n">fields</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;after&quot;</span><span class="p">,</span> <span class="n">check_fields</span><span class="o">=</span><span class="kc">None</span>
-<span class="p">)</span>
+    <span class="n">__field</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="n"><span title="pydantic.functional_validators.FieldValidatorModes">FieldValidatorModes</span></span> <span class="o">=</span> <span class="s2">&quot;after&quot;</span><span class="p">,</span>
+    <span class="n">check_fields</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4178,7 +4181,7 @@ annotation applied to a type.</p>
         <tr>
           <td><code>__field</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4193,7 +4196,7 @@ from <code>fields</code> to ensure an error is raised if you don't pass at least
         <tr>
           <td><code>*fields</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4221,7 +4224,7 @@ from <code>fields</code> to ensure an error is raised if you don't pass at least
         <tr>
           <td><code>check_fields</code></td>
           <td>
-                <code>bool | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4248,7 +4251,7 @@ from <code>fields</code> to ensure an error is raised if you don't pass at least
     <tbody>
         <tr>
           <td>
-                <code><span title="typing.Callable">Callable</span>[[<span title="typing.Any">Any</span>], <span title="typing.Any">Any</span>]</code>
+                <code><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>], <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4486,7 +4489,9 @@ from <code>fields</code> to ensure an error is raised if you don't pass at least
 
 
 <a href="#pydantic.functional_validators.model_validator" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">model_validator</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">model_validator</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span><span class="s2">&quot;wrap&quot;</span><span class="p">,</span> <span class="s2">&quot;before&quot;</span><span class="p">,</span> <span class="s2">&quot;after&quot;</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4570,7 +4575,7 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
     <tbody>
         <tr>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
           </td>
           <td>
             <div class="doc-md-description">

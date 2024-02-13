@@ -3048,7 +3048,7 @@ Consider an input of <code>list</code>, which will be serialized into a space-de
         <tr>
           <td><code><span title="pydantic.functional_serializers.PlainSerializer.return_type">return_type</span></code></td>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3190,7 +3190,7 @@ logic, and can modify the resulting value before returning it as the final outpu
         <tr>
           <td><code><span title="pydantic.functional_serializers.WrapSerializer.return_type">return_type</span></code></td>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3247,12 +3247,14 @@ logic, and can modify the resulting value before returning it as the final outpu
 
 <a href="#pydantic.functional_serializers.field_serializer" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">field_serializer</span><span class="p">(</span>
-    <span class="o">*</span><span class="n">fields</span><span class="p">,</span>
-    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;plain&quot;</span><span class="p">,</span>
-    <span class="n">return_type</span><span class="o">=</span><span class="n">PydanticUndefined</span><span class="p">,</span>
-    <span class="n">when_used</span><span class="o">=</span><span class="s2">&quot;always&quot;</span><span class="p">,</span>
-    <span class="n">check_fields</span><span class="o">=</span><span class="kc">None</span>
-<span class="p">)</span>
+    <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span><span class="s2">&quot;plain&quot;</span><span class="p">,</span> <span class="s2">&quot;wrap&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;plain&quot;</span><span class="p">,</span>
+    <span class="n">return_type</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
+    <span class="n">when_used</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span>
+        <span class="s2">&quot;always&quot;</span><span class="p">,</span> <span class="s2">&quot;unless-none&quot;</span><span class="p">,</span> <span class="s2">&quot;json&quot;</span><span class="p">,</span> <span class="s2">&quot;json-unless-none&quot;</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;always&quot;</span><span class="p">,</span>
+    <span class="n">check_fields</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3300,7 +3302,7 @@ logic, and can modify the resulting value before returning it as the final outpu
         <tr>
           <td><code>fields</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3333,7 +3335,7 @@ logic, and can modify the resulting value before returning it as the final outpu
         <tr>
           <td><code>return_type</code></td>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3361,7 +3363,7 @@ logic, and can modify the resulting value before returning it as the final outpu
         <tr>
           <td><code>check_fields</code></td>
           <td>
-                <code>bool | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3388,7 +3390,7 @@ logic, and can modify the resulting value before returning it as the final outpu
     <tbody>
         <tr>
           <td>
-                <code><span title="typing.Callable">Callable</span>[[<span title="typing.Any">Any</span>], <span title="typing.Any">Any</span>]</code>
+                <code><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>], <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3549,12 +3551,14 @@ logic, and can modify the resulting value before returning it as the final outpu
 
 <a href="#pydantic.functional_serializers.model_serializer" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">model_serializer</span><span class="p">(</span>
-    <span class="n">__f</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">__f</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;plain&quot;</span><span class="p">,</span>
-    <span class="n">when_used</span><span class="o">=</span><span class="s2">&quot;always&quot;</span><span class="p">,</span>
-    <span class="n">return_type</span><span class="o">=</span><span class="n">PydanticUndefined</span>
-<span class="p">)</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span><span class="s2">&quot;plain&quot;</span><span class="p">,</span> <span class="s2">&quot;wrap&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;plain&quot;</span><span class="p">,</span>
+    <span class="n">when_used</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span>
+        <span class="s2">&quot;always&quot;</span><span class="p">,</span> <span class="s2">&quot;unless-none&quot;</span><span class="p">,</span> <span class="s2">&quot;json&quot;</span><span class="p">,</span> <span class="s2">&quot;json-unless-none&quot;</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;always&quot;</span><span class="p">,</span>
+    <span class="n">return_type</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span> <span class="o">=</span> <span class="n">PydanticUndefined</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3598,7 +3602,7 @@ logic, and can modify the resulting value before returning it as the final outpu
         <tr>
           <td><code>__f</code></td>
           <td>
-                <code><span title="typing.Callable">Callable</span>[..., <span title="typing.Any">Any</span>] | None</code>
+                <code><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[..., <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3645,7 +3649,7 @@ logic, and can modify the resulting value before returning it as the final outpu
         <tr>
           <td><code>return_type</code></td>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3672,7 +3676,7 @@ logic, and can modify the resulting value before returning it as the final outpu
     <tbody>
         <tr>
           <td>
-                <code><span title="typing.Callable">Callable</span>[[<span title="typing.Any">Any</span>], <span title="typing.Any">Any</span>]</code>
+                <code><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>], <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">

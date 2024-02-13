@@ -3207,7 +3207,7 @@
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code>str</code>, <code><span title="enum.Enum">Enum</span></code></p>
+            Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>, <code><a class="autorefs autorefs-external" title="enum.Enum" href="https://docs.python.org/3/library/enum.html#enum.Enum">Enum</a></code></p>
 
   
       <p>Payment card brands supported by the <a class="autorefs autorefs-internal" href="#pydantic_extra_types.payment.PaymentCardNumber"><code>PaymentCardNumber</code></a>.</p>
@@ -3243,12 +3243,12 @@
 
 
 <a href="#pydantic_extra_types.payment.PaymentCardNumber" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">PaymentCardNumber</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">PaymentCardNumber</span><span class="p">(</span><span class="n">card_number</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code>str</code></p>
+            Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code></p>
 
   
       <p>A <a href="https://en.wikipedia.org/wiki/Payment_card_number">payment card number</a>.</p>
@@ -3296,7 +3296,7 @@
   </span>
 
 <a href="#pydantic_extra_types.payment.PaymentCardNumber.strip_whitespace" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">strip_whitespace</span> <span class="o">=</span> <span class="kc">True</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">strip_whitespace</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3319,7 +3319,7 @@
   </span>
 
 <a href="#pydantic_extra_types.payment.PaymentCardNumber.min_length" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">min_length</span> <span class="o">=</span> <span class="mi">12</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">min_length</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">12</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3342,7 +3342,7 @@
   </span>
 
 <a href="#pydantic_extra_types.payment.PaymentCardNumber.max_length" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">max_length</span> <span class="o">=</span> <span class="mi">19</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">max_length</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">19</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3365,7 +3365,7 @@
   </span>
 
 <a href="#pydantic_extra_types.payment.PaymentCardNumber.bin" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nb">bin</span> <span class="o">=</span> <span class="n">card_number</span><span class="p">[:</span><span class="mi">6</span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nb">bin</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="n">card_number</span><span class="p">[:</span><span class="mi">6</span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3388,7 +3388,7 @@
   </span>
 
 <a href="#pydantic_extra_types.payment.PaymentCardNumber.last4" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">last4</span> <span class="o">=</span> <span class="n">card_number</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">last4</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="n">card_number</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3411,7 +3411,7 @@
   </span>
 
 <a href="#pydantic_extra_types.payment.PaymentCardNumber.brand" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">brand</span> <span class="o">=</span> <span class="n">validate_brand</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">brand</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_extra_types.payment.PaymentCardBrand" href="#pydantic_extra_types.payment.PaymentCardBrand">PaymentCardBrand</a></span> <span class="o">=</span> <span class="n"><span title="self.validate_brand">validate_brand</span></span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3434,7 +3434,7 @@
   </span>
 
 <a href="#pydantic_extra_types.payment.PaymentCardNumber.masked" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">masked</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">masked</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3460,7 +3460,9 @@
   </span>
 
 <a href="#pydantic_extra_types.payment.PaymentCardNumber.validate" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">validate</span><span class="p">(</span><span class="n">__input_value</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">validate</span><span class="p">(</span>
+    <span class="n">__input_value</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.core_schema.ValidationInfo" href="../pydantic_core_schema/#pydantic_core.core_schema.ValidationInfo">ValidationInfo</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_extra_types.payment.PaymentCardNumber" href="#pydantic_extra_types.payment.PaymentCardNumber">PaymentCardNumber</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3483,7 +3485,7 @@
         <tr>
           <td><code>__input_value</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3580,7 +3582,7 @@
   </span>
 
 <a href="#pydantic_extra_types.payment.PaymentCardNumber.validate_digits" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">validate_digits</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">validate_digits</span><span class="p">(</span><span class="n">card_number</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3603,7 +3605,7 @@
         <tr>
           <td><code>card_number</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3686,7 +3688,7 @@
   </span>
 
 <a href="#pydantic_extra_types.payment.PaymentCardNumber.validate_luhn_check_digit" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">validate_luhn_check_digit</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">validate_luhn_check_digit</span><span class="p">(</span><span class="n">card_number</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3710,7 +3712,7 @@ Based on the <a href="https://en.wikipedia.org/wiki/Luhn_algorithm">Luhn algorit
         <tr>
           <td><code>card_number</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3737,7 +3739,7 @@ Based on the <a href="https://en.wikipedia.org/wiki/Luhn_algorithm">Luhn algorit
     <tbody>
         <tr>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3849,7 +3851,7 @@ Based on the <a href="https://en.wikipedia.org/wiki/Luhn_algorithm">Luhn algorit
   </span>
 
 <a href="#pydantic_extra_types.payment.PaymentCardNumber.validate_brand" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">validate_brand</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">validate_brand</span><span class="p">(</span><span class="n">card_number</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_extra_types.payment.PaymentCardBrand" href="#pydantic_extra_types.payment.PaymentCardBrand">PaymentCardBrand</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3874,7 +3876,7 @@ for major brands.</p>
         <tr>
           <td><code>card_number</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">

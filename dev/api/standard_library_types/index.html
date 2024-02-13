@@ -4092,7 +4092,7 @@ use <a href="../types/#pydantic.types.StrictBool"><code>StrictBool</code></a>.</
 <h2 id="datetime-types">Datetime Types<a class="headerlink" href="#datetime-types" title="Permanent link">&para;</a></h2>
 <p>Pydantic supports the following <a href="https://docs.python.org/library/datetime.html#available-types">datetime</a>
 types:</p>
-<h3 id="datetimedatetime"><code>datetime.datetime</code><a class="headerlink" href="#datetimedatetime" title="Permanent link">&para;</a></h3>
+<h3 id="datetimedatetime"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime"><code>datetime.datetime</code></a><a class="headerlink" href="#datetimedatetime" title="Permanent link">&para;</a></h3>
 <ul>
 <li>
 <p><code>datetime</code> fields will accept values of type:</p>
@@ -4124,7 +4124,7 @@ types:</p>
 <span class="sd">{&#39;dt&#39;: datetime.datetime(2032, 4, 23, 10, 20, 30, 400000, tzinfo=TzInfo(+02:30))}</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
-<h3 id="datetimedate"><code>datetime.date</code><a class="headerlink" href="#datetimedate" title="Permanent link">&para;</a></h3>
+<h3 id="datetimedate"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.date"><code>datetime.date</code></a><a class="headerlink" href="#datetimedate" title="Permanent link">&para;</a></h3>
 <ul>
 <li>
 <p><code>date</code> fields will accept values of type:</p>
@@ -4153,7 +4153,7 @@ types:</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">my_birthday</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="c1">#&gt; {&#39;d&#39;: datetime.date(2023, 3, 24)}</span>
 </code></pre></div>
-<h3 id="datetimetime"><code>datetime.time</code><a class="headerlink" href="#datetimetime" title="Permanent link">&para;</a></h3>
+<h3 id="datetimetime"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.time"><code>datetime.time</code></a><a class="headerlink" href="#datetimetime" title="Permanent link">&para;</a></h3>
 <ul>
 <li>
 <p><code>time</code> fields will accept values of type:</p>
@@ -4180,7 +4180,7 @@ types:</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="c1">#&gt; {&#39;t&#39;: datetime.time(4, 8, 16)}</span>
 </code></pre></div>
-<h3 id="datetimetimedelta"><code>datetime.timedelta</code><a class="headerlink" href="#datetimetimedelta" title="Permanent link">&para;</a></h3>
+<h3 id="datetimetimedelta"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.timedelta"><code>datetime.timedelta</code></a><a class="headerlink" href="#datetimetimedelta" title="Permanent link">&para;</a></h3>
 <ul>
 <li>
 <p><code>timedelta</code> fields will accept values of type:</p>
@@ -4214,25 +4214,25 @@ types:</p>
 </code></pre></div>
 <h2 id="number-types">Number Types<a class="headerlink" href="#number-types" title="Permanent link">&para;</a></h2>
 <p>Pydantic supports the following numeric types from the Python standard library:</p>
-<h3 id="int"><code>int</code><a class="headerlink" href="#int" title="Permanent link">&para;</a></h3>
+<h3 id="int"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int"><code>int</code></a><a class="headerlink" href="#int" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Pydantic uses <code>int(v)</code> to coerce types to an <code>int</code>;
   see <a href="../../concepts/models/#data-conversion">Data conversion</a> for details on loss of information during data conversion.</li>
 </ul>
-<h3 id="float"><code>float</code><a class="headerlink" href="#float" title="Permanent link">&para;</a></h3>
+<h3 id="float"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float"><code>float</code></a><a class="headerlink" href="#float" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Pydantic uses <code>float(v)</code> to coerce values to floats.</li>
 </ul>
-<h3 id="enumintenum"><code>enum.IntEnum</code><a class="headerlink" href="#enumintenum" title="Permanent link">&para;</a></h3>
+<h3 id="enumintenum"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/enum.html#enum.IntEnum"><code>enum.IntEnum</code></a><a class="headerlink" href="#enumintenum" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Validation: Pydantic checks that the value is a valid <code>IntEnum</code> instance.</li>
 <li>Validation for subclass of <code>enum.IntEnum</code>: checks that the value is a valid member of the integer enum;
   see <a href="#enum">Enums and Choices</a> for more details.</li>
 </ul>
-<h3 id="decimaldecimal"><code>decimal.Decimal</code><a class="headerlink" href="#decimaldecimal" title="Permanent link">&para;</a></h3>
+<h3 id="decimaldecimal"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/decimal.html#decimal.Decimal"><code>decimal.Decimal</code></a><a class="headerlink" href="#decimaldecimal" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Validation: Pydantic attempts to convert the value to a string, then passes the string to <code>Decimal(v)</code>.</li>
-<li>Serialization: Pydantic serializes <code>Decimal</code> types as strings.
+<li>Serialization: Pydantic serializes <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/decimal.html#decimal.Decimal"><code>Decimal</code></a> types as strings.
 You can use a custom serializer to override this behavior if desired. For example:</li>
 </ul>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">decimal</span> <span class="kn">import</span> <span class="n">Decimal</span>
@@ -4266,8 +4266,8 @@ You can use a custom serializer to override this behavior if desired. For exampl
 <li>Using <a class="autorefs autorefs-internal" href="../base_model/#pydantic.BaseModel.model_dump"><code>model_dump</code></a> with <code>mode='json'</code>, <code>x</code> is serialized as a <code>string</code>, and <code>y</code> is serialized as a <code>float</code> because of the custom serializer applied.</li>
 <li>Using <a class="autorefs autorefs-internal" href="../base_model/#pydantic.BaseModel.model_dump_json"><code>model_dump_json</code></a>, <code>x</code> is serialized as a <code>string</code>, and <code>y</code> is serialized as a <code>float</code> because of the custom serializer applied.</li>
 </ol>
-<h2 id="enum"><code>Enum</code><a class="headerlink" href="#enum" title="Permanent link">&para;</a></h2>
-<p>Pydantic uses Python's standard <code>enum</code> classes to define choices.</p>
+<h2 id="enum"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/enum.html#enum.Enum"><code>Enum</code></a><a class="headerlink" href="#enum" title="Permanent link">&para;</a></h2>
+<p>Pydantic uses Python's standard <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/enum.html#module-enum"><code>enum</code></a> classes to define choices.</p>
 <p><code>enum.Enum</code> checks that the value is a valid <code>Enum</code> instance.
 Subclass of <code>enum.Enum</code> checks that the value is a valid member of the enum.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">IntEnum</span>
@@ -4305,10 +4305,10 @@ Subclass of <code>enum.Enum</code> checks that the value is a valid member of th
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <h2 id="lists-and-tuples">Lists and Tuples<a class="headerlink" href="#lists-and-tuples" title="Permanent link">&para;</a></h2>
-<h3 id="list"><code>list</code><a class="headerlink" href="#list" title="Permanent link">&para;</a></h3>
-<p>Allows <code>list</code>, <code>tuple</code>, <code>set</code>, <code>frozenset</code>, <code>deque</code>, or generators and casts to a <code>list</code>.
+<h3 id="list"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list"><code>list</code></a><a class="headerlink" href="#list" title="Permanent link">&para;</a></h3>
+<p>Allows <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list"><code>list</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple"><code>tuple</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#set"><code>set</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#frozenset"><code>frozenset</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/collections.html#collections.deque"><code>deque</code></a>, or generators and casts to a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list"><code>list</code></a>.
 When a generic parameter is provided, the appropriate validation is applied to all items of the list.</p>
-<h3 id="typinglist"><code>typing.List</code><a class="headerlink" href="#typinglist" title="Permanent link">&para;</a></h3>
+<h3 id="typinglist"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.List"><code>typing.List</code></a><a class="headerlink" href="#typinglist" title="Permanent link">&para;</a></h3>
 <p>Handled the same as <code>list</code> above.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
@@ -4325,10 +4325,10 @@ When a generic parameter is provided, the appropriate validation is applied to a
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">list_of_ints</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">list_of_ints</span><span class="p">)</span>
 <span class="c1">#&gt; [1, 2, 3]</span>
 </code></pre></div>
-<h3 id="tuple"><code>tuple</code><a class="headerlink" href="#tuple" title="Permanent link">&para;</a></h3>
-<p>Allows <code>list</code>, <code>tuple</code>, <code>set</code>, <code>frozenset</code>, <code>deque</code>, or generators and casts to a <code>tuple</code>.
+<h3 id="tuple"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple"><code>tuple</code></a><a class="headerlink" href="#tuple" title="Permanent link">&para;</a></h3>
+<p>Allows <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list"><code>list</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple"><code>tuple</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#set"><code>set</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#frozenset"><code>frozenset</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/collections.html#collections.deque"><code>deque</code></a>, or generators and casts to a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple"><code>tuple</code></a>.
 When generic parameters are provided, the appropriate validation is applied to the respective items of the tuple</p>
-<h3 id="typingtuple"><code>typing.Tuple</code><a class="headerlink" href="#typingtuple" title="Permanent link">&para;</a></h3>
+<h3 id="typingtuple"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Tuple"><code>typing.Tuple</code></a><a class="headerlink" href="#typingtuple" title="Permanent link">&para;</a></h3>
 <p>Handled the same as <code>tuple</code> above.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
@@ -4345,10 +4345,10 @@ When generic parameters are provided, the appropriate validation is applied to t
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">tuple_of_different_types</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">tuple_of_different_types</span><span class="p">)</span>
 <span class="c1">#&gt; (3, 2.0, True)</span>
 </code></pre></div>
-<h3 id="typingnamedtuple"><code>typing.NamedTuple</code><a class="headerlink" href="#typingnamedtuple" title="Permanent link">&para;</a></h3>
-<p>Subclasses of <code>typing.NamedTuple</code> are similar to <code>tuple</code>, but create instances of the given <code>namedtuple</code> class.</p>
-<p>Subclasses of <code>collections.namedtuple</code> are similar to subclass of <code>typing.NamedTuple</code>, but since field types are not specified,
-all fields are treated as having type <code>Any</code>.</p>
+<h3 id="typingnamedtuple"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.NamedTuple"><code>typing.NamedTuple</code></a><a class="headerlink" href="#typingnamedtuple" title="Permanent link">&para;</a></h3>
+<p>Subclasses of <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.NamedTuple"><code>typing.NamedTuple</code></a> are similar to <code>tuple</code>, but create instances of the given <code>namedtuple</code> class.</p>
+<p>Subclasses of <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/collections.html#collections.namedtuple"><code>collections.namedtuple</code></a> are similar to subclass of <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.NamedTuple"><code>typing.NamedTuple</code></a>, but since field types are not specified,
+all fields are treated as having type <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Any"><code>Any</code></a>.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">NamedTuple</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -4374,10 +4374,10 @@ all fields are treated as having type <code>Any</code>.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <h2 id="deque">Deque<a class="headerlink" href="#deque" title="Permanent link">&para;</a></h2>
-<h3 id="deque_1"><code>deque</code><a class="headerlink" href="#deque_1" title="Permanent link">&para;</a></h3>
-<p>Allows <code>list</code>, <code>tuple</code>, <code>set</code>, <code>frozenset</code>, <code>deque</code>, or generators and casts to a <code>deque</code>.
-When generic parameters are provided, the appropriate validation is applied to the respective items of the <code>deque</code></p>
-<h3 id="typingdeque"><code>typing.Deque</code><a class="headerlink" href="#typingdeque" title="Permanent link">&para;</a></h3>
+<h3 id="deque_1"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/collections.html#collections.deque"><code>deque</code></a><a class="headerlink" href="#deque_1" title="Permanent link">&para;</a></h3>
+<p>Allows <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list"><code>list</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple"><code>tuple</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#set"><code>set</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#frozenset"><code>frozenset</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/collections.html#collections.deque"><code>deque</code></a>, or generators and casts to a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/collections.html#collections.deque"><code>deque</code></a>.
+When generic parameters are provided, the appropriate validation is applied to the respective items of the <code>deque</code>.</p>
+<h3 id="typingdeque"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Deque"><code>typing.Deque</code></a><a class="headerlink" href="#typingdeque" title="Permanent link">&para;</a></h3>
 <p>Handled the same as <code>deque</code> above.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Deque</span><span class="p">,</span> <span class="n">Optional</span>
 
@@ -4392,10 +4392,10 @@ When generic parameters are provided, the appropriate validation is applied to t
 <span class="c1">#&gt; deque([1, 2, 3])</span>
 </code></pre></div>
 <h2 id="sets">Sets<a class="headerlink" href="#sets" title="Permanent link">&para;</a></h2>
-<h3 id="set"><code>set</code><a class="headerlink" href="#set" title="Permanent link">&para;</a></h3>
-<p>Allows <code>list</code>, <code>tuple</code>, <code>set</code>, <code>frozenset</code>, <code>deque</code>, or generators and casts to a <code>set</code>.
+<h3 id="set"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#set"><code>set</code></a><a class="headerlink" href="#set" title="Permanent link">&para;</a></h3>
+<p>Allows <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list"><code>list</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple"><code>tuple</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#set"><code>set</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#frozenset"><code>frozenset</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/collections.html#collections.deque"><code>deque</code></a>, or generators and casts to a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#set"><code>set</code></a>.
 When a generic parameter is provided, the appropriate validation is applied to all items of the set.</p>
-<h3 id="typingset"><code>typing.Set</code><a class="headerlink" href="#typingset" title="Permanent link">&para;</a></h3>
+<h3 id="typingset"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Set"><code>typing.Set</code></a><a class="headerlink" href="#typingset" title="Permanent link">&para;</a></h3>
 <p>Handled the same as <code>set</code> above.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span>
 
@@ -4414,10 +4414,10 @@ When a generic parameter is provided, the appropriate validation is applied to a
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">set_of_ints</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">set_of_ints</span><span class="p">)</span>
 <span class="c1">#&gt; {1, 2, 3}</span>
 </code></pre></div>
-<h3 id="frozenset"><code>frozenset</code><a class="headerlink" href="#frozenset" title="Permanent link">&para;</a></h3>
-<p>Allows <code>list</code>, <code>tuple</code>, <code>set</code>, <code>frozenset</code>, <code>deque</code>, or generators and casts to a <code>frozenset</code>.
+<h3 id="frozenset"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#frozenset"><code>frozenset</code></a><a class="headerlink" href="#frozenset" title="Permanent link">&para;</a></h3>
+<p>Allows <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list"><code>list</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple"><code>tuple</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#set"><code>set</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#frozenset"><code>frozenset</code></a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/collections.html#collections.deque"><code>deque</code></a>, or generators and casts to a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#frozenset"><code>frozenset</code></a>.
 When a generic parameter is provided, the appropriate validation is applied to all items of the frozen set.</p>
-<h3 id="typingfrozenset"><code>typing.FrozenSet</code><a class="headerlink" href="#typingfrozenset" title="Permanent link">&para;</a></h3>
+<h3 id="typingfrozenset"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.FrozenSet"><code>typing.FrozenSet</code></a><a class="headerlink" href="#typingfrozenset" title="Permanent link">&para;</a></h3>
 <p>Handled the same as <code>frozenset</code> above.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">FrozenSet</span><span class="p">,</span> <span class="n">Optional</span>
 
@@ -4442,19 +4442,19 @@ When a generic parameter is provided, the appropriate validation is applied to a
 <span class="c1">#&gt; [1, 2, 3]</span>
 </code></pre></div>
 <h2 id="other-iterables">Other Iterables<a class="headerlink" href="#other-iterables" title="Permanent link">&para;</a></h2>
-<h3 id="typingsequence"><code>typing.Sequence</code><a class="headerlink" href="#typingsequence" title="Permanent link">&para;</a></h3>
-<p>This is intended for use when the provided value should meet the requirements of the <code>Sequence</code> protocol, and it is
+<h3 id="typingsequence"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Sequence"><code>typing.Sequence</code></a><a class="headerlink" href="#typingsequence" title="Permanent link">&para;</a></h3>
+<p>This is intended for use when the provided value should meet the requirements of the <code>Sequence</code> ABC, and it is
 desirable to do eager validation of the values in the container. Note that when validation must be performed on the
 values of the container, the type of the container may not be preserved since validation may end up replacing values.
-We guarantee that the validated value will be a valid <code>typing.Sequence</code>, but it may have a different type than was
+We guarantee that the validated value will be a valid <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Sequence"><code>typing.Sequence</code></a>, but it may have a different type than was
 provided (generally, it will become a <code>list</code>).</p>
-<h3 id="typingiterable"><code>typing.Iterable</code><a class="headerlink" href="#typingiterable" title="Permanent link">&para;</a></h3>
+<h3 id="typingiterable"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Iterable"><code>typing.Iterable</code></a><a class="headerlink" href="#typingiterable" title="Permanent link">&para;</a></h3>
 <p>This is intended for use when the provided value may be an iterable that shouldn't be consumed.
 See <a href="#infinite-generators">Infinite Generators</a> below for more detail on parsing and validation.
-Similar to <code>typing.Sequence</code>, we guarantee that the validated result will be a valid <code>typing.Iterable</code>,
+Similar to <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Sequence"><code>typing.Sequence</code></a>, we guarantee that the validated result will be a valid <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Iterable"><code>typing.Iterable</code></a>,
 but it may have a different type than was provided. In particular, even if a non-generator type such as a <code>list</code>
-is provided, the post-validation value of a field of type <code>typing.Iterable</code> will be a generator.</p>
-<p>Here is a simple example using <code>typing.Sequence</code>:</p>
+is provided, the post-validation value of a field of type <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Iterable"><code>typing.Iterable</code></a> will be a generator.</p>
+<p>Here is a simple example using <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Sequence"><code>typing.Sequence</code></a>:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Sequence</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
@@ -4474,7 +4474,7 @@ is provided, the post-validation value of a field of type <code>typing.Iterable<
 In that case, the generator will be consumed and stored on the model as a list and its values will be
 validated against the type parameter of the <code>Sequence</code> (e.g. <code>int</code> in <code>Sequence[int]</code>).</p>
 <p>However, if you have a generator that you <em>don't</em> want to be eagerly consumed (e.g. an infinite
-generator or a remote data loader), you can use a field of type <code>Iterable</code>:</p>
+generator or a remote data loader), you can use a field of type <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Iterable"><code>Iterable</code></a>:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Iterable</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
@@ -4551,8 +4551,8 @@ To prevent it from being consumed, no validation of the yielded values is perfor
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <h2 id="mapping-types">Mapping Types<a class="headerlink" href="#mapping-types" title="Permanent link">&para;</a></h2>
-<h3 id="dict"><code>dict</code><a class="headerlink" href="#dict" title="Permanent link">&para;</a></h3>
-<p><code>dict(v)</code> is used to attempt to convert a dictionary. see <code>typing.Dict</code> below for sub-type constraints.</p>
+<h3 id="dict"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict"><code>dict</code></a><a class="headerlink" href="#dict" title="Permanent link">&para;</a></h3>
+<p><code>dict(v)</code> is used to attempt to convert a dictionary. see <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Dict"><code>typing.Dict</code></a> below for sub-type constraints.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -4574,7 +4574,7 @@ To prevent it from being consumed, no validation of the yielded values is perfor
 <span class="sd">      Input should be a valid dictionary [type=dict_type, input_value=&#39;test&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-<h3 id="typingdict"><code>typing.Dict</code><a class="headerlink" href="#typingdict" title="Permanent link">&para;</a></h3>
+<h3 id="typingdict"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Dict"><code>typing.Dict</code></a><a class="headerlink" href="#typingdict" title="Permanent link">&para;</a></h3>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -4602,13 +4602,13 @@ To prevent it from being consumed, no validation of the yielded values is perfor
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This is a new feature of the Python standard library as of Python 3.8.
-Because of limitations in <code>typing.TypedDict</code> before 3.12, the <a href="https://pypi.org/project/typing-extensions/">typing-extensions</a>
+Because of limitations in <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict">typing.TypedDict</a> before 3.12, the <a href="https://pypi.org/project/typing-extensions/">typing-extensions</a>
 package is required for Python &lt;3.12. You'll need to import <code>TypedDict</code> from <code>typing_extensions</code> instead of <code>typing</code> and will
 get a build time error if you don't.</p>
 </div>
-<p><a href="https://docs.python.org/3/library/typing.html#typing.TypedDict">TypedDict</a> declares a dictionary type that expects all of
+<p><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict"><code>TypedDict</code></a> declares a dictionary type that expects all of
 its instances to have a certain set of keys, where each key is associated with a value of a consistent type.</p>
-<p>It is same as <code>dict</code> but Pydantic will validate the dictionary since keys are annotated.</p>
+<p>It is same as <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict"><code>dict</code></a> but Pydantic will validate the dictionary since keys are annotated.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypedDict</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -4634,7 +4634,7 @@ its instances to have a certain set of keys, where each key is associated with a
 <span class="sd">      Field required [type=missing, input_value={&#39;name&#39;: &#39;foo&#39;}, input_type=dict]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-<p>You can define <code>__pydantic_config__</code> to change the model inherited from <code>TypedDict</code>.
+<p>You can define <code>__pydantic_config__</code> to change the model inherited from <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict"><code>TypedDict</code></a>.
 See the <a class="autorefs autorefs-internal" href="../config/#pydantic.config.ConfigDict"><code>ConfigDict</code> API reference</a> for more details.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
@@ -4706,7 +4706,7 @@ See the <a class="autorefs autorefs-internal" href="../config/#pydantic.config.C
 </code></pre></div>
 <h2 id="callable">Callable<a class="headerlink" href="#callable" title="Permanent link">&para;</a></h2>
 <p>See below for more detail on parsing and validation</p>
-<p>Fields can also be of type <code>Callable</code>:</p>
+<p>Fields can also be of type <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Callable"><code>Callable</code></a>:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
@@ -4728,12 +4728,12 @@ type is performed.</p>
 </div>
 <h2 id="ip-address-types">IP Address Types<a class="headerlink" href="#ip-address-types" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>ipaddress.IPv4Address</code>: Uses the type itself for validation by passing the value to <code>IPv4Address(v)</code>.</li>
-<li><code>ipaddress.IPv4Interface</code>: Uses the type itself for validation by passing the value to <code>IPv4Address(v)</code>.</li>
-<li><code>ipaddress.IPv4Network</code>: Uses the type itself for validation by passing the value to <code>IPv4Network(v)</code>.</li>
-<li><code>ipaddress.IPv6Address</code>: Uses the type itself for validation by passing the value to <code>IPv6Address(v)</code>.</li>
-<li><code>ipaddress.IPv6Interface</code>: Uses the type itself for validation by passing the value to <code>IPv6Interface(v)</code>.</li>
-<li><code>ipaddress.IPv6Network</code>: Uses the type itself for validation by passing the value to <code>IPv6Network(v)</code>.</li>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Address"><code>ipaddress.IPv4Address</code></a>: Uses the type itself for validation by passing the value to <code>IPv4Address(v)</code>.</li>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Interface"><code>ipaddress.IPv4Interface</code></a>: Uses the type itself for validation by passing the value to <code>IPv4Address(v)</code>.</li>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Network"><code>ipaddress.IPv4Network</code></a>: Uses the type itself for validation by passing the value to <code>IPv4Network(v)</code>.</li>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv6Address"><code>ipaddress.IPv6Address</code></a>: Uses the type itself for validation by passing the value to <code>IPv6Address(v)</code>.</li>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv6Interface"><code>ipaddress.IPv6Interface</code></a>: Uses the type itself for validation by passing the value to <code>IPv6Interface(v)</code>.</li>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv6Network"><code>ipaddress.IPv6Network</code></a>: Uses the type itself for validation by passing the value to <code>IPv6Network(v)</code>.</li>
 </ul>
 <p>See <a href="../networks/">Network Types</a> for other custom IP address types.</p>
 <h2 id="uuid">UUID<a class="headerlink" href="#uuid" title="Permanent link">&para;</a></h2>
@@ -4747,13 +4747,13 @@ There's a fallback to <code>UUID(bytes=v)</code> for <code>bytes</code> and <cod
 <li><a class="autorefs autorefs-internal" href="../types/#pydantic.types.UUID5"><code>UUID5</code></a>: requires UUID version 5.</li>
 </ul>
 <h2 id="union">Union<a class="headerlink" href="#union" title="Permanent link">&para;</a></h2>
-<p>Pydantic has extensive support for union validation, both <code>typing.Union</code> and Python 3.10's pipe syntax (<code>A | B</code>) are supported.
+<p>Pydantic has extensive support for union validation, both <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Union"><code>typing.Union</code></a> and Python 3.10's pipe syntax (<code>A | B</code>) are supported.
 Read more in the <a href="../../concepts/unions/"><code>Unions</code></a> section of the concepts docs.</p>
-<h2 id="type-and-typevar"><code>Type</code> and <code>TypeVar</code><a class="headerlink" href="#type-and-typevar" title="Permanent link">&para;</a></h2>
-<h3 id="type"><code>type</code><a class="headerlink" href="#type" title="Permanent link">&para;</a></h3>
+<h2 id="type-and-typevar"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Type"><code>Type</code></a> and <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypeVar"><code>TypeVar</code></a><a class="headerlink" href="#type-and-typevar" title="Permanent link">&para;</a></h2>
+<h3 id="type"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type"><code>type</code></a><a class="headerlink" href="#type" title="Permanent link">&para;</a></h3>
 <p>Pydantic supports the use of <code>type[T]</code> to specify that a field may only accept classes (not instances)
 that are subclasses of <code>T</code>.</p>
-<h3 id="typingtype"><code>typing.Type</code><a class="headerlink" href="#typingtype" title="Permanent link">&para;</a></h3>
+<h3 id="typingtype"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Type"><code>typing.Type</code></a><a class="headerlink" href="#typingtype" title="Permanent link">&para;</a></h3>
 <p>Handled the same as <code>type</code> above.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Type</span>
 
@@ -4814,8 +4814,8 @@ that are subclasses of <code>T</code>.</p>
 <span class="sd">      Input should be a type [type=is_type, input_value=&lt;__main__.Foo object at 0x0123456789ab&gt;, input_type=Foo]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-<h3 id="typingtypevar"><code>typing.TypeVar</code><a class="headerlink" href="#typingtypevar" title="Permanent link">&para;</a></h3>
-<p><code>TypeVar</code> is supported either unconstrained, constrained or with a bound.</p>
+<h3 id="typingtypevar"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypeVar"><code>typing.TypeVar</code></a><a class="headerlink" href="#typingtypevar" title="Permanent link">&para;</a></h3>
+<p><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypeVar"><code>TypeVar</code></a> is supported either unconstrained, constrained or with a bound.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TypeVar</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
@@ -4839,7 +4839,7 @@ that are subclasses of <code>T</code>.</p>
 <span class="c1">#&gt; a=None b=1.0 c=1</span>
 </code></pre></div>
 <h2 id="none-types">None Types<a class="headerlink" href="#none-types" title="Permanent link">&para;</a></h2>
-<p><code>None</code>, <code>type(None)</code>, or <code>Literal[None]</code> are all equivalent according to <a href="https://www.python.org/dev/peps/pep-0484/#using-none">PEP 484</a>.
+<p><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/constants.html#None"><code>None</code></a>, <code>type(None)</code>, or <code>Literal[None]</code> are all equivalent according to <a href="https://typing.readthedocs.io/en/latest/spec/special-types.html#none">the typing specification</a>.
 Allows only <code>None</code> value.</p>
 <h2 id="strings">Strings<a class="headerlink" href="#strings" title="Permanent link">&para;</a></h2>
 <p><code>str</code>: Strings are accepted as-is. <code>bytes</code> and <code>bytearray</code> are converted using <code>v.decode()</code>.
@@ -4893,15 +4893,9 @@ view, this is frequently not intended as is a common source of bugs.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <h2 id="bytes">Bytes<a class="headerlink" href="#bytes" title="Permanent link">&para;</a></h2>
-<p><code>bytes</code> are accepted as-is. <code>bytearray</code> is converted using <code>bytes(v)</code>. <code>str</code> are converted using <code>v.encode()</code>. <code>int</code>, <code>float</code>, and <code>Decimal</code> are coerced using <code>str(v).encode()</code>. See <a href="../types/#pydantic.types.ByteSize">ByteSize</a> for more details.</p>
-<h2 id="typingliteral"><code>typing.Literal</code><a class="headerlink" href="#typingliteral" title="Permanent link">&para;</a></h2>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>This is a new feature of the Python standard library as of Python 3.8;
-prior to Python 3.8, it requires the <a href="https://pypi.org/project/typing-extensions/">typing-extensions</a> package.</p>
-</div>
-<p>Pydantic supports the use of <code>typing.Literal</code> (or <code>typing_extensions.Literal</code> prior to Python 3.8)
-as a lightweight way to specify that a field may accept only specific literal values:</p>
+<p><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes"><code>bytes</code></a> are accepted as-is. <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytearray"><code>bytearray</code></a> is converted using <code>bytes(v)</code>. <code>str</code> are converted using <code>v.encode()</code>. <code>int</code>, <code>float</code>, and <code>Decimal</code> are coerced using <code>str(v).encode()</code>. See <a href="../types/#pydantic.types.ByteSize">ByteSize</a> for more details.</p>
+<h2 id="typingliteral"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Literal"><code>typing.Literal</code></a><a class="headerlink" href="#typingliteral" title="Permanent link">&para;</a></h2>
+<p>Pydantic supports the use of <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Literal"><code>typing.Literal</code></a> as a lightweight way to specify that a field may accept only specific literal values:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -4996,13 +4990,13 @@ without needing to declare custom validators:</p>
 <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">Meal</span><span class="p">(</span><span class="n">dessert</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="s1">&#39;cake&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">dessert</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="c1">#&gt; Dessert</span>
 </code></pre></div>
-<h2 id="typingany"><code>typing.Any</code><a class="headerlink" href="#typingany" title="Permanent link">&para;</a></h2>
+<h2 id="typingany"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Any"><code>typing.Any</code></a><a class="headerlink" href="#typingany" title="Permanent link">&para;</a></h2>
 <p>Allows any value, including <code>None</code>.</p>
-<h2 id="typingannotated"><code>typing.Annotated</code><a class="headerlink" href="#typingannotated" title="Permanent link">&para;</a></h2>
+<h2 id="typingannotated"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>typing.Annotated</code></a><a class="headerlink" href="#typingannotated" title="Permanent link">&para;</a></h2>
 <p>Allows wrapping another type with arbitrary metadata, as per <a href="https://www.python.org/dev/peps/pep-0593/">PEP-593</a>. The <code>Annotated</code> hint may contain a single call to the <a href="../../concepts/json_schema/#typingannotated-fields"><code>Field</code> function</a>, but otherwise the additional metadata is ignored and the root type is used.</p>
-<h2 id="typingpattern"><code>typing.Pattern</code><a class="headerlink" href="#typingpattern" title="Permanent link">&para;</a></h2>
+<h2 id="typingpattern"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Pattern"><code>typing.Pattern</code></a><a class="headerlink" href="#typingpattern" title="Permanent link">&para;</a></h2>
 <p>Will cause the input value to be passed to <code>re.compile(v)</code> to create a regular expression pattern.</p>
-<h2 id="pathlibpath"><code>pathlib.Path</code><a class="headerlink" href="#pathlibpath" title="Permanent link">&para;</a></h2>
+<h2 id="pathlibpath"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path"><code>pathlib.Path</code></a><a class="headerlink" href="#pathlibpath" title="Permanent link">&para;</a></h2>
 <p>Simply uses the type itself for validation by passing the value to <code>Path(v)</code>.</p>
 
   

@@ -3076,7 +3076,7 @@
   </span>
 
 <a href="#pydantic.aliases.AliasPath" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">AliasPath</span><span class="p">(</span><span class="n">first_arg</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">AliasPath</span><span class="p">(</span><span class="n">first_arg</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3103,7 +3103,7 @@
         <tr>
           <td><code><span title="pydantic.aliases.AliasPath.path">path</span></code></td>
           <td>
-                <code>list[int | str]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3144,7 +3144,7 @@
 
 
 <a href="#pydantic.aliases.AliasPath.convert_to_aliases" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">convert_to_aliases</span><span class="p">()</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">convert_to_aliases</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3164,7 +3164,7 @@
     <tbody>
         <tr>
           <td>
-                <code>list[str | int]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3218,7 +3218,9 @@
   </span>
 
 <a href="#pydantic.aliases.AliasChoices" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">AliasChoices</span><span class="p">(</span><span class="n">first_choice</span><span class="p">,</span> <span class="o">*</span><span class="n">choices</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">AliasChoices</span><span class="p">(</span>
+    <span class="n">first_choice</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.aliases.AliasPath" href="#pydantic.aliases.AliasPath">AliasPath</a></span><span class="p">,</span> <span class="o">*</span><span class="n">choices</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.aliases.AliasPath" href="#pydantic.aliases.AliasPath">AliasPath</a></span>
+<span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3245,7 +3247,7 @@
         <tr>
           <td><code><span title="pydantic.aliases.AliasChoices.choices">choices</span></code></td>
           <td>
-                <code>list[str | <a class="autorefs autorefs-internal" title="pydantic.aliases.AliasPath" href="#pydantic.aliases.AliasPath">AliasPath</a>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="pydantic.aliases.AliasPath" href="#pydantic.aliases.AliasPath">AliasPath</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3286,7 +3288,7 @@
 
 
 <a href="#pydantic.aliases.AliasChoices.convert_to_aliases" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">convert_to_aliases</span><span class="p">()</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">convert_to_aliases</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">]]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3306,7 +3308,7 @@
     <tbody>
         <tr>
           <td>
-                <code>list[list[str | int]]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a>]]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3398,7 +3400,7 @@
         <tr>
           <td><code><span title="pydantic.aliases.AliasGenerator.alias">alias</span></code></td>
           <td>
-                <code><span title="typing.Callable">Callable</span>[[str], str] | None</code>
+                <code><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>], <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>] | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3409,7 +3411,7 @@
         <tr>
           <td><code><span title="pydantic.aliases.AliasGenerator.validation_alias">validation_alias</span></code></td>
           <td>
-                <code><span title="typing.Callable">Callable</span>[[str], str | <a class="autorefs autorefs-internal" title="pydantic.aliases.AliasPath" href="#pydantic.aliases.AliasPath">AliasPath</a> | <a class="autorefs autorefs-internal" title="pydantic.aliases.AliasChoices" href="#pydantic.aliases.AliasChoices">AliasChoices</a>] | None</code>
+                <code><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>], <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="pydantic.aliases.AliasPath" href="#pydantic.aliases.AliasPath">AliasPath</a> | <a class="autorefs autorefs-internal" title="pydantic.aliases.AliasChoices" href="#pydantic.aliases.AliasChoices">AliasChoices</a>] | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3420,7 +3422,7 @@
         <tr>
           <td><code><span title="pydantic.aliases.AliasGenerator.serialization_alias">serialization_alias</span></code></td>
           <td>
-                <code><span title="typing.Callable">Callable</span>[[str], str] | None</code>
+                <code><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>], <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>] | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3454,7 +3456,13 @@
 
 
 <a href="#pydantic.aliases.AliasGenerator.generate_aliases" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">generate_aliases</span><span class="p">(</span><span class="n">field_name</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">generate_aliases</span><span class="p">(</span>
+    <span class="n">field_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span>
+    <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.aliases.AliasPath" href="#pydantic.aliases.AliasPath">AliasPath</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.aliases.AliasChoices" href="#pydantic.aliases.AliasChoices">AliasChoices</a></span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3474,7 +3482,7 @@
     <tbody>
         <tr>
           <td>
-                <code>tuple[str | None, str | <a class="autorefs autorefs-internal" title="pydantic.aliases.AliasPath" href="#pydantic.aliases.AliasPath">AliasPath</a> | <a class="autorefs autorefs-internal" title="pydantic.aliases.AliasChoices" href="#pydantic.aliases.AliasChoices">AliasChoices</a> | None, str | None]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="pydantic.aliases.AliasPath" href="#pydantic.aliases.AliasPath">AliasPath</a> | <a class="autorefs autorefs-internal" title="pydantic.aliases.AliasChoices" href="#pydantic.aliases.AliasChoices">AliasChoices</a> | None, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None]</code>
           </td>
           <td>
             <div class="doc-md-description">

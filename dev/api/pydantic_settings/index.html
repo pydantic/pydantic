@@ -3324,13 +3324,13 @@
 <a href="#pydantic_settings.BaseSettings" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">BaseSettings</span><span class="p">(</span>
     <span class="n">__pydantic_self__</span><span class="p">,</span>
-    <span class="n">_case_sensitive</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">_env_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">_env_file</span><span class="o">=</span><span class="n">ENV_FILE_SENTINEL</span><span class="p">,</span>
-    <span class="n">_env_file_encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">_env_nested_delimiter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">_secrets_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="o">**</span><span class="n">values</span>
+    <span class="n">_case_sensitive</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">_env_prefix</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">_env_file</span><span class="p">:</span> <span class="n"><span title="pydantic_settings.sources.DotenvType">DotenvType</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">ENV_FILE_SENTINEL</span><span class="p">,</span>
+    <span class="n">_env_file_encoding</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">_env_nested_delimiter</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">_secrets_dir</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">values</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -3360,7 +3360,7 @@ Heroku and any 12 factor app design.</p>
         <tr>
           <td><code>_case_sensitive</code></td>
           <td>
-                <code>bool | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3374,7 +3374,7 @@ Heroku and any 12 factor app design.</p>
         <tr>
           <td><code>_env_prefix</code></td>
           <td>
-                <code>str | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3404,7 +3404,7 @@ means that the value from <code>model_config['env_file']</code> should be used. 
         <tr>
           <td><code>_env_file_encoding</code></td>
           <td>
-                <code>str | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3418,7 +3418,7 @@ means that the value from <code>model_config['env_file']</code> should be used. 
         <tr>
           <td><code>_env_nested_delimiter</code></td>
           <td>
-                <code>str | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3432,7 +3432,7 @@ means that the value from <code>model_config['env_file']</code> should be used. 
         <tr>
           <td><code>_secrets_dir</code></td>
           <td>
-                <code>str | <span title="pathlib.Path">Path</span> | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3521,12 +3521,12 @@ means that the value from <code>model_config['env_file']</code> should be used. 
 
 <a href="#pydantic_settings.BaseSettings.settings_customise_sources" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">settings_customise_sources</span><span class="p">(</span>
-    <span class="n">settings_cls</span><span class="p">,</span>
-    <span class="n">init_settings</span><span class="p">,</span>
-    <span class="n">env_settings</span><span class="p">,</span>
-    <span class="n">dotenv_settings</span><span class="p">,</span>
-    <span class="n">file_secret_settings</span><span class="p">,</span>
-<span class="p">)</span>
+    <span class="n">settings_cls</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="pydantic_settings.main.BaseSettings" href="#pydantic_settings.BaseSettings">BaseSettings</a></span><span class="p">],</span>
+    <span class="n">init_settings</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_settings.sources.PydanticBaseSettingsSource" href="#pydantic_settings.PydanticBaseSettingsSource">PydanticBaseSettingsSource</a></span><span class="p">,</span>
+    <span class="n">env_settings</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_settings.sources.PydanticBaseSettingsSource" href="#pydantic_settings.PydanticBaseSettingsSource">PydanticBaseSettingsSource</a></span><span class="p">,</span>
+    <span class="n">dotenv_settings</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_settings.sources.PydanticBaseSettingsSource" href="#pydantic_settings.PydanticBaseSettingsSource">PydanticBaseSettingsSource</a></span><span class="p">,</span>
+    <span class="n">file_secret_settings</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_settings.sources.PydanticBaseSettingsSource" href="#pydantic_settings.PydanticBaseSettingsSource">PydanticBaseSettingsSource</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="pydantic_settings.sources.PydanticBaseSettingsSource" href="#pydantic_settings.PydanticBaseSettingsSource">PydanticBaseSettingsSource</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3549,7 +3549,7 @@ means that the value from <code>model_config['env_file']</code> should be used. 
         <tr>
           <td><code>settings_cls</code></td>
           <td>
-                <code>type[<a class="autorefs autorefs-internal" title="pydantic_settings.main.BaseSettings" href="#pydantic_settings.BaseSettings">BaseSettings</a>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<a class="autorefs autorefs-internal" title="pydantic_settings.main.BaseSettings" href="#pydantic_settings.BaseSettings">BaseSettings</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3632,7 +3632,7 @@ means that the value from <code>model_config['env_file']</code> should be used. 
     <tbody>
         <tr>
           <td>
-                <code>tuple[<a class="autorefs autorefs-internal" title="pydantic_settings.sources.PydanticBaseSettingsSource" href="#pydantic_settings.PydanticBaseSettingsSource">PydanticBaseSettingsSource</a>, ...]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-internal" title="pydantic_settings.sources.PydanticBaseSettingsSource" href="#pydantic_settings.PydanticBaseSettingsSource">PydanticBaseSettingsSource</a>, ...]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3715,12 +3715,12 @@ means that the value from <code>model_config['env_file']</code> should be used. 
 
 <a href="#pydantic_settings.DotEnvSettingsSource" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">DotEnvSettingsSource</span><span class="p">(</span>
-    <span class="n">settings_cls</span><span class="p">,</span>
-    <span class="n">env_file</span><span class="o">=</span><span class="n">ENV_FILE_SENTINEL</span><span class="p">,</span>
-    <span class="n">env_file_encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">case_sensitive</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">env_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">env_nested_delimiter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">settings_cls</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="pydantic_settings.main.BaseSettings" href="#pydantic_settings.BaseSettings">BaseSettings</a></span><span class="p">],</span>
+    <span class="n">env_file</span><span class="p">:</span> <span class="n"><span title="pydantic_settings.sources.DotenvType">DotenvType</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">ENV_FILE_SENTINEL</span><span class="p">,</span>
+    <span class="n">env_file_encoding</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">case_sensitive</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">env_prefix</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">env_nested_delimiter</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -3794,10 +3794,10 @@ means that the value from <code>model_config['env_file']</code> should be used. 
 
 <a href="#pydantic_settings.EnvSettingsSource" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">EnvSettingsSource</span><span class="p">(</span>
-    <span class="n">settings_cls</span><span class="p">,</span>
-    <span class="n">case_sensitive</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">env_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">env_nested_delimiter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">settings_cls</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="pydantic_settings.main.BaseSettings" href="#pydantic_settings.BaseSettings">BaseSettings</a></span><span class="p">],</span>
+    <span class="n">case_sensitive</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">env_prefix</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">env_nested_delimiter</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -3862,7 +3862,9 @@ means that the value from <code>model_config['env_file']</code> should be used. 
 
 
 <a href="#pydantic_settings.EnvSettingsSource.get_field_value" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">get_field_value</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">get_field_value</span><span class="p">(</span>
+    <span class="n">field</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="../fields/#pydantic.fields.FieldInfo">FieldInfo</a></span><span class="p">,</span> <span class="n">field_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3899,7 +3901,7 @@ means that the value from <code>model_config['env_file']</code> should be used. 
         <tr>
           <td><code>field_name</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3926,7 +3928,7 @@ means that the value from <code>model_config['env_file']</code> should be used. 
     <tbody>
         <tr>
           <td>
-                <code>tuple[<span title="typing.Any">Any</span>, str, bool]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3996,8 +3998,11 @@ a flag to determine whether value is complex.</p>
 
 <a href="#pydantic_settings.EnvSettingsSource.prepare_field_value" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">prepare_field_value</span><span class="p">(</span>
-    <span class="n">field_name</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">value_is_complex</span>
-<span class="p">)</span>
+    <span class="n">field_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">field</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="../fields/#pydantic.fields.FieldInfo">FieldInfo</a></span><span class="p">,</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">,</span>
+    <span class="n">value_is_complex</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4038,7 +4043,7 @@ a flag to determine whether value is complex.</p>
         <tr>
           <td><code>field_name</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4065,7 +4070,7 @@ a flag to determine whether value is complex.</p>
     <tbody>
         <tr>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4199,7 +4204,9 @@ a flag to determine whether value is complex.</p>
   </span>
 
 <a href="#pydantic_settings.EnvSettingsSource.next_field" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">next_field</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">next_field</span><span class="p">(</span>
+    <span class="n">field</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="../fields/#pydantic.fields.FieldInfo">FieldInfo</a></span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="../fields/#pydantic.fields.FieldInfo">FieldInfo</a></span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4254,7 +4261,7 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
         <tr>
           <td><code>key</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4383,7 +4390,11 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
 
 
 <a href="#pydantic_settings.EnvSettingsSource.explode_env_vars" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">explode_env_vars</span><span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">env_vars</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">explode_env_vars</span><span class="p">(</span>
+    <span class="n">field_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">field</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="../fields/#pydantic.fields.FieldInfo">FieldInfo</a></span><span class="p">,</span>
+    <span class="n">env_vars</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Mapping" href="https://docs.python.org/3/library/typing.html#typing.Mapping">Mapping</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4407,7 +4418,7 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
         <tr>
           <td><code>field_name</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4435,7 +4446,7 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
         <tr>
           <td><code>env_vars</code></td>
           <td>
-                <code><span title="typing.Mapping">Mapping</span>[str, str | None]</code>
+                <code><a class="autorefs autorefs-external" title="typing.Mapping" href="https://docs.python.org/3/library/typing.html#typing.Mapping">Mapping</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4462,7 +4473,7 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
     <tbody>
         <tr>
           <td>
-                <code>dict[str, <span title="typing.Any">Any</span>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4588,7 +4599,10 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
 
 
 <a href="#pydantic_settings.InitSettingsSource" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">InitSettingsSource</span><span class="p">(</span><span class="n">settings_cls</span><span class="p">,</span> <span class="n">init_kwargs</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">InitSettingsSource</span><span class="p">(</span>
+    <span class="n">settings_cls</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="pydantic_settings.main.BaseSettings" href="#pydantic_settings.BaseSettings">BaseSettings</a></span><span class="p">],</span>
+    <span class="n">init_kwargs</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">],</span>
+<span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4638,12 +4652,14 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
 
 
 <a href="#pydantic_settings.PydanticBaseSettingsSource" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">PydanticBaseSettingsSource</span><span class="p">(</span><span class="n">settings_cls</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">PydanticBaseSettingsSource</span><span class="p">(</span>
+    <span class="n">settings_cls</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="pydantic_settings.main.BaseSettings" href="#pydantic_settings.BaseSettings">BaseSettings</a></span><span class="p">],</span>
+<span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code><span title="abc.ABC">ABC</span></code></p>
+            Bases: <code><a class="autorefs autorefs-external" title="abc.ABC" href="https://docs.python.org/3/library/abc.html#abc.ABC">ABC</a></code></p>
 
   
       <p>Abstract base class for settings sources, every settings source classes should inherit from it.</p>
@@ -4684,7 +4700,9 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
   </span>
 
 <a href="#pydantic_settings.PydanticBaseSettingsSource.get_field_value" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">get_field_value</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">get_field_value</span><span class="p">(</span>
+    <span class="n">field</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="../fields/#pydantic.fields.FieldInfo">FieldInfo</a></span><span class="p">,</span> <span class="n">field_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4722,7 +4740,7 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
         <tr>
           <td><code>field_name</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4749,7 +4767,7 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
     <tbody>
         <tr>
           <td>
-                <code>tuple[<span title="typing.Any">Any</span>, str, bool]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4807,7 +4825,7 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
 
 
 <a href="#pydantic_settings.PydanticBaseSettingsSource.field_is_complex" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">field_is_complex</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">field_is_complex</span><span class="p">(</span><span class="n">field</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="../fields/#pydantic.fields.FieldInfo">FieldInfo</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4857,7 +4875,7 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
     <tbody>
         <tr>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4908,8 +4926,11 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
 
 <a href="#pydantic_settings.PydanticBaseSettingsSource.prepare_field_value" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">prepare_field_value</span><span class="p">(</span>
-    <span class="n">field_name</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">value_is_complex</span>
-<span class="p">)</span>
+    <span class="n">field_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">field</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="../fields/#pydantic.fields.FieldInfo">FieldInfo</a></span><span class="p">,</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">,</span>
+    <span class="n">value_is_complex</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4932,7 +4953,7 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
         <tr>
           <td><code>field_name</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4960,7 +4981,7 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
         <tr>
           <td><code>value</code></td>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4974,7 +4995,7 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
         <tr>
           <td><code>value_is_complex</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5001,7 +5022,7 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
     <tbody>
         <tr>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5061,7 +5082,9 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
 
 
 <a href="#pydantic_settings.PydanticBaseSettingsSource.decode_complex_value" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">decode_complex_value</span><span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">decode_complex_value</span><span class="p">(</span>
+    <span class="n">field_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="../fields/#pydantic.fields.FieldInfo">FieldInfo</a></span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -5084,7 +5107,7 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
         <tr>
           <td><code>field_name</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5112,7 +5135,7 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
         <tr>
           <td><code>value</code></td>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5139,7 +5162,7 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
     <tbody>
         <tr>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5202,10 +5225,10 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
 
 <a href="#pydantic_settings.SecretsSettingsSource" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">SecretsSettingsSource</span><span class="p">(</span>
-    <span class="n">settings_cls</span><span class="p">,</span>
-    <span class="n">secrets_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">case_sensitive</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">env_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">settings_cls</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="pydantic_settings.main.BaseSettings" href="#pydantic_settings.BaseSettings">BaseSettings</a></span><span class="p">],</span>
+    <span class="n">secrets_dir</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">case_sensitive</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">env_prefix</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -5264,7 +5287,9 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
   </span>
 
 <a href="#pydantic_settings.SecretsSettingsSource.find_case_path" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">find_case_path</span><span class="p">(</span><span class="n">dir_path</span><span class="p">,</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">case_sensitive</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">find_case_path</span><span class="p">(</span>
+    <span class="n">dir_path</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">,</span> <span class="n">file_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">case_sensitive</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -5287,7 +5312,7 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
         <tr>
           <td><code>dir_path</code></td>
           <td>
-                <code><span title="pathlib.Path">Path</span></code>
+                <code><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5301,7 +5326,7 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
         <tr>
           <td><code>file_name</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5315,7 +5340,7 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
         <tr>
           <td><code>case_sensitive</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5342,7 +5367,7 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
     <tbody>
         <tr>
           <td>
-                <code><span title="pathlib.Path">Path</span> | None</code>
+                <code><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5408,7 +5433,9 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
 
 
 <a href="#pydantic_settings.SecretsSettingsSource.get_field_value" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">get_field_value</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">get_field_value</span><span class="p">(</span>
+    <span class="n">field</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="../fields/#pydantic.fields.FieldInfo">FieldInfo</a></span><span class="p">,</span> <span class="n">field_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -5445,7 +5472,7 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
         <tr>
           <td><code>field_name</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5472,7 +5499,7 @@ next_field(sub_model, 'sub_sub_model') Returns <code>sub_sub_model</code> field 
     <tbody>
         <tr>
           <td>
-                <code>tuple[<span title="typing.Any">Any</span>, str, bool]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">

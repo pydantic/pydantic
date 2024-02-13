@@ -3116,7 +3116,9 @@
 
 
 <a href="#pydantic.annotated_handlers.GetJsonSchemaHandler.resolve_ref_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">resolve_ref_schema</span><span class="p">(</span><span class="n">__maybe_ref_json_schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">resolve_ref_schema</span><span class="p">(</span>
+    <span class="n">__maybe_ref_json_schema</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3168,7 +3170,7 @@ This means you don't have to check before calling this function.</p>
     <tbody>
         <tr>
           <td>
-                <code>LookupError</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#LookupError">LookupError</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3289,7 +3291,7 @@ This means you don't have to check before calling this function.</p>
   </span>
 
 <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.field_name" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">field_name</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">field_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3311,7 +3313,7 @@ This means you don't have to check before calling this function.</p>
 
 
 <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.generate_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">generate_schema</span><span class="p">(</span><span class="n">__source_type</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">generate_schema</span><span class="p">(</span><span class="n">__source_type</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3338,7 +3340,7 @@ that was intended for the sequence itself to its items!</p>
         <tr>
           <td><code>__source_type</code></td>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3421,7 +3423,9 @@ that was intended for the sequence itself to its items!</p>
 
 
 <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.resolve_ref_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">resolve_ref_schema</span><span class="p">(</span><span class="n">__maybe_ref_schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">resolve_ref_schema</span><span class="p">(</span>
+    <span class="n">__maybe_ref_schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3473,7 +3477,7 @@ This means you don't have to check before calling this function.</p>
     <tbody>
         <tr>
           <td>
-                <code>LookupError</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#LookupError">LookupError</a></code>
           </td>
           <td>
             <div class="doc-md-description">

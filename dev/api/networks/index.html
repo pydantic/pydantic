@@ -3369,7 +3369,7 @@
   </span>
 
 <a href="#pydantic.networks.AnyUrl" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">AnyUrl</span> <span class="o">=</span> <span class="n">Url</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">AnyUrl</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3409,8 +3409,8 @@ the types export the following properties:</p>
   </span>
 
 <a href="#pydantic.networks.AnyHttpUrl" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">AnyHttpUrl</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
-    <span class="n">Url</span><span class="p">,</span> <span class="n">UrlConstraints</span><span class="p">(</span><span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;http&quot;</span><span class="p">,</span> <span class="s2">&quot;https&quot;</span><span class="p">])</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">AnyHttpUrl</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span><span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;http&quot;</span><span class="p">,</span> <span class="s2">&quot;https&quot;</span><span class="p">])</span>
 <span class="p">]</span>
 </code></pre></div>
 
@@ -3438,9 +3438,9 @@ the types export the following properties:</p>
   </span>
 
 <a href="#pydantic.networks.HttpUrl" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">HttpUrl</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
-    <span class="n">Url</span><span class="p">,</span>
-    <span class="n">UrlConstraints</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">HttpUrl</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span>
         <span class="n">max_length</span><span class="o">=</span><span class="mi">2083</span><span class="p">,</span> <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;http&quot;</span><span class="p">,</span> <span class="s2">&quot;https&quot;</span><span class="p">]</span>
     <span class="p">),</span>
 <span class="p">]</span>
@@ -3535,8 +3535,8 @@ underscores are allowed, but you can always do further validation in a validator
   </span>
 
 <a href="#pydantic.networks.FileUrl" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">FileUrl</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
-    <span class="n">Url</span><span class="p">,</span> <span class="n">UrlConstraints</span><span class="p">(</span><span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;file&quot;</span><span class="p">])</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">FileUrl</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span><span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;file&quot;</span><span class="p">])</span>
 <span class="p">]</span>
 </code></pre></div>
 
@@ -3563,9 +3563,9 @@ underscores are allowed, but you can always do further validation in a validator
   </span>
 
 <a href="#pydantic.networks.PostgresDsn" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">PostgresDsn</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
-    <span class="n">MultiHostUrl</span><span class="p">,</span>
-    <span class="n">UrlConstraints</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">PostgresDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.MultiHostUrl" href="../pydantic_core/#pydantic_core.MultiHostUrl">MultiHostUrl</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span>
         <span class="n">host_required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span>
             <span class="s2">&quot;postgres&quot;</span><span class="p">,</span>
@@ -3656,9 +3656,9 @@ underscores are allowed, but you can always do further validation in a validator
   </span>
 
 <a href="#pydantic.networks.CockroachDsn" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">CockroachDsn</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
-    <span class="n">Url</span><span class="p">,</span>
-    <span class="n">UrlConstraints</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">CockroachDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span>
         <span class="n">host_required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span>
             <span class="s2">&quot;cockroachdb&quot;</span><span class="p">,</span>
@@ -3694,8 +3694,8 @@ underscores are allowed, but you can always do further validation in a validator
   </span>
 
 <a href="#pydantic.networks.AmqpDsn" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">AmqpDsn</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
-    <span class="n">Url</span><span class="p">,</span> <span class="n">UrlConstraints</span><span class="p">(</span><span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;amqp&quot;</span><span class="p">,</span> <span class="s2">&quot;amqps&quot;</span><span class="p">])</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">AmqpDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span><span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;amqp&quot;</span><span class="p">,</span> <span class="s2">&quot;amqps&quot;</span><span class="p">])</span>
 <span class="p">]</span>
 </code></pre></div>
 
@@ -3724,9 +3724,9 @@ underscores are allowed, but you can always do further validation in a validator
   </span>
 
 <a href="#pydantic.networks.RedisDsn" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">RedisDsn</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
-    <span class="n">Url</span><span class="p">,</span>
-    <span class="n">UrlConstraints</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">RedisDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span>
         <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;redis&quot;</span><span class="p">,</span> <span class="s2">&quot;rediss&quot;</span><span class="p">],</span>
         <span class="n">default_host</span><span class="o">=</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span>
         <span class="n">default_port</span><span class="o">=</span><span class="mi">6379</span><span class="p">,</span>
@@ -3760,9 +3760,9 @@ underscores are allowed, but you can always do further validation in a validator
   </span>
 
 <a href="#pydantic.networks.MongoDsn" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">MongoDsn</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
-    <span class="n">MultiHostUrl</span><span class="p">,</span>
-    <span class="n">UrlConstraints</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">MongoDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.MultiHostUrl" href="../pydantic_core/#pydantic_core.MultiHostUrl">MultiHostUrl</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span>
         <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mongodb&quot;</span><span class="p">,</span> <span class="s2">&quot;mongodb+srv&quot;</span><span class="p">],</span>
         <span class="n">default_port</span><span class="o">=</span><span class="mi">27017</span><span class="p">,</span>
     <span class="p">),</span>
@@ -3795,9 +3795,9 @@ underscores are allowed, but you can always do further validation in a validator
   </span>
 
 <a href="#pydantic.networks.KafkaDsn" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">KafkaDsn</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
-    <span class="n">Url</span><span class="p">,</span>
-    <span class="n">UrlConstraints</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">KafkaDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span>
         <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;kafka&quot;</span><span class="p">],</span>
         <span class="n">default_host</span><span class="o">=</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span>
         <span class="n">default_port</span><span class="o">=</span><span class="mi">9092</span><span class="p">,</span>
@@ -3830,9 +3830,9 @@ underscores are allowed, but you can always do further validation in a validator
   </span>
 
 <a href="#pydantic.networks.NatsDsn" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">NatsDsn</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
-    <span class="n">MultiHostUrl</span><span class="p">,</span>
-    <span class="n">UrlConstraints</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">NatsDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.MultiHostUrl" href="../pydantic_core/#pydantic_core.MultiHostUrl">MultiHostUrl</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span>
         <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;nats&quot;</span><span class="p">,</span> <span class="s2">&quot;tls&quot;</span><span class="p">,</span> <span class="s2">&quot;ws&quot;</span><span class="p">],</span>
         <span class="n">default_host</span><span class="o">=</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span>
         <span class="n">default_port</span><span class="o">=</span><span class="mi">4222</span><span class="p">,</span>
@@ -3864,9 +3864,9 @@ More: https://nats.io</p>
   </span>
 
 <a href="#pydantic.networks.MySQLDsn" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">MySQLDsn</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
-    <span class="n">Url</span><span class="p">,</span>
-    <span class="n">UrlConstraints</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">MySQLDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span>
         <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span>
             <span class="s2">&quot;mysql&quot;</span><span class="p">,</span>
             <span class="s2">&quot;mysql+mysqlconnector&quot;</span><span class="p">,</span>
@@ -3907,9 +3907,9 @@ More: https://nats.io</p>
   </span>
 
 <a href="#pydantic.networks.MariaDBDsn" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">MariaDBDsn</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
-    <span class="n">Url</span><span class="p">,</span>
-    <span class="n">UrlConstraints</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">MariaDBDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span>
         <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span>
             <span class="s2">&quot;mariadb&quot;</span><span class="p">,</span>
             <span class="s2">&quot;mariadb+mariadbconnector&quot;</span><span class="p">,</span>
@@ -3994,7 +3994,7 @@ A somewhat arbitrary but very generous number compared to what is allowed by mos
         <tr>
           <td><code><span title="pydantic.networks.UrlConstraints.max_length">max_length</span></code></td>
           <td>
-                <code>int | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4005,7 +4005,7 @@ A somewhat arbitrary but very generous number compared to what is allowed by mos
         <tr>
           <td><code><span title="pydantic.networks.UrlConstraints.allowed_schemes">allowed_schemes</span></code></td>
           <td>
-                <code>list[str] | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>] | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4016,7 +4016,7 @@ A somewhat arbitrary but very generous number compared to what is allowed by mos
         <tr>
           <td><code><span title="pydantic.networks.UrlConstraints.host_required">host_required</span></code></td>
           <td>
-                <code>bool | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4027,7 +4027,7 @@ A somewhat arbitrary but very generous number compared to what is allowed by mos
         <tr>
           <td><code><span title="pydantic.networks.UrlConstraints.default_host">default_host</span></code></td>
           <td>
-                <code>str | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4038,7 +4038,7 @@ A somewhat arbitrary but very generous number compared to what is allowed by mos
         <tr>
           <td><code><span title="pydantic.networks.UrlConstraints.default_port">default_port</span></code></td>
           <td>
-                <code>int | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4049,7 +4049,7 @@ A somewhat arbitrary but very generous number compared to what is allowed by mos
         <tr>
           <td><code><span title="pydantic.networks.UrlConstraints.default_path">default_path</span></code></td>
           <td>
-                <code>str | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4144,7 +4144,7 @@ A somewhat arbitrary but very generous number compared to what is allowed by mos
 
 
 <a href="#pydantic.networks.NameEmail" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">NameEmail</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">email</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">NameEmail</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">email</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4361,7 +4361,7 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 
 
 <a href="#pydantic.networks.validate_email" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">validate_email</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">validate_email</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">

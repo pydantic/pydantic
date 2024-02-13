@@ -3058,7 +3058,7 @@
 <a id="pydantic.type_adapter.TypeAdapter"></a>
   <div class="doc doc-contents first">
           <p class="doc doc-class-bases">
-            Bases: <code><span title="typing.Generic">Generic</span>[<span title="pydantic.type_adapter.T">T</span>]</code></p>
+            Bases: <code><a class="autorefs autorefs-external" title="typing.Generic" href="https://docs.python.org/3/library/typing.html#typing.Generic">Generic</a>[<span title="pydantic.type_adapter.T">T</span>]</code></p>
 
   
       <div class="admonition abstract">
@@ -3133,7 +3133,7 @@ for types that do not have such methods (such as dataclasses, primitive types, a
         <tr>
           <td><code>type</code></td>
           <td>
-                <code>type[<span title="pydantic.type_adapter.T">T</span>] | <span title="pydantic.type_adapter.T">T</span></code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<span title="pydantic.type_adapter.T">T</span>] | <span title="pydantic.type_adapter.T">T</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3161,7 +3161,7 @@ for types that do not have such methods (such as dataclasses, primitive types, a
         <tr>
           <td><code>_parent_depth</code></td>
           <td>
-                <code>int</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3175,7 +3175,7 @@ for types that do not have such methods (such as dataclasses, primitive types, a
         <tr>
           <td><code>module</code></td>
           <td>
-                <code>str | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3429,12 +3429,12 @@ annotate your variable:</p>
 
 <a href="#pydantic.type_adapter.TypeAdapter.validate_python" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">validate_python</span><span class="p">(</span>
-    <span class="n">__object</span><span class="p">,</span>
+    <span class="n">__object</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">from_attributes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">context</span><span class="o">=</span><span class="kc">None</span>
-<span class="p">)</span>
+    <span class="n">strict</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">from_attributes</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">context</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pydantic.type_adapter.T">T</span></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3457,7 +3457,7 @@ annotate your variable:</p>
         <tr>
           <td><code>__object</code></td>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3471,7 +3471,7 @@ annotate your variable:</p>
         <tr>
           <td><code>strict</code></td>
           <td>
-                <code>bool | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3485,7 +3485,7 @@ annotate your variable:</p>
         <tr>
           <td><code>from_attributes</code></td>
           <td>
-                <code>bool | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3499,7 +3499,7 @@ annotate your variable:</p>
         <tr>
           <td><code>context</code></td>
           <td>
-                <code>dict[str, <span title="typing.Any">Any</span>] | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3607,7 +3607,12 @@ argument is not supported.</p>
 
 
 <a href="#pydantic.type_adapter.TypeAdapter.validate_json" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">validate_json</span><span class="p">(</span><span class="n">__data</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">validate_json</span><span class="p">(</span>
+    <span class="n">__data</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a></span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">strict</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">context</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pydantic.type_adapter.T">T</span></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3634,7 +3639,7 @@ argument is not supported.</p>
         <tr>
           <td><code>__data</code></td>
           <td>
-                <code>str | bytes</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3648,7 +3653,7 @@ argument is not supported.</p>
         <tr>
           <td><code>strict</code></td>
           <td>
-                <code>bool | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3662,7 +3667,7 @@ argument is not supported.</p>
         <tr>
           <td><code>context</code></td>
           <td>
-                <code>dict[str, <span title="typing.Any">Any</span>] | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3749,7 +3754,12 @@ argument is not supported.</p>
 
 
 <a href="#pydantic.type_adapter.TypeAdapter.validate_strings" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">validate_strings</span><span class="p">(</span><span class="n">__obj</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">validate_strings</span><span class="p">(</span>
+    <span class="n">__obj</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">strict</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">context</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pydantic.type_adapter.T">T</span></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3772,7 +3782,7 @@ argument is not supported.</p>
         <tr>
           <td><code>__obj</code></td>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3786,7 +3796,7 @@ argument is not supported.</p>
         <tr>
           <td><code>strict</code></td>
           <td>
-                <code>bool | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3800,7 +3810,7 @@ argument is not supported.</p>
         <tr>
           <td><code>context</code></td>
           <td>
-                <code>dict[str, <span title="typing.Any">Any</span>] | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3879,7 +3889,11 @@ argument is not supported.</p>
 
 
 <a href="#pydantic.type_adapter.TypeAdapter.get_default_value" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">get_default_value</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">get_default_value</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">strict</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">context</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Some" href="../pydantic_core/#pydantic_core.Some">Some</a></span><span class="p">[</span><span class="n"><span title="pydantic.type_adapter.T">T</span></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3902,7 +3916,7 @@ argument is not supported.</p>
         <tr>
           <td><code>strict</code></td>
           <td>
-                <code>bool | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3916,7 +3930,7 @@ argument is not supported.</p>
         <tr>
           <td><code>context</code></td>
           <td>
-                <code>dict[str, <span title="typing.Any">Any</span>] | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3994,18 +4008,18 @@ argument is not supported.</p>
 
 <a href="#pydantic.type_adapter.TypeAdapter.dump_python" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">dump_python</span><span class="p">(</span>
-    <span class="n">__instance</span><span class="p">,</span>
+    <span class="n">__instance</span><span class="p">:</span> <span class="n"><span title="pydantic.type_adapter.T">T</span></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;python&quot;</span><span class="p">,</span>
-    <span class="n">include</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">exclude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">by_alias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">exclude_unset</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">exclude_defaults</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">exclude_none</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">round_trip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">warnings</span><span class="o">=</span><span class="kc">True</span>
-<span class="p">)</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span><span class="s2">&quot;json&quot;</span><span class="p">,</span> <span class="s2">&quot;python&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;python&quot;</span><span class="p">,</span>
+    <span class="n">include</span><span class="p">:</span> <span class="n"><span title="pydantic.type_adapter.IncEx">IncEx</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">exclude</span><span class="p">:</span> <span class="n"><span title="pydantic.type_adapter.IncEx">IncEx</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">by_alias</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">exclude_unset</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">exclude_defaults</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">exclude_none</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">round_trip</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">warnings</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4084,7 +4098,7 @@ argument is not supported.</p>
         <tr>
           <td><code>by_alias</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4098,7 +4112,7 @@ argument is not supported.</p>
         <tr>
           <td><code>exclude_unset</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4112,7 +4126,7 @@ argument is not supported.</p>
         <tr>
           <td><code>exclude_defaults</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4126,7 +4140,7 @@ argument is not supported.</p>
         <tr>
           <td><code>exclude_none</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4140,7 +4154,7 @@ argument is not supported.</p>
         <tr>
           <td><code>round_trip</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4154,7 +4168,7 @@ argument is not supported.</p>
         <tr>
           <td><code>warnings</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4181,7 +4195,7 @@ argument is not supported.</p>
     <tbody>
         <tr>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4296,18 +4310,18 @@ argument is not supported.</p>
 
 <a href="#pydantic.type_adapter.TypeAdapter.dump_json" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">dump_json</span><span class="p">(</span>
-    <span class="n">__instance</span><span class="p">,</span>
+    <span class="n">__instance</span><span class="p">:</span> <span class="n"><span title="pydantic.type_adapter.T">T</span></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">indent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">include</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">exclude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">by_alias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">exclude_unset</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">exclude_defaults</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">exclude_none</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">round_trip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">warnings</span><span class="o">=</span><span class="kc">True</span>
-<span class="p">)</span>
+    <span class="n">indent</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">include</span><span class="p">:</span> <span class="n"><span title="pydantic.type_adapter.IncEx">IncEx</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">exclude</span><span class="p">:</span> <span class="n"><span title="pydantic.type_adapter.IncEx">IncEx</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">by_alias</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">exclude_unset</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">exclude_defaults</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">exclude_none</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">round_trip</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">warnings</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4348,7 +4362,7 @@ argument is not supported.</p>
         <tr>
           <td><code>indent</code></td>
           <td>
-                <code>int | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4390,7 +4404,7 @@ argument is not supported.</p>
         <tr>
           <td><code>by_alias</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4404,7 +4418,7 @@ argument is not supported.</p>
         <tr>
           <td><code>exclude_unset</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4418,7 +4432,7 @@ argument is not supported.</p>
         <tr>
           <td><code>exclude_defaults</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4432,7 +4446,7 @@ argument is not supported.</p>
         <tr>
           <td><code>exclude_none</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4446,7 +4460,7 @@ argument is not supported.</p>
         <tr>
           <td><code>round_trip</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4460,7 +4474,7 @@ argument is not supported.</p>
         <tr>
           <td><code>warnings</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4487,7 +4501,7 @@ argument is not supported.</p>
     <tbody>
         <tr>
           <td>
-                <code>bytes</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4607,11 +4621,13 @@ argument is not supported.</p>
 <a href="#pydantic.type_adapter.TypeAdapter.json_schema" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">json_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">ref_template</span><span class="o">=</span><span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
-    <span class="n">schema_generator</span><span class="o">=</span><span class="n">GenerateJsonSchema</span><span class="p">,</span>
-    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;validation&quot;</span>
-<span class="p">)</span>
+    <span class="n">by_alias</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">ref_template</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
+    <span class="n">schema_generator</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span>
+        <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="../json_schema/#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a></span>
+    <span class="p">]</span> <span class="o">=</span> <span class="n">GenerateJsonSchema</span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="../json_schema/#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a></span> <span class="o">=</span> <span class="s2">&quot;validation&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4634,7 +4650,7 @@ argument is not supported.</p>
         <tr>
           <td><code>by_alias</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4648,7 +4664,7 @@ argument is not supported.</p>
         <tr>
           <td><code>ref_template</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4662,7 +4678,7 @@ argument is not supported.</p>
         <tr>
           <td><code>schema_generator</code></td>
           <td>
-                <code>type[<a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="../json_schema/#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="../json_schema/#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4703,7 +4719,7 @@ argument is not supported.</p>
     <tbody>
         <tr>
           <td>
-                <code>dict[str, <span title="typing.Any">Any</span>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4778,14 +4794,26 @@ argument is not supported.</p>
 
 <a href="#pydantic.type_adapter.TypeAdapter.json_schemas" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">json_schemas</span><span class="p">(</span>
-    <span class="n">__inputs</span><span class="p">,</span>
+    <span class="n">__inputs</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a></span><span class="p">[</span>
+        <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span>
+            <span class="n"><span title="pydantic.json_schema.JsonSchemaKeyT">JsonSchemaKeyT</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="../json_schema/#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.type_adapter.TypeAdapter" href="#pydantic.type_adapter.TypeAdapter">TypeAdapter</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span>
+        <span class="p">]</span>
+    <span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">ref_template</span><span class="o">=</span><span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
-    <span class="n">schema_generator</span><span class="o">=</span><span class="n">GenerateJsonSchema</span>
-<span class="p">)</span>
+    <span class="n">by_alias</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">description</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">ref_template</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
+    <span class="n">schema_generator</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span>
+        <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="../json_schema/#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a></span>
+    <span class="p">]</span> <span class="o">=</span> <span class="n">GenerateJsonSchema</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span>
+    <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span>
+        <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><span title="pydantic.json_schema.JsonSchemaKeyT">JsonSchemaKeyT</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="../json_schema/#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a></span><span class="p">],</span>
+        <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span><span class="p">,</span>
+<span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4808,7 +4836,7 @@ argument is not supported.</p>
         <tr>
           <td><code>__inputs</code></td>
           <td>
-                <code><span title="typing.Iterable">Iterable</span>[tuple[<span title="pydantic.json_schema.JsonSchemaKeyT">JsonSchemaKeyT</span>, <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="../json_schema/#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a>, <a class="autorefs autorefs-internal" title="pydantic.type_adapter.TypeAdapter" href="#pydantic.type_adapter.TypeAdapter">TypeAdapter</a>[<span title="typing.Any">Any</span>]]]</code>
+                <code><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<span title="pydantic.json_schema.JsonSchemaKeyT">JsonSchemaKeyT</span>, <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="../json_schema/#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a>, <a class="autorefs autorefs-internal" title="pydantic.type_adapter.TypeAdapter" href="#pydantic.type_adapter.TypeAdapter">TypeAdapter</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]]]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4824,7 +4852,7 @@ definitions in the output JSON schema.</p>
         <tr>
           <td><code>by_alias</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4838,7 +4866,7 @@ definitions in the output JSON schema.</p>
         <tr>
           <td><code>title</code></td>
           <td>
-                <code>str | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4852,7 +4880,7 @@ definitions in the output JSON schema.</p>
         <tr>
           <td><code>description</code></td>
           <td>
-                <code>str | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4866,7 +4894,7 @@ definitions in the output JSON schema.</p>
         <tr>
           <td><code>ref_template</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4880,7 +4908,7 @@ definitions in the output JSON schema.</p>
         <tr>
           <td><code>schema_generator</code></td>
           <td>
-                <code>type[<a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="../json_schema/#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="../json_schema/#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4907,7 +4935,7 @@ definitions in the output JSON schema.</p>
     <tbody>
         <tr>
           <td>
-                <code>tuple[dict[tuple[<span title="pydantic.json_schema.JsonSchemaKeyT">JsonSchemaKeyT</span>, <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="../json_schema/#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a>], <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a>], <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<span title="pydantic.json_schema.JsonSchemaKeyT">JsonSchemaKeyT</span>, <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="../json_schema/#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a>], <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a>], <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">

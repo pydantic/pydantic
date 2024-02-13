@@ -3287,7 +3287,7 @@ Developing plugins is not recommended until the feature becomes stable.</p>
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code><span title="typing.NamedTuple">NamedTuple</span></code></p>
+            Bases: <code><a class="autorefs autorefs-external" title="typing.NamedTuple" href="https://docs.python.org/3/library/typing.html#typing.NamedTuple">NamedTuple</a></code></p>
 
   
       <p>Path defining where <code>schema_type</code> was defined, or where <code>TypeAdapter</code> was called.</p>
@@ -3356,13 +3356,17 @@ Developing plugins is not recommended until the feature becomes stable.</p>
 
 <a href="#pydantic.plugin.PydanticPluginProtocol.new_schema_validator" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">new_schema_validator</span><span class="p">(</span>
-    <span class="n">schema</span><span class="p">,</span>
-    <span class="n">schema_type</span><span class="p">,</span>
-    <span class="n">schema_type_path</span><span class="p">,</span>
-    <span class="n">schema_kind</span><span class="p">,</span>
-    <span class="n">config</span><span class="p">,</span>
-    <span class="n">plugin_settings</span><span class="p">,</span>
-<span class="p">)</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.CoreSchema">CoreSchema</span></span><span class="p">,</span>
+    <span class="n">schema_type</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">,</span>
+    <span class="n">schema_type_path</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.plugin.SchemaTypePath" href="#pydantic.plugin.SchemaTypePath">SchemaTypePath</a></span><span class="p">,</span>
+    <span class="n">schema_kind</span><span class="p">:</span> <span class="n"><span title="pydantic.plugin.SchemaKind">SchemaKind</span></span><span class="p">,</span>
+    <span class="n">config</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.CoreConfig" href="../pydantic_core_schema/#pydantic_core.core_schema.CoreConfig">CoreConfig</a></span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">plugin_settings</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#object">object</a></span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic.plugin.ValidatePythonHandlerProtocol" href="#pydantic.plugin.ValidatePythonHandlerProtocol">ValidatePythonHandlerProtocol</a></span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic.plugin.ValidateJsonHandlerProtocol" href="#pydantic.plugin.ValidateJsonHandlerProtocol">ValidateJsonHandlerProtocol</a></span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic.plugin.ValidateStringsHandlerProtocol" href="#pydantic.plugin.ValidateStringsHandlerProtocol">ValidateStringsHandlerProtocol</a></span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3402,7 +3406,7 @@ implement that method.</p>
         <tr>
           <td><code>schema_type</code></td>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3458,7 +3462,7 @@ implement that method.</p>
         <tr>
           <td><code>plugin_settings</code></td>
           <td>
-                <code>dict[str, object]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#object">object</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3485,7 +3489,7 @@ implement that method.</p>
     <tbody>
         <tr>
           <td>
-                <code>tuple[<a class="autorefs autorefs-internal" title="pydantic.plugin.ValidatePythonHandlerProtocol" href="#pydantic.plugin.ValidatePythonHandlerProtocol">ValidatePythonHandlerProtocol</a> | None, <a class="autorefs autorefs-internal" title="pydantic.plugin.ValidateJsonHandlerProtocol" href="#pydantic.plugin.ValidateJsonHandlerProtocol">ValidateJsonHandlerProtocol</a> | None, <a class="autorefs autorefs-internal" title="pydantic.plugin.ValidateStringsHandlerProtocol" href="#pydantic.plugin.ValidateStringsHandlerProtocol">ValidateStringsHandlerProtocol</a> | None]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-internal" title="pydantic.plugin.ValidatePythonHandlerProtocol" href="#pydantic.plugin.ValidatePythonHandlerProtocol">ValidatePythonHandlerProtocol</a> | None, <a class="autorefs autorefs-internal" title="pydantic.plugin.ValidateJsonHandlerProtocol" href="#pydantic.plugin.ValidateJsonHandlerProtocol">ValidateJsonHandlerProtocol</a> | None, <a class="autorefs autorefs-internal" title="pydantic.plugin.ValidateStringsHandlerProtocol" href="#pydantic.plugin.ValidateStringsHandlerProtocol">ValidateStringsHandlerProtocol</a> | None]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3617,7 +3621,7 @@ typed <code>on_error</code> method.</p>
   </span>
 
 <a href="#pydantic.plugin.BaseValidateHandlerProtocol.on_enter" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">on_enter</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">on_enter</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3639,7 +3643,7 @@ typed <code>on_error</code> method.</p>
 
 
 <a href="#pydantic.plugin.BaseValidateHandlerProtocol.on_success" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">on_success</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">on_success</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3662,7 +3666,7 @@ typed <code>on_error</code> method.</p>
         <tr>
           <td><code>result</code></td>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3707,7 +3711,7 @@ typed <code>on_error</code> method.</p>
 
 
 <a href="#pydantic.plugin.BaseValidateHandlerProtocol.on_error" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">on_error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">on_error</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.ValidationError" href="../pydantic_core/#pydantic_core.ValidationError">ValidationError</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3775,7 +3779,7 @@ typed <code>on_error</code> method.</p>
 
 
 <a href="#pydantic.plugin.BaseValidateHandlerProtocol.on_exception" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">on_exception</span><span class="p">(</span><span class="n">exception</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">on_exception</span><span class="p">(</span><span class="n">exception</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#Exception">Exception</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3798,7 +3802,7 @@ typed <code>on_error</code> method.</p>
         <tr>
           <td><code>exception</code></td>
           <td>
-                <code>Exception</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#Exception">Exception</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3884,13 +3888,13 @@ typed <code>on_error</code> method.</p>
 
 <a href="#pydantic.plugin.ValidatePythonHandlerProtocol.on_enter" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">on_enter</span><span class="p">(</span>
-    <span class="nb">input</span><span class="p">,</span>
+    <span class="nb">input</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">from_attributes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">self_instance</span><span class="o">=</span><span class="kc">None</span>
-<span class="p">)</span>
+    <span class="n">strict</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">from_attributes</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">context</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">self_instance</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3913,7 +3917,7 @@ typed <code>on_error</code> method.</p>
         <tr>
           <td><code>input</code></td>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3927,7 +3931,7 @@ typed <code>on_error</code> method.</p>
         <tr>
           <td><code>strict</code></td>
           <td>
-                <code>bool | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3941,7 +3945,7 @@ typed <code>on_error</code> method.</p>
         <tr>
           <td><code>from_attributes</code></td>
           <td>
-                <code>bool | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3955,7 +3959,7 @@ typed <code>on_error</code> method.</p>
         <tr>
           <td><code>context</code></td>
           <td>
-                <code>dict[str, <span title="typing.Any">Any</span>] | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3969,7 +3973,7 @@ typed <code>on_error</code> method.</p>
         <tr>
           <td><code>self_instance</code></td>
           <td>
-                <code><span title="typing.Any">Any</span> | None</code>
+                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4082,8 +4086,12 @@ validation from the <code>__init__</code> method of a model.</p>
 
 <a href="#pydantic.plugin.ValidateJsonHandlerProtocol.on_enter" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">on_enter</span><span class="p">(</span>
-    <span class="nb">input</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">self_instance</span><span class="o">=</span><span class="kc">None</span>
-<span class="p">)</span>
+    <span class="nb">input</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytearray">bytearray</a></span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">strict</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">context</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">self_instance</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4106,7 +4114,7 @@ validation from the <code>__init__</code> method of a model.</p>
         <tr>
           <td><code>input</code></td>
           <td>
-                <code>str | bytes | bytearray</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytearray">bytearray</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4120,7 +4128,7 @@ validation from the <code>__init__</code> method of a model.</p>
         <tr>
           <td><code>strict</code></td>
           <td>
-                <code>bool | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4134,7 +4142,7 @@ validation from the <code>__init__</code> method of a model.</p>
         <tr>
           <td><code>context</code></td>
           <td>
-                <code>dict[str, <span title="typing.Any">Any</span>] | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4148,7 +4156,7 @@ validation from the <code>__init__</code> method of a model.</p>
         <tr>
           <td><code>self_instance</code></td>
           <td>
-                <code><span title="typing.Any">Any</span> | None</code>
+                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4256,7 +4264,12 @@ validation from the <code>__init__</code> method of a model.</p>
 
 
 <a href="#pydantic.plugin.ValidateStringsHandlerProtocol.on_enter" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">on_enter</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">on_enter</span><span class="p">(</span>
+    <span class="nb">input</span><span class="p">:</span> <span class="n"><span title="pydantic.plugin.StringInput">StringInput</span></span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">strict</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">context</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4293,7 +4306,7 @@ validation from the <code>__init__</code> method of a model.</p>
         <tr>
           <td><code>strict</code></td>
           <td>
-                <code>bool | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4307,7 +4320,7 @@ validation from the <code>__init__</code> method of a model.</p>
         <tr>
           <td><code>context</code></td>
           <td>
-                <code>dict[str, <span title="typing.Any">Any</span>] | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
           </td>
           <td>
             <div class="doc-md-description">

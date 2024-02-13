@@ -2973,18 +2973,21 @@
 
 <a href="#pydantic.dataclasses.dataclass" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">dataclass</span><span class="p">(</span>
-    <span class="n">_cls</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">_cls</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><span title="pydantic.dataclasses._T">_T</span></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="nb">repr</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">eq</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">order</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">unsafe_hash</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">frozen</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">validate_on_init</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">kw_only</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">slots</span><span class="o">=</span><span class="kc">False</span>
+    <span class="n">init</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="nb">repr</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">eq</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">order</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">unsafe_hash</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">frozen</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">config</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.config.ConfigDict" href="../config/#pydantic.config.ConfigDict">ConfigDict</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#object">object</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">validate_on_init</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">kw_only</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">slots</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span>
+    <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><span title="pydantic.dataclasses._T">_T</span></span><span class="p">]],</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span></span><span class="p">]]</span>
+    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span></span><span class="p">]</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -3014,7 +3017,7 @@ but with added validation.</p>
         <tr>
           <td><code>_cls</code></td>
           <td>
-                <code>type[<span title="pydantic.dataclasses._T">_T</span>] | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<span title="pydantic.dataclasses._T">_T</span>] | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3044,7 +3047,7 @@ own  <code>__init__</code> function.</p>
         <tr>
           <td><code>repr</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3058,7 +3061,7 @@ own  <code>__init__</code> function.</p>
         <tr>
           <td><code>eq</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3072,7 +3075,7 @@ own  <code>__init__</code> function.</p>
         <tr>
           <td><code>order</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3086,7 +3089,7 @@ own  <code>__init__</code> function.</p>
         <tr>
           <td><code>unsafe_hash</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3100,7 +3103,7 @@ own  <code>__init__</code> function.</p>
         <tr>
           <td><code>frozen</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3115,7 +3118,7 @@ attributes to be modified after it has been initialized.</p>
         <tr>
           <td><code>config</code></td>
           <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic.config.ConfigDict" href="../config/#pydantic.config.ConfigDict">ConfigDict</a> | type[object] | None</code>
+                <code><a class="autorefs autorefs-internal" title="pydantic.config.ConfigDict" href="../config/#pydantic.config.ConfigDict">ConfigDict</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#object">object</a>] | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3129,7 +3132,7 @@ attributes to be modified after it has been initialized.</p>
         <tr>
           <td><code>validate_on_init</code></td>
           <td>
-                <code>bool | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3144,7 +3147,7 @@ are validated on init.</p>
         <tr>
           <td><code>kw_only</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3158,7 +3161,7 @@ are validated on init.</p>
         <tr>
           <td><code>slots</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3186,7 +3189,7 @@ new attributes after instantiation.</p>
     <tbody>
         <tr>
           <td>
-                <code><span title="typing.Callable">Callable</span>[[type[<span title="pydantic.dataclasses._T">_T</span>]], type[<span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span>]] | type[<span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span>]</code>
+                <code><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<span title="pydantic.dataclasses._T">_T</span>]], <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span>]] | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3210,7 +3213,7 @@ new attributes after instantiation.</p>
     <tbody>
         <tr>
           <td>
-                <code>AssertionError</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#AssertionError">AssertionError</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3551,13 +3554,13 @@ new attributes after instantiation.</p>
 
 <a href="#pydantic.dataclasses.rebuild_dataclass" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">rebuild_dataclass</span><span class="p">(</span>
-    <span class="bp">cls</span><span class="p">,</span>
+    <span class="bp">cls</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span></span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">raise_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">_parent_namespace_depth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-    <span class="n">_types_namespace</span><span class="o">=</span><span class="kc">None</span>
-<span class="p">)</span>
+    <span class="n">force</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">raise_errors</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">_parent_namespace_depth</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="n">_types_namespace</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3583,7 +3586,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
         <tr>
           <td><code>cls</code></td>
           <td>
-                <code>type[<span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3597,7 +3600,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
         <tr>
           <td><code>force</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3611,7 +3614,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
         <tr>
           <td><code>raise_errors</code></td>
           <td>
-                <code>bool</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3625,7 +3628,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
         <tr>
           <td><code>_parent_namespace_depth</code></td>
           <td>
-                <code>int</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3639,7 +3642,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
         <tr>
           <td><code>_types_namespace</code></td>
           <td>
-                <code>dict[str, <span title="typing.Any">Any</span>] | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3666,7 +3669,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
     <tbody>
         <tr>
           <td>
-                <code>bool | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3676,7 +3679,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
         </tr>
         <tr>
           <td>
-                <code>bool | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3798,7 +3801,9 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 
 
 <a href="#pydantic.dataclasses.is_pydantic_dataclass" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">is_pydantic_dataclass</span><span class="p">(</span><span class="n">__cls</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">is_pydantic_dataclass</span><span class="p">(</span>
+    <span class="n">__cls</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing_extensions.TypeGuard">TypeGuard</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span></span><span class="p">]]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3821,7 +3826,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
         <tr>
           <td><code>__cls</code></td>
           <td>
-                <code>type[<span title="typing.Any">Any</span>]</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3848,7 +3853,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
     <tbody>
         <tr>
           <td>
-                <code><span title="typing_extensions.TypeGuard">TypeGuard</span>[type[<span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span>]]</code>
+                <code><span title="typing_extensions.TypeGuard">TypeGuard</span>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span>]]</code>
           </td>
           <td>
             <div class="doc-md-description">
