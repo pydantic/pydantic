@@ -37,7 +37,7 @@ def test_construct_fields_set():
     assert m.model_dump() == {'a': 3, 'b': -1}
 
 
-def test_construct_allow_extra(extra: str):
+def test_construct_allow_extra():
     """model_construct() should allow extra fields only in the case of extra='allow'"""
 
     class Foo(BaseModel, extra='allow'):
