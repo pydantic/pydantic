@@ -973,7 +973,7 @@ class GenerateSchema:
         # Apply an alias_generator if
         # 1. An alias is not specified
         # 2. An alias is specified, but the priority is <= 1
-        if alias_generator and (
+        if (
             field_info.alias_priority is None
             or field_info.alias_priority <= 1
             or field_info.alias is None
@@ -1026,7 +1026,7 @@ class GenerateSchema:
         # 1. An alias is not specified
         # 2. An alias is specified, but the priority is <= 1
 
-        if alias_generator and (
+        if (
             computed_field_info.alias_priority is None
             or computed_field_info.alias_priority <= 1
             or computed_field_info.alias is None
