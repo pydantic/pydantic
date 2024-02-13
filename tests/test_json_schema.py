@@ -5935,7 +5935,7 @@ def test_recursive_json_schema_build() -> None:
 
 
 def test_json_schema_annotated_with_field() -> None:
-    """Check if the ellipsis in the signature is considered as a required field."""
+    """Ensure field specified with Annotated in create_model call is still marked as required."""
 
     from pydantic import create_model
 
@@ -5949,6 +5949,30 @@ def test_json_schema_annotated_with_field() -> None:
             'bar': {'description': 'Bar description', 'title': 'Bar', 'type': 'integer'},
         },
         'required': ['bar'],
+        'title': 'test_model',
+        'type': 'object',
+    }
+
+
+def test_required_fields_in_annotated_model() -> None:
+    """Ensure multiple field specified with Annotated in create_model call is still marked as required."""
+
+    from pydantic import create_model
+
+    Model = create_model(
+        'test_model',
+        foo=(int, ...),
+        bar=(Annotated[int, Field(description='Bar description')], ...),
+        baz=(Annotated[int, Field(..., description='Baz description')], ...),
+    )
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'foo': {'title': 'Foo', 'type': 'integer'},
+            'bar': {'description': 'Bar description', 'title': 'Bar', 'type': 'integer'},
+            'baz': {'description': 'Baz description', 'title': 'Baz', 'type': 'integer'},
+        },
+        'required': ['foo', 'bar', 'baz'],
         'title': 'test_model',
         'type': 'object',
     }
