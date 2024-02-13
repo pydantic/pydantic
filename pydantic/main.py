@@ -12,6 +12,7 @@ from typing import Any, ClassVar, Dict, Set, Tuple
 import pydantic_core
 import typing_extensions
 from pydantic_core import PydanticUndefined
+from typing_extensions import TypeAlias
 
 from ._internal import (
     _config,
@@ -31,11 +32,6 @@ from .config import ConfigDict
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema
 from .warnings import PydanticDeprecatedSince20
-
-if sys.version_info < (3, 10):
-    TypeAlias = typing_extensions.TypeAlias
-else:
-    from typing import TypeAlias
 
 # Always define certain types that are needed to resolve method type hints/annotations
 # (even when not type checking) via typing.get_type_hints.
