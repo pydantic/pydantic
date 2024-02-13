@@ -4806,7 +4806,9 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
 <span class="normal">1362</span>
 <span class="normal">1363</span>
 <span class="normal">1364</span>
-<span class="normal">1365</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
+<span class="normal">1365</span>
+<span class="normal">1366</span>
+<span class="normal">1367</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.7/concepts/models/</span>
 
 <span class="sd">    A base class for creating Pydantic models.</span>
@@ -5615,60 +5617,62 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
         <span class="n">_object_setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;__pydantic_private__&#39;</span><span class="p">,</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;__pydantic_private__&#39;</span><span class="p">])</span>
         <span class="n">_object_setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;__dict__&#39;</span><span class="p">,</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;__dict__&#39;</span><span class="p">])</span>
 
-    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">):</span>
-            <span class="c1"># When comparing instances of generic types for equality, as long as all field values are equal,</span>
-            <span class="c1"># only require their generic origin types to be equal, rather than exact type equality.</span>
-            <span class="c1"># This prevents headaches like MyGeneric(x=1) != MyGeneric[Any](x=1).</span>
-            <span class="n">self_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__pydantic_generic_metadata__</span><span class="p">[</span><span class="s1">&#39;origin&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span>
-            <span class="n">other_type</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">__pydantic_generic_metadata__</span><span class="p">[</span><span class="s1">&#39;origin&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">other</span><span class="o">.</span><span class="vm">__class__</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">typing</span><span class="o">.</span><span class="n">TYPE_CHECKING</span><span class="p">:</span>
 
-            <span class="c1"># Perform common checks first</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
-                <span class="n">self_type</span> <span class="o">==</span> <span class="n">other_type</span>
-                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">__pydantic_private__</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">__pydantic_private__</span>
-                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">__pydantic_extra__</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">__pydantic_extra__</span>
-            <span class="p">):</span>
-                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">):</span>
+                <span class="c1"># When comparing instances of generic types for equality, as long as all field values are equal,</span>
+                <span class="c1"># only require their generic origin types to be equal, rather than exact type equality.</span>
+                <span class="c1"># This prevents headaches like MyGeneric(x=1) != MyGeneric[Any](x=1).</span>
+                <span class="n">self_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__pydantic_generic_metadata__</span><span class="p">[</span><span class="s1">&#39;origin&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span>
+                <span class="n">other_type</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">__pydantic_generic_metadata__</span><span class="p">[</span><span class="s1">&#39;origin&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">other</span><span class="o">.</span><span class="vm">__class__</span>
 
-            <span class="c1"># We only want to compare pydantic fields but ignoring fields is costly.</span>
-            <span class="c1"># We&#39;ll perform a fast check first, and fallback only when needed</span>
-            <span class="c1"># See GH-7444 and GH-7825 for rationale and a performance benchmark</span>
+                <span class="c1"># Perform common checks first</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
+                    <span class="n">self_type</span> <span class="o">==</span> <span class="n">other_type</span>
+                    <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">__pydantic_private__</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">__pydantic_private__</span>
+                    <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">__pydantic_extra__</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">__pydantic_extra__</span>
+                <span class="p">):</span>
+                    <span class="k">return</span> <span class="kc">False</span>
 
-            <span class="c1"># First, do the fast (and sometimes faulty) __dict__ comparison</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
-                <span class="c1"># If the check above passes, then pydantic fields are equal, we can return early</span>
-                <span class="k">return</span> <span class="kc">True</span>
+                <span class="c1"># We only want to compare pydantic fields but ignoring fields is costly.</span>
+                <span class="c1"># We&#39;ll perform a fast check first, and fallback only when needed</span>
+                <span class="c1"># See GH-7444 and GH-7825 for rationale and a performance benchmark</span>
 
-            <span class="c1"># We don&#39;t want to trigger unnecessary costly filtering of __dict__ on all unequal objects, so we return</span>
-            <span class="c1"># early if there are no keys to ignore (we would just return False later on anyway)</span>
-            <span class="n">model_fields</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">model_fields</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="n">model_fields</span> <span class="ow">and</span> <span class="n">other</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="n">model_fields</span><span class="p">:</span>
-                <span class="k">return</span> <span class="kc">False</span>
+                <span class="c1"># First, do the fast (and sometimes faulty) __dict__ comparison</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
+                    <span class="c1"># If the check above passes, then pydantic fields are equal, we can return early</span>
+                    <span class="k">return</span> <span class="kc">True</span>
 
-            <span class="c1"># If we reach here, there are non-pydantic-fields keys, mapped to unequal values, that we need to ignore</span>
-            <span class="c1"># Resort to costly filtering of the __dict__ objects</span>
-            <span class="c1"># We use operator.itemgetter because it is much faster than dict comprehensions</span>
-            <span class="c1"># NOTE: Contrary to standard python class and instances, when the Model class has a default value for an</span>
-            <span class="c1"># attribute and the model instance doesn&#39;t have a corresponding attribute, accessing the missing attribute</span>
-            <span class="c1"># raises an error in BaseModel.__getattr__ instead of returning the class attribute</span>
-            <span class="c1"># So we can use operator.itemgetter() instead of operator.attrgetter()</span>
-            <span class="n">getter</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">itemgetter</span><span class="p">(</span><span class="o">*</span><span class="n">model_fields</span><span class="p">)</span> <span class="k">if</span> <span class="n">model_fields</span> <span class="k">else</span> <span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="n">_utils</span><span class="o">.</span><span class="n">_SENTINEL</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">getter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span> <span class="o">==</span> <span class="n">getter</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                <span class="c1"># In rare cases (such as when using the deprecated BaseModel.copy() method),</span>
-                <span class="c1"># the __dict__ may not contain all model fields, which is how we can get here.</span>
-                <span class="c1"># getter(self.__dict__) is much faster than any &#39;safe&#39; method that accounts</span>
-                <span class="c1"># for missing keys, and wrapping it in a `try` doesn&#39;t slow things down much</span>
-                <span class="c1"># in the common case.</span>
-                <span class="n">self_fields_proxy</span> <span class="o">=</span> <span class="n">_utils</span><span class="o">.</span><span class="n">SafeGetItemProxy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
-                <span class="n">other_fields_proxy</span> <span class="o">=</span> <span class="n">_utils</span><span class="o">.</span><span class="n">SafeGetItemProxy</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
-                <span class="k">return</span> <span class="n">getter</span><span class="p">(</span><span class="n">self_fields_proxy</span><span class="p">)</span> <span class="o">==</span> <span class="n">getter</span><span class="p">(</span><span class="n">other_fields_proxy</span><span class="p">)</span>
+                <span class="c1"># We don&#39;t want to trigger unnecessary costly filtering of __dict__ on all unequal objects, so we return</span>
+                <span class="c1"># early if there are no keys to ignore (we would just return False later on anyway)</span>
+                <span class="n">model_fields</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">model_fields</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="n">model_fields</span> <span class="ow">and</span> <span class="n">other</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="n">model_fields</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">False</span>
 
-        <span class="c1"># other instance is not a BaseModel</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">NotImplemented</span>  <span class="c1"># delegate to the other item in the comparison</span>
+                <span class="c1"># If we reach here, there are non-pydantic-fields keys, mapped to unequal values, that we need to ignore</span>
+                <span class="c1"># Resort to costly filtering of the __dict__ objects</span>
+                <span class="c1"># We use operator.itemgetter because it is much faster than dict comprehensions</span>
+                <span class="c1"># NOTE: Contrary to standard python class and instances, when the Model class has a default value for an</span>
+                <span class="c1"># attribute and the model instance doesn&#39;t have a corresponding attribute, accessing the missing attribute</span>
+                <span class="c1"># raises an error in BaseModel.__getattr__ instead of returning the class attribute</span>
+                <span class="c1"># So we can use operator.itemgetter() instead of operator.attrgetter()</span>
+                <span class="n">getter</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">itemgetter</span><span class="p">(</span><span class="o">*</span><span class="n">model_fields</span><span class="p">)</span> <span class="k">if</span> <span class="n">model_fields</span> <span class="k">else</span> <span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="n">_utils</span><span class="o">.</span><span class="n">_SENTINEL</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">getter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span> <span class="o">==</span> <span class="n">getter</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="c1"># In rare cases (such as when using the deprecated BaseModel.copy() method),</span>
+                    <span class="c1"># the __dict__ may not contain all model fields, which is how we can get here.</span>
+                    <span class="c1"># getter(self.__dict__) is much faster than any &#39;safe&#39; method that accounts</span>
+                    <span class="c1"># for missing keys, and wrapping it in a `try` doesn&#39;t slow things down much</span>
+                    <span class="c1"># in the common case.</span>
+                    <span class="n">self_fields_proxy</span> <span class="o">=</span> <span class="n">_utils</span><span class="o">.</span><span class="n">SafeGetItemProxy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
+                    <span class="n">other_fields_proxy</span> <span class="o">=</span> <span class="n">_utils</span><span class="o">.</span><span class="n">SafeGetItemProxy</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">getter</span><span class="p">(</span><span class="n">self_fields_proxy</span><span class="p">)</span> <span class="o">==</span> <span class="n">getter</span><span class="p">(</span><span class="n">other_fields_proxy</span><span class="p">)</span>
+
+            <span class="c1"># other instance is not a BaseModel</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">NotImplemented</span>  <span class="c1"># delegate to the other item in the comparison</span>
 
     <span class="k">if</span> <span class="n">typing</span><span class="o">.</span><span class="n">TYPE_CHECKING</span><span class="p">:</span>
         <span class="c1"># We put `__init_subclass__` in a TYPE_CHECKING block because, even though we want the type-checking benefits</span>
@@ -8544,9 +8548,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/main.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1185</span>
-<span class="normal">1186</span>
-<span class="normal">1187</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1187</span>
 <span class="normal">1188</span>
 <span class="normal">1189</span>
 <span class="normal">1190</span>
@@ -8618,7 +8620,9 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <span class="normal">1256</span>
 <span class="normal">1257</span>
 <span class="normal">1258</span>
-<span class="normal">1259</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@typing_extensions</span><span class="o">.</span><span class="n">deprecated</span><span class="p">(</span>
+<span class="normal">1259</span>
+<span class="normal">1260</span>
+<span class="normal">1261</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@typing_extensions</span><span class="o">.</span><span class="n">deprecated</span><span class="p">(</span>
     <span class="s1">&#39;The `copy` method is deprecated; use `model_copy` instead. &#39;</span>
     <span class="s1">&#39;See the docstring of `BaseModel.copy` for details about how to handle `include` and `exclude`.&#39;</span><span class="p">,</span>
     <span class="n">category</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -8938,9 +8942,7 @@ if <code>None</code>, the value is taken from <code>sys._getframe(1)</code></p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/main.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1398</span>
-<span class="normal">1399</span>
-<span class="normal">1400</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1400</span>
 <span class="normal">1401</span>
 <span class="normal">1402</span>
 <span class="normal">1403</span>
@@ -9038,7 +9040,9 @@ if <code>None</code>, the value is taken from <code>sys._getframe(1)</code></p>
 <span class="normal">1495</span>
 <span class="normal">1496</span>
 <span class="normal">1497</span>
-<span class="normal">1498</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+<span class="normal">1498</span>
+<span class="normal">1499</span>
+<span class="normal">1500</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">__model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">__config__</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
