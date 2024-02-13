@@ -14,7 +14,7 @@ import typing_extensions
 from pydantic_core import PydanticUndefined, SchemaSerializer
 from typing_extensions import dataclass_transform, deprecated
 
-from pydantic.root_model import RootModel
+from pydantic import RootModel
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..plugin._schema_validator import create_schema_validator
@@ -184,7 +184,7 @@ class ModelMetaclass(ABCMeta):
                             error_message += (
                                 f' Note: `typing.Generic` must go last: `class {cls.__name__}({bases_str}): ...`)'
                             )
-                        raise TypeError(error_message)
+                    raise TypeError(error_message)
                 cls.__pydantic_generic_metadata__ = {
                     'origin': None,
                     'args': (),
