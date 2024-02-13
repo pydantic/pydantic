@@ -172,8 +172,12 @@ plugins:
           docstring_options:
             ignore_init_summary: true
           merge_init_into_class: true
+          show_signature_annotations: true
+          signature_crossrefs: true
           extensions:
             - docs/plugins/griffe_doclinks.py
+        import:
+          - https://docs.python.org/3/objects.inv
 - mkdocs-simple-hooks:
     hooks:
       on_pre_build: 'docs.plugins.main:on_pre_build'

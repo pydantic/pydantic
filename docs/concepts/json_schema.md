@@ -442,7 +442,7 @@ print(ModelB.model_json_schema())
 """
 ```
 
-You can specify JSON schema modifications via the [`Field`][pydantic.fields.Field] constructor via `typing.Annotated` as well:
+You can specify JSON schema modifications via the [`Field`][pydantic.fields.Field] constructor via [`typing.Annotated`][] as well:
 
 ```py output="json"
 import json
