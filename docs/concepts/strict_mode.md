@@ -287,7 +287,7 @@ except ValidationError as exc:
     [`pydantic.types.Strict`][pydantic.types.Strict]<br>
 
 Pydantic also provides the [`Strict`](../api/types.md#pydantic.types.Strict) class, which is intended for use as
-metadata with `typing.Annotated` class; this annotation indicates that the annotated field should be validated in
+metadata with [`typing.Annotated`][] class; this annotation indicates that the annotated field should be validated in
 strict mode:
 
 ```python
