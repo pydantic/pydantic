@@ -1305,6 +1305,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#disabling-plugins" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disabling Plugins
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2871,6 +2882,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#disabling-plugins" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disabling Plugins
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2994,6 +3016,29 @@ into their own dedicates keys in a plugin specific key in the <code>plugin_setti
     <span class="o">...</span>
 </code></pre></div>
 <p>On each validation call, the <code>plugin_settings</code> will be passed to a callable registered for the events.</p>
+<h2 id="disabling-plugins">Disabling Plugins<a class="headerlink" href="#disabling-plugins" title="Permanent link">&para;</a></h2>
+<p>You can use environment variable <code>PYDANTIC_DISABLE_PLUGINS</code> to disable all or specific plugin(s).</p>
+<table>
+<thead>
+<tr>
+<th>Environment Variable</th>
+<th>Allowed Values</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PYDANTIC_DISABLE_PLUGINS</code></td>
+<td><code>__all__</code>, <code>1</code>, <code>true</code></td>
+<td>Disables all plugins</td>
+</tr>
+<tr>
+<td></td>
+<td>Comma-separated string (e.g. <code>my-plugin-1,my-plugin2</code>)</td>
+<td>Disables specified plugin(s)</td>
+</tr>
+</tbody>
+</table>
 
 
 
