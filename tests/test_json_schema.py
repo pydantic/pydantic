@@ -6,14 +6,7 @@ import typing
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
-from ipaddress import (
-    IPv4Address,
-    IPv4Interface,
-    IPv4Network,
-    IPv6Address,
-    IPv6Interface,
-    IPv6Network,
-)
+from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from typing import (
     Any,
@@ -75,15 +68,7 @@ from pydantic.json_schema import (
     model_json_schema,
     models_json_schema,
 )
-from pydantic.networks import (
-    AnyUrl,
-    EmailStr,
-    IPvAnyAddress,
-    IPvAnyInterface,
-    IPvAnyNetwork,
-    MultiHostUrl,
-    NameEmail,
-)
+from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, MultiHostUrl, NameEmail
 from pydantic.type_adapter import TypeAdapter
 from pydantic.types import (
     UUID1,
@@ -5947,3 +5932,62 @@ def test_recursive_json_schema_build() -> None:
         c: ModelC
 
     assert Model.model_json_schema()
+
+
+def test_json_schema_annotated_with_field() -> None:
+    """Ensure field specified with Annotated in create_model call is still marked as required."""
+
+    from pydantic import create_model
+
+    Model = create_model(
+        'test_model',
+        bar=(Annotated[int, Field(description='Bar description')], ...),
+    )
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'bar': {'description': 'Bar description', 'title': 'Bar', 'type': 'integer'},
+        },
+        'required': ['bar'],
+        'title': 'test_model',
+        'type': 'object',
+    }
+
+
+def test_required_fields_in_annotated_with_create_model() -> None:
+    """Ensure multiple field specified with Annotated in create_model call is still marked as required."""
+
+    from pydantic import create_model
+
+    Model = create_model(
+        'test_model',
+        foo=(int, ...),
+        bar=(Annotated[int, Field(description='Bar description')], ...),
+        baz=(Annotated[int, Field(..., description='Baz description')], ...),
+    )
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'foo': {'title': 'Foo', 'type': 'integer'},
+            'bar': {'description': 'Bar description', 'title': 'Bar', 'type': 'integer'},
+            'baz': {'description': 'Baz description', 'title': 'Baz', 'type': 'integer'},
+        },
+        'required': ['foo', 'bar', 'baz'],
+        'title': 'test_model',
+        'type': 'object',
+    }
+
+
+def test_required_fields_in_annotated_with_basemodel() -> None:
+    """
+    Ensure multiple field specified with Annotated in BaseModel is marked as required.
+    """
+
+    class Model(BaseModel):
+        a: int = ...
+        b: Annotated[int, 'placeholder'] = ...
+        c: Annotated[int, Field()] = ...
+
+    assert Model.model_fields['a'].is_required()
+    assert Model.model_fields['b'].is_required()
+    assert Model.model_fields['c'].is_required()
