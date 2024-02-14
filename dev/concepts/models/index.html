@@ -4110,13 +4110,22 @@ positionally, instead of using a keyword argument.</p>
   <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_construct"><code>model_construct()</code></a>.</li>
 <li>In particular, the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_construct"><code>model_construct()</code></a> method does not support recursively constructing models from dicts.</li>
 <li>If you do not pass keyword arguments for fields with defaults, the default values will still be used.</li>
-<li>For models with <code>model_config['extra'] == 'allow'</code>, data not corresponding to fields will be correctly stored in
-  the <code>__pydantic_extra__</code> dict.</li>
 <li>For models with private attributes, the <code>__pydantic_private__</code> dict will be initialized the same as it would be when
   calling <code>__init__</code>.</li>
 <li>When constructing an instance using <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_construct"><code>model_construct()</code></a>, no <code>__init__</code> method from the model or any of its parent
   classes will be called, even when a custom <code>__init__</code> method is defined.</li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">On <code>extra</code> behavior with <code>model_construct</code></p>
+<ul>
+<li>For models with <code>model_config['extra'] == 'allow'</code>, data not corresponding to fields will be correctly stored in
+the <code>__pydantic_extra__</code> dict and saved to the model's <code>__dict__</code>.</li>
+<li>For models with <code>model_config['extra'] == 'ignore'</code>, data not corresponding to fields will be ignored - that is,
+not stored in <code>__pydantic_extra__</code> or <code>__dict__</code> on the instance.</li>
+<li>Unlike a call to <code>__init__</code>, a call to <code>model_construct</code> with <code>model_config['extra'] == 'forbid'</code> doesn't raise an
+error in the presence of data not corresponding to fields. Rather, said input data is simply ignored.</li>
+</ul>
+</div>
 <h2 id="generic-models">Generic models<a class="headerlink" href="#generic-models" title="Permanent link">&para;</a></h2>
 <p>Pydantic supports the creation of generic models to make it easier to reuse a common model structure.</p>
 <p>In order to declare a generic model, you perform the following steps:</p>
