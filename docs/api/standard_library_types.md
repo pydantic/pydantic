@@ -59,7 +59,9 @@ types:
       (if < `-2e10`or > `2e10`) since 1 January 1970
     * `str`; the following formats are accepted:
         * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
+        * `YYYY-MM-DD` is accepted in lax mode, but not in strict mode
         * `int` or `float` as a string (assumed as Unix time)
+    * [`datetime.date`][] instances are accepted in lax mode, but not in strict mode
 
 ```py
 from datetime import datetime
