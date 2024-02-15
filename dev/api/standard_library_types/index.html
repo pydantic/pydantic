@@ -4102,9 +4102,11 @@ types:</p>
   (if &lt; <code>-2e10</code>or &gt; <code>2e10</code>) since 1 January 1970</li>
 <li><code>str</code>; the following formats are accepted:<ul>
 <li><code>YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]</code></li>
+<li><code>YYYY-MM-DD</code> is accepted in lax mode, but not in strict mode</li>
 <li><code>int</code> or <code>float</code> as a string (assumed as Unix time)</li>
 </ul>
 </li>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.date"><code>datetime.date</code></a> instances are accepted in lax mode, but not in strict mode</li>
 </ul>
 </li>
 </ul>
