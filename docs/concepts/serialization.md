@@ -433,6 +433,15 @@ print(m.model_dump())  # note: the password field is not included
 
 ### Serializing with duck-typing
 
+If you want to preserve the old duck-typing serialization behavior, you can do this at the runtime, model, or field level:
+* [Field level: use the `SerializeAsAny` annotation](#serializeasany-annotation)
+* [Model level: use the [`serialize_as_any`][pydantic.config.ConfigDict.serialize_as_any] config setting](#serialize_as_any-config-setting)
+* [Runtime level: use the [`serialize_as_any`] flag when calling `model_dump()` or `model_dump_json()`](#serialize_as_any-runtime-setting)
+
+We discuss these options below in more detail:
+
+#### `SerializeAsAny` annotation:
+
 If you want to preserve the old duck-typing serialization behavior, this can be done using `SerializeAsAny`:
 
 ```py
@@ -467,6 +476,10 @@ When a field is annotated as `SerializeAsAny[<SomeType>]`, the validation behavi
 annotated as `<SomeType>`, and type-checkers like mypy will treat the attribute as having the appropriate type as well.
 But when serializing, the field will be serialized as though the type hint for the field was `Any`, which is where the
 name comes from.
+
+#### `serialize_as_any` config setting
+
+### `serialize_as_any` runtime setting
 
 ## `pickle.dumps(model)`
 
