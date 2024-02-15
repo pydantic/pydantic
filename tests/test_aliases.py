@@ -725,3 +725,35 @@ def test_alias_generator_with_computed_field_for_serialization() -> None:
 
     r = Rectangle(width_val_alias=10, height_val_alias=20)
     assert r.model_dump(by_alias=True) == {'width_ser_alias': 10, 'height_ser_alias': 20, 'area_ser_alias': 200}
+
+
+empty_str_alias_generator = AliasGenerator(
+    validation_alias=lambda x: '', alias=lambda x: f'{x}_alias', serialization_alias=lambda x: ''
+)
+
+
+def test_alias_gen_with_empty_string() -> None:
+    class Model(BaseModel):
+        a: str
+
+        model_config = ConfigDict(alias_generator=empty_str_alias_generator)
+
+    assert Model.model_fields['a'].validation_alias == ''
+    assert Model.model_fields['a'].serialization_alias == ''
+    assert Model.model_fields['a'].alias == 'a_alias'
+
+
+def test_alias_gen_with_empty_string_and_computed_field() -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(alias_generator=empty_str_alias_generator)
+
+        a: str
+
+        @computed_field
+        def b(self) -> str:
+            return self.a
+
+    assert Model.model_fields['a'].validation_alias == ''
+    assert Model.model_fields['a'].serialization_alias == ''
+    assert Model.model_fields['a'].alias == 'a_alias'
+    assert Model.model_computed_fields['b'].alias == ''

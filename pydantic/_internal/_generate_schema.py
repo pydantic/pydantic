@@ -296,6 +296,15 @@ class TypesNamespaceStack:
             self._types_namespace_stack.pop()
 
 
+def _get_first_non_null(a: Any, b: Any) -> Any:
+    """Return the first argument if it is not None, otherwise return the second argument.
+
+    Use case: serialization_alias (argument a) and alias (argument b) are both defined, and serialization_alias is ''.
+    This function will return serialization_alias, which is the first argument, even though it is an empty string.
+    """
+    return a if a is not None else b
+
+
 class GenerateSchema:
     """Generate core schema for a Pydantic model, dataclass and types like `str`, `datetime`, ... ."""
 
@@ -997,17 +1006,17 @@ class GenerateSchema:
 
             # if the priority is 1, then we set the aliases to the generated alias
             if field_info.alias_priority == 1:
-                field_info.serialization_alias = serialization_alias or alias
-                field_info.validation_alias = validation_alias or alias
+                field_info.serialization_alias = _get_first_non_null(serialization_alias, alias)
+                field_info.validation_alias = _get_first_non_null(validation_alias, alias)
                 field_info.alias = alias
 
             # if any of the aliases are not set, then we set them to the corresponding generated alias
             if field_info.alias is None:
                 field_info.alias = alias
             if field_info.serialization_alias is None:
-                field_info.serialization_alias = serialization_alias or alias
+                field_info.serialization_alias = _get_first_non_null(serialization_alias, alias)
             if field_info.validation_alias is None:
-                field_info.validation_alias = validation_alias or alias
+                field_info.validation_alias = _get_first_non_null(validation_alias, alias)
 
     @staticmethod
     def _apply_alias_generator_to_computed_field_info(
@@ -1050,7 +1059,7 @@ class GenerateSchema:
             # note that we use the serialization_alias with priority over alias, as computed_field
             # aliases are used for serialization only (not validation)
             if computed_field_info.alias_priority == 1:
-                computed_field_info.alias = serialization_alias or alias
+                computed_field_info.alias = _get_first_non_null(serialization_alias, alias)
 
     def _common_field_schema(  # C901
         self, name: str, field_info: FieldInfo, decorators: DecoratorInfos
