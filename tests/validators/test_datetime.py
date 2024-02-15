@@ -19,7 +19,7 @@ from ..conftest import Err, PyAndJson
     [
         (datetime(2022, 6, 8, 12, 13, 14), datetime(2022, 6, 8, 12, 13, 14)),
         (date(2022, 6, 8), datetime(2022, 6, 8)),
-        ('2022-01-01', datetime(2022, 1, 1, 0, 0, 0, tzinfo=timezone.utc)),
+        ('2022-01-01', datetime(2022, 1, 1, 0, 0, 0)),
         ('2022-06-08T12:13:14', datetime(2022, 6, 8, 12, 13, 14)),
         ('1000000000000', datetime(2001, 9, 9, 1, 46, 40, tzinfo=timezone.utc)),
         (b'2022-06-08T12:13:14', datetime(2022, 6, 8, 12, 13, 14)),
