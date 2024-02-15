@@ -140,7 +140,6 @@ impl Validator for DateTimeValidator {
 }
 
 /// In lax mode, if the input is not a datetime, we try parsing the input as a date and add the "00:00:00" time.
-///
 /// Ok(None) means that this is not relevant to datetimes (the input was not a date nor a string)
 fn datetime_from_date<'data>(input: &'data impl Input<'data>) -> Result<Option<EitherDateTime<'data>>, ValError> {
     let either_date = match input.validate_date(false) {
@@ -171,7 +170,7 @@ fn datetime_from_date<'data>(input: &'data impl Input<'data>) -> Result<Option<E
         minute: 0,
         second: 0,
         microsecond: 0,
-        tz_offset: Some(0),
+        tz_offset: None,
     };
 
     let datetime = DateTime {
