@@ -1347,6 +1347,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#other-settings-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Other settings source
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#field-value-priority" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3117,6 +3128,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#other-settings-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Other settings source
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#field-value-priority" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3666,6 +3688,56 @@ as the target mount point. If you want to use a different location, change <code
 <p>Last, run your application inside a Docker container and supply your newly created secret
 <div class="language-bash highlight"><pre><span></span><code>docker<span class="w"> </span>service<span class="w"> </span>create<span class="w"> </span>--name<span class="w"> </span>pydantic-with-secrets<span class="w"> </span>--secret<span class="w"> </span>my_secret_data<span class="w"> </span>pydantic-app:latest
 </code></pre></div></p>
+<h2 id="other-settings-source">Other settings source<a class="headerlink" href="#other-settings-source" title="Permanent link">&para;</a></h2>
+<p>Other settings sources are available for common configuration files:</p>
+<ul>
+<li><code>TomlConfigSettingsSource</code> using <code>toml_file</code> and toml_file_encoding arguments</li>
+<li><code>YamlConfigSettingsSource</code> using <code>yaml_file</code> and yaml_file_encoding arguments</li>
+<li><code>JsonConfigSettingsSource</code> using <code>json_file</code> and <code>json_file_encoding</code> arguments</li>
+</ul>
+<p>You can also provide multiple files by providing a list of path:
+<div class="language-py highlight"><pre><span></span><code><span class="n">toml_file</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;config.default.toml&#39;</span><span class="p">,</span> <span class="s1">&#39;config.custom.toml&#39;</span><span class="p">]</span>
+</code></pre></div>
+To use them, you can use the same mechanism described <a href="#customise-settings-sources">here</a></p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseSettings</span><span class="p">,</span>
+    <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+    <span class="n">SettingsConfigDict</span><span class="p">,</span>
+    <span class="n">TomlConfigSettingsSource</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Nested</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">nested_field</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">foobar</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">nested</span><span class="p">:</span> <span class="n">Nested</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span>
+        <span class="n">toml_file</span><span class="o">=</span><span class="s1">&#39;config.toml&#39;</span><span class="p">,</span> <span class="n">toml_file_encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span>
+    <span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">settings_customise_sources</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">settings_cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseSettings</span><span class="p">],</span>
+        <span class="n">init_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">env_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">dotenv_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">file_secret_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">PydanticBaseSettingsSource</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">TomlConfigSettingsSource</span><span class="p">(</span><span class="n">settings_cls</span><span class="p">),)</span>
+</code></pre></div>
+<p>This will be able to read the following "config.toml" file, located in your working directory:</p>
+<div class="language-toml highlight"><pre><span></span><code><span class="n">foobar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Hello&quot;</span>
+<span class="k">[nested]</span>
+<span class="n">nested_field</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;world!&quot;</span>
+</code></pre></div>
 <h2 id="field-value-priority">Field value priority<a class="headerlink" href="#field-value-priority" title="Permanent link">&para;</a></h2>
 <p>In the case where a value is specified for the same <code>Settings</code> field in multiple ways,
 the selected value is determined as follows (in descending order of priority):</p>
