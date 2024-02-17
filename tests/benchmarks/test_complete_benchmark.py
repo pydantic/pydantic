@@ -8,7 +8,7 @@ from uuid import UUID
 
 import pytest
 
-from pydantic_core import SchemaValidator, ValidationError, validate_core_schema
+from pydantic_core import SchemaSerializer, SchemaValidator, ValidationError, validate_core_schema
 
 from .complete_schema import input_data_lax, input_data_strict, input_data_wrong, schema
 
@@ -96,6 +96,25 @@ def test_complete_core_lax(benchmark):
 def test_complete_core_strict(benchmark):
     v = SchemaValidator(validate_core_schema(schema(strict=True)))
     benchmark(v.validate_python, input_data_strict())
+
+
+@pytest.mark.benchmark(group='complete-to-python')
+def test_complete_core_serializer_to_python(benchmark):
+    core_schema = validate_core_schema(schema())
+    v = SchemaValidator(core_schema)
+    model = v.validate_python(input_data_lax())
+    serializer = SchemaSerializer(core_schema)
+    assert serializer.to_python(model) == model.__dict__
+    benchmark(serializer.to_python, model)
+
+
+@pytest.mark.benchmark(group='complete-to-json')
+def test_complete_core_serializer_to_json(benchmark):
+    core_schema = validate_core_schema(schema())
+    v = SchemaValidator(core_schema)
+    model = v.validate_python(input_data_lax())
+    serializer = SchemaSerializer(core_schema)
+    benchmark(serializer.to_json, model)
 
 
 @pytest.mark.benchmark(group='complete-wrong')
