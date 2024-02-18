@@ -1,7 +1,7 @@
 import json
-from typing import Optional
+from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, SecretStr, SerializeAsAny
+from pydantic import BaseModel, SecretStr, SerializeAsAny
 
 
 def test_serialize_as_any() -> None:
@@ -26,38 +26,6 @@ def test_serialize_as_any() -> None:
     }
 
 
-def test_serialize_as_any_on_config() -> None:
-    class User(BaseModel):
-        name: str
-
-        model_config = ConfigDict(serialize_as_any=True)
-
-    class UserLogin(User):
-        password: SecretStr
-
-    class OuterModel(BaseModel):
-        user: User
-
-    user = UserLogin(name='pydantic', password='password')
-    assert OuterModel(user=user).model_dump() == {'user': {'name': 'pydantic', 'password': '**********'}}
-
-
-def test_serialize_as_any_on_config_not_recursive() -> None:
-    class User(BaseModel):
-        name: str
-
-    class UserLogin(User):
-        password: SecretStr
-
-    class OuterModel(BaseModel):
-        user: User
-
-        model_config = ConfigDict(serialize_as_any=True)
-
-    user = UserLogin(name='pydantic', password='password')
-    assert OuterModel(user=user).model_dump() == {'user': {'name': 'pydantic'}}
-
-
 def test_serialize_as_any_runtime() -> None:
     class User(BaseModel):
         name: str
@@ -69,7 +37,7 @@ def test_serialize_as_any_runtime() -> None:
         user: User
 
     user = UserLogin(name='pydantic', password='password')
-    assert OuterModel(user=user).model_dump(serialize_as_any=True) == {
+    assert json.loads(OuterModel(user=user).model_dump_json(serialize_as_any=True)) == {
         'user': {'name': 'pydantic', 'password': '**********'}
     }
 
@@ -77,6 +45,7 @@ def test_serialize_as_any_runtime() -> None:
 def test_serialize_as_any_runtime_recursive() -> None:
     class User(BaseModel):
         name: str
+        friends: List['User']
 
     class UserLogin(User):
         password: SecretStr
@@ -84,23 +53,13 @@ def test_serialize_as_any_runtime_recursive() -> None:
     class OuterModel(BaseModel):
         user: User
 
-    user = UserLogin(name='pydantic', password='password')
-    assert OuterModel(user=user).model_dump(serialize_as_any=True) == {
-        'user': {'name': 'pydantic', 'password': '**********'}
+    user = UserLogin(
+        name='pydantic', password='password', friends=[UserLogin(name='pydantic', password='password', friends=[])]
+    )
+    assert json.loads(OuterModel(user=user).model_dump_json(serialize_as_any=True)) == {
+        'user': {
+            'name': 'pydantic',
+            'password': '**********',
+            'friends': [{'name': 'pydantic', 'password': '**********', 'friends': []}],
+        },
     }
-
-
-def test_serialize_as_any_on_config_priority() -> None:
-    class User(BaseModel):
-        name: str
-
-        model_config = ConfigDict(serialize_as_any=False)
-
-    class UserLogin(User):
-        password: SecretStr
-
-    class OuterModel(BaseModel):
-        user: User
-
-    user = UserLogin(name='pydantic', password='password')
-    assert OuterModel(user=user).model_dump(serialize_as_any=True) == {'user': {'name': 'pydantic'}}

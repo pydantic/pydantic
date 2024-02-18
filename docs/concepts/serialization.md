@@ -433,16 +433,15 @@ print(m.model_dump())  # note: the password field is not included
 
 ### Serializing with duck-typing
 
-If you want to preserve the old duck-typing serialization behavior, you can do this at the runtime, model, or field level:
-* [Field level: use the `SerializeAsAny` annotation](#serializeasany-annotation)
-* [Model level: use the [`serialize_as_any`][pydantic.config.ConfigDict.serialize_as_any] config setting](#serialize_as_any-config-setting)
+If you want to preserve the old duck-typing serialization behavior, you can use a runtime setting, or annotate individual types.
+* [Field / type level: use the `SerializeAsAny` annotation](#serializeasany-annotation)
 * [Runtime level: use the [`serialize_as_any`] flag when calling `model_dump()` or `model_dump_json()`](#serialize_as_any-runtime-setting)
 
 We discuss these options below in more detail:
 
 #### `SerializeAsAny` annotation:
 
-If you want to preserve the old duck-typing serialization behavior, this can be done using `SerializeAsAny`:
+If you want to preserve the old duck-typing serialization behavior, this can be done using the `SerializeAsAny` annotation on a type:
 
 ```py
 from pydantic import BaseModel, SerializeAsAny
@@ -477,9 +476,117 @@ annotated as `<SomeType>`, and type-checkers like mypy will treat the attribute 
 But when serializing, the field will be serialized as though the type hint for the field was `Any`, which is where the
 name comes from.
 
-#### `serialize_as_any` config setting
-
 ### `serialize_as_any` runtime setting
+
+The `serialize_as_any` runtime setting can be used to serialize model data with or without duck typed serialization behavior.
+`serialize_as_any` can be passed as a keyword argument to the `model_dump()` and `model_dump_json` methods.
+
+If `serialize_as_any` is set to `True`, the model will be serialized using duck typed serialization behavior,
+which means that the model will ignore the schema and instead ask the object itself how it should be serialized.
+In particular, this means that when model subclasses are serialized, fields present in the subclass but not in
+the original schema will be included.
+
+If `serialize_as_any` is set to `False` (which is the default), the model will be serialized using the schema,
+which means that fields present in a subclass but not in the original schema will be ignored.
+
+For example:
+
+```py
+from pydantic import BaseModel
+
+
+class User(BaseModel):
+    name: str
+
+
+class UserLogin(User):
+    password: str
+
+
+class OuterModel(BaseModel):
+    user1: User
+    user2: User
+
+
+user = UserLogin(name='pydantic', password='password')
+
+print(OuterModel(user1=user, user2=user).model_dump(serialize_as_any=True)) # (1)!
+"""
+{
+    'user1': {'name': 'pydantic', 'password': 'password'},
+    'user2': {'name': 'pydantic', 'password': 'password'},
+}
+"""
+
+print(OuterModel(user1=user, user2=user).model_dump(serialize_as_any=False)) # (2)!
+"""
+{
+    'user1': {'name': 'pydantic'},
+    'user2': {'name': 'pydantic'},
+}
+"""
+```
+
+1. With `serialize_as_any` set to `True`, the result matches that of V1.
+2. With `serialize_as_any` set to `False` (the V2 default), fields present on the subclass,
+but not the base class, are not included in serialization.
+
+This setting even takes effect with nested and recursive patterns as well. For example:
+
+```py
+from typing import List
+
+from pydantic import BaseModel
+
+
+class User(BaseModel):
+    name: str
+    friends: List['User']
+
+class UserLogin(User):
+    password: str
+
+
+class OuterModel(BaseModel):
+    user: User
+
+user = UserLogin(name='alber', password='pydantic-pw', friends=[UserLogin(name='sebastian', password='fastapi-pw', friends=[])])
+
+print(OuterModel(user=user).model_dump(serialize_as_any=True)) # (1)!
+"""
+{
+    'user': {
+        'name': 'samuel',
+        'friends': [
+            {
+                'name': 'sebastian',
+                'friends': [],
+                'password': 'fastapi-pw',
+            }
+        ],
+        'password': 'pydantic-pw',
+    }
+}
+"""
+
+print(OuterModel(user=user).model_dump(serialize_as_any=False)) # (2)!
+"""
+{
+    'user': {
+        'name': 'samuel',
+        'friends': [
+            {
+                'name': 'sebastian',
+                'friends': [],
+            }
+        ],
+    }
+}
+"""
+```
+
+1. Even nested `User` model instances are dumped with fields unique to `User` subclasses.
+2. Even nested `User` model instances are dumped without fields unique to `User` subclasses.
 
 ## `pickle.dumps(model)`
 
