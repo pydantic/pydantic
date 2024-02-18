@@ -628,9 +628,10 @@ def test_tzinfo_could_be_reused():
     assert isinstance(now, datetime)
 
 
+@pytest.mark.xfail(reason='waiting on pydantic-core 2.16.3')
 def test_datetime_from_date_str():
     class Model(BaseModel):
         value: datetime
 
     m = Model(value='2015-10-21')
-    assert m.value == datetime(2015, 10, 21, 0, 0, tzinfo=timezone.utc)
+    assert m.value == datetime(2015, 10, 21, 0, 0)

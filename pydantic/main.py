@@ -7,11 +7,12 @@ import types
 import typing
 import warnings
 from copy import copy, deepcopy
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Dict, Generator, Set, Tuple, TypeVar, Union
 
 import pydantic_core
 import typing_extensions
 from pydantic_core import PydanticUndefined
+from typing_extensions import TypeAlias
 
 from ._internal import (
     _config,
@@ -32,22 +33,25 @@ from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema
 from .warnings import PydanticDeprecatedSince20
 
+# Always define certain types that are needed to resolve method type hints/annotations
+# (even when not type checking) via typing.get_type_hints.
+Model = TypeVar('Model', bound='BaseModel')
+TupleGenerator = Generator[Tuple[str, Any], None, None]
+# should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
+IncEx: TypeAlias = Union[Set[int], Set[str], Dict[int, Any], Dict[str, Any], None]
+
+
 if typing.TYPE_CHECKING:
     from inspect import Signature
     from pathlib import Path
 
     from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
-    from typing_extensions import Literal, Unpack
+    from typing_extensions import Unpack
 
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
     from .deprecated.parse import Protocol as DeprecatedParseProtocol
     from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
     from .fields import Field as _Field
-
-    TupleGenerator = typing.Generator[typing.Tuple[str, Any], None, None]
-    Model = typing.TypeVar('Model', bound='BaseModel')
-    # should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
-    IncEx: typing_extensions.TypeAlias = 'set[int] | set[str] | dict[int, Any] | dict[str, Any] | None'
 else:
     # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
     # and https://youtrack.jetbrains.com/issue/PY-51428
@@ -120,7 +124,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_decorators__: ClassVar[_decorators.DecoratorInfos]
         __pydantic_generic_metadata__: ClassVar[_generics.PydanticGenericMetadata]
         __pydantic_parent_namespace__: ClassVar[dict[str, Any] | None]
-        __pydantic_post_init__: ClassVar[None | Literal['model_post_init']]
+        __pydantic_post_init__: ClassVar[None | typing_extensions.Literal['model_post_init']]
         __pydantic_root_model__: ClassVar[bool]
         __pydantic_serializer__: ClassVar[SchemaSerializer]
         __pydantic_validator__: ClassVar[SchemaValidator]
@@ -198,7 +202,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         Creates a new model setting `__dict__` and `__pydantic_fields_set__` from trusted or pre-validated data.
         Default values are respected, but no other validation is performed.
-        Behaves as if `Config.extra = 'allow'` was set since it adds all passed values
+
+        !!! note
+            `model_construct()` generally respects the `model_config.extra` setting on the provided model.
+            That is, if `model_config.extra == 'allow'`, then all extra passed values are added to the model instance's `__dict__`
+            and `__pydantic_extra__` fields. If `model_config.extra == 'ignore'` (the default), then all extra passed values are ignored.
+            Because no validation is performed with a call to `model_construct()`, having `model_config.extra == 'forbid'` does not result in
+            an error if extra values are passed, but they will be ignored.
 
         Args:
             _fields_set: The set of field names accepted for the Model instance.
@@ -228,8 +238,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             _extra = {}
             for k, v in values.items():
                 _extra[k] = v
-        else:
-            fields_values.update(values)
         _object_setattr(m, '__dict__', fields_values)
         _object_setattr(m, '__pydantic_fields_set__', _fields_set)
         if not cls.__pydantic_root_model__:
@@ -281,7 +289,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     def model_dump(
         self,
         *,
-        mode: Literal['json', 'python'] | str = 'python',
+        mode: typing_extensions.Literal['json', 'python'] | str = 'python',
         include: IncEx = None,
         exclude: IncEx = None,
         by_alias: bool = False,
@@ -867,60 +875,62 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         _object_setattr(self, '__pydantic_private__', state['__pydantic_private__'])
         _object_setattr(self, '__dict__', state['__dict__'])
 
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, BaseModel):
-            # When comparing instances of generic types for equality, as long as all field values are equal,
-            # only require their generic origin types to be equal, rather than exact type equality.
-            # This prevents headaches like MyGeneric(x=1) != MyGeneric[Any](x=1).
-            self_type = self.__pydantic_generic_metadata__['origin'] or self.__class__
-            other_type = other.__pydantic_generic_metadata__['origin'] or other.__class__
+    if not typing.TYPE_CHECKING:
 
-            # Perform common checks first
-            if not (
-                self_type == other_type
-                and self.__pydantic_private__ == other.__pydantic_private__
-                and self.__pydantic_extra__ == other.__pydantic_extra__
-            ):
-                return False
+        def __eq__(self, other: Any) -> bool:
+            if isinstance(other, BaseModel):
+                # When comparing instances of generic types for equality, as long as all field values are equal,
+                # only require their generic origin types to be equal, rather than exact type equality.
+                # This prevents headaches like MyGeneric(x=1) != MyGeneric[Any](x=1).
+                self_type = self.__pydantic_generic_metadata__['origin'] or self.__class__
+                other_type = other.__pydantic_generic_metadata__['origin'] or other.__class__
 
-            # We only want to compare pydantic fields but ignoring fields is costly.
-            # We'll perform a fast check first, and fallback only when needed
-            # See GH-7444 and GH-7825 for rationale and a performance benchmark
+                # Perform common checks first
+                if not (
+                    self_type == other_type
+                    and self.__pydantic_private__ == other.__pydantic_private__
+                    and self.__pydantic_extra__ == other.__pydantic_extra__
+                ):
+                    return False
 
-            # First, do the fast (and sometimes faulty) __dict__ comparison
-            if self.__dict__ == other.__dict__:
-                # If the check above passes, then pydantic fields are equal, we can return early
-                return True
+                # We only want to compare pydantic fields but ignoring fields is costly.
+                # We'll perform a fast check first, and fallback only when needed
+                # See GH-7444 and GH-7825 for rationale and a performance benchmark
 
-            # We don't want to trigger unnecessary costly filtering of __dict__ on all unequal objects, so we return
-            # early if there are no keys to ignore (we would just return False later on anyway)
-            model_fields = type(self).model_fields.keys()
-            if self.__dict__.keys() <= model_fields and other.__dict__.keys() <= model_fields:
-                return False
+                # First, do the fast (and sometimes faulty) __dict__ comparison
+                if self.__dict__ == other.__dict__:
+                    # If the check above passes, then pydantic fields are equal, we can return early
+                    return True
 
-            # If we reach here, there are non-pydantic-fields keys, mapped to unequal values, that we need to ignore
-            # Resort to costly filtering of the __dict__ objects
-            # We use operator.itemgetter because it is much faster than dict comprehensions
-            # NOTE: Contrary to standard python class and instances, when the Model class has a default value for an
-            # attribute and the model instance doesn't have a corresponding attribute, accessing the missing attribute
-            # raises an error in BaseModel.__getattr__ instead of returning the class attribute
-            # So we can use operator.itemgetter() instead of operator.attrgetter()
-            getter = operator.itemgetter(*model_fields) if model_fields else lambda _: _utils._SENTINEL
-            try:
-                return getter(self.__dict__) == getter(other.__dict__)
-            except KeyError:
-                # In rare cases (such as when using the deprecated BaseModel.copy() method),
-                # the __dict__ may not contain all model fields, which is how we can get here.
-                # getter(self.__dict__) is much faster than any 'safe' method that accounts
-                # for missing keys, and wrapping it in a `try` doesn't slow things down much
-                # in the common case.
-                self_fields_proxy = _utils.SafeGetItemProxy(self.__dict__)
-                other_fields_proxy = _utils.SafeGetItemProxy(other.__dict__)
-                return getter(self_fields_proxy) == getter(other_fields_proxy)
+                # We don't want to trigger unnecessary costly filtering of __dict__ on all unequal objects, so we return
+                # early if there are no keys to ignore (we would just return False later on anyway)
+                model_fields = type(self).model_fields.keys()
+                if self.__dict__.keys() <= model_fields and other.__dict__.keys() <= model_fields:
+                    return False
 
-        # other instance is not a BaseModel
-        else:
-            return NotImplemented  # delegate to the other item in the comparison
+                # If we reach here, there are non-pydantic-fields keys, mapped to unequal values, that we need to ignore
+                # Resort to costly filtering of the __dict__ objects
+                # We use operator.itemgetter because it is much faster than dict comprehensions
+                # NOTE: Contrary to standard python class and instances, when the Model class has a default value for an
+                # attribute and the model instance doesn't have a corresponding attribute, accessing the missing attribute
+                # raises an error in BaseModel.__getattr__ instead of returning the class attribute
+                # So we can use operator.itemgetter() instead of operator.attrgetter()
+                getter = operator.itemgetter(*model_fields) if model_fields else lambda _: _utils._SENTINEL
+                try:
+                    return getter(self.__dict__) == getter(other.__dict__)
+                except KeyError:
+                    # In rare cases (such as when using the deprecated BaseModel.copy() method),
+                    # the __dict__ may not contain all model fields, which is how we can get here.
+                    # getter(self.__dict__) is much faster than any 'safe' method that accounts
+                    # for missing keys, and wrapping it in a `try` doesn't slow things down much
+                    # in the common case.
+                    self_fields_proxy = _utils.SafeGetItemProxy(self.__dict__)
+                    other_fields_proxy = _utils.SafeGetItemProxy(other.__dict__)
+                    return getter(self_fields_proxy) == getter(other_fields_proxy)
+
+            # other instance is not a BaseModel
+            else:
+                return NotImplemented  # delegate to the other item in the comparison
 
     if typing.TYPE_CHECKING:
         # We put `__init_subclass__` in a TYPE_CHECKING block because, even though we want the type-checking benefits

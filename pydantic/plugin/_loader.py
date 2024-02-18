@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.metadata as importlib_metadata
+import os
 import warnings
 from typing import TYPE_CHECKING, Final, Iterable
 
@@ -22,9 +23,12 @@ def get_plugins() -> Iterable[PydanticPluginProtocol]:
 
     Inspired by: https://github.com/pytest-dev/pluggy/blob/1.3.0/src/pluggy/_manager.py#L376-L402
     """
+    disabled_plugins = os.getenv('PYDANTIC_DISABLE_PLUGINS')
     global _plugins, _loading_plugins
     if _loading_plugins:
         # this happens when plugins themselves use pydantic, we return no plugins
+        return ()
+    elif disabled_plugins in ('__all__', '1', 'true'):
         return ()
     elif _plugins is None:
         _plugins = {}
@@ -36,6 +40,8 @@ def get_plugins() -> Iterable[PydanticPluginProtocol]:
                     if entry_point.group != PYDANTIC_ENTRY_POINT_GROUP:
                         continue
                     if entry_point.value in _plugins:
+                        continue
+                    if disabled_plugins is not None and entry_point.name in disabled_plugins.split(','):
                         continue
                     try:
                         _plugins[entry_point.value] = entry_point.load()

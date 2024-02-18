@@ -24,6 +24,8 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    get_args,
+    get_origin,
 )
 from uuid import UUID
 
@@ -75,6 +77,7 @@ __all__ = (
     'DirectoryPath',
     'NewPath',
     'Json',
+    'Secret',
     'SecretStr',
     'SecretBytes',
     'StrictBool',
@@ -1332,7 +1335,8 @@ NewPath = Annotated[Path, PathType('new')]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ JSON TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 if TYPE_CHECKING:
-    Json = Annotated[AnyType, ...]  # Json[list[str]] will be recognized by type checkers as list[str]
+    # Json[list[str]] will be recognized by type checkers as list[str]
+    Json = Annotated[AnyType, ...]
 
 else:
 
@@ -1439,10 +1443,10 @@ else:
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SECRET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-SecretType = TypeVar('SecretType', str, bytes)
+SecretType = TypeVar('SecretType')
 
 
-class _SecretField(Generic[SecretType]):
+class _SecretBase(Generic[SecretType]):
     def __init__(self, secret_value: SecretType) -> None:
         self._secret_value: SecretType = secret_value
 
@@ -1460,29 +1464,124 @@ class _SecretField(Generic[SecretType]):
     def __hash__(self) -> int:
         return hash(self.get_secret_value())
 
-    def __len__(self) -> int:
-        return len(self._secret_value)
-
     def __str__(self) -> str:
         return str(self._display())
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self._display()!r})'
 
-    def _display(self) -> SecretType:
+    def _display(self) -> str | bytes:
         raise NotImplementedError
+
+
+class Secret(_SecretBase[SecretType]):
+    """A generic base class used for defining a field with sensitive information that you do not want to be visible in logging or tracebacks.
+
+    You may either directly parametrize `Secret` with a type, or subclass from `Secret` with a parametrized type. The benefit of subclassing
+    is that you can define a custom `_display` method, which will be used for `repr()` and `str()` methods. The examples below demonstrate both
+    ways of using `Secret` to create a new secret type.
+
+    1. Directly parametrizing `Secret` with a type:
+
+    ```py
+    from pydantic import BaseModel, Secret
+
+    SecretBool = Secret[bool]
+
+    class Model(BaseModel):
+        secret_bool: SecretBool
+
+    m = Model(secret_bool=True)
+    print(m.model_dump())
+    #> {'secret_bool': Secret('**********')}
+
+    print(m.model_dump_json())
+    #> {"secret_bool":"**********"}
+
+    print(m.secret_bool.get_secret_value())
+    #> True
+    ```
+
+    2. Subclassing from parametrized `Secret`:
+
+    ```py
+    from datetime import date
+
+    from pydantic import BaseModel, Secret
+
+    class SecretDate(Secret[date]):
+        def _display(self) -> str:
+            return '****/**/**'
+
+    class Model(BaseModel):
+        secret_date: SecretDate
+
+    m = Model(secret_date=date(2022, 1, 1))
+    print(m.model_dump())
+    #> {'secret_date': SecretDate('****/**/**')}
+
+    print(m.model_dump_json())
+    #> {"secret_date":"****/**/**"}
+
+    print(m.secret_date.get_secret_value())
+    #> 2022-01-01
+    ```
+
+    The value returned by the `_display` method will be used for `repr()` and `str()`.
+    """
+
+    def _display(self) -> str | bytes:
+        return '**********' if self.get_secret_value() else ''
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        if issubclass(source, SecretStr):
-            field_type = str
-            inner_schema = core_schema.str_schema()
+        inner_type = None
+        # if origin_type is Secret, then cls is a GenericAlias, and we can extract the inner type directly
+        origin_type = get_origin(source)
+        if origin_type is not None:
+            inner_type = get_args(source)[0]
+        # otherwise, we need to get the inner type from the base class
         else:
-            assert issubclass(source, SecretBytes)
-            field_type = bytes
-            inner_schema = core_schema.bytes_schema()
-        error_kind = 'string_type' if field_type is str else 'bytes_type'
+            bases = getattr(cls, '__orig_bases__', getattr(cls, '__bases__', []))
+            for base in bases:
+                if get_origin(base) is Secret:
+                    inner_type = get_args(base)[0]
+            if bases == [] or inner_type is None:
+                raise TypeError(
+                    f"Can't get secret type from {cls.__name__}. "
+                    'Please use Secret[<type>], or subclass from Secret[<type>] instead.'
+                )
 
+        inner_schema = handler.generate_schema(inner_type)  # type: ignore
+
+        def validate_secret_value(value, handler) -> Secret[SecretType]:
+            if isinstance(value, Secret):
+                value = value.get_secret_value()
+            validated_inner = handler(value)
+            return cls(validated_inner)
+
+        return core_schema.json_or_python_schema(
+            python_schema=core_schema.no_info_wrap_validator_function(
+                validate_secret_value,
+                inner_schema,
+                serialization=core_schema.plain_serializer_function_ser_schema(lambda x: x),
+            ),
+            json_schema=core_schema.no_info_after_validator_function(
+                lambda x: cls(x), inner_schema, serialization=core_schema.to_string_ser_schema(when_used='json')
+            ),
+        )
+
+
+def _secret_display(value: SecretType) -> str:  # type: ignore
+    return '**********' if value else ''
+
+
+class _SecretField(_SecretBase[SecretType]):
+    _inner_schema: ClassVar[CoreSchema]
+    _error_kind: ClassVar[str]
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         def serialize(
             value: _SecretField[SecretType], info: core_schema.SerializationInfo
         ) -> str | _SecretField[SecretType]:
@@ -1494,7 +1593,7 @@ class _SecretField(Generic[SecretType]):
                 return value
 
         def get_json_schema(_core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-            json_schema = handler(inner_schema)
+            json_schema = handler(cls._inner_schema)
             _utils.update_not_none(
                 json_schema,
                 type='string',
@@ -1505,31 +1604,33 @@ class _SecretField(Generic[SecretType]):
 
         json_schema = core_schema.no_info_after_validator_function(
             source,  # construct the type
-            inner_schema,
+            cls._inner_schema,
         )
-        s = core_schema.json_or_python_schema(
-            python_schema=core_schema.union_schema(
-                [
-                    core_schema.is_instance_schema(source),
-                    json_schema,
-                ],
-                strict=True,
-                custom_error_type=error_kind,
-            ),
-            json_schema=json_schema,
-            serialization=core_schema.plain_serializer_function_ser_schema(
-                serialize,
-                info_arg=True,
-                return_schema=core_schema.str_schema(),
-                when_used='json',
-            ),
+
+        def get_secret_schema(strict: bool) -> CoreSchema:
+            return core_schema.json_or_python_schema(
+                python_schema=core_schema.union_schema(
+                    [
+                        core_schema.is_instance_schema(source),
+                        json_schema,
+                    ],
+                    custom_error_type=cls._error_kind,
+                    strict=strict,
+                ),
+                json_schema=json_schema,
+                serialization=core_schema.plain_serializer_function_ser_schema(
+                    serialize,
+                    info_arg=True,
+                    return_schema=core_schema.str_schema(),
+                    when_used='json',
+                ),
+            )
+
+        return core_schema.lax_or_strict_schema(
+            lax_schema=get_secret_schema(strict=False),
+            strict_schema=get_secret_schema(strict=True),
+            metadata={'pydantic_js_functions': [get_json_schema]},
         )
-        s.setdefault('metadata', {}).setdefault('pydantic_js_functions', []).append(get_json_schema)
-        return s
-
-
-def _secret_display(value: str | bytes) -> str:
-    return '**********' if value else ''
 
 
 class SecretStr(_SecretField[str]):
@@ -1556,8 +1657,14 @@ class SecretStr(_SecretField[str]):
     ```
     """
 
+    _inner_schema: ClassVar[CoreSchema] = core_schema.str_schema()
+    _error_kind: ClassVar[str] = 'string_type'
+
+    def __len__(self) -> int:
+        return len(self._secret_value)
+
     def _display(self) -> str:
-        return _secret_display(self.get_secret_value())
+        return _secret_display(self._secret_value)
 
 
 class SecretBytes(_SecretField[bytes]):
@@ -1583,8 +1690,14 @@ class SecretBytes(_SecretField[bytes]):
     ```
     """
 
+    _inner_schema: ClassVar[CoreSchema] = core_schema.bytes_schema()
+    _error_kind: ClassVar[str] = 'bytes_type'
+
+    def __len__(self) -> int:
+        return len(self._secret_value)
+
     def _display(self) -> bytes:
-        return _secret_display(self.get_secret_value()).encode()
+        return _secret_display(self._secret_value).encode()
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PAYMENT CARD TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
