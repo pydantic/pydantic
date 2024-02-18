@@ -50,3 +50,7 @@ reports that validation error. So this is a feature request we would look into.
 There is no `__init__` method for **ValidationError** so you would have to use `from_exception_data` static method
 with **ValidationError**. See [here](https://docs.pydantic.dev/latest/api/pydantic_core/#pydantic_core.ValidationError)
 for more details.
+
+## Pydantic does not allow Literal enum value discriminator to be initialized by string
+
+A simple solution to this is to allow your class to inherit from both `str` and `Enum`.
