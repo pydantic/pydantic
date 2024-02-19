@@ -4663,7 +4663,7 @@ subclasses to modify the "global" approach to generating JSON schema.</p>
 </code></pre></div>
 <h2 id="customizing-the-refs-in-json-schema">Customizing the <code>$ref</code>s in JSON Schema<a class="headerlink" href="#customizing-the-refs-in-json-schema" title="Permanent link">&para;</a></h2>
 <p>The format of <code>$ref</code>s can be altered by calling <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_json_schema"><code>model_json_schema()</code></a>
-or <code>model_dump_json()</code>][pydantic.main.BaseModel.model_dump_json] with the <code>ref_template</code> keyword argument.
+or <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump_json"><code>model_dump_json()</code></a> with the <code>ref_template</code> keyword argument.
 The definitions are always stored under the key <code>$defs</code>, but a specified prefix can be used for the references.</p>
 <p>This is useful if you need to extend or modify the JSON schema default definitions location. For example, with OpenAPI:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
