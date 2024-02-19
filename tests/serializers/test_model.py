@@ -456,6 +456,58 @@ def test_function_plain_field_serializer_to_python():
     assert s.to_python(Model(x=1000)) == {'x': '1_000'}
 
 
+@pytest.mark.skipif(cached_property is None, reason='cached_property is not available')
+def test_field_serializer_cached_property():
+    @dataclasses.dataclass
+    class Model:
+        x: int
+        y: int
+
+        @cached_property
+        def x_formatted(self) -> str:
+            return f'{self.x:_}'
+
+        # This is a @computed_field
+        @cached_property
+        def y_formatted(self) -> str:
+            return f'{self.y:_}'
+
+        def ser_x(self, v: Any, _) -> str:
+            assert self.x == 1_000 == v
+            return self.x_formatted
+
+        def ser_y(self, v: Any, _) -> str:
+            assert self.y == 2_000 == v
+            return self.y_formatted
+
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            Model,
+            core_schema.model_fields_schema(
+                {
+                    'x': core_schema.model_field(
+                        core_schema.int_schema(
+                            serialization=core_schema.plain_serializer_function_ser_schema(
+                                Model.ser_x, is_field_serializer=True, info_arg=True
+                            )
+                        )
+                    ),
+                    'y': core_schema.model_field(
+                        core_schema.int_schema(
+                            serialization=core_schema.plain_serializer_function_ser_schema(
+                                Model.ser_y, is_field_serializer=True, info_arg=True
+                            )
+                        )
+                    ),
+                },
+                computed_fields=[core_schema.computed_field('y_formatted', core_schema.str_schema())],
+            ),
+        )
+    )
+    assert s.to_python(Model(x=1000, y=2000)) == {'x': '1_000', 'y': '2_000', 'y_formatted': '2_000'}
+    assert s.to_json(Model(x=1000, y=2000)) == b'{"x":"1_000","y":"2_000","y_formatted":"2_000"}'
+
+
 def test_function_wrap_field_serializer_to_python():
     @dataclasses.dataclass
     class Model:

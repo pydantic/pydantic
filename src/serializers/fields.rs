@@ -5,6 +5,7 @@ use pyo3::types::{PyDict, PyString};
 
 use ahash::AHashMap;
 use serde::ser::SerializeMap;
+use smallvec::SmallVec;
 
 use crate::serializers::extra::SerCheck;
 use crate::PydanticSerializationUnexpectedValue;
@@ -321,7 +322,7 @@ impl TypeSerializer for GeneralFieldsSerializer {
             return infer_to_python(value, include, exclude, &td_extra);
         };
 
-        let output_dict = self.main_to_python(py, main_dict.iter().map(Ok), include, exclude, td_extra)?;
+        let output_dict = self.main_to_python(py, dict_items(main_dict), include, exclude, td_extra)?;
 
         // this is used to include `__pydantic_extra__` in serialization on models
         if let Some(extra_dict) = extra_dict {
@@ -373,7 +374,7 @@ impl TypeSerializer for GeneralFieldsSerializer {
         // NOTE! As above, we maintain the order of the input dict assuming that's right
         // we don't both with `used_fields` here because on unions, `to_python(..., mode='json')` is used
         let mut map = self.main_serde_serialize(
-            main_dict.iter().map(Ok),
+            dict_items(main_dict),
             expected_len,
             serializer,
             include,
@@ -407,4 +408,11 @@ impl TypeSerializer for GeneralFieldsSerializer {
 
 fn key_str(key: &PyAny) -> PyResult<&str> {
     key.downcast::<PyString>()?.to_str()
+}
+
+fn dict_items(main_dict: &PyDict) -> impl Iterator<Item = PyResult<(&PyAny, &PyAny)>> {
+    // Collect items before iterating to prevent panic on dict mutation.
+    // Use a SmallVec to avoid heap allocation for models with a reasonable number of fields.
+    let main_items: SmallVec<[_; 16]> = main_dict.iter().collect();
+    main_items.into_iter().map(Ok)
 }
