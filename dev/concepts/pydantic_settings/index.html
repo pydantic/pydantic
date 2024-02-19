@@ -3691,7 +3691,7 @@ as the target mount point. If you want to use a different location, change <code
 <h2 id="other-settings-source">Other settings source<a class="headerlink" href="#other-settings-source" title="Permanent link">&para;</a></h2>
 <p>Other settings sources are available for common configuration files:</p>
 <ul>
-<li><code>TomlConfigSettingsSource</code> using <code>toml_file</code> and toml_file_encoding arguments</li>
+<li><code>TomlConfigSettingsSource</code> using <code>toml_file</code> argument</li>
 <li><code>YamlConfigSettingsSource</code> using <code>yaml_file</code> and yaml_file_encoding arguments</li>
 <li><code>JsonConfigSettingsSource</code> using <code>json_file</code> and <code>json_file_encoding</code> arguments</li>
 </ul>
@@ -3718,9 +3718,7 @@ To use them, you can use the same mechanism described <a href="#customise-settin
 <span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
     <span class="n">foobar</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">nested</span><span class="p">:</span> <span class="n">Nested</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span>
-        <span class="n">toml_file</span><span class="o">=</span><span class="s1">&#39;config.toml&#39;</span><span class="p">,</span> <span class="n">toml_file_encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span>
-    <span class="p">)</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">toml_file</span><span class="o">=</span><span class="s1">&#39;config.toml&#39;</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">settings_customise_sources</span><span class="p">(</span>
