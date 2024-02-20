@@ -21,7 +21,7 @@ async def main(tests_zip: str, tag_name: str):
     # File saved on the GH release
     pydantic_core_wheel = (
         'https://githubproxy.samuelcolvin.workers.dev/pydantic/pydantic-core/releases/'
-        f'download/{tag_name}/pydantic_core-{tag_name.lstrip("v")}-cp311-cp311-emscripten_3_1_32_wasm32.whl'
+        f'download/{tag_name}/pydantic_core-{tag_name.lstrip("v")}-cp311-cp311-emscripten_3_1_46_wasm32.whl'
     )
     zip_file = ZipFile(BytesIO(base64.b64decode(tests_zip)))
     count = 0
