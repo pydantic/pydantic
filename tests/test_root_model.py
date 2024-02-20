@@ -653,7 +653,7 @@ def test_model_validate_strings(root_type, input_value, expected, raises_match, 
 def test_model_construction_with_invalid_generic_specification() -> None:
     T_ = TypeVar('T_', bound=BaseModel)
 
-    with pytest.raises(TypeError, match='You should ensure that RootModel is correctly parameterized'):
+    with pytest.raises(TypeError, match='You should parametrize RootModel directly'):
 
         class GenericRootModel(RootModel, Generic[T_]):
             root: Union[T_, int]

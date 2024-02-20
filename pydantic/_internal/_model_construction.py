@@ -33,6 +33,7 @@ if typing.TYPE_CHECKING:
     from ..fields import Field as PydanticModelField
     from ..fields import FieldInfo, ModelPrivateAttr
     from ..main import BaseModel
+    from ..root_model import RootModelRootType
 else:
     # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
     # and https://youtrack.jetbrains.com/issue/PY-51428
@@ -138,15 +139,19 @@ class ModelMetaclass(ABCMeta):
                 parameters = getattr(cls, '__parameters__', None) or parent_parameters
                 if parameters and parent_parameters and not all(x in parameters for x in parent_parameters):
                     missing_parameters = tuple(x for x in parameters if x not in parent_parameters)
-                    if 'RootModelRootType' in tuple(
-                        x.__name__ for x in parent_parameters
-                    ) and 'RootModelRootType' not in tuple(x.__name__ for x in parameters):
+                    if RootModelRootType in parent_parameters and RootModelRootType not in parameters:
+                        # This is a special case where the user has subclassed `RootModel`, but has not parametrized
+                        # RootModel with the generic type identifiers being used. Ex:
+                        # class MyModel(RootModel, Generic[T]):
+                        #    root: T
+                        # Should instead just be:
+                        # class MyModel(RootModel[T]):
+                        #   root: T
                         parameters_str = ', '.join([x.__name__ for x in missing_parameters])
                         error_message = (
                             f'{cls.__name__} is a subclass of `RootModel`, but does not include the generic type identifier(s) '
                             f'{parameters_str} in its parameters. '
-                            f'You should ensure that RootModel is correctly parameterized, '
-                            f'e.g., `class {cls.__name__}(RootModel[{parameters_str}]): ...`.'
+                            f'You should parametrize RootModel directly, e.g., `class {cls.__name__}(RootModel[{parameters_str}]): ...`.'
                         )
                     else:
                         combined_parameters = parent_parameters + missing_parameters
