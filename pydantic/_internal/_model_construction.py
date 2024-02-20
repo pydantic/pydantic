@@ -137,13 +137,25 @@ class ModelMetaclass(ABCMeta):
                 parent_parameters = getattr(cls, '__pydantic_generic_metadata__', {}).get('parameters', ())
                 parameters = getattr(cls, '__parameters__', None) or parent_parameters
                 if parameters and parent_parameters and not all(x in parameters for x in parent_parameters):
-                    combined_parameters = parent_parameters + tuple(x for x in parameters if x not in parent_parameters)
-                    parameters_str = ', '.join([str(x) for x in combined_parameters])
-                    generic_type_label = f'typing.Generic[{parameters_str}]'
-                    error_message = (
-                        f'All parameters must be present on typing.Generic;'
-                        f' you should inherit from {generic_type_label}.'
-                    )
+                    missing_parameters = tuple(x for x in parameters if x not in parent_parameters)
+                    if 'RootModelRootType' in tuple(
+                        x.__name__ for x in parent_parameters
+                    ) and 'RootModelRootType' not in tuple(x.__name__ for x in parameters):
+                        parameters_str = ', '.join([x.__name__ for x in missing_parameters])
+                        error_message = (
+                            f'{cls.__name__} is a subclass of `RootModel`, but does not include the generic type identifier(s) '
+                            f'{parameters_str} in its parameters. '
+                            f'You should ensure that RootModel is correctly parameterized, '
+                            f'e.g., `class {cls.__name__}(RootModel[{parameters_str}]): ...`.'
+                        )
+                    else:
+                        combined_parameters = parent_parameters + missing_parameters
+                        parameters_str = ', '.join([str(x) for x in combined_parameters])
+                        generic_type_label = f'typing.Generic[{parameters_str}]'
+                        error_message = (
+                            f'All parameters must be present on typing.Generic;'
+                            f' you should inherit from {generic_type_label}.'
+                        )
                     if Generic not in bases:  # pragma: no cover
                         # We raise an error here not because it is desirable, but because some cases are mishandled.
                         # It would be nice to remove this error and still have things behave as expected, it's just
