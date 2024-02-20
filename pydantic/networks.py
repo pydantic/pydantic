@@ -502,6 +502,9 @@ class NameEmail(_repr.Representation):
             return cls(name, email)
 
     def __str__(self) -> str:
+        if email_address_regex.fullmatch(self.name):
+            return f'"{self.name}" <{self.email}>'
+
         return f'{self.name} <{self.email}>'
 
 
@@ -663,6 +666,7 @@ def _build_pretty_email_regex() -> re.Pattern[str]:
 
 
 pretty_email_regex = _build_pretty_email_regex()
+email_address_regex = re.compile(r'^[\w\-.]+@([\w\-]+.)+[\w\-]{2,4}$')
 
 MAX_EMAIL_LENGTH = 2048
 """Maximum length for an email.
