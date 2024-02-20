@@ -309,7 +309,7 @@ jobs:
           # NOTE!: as per https://github.com/pydantic/pydantic-core/pull/149 this version needs to match the version
           # in node_modules/pyodide/repodata.json, to get the version, run:
           # `cat node_modules/pyodide/repodata.json | python -m json.tool | rg platform`
-          version: '3.1.32'
+          version: '3.1.46'
           actions-cache-folder: emsdk-cache
 
       - run: pip install 'maturin>=1,<2' 'ruff==0.1.3' typing_extensions
