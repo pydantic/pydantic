@@ -27,7 +27,11 @@ def test_deprecated_fields():
     instance = Model(a=1, b=1, c=1)
 
     pytest.warns(DeprecationWarning, lambda: instance.a, match='^$')
-    pytest.warns(DeprecationWarning, lambda: instance.b, match='^This is deprecated$')
+
+    with pytest.warns(DeprecationWarning, match='^This is deprecated$'):
+        b = instance.b
+
+    assert b == 1
 
 
 @pytest.mark.skipif(
@@ -108,8 +112,9 @@ def test_computed_field_deprecated():
     pytest.warns(DeprecationWarning, lambda: instance.p5, match='^This is deprecated$')
 
     with pytest.warns(DeprecationWarning, match='^$'):
-        instance.p3
+        p3 = instance.p3
 
+    assert p3 == 1
 
 @pytest.mark.skipif(
     pydantic.version.parse_package_version(importlib.metadata.version('typing_extensions')) < (4, 9),
@@ -133,4 +138,7 @@ def test_computed_field_deprecated_deprecated_class():
 
     instance = Model()
 
-    pytest.warns(DeprecationWarning, lambda: instance.p1, match='^This is deprecated$')
+    with pytest.warns(DeprecationWarning, match='^This is deprecated$'):
+        p1 = instance.p1
+
+    assert p1 == 1
