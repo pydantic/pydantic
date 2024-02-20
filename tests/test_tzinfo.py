@@ -1,10 +1,14 @@
 import copy
 import functools
 import pickle
+import sys
 import unittest
 from datetime import datetime, timedelta, timezone, tzinfo
 
 from pydantic_core import SchemaValidator, TzInfo, core_schema
+
+if sys.version_info >= (3, 9):
+    from zoneinfo import ZoneInfo
 
 
 class _ALWAYS_EQ:
@@ -80,6 +84,7 @@ class TestTzInfo(unittest.TestCase):
     def setUp(self):
         self.ACDT = TzInfo(timedelta(hours=9.5).total_seconds())
         self.EST = TzInfo(-timedelta(hours=5).total_seconds())
+        self.UTC = TzInfo(timedelta(0).total_seconds())
         self.DT = datetime(2010, 1, 1)
 
     def test_str(self):
@@ -162,6 +167,17 @@ class TestTzInfo(unittest.TestCase):
         self.assertTrue(tz > SMALLEST)
         self.assertFalse(tz <= SMALLEST)
         self.assertTrue(tz >= SMALLEST)
+
+        # offset based comparion tests for tzinfo derived classes like datetime.timezone.
+        utcdatetime = self.DT.replace(tzinfo=timezone.utc)
+        self.assertTrue(tz == utcdatetime.tzinfo)
+        estdatetime = self.DT.replace(tzinfo=timezone(-timedelta(hours=5)))
+        self.assertTrue(self.EST == estdatetime.tzinfo)
+        self.assertTrue(tz > estdatetime.tzinfo)
+        if sys.version_info >= (3, 9) and sys.platform == 'linux':
+            self.assertFalse(tz == ZoneInfo('Europe/London'))
+            with self.assertRaises(TypeError):
+                tz > ZoneInfo('Europe/London')
 
     def test_copy(self):
         for tz in self.ACDT, self.EST:
