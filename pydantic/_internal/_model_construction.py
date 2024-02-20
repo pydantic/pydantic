@@ -33,7 +33,6 @@ if typing.TYPE_CHECKING:
     from ..fields import Field as PydanticModelField
     from ..fields import FieldInfo, ModelPrivateAttr
     from ..main import BaseModel
-    from ..root_model import RootModelRootType
 else:
     # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
     # and https://youtrack.jetbrains.com/issue/PY-51428
@@ -138,6 +137,8 @@ class ModelMetaclass(ABCMeta):
                 parent_parameters = getattr(cls, '__pydantic_generic_metadata__', {}).get('parameters', ())
                 parameters = getattr(cls, '__parameters__', None) or parent_parameters
                 if parameters and parent_parameters and not all(x in parameters for x in parent_parameters):
+                    from ..root_model import RootModelRootType
+
                     missing_parameters = tuple(x for x in parameters if x not in parent_parameters)
                     if RootModelRootType in parent_parameters and RootModelRootType not in parameters:
                         # This is a special case where the user has subclassed `RootModel`, but has not parametrized
