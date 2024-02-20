@@ -45,7 +45,7 @@ instance variables on object instances.
 Pydantic does not currently support exhaustive validation so it stops after the first error on a given field and
 reports that validation error. So this is a feature request we would look into.
 
-## Can not use **ValidataionError** `__init__` method
+## Can not use **ValidationError** `__init__` method
 
 There is no `__init__` method for **ValidationError** so you would have to use `from_exception_data` static method
 with **ValidationError**. See [here](https://docs.pydantic.dev/latest/api/pydantic_core/#pydantic_core.ValidationError)
