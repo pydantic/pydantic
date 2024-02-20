@@ -476,10 +476,10 @@ annotated as `<SomeType>`, and type-checkers like mypy will treat the attribute 
 But when serializing, the field will be serialized as though the type hint for the field was `Any`, which is where the
 name comes from.
 
-### `serialize_as_any` runtime setting
+#### `serialize_as_any` runtime setting
 
 The `serialize_as_any` runtime setting can be used to serialize model data with or without duck typed serialization behavior.
-`serialize_as_any` can be passed as a keyword argument to the `model_dump()` and `model_dump_json` methods.
+`serialize_as_any` can be passed as a keyword argument to the `model_dump()` and `model_dump_json` methods of `BaseModel`s and `RootModel`s. It can also be passed as a keyword argument to the `dump_python()` and `dump_json()` methods of `TypeAdapter`s.
 
 If `serialize_as_any` is set to `True`, the model will be serialized using duck typed serialization behavior,
 which means that the model will ignore the schema and instead ask the object itself how it should be serialized.
