@@ -656,4 +656,4 @@ def test_model_construction_with_invalid_generic_specification() -> None:
     with pytest.raises(TypeError, match='You should ensure that RootModel is correctly parameterized'):
 
         class GenericRootModel(RootModel, Generic[T_]):
-            root: Union[T_ | int]
+            root: Union[T_, int]
