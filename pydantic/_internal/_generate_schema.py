@@ -8,7 +8,7 @@ import re
 import sys
 import typing
 import warnings
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from copy import copy, deepcopy
 from enum import Enum
 from functools import partial
@@ -296,6 +296,15 @@ class TypesNamespaceStack:
             self._types_namespace_stack.pop()
 
 
+def _get_first_non_null(a: Any, b: Any) -> Any:
+    """Return the first argument if it is not None, otherwise return the second argument.
+
+    Use case: serialization_alias (argument a) and alias (argument b) are both defined, and serialization_alias is ''.
+    This function will return serialization_alias, which is the first argument, even though it is an empty string.
+    """
+    return a if a is not None else b
+
+
 class GenerateSchema:
     """Generate core schema for a Pydantic model, dataclass and types like `str`, `datetime`, ... ."""
 
@@ -438,8 +447,6 @@ class GenerateSchema:
         if collect_invalid_schemas(schema):
             raise self.CollectedInvalid()
         schema = validate_core_schema(schema)
-        if 'definitions' in schema:
-            schema['definitions'] = list(reversed(schema['definitions']))
         return schema
 
     def collect_definitions(self, schema: CoreSchema) -> CoreSchema:
@@ -975,7 +982,7 @@ class GenerateSchema:
         # Apply an alias_generator if
         # 1. An alias is not specified
         # 2. An alias is specified, but the priority is <= 1
-        if alias_generator and (
+        if (
             field_info.alias_priority is None
             or field_info.alias_priority <= 1
             or field_info.alias is None
@@ -999,17 +1006,60 @@ class GenerateSchema:
 
             # if the priority is 1, then we set the aliases to the generated alias
             if field_info.alias_priority == 1:
-                field_info.serialization_alias = serialization_alias or alias
-                field_info.validation_alias = validation_alias or alias
+                field_info.serialization_alias = _get_first_non_null(serialization_alias, alias)
+                field_info.validation_alias = _get_first_non_null(validation_alias, alias)
                 field_info.alias = alias
 
             # if any of the aliases are not set, then we set them to the corresponding generated alias
             if field_info.alias is None:
                 field_info.alias = alias
             if field_info.serialization_alias is None:
-                field_info.serialization_alias = serialization_alias or alias
+                field_info.serialization_alias = _get_first_non_null(serialization_alias, alias)
             if field_info.validation_alias is None:
-                field_info.validation_alias = validation_alias or alias
+                field_info.validation_alias = _get_first_non_null(validation_alias, alias)
+
+    @staticmethod
+    def _apply_alias_generator_to_computed_field_info(
+        alias_generator: Callable[[str], str] | AliasGenerator,
+        computed_field_info: ComputedFieldInfo,
+        computed_field_name: str,
+    ):
+        """Apply an alias_generator to alias on a ComputedFieldInfo instance if appropriate.
+
+        Args:
+            alias_generator: A callable that takes a string and returns a string, or an AliasGenerator instance.
+            computed_field_info: The ComputedFieldInfo instance to which the alias_generator is (maybe) applied.
+            computed_field_name: The name of the computed field from which to generate the alias.
+        """
+        # Apply an alias_generator if
+        # 1. An alias is not specified
+        # 2. An alias is specified, but the priority is <= 1
+
+        if (
+            computed_field_info.alias_priority is None
+            or computed_field_info.alias_priority <= 1
+            or computed_field_info.alias is None
+        ):
+            alias, validation_alias, serialization_alias = None, None, None
+
+            if isinstance(alias_generator, AliasGenerator):
+                alias, validation_alias, serialization_alias = alias_generator.generate_aliases(computed_field_name)
+            elif isinstance(alias_generator, Callable):
+                alias = alias_generator(computed_field_name)
+                if not isinstance(alias, str):
+                    raise TypeError(f'alias_generator {alias_generator} must return str, not {alias.__class__}')
+
+            # if priority is not set, we set to 1
+            # which supports the case where the alias_generator from a child class is used
+            # to generate an alias for a field in a parent class
+            if computed_field_info.alias_priority is None or computed_field_info.alias_priority <= 1:
+                computed_field_info.alias_priority = 1
+
+            # if the priority is 1, then we set the aliases to the generated alias
+            # note that we use the serialization_alias with priority over alias, as computed_field
+            # aliases are used for serialization only (not validation)
+            if computed_field_info.alias_priority == 1:
+                computed_field_info.alias = _get_first_non_null(serialization_alias, alias)
 
     def _common_field_schema(  # C901
         self, name: str, field_info: FieldInfo, decorators: DecoratorInfos
@@ -1473,8 +1523,18 @@ class GenerateSchema:
             if origin is not None:
                 dataclass = origin
 
-            config = getattr(dataclass, '__pydantic_config__', None)
-            with self._config_wrapper_stack.push(config), self._types_namespace_stack.push(dataclass):
+            with ExitStack() as dataclass_bases_stack:
+                # Pushing a namespace prioritises items already in the stack, so iterate though the MRO forwards
+                for dataclass_base in dataclass.__mro__:
+                    if dataclasses.is_dataclass(dataclass_base):
+                        dataclass_bases_stack.enter_context(self._types_namespace_stack.push(dataclass_base))
+
+                # Pushing a config overwrites the previous config, so iterate though the MRO backwards
+                for dataclass_base in reversed(dataclass.__mro__):
+                    if dataclasses.is_dataclass(dataclass_base):
+                        config = getattr(dataclass_base, '__pydantic_config__', None)
+                        dataclass_bases_stack.enter_context(self._config_wrapper_stack.push(config))
+
                 core_config = self._config_wrapper.core_config(dataclass)
 
                 self = self._current_generate_schema
@@ -1494,7 +1554,7 @@ class GenerateSchema:
                     )
 
                 # disallow combination of init=False on a dataclass field and extra='allow' on a dataclass
-                if config and config.get('extra') == 'allow':
+                if self._config_wrapper_stack.tail.extra == 'allow':
                     # disallow combination of init=False on a dataclass field and extra='allow' on a dataclass
                     for field_name, field in fields.items():
                         if field.init is False:
@@ -1542,6 +1602,10 @@ class GenerateSchema:
                 schema = apply_model_validators(schema, model_validators, 'outer')
                 self.defs.definitions[dataclass_ref] = self._post_process_generated_schema(schema)
                 return core_schema.definition_reference_schema(dataclass_ref)
+
+            # Type checkers seem to assume ExitStack may suppress exceptions and therefore
+            # control flow can exit the `with` block without returning.
+            assert False, 'Unreachable'
 
     def _callable_schema(self, function: Callable[..., Any]) -> core_schema.CallSchema:
         """Generate schema for a Callable.
@@ -1648,20 +1712,12 @@ class GenerateSchema:
             filter_field_decorator_info_by_field(field_serializers.values(), d.cls_var_name),
             computed_field=True,
         )
-        # Handle alias_generator using similar logic to that from
-        # pydantic._internal._generate_schema.GenerateSchema._common_field_schema,
-        # with field_info -> d.info and name -> d.cls_var_name
+
         alias_generator = self._config_wrapper.alias_generator
-        if alias_generator and (d.info.alias_priority is None or d.info.alias_priority <= 1):
-            alias = None
-            if isinstance(alias_generator, AliasGenerator) and alias_generator.alias is not None:
-                alias = alias_generator.alias(d.cls_var_name)
-            elif isinstance(alias_generator, Callable):
-                alias = alias_generator(d.cls_var_name)
-            if not isinstance(alias, str):
-                raise TypeError(f'alias_generator {alias_generator} must return str, not {alias.__class__}')
-            d.info.alias = alias
-            d.info.alias_priority = 1
+        if alias_generator is not None:
+            self._apply_alias_generator_to_computed_field_info(
+                alias_generator=alias_generator, computed_field_info=d.info, computed_field_name=d.cls_var_name
+            )
 
         def set_computed_field_metadata(schema: CoreSchemaOrField, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
             json_schema = handler(schema)

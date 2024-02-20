@@ -556,11 +556,9 @@ def test_use_no_fields():
         class Model(BaseModel):
             a: str
 
-            with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
-
-                @validator()
-                def checker(cls, v):
-                    return v
+            @validator()
+            def checker(cls, v):
+                return v
 
 
 def test_use_no_fields_field_validator():
@@ -2823,3 +2821,19 @@ def test_plain_validator_plain_serializer() -> None:
     data = blah.model_dump()
     assert isinstance(data['foo'], ser_type)
     assert isinstance(data['bar'], ser_type)
+
+
+def test_plain_validator_with_unsupported_type() -> None:
+    class UnsupportedClass:
+        pass
+
+    PreviouslySupportedType = Annotated[
+        UnsupportedClass,
+        PlainValidator(lambda _: UnsupportedClass()),
+    ]
+
+    type_adapter = TypeAdapter(PreviouslySupportedType)
+
+    model = type_adapter.validate_python('abcdefg')
+    assert isinstance(model, UnsupportedClass)
+    assert isinstance(type_adapter.dump_python(model), UnsupportedClass)

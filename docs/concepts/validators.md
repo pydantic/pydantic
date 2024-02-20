@@ -347,7 +347,7 @@ except ValidationError as e:
     """
 
 try:
-    UserModel(name='John Doe', id=1)
+    UserModel(name='John Doe', id='abc')
 except ValidationError as e:
     print(e)
     """

@@ -24,19 +24,17 @@ if typing.TYPE_CHECKING:
     @dataclass_transform(kw_only_default=False, field_specifiers=(PydanticModelField,))
     class _RootModelMetaclass(_model_construction.ModelMetaclass):
         ...
-
-    Model = typing.TypeVar('Model', bound='BaseModel')
 else:
     _RootModelMetaclass = _model_construction.ModelMetaclass
 
 __all__ = ('RootModel',)
 
-
+Model = typing.TypeVar('Model', bound='BaseModel')
 RootModelRootType = typing.TypeVar('RootModelRootType')
 
 
 class RootModel(BaseModel, typing.Generic[RootModelRootType], metaclass=_RootModelMetaclass):
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/models/#rootmodel-and-custom-root-types
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/models/#rootmodel-and-custom-root-types
 
     A Pydantic `BaseModel` for the root object of the model.
 

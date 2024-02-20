@@ -34,6 +34,7 @@ authors = [
     {name = 'Marcelo Trylesinski', email = 'marcelotryle@gmail.com'},
     {name = 'Sydney Runkle', email = 'sydneymarierunkle@gmail.com'},
     {name = 'David Hewitt', email = 'mail@davidhewitt.io'},
+    {name = 'Alex Hall', email='alex.mojaki@gmail.com'},
 ]
 license = 'MIT'
 classifiers = [
@@ -65,7 +66,7 @@ requires-python = '>=3.8'
 dependencies = [
     'typing-extensions>=4.6.1',
     'annotated-types>=0.4.0',
-    "pydantic-core==2.16.1",
+    "pydantic-core==2.16.2",
 ]
 dynamic = ['version', 'readme']
 
@@ -92,7 +93,7 @@ docs = [
 ]
 linting = [
     "eval-type-backport>=0.1.3",
-    "ruff==0.1.3",
+    "ruff==0.2.1",
     "mypy~=1.1.1",
 ]
 testing = [
@@ -172,21 +173,32 @@ addopts = [
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
 assignees = []
-reviewers = ['samuelcolvin', 'adriangb', 'dmontagu', 'hramezani', 'lig', 'Kludex', 'davidhewitt', 'sydney-runkle']
+reviewers = ['samuelcolvin', 'adriangb', 'dmontagu', 'hramezani', 'Kludex', 'davidhewitt', 'sydney-runkle', 'alexmojaki']
 require_change_file = false
 unconfirmed_label = 'pending'
 
 [tool.ruff]
 line-length = 120
+target-version = 'py38'
+extend-exclude = ['pydantic/v1', 'tests/mypy/outputs']
+
+[tool.ruff.lint]
 extend-select = ['Q', 'RUF100', 'C90', 'UP', 'I', 'D', 'T']
 extend-ignore = ['D105', 'D107', 'D205', 'D415']
 flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
-mccabe = { max-complexity = 14 }
 isort = { known-first-party = ['pydantic', 'tests'] }
-target-version = "py38"
-extend-exclude = ['pydantic/v1', 'tests/mypy/outputs']
+mccabe = { max-complexity = 14 }
+pydocstyle = { convention = 'google' }
 
-[tool.ruff.extend-per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
+'docs/*' = ['D']
+'pydantic/__init__.py' = ['F405', 'F403', 'D']
+'tests/test_forward_ref.py' = ['F821']
+'tests/*' = ['D']
+'pydantic/deprecated/*' = ['D']
+'pydantic/json_schema.py' = ['D']
+
+[tool.ruff.lint.extend-per-file-ignores]
 "docs/**/*.py" = ['T']
 "tests/**/*.py" = ['T', 'E721', 'F811']
 "tests/benchmarks/test_fastapi_startup_generics.py" = ['UP006', 'UP007']
@@ -194,17 +206,6 @@ extend-exclude = ['pydantic/v1', 'tests/mypy/outputs']
 
 [tool.ruff.format]
 quote-style = 'single'
-
-[tool.ruff.pydocstyle]
-convention = "google"
-
-[tool.ruff.per-file-ignores]
-'docs/*' = ['D']
-'pydantic/__init__.py' = ['F405', 'F403', 'D']
-'tests/test_forward_ref.py' = ['F821']
-'tests/*' = ['D']
-'pydantic/deprecated/*' = ['D']
-'pydantic/json_schema.py' = ['D']
 
 [tool.coverage.run]
 source = ['pydantic']

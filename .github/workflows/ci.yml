@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pdm-project/setup-pdm@v3
+      - uses: pdm-project/setup-pdm@v4
         with:
           python-version: ${{ matrix.python-version }}
           cache: true
@@ -46,7 +46,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: pdm-project/setup-pdm@v3
+    - uses: pdm-project/setup-pdm@v4
       with:
         # cloudflare pages build containers run 3.8, hence using it here
         python-version: '3.8'
@@ -79,7 +79,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pdm-project/setup-pdm@v3
+      - uses: pdm-project/setup-pdm@v4
         with:
           python-version: '3.10'
           cache: true
@@ -118,7 +118,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: pdm-project/setup-pdm@v3
+    - uses: pdm-project/setup-pdm@v4
       with:
         python-version: ${{ matrix.python-version }}
         cache: true
@@ -180,7 +180,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pdm-project/setup-pdm@v3
+      - uses: pdm-project/setup-pdm@v4
         with:
           python-version: '3.11'
           cache: true
@@ -226,7 +226,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: pdm-project/setup-pdm@v3
+    - uses: pdm-project/setup-pdm@v4
       with:
         python-version: ${{ matrix.python-version }}
         cache: true
@@ -317,7 +317,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: pdm-project/setup-pdm@v3
+    - uses: pdm-project/setup-pdm@v4
       with:
         python-version: ${{ matrix.python-version }}
         cache: true

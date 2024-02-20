@@ -617,12 +617,18 @@ Here are some additional notes on the behavior of [`model_construct()`][pydantic
   [`model_construct()`][pydantic.main.BaseModel.model_construct].
   * In particular, the [`model_construct()`][pydantic.main.BaseModel.model_construct] method does not support recursively constructing models from dicts.
 * If you do not pass keyword arguments for fields with defaults, the default values will still be used.
-* For models with `model_config['extra'] == 'allow'`, data not corresponding to fields will be correctly stored in
-  the `__pydantic_extra__` dict.
 * For models with private attributes, the `__pydantic_private__` dict will be initialized the same as it would be when
   calling `__init__`.
 * When constructing an instance using [`model_construct()`][pydantic.main.BaseModel.model_construct], no `__init__` method from the model or any of its parent
   classes will be called, even when a custom `__init__` method is defined.
+
+!!! note "On `extra` behavior with `model_construct`"
+    * For models with `model_config['extra'] == 'allow'`, data not corresponding to fields will be correctly stored in
+    the `__pydantic_extra__` dict and saved to the model's `__dict__`.
+    * For models with `model_config['extra'] == 'ignore'`, data not corresponding to fields will be ignored - that is,
+    not stored in `__pydantic_extra__` or `__dict__` on the instance.
+    * Unlike a call to `__init__`, a call to `model_construct` with `model_config['extra'] == 'forbid'` doesn't raise an
+    error in the presence of data not corresponding to fields. Rather, said input data is simply ignored.
 
 ## Generic models
 

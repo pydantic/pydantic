@@ -116,6 +116,7 @@ def test_computed_field_deprecated():
 
     assert p3 == 1
 
+
 @pytest.mark.skipif(
     pydantic.version.parse_package_version(importlib.metadata.version('typing_extensions')) < (4, 9),
     reason='`deprecated` type annotation requires typing_extensions>=4.9',

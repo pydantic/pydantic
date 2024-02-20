@@ -194,20 +194,7 @@ class ModelMetaclass(ABCMeta):
             # the generic computed fields return type is set to PydanticUndefined
             cls.model_computed_fields = {k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()}
 
-            for field, field_info in cls.model_fields.items():
-                if (msg := field_info.deprecation_message) is not None:
-                    desc = _DeprecatedFieldDescriptor(msg)
-                    desc.__set_name__(cls, field)
-                    setattr(cls, field, desc)
-
-            for field, computed_field_info in cls.model_computed_fields.items():
-                if (
-                    not computed_field_info.from_deprecated_decorator  # Avoid having two warnings emitted
-                    and (msg := computed_field_info.deprecation_message) is not None
-                ):
-                    desc = _DeprecatedFieldDescriptor(msg, computed_field_info.wrapped_property)
-                    desc.__set_name__(cls, field)
-                    setattr(cls, field, desc)
+            set_deprecated_descriptors(cls)
 
             # using super(cls, cls) on the next line ensures we only call the parent class's __pydantic_init_subclass__
             # I believe the `type: ignore` is only necessary because mypy doesn't realize that this code branch is
@@ -567,6 +554,24 @@ def complete_model_class(
         generate_pydantic_signature(init=cls.__init__, fields=cls.model_fields, config_wrapper=config_wrapper),
     )
     return True
+
+
+def set_deprecated_descriptors(cls: type[BaseModel]) -> None:
+    """Set data descriptors on the class for deprecated fields."""
+    for field, field_info in cls.model_fields.items():
+        if (msg := field_info.deprecation_message) is not None:
+            desc = _DeprecatedFieldDescriptor(msg)
+            desc.__set_name__(cls, field)
+            setattr(cls, field, desc)
+
+    for field, computed_field_info in cls.model_computed_fields.items():
+        if (
+            not computed_field_info.from_deprecated_decorator  # Avoid having two warnings emitted
+            and (msg := computed_field_info.deprecation_message) is not None
+        ):
+            desc = _DeprecatedFieldDescriptor(msg, computed_field_info.wrapped_property)
+            desc.__set_name__(cls, field)
+            setattr(cls, field, desc)
 
 
 class _DeprecatedFieldDescriptor:

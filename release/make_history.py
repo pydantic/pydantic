@@ -66,7 +66,7 @@ def get_notes(new_version: str) -> str:
     response.raise_for_status()
 
     body = response.json()['body']
-    body = body.replace('<!-- Release notes generated using configuration in .github/release.yml at main -->\n\n', "")
+    body = body.replace('<!-- Release notes generated using configuration in .github/release.yml at main -->\n\n', '')
 
     # Add one level to all headers so they match HISTORY.md, and add trailing newline
     body = re.sub(pattern='^(#+ .+?)$', repl=r'#\1\n', string=body, flags=re.MULTILINE)
