@@ -8,7 +8,7 @@
   "main": "tests/emscripten_runner.js",
   "dependencies": {
     "prettier": "^2.7.1",
-    "pyodide": "^0.23.0"
+    "pyodide": "^0.25.0"
   },
   "scripts": {
     "test": "node tests/emscripten_runner.js",

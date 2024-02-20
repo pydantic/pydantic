@@ -89,7 +89,7 @@ async function main() {
       get(`./run_tests.py?v=${Date.now()}`, 'text'),
       // e4cf2e2 commit matches the pydantic-core wheel being used, so tests should pass
       get(zip_url, 'blob'),
-      importScripts('https://cdn.jsdelivr.net/pyodide/v0.23.0/full/pyodide.js'),
+      importScripts('https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js'),
     ]);
 
     const pyodide = await loadPyodide();
