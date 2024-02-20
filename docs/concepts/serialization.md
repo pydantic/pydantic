@@ -550,7 +550,7 @@ class UserLogin(User):
 class OuterModel(BaseModel):
     user: User
 
-user = UserLogin(name='alber', password='pydantic-pw', friends=[UserLogin(name='sebastian', password='fastapi-pw', friends=[])])
+user = UserLogin(name='samuel', password='pydantic-pw', friends=[UserLogin(name='sebastian', password='fastapi-pw', friends=[])])
 
 print(OuterModel(user=user).model_dump(serialize_as_any=True)) # (1)!
 """

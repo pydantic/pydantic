@@ -315,6 +315,7 @@ class TypeAdapter(Generic[T]):
         exclude_none: bool = False,
         round_trip: bool = False,
         warnings: bool = True,
+        serialize_as_any: bool = False,
     ) -> Any:
         """Dump an instance of the adapted type to a Python object.
 
@@ -329,6 +330,7 @@ class TypeAdapter(Generic[T]):
             exclude_none: Whether to exclude fields with None values.
             round_trip: Whether to output the serialized data in a way that is compatible with deserialization.
             warnings: Whether to display serialization warnings.
+            serialize_as_any: Whether to serialize fields with duck-typed serialization behavior.
 
         Returns:
             The serialized object.
@@ -344,6 +346,7 @@ class TypeAdapter(Generic[T]):
             exclude_none=exclude_none,
             round_trip=round_trip,
             warnings=warnings,
+            serialize_as_any=serialize_as_any,
         )
 
     def dump_json(
@@ -360,6 +363,7 @@ class TypeAdapter(Generic[T]):
         exclude_none: bool = False,
         round_trip: bool = False,
         warnings: bool = True,
+        serialize_as_any: bool = False,
     ) -> bytes:
         """Usage docs: https://docs.pydantic.dev/2.7/concepts/json/#json-serialization
 
@@ -376,6 +380,7 @@ class TypeAdapter(Generic[T]):
             exclude_none: Whether to exclude fields with a value of `None`.
             round_trip: Whether to serialize and deserialize the instance to ensure round-tripping.
             warnings: Whether to emit serialization warnings.
+            serialize_as_any: Whether to serialize fields with duck-typed serialization behavior.
 
         Returns:
             The JSON representation of the given instance as bytes.
@@ -391,6 +396,7 @@ class TypeAdapter(Generic[T]):
             exclude_none=exclude_none,
             round_trip=round_trip,
             warnings=warnings,
+            serialize_as_any=serialize_as_any,
         )
 
     def json_schema(
