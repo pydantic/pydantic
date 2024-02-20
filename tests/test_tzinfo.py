@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone, tzinfo
 from pydantic_core import SchemaValidator, TzInfo, core_schema
 
 if sys.version_info >= (3, 9):
-    from zoneinfo import ZoneInfo
+    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
 class _ALWAYS_EQ:
@@ -174,10 +174,17 @@ class TestTzInfo(unittest.TestCase):
         estdatetime = self.DT.replace(tzinfo=timezone(-timedelta(hours=5)))
         self.assertTrue(self.EST == estdatetime.tzinfo)
         self.assertTrue(tz > estdatetime.tzinfo)
+
         if sys.version_info >= (3, 9) and sys.platform == 'linux':
-            self.assertFalse(tz == ZoneInfo('Europe/London'))
-            with self.assertRaises(TypeError):
-                tz > ZoneInfo('Europe/London')
+            try:
+                europe_london = ZoneInfo('Europe/London')
+            except ZoneInfoNotFoundError:
+                # tz data not available
+                pass
+            else:
+                self.assertFalse(tz == europe_london)
+                with self.assertRaises(TypeError):
+                    tz > europe_london
 
     def test_copy(self):
         for tz in self.ACDT, self.EST:
