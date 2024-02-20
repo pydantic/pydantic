@@ -156,15 +156,15 @@ class ModelMetaclass(ABCMeta):
                             f'All parameters must be present on typing.Generic;'
                             f' you should inherit from {generic_type_label}.'
                         )
-                    if Generic not in bases:  # pragma: no cover
-                        # We raise an error here not because it is desirable, but because some cases are mishandled.
-                        # It would be nice to remove this error and still have things behave as expected, it's just
-                        # challenging because we are using a custom `__class_getitem__` to parametrize generic models,
-                        # and not returning a typing._GenericAlias from it.
-                        bases_str = ', '.join([x.__name__ for x in bases] + [generic_type_label])
-                        error_message += (
-                            f' Note: `typing.Generic` must go last: `class {cls.__name__}({bases_str}): ...`)'
-                        )
+                        if Generic not in bases:  # pragma: no cover
+                            # We raise an error here not because it is desirable, but because some cases are mishandled.
+                            # It would be nice to remove this error and still have things behave as expected, it's just
+                            # challenging because we are using a custom `__class_getitem__` to parametrize generic models,
+                            # and not returning a typing._GenericAlias from it.
+                            bases_str = ', '.join([x.__name__ for x in bases] + [generic_type_label])
+                            error_message += (
+                                f' Note: `typing.Generic` must go last: `class {cls.__name__}({bases_str}): ...`)'
+                            )
                     raise TypeError(error_message)
 
                 cls.__pydantic_generic_metadata__ = {
