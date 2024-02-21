@@ -9,7 +9,7 @@ import weakref
 from abc import ABCMeta
 from functools import partial
 from types import FunctionType
-from typing import Any, Callable, Generic
+from typing import Any, Callable, Generic, NoReturn
 
 import typing_extensions
 from pydantic_core import PydanticUndefined, SchemaSerializer
@@ -605,7 +605,7 @@ class _DeprecatedFieldDescriptor:
     # Defined to take precedence over the instance's dictionary
     # Note that it will not be called when setting a value on a model instance
     # as `BaseModel.__setattr__` is defined and takes priority.
-    def __set__(self, obj, value: Any) -> None:
+    def __set__(self, obj: Any, value: Any) -> NoReturn:
         raise AttributeError(self.field_name)
 
 
