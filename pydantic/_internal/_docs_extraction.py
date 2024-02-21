@@ -25,8 +25,12 @@ class DocstringVisitor(ast.NodeVisitor):
             self.target = node.target.id
 
     def visit_Expr(self, node: ast.Expr) -> Any:
-        if isinstance(node.value, ast.Str) and self.previous_node_type is ast.AnnAssign:
-            docstring = inspect.cleandoc(node.value.s)
+        if (
+            isinstance(node.value, ast.Constant)
+            and isinstance(node.value.value, str)
+            and self.previous_node_type is ast.AnnAssign
+        ):
+            docstring = inspect.cleandoc(node.value.value)
             if self.target:
                 self.attrs[self.target] = docstring
             self.target = None

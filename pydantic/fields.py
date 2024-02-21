@@ -705,8 +705,8 @@ def Field(  # noqa: C901
         lt: Less than. If set, value must be less than this. Only applicable to numbers.
         le: Less than or equal. If set, value must be less than or equal to this. Only applicable to numbers.
         multiple_of: Value must be a multiple of this. Only applicable to numbers.
-        min_length: Minimum length for strings.
-        max_length: Maximum length for strings.
+        min_length: Minimum length for iterables.
+        max_length: Maximum length for iterables.
         pattern: Pattern for strings (a regular expression).
         allow_inf_nan: Allow `inf`, `-inf`, `nan`. Only applicable to numbers.
         max_digits: Maximum number of allow digits for strings.

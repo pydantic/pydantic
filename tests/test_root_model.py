@@ -1,11 +1,11 @@
 import pickle
 from datetime import date, datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Generic, List, Optional, Union
 
 import pytest
 from pydantic_core import CoreSchema
 from pydantic_core.core_schema import SerializerFunctionWrapHandler
-from typing_extensions import Annotated, Literal
+from typing_extensions import Annotated, Literal, TypeVar
 
 from pydantic import (
     Base64Str,
@@ -648,3 +648,12 @@ def test_model_validate_strings(root_type, input_value, expected, raises_match, 
             Model.model_validate_strings(input_value, strict=strict)
     else:
         assert Model.model_validate_strings(input_value, strict=strict).root == expected
+
+
+def test_model_construction_with_invalid_generic_specification() -> None:
+    T_ = TypeVar('T_', bound=BaseModel)
+
+    with pytest.raises(TypeError, match='You should parametrize RootModel directly'):
+
+        class GenericRootModel(RootModel, Generic[T_]):
+            root: Union[T_, int]
