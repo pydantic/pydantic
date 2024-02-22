@@ -431,11 +431,22 @@ print(m.model_dump())  # note: the password field is not included
     even if subclasses get passed when instantiating the object. In particular, this can help prevent surprises
     when adding sensitive information like secrets as fields of subclasses.
 
-### Serializing with duck-typing
+### Serializing with duck-typing 🦆
+
+!!! question "What is serialization with duck typing?"
+
+    Duck-typing serialization is the behavior of serializing an object based on the fields present in the object itself,
+    rather than the fields present in the schema of the object. This means that when an object is serialized, fields present in
+    a subclass, but not in the original schema, will be included in the serialized output.
+
+    This behavior was the default in Pydantic V1, but was changed in V2 to help ensure that you know precisely which
+    fields would be included when serializing, even if subclasses get passed when instantiating the object. This helps
+    prevent security risks when serializing subclasses with sensitive information, for example.
 
 If you want to preserve the old duck-typing serialization behavior, you can use a runtime setting, or annotate individual types.
-* [Field / type level: use the `SerializeAsAny` annotation](#serializeasany-annotation)
-* [Runtime level: use the [`serialize_as_any`] flag when calling `model_dump()` or `model_dump_json()`](#serialize_as_any-runtime-setting)
+
+* Field / type level: use the `SerializeAsAny` annotation
+* Runtime level: use the `serialize_as_any` flag when calling `model_dump()` or `model_dump_json()`
 
 We discuss these options below in more detail:
 
@@ -587,6 +598,41 @@ print(OuterModel(user=user).model_dump(serialize_as_any=False)) # (2)!
 
 1. Even nested `User` model instances are dumped with fields unique to `User` subclasses.
 2. Even nested `User` model instances are dumped without fields unique to `User` subclasses.
+
+#### Overridng the `serialize_as_any` default (False)
+
+You can override the default setting for `serialize_as_any` at the project level by configuring a subclass of `BaseModel` that overrides the default for the `serialize_as_any` argument to `model_dump()` and `model_dump_json()`.
+
+For example, you could do the following if you want to use duck-typing serialization by default:
+
+```py
+from typing import Any, Dict
+
+from pydantic import BaseModel, SecretStr
+
+class MyBaseModel(BaseModel):
+    def model_dump(self, **kwargs) -> Dict[str, Any]::
+        return super().model_dump(serialize_as_any=True, **kwargs)
+
+    def model_dump_json(self, **kwargs) -> str:
+        return super().model_dump_json(serialize_as_any=True, **kwargs)
+
+
+class User(BaseModel):
+    name: str
+
+class UserInfo(User):
+    password: SecretStr
+
+class OuterModel(MyBaseModel):
+    user: User
+
+u = OuterModel(user=UserInfo(name='John', password='secret_pw'))
+print(u.model_dump_json())
+#> {"user":{"name":"John","password":"**********"}} # (1)!
+```
+
+1. By default, `model_dump_json` will use duck-typing serialization behavior, which means that the `password` field is included in the output.
 
 ## `pickle.dumps(model)`
 
