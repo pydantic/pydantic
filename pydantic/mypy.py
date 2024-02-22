@@ -340,16 +340,25 @@ class PydanticModelField:
         self.type = type
         self.info = info
 
-    def to_argument(self, current_info: TypeInfo, typed: bool, force_optional: bool, use_alias: bool) -> Argument:
+    def to_argument(
+        self,
+        current_info: TypeInfo,
+        typed: bool,
+        force_optional: bool,
+        use_alias: bool,
+        api: SemanticAnalyzerPluginInterface,
+    ) -> Argument:
         """Based on mypy.plugins.dataclasses.DataclassAttribute.to_argument."""
+        variable = self.to_var(current_info, api, use_alias)
+        type_annotation = self.expand_type(current_info, api) if typed else AnyType(TypeOfAny.explicit)
         return Argument(
-            variable=self.to_var(current_info, use_alias),
-            type_annotation=self.expand_type(current_info) if typed else AnyType(TypeOfAny.explicit),
+            variable=variable,
+            type_annotation=type_annotation,
             initializer=None,
             kind=ARG_NAMED_OPT if force_optional or self.has_default else ARG_NAMED,
         )
 
-    def expand_type(self, current_info: TypeInfo) -> Type | None:
+    def expand_type(self, current_info: TypeInfo, api: SemanticAnalyzerPluginInterface) -> Type | None:
         """Based on mypy.plugins.dataclasses.DataclassAttribute.expand_type."""
         # The getattr in the next line is used to prevent errors in legacy versions of mypy without this attribute
         if self.type is not None and getattr(self.info, 'self_type', None) is not None:
@@ -359,18 +368,19 @@ class PydanticModelField:
             # we serialize attributes).
             expanded_type = expand_type(self.type, {self.info.self_type.id: fill_typevars(current_info)})
             if isinstance(self.type, UnionType) and not isinstance(expanded_type, UnionType):
-                raise _DeferAnalysis()
+                if not api.final_iteration:
+                    raise _DeferAnalysis()
             return expanded_type
         return self.type
 
-    def to_var(self, current_info: TypeInfo, use_alias: bool) -> Var:
+    def to_var(self, current_info: TypeInfo, api: SemanticAnalyzerPluginInterface, use_alias: bool) -> Var:
         """Based on mypy.plugins.dataclasses.DataclassAttribute.to_var."""
         if use_alias and self.alias is not None:
             name = self.alias
         else:
             name = self.name
 
-        return Var(name, self.expand_type(current_info))
+        return Var(name, self.expand_type(current_info, api))
 
     def serialize(self) -> JsonDict:
         """Based on mypy.plugins.dataclasses.DataclassAttribute.serialize."""
@@ -478,7 +488,7 @@ class PydanticModelTransformer:
         try:
             self.add_initializer(fields, config, is_settings, is_root_model)
             self.add_model_construct_method(fields, config, is_settings)
-            self.set_frozen(fields, frozen=config.frozen is True)
+            self.set_frozen(fields, self._api, frozen=config.frozen is True)
         except _DeferAnalysis:
             if not self._api.final_iteration:
                 self._api.defer()
@@ -915,7 +925,7 @@ class PydanticModelTransformer:
             is_classmethod=True,
         )
 
-    def set_frozen(self, fields: list[PydanticModelField], frozen: bool) -> None:
+    def set_frozen(self, fields: list[PydanticModelField], api: SemanticAnalyzerPluginInterface, frozen: bool) -> None:
         """Marks all fields as properties so that attempts to set them trigger mypy errors.
 
         This is the same approach used by the attrs and dataclasses plugins.
@@ -940,7 +950,7 @@ class PydanticModelTransformer:
                     detail = f'sym_node.node: {var_str} (of type {var.__class__})'
                     error_unexpected_behavior(detail, self._api, self._cls)
             else:
-                var = field.to_var(info, use_alias=False)
+                var = field.to_var(info, api, use_alias=False)
                 var.info = info
                 var.is_property = frozen
                 var._fullname = info.fullname + '.' + var.name
@@ -1037,7 +1047,11 @@ class PydanticModelTransformer:
         info = self._cls.info
         arguments = [
             field.to_argument(
-                info, typed=typed, force_optional=requires_dynamic_aliases or is_settings, use_alias=use_alias
+                info,
+                typed=typed,
+                force_optional=requires_dynamic_aliases or is_settings,
+                use_alias=use_alias,
+                api=self._api,
             )
             for field in fields
             if not (use_alias and field.has_dynamic_alias)
