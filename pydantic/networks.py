@@ -502,6 +502,9 @@ class NameEmail(_repr.Representation):
             return cls(name, email)
 
     def __str__(self) -> str:
+        if '@' in self.name:
+            return f'"{self.name}" <{self.email}>'
+
         return f'{self.name} <{self.email}>'
 
 
