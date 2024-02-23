@@ -2938,7 +2938,7 @@
 <a id="pydantic_extra_types.mac_address"></a>
   <div class="doc doc-contents first">
   
-      <p>The <code>pydantic_extra_types.mac_address</code> module provides functionality to parse and validate MAC addresses in different
+      <p>The MAC address module provides functionality to parse and validate MAC addresses in different
 formats, such as IEEE 802 MAC-48, EUI-48, EUI-64, or a 20-octet format.</p>
 
   
@@ -3017,109 +3017,9 @@ formats, such as IEEE 802 MAC-48, EUI-48, EUI-64, or a 20-octet format.</p>
   
       <p>Validate a MAC Address from the provided byte value.</p>
 
-
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>value</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The byte value representing the MAC address.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-<th>Name</th>        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-<td><code>str</code></td>          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The parsed MAC address.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-
-
-  <p><strong>Raises:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic_core.PydanticCustomError" href="../pydantic_core/#pydantic_core.PydanticCustomError">PydanticCustomError</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>If the value is not a valid MAC address.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
           <details class="quote">
             <summary>Source code in <code>pydantic_extra_types/mac_address.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 44</span>
-<span class="normal"> 45</span>
-<span class="normal"> 46</span>
-<span class="normal"> 47</span>
-<span class="normal"> 48</span>
-<span class="normal"> 49</span>
-<span class="normal"> 50</span>
-<span class="normal"> 51</span>
-<span class="normal"> 52</span>
-<span class="normal"> 53</span>
-<span class="normal"> 54</span>
-<span class="normal"> 55</span>
-<span class="normal"> 56</span>
-<span class="normal"> 57</span>
-<span class="normal"> 58</span>
-<span class="normal"> 59</span>
-<span class="normal"> 60</span>
-<span class="normal"> 61</span>
-<span class="normal"> 62</span>
-<span class="normal"> 63</span>
-<span class="normal"> 64</span>
-<span class="normal"> 65</span>
-<span class="normal"> 66</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 66</span>
 <span class="normal"> 67</span>
 <span class="normal"> 68</span>
 <span class="normal"> 69</span>
@@ -3165,19 +3065,23 @@ formats, such as IEEE 802 MAC-48, EUI-48, EUI-64, or a 20-octet format.</p>
 <span class="normal">109</span>
 <span class="normal">110</span>
 <span class="normal">111</span>
-<span class="normal">112</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">validate_mac_address</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Validate a MAC Address from the provided byte value.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        value: The byte value representing the MAC address.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        str: The parsed MAC address.</span>
-
-<span class="sd">    Raises:</span>
-<span class="sd">        PydanticCustomError: If the value is not a valid MAC address.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">14</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span>
@@ -3266,7 +3170,7 @@ formats, such as IEEE 802 MAC-48, EUI-48, EUI-64, or a 20-octet format.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.7.0a1", "pydantic-core==2.16.2"]
+    window.mkdocs_run_deps = ["pydantic==2.7.0a1", "pydantic-core==2.16.3"]
     </script>
 
               </article>
