@@ -633,4 +633,4 @@ def test_datetime_from_date_str():
         value: datetime
 
     m = Model(value='2015-10-21')
-    assert m.value == datetime(2015, 10, 21, 0, 0, tzinfo=timezone.utc)
+    assert m.value == datetime(2015, 10, 21, 0, 0)
