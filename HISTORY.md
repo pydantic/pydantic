@@ -1,3 +1,18 @@
+## v2.6.2 (2024-02-23)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.6.2)
+
+### What's Changed
+
+#### Packaging
+
+* Upgrade to `pydantic-core` 2.16.3 by @sydney-runkle in [#8879](https://github.com/pydantic/pydantic/pull/8879)
+
+#### Fixes
+
+* 'YYYY-MM-DD' date string coerced to datetime shouldn't infer timezone by @sydney-runkle in [pydantic/pydantic-core#1193](https://github.com/pydantic/pydantic-core/pull/1193)
+
+
 ## v2.6.1 (2024-02-05)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.6.1)
