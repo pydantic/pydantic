@@ -70,6 +70,13 @@ cases = (
         pytest.mark.skipif(MYPY_VERSION_TUPLE > (1, 0, 1), reason='Need to handle some more things for mypy >=1.1.1'),
     ).build()
     + MypyCasesBuilder(
+        ['mypy-default.ini', 'pyproject-default.toml'],
+        'root_models.py',
+        pytest.mark.skipif(
+            MYPY_VERSION_TUPLE < (1, 1, 1), reason='`dataclass_transform` only supported on mypy >= 1.1.1'
+        ),
+    ).build()
+    + MypyCasesBuilder(
         'mypy-default.ini', ['plugin_success.py', 'plugin_success_baseConfig.py', 'metaclass_args.py']
     ).build()
     # Default plugin config
@@ -103,6 +110,9 @@ cases = (
         ('mypy-plugin-strict-no-any.ini', 'dataclass_no_any.py'),
         ('mypy-plugin-very-strict.ini', 'metaclass_args.py'),
         ('pyproject-default.toml', 'computed_fields.py'),
+        ('pyproject-default.toml', 'with_config_decorator.py'),
+        ('pyproject-plugin-no-strict-optional.toml', 'no_strict_optional.py'),
+        ('pyproject-plugin-strict-equality.toml', 'strict_equality.py'),
     ]
 )
 
@@ -183,6 +193,8 @@ def test_mypy_results(config_filename: str, python_filename: str, request: pytes
     if test_config.existing is not None:
         existing_output_code = test_config.existing.output_path.read_text()
         print(f'Comparing output with {test_config.existing.output_path}')
+    else:
+        print('Expecting no mypy errors')
 
     merged_output = merge_python_and_mypy_output(input_code, mypy_out)
 
@@ -193,6 +205,9 @@ def test_mypy_results(config_filename: str, python_filename: str, request: pytes
         test_config.current.output_path.parent.mkdir(parents=True, exist_ok=True)
         test_config.current.output_path.write_text(merged_output)
     else:
+        print('**** Merged Output ****')
+        print(merged_output)
+        print('***********************')
         assert existing_output_code is not None, 'No output file found, run `make test-mypy-update` to create it'
         assert merged_output == existing_output_code
         expected_returncode = get_expected_return_code(existing_output_code)
@@ -270,7 +285,7 @@ def merge_python_and_mypy_output(source_code: str, mypy_output: str) -> str:
         if not line:
             continue
         try:
-            line_number, message = line.split(':', maxsplit=1)
+            line_number, message = re.split(r':(?:\d+:)?', line, maxsplit=1)
             merged_lines.insert(int(line_number), (f'# MYPY: {message.strip()}', True))
         except ValueError:
             # This could happen due to lack of a ':' in `line`, or the pre-':' contents not being a number

@@ -529,6 +529,7 @@ def test_snake2camel(value: str, result: str) -> None:
         ('Camel2Snake', 'camel_2_snake'),
         ('_CamelToSnake', '_camel_to_snake'),
         ('CamelToSnake_', 'camel_to_snake_'),
+        ('CAMELToSnake', 'camel_to_snake'),
         ('__CamelToSnake__', '__camel_to_snake__'),
         ('Camel2', 'camel_2'),
         ('Camel2_', 'camel_2_'),
@@ -542,19 +543,8 @@ def test_camel2snake(value: str, result: str) -> None:
     assert to_snake(value) == result
 
 
-@pytest.mark.parametrize(
-    'params,expected_extra_schema',
-    (
-        pytest.param({}, {}, id='Positional tuple without extra_schema'),
-        pytest.param(
-            {'extras_schema': core_schema.float_schema()},
-            {'extras_schema': {'type': 'str'}},
-            id='Positional tuple with extra_schema',
-        ),
-    ),
-)
-def test_handle_tuple_positional_schema(params, expected_extra_schema):
-    schema = core_schema.tuple_positional_schema([core_schema.str_schema()], **params)
+def test_handle_tuple_schema():
+    schema = core_schema.tuple_schema([core_schema.float_schema(), core_schema.int_schema()])
 
     def walk(s, recurse):
         # change extra_schema['type'] to 'str'
@@ -562,11 +552,10 @@ def test_handle_tuple_positional_schema(params, expected_extra_schema):
             s['type'] = 'str'
         return s
 
-    schema = _WalkCoreSchema().handle_tuple_positional_schema(schema, walk)
+    schema = _WalkCoreSchema().handle_tuple_schema(schema, walk)
     assert schema == {
-        **expected_extra_schema,
-        'items_schema': [{'type': 'str'}],
-        'type': 'tuple-positional',
+        'items_schema': [{'type': 'str'}, {'type': 'int'}],
+        'type': 'tuple',
     }
 
 

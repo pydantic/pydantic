@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pdm-project/setup-pdm@v3
+      - uses: pdm-project/setup-pdm@v4
         with:
           python-version: '3.10'
           cache: true
@@ -27,6 +27,6 @@ jobs:
           pdm install -G testing -G testing-extra -G email
 
       - name: Run CodSpeed benchmarks
-        uses: CodSpeedHQ/action@v1
+        uses: CodSpeedHQ/action@v2
         with:
           run: pdm run pytest ./tests/benchmarks --codspeed

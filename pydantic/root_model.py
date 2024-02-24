@@ -8,25 +8,33 @@ from copy import copy, deepcopy
 from pydantic_core import PydanticUndefined
 
 from . import PydanticUserError
-from ._internal import _repr
+from ._internal import _model_construction, _repr
 from .main import BaseModel, _object_setattr
 
 if typing.TYPE_CHECKING:
     from typing import Any
 
-    from typing_extensions import Literal
+    from typing_extensions import Literal, dataclass_transform
 
-    Model = typing.TypeVar('Model', bound='BaseModel')
+    from .fields import Field as PydanticModelField
 
+    # dataclass_transform could be applied to RootModel directly, but `ModelMetaclass`'s dataclass_transform
+    # takes priority (at least with pyright). We trick type checkers into thinking we apply dataclass_transform
+    # on a new metaclass.
+    @dataclass_transform(kw_only_default=False, field_specifiers=(PydanticModelField,))
+    class _RootModelMetaclass(_model_construction.ModelMetaclass):
+        ...
+else:
+    _RootModelMetaclass = _model_construction.ModelMetaclass
 
 __all__ = ('RootModel',)
 
-
+Model = typing.TypeVar('Model', bound='BaseModel')
 RootModelRootType = typing.TypeVar('RootModelRootType')
 
 
-class RootModel(BaseModel, typing.Generic[RootModelRootType]):
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/models/#rootmodel-and-custom-root-types
+class RootModel(BaseModel, typing.Generic[RootModelRootType], metaclass=_RootModelMetaclass):
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/models/#rootmodel-and-custom-root-types
 
     A Pydantic `BaseModel` for the root object of the model.
 
@@ -52,7 +60,7 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
             )
         super().__init_subclass__(**kwargs)
 
-    def __init__(__pydantic_self__, root: RootModelRootType = PydanticUndefined, **data) -> None:  # type: ignore
+    def __init__(self, /, root: RootModelRootType = PydanticUndefined, **data) -> None:  # type: ignore
         __tracebackhide__ = True
         if data:
             if root is not PydanticUndefined:
@@ -60,12 +68,12 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
                     '"RootModel.__init__" accepts either a single positional argument or arbitrary keyword arguments'
                 )
             root = data  # type: ignore
-        __pydantic_self__.__pydantic_validator__.validate_python(root, self_instance=__pydantic_self__)
+        self.__pydantic_validator__.validate_python(root, self_instance=self)
 
-    __init__.__pydantic_base_init__ = True
+    __init__.__pydantic_base_init__ = True  # pyright: ignore[reportFunctionMemberAccess]
 
     @classmethod
-    def model_construct(cls: type[Model], root: RootModelRootType, _fields_set: set[str] | None = None) -> Model:
+    def model_construct(cls: type[Model], root: RootModelRootType, _fields_set: set[str] | None = None) -> Model:  # type: ignore
         """Create a new model using the provided root object and update fields set.
 
         Args:
@@ -110,7 +118,7 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
 
     if typing.TYPE_CHECKING:
 
-        def model_dump(
+        def model_dump(  # type: ignore
             self,
             *,
             mode: Literal['json', 'python'] | str = 'python',
@@ -122,11 +130,17 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
             exclude_none: bool = False,
             round_trip: bool = False,
             warnings: bool = True,
-        ) -> RootModelRootType:
+        ) -> Any:
             """This method is included just to get a more accurate return type for type checkers.
             It is included in this `if TYPE_CHECKING:` block since no override is actually necessary.
 
             See the documentation of `BaseModel.model_dump` for more details about the arguments.
+
+            Generally, this method will have a return type of `RootModelRootType`, assuming that `RootModelRootType` is
+            not a `BaseModel` subclass. If `RootModelRootType` is a `BaseModel` subclass, then the return
+            type will likely be `dict[str, Any]`, as `model_dump` calls are recursive. The return type could
+            even be something different, in the case of a custom serializer.
+            Thus, `Any` is used here to catch all of these cases.
             """
             ...
 

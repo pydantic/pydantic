@@ -312,8 +312,8 @@ from pydantic import (
 
 
 class UserModel(BaseModel):
-    id: int
     name: str
+    id: int
 
     @field_validator('name')
     @classmethod
@@ -333,11 +333,11 @@ class UserModel(BaseModel):
         return v
 
 
-print(UserModel(id=1, name='John Doe'))
-#> id=1 name='John Doe'
+print(UserModel(name='John Doe', id=1))
+#> name='John Doe' id=1
 
 try:
-    UserModel(id=1, name='samuel')
+    UserModel(name='samuel', id=1)
 except ValidationError as e:
     print(e)
     """
@@ -347,7 +347,7 @@ except ValidationError as e:
     """
 
 try:
-    UserModel(id='abc', name='John Doe')
+    UserModel(name='John Doe', id='abc')
 except ValidationError as e:
     print(e)
     """
@@ -357,7 +357,7 @@ except ValidationError as e:
     """
 
 try:
-    UserModel(id=1, name='John Doe!')
+    UserModel(name='John Doe!', id=1)
 except ValidationError as e:
     print(e)
     """
@@ -400,6 +400,8 @@ Validation can also be performed on the entire model's data using `@model_valida
 ```py
 from typing import Any
 
+from typing_extensions import Self
+
 from pydantic import BaseModel, ValidationError, model_validator
 
 
@@ -418,7 +420,7 @@ class UserModel(BaseModel):
         return data
 
     @model_validator(mode='after')
-    def check_passwords_match(self) -> 'UserModel':
+    def check_passwords_match(self) -> Self:
         pw1 = self.password1
         pw2 = self.password2
         if pw1 is not None and pw2 is not None and pw1 != pw2:
@@ -460,7 +462,7 @@ Because of this `mode='before'` validators are extremely flexible and powerful b
 Before model validators should be class methods.
 The first argument should be `cls` (and we also recommend you use `@classmethod` below `@model_validator` for proper type checking), the second argument will be the input (you should generally type it as `Any` and use `isinstance` to narrow the type) and the third argument (if present) will be a `pydantic.ValidationInfo`.
 
-`mode='after'` validators are instance methods and always receive an instance of the model as the first argument.
+`mode='after'` validators are instance methods and always receive an instance of the model as the first argument. Be sure to return the instance at the end of your validator.
 You should not use `(cls, ModelType)` as the signature, instead just use `(self)` and let type checkers infer the type of `self` for you.
 Since these are fully type safe they are often easier to implement than `mode='before'` validators.
 If any field fails to validate, `mode='after'` validators for that field will not be called.
@@ -726,10 +728,10 @@ def init_context(value: Dict[str, Any]) -> Iterator[None]:
 class Model(BaseModel):
     my_number: int
 
-    def __init__(__pydantic_self__, **data: Any) -> None:
-        __pydantic_self__.__pydantic_validator__.validate_python(
+    def __init__(self, /, **data: Any) -> None:
+        self.__pydantic_validator__.validate_python(
             data,
-            self_instance=__pydantic_self__,
+            self_instance=self,
             context=_init_context_var.get(),
         )
 
@@ -751,4 +753,39 @@ with init_context({'multiplier': 3}):
 
 print(Model(my_number=2))
 #> my_number=2
+```
+
+## Reusing Validators
+
+Occasionally, you will want to use the same validator on multiple fields/models (e.g. to normalize some input data).
+The "naive" approach would be to write a separate function, then call it from multiple decorators.
+Obviously, this entails a lot of repetition and boiler plate code.
+The following approach demonstrates how you can reuse a validator so that redundancy is minimized and the models become again almost declarative.
+
+```py
+from pydantic import BaseModel, field_validator
+
+
+def normalize(name: str) -> str:
+    return ' '.join((word.capitalize()) for word in name.split(' '))
+
+
+class Producer(BaseModel):
+    name: str
+
+    _normalize_name = field_validator('name')(normalize)
+
+
+class Consumer(BaseModel):
+    name: str
+
+    _normalize_name = field_validator('name')(normalize)
+
+
+jane_doe = Producer(name='JaNe DOE')
+print(repr(jane_doe))
+#> Producer(name='Jane Doe')
+john_doe = Consumer(name='joHN dOe')
+print(repr(john_doe))
+#> Consumer(name='John Doe')
 ```

@@ -20,6 +20,7 @@ from pydantic import (
     PositiveInt,
     PydanticUserError,
     ValidationError,
+    with_config,
 )
 from pydantic._internal._decorators import get_attribute_from_bases
 from pydantic.functional_serializers import field_serializer, model_serializer
@@ -735,7 +736,7 @@ def test_typeddict_alias_generator(TypedDict):
     ]
 
 
-def test_typeddict_inheritence(TypedDict: Any) -> None:
+def test_typeddict_inheritance(TypedDict: Any) -> None:
     class Parent(TypedDict):
         x: int
 
@@ -919,3 +920,13 @@ def test_typeddict_mro():
         pass
 
     assert get_attribute_from_bases(C, 'x') == 2
+
+
+def test_typeddict_with_config_decorator():
+    @with_config(ConfigDict(str_to_lower=True))
+    class Model(TypedDict):
+        x: str
+
+    ta = TypeAdapter(Model)
+
+    assert ta.validate_python({'x': 'ABC'}) == {'x': 'abc'}

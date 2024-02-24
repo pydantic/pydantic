@@ -1,7 +1,6 @@
 import asyncio
 import inspect
 import re
-import sys
 from datetime import datetime, timezone
 from functools import partial
 from typing import Any, List, Tuple
@@ -12,8 +11,6 @@ from typing_extensions import Annotated, TypedDict
 
 from pydantic import Field, PydanticInvalidForJsonSchema, TypeAdapter, ValidationError, validate_call
 from pydantic.main import BaseModel
-
-skip_pre_39 = pytest.mark.skipif(sys.version_info < (3, 9), reason='testing >= 3.9 behaviour only')
 
 
 def test_args():
@@ -93,9 +90,7 @@ def test_wrap():
     assert foo_bar.__name__ == 'foo_bar'
     assert foo_bar.__module__ == 'tests.test_validate_call'
     assert foo_bar.__qualname__ == 'test_wrap.<locals>.foo_bar'
-    assert isinstance(foo_bar.__pydantic_core_schema__, dict)
     assert callable(foo_bar.raw_function)
-    assert repr(foo_bar) == f'ValidateCallWrapper({repr(foo_bar.raw_function)})'
     assert repr(inspect.signature(foo_bar)) == '<Signature (a: int, b: int)>'
 
 
@@ -369,12 +364,11 @@ def test_item_method():
 
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'missing_argument', 'loc': ('a',), 'msg': 'Missing required argument', 'input': ArgsKwargs(())},
-        {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs(())},
+        {'type': 'missing_argument', 'loc': ('a',), 'msg': 'Missing required argument', 'input': ArgsKwargs((x,))},
+        {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs((x,))},
     ]
 
 
-@skip_pre_39
 def test_class_method():
     class X:
         @classmethod
@@ -392,8 +386,8 @@ def test_class_method():
 
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'missing_argument', 'loc': ('a',), 'msg': 'Missing required argument', 'input': ArgsKwargs(())},
-        {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs(())},
+        {'type': 'missing_argument', 'loc': ('a',), 'msg': 'Missing required argument', 'input': ArgsKwargs((X,))},
+        {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs((X,))},
     ]
 
 
@@ -684,6 +678,18 @@ def test_basemodel_method():
     assert bar.test('1') == (bar, 1)
 
 
+def test_dynamic_method_decoration():
+    class Foo:
+        def bar(self, value: str) -> str:
+            return f'bar-{value}'
+
+    Foo.bar = validate_call(Foo.bar)
+    assert Foo.bar
+
+    foo = Foo()
+    assert foo.bar('test') == 'bar-test'
+
+
 @pytest.mark.parametrize('decorator', [staticmethod, classmethod])
 def test_classmethod_order_error(decorator):
     name = decorator.__name__
@@ -748,3 +754,39 @@ def test_validate_call_with_slots() -> None:
     assert c.some_instance_method == c.some_instance_method
     assert c.some_class_method == c.some_class_method
     assert c.some_static_method == c.some_static_method
+
+
+def test_eval_type_backport():
+    @validate_call
+    def foo(bar: 'list[int | str]') -> 'list[int | str]':
+        return bar
+
+    assert foo([1, '2']) == [1, '2']
+    with pytest.raises(ValidationError) as exc_info:
+        foo('not a list')  # type: ignore
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'list_type',
+            'loc': (0,),
+            'msg': 'Input should be a valid list',
+            'input': 'not a list',
+        }
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        foo([{'not a str or int'}])  # type: ignore
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_type',
+            'loc': (0, 0, 'int'),
+            'msg': 'Input should be a valid integer',
+            'input': {'not a str or int'},
+        },
+        {
+            'type': 'string_type',
+            'loc': (0, 0, 'str'),
+            'msg': 'Input should be a valid string',
+            'input': {'not a str or int'},
+        },
+    ]

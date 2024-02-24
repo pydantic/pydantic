@@ -58,6 +58,9 @@ PydanticErrorCodes = Literal[
     'invalid_annotated_type',
     'type-adapter-config-unused',
     'root-model-extra',
+    'unevaluable-type-annotation',
+    'dataclass-init-false-extra-allow',
+    'clashing-init-and-init-var',
 ]
 
 

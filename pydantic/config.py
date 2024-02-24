@@ -1,16 +1,17 @@
 """Configuration for Pydantic models."""
 from __future__ import annotations as _annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, TypeVar, Union
 
 from typing_extensions import Literal, TypeAlias, TypedDict
 
 from ._migration import getattr_migration
+from .aliases import AliasGenerator
 
 if TYPE_CHECKING:
     from ._internal._generate_schema import GenerateSchema as _GenerateSchema
 
-__all__ = ('ConfigDict',)
+__all__ = ('ConfigDict', 'with_config')
 
 
 JsonValue: TypeAlias = Union[int, float, str, bool, None, List['JsonValue'], 'JsonDict']
@@ -119,12 +120,12 @@ class ConfigDict(TypedDict, total=False):
 
     frozen: bool
     """
-    Whether or not models are faux-immutable, i.e. whether `__setattr__` is allowed, and also generates
+    Whether models are faux-immutable, i.e. whether `__setattr__` is allowed, and also generates
     a `__hash__()` method for the model. This makes instances of the model potentially hashable if all the
     attributes are hashable. Defaults to `False`.
 
     Note:
-        On V1, this setting was called `allow_mutation`, and was `True` by default.
+        On V1, the inverse of this setting was called `allow_mutation`, and was `True` by default.
     """
 
     populate_by_name: bool
@@ -315,12 +316,18 @@ class ConfigDict(TypedDict, total=False):
     loc_by_alias: bool
     """Whether to use the actual key provided in the data (e.g. alias) for error `loc`s rather than the field's name. Defaults to `True`."""
 
-    alias_generator: Callable[[str], str] | None
+    alias_generator: Callable[[str], str] | AliasGenerator | None
     """
-    A callable that takes a field name and returns an alias for it.
+    A callable that takes a field name and returns an alias for it
+    or an instance of [`AliasGenerator`][pydantic.aliases.AliasGenerator]. Defaults to `None`.
+
+    When using a callable, the alias generator is used for both validation and serialization.
+    If you want to use different alias generators for validation and serialization, you can use
+    [`AliasGenerator`][pydantic.aliases.AliasGenerator] instead.
 
     If data source field names do not match your code style (e. g. CamelCase fields),
-    you can automatically generate aliases using `alias_generator`:
+    you can automatically generate aliases using `alias_generator`. Here's an example with
+    a basic callable:
 
     ```py
     from pydantic import BaseModel, ConfigDict
@@ -337,6 +344,30 @@ class ConfigDict(TypedDict, total=False):
     #> tr-TR
     print(voice.model_dump(by_alias=True))
     #> {'Name': 'Filiz', 'LanguageCode': 'tr-TR'}
+    ```
+
+    If you want to use different alias generators for validation and serialization, you can use
+    [`AliasGenerator`][pydantic.aliases.AliasGenerator].
+
+    ```py
+    from pydantic import AliasGenerator, BaseModel, ConfigDict
+    from pydantic.alias_generators import to_camel, to_pascal
+
+    class Athlete(BaseModel):
+        first_name: str
+        last_name: str
+        sport: str
+
+        model_config = ConfigDict(
+            alias_generator=AliasGenerator(
+                validation_alias=to_camel,
+                serialization_alias=to_pascal,
+            )
+        )
+
+    athlete = Athlete(firstName='John', lastName='Doe', sport='track')
+    print(athlete.model_dump(by_alias=True))
+    #> {'FirstName': 'John', 'LastName': 'Doe', 'Sport': 'track'}
     ```
 
     Note:
@@ -538,6 +569,15 @@ class ConfigDict(TypedDict, total=False):
 
     - `'utf8'` will serialize bytes to UTF-8 strings.
     - `'base64'` will serialize bytes to URL safe base64 strings.
+    """
+
+    ser_json_inf_nan: Literal['null', 'constants']
+    """
+    The encoding of JSON serialized infinity and NaN float values. Accepts the string values of `'null'` and `'constants'`.
+    Defaults to `'null'`.
+
+    - `'null'` will serialize infinity and NaN values as `null`.
+    - `'constants'` will serialize infinity and NaN values as `Infinity` and `NaN`.
     """
 
     # whether to validate default values during validation, default False
@@ -826,7 +866,7 @@ class ConfigDict(TypedDict, total=False):
 
     regex_engine: Literal['rust-regex', 'python-re']
     """
-    The regex engine to used for pattern validation
+    The regex engine to be used for pattern validation.
     Defaults to `'rust-regex'`.
 
     - `rust-regex` uses the [`regex`](https://docs.rs/regex) Rust crate,
@@ -859,14 +899,86 @@ class ConfigDict(TypedDict, total=False):
 
     validation_error_cause: bool
     """
-    If `True`, python exceptions that were part of a validation failure will be shown as an exception group as a cause. Can be useful for debugging. Defaults to `False`.
+    If `True`, Python exceptions that were part of a validation failure will be shown as an exception group as a cause. Can be useful for debugging. Defaults to `False`.
 
     Note:
         Python 3.10 and older don't support exception groups natively. <=3.10, backport must be installed: `pip install exceptiongroup`.
 
     Note:
-        The structure of validation errors are likely to change in future pydantic versions. Pydantic offers no guarantees about the structure of validation errors. Should be used for visual traceback debugging only.
+        The structure of validation errors are likely to change in future Pydantic versions. Pydantic offers no guarantees about their structure. Should be used for visual traceback debugging only.
     """
+
+    use_attribute_docstrings: bool
+    '''
+    Whether docstrings of attributes (bare string literals immediately following the attribute declaration)
+    should be used for field descriptions. Defaults to `False`.
+
+    ```py
+    from pydantic import BaseModel, ConfigDict, Field
+
+
+    class Model(BaseModel):
+        model_config = ConfigDict(use_attribute_docstrings=True)
+
+        x: str
+        """
+        Example of an attribute docstring
+        """
+
+        y: int = Field(description="Description in Field")
+        """
+        Description in Field overrides attribute docstring
+        """
+
+
+    print(Model.model_fields["x"].description)
+    # > Example of an attribute docstring
+    print(Model.model_fields["y"].description)
+    # > Description in Field
+    ```
+    This requires the source code of the class to be available at runtime.
+
+    !!! warning "Usage with `TypedDict`"
+        Due to current limitations, attribute docstrings detection may not work as expected when using `TypedDict`
+        (in particular when multiple `TypedDict` classes have the same name in the same source file). The behavior
+        can be different depending on the Python version used.
+    '''
+
+
+_TypeT = TypeVar('_TypeT', bound=type)
+
+
+def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict
+
+    A convenience decorator to set a [Pydantic configuration](config.md) on a `TypedDict` or a `dataclass` from the standard library.
+
+    Although the configuration can be set using the `__pydantic_config__` attribute, it does not play well with type checkers,
+    especially with `TypedDict`.
+
+    !!! example "Usage"
+
+        ```py
+        from typing_extensions import TypedDict
+
+        from pydantic import ConfigDict, TypeAdapter, with_config
+
+        @with_config(ConfigDict(str_to_lower=True))
+        class Model(TypedDict):
+            x: str
+
+        ta = TypeAdapter(Model)
+
+        print(ta.validate_python({'x': 'ABC'}))
+        #> {'x': 'abc'}
+        ```
+    """
+
+    def inner(TypedDictClass: _TypeT, /) -> _TypeT:
+        TypedDictClass.__pydantic_config__ = config
+        return TypedDictClass
+
+    return inner
 
 
 __getattr__ = getattr_migration(__name__)

@@ -8,7 +8,7 @@ import weakref
 from abc import ABCMeta
 from functools import partial
 from types import FunctionType
-from typing import Any, Callable, Generic, Mapping
+from typing import Any, Callable, Generic
 
 import typing_extensions
 from pydantic_core import PydanticUndefined, SchemaSerializer
@@ -20,17 +20,16 @@ from ..warnings import GenericBeforeBaseModelWarning, PydanticDeprecatedSince20
 from ._config import ConfigWrapper
 from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_from_bases
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
-from ._generate_schema import GenerateSchema, generate_pydantic_signature
+from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
 from ._mock_val_ser import MockValSer, set_model_mocks
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
+from ._signature import generate_pydantic_signature
 from ._typing_extra import get_cls_types_namespace, is_annotated, is_classvar, parent_frame_namespace
-from ._utils import ClassAttribute
+from ._utils import ClassAttribute, SafeGetItemProxy
 from ._validate_call import ValidateCallWrapper
 
 if typing.TYPE_CHECKING:
-    from inspect import Signature
-
     from ..fields import Field as PydanticModelField
     from ..fields import FieldInfo, ModelPrivateAttr
     from ..main import BaseModel
@@ -138,22 +137,40 @@ class ModelMetaclass(ABCMeta):
                 parent_parameters = getattr(cls, '__pydantic_generic_metadata__', {}).get('parameters', ())
                 parameters = getattr(cls, '__parameters__', None) or parent_parameters
                 if parameters and parent_parameters and not all(x in parameters for x in parent_parameters):
-                    combined_parameters = parent_parameters + tuple(x for x in parameters if x not in parent_parameters)
-                    parameters_str = ', '.join([str(x) for x in combined_parameters])
-                    generic_type_label = f'typing.Generic[{parameters_str}]'
-                    error_message = (
-                        f'All parameters must be present on typing.Generic;'
-                        f' you should inherit from {generic_type_label}.'
-                    )
-                    if Generic not in bases:  # pragma: no cover
-                        # We raise an error here not because it is desirable, but because some cases are mishandled.
-                        # It would be nice to remove this error and still have things behave as expected, it's just
-                        # challenging because we are using a custom `__class_getitem__` to parametrize generic models,
-                        # and not returning a typing._GenericAlias from it.
-                        bases_str = ', '.join([x.__name__ for x in bases] + [generic_type_label])
-                        error_message += (
-                            f' Note: `typing.Generic` must go last: `class {cls.__name__}({bases_str}): ...`)'
+                    from ..root_model import RootModelRootType
+
+                    missing_parameters = tuple(x for x in parameters if x not in parent_parameters)
+                    if RootModelRootType in parent_parameters and RootModelRootType not in parameters:
+                        # This is a special case where the user has subclassed `RootModel`, but has not parametrized
+                        # RootModel with the generic type identifiers being used. Ex:
+                        # class MyModel(RootModel, Generic[T]):
+                        #    root: T
+                        # Should instead just be:
+                        # class MyModel(RootModel[T]):
+                        #   root: T
+                        parameters_str = ', '.join([x.__name__ for x in missing_parameters])
+                        error_message = (
+                            f'{cls.__name__} is a subclass of `RootModel`, but does not include the generic type identifier(s) '
+                            f'{parameters_str} in its parameters. '
+                            f'You should parametrize RootModel directly, e.g., `class {cls.__name__}(RootModel[{parameters_str}]): ...`.'
                         )
+                    else:
+                        combined_parameters = parent_parameters + missing_parameters
+                        parameters_str = ', '.join([str(x) for x in combined_parameters])
+                        generic_type_label = f'typing.Generic[{parameters_str}]'
+                        error_message = (
+                            f'All parameters must be present on typing.Generic;'
+                            f' you should inherit from {generic_type_label}.'
+                        )
+                        if Generic not in bases:  # pragma: no cover
+                            # We raise an error here not because it is desirable, but because some cases are mishandled.
+                            # It would be nice to remove this error and still have things behave as expected, it's just
+                            # challenging because we are using a custom `__class_getitem__` to parametrize generic models,
+                            # and not returning a typing._GenericAlias from it.
+                            bases_str = ', '.join([x.__name__ for x in bases] + [generic_type_label])
+                            error_message += (
+                                f' Note: `typing.Generic` must go last: `class {cls.__name__}({bases_str}): ...`)'
+                            )
                     raise TypeError(error_message)
 
                 cls.__pydantic_generic_metadata__ = {
@@ -189,6 +206,11 @@ class ModelMetaclass(ABCMeta):
                 types_namespace=types_namespace,
                 create_model_module=_create_model_module,
             )
+
+            # If this is placed before the complete_model_class call above,
+            # the generic computed fields return type is set to PydanticUndefined
+            cls.model_computed_fields = {k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()}
+
             # using super(cls, cls) on the next line ensures we only call the parent class's __pydantic_init_subclass__
             # I believe the `type: ignore` is only necessary because mypy doesn't realize that this code branch is
             # only hit for _proper_ subclasses of BaseModel
@@ -217,7 +239,7 @@ class ModelMetaclass(ABCMeta):
             raise AttributeError(item)
 
     @classmethod
-    def __prepare__(cls, *args: Any, **kwargs: Any) -> Mapping[str, object]:
+    def __prepare__(cls, *args: Any, **kwargs: Any) -> dict[str, object]:
         return _ModelNamespaceDict()
 
     def __instancecheck__(self, instance: Any) -> bool:
@@ -243,12 +265,18 @@ class ModelMetaclass(ABCMeta):
         return field_names, class_vars, private_attributes
 
     @property
-    @deprecated(
-        'The `__fields__` attribute is deprecated, use `model_fields` instead.', category=PydanticDeprecatedSince20
-    )
+    @deprecated('The `__fields__` attribute is deprecated, use `model_fields` instead.', category=None)
     def __fields__(self) -> dict[str, FieldInfo]:
-        warnings.warn('The `__fields__` attribute is deprecated, use `model_fields` instead.', DeprecationWarning)
+        warnings.warn(
+            'The `__fields__` attribute is deprecated, use `model_fields` instead.', PydanticDeprecatedSince20
+        )
         return self.model_fields  # type: ignore
+
+    def __dir__(self) -> list[str]:
+        attributes = list(super().__dir__())
+        if '__fields__' in attributes:
+            attributes.remove('__fields__')
+        return attributes
 
 
 def init_private_attributes(self: BaseModel, __context: Any) -> None:
@@ -324,6 +352,7 @@ def inspect_namespace(  # noqa C901
         elif (
             isinstance(value, type)
             and value.__module__ == namespace['__module__']
+            and '__qualname__' in namespace
             and value.__qualname__.startswith(namespace['__qualname__'])
         ):
             # `value` is a nested type defined in this namespace; don't error
@@ -422,17 +451,9 @@ def make_hash_func(cls: type[BaseModel]) -> Any:
             # all model fields, which is how we can get here.
             # getter(self.__dict__) is much faster than any 'safe' method that accounts for missing keys,
             # and wrapping it in a `try` doesn't slow things down much in the common case.
-            return hash(getter(FallbackDict(self.__dict__)))  # type: ignore
+            return hash(getter(SafeGetItemProxy(self.__dict__)))
 
     return hash_func
-
-
-class FallbackDict:
-    def __init__(self, inner):
-        self.inner = inner
-
-    def __getitem__(self, key):
-        return self.inner.get(key)
 
 
 def set_model_fields(
@@ -544,25 +565,10 @@ def complete_model_class(
 
     # set __signature__ attr only for model class, but not for its instances
     cls.__signature__ = ClassAttribute(
-        '__signature__', generate_model_signature(cls.__init__, cls.model_fields, config_wrapper)
+        '__signature__',
+        generate_pydantic_signature(init=cls.__init__, fields=cls.model_fields, config_wrapper=config_wrapper),
     )
     return True
-
-
-def generate_model_signature(
-    init: Callable[..., None], fields: dict[str, FieldInfo], config_wrapper: ConfigWrapper
-) -> Signature:
-    """Generate signature for model based on its fields.
-
-    Args:
-        init: The class init.
-        fields: The model fields.
-        config_wrapper: The config wrapper instance.
-
-    Returns:
-        The model signature.
-    """
-    return generate_pydantic_signature(init, fields, config_wrapper)
 
 
 class _PydanticWeakRef:

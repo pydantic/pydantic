@@ -15,6 +15,7 @@ from typing_extensions import (
     Self,
 )
 
+from ..aliases import AliasGenerator
 from ..config import ConfigDict, ExtraValues, JsonDict, JsonEncoder, JsonSchemaExtraCallable
 from ..errors import PydanticUserError
 from ..warnings import PydanticDeprecatedSince20
@@ -55,7 +56,7 @@ class ConfigWrapper:
     # whether to use the actual key provided in the data (e.g. alias or first alias for "field required" errors) instead of field_names
     # to construct error `loc`s, default `True`
     loc_by_alias: bool
-    alias_generator: Callable[[str], str] | None
+    alias_generator: Callable[[str], str] | AliasGenerator | None
     ignored_types: tuple[type, ...]
     allow_inf_nan: bool
     json_schema_extra: JsonDict | JsonSchemaExtraCallable | None
@@ -67,6 +68,7 @@ class ConfigWrapper:
     revalidate_instances: Literal['always', 'never', 'subclass-instances']
     ser_json_timedelta: Literal['iso8601', 'float']
     ser_json_bytes: Literal['utf8', 'base64']
+    ser_json_inf_nan: Literal['null', 'constants']
     # whether to validate default values during validation, default False
     validate_default: bool
     validate_return: bool
@@ -80,6 +82,7 @@ class ConfigWrapper:
     coerce_numbers_to_str: bool
     regex_engine: Literal['rust-regex', 'python-re']
     validation_error_cause: bool
+    use_attribute_docstrings: bool
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
         if check:
@@ -167,6 +170,7 @@ class ConfigWrapper:
                 strict=self.config_dict.get('strict'),
                 ser_json_timedelta=self.config_dict.get('ser_json_timedelta'),
                 ser_json_bytes=self.config_dict.get('ser_json_bytes'),
+                ser_json_inf_nan=self.config_dict.get('ser_json_inf_nan'),
                 from_attributes=self.config_dict.get('from_attributes'),
                 loc_by_alias=self.config_dict.get('loc_by_alias'),
                 revalidate_instances=self.config_dict.get('revalidate_instances'),
@@ -236,6 +240,7 @@ config_defaults = ConfigDict(
     revalidate_instances='never',
     ser_json_timedelta='iso8601',
     ser_json_bytes='utf8',
+    ser_json_inf_nan='null',
     validate_default=False,
     validate_return=False,
     protected_namespaces=('model_',),
@@ -249,6 +254,7 @@ config_defaults = ConfigDict(
     coerce_numbers_to_str=False,
     regex_engine='rust-regex',
     validation_error_cause=False,
+    use_attribute_docstrings=False,
 )
 
 

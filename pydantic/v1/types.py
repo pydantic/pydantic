@@ -481,6 +481,7 @@ else:
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+
 # This types superclass should be Set[T], but cython chokes on that...
 class ConstrainedSet(set):  # type: ignore
     # Needed for pydantic to detect that this is a set
@@ -568,6 +569,7 @@ def confrozenset(
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ LIST TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 # This types superclass should be List[T], but cython chokes on that...
 class ConstrainedList(list):  # type: ignore
@@ -1094,7 +1096,6 @@ class ByteSize(int):
 
     @classmethod
     def validate(cls, v: StrIntFloat) -> 'ByteSize':
-
         try:
             return cls(int(v))
         except ValueError:
@@ -1116,7 +1117,6 @@ class ByteSize(int):
         return cls(int(float(scalar) * unit_mult))
 
     def human_readable(self, decimal: bool = False) -> str:
-
         if decimal:
             divisor = 1000
             units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
@@ -1135,7 +1135,6 @@ class ByteSize(int):
         return f'{num:0.1f}{final_unit}'
 
     def to(self, unit: str) -> float:
-
         try:
             unit_div = BYTE_SIZES[unit.lower()]
         except KeyError:

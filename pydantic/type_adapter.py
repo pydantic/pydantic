@@ -3,10 +3,10 @@ from __future__ import annotations as _annotations
 
 import sys
 from dataclasses import is_dataclass
-from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, cast, final, overload
 
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
-from typing_extensions import Literal, is_typeddict
+from typing_extensions import Literal, get_args, is_typeddict
 
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel
@@ -24,6 +24,7 @@ from .plugin._schema_validator import create_schema_validator
 
 T = TypeVar('T')
 
+
 if TYPE_CHECKING:
     # should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
     IncEx = Union[Set[int], Set[str], Dict[int, Any], Dict[str, Any]]
@@ -31,14 +32,14 @@ if TYPE_CHECKING:
 
 def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth: int) -> CoreSchema:
     """`BaseModel` uses its own `__module__` to find out where it was defined
-    and then look for symbols to resolve forward references in those globals.
+    and then looks for symbols to resolve forward references in those globals.
     On the other hand this function can be called with arbitrary objects,
-    including type aliases where `__module__` (always `typing.py`) is not useful.
+    including type aliases, where `__module__` (always `typing.py`) is not useful.
     So instead we look at the globals in our parent stack frame.
 
     This works for the case where this function is called in a module that
     has the target of forward references in its scope, but
-    does not work for more complex cases.
+    does not always work for more complex cases.
 
     For example, take the following:
 
@@ -61,10 +62,9 @@ def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth:
     v({'x': 1})  # should fail but doesn't
     ```
 
-    If OuterDict were a `BaseModel`, this would work because it would resolve
+    If `OuterDict` were a `BaseModel`, this would work because it would resolve
     the forward reference within the `a.py` namespace.
-    But `TypeAdapter(OuterDict)`
-    can't know what module OuterDict came from.
+    But `TypeAdapter(OuterDict)` can't determine what module `OuterDict` came from.
 
     In other words, the assumption that _all_ forward references exist in the
     module we are being called from is not technically always true.
@@ -98,13 +98,25 @@ def _getattr_no_parents(obj: Any, attribute: str) -> Any:
         raise AttributeError(attribute)
 
 
+def _type_has_config(type_: Any) -> bool:
+    """Returns whether the type has config."""
+    try:
+        return issubclass(type_, BaseModel) or is_dataclass(type_) or is_typeddict(type_)
+    except TypeError:
+        # type is not a class
+        return False
+
+
+@final
 class TypeAdapter(Generic[T]):
-    """Type adapters provide a flexible way to perform validation and serialization based on a Python type.
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/type_adapter/
+
+    Type adapters provide a flexible way to perform validation and serialization based on a Python type.
 
     A `TypeAdapter` instance exposes some of the functionality from `BaseModel` instance methods
     for types that do not have such methods (such as dataclasses, primitive types, and more).
 
-    Note that `TypeAdapter` is not an actual type, so you cannot use it in type annotations.
+    **Note:** `TypeAdapter` instances are not types, and cannot be used as type annotations for fields.
 
     Attributes:
         core_schema: The core schema for the type.
@@ -112,40 +124,37 @@ class TypeAdapter(Generic[T]):
         serializer: The schema serializer for the type.
     """
 
-    if TYPE_CHECKING:
+    @overload
+    def __init__(
+        self,
+        type: type[T],
+        *,
+        config: ConfigDict | None = ...,
+        _parent_depth: int = ...,
+        module: str | None = ...,
+    ) -> None:
+        ...
 
-        @overload
-        def __new__(cls, __type: type[T], *, config: ConfigDict | None = ...) -> TypeAdapter[T]:
-            ...
-
-        # this overload is for non-type things like Union[int, str]
-        # Pyright currently handles this "correctly", but MyPy understands this as TypeAdapter[object]
-        # so an explicit type cast is needed
-        @overload
-        def __new__(cls, __type: T, *, config: ConfigDict | None = ...) -> TypeAdapter[T]:
-            ...
-
-        def __new__(cls, __type: Any, *, config: ConfigDict | None = None) -> TypeAdapter[T]:
-            """A class representing the type adapter."""
-            raise NotImplementedError
-
-        @overload
-        def __init__(
-            self, type: type[T], *, config: ConfigDict | None = None, _parent_depth: int = 2, module: str | None = None
-        ) -> None:
-            ...
-
-        # this overload is for non-type things like Union[int, str]
-        # Pyright currently handles this "correctly", but MyPy understands this as TypeAdapter[object]
-        # so an explicit type cast is needed
-        @overload
-        def __init__(
-            self, type: T, *, config: ConfigDict | None = None, _parent_depth: int = 2, module: str | None = None
-        ) -> None:
-            ...
+    # This second overload is for unsupported special forms (such as Union). `pyright` handles them fine, but `mypy` does not match
+    # them against `type: type[T]`, so an explicit overload with `type: T` is needed.
+    @overload
+    def __init__(  # pyright: ignore[reportOverlappingOverload]
+        self,
+        type: T,
+        *,
+        config: ConfigDict | None = ...,
+        _parent_depth: int = ...,
+        module: str | None = ...,
+    ) -> None:
+        ...
 
     def __init__(
-        self, type: Any, *, config: ConfigDict | None = None, _parent_depth: int = 2, module: str | None = None
+        self,
+        type: type[T] | T,
+        *,
+        config: ConfigDict | None = None,
+        _parent_depth: int = 2,
+        module: str | None = None,
     ) -> None:
         """Initializes the TypeAdapter object.
 
@@ -165,16 +174,24 @@ class TypeAdapter(Generic[T]):
             It may be deprecated in a minor version, so we only recommend using it if you're
             comfortable with potential change in behavior / support.
 
+        ??? tip "Compatibility with `mypy`"
+            Depending on the type used, `mypy` might raise an error when instantiating a `TypeAdapter`. As a workaround, you can explicitly
+            annotate your variable:
+
+            ```py
+            from typing import Union
+
+            from pydantic import TypeAdapter
+
+            ta: TypeAdapter[Union[str, int]] = TypeAdapter(Union[str, int])  # type: ignore[arg-type]
+            ```
+
         Returns:
             A type adapter configured for the specified `type`.
         """
-        config_wrapper = _config.ConfigWrapper(config)
-
-        try:
-            type_has_config = issubclass(type, BaseModel) or is_dataclass(type) or is_typeddict(type)
-        except TypeError:
-            # type is not a class
-            type_has_config = False
+        type_is_annotated: bool = _typing_extra.is_annotated(type)
+        annotated_type: Any = get_args(type)[0] if type_is_annotated else None
+        type_has_config: bool = _type_has_config(annotated_type if type_is_annotated else type)
 
         if type_has_config and config is not None:
             raise PydanticUserError(
@@ -184,6 +201,8 @@ class TypeAdapter(Generic[T]):
                 ' TypeAdapter becomes meaningless, which is probably not what you want.',
                 code='type-adapter-config-unused',
             )
+
+        config_wrapper = _config.ConfigWrapper(config)
 
         core_schema: CoreSchema
         try:
@@ -198,7 +217,7 @@ class TypeAdapter(Generic[T]):
         except AttributeError:
             if module is None:
                 f = sys._getframe(1)
-                module = cast(str, f.f_globals['__name__'])
+                module = cast(str, f.f_globals.get('__name__', ''))
             validator = create_schema_validator(
                 core_schema, type, module, str(type), 'TypeAdapter', core_config, config_wrapper.plugin_settings
             )  # type: ignore
@@ -241,7 +260,7 @@ class TypeAdapter(Generic[T]):
     def validate_json(
         self, __data: str | bytes, *, strict: bool | None = None, context: dict[str, Any] | None = None
     ) -> T:
-        """Usage docs: https://docs.pydantic.dev/2.6/concepts/json/#json-parsing
+        """Usage docs: https://docs.pydantic.dev/2.7/concepts/json/#json-parsing
 
         Validate a JSON string or bytes against the model.
 
@@ -338,7 +357,7 @@ class TypeAdapter(Generic[T]):
         round_trip: bool = False,
         warnings: bool = True,
     ) -> bytes:
-        """Usage docs: https://docs.pydantic.dev/2.6/concepts/json/#json-serialization
+        """Usage docs: https://docs.pydantic.dev/2.7/concepts/json/#json-serialization
 
         Serialize an instance of the adapted type to JSON.
 

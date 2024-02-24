@@ -33,10 +33,11 @@ from uuid import UUID
 import pytest
 from dirty_equals import HasRepr
 from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_json
-from typing_extensions import Annotated, Literal, TypedDict
+from typing_extensions import Annotated, Literal, Self, TypedDict
 
 import pydantic
 from pydantic import (
+    AfterValidator,
     BaseModel,
     Field,
     GetCoreSchemaHandler,
@@ -74,6 +75,7 @@ from pydantic.types import (
     UUID3,
     UUID4,
     UUID5,
+    ByteSize,
     DirectoryPath,
     FilePath,
     Json,
@@ -1291,6 +1293,50 @@ def test_callable_type_with_fallback(default_value, properties):
     assert model_schema['properties'] == properties
 
 
+def test_byte_size_type():
+    class Model(BaseModel):
+        a: ByteSize
+        b: ByteSize = Field('1MB', validate_default=True)
+
+    model_json_schema_validation = Model.model_json_schema(mode='validation')
+    model_json_schema_serialization = Model.model_json_schema(mode='serialization')
+
+    print(model_json_schema_serialization)
+
+    assert model_json_schema_validation == {
+        'properties': {
+            'a': {
+                'anyOf': [
+                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
+                    {'minimum': 0, 'type': 'integer'},
+                ],
+                'title': 'A',
+            },
+            'b': {
+                'anyOf': [
+                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
+                    {'minimum': 0, 'type': 'integer'},
+                ],
+                'default': '1MB',
+                'title': 'B',
+            },
+        },
+        'required': ['a'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+    assert model_json_schema_serialization == {
+        'properties': {
+            'a': {'minimum': 0, 'title': 'A', 'type': 'integer'},
+            'b': {'default': '1MB', 'minimum': 0, 'title': 'B', 'type': 'integer'},
+        },
+        'required': ['a'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 @pytest.mark.parametrize(
     'type_,default_value,properties',
     (
@@ -2484,6 +2530,46 @@ def test_typeddict_with_extra_behavior_forbid():
     }
 
 
+def test_typeddict_with_title():
+    class Model(TypedDict):
+        __pydantic_config__ = ConfigDict(title='Test')  # type: ignore
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {
+        'title': 'Test',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }
+
+
+def test_typeddict_with_json_schema_extra():
+    class Model(TypedDict):
+        __pydantic_config__ = ConfigDict(title='Test', json_schema_extra={'foobar': 'hello'})  # type: ignore
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {
+        'title': 'Test',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'foobar': 'hello',
+    }
+
+
+def test_typeddict_with__callable_json_schema_extra():
+    def json_schema_extra(schema, model_class):
+        schema.pop('properties')
+        schema['type'] = 'override'
+        assert model_class is Model
+
+    class Model(TypedDict):
+        __pydantic_config__ = ConfigDict(title='Test', json_schema_extra=json_schema_extra)  # type: ignore
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {'title': 'Test', 'type': 'override', 'required': ['a']}
+
+
 @pytest.mark.parametrize(
     'annotation,kwargs,field_schema',
     [
@@ -2650,8 +2736,8 @@ def test_tuple_with_extra_schema():
     class MyTuple(Tuple[int, str]):
         @classmethod
         def __get_pydantic_core_schema__(cls, _source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.tuple_positional_schema(
-                [core_schema.int_schema(), core_schema.str_schema()], extras_schema=core_schema.int_schema()
+            return core_schema.tuple_schema(
+                [core_schema.int_schema(), core_schema.str_schema(), core_schema.int_schema()], variadic_item_index=2
             )
 
     class Model(BaseModel):
@@ -5779,3 +5865,129 @@ class Foo(BaseModel):
             }
         }
     }
+
+
+def test_repeated_custom_type():
+    class Numeric(pydantic.BaseModel):
+        value: float
+
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: pydantic.GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.no_info_before_validator_function(cls.validate, handler(source_type))
+
+        @classmethod
+        def validate(cls, v: Any) -> Union[Dict[str, Any], Self]:
+            if isinstance(v, (str, float, int)):
+                return cls(value=v)
+            if isinstance(v, Numeric):
+                return v
+            if isinstance(v, dict):
+                return v
+            raise ValueError(f'Invalid value for {cls}: {v}')
+
+    def is_positive(value: Numeric):
+        assert value.value > 0.0, 'Must be positive'
+
+    class OuterModel(pydantic.BaseModel):
+        x: Numeric
+        y: Numeric
+        z: Annotated[Numeric, AfterValidator(is_positive)]
+
+    assert OuterModel(x=2, y=-1, z=1)
+
+    with pytest.raises(ValidationError):
+        OuterModel(x=2, y=-1, z=-1)
+
+
+def test_description_not_included_for_basemodel() -> None:
+    class Model(BaseModel):
+        x: BaseModel
+
+    assert 'description' not in Model.model_json_schema()['$defs']['BaseModel']
+
+
+def test_recursive_json_schema_build() -> None:
+    """
+    Schema build for this case is a bit complicated due to the recursive nature of the models.
+    This was reported as broken in https://github.com/pydantic/pydantic/issues/8689, which was
+    originally caused by the change made in https://github.com/pydantic/pydantic/pull/8583, which has
+    since been reverted.
+    """
+
+    class AllowedValues(str, Enum):
+        VAL1 = 'Val1'
+        VAL2 = 'Val2'
+
+    class ModelA(BaseModel):
+        modelA_1: AllowedValues = Field(..., max_length=60)
+
+    class ModelB(ModelA):
+        modelB_1: typing.List[ModelA]
+
+    class ModelC(BaseModel):
+        modelC_1: ModelB
+
+    class Model(BaseModel):
+        b: ModelB
+        c: ModelC
+
+    assert Model.model_json_schema()
+
+
+def test_json_schema_annotated_with_field() -> None:
+    """Ensure field specified with Annotated in create_model call is still marked as required."""
+
+    from pydantic import create_model
+
+    Model = create_model(
+        'test_model',
+        bar=(Annotated[int, Field(description='Bar description')], ...),
+    )
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'bar': {'description': 'Bar description', 'title': 'Bar', 'type': 'integer'},
+        },
+        'required': ['bar'],
+        'title': 'test_model',
+        'type': 'object',
+    }
+
+
+def test_required_fields_in_annotated_with_create_model() -> None:
+    """Ensure multiple field specified with Annotated in create_model call is still marked as required."""
+
+    from pydantic import create_model
+
+    Model = create_model(
+        'test_model',
+        foo=(int, ...),
+        bar=(Annotated[int, Field(description='Bar description')], ...),
+        baz=(Annotated[int, Field(..., description='Baz description')], ...),
+    )
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'foo': {'title': 'Foo', 'type': 'integer'},
+            'bar': {'description': 'Bar description', 'title': 'Bar', 'type': 'integer'},
+            'baz': {'description': 'Baz description', 'title': 'Baz', 'type': 'integer'},
+        },
+        'required': ['foo', 'bar', 'baz'],
+        'title': 'test_model',
+        'type': 'object',
+    }
+
+
+def test_required_fields_in_annotated_with_basemodel() -> None:
+    """
+    Ensure multiple field specified with Annotated in BaseModel is marked as required.
+    """
+
+    class Model(BaseModel):
+        a: int = ...
+        b: Annotated[int, 'placeholder'] = ...
+        c: Annotated[int, Field()] = ...
+
+    assert Model.model_fields['a'].is_required()
+    assert Model.model_fields['b'].is_required()
+    assert Model.model_fields['c'].is_required()

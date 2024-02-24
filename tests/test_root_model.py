@@ -1,11 +1,11 @@
 import pickle
 from datetime import date, datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Generic, List, Optional, Union
 
 import pytest
 from pydantic_core import CoreSchema
 from pydantic_core.core_schema import SerializerFunctionWrapHandler
-from typing_extensions import Annotated, Literal
+from typing_extensions import Annotated, Literal, TypeVar
 
 from pydantic import (
     Base64Str,
@@ -591,12 +591,9 @@ def test_json_schema_extra_on_model_and_on_field():
 
 
 def test_help(create_module):
-    # since pydoc/help access all attributes to generate their documentation,
-    # this triggers the deprecation warnings.
-    with pytest.warns(PydanticDeprecatedSince20):
-        module = create_module(
-            # language=Python
-            """
+    module = create_module(
+        # language=Python
+        """
 import pydoc
 
 from pydantic import RootModel
@@ -604,8 +601,7 @@ from pydantic import RootModel
 
 help_result_string = pydoc.render_doc(RootModel)
 """
-        )
-
+    )
     assert 'class RootModel' in module.help_result_string
 
 
@@ -652,3 +648,12 @@ def test_model_validate_strings(root_type, input_value, expected, raises_match, 
             Model.model_validate_strings(input_value, strict=strict)
     else:
         assert Model.model_validate_strings(input_value, strict=strict).root == expected
+
+
+def test_model_construction_with_invalid_generic_specification() -> None:
+    T_ = TypeVar('T_', bound=BaseModel)
+
+    with pytest.raises(TypeError, match='You should parametrize RootModel directly'):
+
+        class GenericRootModel(RootModel, Generic[T_]):
+            root: Union[T_, int]

@@ -1,7 +1,6 @@
 import json
 import platform
 import re
-import sys
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
@@ -38,7 +37,6 @@ from pydantic import (
     GenerateSchema,
     GetCoreSchemaHandler,
     PrivateAttr,
-    PydanticDeprecatedSince20,
     PydanticUndefinedAnnotation,
     PydanticUserError,
     SecretStr,
@@ -651,9 +649,11 @@ def test_hash_function_works_when_instance_dict_modified():
     assert hash(m) == h
 
     # Keys can be missing, e.g. when using the deprecated copy method.
-    # This should change the hash, and more importantly hashing shouldn't raise a KeyError.
+    # This could change the hash, and more importantly hashing shouldn't raise a KeyError
+    # We don't assert here, because a hash collision is possible: the hash is not guaranteed to change
+    # However, hashing must not raise an exception, which simply calling hash() checks for
     del m.__dict__['a']
-    assert h != hash(m)
+    hash(m)
 
 
 def test_default_hash_function_overrides_default_hash_function():
@@ -1532,7 +1532,7 @@ def test_model_export_inclusion_inheritance():
         s4: str = 'v4'
 
     class Parent(BaseModel):
-        # b will be included since fields are set idependently
+        # b will be included since fields are set independently
         model_config = ConfigDict(fields={'b': {'include': ...}})
         a: int
         b: int
@@ -1884,22 +1884,21 @@ def test_class_kwargs_custom_config():
             a: int
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='need 3.10 version')
 def test_new_union_origin():
     """On 3.10+, origin of `int | str` is `types.UnionType`, not `typing.Union`"""
 
     class Model(BaseModel):
-        x: int | str
+        x: 'int | str'
 
     assert Model(x=3).x == 3
     assert Model(x='3').x == '3'
     assert Model(x='pika').x == 'pika'
-    # assert Model.model_json_schema() == {
-    #     'title': 'Model',
-    #     'type': 'object',
-    #     'properties': {'x': {'title': 'X', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
-    #     'required': ['x'],
-    # }
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'x': {'title': 'X', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
+        'required': ['x'],
+    }
 
 
 @pytest.mark.parametrize(
@@ -2843,11 +2842,12 @@ def test_extra_validator_named() -> None:
 
     class Model(BaseModel):
         model_config = ConfigDict(extra='allow')
+        __pydantic_extra__: 'dict[str, Foo]'
 
     class Child(Model):
-        __pydantic_extra__: Dict[str, Foo]
+        y: int
 
-    m = Child(a={'x': '1'})
+    m = Child(a={'x': '1'}, y=2)
     assert m.__pydantic_extra__ == {'a': Foo(x=1)}
 
     # insert_assert(Child.model_json_schema())
@@ -2861,7 +2861,8 @@ def test_extra_validator_named() -> None:
             }
         },
         'additionalProperties': {'$ref': '#/$defs/Foo'},
-        'properties': {},
+        'properties': {'y': {'title': 'Y', 'type': 'integer'}},
+        'required': ['y'],
         'title': 'Child',
         'type': 'object',
     }
@@ -2976,12 +2977,9 @@ def test_deferred_core_schema() -> None:
 
 
 def test_help(create_module):
-    # since pydoc/help access all attributes to generate their documentation,
-    # this triggers the deprecation warnings.
-    with pytest.warns(PydanticDeprecatedSince20):
-        module = create_module(
-            # language=Python
-            """
+    module = create_module(
+        # language=Python
+        """
 import pydoc
 
 from pydantic import BaseModel
@@ -2992,8 +2990,7 @@ class Model(BaseModel):
 
 help_result_string = pydoc.render_doc(Model)
 """
-        )
-
+    )
     assert 'class Model' in module.help_result_string
 
 
@@ -3130,3 +3127,39 @@ def test_shadow_attribute() -> None:
     assert getattr(One, 'foo', None) == ' edited!'
     assert getattr(Two, 'foo', None) == ' edited! edited!'
     assert getattr(Three, 'foo', None) == ' edited! edited!'
+
+
+def test_eval_type_backport():
+    class Model(BaseModel):
+        foo: 'list[int | str]'
+
+    assert Model(foo=[1, '2']).model_dump() == {'foo': [1, '2']}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo='not a list')
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'list_type',
+            'loc': ('foo',),
+            'msg': 'Input should be a valid list',
+            'input': 'not a list',
+        }
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=[{'not a str or int'}])
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_type',
+            'loc': ('foo', 0, 'int'),
+            'msg': 'Input should be a valid integer',
+            'input': {'not a str or int'},
+        },
+        {
+            'type': 'string_type',
+            'loc': ('foo', 0, 'str'),
+            'msg': 'Input should be a valid string',
+            'input': {'not a str or int'},
+        },
+    ]

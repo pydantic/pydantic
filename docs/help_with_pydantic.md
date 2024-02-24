@@ -14,10 +14,6 @@ The [API documentation](api/base_model.md) give reference docs for all public Py
 
 [GitHub discussions](https://github.com/pydantic/pydantic/discussions) are useful for asking questions, your question and the answer will help everyone.
 
-## :simple-discord: Discord
-
-The [Pydantic Discord server](https://discord.com/invite/FXTHeFtgtg) is a great place to chat about Pydantic and ask quick questions.
-
 ## :simple-stackoverflow: Stack Overflow
 
 Use the [`pydantic`](https://stackoverflow.com/questions/tagged/pydantic) tag on Stack Overflow to ask questions, note this is not always monitored by the core Pydantic team.

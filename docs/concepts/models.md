@@ -617,12 +617,18 @@ Here are some additional notes on the behavior of [`model_construct()`][pydantic
   [`model_construct()`][pydantic.main.BaseModel.model_construct].
   * In particular, the [`model_construct()`][pydantic.main.BaseModel.model_construct] method does not support recursively constructing models from dicts.
 * If you do not pass keyword arguments for fields with defaults, the default values will still be used.
-* For models with `model_config['extra'] == 'allow'`, data not corresponding to fields will be correctly stored in
-  the `__pydantic_extra__` dict.
 * For models with private attributes, the `__pydantic_private__` dict will be initialized the same as it would be when
   calling `__init__`.
 * When constructing an instance using [`model_construct()`][pydantic.main.BaseModel.model_construct], no `__init__` method from the model or any of its parent
   classes will be called, even when a custom `__init__` method is defined.
+
+!!! note "On `extra` behavior with `model_construct`"
+    * For models with `model_config['extra'] == 'allow'`, data not corresponding to fields will be correctly stored in
+    the `__pydantic_extra__` dict and saved to the model's `__dict__`.
+    * For models with `model_config['extra'] == 'ignore'`, data not corresponding to fields will be ignored - that is,
+    not stored in `__pydantic_extra__` or `__dict__` on the instance.
+    * Unlike a call to `__init__`, a call to `model_construct` with `model_config['extra'] == 'forbid'` doesn't raise an
+    error in the presence of data not corresponding to fields. Rather, said input data is simply ignored.
 
 ## Generic models
 
@@ -1040,6 +1046,9 @@ print(ItemHolder[IntItem](**loaded_data).model_dump())  # (2)!
 
 ## Dynamic model creation
 
+??? api "API Documentation"
+    [`pydantic.main.create_model`][pydantic.main.create_model]<br>
+
 There are some occasions where it is desirable to create a model using runtime information to specify the fields.
 For this Pydantic provides the `create_model` function to allow models to be created on the fly:
 
@@ -1222,8 +1231,8 @@ values of instance attributes will raise errors. See the [API reference][pydanti
     This config flag is deprecated in Pydantic V2, and has been replaced with `frozen`.
 
 !!! warning
-    Immutability in Python is never strict. If developers are determined/stupid they can always
-    modify a so-called "immutable" object.
+    In Python, immutability is not enforced. Developers have the ability to modify objects
+    that are conventionally considered "immutable" if they choose to do so.
 
 ```py
 from pydantic import BaseModel, ConfigDict, ValidationError
@@ -1316,8 +1325,12 @@ print(error_locations)
 
 ## Required fields
 
-To declare a field as required, you may declare it using just an annotation, or you may use `Ellipsis`/`...`
-as the value:
+To declare a field as required, you may declare it using an annotation, or an annotation in combination with a `Field` specification.
+You may also use `Ellipsis`/`...` to emphasize that a field is required, especially when using the `Field` constructor.
+
+The [`Field`](fields.md) function is primarily used to configure settings like `alias` or `description` for an attribute.
+The constructor supports `Ellipsis`/`...` as the sole positional argument.
+This is used as a way to indicate that said field is mandatory, though it's the type hint that enforces this requirement.
 
 ```py
 from pydantic import BaseModel, Field
@@ -1326,18 +1339,19 @@ from pydantic import BaseModel, Field
 class Model(BaseModel):
     a: int
     b: int = ...
-    c: int = Field(...)
+    c: int = Field(..., alias='C')
 ```
 
-Where `Field` refers to the [field function](json_schema.md#field-customization).
-
-Here `a`, `b` and `c` are all required. However, this use of `b: int = ...` does not work properly
-with [mypy](../integrations/mypy.md), and as of **v1.0** should be avoided in most cases.
+Here `a`, `b` and `c` are all required. However, this use of `b: int = ...` does not work properly with
+[mypy](../integrations/mypy.md), and as of **v1.0** should be avoided in most cases.
 
 !!! note
     In Pydantic V1, fields annotated with `Optional` or `Any` would be given an implicit default of `None` even if no
     default was explicitly specified. This behavior has changed in Pydantic V2, and there are no longer any type
     annotations that will result in a field having an implicit default value.
+
+    See [the migration guide](../migration.md#required-optional-and-nullable-fields) for more details on changes
+    to required and nullable fields.
 
 ## Fields with non-hashable default values
 
@@ -1426,6 +1440,9 @@ print(Model.y)
 ```
 
 ### Private model attributes
+
+??? api "API Documentation"
+    [`pydantic.fields.PrivateAttr`][pydantic.fields.PrivateAttr]<br>
 
 Attributes whose name has a leading underscore are not treated as fields by Pydantic, and are not included in the
 model schema. Instead, these are converted into a "private attribute" which is not validated or even set during

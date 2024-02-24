@@ -24,6 +24,8 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    get_args,
+    get_origin,
 )
 from uuid import UUID
 
@@ -75,6 +77,7 @@ __all__ = (
     'DirectoryPath',
     'NewPath',
     'Json',
+    'Secret',
     'SecretStr',
     'SecretBytes',
     'StrictBool',
@@ -105,12 +108,16 @@ __all__ = (
     'Tag',
     'Discriminator',
     'JsonValue',
+    'OnErrorOmit',
 )
+
+
+T = TypeVar('T')
 
 
 @_dataclasses.dataclass
 class Strict(_fields.PydanticMetadata, BaseMetadata):
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/strict_mode/#strict-mode-with-annotated-strict
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/strict_mode/#strict-mode-with-annotated-strict
 
     A field metadata class to indicate that a field should be validated in strict mode.
 
@@ -670,7 +677,7 @@ StrictBytes = Annotated[bytes, Strict()]
 
 @_dataclasses.dataclass(frozen=True)
 class StringConstraints(annotated_types.GroupedMetadata):
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/fields/#string-constraints
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/fields/#string-constraints
 
     Apply constraints to `str` types.
 
@@ -884,15 +891,11 @@ else:
         On model instantiation, pointers will be evaluated and imported. There is
         some nuance to this behavior, demonstrated in the examples below.
 
-        > A known limitation: setting a default value to a string
-        > won't result in validation (thus evaluation). This is actively
-        > being worked on.
-
         **Good behavior:**
         ```py
         from math import cos
 
-        from pydantic import BaseModel, ImportString, ValidationError
+        from pydantic import BaseModel, Field, ImportString, ValidationError
 
 
         class ImportThings(BaseModel):
@@ -922,7 +925,31 @@ else:
         # Actual python objects can be assigned as well
         my_cos = ImportThings(obj=cos)
         my_cos_2 = ImportThings(obj='math.cos')
-        assert my_cos == my_cos_2
+        my_cos_3 = ImportThings(obj='math:cos')
+        assert my_cos == my_cos_2 == my_cos_3
+
+
+        # You can set default field value either as Python object:
+        class ImportThingsDefaultPyObj(BaseModel):
+            obj: ImportString = math.cos
+
+
+        # or as a string value (but only if used with `validate_default=True`)
+        class ImportThingsDefaultString(BaseModel):
+            obj: ImportString = Field(default='math.cos', validate_default=True)
+
+
+        my_cos_default1 = ImportThingsDefaultPyObj()
+        my_cos_default2 = ImportThingsDefaultString()
+        assert my_cos_default1.obj == my_cos_default2.obj == math.cos
+
+
+        # note: this will not work!
+        class ImportThingsMissingValidateDefault(BaseModel):
+            obj: ImportString = 'math.cos'
+
+        my_cos_default3 = ImportThingsMissingValidateDefault()
+        assert my_cos_default3.obj == 'math.cos'  # just string, not evaluated
         ```
 
         Serializing an `ImportString` type to json is also possible.
@@ -936,7 +963,7 @@ else:
 
 
         # Create an instance
-        m = ImportThings(obj='math:cos')
+        m = ImportThings(obj='math.cos')
         print(m)
         #> obj=<built-in function cos>
         print(m.model_dump_json())
@@ -1309,7 +1336,8 @@ NewPath = Annotated[Path, PathType('new')]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ JSON TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 if TYPE_CHECKING:
-    Json = Annotated[AnyType, ...]  # Json[list[str]] will be recognized by type checkers as list[str]
+    # Json[list[str]] will be recognized by type checkers as list[str]
+    Json = Annotated[AnyType, ...]
 
 else:
 
@@ -1416,10 +1444,10 @@ else:
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SECRET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-SecretType = TypeVar('SecretType', str, bytes)
+SecretType = TypeVar('SecretType')
 
 
-class _SecretField(Generic[SecretType]):
+class _SecretBase(Generic[SecretType]):
     def __init__(self, secret_value: SecretType) -> None:
         self._secret_value: SecretType = secret_value
 
@@ -1437,29 +1465,124 @@ class _SecretField(Generic[SecretType]):
     def __hash__(self) -> int:
         return hash(self.get_secret_value())
 
-    def __len__(self) -> int:
-        return len(self._secret_value)
-
     def __str__(self) -> str:
         return str(self._display())
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self._display()!r})'
 
-    def _display(self) -> SecretType:
+    def _display(self) -> str | bytes:
         raise NotImplementedError
+
+
+class Secret(_SecretBase[SecretType]):
+    """A generic base class used for defining a field with sensitive information that you do not want to be visible in logging or tracebacks.
+
+    You may either directly parametrize `Secret` with a type, or subclass from `Secret` with a parametrized type. The benefit of subclassing
+    is that you can define a custom `_display` method, which will be used for `repr()` and `str()` methods. The examples below demonstrate both
+    ways of using `Secret` to create a new secret type.
+
+    1. Directly parametrizing `Secret` with a type:
+
+    ```py
+    from pydantic import BaseModel, Secret
+
+    SecretBool = Secret[bool]
+
+    class Model(BaseModel):
+        secret_bool: SecretBool
+
+    m = Model(secret_bool=True)
+    print(m.model_dump())
+    #> {'secret_bool': Secret('**********')}
+
+    print(m.model_dump_json())
+    #> {"secret_bool":"**********"}
+
+    print(m.secret_bool.get_secret_value())
+    #> True
+    ```
+
+    2. Subclassing from parametrized `Secret`:
+
+    ```py
+    from datetime import date
+
+    from pydantic import BaseModel, Secret
+
+    class SecretDate(Secret[date]):
+        def _display(self) -> str:
+            return '****/**/**'
+
+    class Model(BaseModel):
+        secret_date: SecretDate
+
+    m = Model(secret_date=date(2022, 1, 1))
+    print(m.model_dump())
+    #> {'secret_date': SecretDate('****/**/**')}
+
+    print(m.model_dump_json())
+    #> {"secret_date":"****/**/**"}
+
+    print(m.secret_date.get_secret_value())
+    #> 2022-01-01
+    ```
+
+    The value returned by the `_display` method will be used for `repr()` and `str()`.
+    """
+
+    def _display(self) -> str | bytes:
+        return '**********' if self.get_secret_value() else ''
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        if issubclass(source, SecretStr):
-            field_type = str
-            inner_schema = core_schema.str_schema()
+        inner_type = None
+        # if origin_type is Secret, then cls is a GenericAlias, and we can extract the inner type directly
+        origin_type = get_origin(source)
+        if origin_type is not None:
+            inner_type = get_args(source)[0]
+        # otherwise, we need to get the inner type from the base class
         else:
-            assert issubclass(source, SecretBytes)
-            field_type = bytes
-            inner_schema = core_schema.bytes_schema()
-        error_kind = 'string_type' if field_type is str else 'bytes_type'
+            bases = getattr(cls, '__orig_bases__', getattr(cls, '__bases__', []))
+            for base in bases:
+                if get_origin(base) is Secret:
+                    inner_type = get_args(base)[0]
+            if bases == [] or inner_type is None:
+                raise TypeError(
+                    f"Can't get secret type from {cls.__name__}. "
+                    'Please use Secret[<type>], or subclass from Secret[<type>] instead.'
+                )
 
+        inner_schema = handler.generate_schema(inner_type)  # type: ignore
+
+        def validate_secret_value(value, handler) -> Secret[SecretType]:
+            if isinstance(value, Secret):
+                value = value.get_secret_value()
+            validated_inner = handler(value)
+            return cls(validated_inner)
+
+        return core_schema.json_or_python_schema(
+            python_schema=core_schema.no_info_wrap_validator_function(
+                validate_secret_value,
+                inner_schema,
+                serialization=core_schema.plain_serializer_function_ser_schema(lambda x: x),
+            ),
+            json_schema=core_schema.no_info_after_validator_function(
+                lambda x: cls(x), inner_schema, serialization=core_schema.to_string_ser_schema(when_used='json')
+            ),
+        )
+
+
+def _secret_display(value: SecretType) -> str:  # type: ignore
+    return '**********' if value else ''
+
+
+class _SecretField(_SecretBase[SecretType]):
+    _inner_schema: ClassVar[CoreSchema]
+    _error_kind: ClassVar[str]
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         def serialize(
             value: _SecretField[SecretType], info: core_schema.SerializationInfo
         ) -> str | _SecretField[SecretType]:
@@ -1471,7 +1594,7 @@ class _SecretField(Generic[SecretType]):
                 return value
 
         def get_json_schema(_core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-            json_schema = handler(inner_schema)
+            json_schema = handler(cls._inner_schema)
             _utils.update_not_none(
                 json_schema,
                 type='string',
@@ -1482,37 +1605,40 @@ class _SecretField(Generic[SecretType]):
 
         json_schema = core_schema.no_info_after_validator_function(
             source,  # construct the type
-            inner_schema,
+            cls._inner_schema,
         )
-        s = core_schema.json_or_python_schema(
-            python_schema=core_schema.union_schema(
-                [
-                    core_schema.is_instance_schema(source),
-                    json_schema,
-                ],
-                strict=True,
-                custom_error_type=error_kind,
-            ),
-            json_schema=json_schema,
-            serialization=core_schema.plain_serializer_function_ser_schema(
-                serialize,
-                info_arg=True,
-                return_schema=core_schema.str_schema(),
-                when_used='json',
-            ),
+
+        def get_secret_schema(strict: bool) -> CoreSchema:
+            return core_schema.json_or_python_schema(
+                python_schema=core_schema.union_schema(
+                    [
+                        core_schema.is_instance_schema(source),
+                        json_schema,
+                    ],
+                    custom_error_type=cls._error_kind,
+                    strict=strict,
+                ),
+                json_schema=json_schema,
+                serialization=core_schema.plain_serializer_function_ser_schema(
+                    serialize,
+                    info_arg=True,
+                    return_schema=core_schema.str_schema(),
+                    when_used='json',
+                ),
+            )
+
+        return core_schema.lax_or_strict_schema(
+            lax_schema=get_secret_schema(strict=False),
+            strict_schema=get_secret_schema(strict=True),
+            metadata={'pydantic_js_functions': [get_json_schema]},
         )
-        s.setdefault('metadata', {}).setdefault('pydantic_js_functions', []).append(get_json_schema)
-        return s
-
-
-def _secret_display(value: str | bytes) -> str:
-    return '**********' if value else ''
 
 
 class SecretStr(_SecretField[str]):
     """A string used for storing sensitive information that you do not want to be visible in logging or tracebacks.
 
-    It displays `'**********'` instead of the string value on `repr()` and `str()` calls.
+    When the secret value is nonempty, it is displayed as `'**********'` instead of the underlying value in
+    calls to `repr()` and `str()`. If the value _is_ empty, it is displayed as `''`.
 
     ```py
     from pydantic import BaseModel, SecretStr
@@ -1527,17 +1653,27 @@ class SecretStr(_SecretField[str]):
     #> username='scolvin' password=SecretStr('**********')
     print(user.password.get_secret_value())
     #> password1
+    print((SecretStr('password'), SecretStr('')))
+    #> (SecretStr('**********'), SecretStr(''))
     ```
     """
 
+    _inner_schema: ClassVar[CoreSchema] = core_schema.str_schema()
+    _error_kind: ClassVar[str] = 'string_type'
+
+    def __len__(self) -> int:
+        return len(self._secret_value)
+
     def _display(self) -> str:
-        return _secret_display(self.get_secret_value())
+        return _secret_display(self._secret_value)
 
 
 class SecretBytes(_SecretField[bytes]):
     """A bytes used for storing sensitive information that you do not want to be visible in logging or tracebacks.
 
     It displays `b'**********'` instead of the string value on `repr()` and `str()` calls.
+    When the secret value is nonempty, it is displayed as `b'**********'` instead of the underlying value in
+    calls to `repr()` and `str()`. If the value _is_ empty, it is displayed as `b''`.
 
     ```py
     from pydantic import BaseModel, SecretBytes
@@ -1550,11 +1686,19 @@ class SecretBytes(_SecretField[bytes]):
     #> username='scolvin' password=SecretBytes(b'**********')
     print(user.password.get_secret_value())
     #> b'password1'
+    print((SecretBytes(b'password'), SecretBytes(b'')))
+    #> (SecretBytes(b'**********'), SecretBytes(b''))
     ```
     """
 
+    _inner_schema: ClassVar[CoreSchema] = core_schema.bytes_schema()
+    _error_kind: ClassVar[str] = 'bytes_type'
+
+    def __len__(self) -> int:
+        return len(self._secret_value)
+
     def _display(self) -> bytes:
-        return _secret_display(self.get_secret_value()).encode()
+        return _secret_display(self._secret_value).encode()
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PAYMENT CARD TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1680,24 +1824,6 @@ class PaymentCardNumber(str):
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BYTE SIZE TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-BYTE_SIZES = {
-    'b': 1,
-    'kb': 10**3,
-    'mb': 10**6,
-    'gb': 10**9,
-    'tb': 10**12,
-    'pb': 10**15,
-    'eb': 10**18,
-    'kib': 2**10,
-    'mib': 2**20,
-    'gib': 2**30,
-    'tib': 2**40,
-    'pib': 2**50,
-    'eib': 2**60,
-}
-BYTE_SIZES.update({k.lower()[0]: v for k, v in BYTE_SIZES.items() if 'i' not in k})
-byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
-
 
 class ByteSize(int):
     """Converts a string representing a number of bytes with units (such as `'1KB'` or `'11.5MiB'`) into an integer.
@@ -1728,15 +1854,63 @@ class ByteSize(int):
     #> 44.4PiB
     print(m.size.human_readable(decimal=True))
     #> 50.0PB
+    print(m.size.human_readable(separator=' '))
+    #> 44.4 PiB
 
     print(m.size.to('TiB'))
     #> 45474.73508864641
     ```
     """
 
+    byte_sizes = {
+        'b': 1,
+        'kb': 10**3,
+        'mb': 10**6,
+        'gb': 10**9,
+        'tb': 10**12,
+        'pb': 10**15,
+        'eb': 10**18,
+        'kib': 2**10,
+        'mib': 2**20,
+        'gib': 2**30,
+        'tib': 2**40,
+        'pib': 2**50,
+        'eib': 2**60,
+        'bit': 1 / 8,
+        'kbit': 10**3 / 8,
+        'mbit': 10**6 / 8,
+        'gbit': 10**9 / 8,
+        'tbit': 10**12 / 8,
+        'pbit': 10**15 / 8,
+        'ebit': 10**18 / 8,
+        'kibit': 2**10 / 8,
+        'mibit': 2**20 / 8,
+        'gibit': 2**30 / 8,
+        'tibit': 2**40 / 8,
+        'pibit': 2**50 / 8,
+        'eibit': 2**60 / 8,
+    }
+    byte_sizes.update({k.lower()[0]: v for k, v in byte_sizes.items() if 'i' not in k})
+
+    byte_string_pattern = r'^\s*(\d*\.?\d+)\s*(\w+)?'
+    byte_string_re = re.compile(byte_string_pattern, re.IGNORECASE)
+
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        return core_schema.with_info_plain_validator_function(cls._validate)
+        return core_schema.with_info_after_validator_function(
+            function=cls._validate,
+            schema=core_schema.union_schema(
+                [
+                    core_schema.str_schema(pattern=cls.byte_string_pattern),
+                    core_schema.int_schema(ge=0),
+                ],
+                custom_error_type='byte_size',
+                custom_error_message='could not parse value and unit from byte string',
+            ),
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                int, return_schema=core_schema.int_schema(ge=0)
+            ),
+        )
 
     @classmethod
     def _validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> ByteSize:
@@ -1745,7 +1919,7 @@ class ByteSize(int):
         except ValueError:
             pass
 
-        str_match = byte_string_re.match(str(__input_value))
+        str_match = cls.byte_string_re.match(str(__input_value))
         if str_match is None:
             raise PydanticCustomError('byte_size', 'could not parse value and unit from byte string')
 
@@ -1754,18 +1928,19 @@ class ByteSize(int):
             unit = 'b'
 
         try:
-            unit_mult = BYTE_SIZES[unit.lower()]
+            unit_mult = cls.byte_sizes[unit.lower()]
         except KeyError:
             raise PydanticCustomError('byte_size_unit', 'could not interpret byte unit: {unit}', {'unit': unit})
 
         return cls(int(float(scalar) * unit_mult))
 
-    def human_readable(self, decimal: bool = False) -> str:
+    def human_readable(self, decimal: bool = False, separator: str = '') -> str:
         """Converts a byte size to a human readable string.
 
         Args:
             decimal: If True, use decimal units (e.g. 1000 bytes per KB). If False, use binary units
                 (e.g. 1024 bytes per KiB).
+            separator: A string used to split the value and unit. Defaults to an empty string ('').
 
         Returns:
             A human readable string representation of the byte size.
@@ -1783,25 +1958,27 @@ class ByteSize(int):
         for unit in units:
             if abs(num) < divisor:
                 if unit == 'B':
-                    return f'{num:0.0f}{unit}'
+                    return f'{num:0.0f}{separator}{unit}'
                 else:
-                    return f'{num:0.1f}{unit}'
+                    return f'{num:0.1f}{separator}{unit}'
             num /= divisor
 
-        return f'{num:0.1f}{final_unit}'
+        return f'{num:0.1f}{separator}{final_unit}'
 
     def to(self, unit: str) -> float:
-        """Converts a byte size to another unit.
+        """Converts a byte size to another unit, including both byte and bit units.
 
         Args:
-            unit: The unit to convert to. Must be one of the following: B, KB, MB, GB, TB, PB, EiB,
-                KiB, MiB, GiB, TiB, PiB, EiB.
+            unit: The unit to convert to. Must be one of the following: B, KB, MB, GB, TB, PB, EB,
+                KiB, MiB, GiB, TiB, PiB, EiB (byte units) and
+                bit, kbit, mbit, gbit, tbit, pbit, ebit,
+                kibit, mibit, gibit, tibit, pibit, eibit (bit units).
 
         Returns:
             The byte size in the new unit.
         """
         try:
-            unit_div = BYTE_SIZES[unit.lower()]
+            unit_div = self.byte_sizes[unit.lower()]
         except KeyError:
             raise PydanticCustomError('byte_size_unit', 'Could not interpret byte unit: {unit}', {'unit': unit})
 
@@ -2425,7 +2602,7 @@ __getattr__ = getattr_migration(__name__)
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class GetPydanticSchema:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/types/#using-getpydanticschema-to-reduce-boilerplate
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/types/#using-getpydanticschema-to-reduce-boilerplate
 
     A convenience class for creating an annotation that provides pydantic custom type hooks.
 
@@ -2561,7 +2738,7 @@ class Tag:
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
 class Discriminator:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/unions/#discriminated-unions-with-callable-discriminator
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/unions/#discriminated-unions-with-callable-discriminator
 
     Provides a way to use a custom callable as the way to extract the value of a union discriminator.
 
@@ -2721,9 +2898,7 @@ def _get_type_name(x: Any) -> str:
     if type_ in _JSON_TYPES:
         return type_.__name__
 
-    # Handle proper subclasses; note we don't need to handle None here
-    if isinstance(x, bool):
-        return 'bool'
+    # Handle proper subclasses; note we don't need to handle None or bool here
     if isinstance(x, int):
         return 'int'
     if isinstance(x, float):
@@ -2752,9 +2927,9 @@ if TYPE_CHECKING:
         List['JsonValue'],
         Dict[str, 'JsonValue'],
         str,
+        bool,
         int,
         float,
-        bool,
         None,
     ]
     """A `JsonValue` is used to represent a value that can be serialized to JSON.
@@ -2764,9 +2939,9 @@ if TYPE_CHECKING:
     * `List['JsonValue']`
     * `Dict[str, 'JsonValue']`
     * `str`
+    * `bool`
     * `int`
     * `float`
-    * `bool`
     * `None`
 
     The following example demonstrates how to use `JsonValue` to validate JSON data,
@@ -2808,9 +2983,9 @@ else:
                 Annotated[List['JsonValue'], Tag('list')],
                 Annotated[Dict[str, 'JsonValue'], Tag('dict')],
                 Annotated[str, Tag('str')],
+                Annotated[bool, Tag('bool')],
                 Annotated[int, Tag('int')],
                 Annotated[float, Tag('float')],
-                Annotated[bool, Tag('bool')],
                 Annotated[None, Tag('NoneType')],
             ],
             Discriminator(
@@ -2821,3 +2996,21 @@ else:
             _AllowAnyJson,
         ],
     )
+
+
+class _OnErrorOmit:
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        # there is no actual default value here but we use with_default_schema since it already has the on_error
+        # behavior implemented and it would be no more efficient to implement it on every other validator
+        # or as a standalone validator
+        return core_schema.with_default_schema(schema=handler(source_type), on_error='omit')
+
+
+OnErrorOmit = Annotated[T, _OnErrorOmit]
+"""
+When used as an item in a list, the key type in a dict, optional values of a TypedDict, etc.
+this annotation omits the item from the iteration if there is any error validating it.
+That is, instead of a [`ValidationError`][pydantic_core.ValidationError] being propagated up and the entire iterable being discarded
+any invalid items are discarded and the valid ones are returned.
+"""

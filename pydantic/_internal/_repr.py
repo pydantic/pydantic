@@ -93,6 +93,8 @@ def display_as_type(obj: Any) -> str:
         return '...'
     elif isinstance(obj, Representation):
         return repr(obj)
+    elif isinstance(obj, typing_extensions.TypeAliasType):
+        return str(obj)
 
     if not isinstance(obj, (_typing_extra.typing_base, _typing_extra.WithArgsTypes, type)):
         obj = obj.__class__

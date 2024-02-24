@@ -250,7 +250,7 @@ import dataclasses
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError
 
 
 @dataclasses.dataclass(frozen=True)
@@ -265,6 +265,9 @@ class File:
 
 
 class Foo(BaseModel):
+    # Required so that pydantic revalidates the model attributes
+    model_config = ConfigDict(revalidate_instances='always')
+
     file: File
     user: Optional[User] = None
 
@@ -391,6 +394,8 @@ with the help of the [`@model_validator`](validators.md#model-validators) decora
 ```py
 from typing import Any, Dict
 
+from typing_extensions import Self
+
 from pydantic import model_validator
 from pydantic.dataclasses import dataclass
 
@@ -415,7 +420,7 @@ class User:
         return values
 
     @model_validator(mode='after')
-    def post_root(self) -> 'User':
+    def post_root(self) -> Self:
         print(f'Third: {self}')
         #> Third: User(birth=Birth(year=1995, month=3, day=2))
         return self
