@@ -455,6 +455,13 @@ except ValidationError as e:
     """
 ```
 
+!!! note "On return type checking"
+    Methods decorated with `@model_validator` should return the self instance at the end of the method.
+    For type checking purposes, you can use `Self` from either `typing` or the `typing_extensions` backport as the
+    return type of the decorated method.
+    In the context of the above example, you could also use `def check_passwords_match(self: 'UserModel)' -> 'UserModel'` to indicate that
+    the method returns an instance of the model.
+
 Model validators can be `mode='before'`, `mode='after'` or `mode='wrap'`.
 
 Before model validators are passed the raw input which is often a `dict[str, Any]` but could also be an instance of the model itself (e.g. if `UserModel.model_validate(UserModel.construct(...))` is called) or anything else since you can pass arbitrary objects into `model_validate`.
