@@ -24,8 +24,6 @@ jobs:
       - id: cache-rust
         name: cache rust
         uses: Swatinem/rust-cache@v2
-        with:
-          key: coverage-v2
 
       - run: cargo install rustfilt coverage-prepare
         if: steps.cache-rust.outputs.cache-hit != 'true'
@@ -120,13 +118,48 @@ jobs:
 
       - name: cache rust
         uses: Swatinem/rust-cache@v2
-        with:
-          key: ${{ matrix.os }}-v1
 
       - name: set up python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+      - run: pip install -r tests/requirements.txt
+
+      - run: pip install -e .
+        env:
+          RUST_BACKTRACE: 1
+
+      - run: pip freeze
+
+      - run: pytest
+
+      - run: cargo test
+
+  test-msrv:
+    name: test MSRV
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: set up python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: resolve MSRV
+        id: resolve-msrv
+        run:
+          echo MSRV=`python -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["package"]["rust-version"])'` >> $GITHUB_OUTPUT
+
+      - name: install rust MSRV
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ steps.resolve-msrv.outputs.MSRV }}
+
+      - name: cache rust
+        uses: Swatinem/rust-cache@v2
 
       - run: pip install -r tests/requirements.txt
 
@@ -164,8 +197,6 @@ jobs:
 
       - name: cache rust
         uses: Swatinem/rust-cache@v2
-        with:
-          key: test-debug
 
       - run: pip install -r tests/requirements.txt
       - run: make build-dev
@@ -197,8 +228,6 @@ jobs:
 
       - name: cache rust
         uses: Swatinem/rust-cache@v2
-        with:
-          key: test-pydantic-integration
 
       - name: install deps
         run: |
