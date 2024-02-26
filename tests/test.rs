@@ -117,4 +117,102 @@ json_input = '{"a": "something"}'
             assert_eq!(repr, "{'a': 'something'}");
         });
     }
+
+    #[test]
+    fn test_segfault_for_recursive_schemas() {
+        Python::with_gil(|py| {
+            let code = r"
+schema = {
+    'type': 'definitions',
+    'schema': {
+        'type': 'definition-ref',
+        'schema_ref': '__main__.JSONData:4303261344'
+    },
+    'definitions': [
+        {
+            'type': 'union',
+            'choices': [
+                {
+                    'type': 'dict',
+                    'keys_schema': {'type': 'str'},
+                    'values_schema': {
+                        'type': 'definition-ref',
+                        'schema_ref': '__main__.JSONData:4303261344'
+                    },
+                    'strict': False
+                },
+                {
+                    'type': 'list',
+                    'items_schema': {
+                        'type': 'definition-ref',
+                        'schema_ref': '__main__.JSONData:4303261344'
+                    },
+                    'strict': False
+                }
+            ],
+            'ref': '__main__.JSONData:4303261344'
+        }
+    ]
+}
+dump_json_input_1 = 1
+dump_json_input_2 = {'a': 'something'}
+            ";
+            let locals = PyDict::new(py);
+            py.run(code, None, Some(locals)).unwrap();
+            let schema: &PyDict = locals.get_item("schema").unwrap().unwrap().extract().unwrap();
+            let dump_json_input_1: &PyAny = locals
+                .get_item("dump_json_input_1")
+                .unwrap()
+                .unwrap()
+                .extract()
+                .unwrap();
+            let dump_json_input_2: &PyAny = locals
+                .get_item("dump_json_input_2")
+                .unwrap()
+                .unwrap()
+                .extract()
+                .unwrap();
+            let binding = SchemaSerializer::py_new(py, schema, None)
+                .unwrap()
+                .to_json(
+                    py,
+                    dump_json_input_1,
+                    None,
+                    None,
+                    None,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    None,
+                )
+                .unwrap();
+            let serialization_result: &PyAny = binding.extract(py).unwrap();
+            let repr = format!("{}", serialization_result.repr().unwrap());
+            assert_eq!(repr, "b'1'");
+
+            let binding = SchemaSerializer::py_new(py, schema, None)
+                .unwrap()
+                .to_json(
+                    py,
+                    dump_json_input_2,
+                    None,
+                    None,
+                    None,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    None,
+                )
+                .unwrap();
+            let serialization_result: &PyAny = binding.extract(py).unwrap();
+            let repr = format!("{}", serialization_result.repr().unwrap());
+            assert_eq!(repr, "b'{\"a\":\"something\"}'");
+        });
+    }
 }

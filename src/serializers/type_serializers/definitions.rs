@@ -4,8 +4,8 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
-use crate::definitions::DefinitionRef;
 use crate::definitions::DefinitionsBuilder;
+use crate::definitions::{DefinitionRef, RecursionSafeCache};
 
 use crate::tools::SchemaDict;
 
@@ -39,9 +39,28 @@ impl BuildSerializer for DefinitionsSerializerBuilder {
     }
 }
 
-#[derive(Debug, Clone)]
 pub struct DefinitionRefSerializer {
     definition: DefinitionRef<CombinedSerializer>,
+    retry_with_lax_check: RecursionSafeCache<bool>,
+}
+
+// TODO(DH): Remove the need to clone serializers
+impl Clone for DefinitionRefSerializer {
+    fn clone(&self) -> Self {
+        Self {
+            definition: self.definition.clone(),
+            retry_with_lax_check: RecursionSafeCache::new(),
+        }
+    }
+}
+
+impl std::fmt::Debug for DefinitionRefSerializer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DefinitionRefSerializer")
+            .field("definition", &self.definition)
+            .field("retry_with_lax_check", &self.retry_with_lax_check())
+            .finish()
+    }
 }
 
 impl BuildSerializer for DefinitionRefSerializer {
@@ -54,7 +73,11 @@ impl BuildSerializer for DefinitionRefSerializer {
     ) -> PyResult<CombinedSerializer> {
         let schema_ref = schema.get_as_req(intern!(schema.py(), "schema_ref"))?;
         let definition = definitions.get_definition(schema_ref);
-        Ok(Self { definition }.into())
+        Ok(Self {
+            definition,
+            retry_with_lax_check: RecursionSafeCache::new(),
+        }
+        .into())
     }
 }
 
@@ -101,6 +124,8 @@ impl TypeSerializer for DefinitionRefSerializer {
     }
 
     fn retry_with_lax_check(&self) -> bool {
-        self.definition.read(|s| s.unwrap().retry_with_lax_check())
+        *self
+            .retry_with_lax_check
+            .get_or_init(|| self.definition.read(|s| s.unwrap().retry_with_lax_check()), &false)
     }
 }
