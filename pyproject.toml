@@ -131,6 +131,7 @@ testing = [
     "faker>=18.13.0",
     "pytest-benchmark>=4.0.0",
     "pytest-codspeed~=2.2.0",
+    "packaging>=23.2",
 ]
 testing-extra = [
     # used when generate devtools docs example
