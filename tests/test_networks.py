@@ -1,3 +1,4 @@
+import json
 from typing import Union
 
 import pytest
@@ -867,3 +868,16 @@ def test_name_email():
     assert exc_info.value.errors() == [
         {'input': 1, 'loc': ('v',), 'msg': 'Input is not a valid NameEmail', 'type': 'name_email_type'}
     ]
+
+
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
+def test_name_email_serialization():
+    class Model(BaseModel):
+        email: NameEmail
+
+    m = Model.model_validate({'email': '"name@mailbox.com" <name@mailbox.com>'})
+    assert m.email.name == 'name@mailbox.com'
+    assert str(m.email) == '"name@mailbox.com" <name@mailbox.com>'
+
+    obj = json.loads(m.model_dump_json())
+    Model(email=obj['email'])
