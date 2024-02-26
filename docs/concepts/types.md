@@ -464,7 +464,6 @@ assert Model(name='ABC').name == 'abc'  # (2)!
 ```
 
 1. The `frozen=True` specification makes `MyAfterValidator` hashable. Without this, a union such as `Username | None` will raise an error.
-method to the `dataclass`, which is sometimes used during serialization.
 2. Notice that type checkers will not complain about assigning `'ABC'` to `Username` like they did in the previous example because they do not consider `Username` to be a distinct type from `str`.
 
 #### Handling third-party types
