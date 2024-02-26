@@ -3702,7 +3702,7 @@ This is equivalent to implementing <code>__get_validators__</code> in Pydantic V
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">GetCoreSchemaHandler</span>
 
 
-<span class="nd">@dataclass</span>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># (1)!</span>
 <span class="k">class</span> <span class="nc">MyAfterValidator</span><span class="p">:</span>
     <span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]</span>
 
@@ -3721,9 +3721,12 @@ This is equivalent to implementing <code>__get_validators__</code> in Pydantic V
     <span class="n">name</span><span class="p">:</span> <span class="n">Username</span>
 
 
-<span class="k">assert</span> <span class="n">Model</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;ABC&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;abc&#39;</span>
+<span class="k">assert</span> <span class="n">Model</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;ABC&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;abc&#39;</span>  <span class="c1"># (2)!</span>
 </code></pre></div>
-<p>Notice that type checkers will not complain about assigning <code>'abc'</code> to <code>Username</code> like they did in the previous example because they do not consider <code>Username</code> to be a distinct type from <code>str</code>.</p>
+<ol>
+<li>The <code>frozen=True</code> specification makes <code>MyAfterValidator</code> hashable. Without this, a union such as <code>Username | None</code> will raise an error.</li>
+<li>Notice that type checkers will not complain about assigning <code>'ABC'</code> to <code>Username</code> like they did in the previous example because they do not consider <code>Username</code> to be a distinct type from <code>str</code>.</li>
+</ol>
 <h4 id="handling-third-party-types">Handling third-party types<a class="headerlink" href="#handling-third-party-types" title="Permanent link">&para;</a></h4>
 <p>Another use case for the pattern in the previous section is to handle third party types.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
