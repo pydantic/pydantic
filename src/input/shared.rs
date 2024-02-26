@@ -72,6 +72,7 @@ fn strip_underscores(s: &str) -> Option<String> {
 /// https://docs.python.org/3/whatsnew/3.11.html#other-cpython-implementation-changes and
 /// https://github.com/python/cpython/issues/95778 for more info in that length bound
 pub fn str_as_int<'s, 'l>(input: &'s impl Input<'s>, str: &'l str) -> ValResult<EitherInt<'s>> {
+    let str = str.trim();
     let len = str.len();
     if len > 4300 {
         Err(ValError::new(ErrorTypeDefaults::IntParsingSize, input))
@@ -96,7 +97,7 @@ pub fn str_as_int<'s, 'l>(input: &'s impl Input<'s>, str: &'l str) -> ValResult<
 
 /// parse a float as a float
 pub fn str_as_float<'s, 'l>(input: &'s impl Input<'s>, str: &'l str) -> ValResult<EitherFloat<'s>> {
-    match str.parse() {
+    match str.trim().parse() {
         Ok(float) => Ok(EitherFloat::F64(float)),
         Err(_) => match strip_underscores(str).and_then(|stripped| stripped.parse().ok()) {
             Some(float) => Ok(EitherFloat::F64(float)),
