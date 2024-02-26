@@ -4,6 +4,7 @@
 /// We use DefinitionsBuilder to collect the references / definitions into a single vector
 /// and then get a definition from a reference using an integer id (just for performance of not using a HashMap)
 use std::{
+    borrow::Borrow,
     collections::hash_map::Entry,
     fmt::Debug,
     sync::{
@@ -194,23 +195,39 @@ impl<T: std::fmt::Debug> DefinitionsBuilder<T> {
     }
 }
 
-struct LazyName {
-    initialized: OnceLock<String>,
+/// Because definitions can create recursive structures, we often need to be able to populate
+/// values lazily from these structures in a way that avoids infinite recursion. This structure
+/// avoids infinite recursion by returning a default value when a recursion loop is detected.
+pub(crate) struct RecursionSafeCache<T> {
+    cache: OnceLock<T>,
     in_recursion: AtomicBool,
 }
 
-impl LazyName {
-    fn new() -> Self {
+impl<T: Clone> Clone for RecursionSafeCache<T> {
+    fn clone(&self) -> Self {
         Self {
-            initialized: OnceLock::new(),
+            cache: self.cache.clone(),
+            in_recursion: AtomicBool::new(false),
+        }
+    }
+}
+
+impl<T> RecursionSafeCache<T> {
+    /// Creates a new RecursionSafeCache
+    pub(crate) fn new() -> Self {
+        Self {
+            cache: OnceLock::new(),
             in_recursion: AtomicBool::new(false),
         }
     }
 
-    /// Gets the validator name, returning the default in the case of recursion loops
-    fn get_or_init(&self, init: impl FnOnce() -> String) -> &str {
-        if let Some(s) = self.initialized.get() {
-            return s.as_str();
+    /// Gets or initialized the cached value, returning the default in the case of recursion loops
+    pub(crate) fn get_or_init<D: ?Sized>(&self, init: impl FnOnce() -> T, recursive_default: &'static D) -> &D
+    where
+        T: Borrow<D>,
+    {
+        if let Some(cached) = self.cache.get() {
+            return cached.borrow();
         }
 
         if self
@@ -218,25 +235,35 @@ impl LazyName {
             .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
             .is_err()
         {
-            return "...";
+            return recursive_default;
         }
-        let result = self.initialized.get_or_init(init).as_str();
+        let result = self.cache.get_or_init(init).borrow();
         self.in_recursion.store(false, Ordering::SeqCst);
         result
+    }
+
+    /// Gets the value, if it is set
+    fn get(&self) -> Option<&T> {
+        self.cache.get()
+    }
+}
+
+#[derive(Clone)]
+struct LazyName(RecursionSafeCache<String>);
+
+impl LazyName {
+    fn new() -> Self {
+        Self(RecursionSafeCache::new())
+    }
+
+    /// Gets the validator name, returning the default in the case of recursion loops
+    fn get_or_init(&self, init: impl FnOnce() -> String) -> &str {
+        self.0.get_or_init(init, "...")
     }
 }
 
 impl Debug for LazyName {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.initialized.get().map_or("...", String::as_str).fmt(f)
-    }
-}
-
-impl Clone for LazyName {
-    fn clone(&self) -> Self {
-        Self {
-            initialized: OnceLock::new(),
-            in_recursion: AtomicBool::new(false),
-        }
+        self.0.get().map_or("...", String::as_str).fmt(f)
     }
 }
