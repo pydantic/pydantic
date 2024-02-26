@@ -48,8 +48,6 @@ jobs:
 
       - name: cache rust
         uses: Swatinem/rust-cache@v2
-        with:
-          key: v1
 
       - name: Compile pydantic-core for profiling
         run: make build-profiling

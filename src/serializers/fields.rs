@@ -147,7 +147,7 @@ impl GeneralFieldsSerializer {
         }
     }
 
-    pub fn main_to_python<'py>(
+    pub(crate) fn main_to_python<'py>(
         &self,
         py: Python<'py>,
         main_iter: impl Iterator<Item = PyResult<(&'py PyAny, &'py PyAny)>>,
@@ -212,7 +212,7 @@ impl GeneralFieldsSerializer {
         }
     }
 
-    pub fn main_serde_serialize<'py, S: serde::ser::Serializer>(
+    pub(crate) fn main_serde_serialize<'py, S: serde::ser::Serializer>(
         &self,
         main_iter: impl Iterator<Item = PyResult<(&'py PyAny, &'py PyAny)>>,
         expected_len: usize,
@@ -258,7 +258,7 @@ impl GeneralFieldsSerializer {
         Ok(map)
     }
 
-    pub fn add_computed_fields_python(
+    pub(crate) fn add_computed_fields_python(
         &self,
         model: Option<&PyAny>,
         output_dict: &PyDict,
@@ -275,7 +275,7 @@ impl GeneralFieldsSerializer {
         Ok(())
     }
 
-    pub fn add_computed_fields_json<S: serde::ser::Serializer>(
+    pub(crate) fn add_computed_fields_json<S: serde::ser::Serializer>(
         &self,
         model: Option<&PyAny>,
         map: &mut S::SerializeMap,
@@ -291,7 +291,7 @@ impl GeneralFieldsSerializer {
         Ok(())
     }
 
-    pub fn computed_field_count(&self) -> usize {
+    pub(crate) fn computed_field_count(&self) -> usize {
         option_length!(self.computed_fields)
     }
 }
