@@ -1852,3 +1852,27 @@ def test_nested_discriminator() -> None:
         'title': 'MyModel',
         'type': 'object',
     }
+
+
+def test_nested_schema_gen_uses_tagged_union_in_ref() -> None:
+    class NestedState(BaseModel):
+        state_type: Literal['nested']
+        substate: 'AnyState'
+
+    # If this type is left out, the model behaves normally again
+    class LoopState(BaseModel):
+        state_type: Literal['loop']
+        substate: 'AnyState'
+
+    class LeafState(BaseModel):
+        state_type: Literal['leaf']
+
+    AnyState = Annotated[Union[NestedState, LoopState, LeafState], Field(..., discriminator='state_type')]
+    NestedState.model_rebuild()
+    LoopState.model_rebuild()
+    adapter = TypeAdapter(AnyState)
+
+    assert adapter.core_schema['schema']['type'] == 'tagged-union'
+    for definition in adapter.core_schema['definitions']:
+        if definition['schema']['model_name'] in ['NestedState', 'LoopState']:
+            assert definition['schema']['fields']['substate']['schema']['schema']['type'] == 'tagged-union'
