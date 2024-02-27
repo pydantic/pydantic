@@ -114,6 +114,8 @@ nav:
     - Mac Address: api/pydantic_extra_types_mac_address.md
     - ISBN: api/pydantic_extra_types_isbn.md
     - Pendulum: api/pydantic_extra_types_pendulum_dt.md
+    - Currency: api/pydantic_extra_types_currency_code.md
+    - Language: api/pydantic_extra_types_language_code.md
 - Examples:
   - Secrets: examples/secrets.md
 - Error Messages:
