@@ -54,6 +54,11 @@ def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSche
         if discriminator is not None:
             if definitions is None:
                 definitions = collect_definitions(schema)
+                # After we collect the definitions schemas, we must run through the discriminator
+                # application logic for each one. This step is crucial to prevent an exponential
+                # increase in complexity that occurs if schemas are left as 'union' schemas
+                # rather than 'tagged-union' schemas.
+                # For more details, see https://github.com/pydantic/pydantic/pull/8904#discussion_r1504687302
                 definitions = {k: recurse(v, inner) for k, v in definitions.items()}
             s = apply_discriminator(s, discriminator, definitions)
         return s
