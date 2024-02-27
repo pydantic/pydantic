@@ -19,7 +19,7 @@ from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..plugin._schema_validator import create_schema_validator
 from ..warnings import GenericBeforeBaseModelWarning, PydanticDeprecatedSince20
 from ._config import ConfigWrapper
-from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_from_bases
+from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_from_bases, unwrap_wrapped_function
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
 from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
@@ -584,8 +584,9 @@ def set_deprecated_descriptors(cls: type[BaseModel]) -> None:
 
     for field, computed_field_info in cls.model_computed_fields.items():
         if (
-            not computed_field_info.from_deprecated_decorator  # Avoid having two warnings emitted
-            and (msg := computed_field_info.deprecation_message) is not None
+            (msg := computed_field_info.deprecation_message) is not None
+            # Avoid having two warnings emitted:
+            and not hasattr(unwrap_wrapped_function(computed_field_info.wrapped_property), '__deprecated__')
         ):
             desc = _DeprecatedFieldDescriptor(msg, computed_field_info.wrapped_property)
             desc.__set_name__(cls, field)

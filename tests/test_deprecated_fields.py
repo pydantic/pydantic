@@ -2,9 +2,9 @@ import importlib.metadata
 
 import pytest
 from packaging.version import Version
-from typing_extensions import Annotated, deprecated
+from typing_extensions import Annotated, Self, deprecated
 
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field, computed_field, field_validator, model_validator
 
 
 def test_deprecated_fields():
@@ -60,6 +60,52 @@ def test_deprecated_fields_deprecated_class():
     pytest.warns(DeprecationWarning, lambda: instance.a, match='^$')
     pytest.warns(DeprecationWarning, lambda: instance.b, match='^This is deprecated$')
     pytest.warns(DeprecationWarning, lambda: instance.c, match='^This is deprecated$')
+
+
+def test_deprecated_fields_field_validator():
+    class Model(BaseModel):
+        x: int = Field(deprecated='x is deprecated')
+
+        @field_validator('x')
+        @classmethod
+        def validate_x(cls, v: int) -> int:
+            return v * 2
+
+    instance = Model(x=1)
+
+    with pytest.warns(DeprecationWarning):
+        assert instance.x == 2
+
+
+def test_deprecated_fields_model_validator():
+    class Model(BaseModel):
+        x: int = Field(deprecated='x is deprecated')
+
+        @model_validator(mode='after')
+        def validate_x(self) -> Self:
+            self.x = self.x * 2
+
+    instance = Model(x=1)
+
+    with pytest.warns(DeprecationWarning):
+        assert instance.x == 2
+
+
+def test_deprecated_fields_validate_assignment():
+    class Model(BaseModel):
+        x: int = Field(deprecated='x is deprecated')
+
+        model_config = {'validate_assignment': True}
+
+    instance = Model(x=1)
+
+    with pytest.warns(DeprecationWarning):
+        assert instance.x == 1
+
+    instance.x = 2
+
+    with pytest.warns(DeprecationWarning):
+        assert instance.x == 2
 
 
 def test_computed_field_deprecated():
