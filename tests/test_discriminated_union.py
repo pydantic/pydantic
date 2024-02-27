@@ -1867,7 +1867,7 @@ def test_nested_schema_gen_uses_tagged_union_in_ref() -> None:
     class LeafState(BaseModel):
         state_type: Literal['leaf']
 
-    AnyState = Annotated[NestedState | LoopState | LeafState, Field(..., discriminator='state_type')]
+    AnyState = Annotated[Union[NestedState, LoopState, LeafState], Field(..., discriminator='state_type')]
     NestedState.model_rebuild()
     LoopState.model_rebuild()
     adapter = TypeAdapter(AnyState)
