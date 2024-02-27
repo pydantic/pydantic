@@ -54,6 +54,7 @@ def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSche
         if discriminator is not None:
             if definitions is None:
                 definitions = collect_definitions(schema)
+                definitions = {k: recurse(v, inner) for k, v in definitions.items()}
             s = apply_discriminator(s, discriminator, definitions)
         return s
 
