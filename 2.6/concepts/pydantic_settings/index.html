@@ -1347,6 +1347,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#other-settings-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Other settings source
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#field-value-priority" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3091,6 +3102,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#other-settings-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Other settings source
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#field-value-priority" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3360,12 +3382,12 @@ you like through <code>Field(validation_alias=...)</code>.</p>
 <p>In case of nested models, the <code>case_sensitive</code> setting will be applied to all nested models.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">os</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 <span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
 
 
-<span class="k">class</span> <span class="nc">RedisSettings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">RedisSettings</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">host</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">port</span><span class="p">:</span> <span class="nb">int</span>
 
@@ -3383,13 +3405,10 @@ you like through <code>Field(validation_alias=...)</code>.</p>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    2 validation errors for RedisSettings</span>
-<span class="sd">    host</span>
+<span class="sd">    1 validation error for Settings</span>
+<span class="sd">    redis.host</span>
 <span class="sd">      Field required [type=missing, input_value={&#39;HOST&#39;: &#39;localhost&#39;, &#39;port&#39;: 6379}, input_type=dict]</span>
 <span class="sd">        For further information visit https://errors.pydantic.dev/2/v/missing</span>
-<span class="sd">    HOST</span>
-<span class="sd">      Extra inputs are not permitted [type=extra_forbidden, input_value=&#39;localhost&#39;, input_type=str]</span>
-<span class="sd">        For further information visit https://errors.pydantic.dev/2/v/extra_forbidden</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <ol>
@@ -3401,6 +3420,10 @@ you like through <code>Field(validation_alias=...)</code>.</p>
 <code>case_sensitive</code> config setting will have no effect - settings will always be updated ignoring case.</p>
 </div>
 <h2 id="parsing-environment-variable-values">Parsing environment variable values<a class="headerlink" href="#parsing-environment-variable-values" title="Permanent link">&para;</a></h2>
+<p>By default environment variables are parsed verbatim, including if the value is empty. You can choose to
+ignore empty environment variables by setting the <code>env_ignore_empty</code> config setting to <code>True</code>. This can be
+useful if you would prefer to use the default value for a field rather than an empty value from the
+environment.</p>
 <p>For most simple field types (such as <code>int</code>, <code>float</code>, <code>str</code>, etc.), the environment variable value is parsed
 the same way it would be if passed directly to the initialiser (as a string).</p>
 <p>Complex types like <code>list</code>, <code>set</code>, <code>dict</code>, and sub-models are populated from the environment by treating the
@@ -3410,6 +3433,11 @@ config setting, then use an environment variable with a name pointing to the nes
 What it does is simply explodes your variable into nested models or dicts.
 So if you define a variable <code>FOO__BAR__BAZ=123</code> it will convert it into <code>FOO={'BAR': {'BAZ': 123}}</code>
 If you have multiple variables with the same structure they will be merged.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Sub model has to inherit from <code>pydantic.BaseModel</code>, Otherwise <code>pydantic-settings</code> will initialize sub model,
+collects values for sub model fields separately, and you may get unexpected results.</p>
+</div>
 <p>As an example, given the following environment variables:
 <div class="language-bash highlight"><pre><span></span><code><span class="c1"># your environment</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">V0</span><span class="o">=</span><span class="m">0</span>
@@ -3452,18 +3480,14 @@ If you have multiple variables with the same structure they will be merged.</p>
 </code></pre></div>
 <ol>
 <li>
-<p>Sub model has to inherit from <code>pydantic.BaseModel</code>, Otherwise <code>pydantic-settings</code> will initialize sub model,
-   collects values for sub model fields separately, and you may get unexpected results.</p>
+<p>Sub model has to inherit from <code>pydantic.BaseModel</code>.</p>
 </li>
 <li>
-<p>Sub model has to inherit from <code>pydantic.BaseModel</code>, Otherwise <code>pydantic-settings</code> will initialize sub model,
-   collects values for sub model fields separately, and you may get unexpected results.</p>
+<p>Sub model has to inherit from <code>pydantic.BaseModel</code>.</p>
 </li>
 </ol>
 <p><code>env_nested_delimiter</code> can be configured via the <code>model_config</code> as shown above, or via the
 <code>_env_nested_delimiter</code> keyword argument on instantiation.</p>
-<p>JSON is only parsed in top-level fields, if you need to parse JSON in sub-models, you will need to implement
-validators on those models.</p>
 <p>Nested environment variables take precedence over the top-level environment variable JSON
 (e.g. in the example above, <code>SUB_MODEL__V2</code> trumps <code>SUB_MODEL</code>).</p>
 <p>You may also populate a complex type by providing your own source class.</p>
@@ -3579,6 +3603,12 @@ it will raise <code>ValidationError</code> in settings construction.</p>
 <span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_file</span><span class="o">=</span><span class="s1">&#39;.env&#39;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
 </code></pre></div></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Pydantic settings loads all the values from dotenv file and passes it to the model, regardless of the model's <code>env_prefix</code>.
+So if you provide extra values in a dotenv file, whether they start with <code>env_prefix</code> or not,
+a <code>ValidationError</code> will be raised.</p>
+</div>
 <h2 id="secrets">Secrets<a class="headerlink" href="#secrets" title="Permanent link">&para;</a></h2>
 <p>Placing secret values in files is a common pattern to provide sensitive configuration to an application.</p>
 <p>A secret file follows the same principal as a dotenv file except it only contains a single value and the file name
@@ -3632,6 +3662,54 @@ as the target mount point. If you want to use a different location, change <code
 <p>Last, run your application inside a Docker container and supply your newly created secret
 <div class="language-bash highlight"><pre><span></span><code>docker<span class="w"> </span>service<span class="w"> </span>create<span class="w"> </span>--name<span class="w"> </span>pydantic-with-secrets<span class="w"> </span>--secret<span class="w"> </span>my_secret_data<span class="w"> </span>pydantic-app:latest
 </code></pre></div></p>
+<h2 id="other-settings-source">Other settings source<a class="headerlink" href="#other-settings-source" title="Permanent link">&para;</a></h2>
+<p>Other settings sources are available for common configuration files:</p>
+<ul>
+<li><code>TomlConfigSettingsSource</code> using <code>toml_file</code> argument</li>
+<li><code>YamlConfigSettingsSource</code> using <code>yaml_file</code> and yaml_file_encoding arguments</li>
+<li><code>JsonConfigSettingsSource</code> using <code>json_file</code> and <code>json_file_encoding</code> arguments</li>
+</ul>
+<p>You can also provide multiple files by providing a list of path:
+<div class="language-py highlight"><pre><span></span><code><span class="n">toml_file</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;config.default.toml&#39;</span><span class="p">,</span> <span class="s1">&#39;config.custom.toml&#39;</span><span class="p">]</span>
+</code></pre></div>
+To use them, you can use the same mechanism described <a href="#customise-settings-sources">here</a></p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseSettings</span><span class="p">,</span>
+    <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+    <span class="n">SettingsConfigDict</span><span class="p">,</span>
+    <span class="n">TomlConfigSettingsSource</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Nested</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">nested_field</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">foobar</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">nested</span><span class="p">:</span> <span class="n">Nested</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">toml_file</span><span class="o">=</span><span class="s1">&#39;config.toml&#39;</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">settings_customise_sources</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">settings_cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseSettings</span><span class="p">],</span>
+        <span class="n">init_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">env_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">dotenv_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">file_secret_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">PydanticBaseSettingsSource</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">TomlConfigSettingsSource</span><span class="p">(</span><span class="n">settings_cls</span><span class="p">),)</span>
+</code></pre></div>
+<p>This will be able to read the following "config.toml" file, located in your working directory:</p>
+<div class="language-toml highlight"><pre><span></span><code><span class="n">foobar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Hello&quot;</span>
+<span class="k">[nested]</span>
+<span class="n">nested_field</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;world!&quot;</span>
+</code></pre></div>
 <h2 id="field-value-priority">Field value priority<a class="headerlink" href="#field-value-priority" title="Permanent link">&para;</a></h2>
 <p>In the case where a value is specified for the same <code>Settings</code> field in multiple ways,
 the selected value is determined as follows (in descending order of priority):</p>
@@ -3805,7 +3883,7 @@ need to add your own custom sources, <code>settings_customise_sources</code> mak
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.6.2", "pydantic-core==2.16.3"]
+    window.mkdocs_run_deps = ["pydantic==2.6.3", "pydantic-core==2.16.3"]
     </script>
 
               </article>
