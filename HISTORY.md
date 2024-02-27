@@ -1,3 +1,18 @@
+## v2.6.3 (2024-02-27)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.6.3)
+
+### What's Changed
+
+#### Packaging
+
+* Update `pydantic-settings` version in the docs by @hramezani in [#8906](https://github.com/pydantic/pydantic/pull/8906)
+
+#### Fixes
+
+* Fix discriminated union schema gen bug by @sydney-runkle in [#8904](https://github.com/pydantic/pydantic/pull/8904)
+
+
 ## v2.6.2 (2024-02-23)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.6.2)
