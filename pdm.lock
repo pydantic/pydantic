@@ -3,9 +3,10 @@
 
 [metadata]
 groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "testing-extra"]
-strategy = ["cross_platform"]
-lock_version = "4.4.1"
-content_hash = "sha256:55624d6d83af291bfaba90cb8ecaf41ee4cfecad9a3aa04d6945640b5475efc0"
+cross_platform = true
+static_urls = false
+lock_version = "4.3"
+content_hash = "sha256:3bf8ccaefcdd7ac0c02606dbb435934025578ce34798b72ea97bd85e39ac6702"
 
 [[package]]
 name = "annotated-types"

@@ -2,6 +2,24 @@
 requires = ['hatchling', 'hatch-fancy-pypi-readme>=22.5.0']
 build-backend = 'hatchling.build'
 
+[tool.hatch.version]
+path = 'pydantic/version.py'
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.sdist]
+# limit which files are included in the sdist (.tar.gz) asset,
+# see https://github.com/pydantic/pydantic/pull/4542
+include = [
+    '/README.md',
+    '/HISTORY.md',
+    '/Makefile',
+    '/pydantic',
+    '/tests',
+    '/requirements',
+]
+
 [project]
 name = 'pydantic'
 description = 'Data validation using Python type hints'
@@ -55,47 +73,6 @@ dynamic = ['version', 'readme']
 [project.optional-dependencies]
 email = ['email-validator>=2.0.0']
 
-[project.urls]
-Homepage = 'https://github.com/pydantic/pydantic'
-Documentation = 'https://docs.pydantic.dev'
-Funding = 'https://github.com/sponsors/samuelcolvin'
-Source = 'https://github.com/pydantic/pydantic'
-Changelog = 'https://docs.pydantic.dev/latest/changelog/'
-
-[tool.hatch.version]
-path = 'pydantic/version.py'
-
-[tool.hatch.metadata]
-allow-direct-references = true
-
-[tool.hatch.build.targets.sdist]
-# limit which files are included in the sdist (.tar.gz) asset,
-# see https://github.com/pydantic/pydantic/pull/4542
-include = [
-    '/README.md',
-    '/HISTORY.md',
-    '/Makefile',
-    '/pydantic',
-    '/tests',
-    '/requirements',
-]
-
-[tool.hatch.metadata.hooks.fancy-pypi-readme]
-content-type = 'text/markdown'
-# construct the PyPI readme from README.md and HISTORY.md
-fragments = [
-    {path = "README.md"},
-    {text = "\n## Changelog\n\n"},
-    {path = "HISTORY.md", pattern = "(.+?)<!-- package description limit -->"},
-    {text = "\n... see [here](https://docs.pydantic.dev/changelog/#v0322-2019-08-17) for earlier changes.\n"},
-]
-# convert GitHuB issue/PR numbers and handles to links
-substitutions = [
-    {pattern = '(\s+)#(\d+)', replacement = '\1[#\2](https://github.com/pydantic/pydantic/issues/\2)'},
-    {pattern = '(\s+)@([\w\-]+)', replacement = '\1[@\2](https://github.com/\2)'},
-    {pattern = '@@', replacement = '@'},
-]
-
 [tool.pdm.dev-dependencies]
 docs = [
     "autoflake",
@@ -131,7 +108,6 @@ testing = [
     "faker>=18.13.0",
     "pytest-benchmark>=4.0.0",
     "pytest-codspeed~=2.2.0",
-    "packaging>=23.2",
 ]
 testing-extra = [
     # used when generate devtools docs example
@@ -152,6 +128,29 @@ memray = [
 [tool.pdm.resolution.overrides]
 # requires Python > 3.8, we only test with 3.8 in CI but because of it won't lock properly
 pytest-memray = "1.5.0"
+
+[project.urls]
+Homepage = 'https://github.com/pydantic/pydantic'
+Documentation = 'https://docs.pydantic.dev'
+Funding = 'https://github.com/sponsors/samuelcolvin'
+Source = 'https://github.com/pydantic/pydantic'
+Changelog = 'https://docs.pydantic.dev/latest/changelog/'
+
+[tool.hatch.metadata.hooks.fancy-pypi-readme]
+content-type = 'text/markdown'
+# construct the PyPI readme from README.md and HISTORY.md
+fragments = [
+    {path = "README.md"},
+    {text = "\n## Changelog\n\n"},
+    {path = "HISTORY.md", pattern = "(.+?)<!-- package description limit -->"},
+    {text = "\n... see [here](https://docs.pydantic.dev/changelog/#v0322-2019-08-17) for earlier changes.\n"},
+]
+# convert GitHuB issue/PR numbers and handles to links
+substitutions = [
+    {pattern = '(\s+)#(\d+)', replacement = '\1[#\2](https://github.com/pydantic/pydantic/issues/\2)'},
+    {pattern = '(\s+)@([\w\-]+)', replacement = '\1[@\2](https://github.com/\2)'},
+    {pattern = '@@', replacement = '@'},
+]
 
 [tool.pytest.ini_options]
 testpaths = 'tests'

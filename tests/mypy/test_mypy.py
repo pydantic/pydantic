@@ -13,16 +13,16 @@ try:
     from mypy import api as mypy_api
     from mypy.version import __version__ as mypy_version
 
-    from pydantic.version import parse_package_version
+    from pydantic.version import parse_mypy_version
 
 except ImportError:
     mypy_api = None
     mypy_version = None
 
-    parse_package_version = lambda _: (0,)  # noqa: E731
+    parse_mypy_version = lambda _: (0,)  # noqa: E731
 
 
-MYPY_VERSION_TUPLE = parse_package_version(mypy_version)
+MYPY_VERSION_TUPLE = parse_mypy_version(mypy_version)
 PYDANTIC_ROOT = Path(__file__).parent.parent.parent
 
 pytestmark = pytest.mark.skipif(
@@ -142,7 +142,7 @@ def get_test_config(module_path: Path, config_path: Path) -> MypyTestConfig:
     existing = None
 
     # Build sorted list of (parsed_version, version) pairs, including the current mypy version being used
-    parsed_version_pairs = sorted([(parse_package_version(v), v) for v in existing_versions])
+    parsed_version_pairs = sorted([(parse_mypy_version(v), v) for v in existing_versions])
     if MYPY_VERSION_TUPLE not in [x[0] for x in parsed_version_pairs]:
         insort(parsed_version_pairs, (MYPY_VERSION_TUPLE, mypy_version))
 
@@ -274,8 +274,8 @@ def test_explicit_reexports_exist():
         ('0.940+dev.04cac4b5d911c4f9529e6ce86a27b44f28846f5d.dirty', (0, 940)),
     ],
 )
-def test_parse_package_version(v_str, v_tuple):
-    assert parse_package_version(v_str) == v_tuple
+def test_parse_mypy_version(v_str, v_tuple):
+    assert parse_mypy_version(v_str) == v_tuple
 
 
 def merge_python_and_mypy_output(source_code: str, mypy_output: str) -> str:

@@ -77,7 +77,7 @@ from mypy.util import get_unique_redefinition_name
 from mypy.version import __version__ as mypy_version
 
 from pydantic._internal import _fields
-from pydantic.version import parse_package_version
+from pydantic.version import parse_mypy_version
 
 try:
     from mypy.types import TypeVarDef  # type: ignore[attr-defined]
@@ -104,7 +104,7 @@ DECORATOR_FULLNAMES = {
 }
 
 
-MYPY_VERSION_TUPLE = parse_package_version(mypy_version)
+MYPY_VERSION_TUPLE = parse_mypy_version(mypy_version)
 BUILTINS_NAME = 'builtins' if MYPY_VERSION_TUPLE >= (0, 930) else '__builtins__'
 
 # Increment version if plugin changes and mypy caches should be invalidated

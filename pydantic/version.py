@@ -62,14 +62,14 @@ def version_info() -> str:
     return '\n'.join('{:>30} {}'.format(k + ':', str(v).replace('\n', ' ')) for k, v in info.items())
 
 
-def parse_package_version(version: str) -> tuple[int, ...]:
-    """Parse a package string version to tuple of ints.
+def parse_mypy_version(version: str) -> tuple[int, ...]:
+    """Parse mypy string version to tuple of ints.
 
     It parses normal version like `0.930` and extra info followed by a `+` sign
     like `0.940+dev.04cac4b5d911c4f9529e6ce86a27b44f28846f5d.dirty`.
 
     Args:
-        version: The package version string.
+        version: The mypy version string.
 
     Returns:
         A tuple of ints. e.g. (0, 930).
