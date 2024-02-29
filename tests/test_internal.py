@@ -208,8 +208,8 @@ def test_schema_is_valid():
     )
 
 
-def test_error_message_schema()
-    class Class SomeLongName:
+def test_model_name_in_schema_error_message()
+    class SomeLongName:
         @classmethod
         def __modify_schema__(cls, field_schema):
             field_schema["title"] = "SomeLongName"
