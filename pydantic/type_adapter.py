@@ -126,7 +126,7 @@ class TypeAdapter(Generic[T]):
 
     @overload
     def __init__(
-        self,
+        self: TypeAdapter[T],
         type: type[T],
         *,
         config: ConfigDict | None = ...,
@@ -135,12 +135,13 @@ class TypeAdapter(Generic[T]):
     ) -> None:
         ...
 
-    # This second overload is for unsupported special forms (such as Union). `pyright` handles them fine, but `mypy` does not match
-    # them against `type: type[T]`, so an explicit overload with `type: T` is needed.
+    # This second overload is for unsupported special forms (such as Annotated, Union, etc.)
+    # Currently there is no way to type this correctly
+    # See https://github.com/python/typing/pull/1618
     @overload
-    def __init__(  # pyright: ignore[reportOverlappingOverload]
-        self,
-        type: T,
+    def __init__(
+        self: TypeAdapter[Any],
+        type: Any,
         *,
         config: ConfigDict | None = ...,
         _parent_depth: int = ...,
@@ -150,7 +151,7 @@ class TypeAdapter(Generic[T]):
 
     def __init__(
         self,
-        type: type[T] | T,
+        type: Any,
         *,
         config: ConfigDict | None = None,
         _parent_depth: int = 2,
