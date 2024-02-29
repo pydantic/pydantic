@@ -209,7 +209,7 @@ def test_schema_is_valid():
 
 
 def test_model_name_in_schema_error_message():
-    from pydantic import BaseModel, PydanticUserError
+    from pydantic import BaseModel, ConfigDict, PydanticUserError
 
     class SomeLongName:
         @classmethod
@@ -219,4 +219,6 @@ def test_model_name_in_schema_error_message():
     with pytest.raises(PydanticUserError, match='The `__modify_schema__`.*SomeLongName.*'):
 
         class B(BaseModel):
+            model_config = ConfigDict(arbitrary_types_allowed=True)
+
             a: SomeLongName
