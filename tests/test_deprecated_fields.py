@@ -84,10 +84,10 @@ def test_deprecated_fields_model_validator():
         @model_validator(mode='after')
         def validate_x(self) -> Self:
             self.x = self.x * 2
-
-    instance = Model(x=1)
+            return self
 
     with pytest.warns(DeprecationWarning):
+        instance = Model(x=1)
         assert instance.x == 2
 
 
