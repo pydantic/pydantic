@@ -703,7 +703,7 @@ You can set the `deprecated` parameter as one of:
 
 * A string, which will be used as the deprecation message.
 * An instance of the `warnings.deprecated` decorator (or the `typing_extensions` backport).
-* A boolean, which will be used to mark the field as deprecated without a default `'deprecated'` deprecation message.
+* A boolean, which will be used to mark the field as deprecated with a default `'deprecated'` deprecation message.
 
 ### `deprecated` as a string
 
