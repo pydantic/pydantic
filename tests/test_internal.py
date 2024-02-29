@@ -208,12 +208,15 @@ def test_schema_is_valid():
     )
 
 
-def test_model_name_in_schema_error_message()
+def test_model_name_in_schema_error_message():
+    from pydantic import BaseModel, PydanticUserError
+
     class SomeLongName:
         @classmethod
         def __modify_schema__(cls, field_schema):
-            field_schema["title"] = "SomeLongName"
-    
-    with pytest.raises(PydanticUserError, match="The `__modify_schema__`.*SomeLongName.*")
-        class B(BaseModel)
+            field_schema['title'] = 'SomeLongName'
+
+    with pytest.raises(PydanticUserError, match='The `__modify_schema__`.*SomeLongName.*'):
+
+        class B(BaseModel):
             a: SomeLongName
