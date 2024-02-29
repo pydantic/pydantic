@@ -162,7 +162,6 @@ jobs:
     # If some tests start failing due to out-of-date schemas/validation errors/etc.,
     # update the `tests/test_fastapi.sh` script to exclude tests that have known-acceptable failures.
     # Disabled for now, until tiangolo/fastapi#11182 is sorted out (when it is the case, add it back to the final check)
-    if: false
     name: test fastapi
     runs-on: ubuntu-latest
     steps:
@@ -355,6 +354,7 @@ jobs:
       - test
       - test-memray
       - test-mypy
+      - test-fastapi
       - test-plugin
 
     runs-on: ubuntu-latest

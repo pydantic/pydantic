@@ -189,3 +189,23 @@ def test_computed_field_deprecated_deprecated_class():
         p1 = instance.p1
 
     assert p1 == 1
+
+
+def test_deprecated_with_boolean() -> None:
+    class Model(BaseModel):
+        a: Annotated[int, Field(deprecated=True)]
+        b: Annotated[int, Field(deprecated=False)]
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'a': {'deprecated': True, 'title': 'A', 'type': 'integer'},
+            'b': {'title': 'B', 'type': 'integer'},
+        },
+        'required': ['a', 'b'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+    instance = Model(a=1, b=1)
+
+    pytest.warns(DeprecationWarning, lambda: instance.a, match='deprecated')

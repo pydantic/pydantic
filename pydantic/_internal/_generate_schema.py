@@ -80,7 +80,7 @@ from ._generics import get_standard_typevars_map, has_instance_in_type, recursiv
 from ._schema_generation_shared import (
     CallbackGetCoreSchemaHandler,
 )
-from ._typing_extra import DEPRECATED_TYPES, is_finalvar
+from ._typing_extra import is_finalvar
 from ._utils import lenient_issubclass
 
 if TYPE_CHECKING:
@@ -1135,7 +1135,7 @@ class GenerateSchema:
         json_schema_updates = {
             'title': field_info.title,
             'description': field_info.description,
-            'deprecated': isinstance(field_info.deprecated, (DEPRECATED_TYPES, str)) or None,
+            'deprecated': bool(field_info.deprecated) or field_info.deprecated == '' or None,
             'examples': to_jsonable_python(field_info.examples),
         }
         json_schema_updates = {k: v for k, v in json_schema_updates.items() if v is not None}
@@ -1732,7 +1732,7 @@ class GenerateSchema:
             if description is not None:
                 json_schema['description'] = description
 
-            if isinstance(d.info.deprecated, (DEPRECATED_TYPES, str)):
+            if d.info.deprecated or d.info.deprecated == '':
                 json_schema['deprecated'] = True
 
             examples = d.info.examples
