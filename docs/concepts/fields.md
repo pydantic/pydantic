@@ -713,7 +713,7 @@ print(Model.model_json_schema()['properties']['deprecated_field'])
 #> {'deprecated': True, 'title': 'Deprecated Field', 'type': 'integer'}
 ```
 
-Alternatively, the `warnings.deprecated` decorator (and the `typing_extensions` backport) can be used:
+Alternatively, the `warnings.deprecated` decorator (or the `typing_extensions` backport) can be used:
 
 ```py test="skip"
 from typing_extensions import Annotated, deprecated
@@ -731,6 +731,28 @@ class Model(BaseModel):
 !!! note "Support for `category` and `stacklevel`"
     The current implementation of this feature does not take into account the `category` and `stacklevel`
     arguments to the `deprecated` decorator. This might land in a future version of Pydantic.
+
+!!! warning "Accessing a deprecated field in validators"
+    When accessing a deprecated field inside a validator, the deprecation warning will be emitted. You can use
+    [`catch_warnings`][warnings.catch_warnings] to explicitly ignore it:
+
+    ```py
+    import warnings
+
+    from typing_extensions import Self
+
+    from pydantic import BaseModel, Field, model_validator
+
+
+    class Model(BaseModel):
+        deprecated_field: int = Field(deprecated='This is deprecated')
+
+        @model_validator(mode='after')
+        def validate_model(self) -> Self:
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', DeprecationWarning)
+                self.deprecated_field = self.deprecated_field * 2
+    ```
 
 ## Customizing JSON Schema
 
