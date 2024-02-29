@@ -206,3 +206,19 @@ def test_schema_is_valid():
         collect_invalid_schemas(cs.nullable_schema(cs.int_schema(metadata={HAS_INVALID_SCHEMAS_METADATA_KEY: True})))
         is True
     )
+
+
+def test_model_name_in_schema_error_message():
+    from pydantic import BaseModel, ConfigDict, PydanticUserError
+
+    class SomeLongName:
+        @classmethod
+        def __modify_schema__(cls, field_schema):
+            field_schema['title'] = 'SomeLongName'
+
+    with pytest.raises(PydanticUserError, match='The `__modify_schema__`.*SomeLongName.*'):
+
+        class B(BaseModel):
+            model_config = ConfigDict(arbitrary_types_allowed=True)
+
+            a: SomeLongName
