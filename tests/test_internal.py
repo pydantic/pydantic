@@ -206,3 +206,14 @@ def test_schema_is_valid():
         collect_invalid_schemas(cs.nullable_schema(cs.int_schema(metadata={HAS_INVALID_SCHEMAS_METADATA_KEY: True})))
         is True
     )
+
+
+def test_error_message_schema()
+    class Class SomeLongName:
+        @classmethod
+        def __modify_schema__(cls, field_schema):
+            field_schema["title"] = "SomeLongName"
+    
+    with pytest.raises(PydanticUserError, match="The `__modify_schema__`.*SomeLongName.*")
+        class B(BaseModel)
+            a: SomeLongName
