@@ -7,7 +7,6 @@ from pydantic_core import CoreSchema, core_schema
 from ..errors import PydanticUserError
 from . import _core_utils
 from ._core_utils import (
-    NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY,
     CoreSchemaField,
     collect_definitions,
     simplify_schema_references,
@@ -29,7 +28,7 @@ class MissingDefinitionForUnionRef(Exception):
         super().__init__(f'Missing definition for ref {self.ref!r}')
 
 
-def set_discriminator(schema: CoreSchema, discriminator: Any) -> None:
+def set_discriminator_in_metadata(schema: CoreSchema, discriminator: Any) -> None:
     schema.setdefault('metadata', {})
     metadata = schema.get('metadata')
     assert metadata is not None
@@ -41,25 +40,16 @@ def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSche
 
     def inner(s: core_schema.CoreSchema, recurse: _core_utils.Recurse) -> core_schema.CoreSchema:
         nonlocal definitions
-        if 'metadata' in s:
-            if s['metadata'].get(NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY, True) is False:
-                return s
 
         s = recurse(s, inner)
         if s['type'] == 'tagged-union':
             return s
 
         metadata = s.get('metadata', {})
-        discriminator = metadata.get(CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY, None)
+        discriminator = metadata.pop(CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY, None)
         if discriminator is not None:
             if definitions is None:
                 definitions = collect_definitions(schema)
-                # After we collect the definitions schemas, we must run through the discriminator
-                # application logic for each one. This step is crucial to prevent an exponential
-                # increase in complexity that occurs if schemas are left as 'union' schemas
-                # rather than 'tagged-union' schemas.
-                # For more details, see https://github.com/pydantic/pydantic/pull/8904#discussion_r1504687302
-                definitions = {k: recurse(v, inner) for k, v in definitions.items()}
             s = apply_discriminator(s, discriminator, definitions)
         return s
 
@@ -274,6 +264,10 @@ class _ApplyInferredDiscriminator:
         * Validating that each allowed discriminator value maps to a unique choice
         * Updating the _tagged_union_choices mapping that will ultimately be used to build the TaggedUnionSchema.
         """
+        if choice['type'] == 'definition-ref':
+            if choice['schema_ref'] not in self.definitions:
+                raise MissingDefinitionForUnionRef(choice['schema_ref'])
+
         if choice['type'] == 'none':
             self._should_be_nullable = True
         elif choice['type'] == 'definitions':
@@ -285,10 +279,6 @@ class _ApplyInferredDiscriminator:
             # Reverse the choices list before extending the stack so that they get handled in the order they occur
             choices_schemas = [v[0] if isinstance(v, tuple) else v for v in choice['choices'][::-1]]
             self._choices_to_handle.extend(choices_schemas)
-        elif choice['type'] == 'definition-ref':
-            if choice['schema_ref'] not in self.definitions:
-                raise MissingDefinitionForUnionRef(choice['schema_ref'])
-            self._handle_choice(self.definitions[choice['schema_ref']])
         elif choice['type'] not in {
             'model',
             'typed-dict',
@@ -296,6 +286,7 @@ class _ApplyInferredDiscriminator:
             'lax-or-strict',
             'dataclass',
             'dataclass-args',
+            'definition-ref',
         } and not _core_utils.is_function_with_inner_schema(choice):
             # We should eventually handle 'definition-ref' as well
             raise TypeError(
