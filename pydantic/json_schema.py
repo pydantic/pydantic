@@ -2183,7 +2183,7 @@ def model_json_schema(
         cls.__pydantic_validator__.rebuild()
 
     if cls is BaseModel:
-        raise AttributeError('model_json_schema() must be called on an instance of BaseModel, not BaseModel itself.')
+        raise AttributeError('model_json_schema() must be called on a subclass of BaseModel, not BaseModel itself.')
     assert '__pydantic_core_schema__' in cls.__dict__, 'this is a bug! please report it'
     return schema_generator_instance.generate(cls.__pydantic_core_schema__, mode=mode)
 
