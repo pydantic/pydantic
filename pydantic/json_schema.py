@@ -2176,9 +2176,14 @@ def model_json_schema(
     Returns:
         The generated JSON Schema.
     """
+    from .main import BaseModel
+
     schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
     if isinstance(cls.__pydantic_validator__, _mock_val_ser.MockValSer):
         cls.__pydantic_validator__.rebuild()
+
+    if cls is BaseModel:
+        raise AttributeError('model_json_schema() must be called on an instance of BaseModel, not BaseModel itself.')
     assert '__pydantic_core_schema__' in cls.__dict__, 'this is a bug! please report it'
     return schema_generator_instance.generate(cls.__pydantic_core_schema__, mode=mode)
 
