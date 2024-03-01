@@ -6410,3 +6410,22 @@ def test_on_error_omit_top_level() -> None:
     # if it hits the top level, but this documents the current behavior at least
     with pytest.raises(SchemaError, match='Uncaught Omit error'):
         ta.validate_python('a')
+
+
+def test_diff_enums_diff_configs() -> None:
+    class MyEnum(str, Enum):
+        A = 'a'
+
+    class MyModel(BaseModel, use_enum_values=True):
+        my_enum: MyEnum
+
+    class OtherModel(BaseModel):
+        my_enum: MyEnum
+
+    class Model(BaseModel):
+        my_model: MyModel
+        other_model: OtherModel
+
+    obj = Model.model_validate({'my_model': {'my_enum': 'a'}, 'other_model': {'my_enum': 'a'}})
+    assert not isinstance(obj.my_model.my_enum, MyEnum)
+    assert isinstance(obj.other_model.my_enum, MyEnum)
