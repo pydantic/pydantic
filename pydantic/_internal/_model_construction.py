@@ -1,6 +1,7 @@
 """Private logic for creating models."""
 from __future__ import annotations as _annotations
 
+import builtins
 import operator
 import typing
 import warnings
@@ -8,7 +9,7 @@ import weakref
 from abc import ABCMeta
 from functools import partial
 from types import FunctionType
-from typing import Any, Callable, Generic
+from typing import Any, Callable, Generic, NoReturn
 
 import typing_extensions
 from pydantic_core import PydanticUndefined, SchemaSerializer
@@ -18,7 +19,7 @@ from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..plugin._schema_validator import create_schema_validator
 from ..warnings import GenericBeforeBaseModelWarning, PydanticDeprecatedSince20
 from ._config import ConfigWrapper
-from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_from_bases
+from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_from_bases, unwrap_wrapped_function
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
 from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
@@ -210,6 +211,8 @@ class ModelMetaclass(ABCMeta):
             # If this is placed before the complete_model_class call above,
             # the generic computed fields return type is set to PydanticUndefined
             cls.model_computed_fields = {k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()}
+
+            set_deprecated_descriptors(cls)
 
             # using super(cls, cls) on the next line ensures we only call the parent class's __pydantic_init_subclass__
             # I believe the `type: ignore` is only necessary because mypy doesn't realize that this code branch is
@@ -569,6 +572,60 @@ def complete_model_class(
         generate_pydantic_signature(init=cls.__init__, fields=cls.model_fields, config_wrapper=config_wrapper),
     )
     return True
+
+
+def set_deprecated_descriptors(cls: type[BaseModel]) -> None:
+    """Set data descriptors on the class for deprecated fields."""
+    for field, field_info in cls.model_fields.items():
+        if (msg := field_info.deprecation_message) is not None:
+            desc = _DeprecatedFieldDescriptor(msg)
+            desc.__set_name__(cls, field)
+            setattr(cls, field, desc)
+
+    for field, computed_field_info in cls.model_computed_fields.items():
+        if (
+            (msg := computed_field_info.deprecation_message) is not None
+            # Avoid having two warnings emitted:
+            and not hasattr(unwrap_wrapped_function(computed_field_info.wrapped_property), '__deprecated__')
+        ):
+            desc = _DeprecatedFieldDescriptor(msg, computed_field_info.wrapped_property)
+            desc.__set_name__(cls, field)
+            setattr(cls, field, desc)
+
+
+class _DeprecatedFieldDescriptor:
+    """Data descriptor used to emit a runtime deprecation warning before accessing a deprecated field.
+
+    Attributes:
+        msg: The deprecation message to be emitted.
+        wrapped_property: The property instance if the deprecated field is a computed field, or `None`.
+        field_name: The name of the field being deprecated.
+    """
+
+    field_name: str
+
+    def __init__(self, msg: str, wrapped_property: property | None = None) -> None:
+        self.msg = msg
+        self.wrapped_property = wrapped_property
+
+    def __set_name__(self, cls: type[BaseModel], name: str) -> None:
+        self.field_name = name
+
+    def __get__(self, obj: BaseModel | None, obj_type: type[BaseModel] | None = None) -> Any:
+        if obj is None:
+            raise AttributeError(self.field_name)
+
+        warnings.warn(self.msg, builtins.DeprecationWarning, stacklevel=2)
+
+        if self.wrapped_property is not None:
+            return self.wrapped_property.__get__(obj, obj_type)
+        return obj.__dict__[self.field_name]
+
+    # Defined to take precedence over the instance's dictionary
+    # Note that it will not be called when setting a value on a model instance
+    # as `BaseModel.__setattr__` is defined and takes priority.
+    def __set__(self, obj: Any, value: Any) -> NoReturn:
+        raise AttributeError(self.field_name)
 
 
 class _PydanticWeakRef:

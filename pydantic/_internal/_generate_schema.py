@@ -1135,6 +1135,7 @@ class GenerateSchema:
         json_schema_updates = {
             'title': field_info.title,
             'description': field_info.description,
+            'deprecated': bool(field_info.deprecated) or field_info.deprecated == '' or None,
             'examples': to_jsonable_python(field_info.examples),
         }
         json_schema_updates = {k: v for k, v in json_schema_updates.items() if v is not None}
@@ -1731,6 +1732,9 @@ class GenerateSchema:
             if description is not None:
                 json_schema['description'] = description
 
+            if d.info.deprecated or d.info.deprecated == '':
+                json_schema['deprecated'] = True
+
             examples = d.info.examples
             if examples is not None:
                 json_schema['examples'] = to_jsonable_python(examples)
@@ -2160,7 +2164,7 @@ def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSch
         if not has_custom_v2_modify_js_func:
             raise PydanticUserError(
                 'The `__modify_schema__` method is not supported in Pydantic v2. '
-                'Use `__get_pydantic_json_schema__` instead.',
+                'Use `__get_pydantic_json_schema__` instead for class' + str(tp),
                 code='custom-json-schema',
             )
 
