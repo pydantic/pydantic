@@ -1179,11 +1179,11 @@ files = [
 
 [[package]]
 name = "pydantic-extra-types"
-version = "2.5.0"
+version = "2.6.0"
 requires_python = ">=3.8"
 git = "https://github.com/pydantic/pydantic-extra-types.git"
 ref = "main"
-revision = "f6dba1e3d7f95edafd9676d20168a0b7ed6861d5"
+revision = "7dd7a2c5bdda0be59482dc11be5a74b268486848"
 summary = "Extra Pydantic types."
 dependencies = [
     "pydantic>=2.5.2",
