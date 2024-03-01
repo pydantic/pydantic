@@ -131,7 +131,17 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_currency_code/</loc>
+         <lastmod>2024-03-01</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_isbn/</loc>
+         <lastmod>2024-03-01</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_language_code/</loc>
          <lastmod>2024-03-01</lastmod>
          <changefreq>daily</changefreq>
     </url>
