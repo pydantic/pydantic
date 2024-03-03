@@ -735,7 +735,7 @@ class GenerateSchema:
         """Recursively generate a pydantic-core schema for any supported python type."""
         has_invalid_schema = self._has_invalid_schema
         self._has_invalid_schema = False
-        schema = self._post_process_generated_schema(self._generate_schema_inner(obj))
+        schema = self._generate_schema_inner(obj)
         self._has_invalid_schema = self._has_invalid_schema or has_invalid_schema
         return schema
 

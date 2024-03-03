@@ -7,10 +7,11 @@ from typing import Any, Callable, Generic, List, Optional, Sequence, TypeVar, Un
 import pytest
 from dirty_equals import HasRepr, IsStr
 from pydantic_core import SchemaValidator, core_schema
-from typing_extensions import Annotated, Literal
+from typing_extensions import Annotated, Literal, TypedDict
 
 from pydantic import BaseModel, ConfigDict, Discriminator, Field, TypeAdapter, ValidationError, field_validator
 from pydantic._internal._discriminated_union import apply_discriminator
+from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
 from pydantic.fields import FieldInfo
 from pydantic.json_schema import GenerateJsonSchema
@@ -1874,3 +1875,87 @@ def test_nested_schema_gen_uses_tagged_union_in_ref() -> None:
     for definition in adapter.core_schema['definitions']:
         if definition['schema']['model_name'] in ['NestedState', 'LoopState']:
             assert definition['schema']['fields']['substate']['schema']['schema']['type'] == 'tagged-union'
+
+
+def test_recursive_discriminiated_union_with_typed_dict() -> None:
+    class Foo(TypedDict):
+        type: Literal['foo']
+        x: 'Foobar'
+
+    class Bar(TypedDict):
+        type: Literal['bar']
+
+    Foobar = Annotated[Foo | Bar, Field(discriminator='type')]
+    ta = TypeAdapter(Foobar)
+
+    # len of errors should be 1 for each case, bc we're using a tagged union
+    with pytest.raises(ValidationError) as e:
+        ta.validate_python({'type': 'wrong'})
+    assert len(e.value.errors()) == 1
+
+    with pytest.raises(ValidationError) as e:
+        ta.validate_python({'type': 'foo', 'x': {'type': 'wrong'}})
+    assert len(e.value.errors()) == 1
+
+    core_schema = ta.core_schema
+    assert core_schema['schema']['type'] == 'tagged-union'
+    for definition in core_schema['definitions']:
+        if 'Foo' in definition['ref']:
+            assert definition['fields']['x']['schema']['type'] == 'tagged-union'
+
+
+def test_recursive_discriminiated_union_with_base_model() -> None:
+    class Foo(BaseModel):
+        type: Literal['foo']
+        x: 'Foobar'
+
+    class Bar(BaseModel):
+        type: Literal['bar']
+
+    Foobar = Annotated[Foo | Bar, Field(discriminator='type')]
+    ta = TypeAdapter(Foobar)
+
+    # len of errors should be 1 for each case, bc we're using a tagged union
+    with pytest.raises(ValidationError) as e:
+        ta.validate_python({'type': 'wrong'})
+    assert len(e.value.errors()) == 1
+
+    with pytest.raises(ValidationError) as e:
+        ta.validate_python({'type': 'foo', 'x': {'type': 'wrong'}})
+    assert len(e.value.errors()) == 1
+
+    core_schema = ta.core_schema
+    assert core_schema['schema']['type'] == 'tagged-union'
+    for definition in core_schema['definitions']:
+        if 'Foo' in definition['ref']:
+            assert definition['schema']['fields']['x']['schema']['type'] == 'tagged-union'
+
+
+def test_recursive_discriminated_union_with_pydantic_dataclass() -> None:
+    @pydantic_dataclass
+    class Foo:
+        type: Literal['foo']
+        x: 'Foobar'
+
+    @pydantic_dataclass
+    class Bar:
+        type: Literal['bar']
+
+    Foobar = Annotated[Foo | Bar, Field(discriminator='type')]
+    ta = TypeAdapter(Foobar)
+
+    # len of errors should be 1 for each case, bc we're using a tagged union
+    with pytest.raises(ValidationError) as e:
+        ta.validate_python({'type': 'wrong'})
+    assert len(e.value.errors()) == 1
+
+    with pytest.raises(ValidationError) as e:
+        ta.validate_python({'type': 'foo', 'x': {'type': 'wrong'}})
+    assert len(e.value.errors()) == 1
+
+    core_schema = ta.core_schema
+    assert core_schema['schema']['type'] == 'tagged-union'
+    for definition in core_schema['definitions']:
+        if 'Foo' in definition['ref']:
+            for field in definition['schema']['fields']:
+                assert field['schema']['type'] == 'tagged-union' if field['name'] == 'x' else True
