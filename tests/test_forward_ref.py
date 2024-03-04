@@ -540,6 +540,7 @@ def test_discriminated_union_forward_ref(create_module):
     # Ensure the rebuild has happened automatically despite validation failure
     assert module.Pet.__pydantic_complete__ is True
 
+    # insert_assert(module.Pet.model_json_schema())
     assert module.Pet.model_json_schema() == {
         'title': 'Pet',
         'required': ['pet'],
@@ -555,13 +556,13 @@ def test_discriminated_union_forward_ref(create_module):
             'Cat': {
                 'title': 'Cat',
                 'type': 'object',
-                'properties': {'type': {'const': 'cat', 'title': 'Type'}},
+                'properties': {'type': {'const': 'cat', 'enum': ['cat'], 'title': 'Type', 'type': 'string'}},
                 'required': ['type'],
             },
             'Dog': {
                 'title': 'Dog',
                 'type': 'object',
-                'properties': {'type': {'const': 'dog', 'title': 'Type'}},
+                'properties': {'type': {'const': 'dog', 'enum': ['dog'], 'title': 'Type', 'type': 'string'}},
                 'required': ['type'],
             },
         },
