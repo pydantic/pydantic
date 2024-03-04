@@ -1885,7 +1885,7 @@ def test_recursive_discriminiated_union_with_typed_dict() -> None:
     class Bar(TypedDict):
         type: Literal['bar']
 
-    Foobar = Annotated[Foo | Bar, Field(discriminator='type')]
+    Foobar = Annotated[Union[Foo, Bar], Field(discriminator='type')]
     ta = TypeAdapter(Foobar)
 
     # len of errors should be 1 for each case, bc we're using a tagged union
@@ -1912,7 +1912,7 @@ def test_recursive_discriminiated_union_with_base_model() -> None:
     class Bar(BaseModel):
         type: Literal['bar']
 
-    Foobar = Annotated[Foo | Bar, Field(discriminator='type')]
+    Foobar = Annotated[Union[Foo, Bar], Field(discriminator='type')]
     ta = TypeAdapter(Foobar)
 
     # len of errors should be 1 for each case, bc we're using a tagged union
@@ -1941,7 +1941,7 @@ def test_recursive_discriminated_union_with_pydantic_dataclass() -> None:
     class Bar:
         type: Literal['bar']
 
-    Foobar = Annotated[Foo | Bar, Field(discriminator='type')]
+    Foobar = Annotated[Union[Foo, Bar], Field(discriminator='type')]
     ta = TypeAdapter(Foobar)
 
     # len of errors should be 1 for each case, bc we're using a tagged union
