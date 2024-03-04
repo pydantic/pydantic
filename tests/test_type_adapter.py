@@ -2,13 +2,14 @@ import json
 import sys
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Any, Dict, ForwardRef, Generic, List, NamedTuple, Tuple, TypeVar, Union
+from typing import Any, Dict, ForwardRef, Generic, List, NamedTuple, Optional, Tuple, TypeVar, Union
 
 import pytest
 from pydantic_core import ValidationError
 from typing_extensions import Annotated, TypeAlias, TypedDict
 
-from pydantic import BaseModel, TypeAdapter, ValidationInfo, field_validator
+import pydantic
+from pydantic import BaseModel, Field, TypeAdapter, ValidationInfo, create_model, field_validator
 from pydantic.config import ConfigDict
 from pydantic.errors import PydanticUserError
 
@@ -371,3 +372,49 @@ def test_eval_type_backport():
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'list_type', 'loc': (), 'msg': 'Input should be a valid list', 'input': 'not a list'}
     ]
+
+
+@pytest.mark.parametrize('defer_build', [False, True])
+@pytest.mark.parametrize('is_annotated', [False, True])
+def test_respects_defer_build(defer_build: bool, is_annotated: bool) -> None:
+    class Model(BaseModel, defer_build=defer_build):
+        x: int
+
+    class SubModel(Model):
+        y: Optional[int] = None
+
+    @pydantic.dataclasses.dataclass(config=ConfigDict(defer_build=defer_build))
+    class DataClassModel:
+        x: int
+
+    @pydantic.dataclasses.dataclass
+    class SubDataClassModel(DataClassModel):
+        y: Optional[int] = None
+
+    class TypedDictModel(TypedDict):
+        __pydantic_config__ = ConfigDict(defer_build=defer_build)  # type: ignore
+        x: int
+
+    models: list[tuple[type, Optional[ConfigDict]]] = [
+        (Model, None),
+        (SubModel, None),
+        (create_model('DynamicModel', __base__=Model), None),
+        (create_model('DynamicSubModel', __base__=SubModel), None),
+        (DataClassModel, None),
+        (SubDataClassModel, None),
+        (TypedDictModel, None),
+        (Dict[str, int], ConfigDict(defer_build=defer_build)),
+    ]
+
+    for model, adapter_config in models:
+        tested_model = Annotated[model, Field(title='abc')] if is_annotated else model
+
+        ta = TypeAdapter(tested_model, config=adapter_config)
+        if defer_build:
+            assert ta._schema_handlers is None, f'{tested_model} should be defer_build'
+        else:
+            assert ta._schema_handlers is not None
+
+        validated = ta.validate_python({'x': 1})
+        assert (validated['x'] if isinstance(validated, dict) else getattr(validated, 'x')) == 1
+        assert ta._schema_handlers is not None

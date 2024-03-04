@@ -11,7 +11,7 @@ from typing_extensions import Literal, get_args, is_typeddict
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel
 
-from ._internal import _config, _generate_schema, _typing_extra
+from ._internal import _config, _generate_schema, _typing_extra, _utils
 from .config import ConfigDict
 from .json_schema import (
     DEFAULT_REF_TEMPLATE,
@@ -203,35 +203,83 @@ class TypeAdapter(Generic[T]):
                 code='type-adapter-config-unused',
             )
 
-        config_wrapper = _config.ConfigWrapper(config)
+        self._type = type
+        self._config_wrapper = _config.ConfigWrapper(config)
+        self._parent_depth = _parent_depth
+        if module is None:
+            f = sys._getframe(1)
+            self._module_name = cast(str, f.f_globals.get('__name__', ''))
+        else:
+            self._module_name = module
+
+        self._schema_handlers: tuple[CoreSchema, SchemaValidator, SchemaSerializer] | None = None
+        if not TypeAdapter._defer_build(type, config):
+            self._init_schema_handlers()
+
+    def _init_schema_handlers(self) -> tuple[CoreSchema, SchemaValidator, SchemaSerializer]:
+        if self._schema_handlers is not None:
+            return self._schema_handlers
 
         core_schema: CoreSchema
         try:
-            core_schema = _getattr_no_parents(type, '__pydantic_core_schema__')
+            core_schema = _getattr_no_parents(self._type, '__pydantic_core_schema__')
         except AttributeError:
-            core_schema = _get_schema(type, config_wrapper, parent_depth=_parent_depth + 1)
+            core_schema = _get_schema(self._type, self._config_wrapper, parent_depth=self._parent_depth + 2)
 
-        core_config = config_wrapper.core_config(None)
+        core_config = self._config_wrapper.core_config(None)
         validator: SchemaValidator
         try:
-            validator = _getattr_no_parents(type, '__pydantic_validator__')
+            validator = _getattr_no_parents(self._type, '__pydantic_validator__')
         except AttributeError:
-            if module is None:
-                f = sys._getframe(1)
-                module = cast(str, f.f_globals.get('__name__', ''))
             validator = create_schema_validator(
-                core_schema, type, module, str(type), 'TypeAdapter', core_config, config_wrapper.plugin_settings
-            )  # type: ignore
+                schema=core_schema,
+                schema_type=self._type,
+                schema_type_module=self._module_name,
+                schema_type_name=str(self._type),
+                schema_kind='TypeAdapter',
+                config=core_config,
+                plugin_settings=self._config_wrapper.plugin_settings,
+            )
 
         serializer: SchemaSerializer
         try:
-            serializer = _getattr_no_parents(type, '__pydantic_serializer__')
+            serializer = _getattr_no_parents(self._type, '__pydantic_serializer__')
         except AttributeError:
             serializer = SchemaSerializer(core_schema, core_config)
 
-        self.core_schema = core_schema
-        self.validator = validator
-        self.serializer = serializer
+        self._schema_handlers = core_schema, validator, serializer
+        return self._schema_handlers
+
+    @property
+    def core_schema(self) -> CoreSchema:
+        """Core schema"""
+        core_schema, _, _ = self._init_schema_handlers()
+        return core_schema
+
+    @property
+    def validator(self) -> SchemaValidator:
+        """Validator"""
+        _, validator, _ = self._init_schema_handlers()
+        return validator
+
+    @property
+    def serializer(self) -> SchemaSerializer:
+        """Serializer"""
+        _, _, serializer = self._init_schema_handlers()
+        return serializer
+
+    @staticmethod
+    def _defer_build(type: Any, type_adapter_config: ConfigDict | None) -> bool:
+        if type_adapter_config is not None and type_adapter_config.get('defer_build', False):
+            return True
+
+        src_type: Any = get_args(type)[0] if _typing_extra.is_annotated(type) else type
+        if _utils.lenient_issubclass(src_type, BaseModel):
+            config: ConfigDict | None = src_type.model_config
+        else:
+            config = getattr(src_type, '__pydantic_config__', None)
+
+        return config is not None and config.get('defer_build', False)
 
     def validate_python(
         self,
