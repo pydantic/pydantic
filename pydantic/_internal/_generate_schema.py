@@ -48,7 +48,6 @@ from . import _core_utils, _decorators, _discriminated_union, _known_annotated_m
 from ._config import ConfigWrapper, ConfigWrapperStack
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._core_utils import (
-    NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY,
     CoreSchemaOrField,
     collect_invalid_schemas,
     define_expected_missing_refs,
@@ -302,7 +301,6 @@ class GenerateSchema:
         '_config_wrapper_stack',
         '_types_namespace_stack',
         '_typevars_map',
-        '_needs_apply_discriminated_union',
         '_has_invalid_schema',
         'field_name_stack',
         'defs',
@@ -318,7 +316,6 @@ class GenerateSchema:
         self._config_wrapper_stack = ConfigWrapperStack(config_wrapper)
         self._types_namespace_stack = TypesNamespaceStack(types_namespace)
         self._typevars_map = typevars_map
-        self._needs_apply_discriminated_union = False
         self._has_invalid_schema = False
         self.field_name_stack = _FieldNameStack()
         self.defs = _Definitions()
@@ -335,7 +332,6 @@ class GenerateSchema:
         obj._config_wrapper_stack = config_wrapper_stack
         obj._types_namespace_stack = types_namespace_stack
         obj._typevars_map = typevars_map
-        obj._needs_apply_discriminated_union = False
         obj._has_invalid_schema = False
         obj.field_name_stack = _FieldNameStack()
         obj.defs = defs
@@ -416,15 +412,10 @@ class GenerateSchema:
             )
         except _discriminated_union.MissingDefinitionForUnionRef:
             # defer until defs are resolved
-            _discriminated_union.set_discriminator(
+            _discriminated_union.set_discriminator_in_metadata(
                 schema,
                 discriminator,
             )
-            if 'metadata' in schema:
-                schema['metadata'][NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY] = True
-            else:
-                schema['metadata'] = {NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY: True}
-            self._needs_apply_discriminated_union = True
             return schema
 
     class CollectedInvalid(Exception):
@@ -719,24 +710,16 @@ class GenerateSchema:
         return args[0], args[1]
 
     def _post_process_generated_schema(self, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-        if 'metadata' in schema:
-            metadata = schema['metadata']
-            metadata[NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY] = self._needs_apply_discriminated_union
-        else:
-            schema['metadata'] = {
-                NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY: self._needs_apply_discriminated_union,
-            }
+        if 'metadata' not in schema:
+            schema['metadata'] = {}
         return schema
 
     def _generate_schema(self, obj: Any) -> core_schema.CoreSchema:
         """Recursively generate a pydantic-core schema for any supported python type."""
         has_invalid_schema = self._has_invalid_schema
         self._has_invalid_schema = False
-        needs_apply_discriminated_union = self._needs_apply_discriminated_union
-        self._needs_apply_discriminated_union = False
-        schema = self._post_process_generated_schema(self._generate_schema_inner(obj))
+        schema = self._generate_schema_inner(obj)
         self._has_invalid_schema = self._has_invalid_schema or has_invalid_schema
-        self._needs_apply_discriminated_union = self._needs_apply_discriminated_union or needs_apply_discriminated_union
         return schema
 
     def _generate_schema_inner(self, obj: Any) -> core_schema.CoreSchema:
