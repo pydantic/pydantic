@@ -1,6 +1,7 @@
 """
 Numerous benchmarks of specific functionality.
 """
+
 import decimal
 import json
 import platform

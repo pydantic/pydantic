@@ -4,6 +4,7 @@ a definition of what inputs can be provided to `SchemaValidator()`.
 
 The schema is generated from `python/pydantic_core/core_schema.py`.
 """
+
 from __future__ import annotations as _annotations
 
 import decimal

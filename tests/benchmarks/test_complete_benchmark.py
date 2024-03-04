@@ -1,6 +1,7 @@
 """
 General benchmarks that attempt to cover all field types, through by no means all uses of all field types.
 """
+
 import json
 from datetime import date, datetime, time
 from decimal import Decimal
