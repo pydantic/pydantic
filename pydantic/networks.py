@@ -8,7 +8,7 @@ from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6
 from typing import TYPE_CHECKING, Any
 
 from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
-from typing_extensions import Annotated, TypeAlias
+from typing_extensions import Annotated, Self, TypeAlias
 
 from ._internal import _fields, _repr, _schema_generation_shared
 from ._migration import getattr_migration
@@ -494,11 +494,11 @@ class NameEmail(_repr.Representation):
         )
 
     @classmethod
-    def _validate(cls, input_value: NameEmail | str, /) -> NameEmail:
+    def _validate(cls, input_value: Self | str, /) -> Self:
         if isinstance(input_value, cls):
             return input_value
         else:
-            name, email = validate_email(input_value)  # type: ignore[arg-type]
+            name, email = validate_email(input_value)
             return cls(name, email)
 
     def __str__(self) -> str:
