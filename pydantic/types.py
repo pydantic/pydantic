@@ -1747,9 +1747,9 @@ class PaymentCardNumber(str):
         )
 
     @classmethod
-    def validate(cls, __input_value: str, _: core_schema.ValidationInfo) -> PaymentCardNumber:
+    def validate(cls, input_value: str, /, _: core_schema.ValidationInfo) -> PaymentCardNumber:
         """Validate the card number and return a `PaymentCardNumber` instance."""
-        return cls(__input_value)
+        return cls(input_value)
 
     @property
     def masked(self) -> str:
@@ -1912,13 +1912,13 @@ class ByteSize(int):
         )
 
     @classmethod
-    def _validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> ByteSize:
+    def _validate(cls, input_value: Any, /, _: core_schema.ValidationInfo) -> ByteSize:
         try:
-            return cls(int(__input_value))
+            return cls(int(input_value))
         except ValueError:
             pass
 
-        str_match = cls.byte_string_re.match(str(__input_value))
+        str_match = cls.byte_string_re.match(str(input_value))
         if str_match is None:
             raise PydanticCustomError('byte_size', 'could not parse value and unit from byte string')
 

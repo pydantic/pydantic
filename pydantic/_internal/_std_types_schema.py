@@ -86,9 +86,9 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
     else:
         expected = ', '.join([repr(case.value) for case in cases[:-1]]) + f' or {cases[-1].value!r}'
 
-    def to_enum(__input_value: Any) -> Enum:
+    def to_enum(input_value: Any, /) -> Enum:
         try:
-            return enum_type(__input_value)
+            return enum_type(input_value)
         except ValueError:
             # The type: ignore on the next line is to ignore the requirement of LiteralString
             raise PydanticCustomError('enum', f'Input should be {expected}', {'expected': expected})  # type: ignore
