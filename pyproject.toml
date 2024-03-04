@@ -55,6 +55,8 @@ features = ["pyo3/extension-module"]
 
 [tool.ruff]
 line-length = 120
+
+[tool.ruff.lint]
 extend-select = ['Q', 'RUF100', 'C90', 'I']
 extend-ignore = [
     'E721',  # using type() instead of isinstance() - we use this in tests
