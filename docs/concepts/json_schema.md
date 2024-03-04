@@ -958,7 +958,7 @@ Here's an example of modifying the generated JSON schema:
 import json
 from typing import Any
 
-from pydantic_core import core_schema
+from pydantic_core import core_schema as cs
 
 from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler, TypeAdapter
 from pydantic.json_schema import JsonSchemaValue
@@ -975,17 +975,17 @@ class Person:
     @classmethod
     def __get_pydantic_core_schema__(
         cls, source_type: Any, handler: GetCoreSchemaHandler
-    ) -> core_schema.CoreSchema:
-        return core_schema.typed_dict_schema(
+    ) -> cs.CoreSchema:
+        return cs.typed_dict_schema(
             {
-                'name': core_schema.typed_dict_field(core_schema.str_schema()),
-                'age': core_schema.typed_dict_field(core_schema.int_schema()),
+                'name': cs.typed_dict_field(cs.str_schema()),
+                'age': cs.typed_dict_field(cs.int_schema()),
             },
         )
 
     @classmethod
     def __get_pydantic_json_schema__(
-        cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        cls, core_schema: cs.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         json_schema = handler(core_schema)
         json_schema = handler.resolve_ref_schema(json_schema)
