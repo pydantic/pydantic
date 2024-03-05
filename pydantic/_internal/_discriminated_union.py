@@ -198,12 +198,12 @@ class _ApplyInferredDiscriminator:
             schema = core_schema.nullable_schema(schema)
         self._used = True
 
-        # If there are any defintitions that were present on the original schema but not on the new schema,
+        # If there are any definitions that were present on the original schema but not on the new schema,
         # we need to add them to the new schema. This is necessary because the definitions may contain
         # schemas that are referenced by the choices in the union, and we need to ensure that the new schema
         # contains all the definitions that are necessary to resolve these references.
         # Note -- by "original schema", we refer to the schema that was passed to the apply method,
-        # not the outermost schema that we're reucrsing on (where self.definitions came from).
+        # not the outermost schema that we're recursing on (where self.definitions came from).
         new_local_defs = collect_definitions(schema)
         missing_defs = original_local_defs.keys() - new_local_defs.keys()
         if missing_defs:
