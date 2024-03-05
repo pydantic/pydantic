@@ -507,8 +507,6 @@ class GenerateSchema:
 
         schema = _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, obj, schema)
 
-        schema = self._post_process_generated_schema(schema)
-
         return schema
 
     def _model_schema(self, cls: type[BaseModel]) -> core_schema.CoreSchema:
@@ -604,7 +602,7 @@ class GenerateSchema:
 
                 schema = self._apply_model_serializers(model_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, model_validators, 'outer')
-                self.defs.definitions[model_ref] = self._post_process_generated_schema(schema)
+                self.defs.definitions[model_ref] = schema
                 return core_schema.definition_reference_schema(model_ref)
 
     def _unpack_refs_defs(self, schema: CoreSchema) -> CoreSchema:
@@ -666,10 +664,8 @@ class GenerateSchema:
             ref = get_ref(schema)
 
         if ref:
-            self.defs.definitions[ref] = self._post_process_generated_schema(schema)
+            self.defs.definitions[ref] = schema
             return core_schema.definition_reference_schema(ref)
-
-        schema = self._post_process_generated_schema(schema)
 
         return schema
 
@@ -725,11 +721,6 @@ class GenerateSchema:
             origin = get_origin(obj)
             raise TypeError(f'Expected two type arguments for {origin}, got 1')
         return args[0], args[1]
-
-    def _post_process_generated_schema(self, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-        if 'metadata' not in schema:
-            schema['metadata'] = {}
-        return schema
 
     def _generate_schema(self, obj: Any) -> core_schema.CoreSchema:
         """Recursively generate a pydantic-core schema for any supported python type."""
@@ -1163,7 +1154,7 @@ class GenerateSchema:
         else:
             choices_with_tags: list[CoreSchema | tuple[CoreSchema, str]] = []
             for choice in choices:
-                metadata = choice.get('metadata')
+                metadata = choice.get('metadata', {})
                 if isinstance(metadata, dict):
                     tag = metadata.get(_core_utils.TAGGED_UNION_TAG_KEY)
                     if tag is not None:
@@ -1304,7 +1295,7 @@ class GenerateSchema:
 
                 schema = self._apply_model_serializers(td_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, decorators.model_validators.values(), 'all')
-                self.defs.definitions[typed_dict_ref] = self._post_process_generated_schema(schema)
+                self.defs.definitions[typed_dict_ref] = schema
                 return core_schema.definition_reference_schema(typed_dict_ref)
 
     def _namedtuple_schema(self, namedtuple_cls: Any, origin: Any) -> core_schema.CoreSchema:
@@ -1583,7 +1574,7 @@ class GenerateSchema:
                 )
                 schema = self._apply_model_serializers(dc_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, model_validators, 'outer')
-                self.defs.definitions[dataclass_ref] = self._post_process_generated_schema(schema)
+                self.defs.definitions[dataclass_ref] = schema
                 return core_schema.definition_reference_schema(dataclass_ref)
 
             # Type checkers seem to assume ExitStack may suppress exceptions and therefore
