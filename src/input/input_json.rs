@@ -370,10 +370,7 @@ impl<'a> Input<'a> for String {
     }
 
     fn validate_int(&'a self, _strict: bool) -> ValResult<ValidationMatch<EitherInt<'a>>> {
-        match self.parse() {
-            Ok(i) => Ok(ValidationMatch::lax(EitherInt::I64(i))),
-            Err(_) => Err(ValError::new(ErrorTypeDefaults::IntParsing, self)),
-        }
+        str_as_int(self, self).map(ValidationMatch::lax)
     }
 
     fn validate_float(&'a self, _strict: bool) -> ValResult<ValidationMatch<EitherFloat<'a>>> {
