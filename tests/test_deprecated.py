@@ -488,7 +488,7 @@ def test_modify_schema_error():
     with pytest.raises(
         PydanticUserError,
         match='The `__modify_schema__` method is not supported in Pydantic v2. '
-        'Use `__get_pydantic_json_schema__` instead for class Model.',
+        'Use `__get_pydantic_json_schema__` instead in class `Model`.',
     ):
 
         class Model(BaseModel):
@@ -506,7 +506,7 @@ def test_modify_schema_on_nested_class_error() -> None:
     with pytest.raises(
         PydanticUserError,
         match='The `__modify_schema__` method is not supported in Pydantic v2. '
-        'Use `__get_pydantic_json_schema__` instead for class SomeLongName.',
+        'Use `__get_pydantic_json_schema__` instead in class `SomeLongName`.',
     ):
 
         class B(BaseModel):
