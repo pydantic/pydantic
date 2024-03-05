@@ -974,60 +974,54 @@ def test_lax_or_strict_definitions() -> None:
     discriminated_schema = apply_discriminator(core_schema.union_schema([cat, dog]), 'kind')
     # insert_assert(discriminated_schema)
     assert discriminated_schema == {
-        'type': 'definitions',
-        'schema': {
-            'type': 'tagged-union',
-            'choices': {
-                'cat': {
+        'type': 'tagged-union',
+        'choices': {
+            'cat': {
+                'type': 'typed-dict',
+                'fields': {'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['cat']}}},
+            },
+            'DOG': {
+                'type': 'lax-or-strict',
+                'lax_schema': {
                     'type': 'typed-dict',
                     'fields': {
-                        'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['cat']}}
+                        'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['DOG']}}
                     },
                 },
-                'DOG': {
-                    'type': 'lax-or-strict',
-                    'lax_schema': {
+                'strict_schema': {
+                    'type': 'definitions',
+                    'schema': {
                         'type': 'typed-dict',
                         'fields': {
-                            'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['DOG']}}
+                            'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['dog']}}
                         },
                     },
-                    'strict_schema': {
-                        'type': 'definitions',
-                        'schema': {
-                            'type': 'typed-dict',
-                            'fields': {
-                                'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['dog']}}
-                            },
-                        },
-                        'definitions': [{'type': 'int', 'ref': 'my-int-definition'}],
-                    },
-                },
-                'dog': {
-                    'type': 'lax-or-strict',
-                    'lax_schema': {
-                        'type': 'typed-dict',
-                        'fields': {
-                            'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['DOG']}}
-                        },
-                    },
-                    'strict_schema': {
-                        'type': 'definitions',
-                        'schema': {
-                            'type': 'typed-dict',
-                            'fields': {
-                                'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['dog']}}
-                            },
-                        },
-                        'definitions': [{'type': 'int', 'ref': 'my-int-definition'}],
-                    },
+                    'definitions': [{'type': 'int', 'ref': 'my-int-definition'}],
                 },
             },
-            'discriminator': 'kind',
-            'strict': False,
-            'from_attributes': True,
+            'dog': {
+                'type': 'lax-or-strict',
+                'lax_schema': {
+                    'type': 'typed-dict',
+                    'fields': {
+                        'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['DOG']}}
+                    },
+                },
+                'strict_schema': {
+                    'type': 'definitions',
+                    'schema': {
+                        'type': 'typed-dict',
+                        'fields': {
+                            'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['dog']}}
+                        },
+                    },
+                    'definitions': [{'type': 'int', 'ref': 'my-int-definition'}],
+                },
+            },
         },
-        'definitions': [{'type': 'str', 'ref': 'my-str-definition'}],
+        'discriminator': 'kind',
+        'strict': False,
+        'from_attributes': True,
     }
 
 
