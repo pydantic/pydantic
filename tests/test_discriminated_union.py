@@ -1959,3 +1959,24 @@ def test_recursive_discriminated_union_with_pydantic_dataclass() -> None:
         if 'Foo' in definition['ref']:
             for field in definition['schema']['fields']:
                 assert field['schema']['type'] == 'tagged-union' if field['name'] == 'x' else True
+
+
+def test_discriminated_union_with_nested_dataclass() -> None:
+    @pydantic_dataclass
+    class Cat:
+        type: Literal['cat'] = 'cat'
+
+    @pydantic_dataclass
+    class Dog:
+        type: Literal['dog'] = 'dog'
+
+    @pydantic_dataclass
+    class NestedDataClass:
+        animal: Annotated[Cat | Dog, Discriminator('type')]
+
+    @pydantic_dataclass
+    class Root:
+        data_class: NestedDataClass
+
+    ta = TypeAdapter(Root)
+    assert ta.core_schema['schema']['fields'][0]['schema']['schema']['fields'][0]['schema']['type'] == 'tagged-union'
