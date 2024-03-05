@@ -1475,11 +1475,9 @@ def create_model(  # noqa: C901
                     code='create-model-field-definitions',
                 ) from e
 
-        elif (
-            sys.version_info >= (3, 9) and f_def.__class__ == typing._AnnotatedAlias  # pyright: ignore[reportGeneralTypeIssues]
-        ):  # typing.Annotated introduced on python3.9 https://typing.readthedocs.io/en/latest/spec/qualifiers.html#annotated
-            # The typing.Annotated class does not retain its construction information
-            # during runtime, thus require checking using private class name
+        elif sys.version_info >= (3, 9) and _typing_extra.is_annotated(
+            f_def
+        ):  # typing.Annotated introduced on python3.9
             try:
                 f_annotation = (
                     f_def.__origin__
