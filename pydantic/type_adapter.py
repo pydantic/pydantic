@@ -450,9 +450,9 @@ class TypeAdapter(Generic[T]):
         """
         schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
 
-        inputs_tup = [(key, mode, adapter.core_schema) for key, mode, adapter in inputs]
+        inputs_ = [(key, mode, adapter.core_schema) for key, mode, adapter in inputs]
 
-        json_schemas_map, definitions = schema_generator_instance.generate_definitions(inputs_tup)
+        json_schemas_map, definitions = schema_generator_instance.generate_definitions(inputs_)
 
         json_schema: dict[str, Any] = {}
         if definitions:
