@@ -1433,7 +1433,8 @@ def create_model(  # noqa: C901
         __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.
         __slots__: Deprecated. Should not be passed to `create_model`.
         **field_definitions: Attributes of the new model. They should be passed in the format:
-            `<name>=(<type>, <default value>)` or `<name>=(<type>, <FieldInfo>)`.
+            `<name>=(<type>, <default value>)`, `<name>=(<type>, <FieldInfo>)`, or `typing.Annotated[<type>, <default value>]`, `typing.Annotated[<type>, <FieldInfo>]`.
+            Any additional metadata in `typing.Annotated[<type>, <default value | FieldInfo>, ...]` will be ignored.
 
     Returns:
         The new [model][pydantic.BaseModel].
@@ -1473,6 +1474,26 @@ def create_model(  # noqa: C901
                     'Field definitions should be a `(<type>, <default>)`.',
                     code='create-model-field-definitions',
                 ) from e
+
+        # The typing.Annotated class does not retain its construction information
+        # during runtime, thus require checking using private class name
+        elif f_def.__class__ == typing._AnnotatedAlias:  # pyright: ignore[reportGeneralTypeIssues]
+            try:
+                # https://typing.readthedocs.io/en/latest/spec/qualifiers.html#annotated
+
+                f_annotation = (
+                    f_def.__origin__
+                )  # __origin__ represents the annotation_type in Annotated[annotate_type, ...]
+
+                f_value = f_def.__metadata__[
+                    0
+                ]  # Python Annotated requires at least one python variable to represent the annotation
+            except ValueError as e:
+                raise PydanticUserError(
+                    'Field definitions should be a `typing.Annotation[type, definition]`.',
+                    code='create-model-field-definitions',
+                ) from e
+
         else:
             f_annotation, f_value = None, f_def
 

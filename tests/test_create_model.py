@@ -1,6 +1,6 @@
 import platform
 import re
-from typing import Generic, Optional, Tuple, TypeVar
+from typing import Annotated, Generic, Optional, Tuple, TypeVar
 
 import pytest
 
@@ -514,6 +514,50 @@ def test_create_model_non_annotated():
         match='A non-annotated attribute was detected: `bar = 123`. All model fields require a type annotation',
     ):
         create_model('FooModel', foo=(str, ...), bar=123)
+
+
+@pytest.mark.parametrize(
+    'annotation_type,field_info',
+    [
+        (bool, Field(alias='foo_bool_alias', description='foo boolean')),
+        (str, Field(alias='foo_str_alis', description='foo string')),
+    ],
+)
+def test_create_model_typing_annotated_field_info(annotation_type, field_info):
+    annotated_foo = Annotated[annotation_type, field_info]
+    model = create_model('FooModel', foo=annotated_foo, bar=(int, 123))
+
+    assert model.model_fields.keys() == {'foo', 'bar'}
+
+    foo = model.model_fields.get('foo')
+
+    assert foo is not None
+    assert foo.annotation == annotation_type
+    assert foo.alias == field_info.alias
+    assert foo.description == field_info.description
+
+
+def test_create_model_typing_annotated_field_uses_first_type():
+    annotated_foo = Annotated[int, 10, str]
+    model = create_model('FooModel', foo=annotated_foo)
+
+    foo = model.model_fields.get('foo')
+
+    assert foo is not None
+    assert foo.annotation == int
+    assert foo.default == 10
+
+
+@pytest.mark.parametrize('annotation_type,default_value', [(bool, False), (str, 'default_value')])
+def test_create_model_typing_annotated_field_default(annotation_type, default_value):
+    annotated_foo = Annotated[annotation_type, default_value]
+    model = create_model('FooModel', foo=annotated_foo)
+
+    foo = model.model_fields.get('foo')
+
+    assert foo is not None
+    assert foo.annotation == annotation_type
+    assert foo.default == default_value
 
 
 def test_create_model_tuple():
