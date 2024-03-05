@@ -185,8 +185,8 @@ def complete_dataclass(
     if config_wrapper.validate_assignment:
 
         @wraps(cls.__setattr__)
-        def validated_setattr(instance: Any, __field: str, __value: str) -> None:
-            validator.validate_assignment(instance, __field, __value)
+        def validated_setattr(instance: Any, field: str, value: str, /) -> None:
+            validator.validate_assignment(instance, field, value)
 
         cls.__setattr__ = validated_setattr.__get__(None, cls)  # type: ignore
 
