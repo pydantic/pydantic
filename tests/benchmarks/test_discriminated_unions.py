@@ -20,8 +20,14 @@ def test_schema_build() -> None:
         state_type: Literal['leaf']
 
     AnyState = Annotated[Union[NestedState, LoopState, LeafState], Field(..., discriminator='state_type')]
+
     adapter = TypeAdapter(AnyState)
     assert adapter.core_schema['schema']['type'] == 'tagged-union'
+
+    return adapter
+
+
+any_state_adapter = test_schema_build()
 
 
 def build_nested_state(n):
@@ -31,26 +37,8 @@ def build_nested_state(n):
         return {'state_type': 'loop', 'substate': {'state_type': 'nested', 'substate': build_nested_state(n - 1)}}
 
 
-class NestedState(BaseModel):
-    state_type: Literal['nested']
-    substate: AnyState
-
-
-class LoopState(BaseModel):
-    state_type: Literal['loop']
-    substate: AnyState
-
-
-class LeafState(BaseModel):
-    state_type: Literal['leaf']
-
-
-AnyState = Annotated[Union[NestedState, LoopState, LeafState], Field(..., discriminator='state_type')]
-adapter = TypeAdapter(AnyState)
-
-
 def test_efficiency_with_highly_nested_examples() -> None:
     # can go much higher, but we keep it reasonably low here for a proof of concept
     for i in range(1, 12):
         very_nested_input = build_nested_state(i)
-        adapter.validate_python(very_nested_input)
+        any_state_adapter.validate_python(very_nested_input)
