@@ -311,7 +311,6 @@ class GenerateSchema:
         '_config_wrapper_stack',
         '_types_namespace_stack',
         '_typevars_map',
-        '_has_invalid_schema',
         'field_name_stack',
         'defs',
     )
@@ -326,7 +325,6 @@ class GenerateSchema:
         self._config_wrapper_stack = ConfigWrapperStack(config_wrapper)
         self._types_namespace_stack = TypesNamespaceStack(types_namespace)
         self._typevars_map = typevars_map
-        self._has_invalid_schema = False
         self.field_name_stack = _FieldNameStack()
         self.defs = _Definitions()
 
@@ -342,7 +340,6 @@ class GenerateSchema:
         obj._config_wrapper_stack = config_wrapper_stack
         obj._types_namespace_stack = types_namespace_stack
         obj._typevars_map = typevars_map
-        obj._has_invalid_schema = False
         obj.field_name_stack = _FieldNameStack()
         obj.defs = defs
         return obj
@@ -497,7 +494,7 @@ class GenerateSchema:
                 schema = from_property
 
         if schema is None:
-            schema = self._generate_schema(obj)
+            schema = self._generate_schema_inner(obj)
 
         metadata_js_function = _extract_get_pydantic_json_schema(obj, schema)
         if metadata_js_function is not None:
@@ -506,8 +503,6 @@ class GenerateSchema:
                 self._add_js_function(metadata_schema, metadata_js_function)
 
         schema = _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, obj, schema)
-
-        schema = self._post_process_generated_schema(schema)
 
         return schema
 
@@ -604,7 +599,7 @@ class GenerateSchema:
 
                 schema = self._apply_model_serializers(model_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, model_validators, 'outer')
-                self.defs.definitions[model_ref] = self._post_process_generated_schema(schema)
+                self.defs.definitions[model_ref] = schema
                 return core_schema.definition_reference_schema(model_ref)
 
     def _unpack_refs_defs(self, schema: CoreSchema) -> CoreSchema:
@@ -653,7 +648,7 @@ class GenerateSchema:
                 schema = get_schema(source)
             else:
                 schema = get_schema(
-                    source, CallbackGetCoreSchemaHandler(self._generate_schema, self, ref_mode=ref_mode)
+                    source, CallbackGetCoreSchemaHandler(self._generate_schema_inner, self, ref_mode=ref_mode)
                 )
 
         schema = self._unpack_refs_defs(schema)
@@ -666,10 +661,8 @@ class GenerateSchema:
             ref = get_ref(schema)
 
         if ref:
-            self.defs.definitions[ref] = self._post_process_generated_schema(schema)
+            self.defs.definitions[ref] = schema
             return core_schema.definition_reference_schema(ref)
-
-        schema = self._post_process_generated_schema(schema)
 
         return schema
 
@@ -725,19 +718,6 @@ class GenerateSchema:
             origin = get_origin(obj)
             raise TypeError(f'Expected two type arguments for {origin}, got 1')
         return args[0], args[1]
-
-    def _post_process_generated_schema(self, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-        if 'metadata' not in schema:
-            schema['metadata'] = {}
-        return schema
-
-    def _generate_schema(self, obj: Any) -> core_schema.CoreSchema:
-        """Recursively generate a pydantic-core schema for any supported python type."""
-        has_invalid_schema = self._has_invalid_schema
-        self._has_invalid_schema = False
-        schema = self._generate_schema_inner(obj)
-        self._has_invalid_schema = self._has_invalid_schema or has_invalid_schema
-        return schema
 
     def _generate_schema_inner(self, obj: Any) -> core_schema.CoreSchema:
         if isinstance(obj, _AnnotatedType):
@@ -1163,13 +1143,11 @@ class GenerateSchema:
         else:
             choices_with_tags: list[CoreSchema | tuple[CoreSchema, str]] = []
             for choice in choices:
-                metadata = choice.get('metadata')
-                if isinstance(metadata, dict):
-                    tag = metadata.get(_core_utils.TAGGED_UNION_TAG_KEY)
-                    if tag is not None:
-                        choices_with_tags.append((choice, tag))
-                    else:
-                        choices_with_tags.append(choice)
+                tag = choice.get('metadata', {}).get(_core_utils.TAGGED_UNION_TAG_KEY)
+                if tag is not None:
+                    choices_with_tags.append((choice, tag))
+                else:
+                    choices_with_tags.append(choice)
             s = core_schema.union_schema(choices_with_tags)
 
         if nullable:
@@ -1304,7 +1282,7 @@ class GenerateSchema:
 
                 schema = self._apply_model_serializers(td_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, decorators.model_validators.values(), 'all')
-                self.defs.definitions[typed_dict_ref] = self._post_process_generated_schema(schema)
+                self.defs.definitions[typed_dict_ref] = schema
                 return core_schema.definition_reference_schema(typed_dict_ref)
 
     def _namedtuple_schema(self, namedtuple_cls: Any, origin: Any) -> core_schema.CoreSchema:
@@ -1583,7 +1561,7 @@ class GenerateSchema:
                 )
                 schema = self._apply_model_serializers(dc_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, model_validators, 'outer')
-                self.defs.definitions[dataclass_ref] = self._post_process_generated_schema(schema)
+                self.defs.definitions[dataclass_ref] = schema
                 return core_schema.definition_reference_schema(dataclass_ref)
 
             # Type checkers seem to assume ExitStack may suppress exceptions and therefore
@@ -1790,7 +1768,7 @@ class GenerateSchema:
         def inner_handler(obj: Any) -> CoreSchema:
             from_property = self._generate_schema_from_property(obj, obj)
             if from_property is None:
-                schema = self._generate_schema(obj)
+                schema = self._generate_schema_inner(obj)
             else:
                 schema = from_property
             metadata_js_function = _extract_get_pydantic_json_schema(obj, schema)
