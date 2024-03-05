@@ -32,8 +32,8 @@ class Map(Mapping):
     def __len__(self) -> int:
         return len(self._d)
 
-    def __getitem__(self, __k):
-        return self._d[__k]
+    def __getitem__(self, k, /):
+        return self._d[k]
 
     def __repr__(self):
         return 'Map({})'.format(', '.join(f'{k}={v!r}' for k, v in self._d.items()))
