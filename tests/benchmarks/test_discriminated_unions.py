@@ -7,27 +7,29 @@ from typing_extensions import Annotated
 from pydantic import BaseModel, Field, TypeAdapter
 
 
+class NestedState(BaseModel):
+    state_type: Literal['nested']
+    substate: AnyState
+
+
+class LoopState(BaseModel):
+    state_type: Literal['loop']
+    substate: AnyState
+
+
+class LeafState(BaseModel):
+    state_type: Literal['leaf']
+
+
+AnyState = Annotated[Union[NestedState, LoopState, LeafState], Field(..., discriminator='state_type')]
+
+
 def test_schema_build() -> None:
-    class NestedState(BaseModel):
-        state_type: Literal['nested']
-        substate: AnyState
-
-    class LoopState(BaseModel):
-        state_type: Literal['loop']
-        substate: AnyState
-
-    class LeafState(BaseModel):
-        state_type: Literal['leaf']
-
-    AnyState = Annotated[Union[NestedState, LoopState, LeafState], Field(..., discriminator='state_type')]
-
     adapter = TypeAdapter(AnyState)
     assert adapter.core_schema['schema']['type'] == 'tagged-union'
 
-    return adapter
 
-
-any_state_adapter = test_schema_build()
+any_state_adapter = TypeAdapter(AnyState)
 
 
 def build_nested_state(n):
