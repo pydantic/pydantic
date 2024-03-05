@@ -2981,10 +2981,11 @@
 
 <a href="#pydantic.validate_call_decorator.validate_call" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">validate_call</span><span class="p">(</span>
-    <span class="n">__func</span><span class="p">:</span> <span class="n"><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">func</span><span class="p">:</span> <span class="n"><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">config</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.config.ConfigDict" href="../config/#pydantic.config.ConfigDict">ConfigDict</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">validate_return</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">validate_return</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span></span><span class="p">],</span> <span class="n"><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span></span><span class="p">]</span>
 </code></pre></div>
 
@@ -3011,7 +3012,7 @@
     </thead>
     <tbody>
         <tr>
-          <td><code>__func</code></td>
+          <td><code>func</code></td>
           <td>
                 <code><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span> | None</code>
           </td>
@@ -3119,8 +3120,10 @@
 <span class="normal">64</span>
 <span class="normal">65</span>
 <span class="normal">66</span>
-<span class="normal">67</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_call</span><span class="p">(</span>
-    <span class="n">__func</span><span class="p">:</span> <span class="n">AnyCallableT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="normal">67</span>
+<span class="normal">68</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_call</span><span class="p">(</span>
+    <span class="n">func</span><span class="p">:</span> <span class="n">AnyCallableT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">validate_return</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -3132,7 +3135,7 @@
 <span class="sd">    Usage may be either as a plain decorator `@validate_call` or with arguments `@validate_call(...)`.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        __func: The function to be decorated.</span>
+<span class="sd">        func: The function to be decorated.</span>
 <span class="sd">        config: The configuration dictionary.</span>
 <span class="sd">        validate_return: Whether to validate the return value.</span>
 
@@ -3154,8 +3157,8 @@
 
         <span class="k">return</span> <span class="n">wrapper_function</span>  <span class="c1"># type: ignore</span>
 
-    <span class="k">if</span> <span class="n">__func</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">validate</span><span class="p">(</span><span class="n">__func</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">func</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">validate</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">validate</span>
 </code></pre></div></td></tr></table></div>
