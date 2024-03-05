@@ -1154,13 +1154,11 @@ class GenerateSchema:
         else:
             choices_with_tags: list[CoreSchema | tuple[CoreSchema, str]] = []
             for choice in choices:
-                metadata = choice.get('metadata', {})
-                if isinstance(metadata, dict):
-                    tag = metadata.get(_core_utils.TAGGED_UNION_TAG_KEY)
-                    if tag is not None:
-                        choices_with_tags.append((choice, tag))
-                    else:
-                        choices_with_tags.append(choice)
+                tag = choice.get('metadata', {}).get(_core_utils.TAGGED_UNION_TAG_KEY)
+                if tag is not None:
+                    choices_with_tags.append((choice, tag))
+                else:
+                    choices_with_tags.append(choice)
             s = core_schema.union_schema(choices_with_tags)
 
         if nullable:
