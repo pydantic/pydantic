@@ -311,7 +311,6 @@ class GenerateSchema:
         '_config_wrapper_stack',
         '_types_namespace_stack',
         '_typevars_map',
-        '_has_invalid_schema',
         'field_name_stack',
         'defs',
     )
@@ -326,7 +325,6 @@ class GenerateSchema:
         self._config_wrapper_stack = ConfigWrapperStack(config_wrapper)
         self._types_namespace_stack = TypesNamespaceStack(types_namespace)
         self._typevars_map = typevars_map
-        self._has_invalid_schema = False
         self.field_name_stack = _FieldNameStack()
         self.defs = _Definitions()
 
@@ -342,7 +340,6 @@ class GenerateSchema:
         obj._config_wrapper_stack = config_wrapper_stack
         obj._types_namespace_stack = types_namespace_stack
         obj._typevars_map = typevars_map
-        obj._has_invalid_schema = False
         obj.field_name_stack = _FieldNameStack()
         obj.defs = defs
         return obj
@@ -497,7 +494,7 @@ class GenerateSchema:
                 schema = from_property
 
         if schema is None:
-            schema = self._generate_schema(obj)
+            schema = self._generate_schema_inner(obj)
 
         metadata_js_function = _extract_get_pydantic_json_schema(obj, schema)
         if metadata_js_function is not None:
@@ -651,7 +648,7 @@ class GenerateSchema:
                 schema = get_schema(source)
             else:
                 schema = get_schema(
-                    source, CallbackGetCoreSchemaHandler(self._generate_schema, self, ref_mode=ref_mode)
+                    source, CallbackGetCoreSchemaHandler(self._generate_schema_inner, self, ref_mode=ref_mode)
                 )
 
         schema = self._unpack_refs_defs(schema)
@@ -721,14 +718,6 @@ class GenerateSchema:
             origin = get_origin(obj)
             raise TypeError(f'Expected two type arguments for {origin}, got 1')
         return args[0], args[1]
-
-    def _generate_schema(self, obj: Any) -> core_schema.CoreSchema:
-        """Recursively generate a pydantic-core schema for any supported python type."""
-        has_invalid_schema = self._has_invalid_schema
-        self._has_invalid_schema = False
-        schema = self._generate_schema_inner(obj)
-        self._has_invalid_schema = self._has_invalid_schema or has_invalid_schema
-        return schema
 
     def _generate_schema_inner(self, obj: Any) -> core_schema.CoreSchema:
         if isinstance(obj, _AnnotatedType):
@@ -1779,7 +1768,7 @@ class GenerateSchema:
         def inner_handler(obj: Any) -> CoreSchema:
             from_property = self._generate_schema_from_property(obj, obj)
             if from_property is None:
-                schema = self._generate_schema(obj)
+                schema = self._generate_schema_inner(obj)
             else:
                 schema = from_property
             metadata_js_function = _extract_get_pydantic_json_schema(obj, schema)
