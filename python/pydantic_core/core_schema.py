@@ -225,13 +225,13 @@ def simple_ser_schema(type: ExpectedSerializationTypes) -> SimpleSerSchema:
     return SimpleSerSchema(type=type)
 
 
-# (__input_value: Any) -> Any
+# (input_value: Any, /) -> Any
 GeneralPlainNoInfoSerializerFunction = Callable[[Any], Any]
-# (__input_value: Any, __info: FieldSerializationInfo) -> Any
+# (input_value: Any, info: FieldSerializationInfo, /) -> Any
 GeneralPlainInfoSerializerFunction = Callable[[Any, SerializationInfo], Any]
-# (__model: Any, __input_value: Any) -> Any
+# (model: Any, input_value: Any, /) -> Any
 FieldPlainNoInfoSerializerFunction = Callable[[Any, Any], Any]
-# (__model: Any, __input_value: Any, __info: FieldSerializationInfo) -> Any
+# (model: Any, input_value: Any, info: FieldSerializationInfo, /) -> Any
 FieldPlainInfoSerializerFunction = Callable[[Any, Any, FieldSerializationInfo], Any]
 SerializerFunction = Union[
     GeneralPlainNoInfoSerializerFunction,
@@ -275,7 +275,7 @@ def plain_serializer_function_ser_schema(
         function: The function to use for serialization
         is_field_serializer: Whether the serializer is for a field, e.g. takes `model` as the first argument,
             and `info` includes `field_name`
-        info_arg: Whether the function takes an `__info` argument
+        info_arg: Whether the function takes an `info` argument
         return_schema: Schema to use for serializing return value
         when_used: When the function should be called
     """
@@ -293,16 +293,16 @@ def plain_serializer_function_ser_schema(
 
 
 class SerializerFunctionWrapHandler(Protocol):  # pragma: no cover
-    def __call__(self, __input_value: Any, __index_key: int | str | None = None) -> Any: ...
+    def __call__(self, input_value: Any, index_key: int | str | None = None, /) -> Any: ...
 
 
-# (__input_value: Any, __serializer: SerializerFunctionWrapHandler) -> Any
+# (input_value: Any, serializer: SerializerFunctionWrapHandler, /) -> Any
 GeneralWrapNoInfoSerializerFunction = Callable[[Any, SerializerFunctionWrapHandler], Any]
-# (__input_value: Any, __serializer: SerializerFunctionWrapHandler, __info: SerializationInfo) -> Any
+# (input_value: Any, serializer: SerializerFunctionWrapHandler, info: SerializationInfo, /) -> Any
 GeneralWrapInfoSerializerFunction = Callable[[Any, SerializerFunctionWrapHandler, SerializationInfo], Any]
-# (__model: Any, __input_value: Any, __serializer: SerializerFunctionWrapHandler) -> Any
+# (model: Any, input_value: Any, serializer: SerializerFunctionWrapHandler, /) -> Any
 FieldWrapNoInfoSerializerFunction = Callable[[Any, Any, SerializerFunctionWrapHandler], Any]
-# (__model: Any, __input_value: Any, __serializer: SerializerFunctionWrapHandler, __info: FieldSerializationInfo) -> Any
+# (model: Any, input_value: Any, serializer: SerializerFunctionWrapHandler, info: FieldSerializationInfo, /) -> Any
 FieldWrapInfoSerializerFunction = Callable[[Any, Any, SerializerFunctionWrapHandler, FieldSerializationInfo], Any]
 WrapSerializerFunction = Union[
     GeneralWrapNoInfoSerializerFunction,
@@ -338,7 +338,7 @@ def wrap_serializer_function_ser_schema(
         function: The function to use for serialization
         is_field_serializer: Whether the serializer is for a field, e.g. takes `model` as the first argument,
             and `info` includes `field_name`
-        info_arg: Whether the function takes an `__info` argument
+        info_arg: Whether the function takes an `info` argument
         schema: The schema to use for the inner serialization
         return_schema: Schema to use for serializing return value
         when_used: When the function should be called
@@ -1767,7 +1767,7 @@ def dict_schema(
     )
 
 
-# (__input_value: Any) -> Any
+# (input_value: Any, /) -> Any
 NoInfoValidatorFunction = Callable[[Any], Any]
 
 
@@ -1776,7 +1776,7 @@ class NoInfoValidatorFunctionSchema(TypedDict):
     function: NoInfoValidatorFunction
 
 
-# (__input_value: Any, __info: ValidationInfo) -> Any
+# (input_value: Any, info: ValidationInfo, /) -> Any
 WithInfoValidatorFunction = Callable[[Any, ValidationInfo], Any]
 
 
@@ -1990,7 +1990,7 @@ class ValidatorFunctionWrapHandler(Protocol):
         ...
 
 
-# (__input_value: Any, __validator: ValidatorFunctionWrapHandler) -> Any
+# (input_value: Any, validator: ValidatorFunctionWrapHandler, /) -> Any
 NoInfoWrapValidatorFunction = Callable[[Any, ValidatorFunctionWrapHandler], Any]
 
 
@@ -1999,7 +1999,7 @@ class NoInfoWrapValidatorFunctionSchema(TypedDict):
     function: NoInfoWrapValidatorFunction
 
 
-# (__input_value: Any, __validator: ValidatorFunctionWrapHandler, __info: ValidationInfo) -> Any
+# (input_value: Any, validator: ValidatorFunctionWrapHandler, info: ValidationInfo, /) -> Any
 WithInfoWrapValidatorFunction = Callable[[Any, ValidatorFunctionWrapHandler, ValidationInfo], Any]
 
 

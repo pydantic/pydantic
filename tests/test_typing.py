@@ -221,8 +221,8 @@ def test_type_error():
 
 
 def test_ser_function_plain():
-    def f(__input: Any, __info: core_schema.SerializationInfo) -> str:
-        return str(__info)
+    def f(input: Any, info: core_schema.SerializationInfo, /) -> str:
+        return str(info)
 
     s = SchemaSerializer(
         core_schema.any_schema(
@@ -239,9 +239,9 @@ def test_ser_function_plain():
 
 def test_ser_function_wrap():
     def f(
-        __input: Any, __serialize: core_schema.SerializerFunctionWrapHandler, __info: core_schema.SerializationInfo
+        input: Any, serialize: core_schema.SerializerFunctionWrapHandler, info: core_schema.SerializationInfo, /
     ) -> str:
-        return f'{__serialize} {__info}'
+        return f'{serialize} {info}'
 
     s = SchemaSerializer(
         core_schema.any_schema(
