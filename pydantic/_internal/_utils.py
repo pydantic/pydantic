@@ -349,8 +349,8 @@ class SafeGetItemProxy:
 
     wrapped: Mapping[str, Any]
 
-    def __getitem__(self, __key: str) -> Any:
-        return self.wrapped.get(__key, _SENTINEL)
+    def __getitem__(self, key: str, /) -> Any:
+        return self.wrapped.get(key, _SENTINEL)
 
     # required to pass the object to operator.itemgetter() instances due to a quirk of typeshed
     # https://github.com/python/mypy/issues/13713
@@ -358,5 +358,5 @@ class SafeGetItemProxy:
     # Since this is typing-only, hide it in a typing.TYPE_CHECKING block
     if typing.TYPE_CHECKING:
 
-        def __contains__(self, __key: str) -> bool:
-            return self.wrapped.__contains__(__key)
+        def __contains__(self, key: str, /) -> bool:
+            return self.wrapped.__contains__(key)

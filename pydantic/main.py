@@ -568,13 +568,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return cls.__pydantic_validator__.validate_strings(obj, strict=strict, context=context)
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, __source: type[BaseModel], __handler: GetCoreSchemaHandler) -> CoreSchema:
+    def __get_pydantic_core_schema__(cls, source: type[BaseModel], handler: GetCoreSchemaHandler, /) -> CoreSchema:
         """Hook into generating the model's CoreSchema.
 
         Args:
-            __source: The class we are generating a schema for.
+            source: The class we are generating a schema for.
                 This will generally be the same as the `cls` argument if this is a classmethod.
-            __handler: Call into Pydantic's internal JSON schema generation.
+            handler: Call into Pydantic's internal JSON schema generation.
                 A callable that calls into Pydantic's internal CoreSchema generation logic.
 
         Returns:
@@ -589,22 +589,23 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             if not cls.__pydantic_generic_metadata__['origin']:
                 return cls.__pydantic_core_schema__
 
-        return __handler(__source)
+        return handler(source)
 
     @classmethod
     def __get_pydantic_json_schema__(
         cls,
-        __core_schema: CoreSchema,
-        __handler: GetJsonSchemaHandler,
+        core_schema: CoreSchema,
+        handler: GetJsonSchemaHandler,
+        /,
     ) -> JsonSchemaValue:
         """Hook into generating the model's JSON schema.
 
         Args:
-            __core_schema: A `pydantic-core` CoreSchema.
+            core_schema: A `pydantic-core` CoreSchema.
                 You can ignore this argument and call the handler with a new CoreSchema,
                 wrap this CoreSchema (`{'type': 'nullable', 'schema': current_schema}`),
                 or just call the handler with the original schema.
-            __handler: Call into Pydantic's internal JSON schema generation.
+            handler: Call into Pydantic's internal JSON schema generation.
                 This will raise a `pydantic.errors.PydanticInvalidForJsonSchema` if JSON schema
                 generation fails.
                 Since this gets called by `BaseModel.model_json_schema` you can override the
@@ -614,7 +615,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Returns:
             A JSON schema, as a Python object.
         """
-        return __handler(__core_schema)
+        return handler(core_schema)
 
     @classmethod
     def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:

@@ -35,9 +35,10 @@ def set_discriminator_in_metadata(schema: CoreSchema, discriminator: Any) -> Non
 
 
 def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-    # Throughout recursion, we allow references to be resolved from the definitions
-    # that are present in the outermost schema. Before apply_discriminators is called,
-    # we call simplify_schema_references (in the clean_schema function),
+    # We recursively walk through the `schema` passed to `apply_discriminators`, applying discriminators
+    # where necessary at each level. During this recursion, we allow references to be resolved from the definitions
+    # that are originally present on the original, outermost `schema`. Before `apply_discriminators` is called,
+    # `simplify_schema_references` is called on the schema (in the `clean_schema` function),
     # which often puts the definitions in the outermost schema.
     global_definitions: dict[str, CoreSchema] = collect_definitions(schema)
 

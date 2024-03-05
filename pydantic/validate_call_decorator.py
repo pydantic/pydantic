@@ -22,12 +22,13 @@ def validate_call(
 
 
 @overload
-def validate_call(__func: AnyCallableT) -> AnyCallableT:
+def validate_call(func: AnyCallableT, /) -> AnyCallableT:
     ...
 
 
 def validate_call(
-    __func: AnyCallableT | None = None,
+    func: AnyCallableT | None = None,
+    /,
     *,
     config: ConfigDict | None = None,
     validate_return: bool = False,
@@ -39,7 +40,7 @@ def validate_call(
     Usage may be either as a plain decorator `@validate_call` or with arguments `@validate_call(...)`.
 
     Args:
-        __func: The function to be decorated.
+        func: The function to be decorated.
         config: The configuration dictionary.
         validate_return: Whether to validate the return value.
 
@@ -61,7 +62,7 @@ def validate_call(
 
         return wrapper_function  # type: ignore
 
-    if __func:
-        return validate(__func)
+    if func:
+        return validate(func)
     else:
         return validate

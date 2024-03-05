@@ -562,9 +562,7 @@ def test_use_no_fields():
 
 
 def test_use_no_fields_field_validator():
-    with pytest.raises(
-        TypeError, match=re.escape("field_validator() missing 1 required positional argument: '__field'")
-    ):
+    with pytest.raises(TypeError, match=re.escape("field_validator() missing 1 required positional argument: 'field'")):
 
         class Model(BaseModel):
             a: str
