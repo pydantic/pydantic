@@ -1972,7 +1972,7 @@ def test_discriminated_union_with_nested_dataclass() -> None:
 
     @pydantic_dataclass
     class NestedDataClass:
-        animal: Annotated[Cat | Dog, Discriminator('type')]
+        animal: Annotated[Union[Cat, Dog], Discriminator('type')]
 
     @pydantic_dataclass
     class Root:
@@ -1990,7 +1990,7 @@ def test_discriminated_union_with_nested_typed_dicts() -> None:
         type: Literal['dog']
 
     class NestedTypedDict(TypedDict):
-        animal: Annotated[Cat | Dog, Discriminator('type')]
+        animal: Annotated[Union[Cat, Dog], Discriminator('type')]
 
     class Root(TypedDict):
         data_class: NestedTypedDict
