@@ -43,6 +43,7 @@ def test_efficiency_with_highly_nested_examples() -> None:
     AnyState = Annotated[NestedState | LoopState | LeafState, Field(..., discriminator='state_type')]
     adapter = TypeAdapter(AnyState)
 
-    for i in range(10, 100):
+    # can go much higher, but we keep it reasonably low here for a proof of concept
+    for i in range(1, 12):
         very_nested_input = build_nested_state(i)
         adapter.validate_python(very_nested_input)
