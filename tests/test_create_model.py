@@ -1,6 +1,8 @@
 import platform
 import re
-from typing import Annotated, Generic, Optional, Tuple, TypeVar
+import sys
+import typing
+from typing import Generic, Optional, Tuple, TypeVar
 
 import pytest
 
@@ -516,6 +518,7 @@ def test_create_model_non_annotated():
         create_model('FooModel', foo=(str, ...), bar=123)
 
 
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='Annotated is introduced after python3.9')
 @pytest.mark.parametrize(
     'annotation_type,field_info',
     [
@@ -524,7 +527,7 @@ def test_create_model_non_annotated():
     ],
 )
 def test_create_model_typing_annotated_field_info(annotation_type, field_info):
-    annotated_foo = Annotated[annotation_type, field_info]
+    annotated_foo = typing.Annotated[annotation_type, field_info]
     model = create_model('FooModel', foo=annotated_foo, bar=(int, 123))
 
     assert model.model_fields.keys() == {'foo', 'bar'}
@@ -537,8 +540,9 @@ def test_create_model_typing_annotated_field_info(annotation_type, field_info):
     assert foo.description == field_info.description
 
 
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='Annotated is introduced after python3.9')
 def test_create_model_typing_annotated_field_uses_first_type():
-    annotated_foo = Annotated[int, 10, str]
+    annotated_foo = typing.Annotated[int, 10, str]
     model = create_model('FooModel', foo=annotated_foo)
 
     foo = model.model_fields.get('foo')
@@ -548,9 +552,10 @@ def test_create_model_typing_annotated_field_uses_first_type():
     assert foo.default == 10
 
 
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='Annotated is introduced after python3.9')
 @pytest.mark.parametrize('annotation_type,default_value', [(bool, False), (str, 'default_value')])
 def test_create_model_typing_annotated_field_default(annotation_type, default_value):
-    annotated_foo = Annotated[annotation_type, default_value]
+    annotated_foo = typing.Annotated[annotation_type, default_value]
     model = create_model('FooModel', foo=annotated_foo)
 
     foo = model.model_fields.get('foo')
