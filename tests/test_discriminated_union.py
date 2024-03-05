@@ -1980,3 +1980,20 @@ def test_discriminated_union_with_nested_dataclass() -> None:
 
     ta = TypeAdapter(Root)
     assert ta.core_schema['schema']['fields'][0]['schema']['schema']['fields'][0]['schema']['type'] == 'tagged-union'
+
+
+def test_discriminated_union_with_nested_typed_dicts() -> None:
+    class Cat(TypedDict):
+        type: Literal['cat']
+
+    class Dog(TypedDict):
+        type: Literal['dog']
+
+    class NestedTypedDict(TypedDict):
+        animal: Annotated[Cat | Dog, Discriminator('type')]
+
+    class Root(TypedDict):
+        data_class: NestedTypedDict
+
+    ta = TypeAdapter(Root)
+    assert ta.core_schema['fields']['data_class']['schema']['fields']['animal']['schema']['type'] == 'tagged-union'
