@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Union
 
 from pydantic import BaseModel, Field, TypeAdapter
 
@@ -17,7 +17,7 @@ def test_schema_build() -> None:
     class LeafState(BaseModel):
         state_type: Literal['leaf']
 
-    AnyState = Annotated[NestedState | LoopState | LeafState, Field(..., discriminator='state_type')]
+    AnyState = Annotated[Union[NestedState, LoopState, LeafState], Field(..., discriminator='state_type')]
     adapter = TypeAdapter(AnyState)
     assert adapter.core_schema['schema']['type'] == 'tagged-union'
 
@@ -40,7 +40,7 @@ def test_efficiency_with_highly_nested_examples() -> None:
     class LeafState(BaseModel):
         state_type: Literal['leaf']
 
-    AnyState = Annotated[NestedState | LoopState | LeafState, Field(..., discriminator='state_type')]
+    AnyState = Annotated[Union[NestedState, LoopState, LeafState], Field(..., discriminator='state_type')]
     adapter = TypeAdapter(AnyState)
 
     # can go much higher, but we keep it reasonably low here for a proof of concept
