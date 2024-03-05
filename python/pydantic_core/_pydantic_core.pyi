@@ -73,7 +73,7 @@ class Some(Generic[_T]):
         Returns the value wrapped by `Some`.
         """
     @classmethod
-    def __class_getitem__(cls, __item: Any) -> Type[Self]: ...
+    def __class_getitem__(cls, item: Any, /) -> Type[Self]: ...
 
 @final
 class SchemaValidator:

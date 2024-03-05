@@ -32,8 +32,8 @@ class Map(Mapping):
     def __len__(self) -> int:
         return len(self._d)
 
-    def __getitem__(self, __k):
-        return self._d[__k]
+    def __getitem__(self, k, /):
+        return self._d[k]
 
     def __repr__(self):
         return 'Map({})'.format(', '.join(f'{k}={v!r}' for k, v in self._d.items()))
@@ -1188,9 +1188,9 @@ def test_from_attributes_extra_ignore_no_attributes_accessed() -> None:
         a = 1
         b = 2
 
-        def __getattribute__(self, __name: str) -> Any:
-            accessed.append(__name)
-            return super().__getattribute__(__name)
+        def __getattribute__(self, name: str, /) -> Any:
+            accessed.append(name)
+            return super().__getattribute__(name)
 
     assert v.validate_python(Source()) == ({'a': 1}, None, {'a'})
     assert 'a' in accessed and 'b' not in accessed
