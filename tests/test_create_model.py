@@ -518,7 +518,7 @@ def test_create_model_non_annotated():
         create_model('FooModel', foo=(str, ...), bar=123)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason='Annotated is introduced after python3.9')
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='typing.Annotated is introduced after python3.9')
 @pytest.mark.parametrize(
     'annotation_type,field_info',
     [
@@ -540,29 +540,25 @@ def test_create_model_typing_annotated_field_info(annotation_type, field_info):
     assert foo.description == field_info.description
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason='Annotated is introduced after python3.9')
-def test_create_model_typing_annotated_field_uses_first_type():
-    annotated_foo = typing.Annotated[int, 10, str]
-    model = create_model('FooModel', foo=annotated_foo)
+def test_create_model_expect_field_info_as_metadata():
+    annotated_foo = typing.Annotated[int, 10]
 
-    foo = model.model_fields.get('foo')
-
-    assert foo is not None
-    assert foo.annotation == int
-    assert foo.default == 10
+    with pytest.raises(PydanticUserError):
+        create_model('FooModel', foo=annotated_foo)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason='Annotated is introduced after python3.9')
-@pytest.mark.parametrize('annotation_type,default_value', [(bool, False), (str, 'default_value')])
-def test_create_model_typing_annotated_field_default(annotation_type, default_value):
-    annotated_foo = typing.Annotated[annotation_type, default_value]
+@pytest.mark.parametrize(
+    'annotation_type,field_info', [(bool, Field(alias='foo_bool_alias')), (str, Field(alias='foo_str_alias'))]
+)
+def test_create_model_typing_extension_field_info(annotation_type, field_info):
+    annotated_foo = typing.Annotated[annotation_type, field_info]
     model = create_model('FooModel', foo=annotated_foo)
 
     foo = model.model_fields.get('foo')
 
     assert foo is not None
     assert foo.annotation == annotation_type
-    assert foo.default == default_value
+    assert foo.alias == field_info.alias
 
 
 def test_create_model_tuple():

@@ -1433,8 +1433,8 @@ def create_model(  # noqa: C901
         __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.
         __slots__: Deprecated. Should not be passed to `create_model`.
         **field_definitions: Attributes of the new model. They should be passed in the format:
-            `<name>=(<type>, <default value>)`, `<name>=(<type>, <FieldInfo>)`, or `typing.Annotated[<type>, <default value>]`, `typing.Annotated[<type>, <FieldInfo>]`.
-            Any additional metadata in `typing.Annotated[<type>, <default value | FieldInfo>, ...]` will be ignored.
+            `<name>=(<type>, <default value>)`, `<name>=(<type>, <FieldInfo>)`, or `typing.Annotated[<type>, <FieldInfo>]`.
+            Any additional metadata in `typing.Annotated[<type>, <FieldInfo>, ...]` will be ignored.
 
     Returns:
         The new [model][pydantic.BaseModel].
@@ -1475,22 +1475,17 @@ def create_model(  # noqa: C901
                     code='create-model-field-definitions',
                 ) from e
 
-        elif sys.version_info >= (3, 9) and _typing_extra.is_annotated(
-            f_def
-        ):  # typing.Annotated introduced on python3.9
-            try:
-                f_annotation = (
-                    f_def.__origin__
-                )  # __origin__ represents the annotation_type in Annotated[annotate_type, ...]
+        elif _typing_extra.is_annotated(f_def):  # typing.Annotated introduced on python3.9
+            (f_annotation, f_value, *_) = typing_extensions.get_args(
+                f_def
+            )  # first two input are expected from Annotated
+            from .fields import FieldInfo
 
-                f_value = f_def.__metadata__[
-                    0
-                ]  # Python Annotated requires at least one python variable to represent the annotation
-            except ValueError as e:
+            if not isinstance(f_value, FieldInfo):
                 raise PydanticUserError(
-                    'Field definitions should be a `typing.Annotation[type, definition]`.',
+                    'Field definitions should be a Annotated[<type>, FieldInfo(...)]',
                     code='create-model-field-definitions',
-                ) from e
+                )
 
         else:
             f_annotation, f_value = None, f_def
