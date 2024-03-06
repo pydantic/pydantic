@@ -541,8 +541,16 @@ def test_create_model_typing_annotated_field_info(annotation_type, field_info):
     assert foo.description == field_info.description
 
 
-def test_create_model_expect_field_info_as_metadata():
-    annotated_foo = typing.Annotated[int, 10]
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='typing.Annotated is introduced after python3.9')
+def test_create_model_expect_field_info_as_metadata_typing():
+    annotated_foo = typing_extensions.Annotated[int, 10]
+
+    with pytest.raises(PydanticUserError):
+        create_model('FooModel', foo=annotated_foo)
+
+
+def test_create_model_expect_field_info_as_metadata_typing_extensions():
+    annotated_foo = typing_extensions.Annotated[int, 10]
 
     with pytest.raises(PydanticUserError):
         create_model('FooModel', foo=annotated_foo)
