@@ -1475,7 +1475,7 @@ def create_model(  # noqa: C901
                     code='create-model-field-definitions',
                 ) from e
 
-        elif _typing_extra.is_annotated(f_def):  # typing.Annotated introduced on python3.9
+        elif _typing_extra.is_annotated(f_def):
             (f_annotation, f_value, *_) = typing_extensions.get_args(
                 f_def
             )  # first two input are expected from Annotated
