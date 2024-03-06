@@ -122,6 +122,18 @@ def test_function_args():
         'round_trip': False,
     }
 
+    assert s.to_python(1, context='context') == 2
+    # insert_assert(f_info)
+    assert f_info == {
+        'context': 'context',
+        'mode': 'python',
+        'by_alias': True,
+        'exclude_unset': False,
+        'exclude_defaults': False,
+        'exclude_none': False,
+        'round_trip': False,
+    }
+
 
 def test_function_error():
     def raise_error(value, _info):
@@ -212,23 +224,27 @@ def test_function_args_str():
         )
     )
     assert s.to_python(123) == (
-        "123 info=SerializationInfo(include=None, exclude=None, mode='python', by_alias=True, exclude_unset=False, "
+        "123 info=SerializationInfo(include=None, exclude=None, context=None, mode='python', by_alias=True, exclude_unset=False, "
         'exclude_defaults=False, exclude_none=False, round_trip=False)'
     )
     assert s.to_python(123, mode='other') == (
-        "123 info=SerializationInfo(include=None, exclude=None, mode='other', by_alias=True, exclude_unset=False, "
+        "123 info=SerializationInfo(include=None, exclude=None, context=None, mode='other', by_alias=True, exclude_unset=False, "
         'exclude_defaults=False, exclude_none=False, round_trip=False)'
     )
     assert s.to_python(123, include={'x'}) == (
-        "123 info=SerializationInfo(include={'x'}, exclude=None, mode='python', by_alias=True, exclude_unset=False, "
+        "123 info=SerializationInfo(include={'x'}, exclude=None, context=None, mode='python', by_alias=True, exclude_unset=False, "
+        'exclude_defaults=False, exclude_none=False, round_trip=False)'
+    )
+    assert s.to_python(123, context='context') == (
+        "123 info=SerializationInfo(include=None, exclude=None, context='context', mode='python', by_alias=True, exclude_unset=False, "
         'exclude_defaults=False, exclude_none=False, round_trip=False)'
     )
     assert s.to_python(123, mode='json', exclude={1: {2}}) == (
-        "123 info=SerializationInfo(include=None, exclude={1: {2}}, mode='json', by_alias=True, exclude_unset=False, "
+        "123 info=SerializationInfo(include=None, exclude={1: {2}}, context=None, mode='json', by_alias=True, exclude_unset=False, "
         'exclude_defaults=False, exclude_none=False, round_trip=False)'
     )
     assert s.to_json(123) == (
-        b"\"123 info=SerializationInfo(include=None, exclude=None, mode='json', by_alias=True, exclude_unset=False, "
+        b"\"123 info=SerializationInfo(include=None, exclude=None, context=None, mode='json', by_alias=True, exclude_unset=False, "
         b'exclude_defaults=False, exclude_none=False, round_trip=False)"'
     )
 

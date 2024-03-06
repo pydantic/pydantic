@@ -480,6 +480,18 @@ impl ValidationInfo {
             mode: extra.input_type,
         }
     }
+
+    fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
+        visit.call(&self.config)?;
+        if let Some(context) = &self.context {
+            visit.call(context)?;
+        }
+        Ok(())
+    }
+
+    fn __clear__(&mut self) {
+        self.context = None;
+    }
 }
 
 #[pymethods]

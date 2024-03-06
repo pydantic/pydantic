@@ -79,7 +79,9 @@ a = A()
             let schema: &PyDict = locals.get_item("schema").unwrap().unwrap().extract().unwrap();
             let serialized: Vec<u8> = SchemaSerializer::py_new(py, schema, None)
                 .unwrap()
-                .to_json(py, a, None, None, None, true, false, false, false, false, true, None)
+                .to_json(
+                    py, a, None, None, None, true, false, false, false, false, true, None, None,
+                )
                 .unwrap()
                 .extract(py)
                 .unwrap();
@@ -187,6 +189,7 @@ dump_json_input_2 = {'a': 'something'}
                     false,
                     false,
                     None,
+                    None,
                 )
                 .unwrap();
             let serialization_result: &PyAny = binding.extract(py).unwrap();
@@ -207,6 +210,7 @@ dump_json_input_2 = {'a': 'something'}
                     false,
                     false,
                     false,
+                    None,
                     None,
                 )
                 .unwrap();

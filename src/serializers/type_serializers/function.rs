@@ -1,9 +1,11 @@
 use std::borrow::Cow;
 
 use pyo3::exceptions::{PyAttributeError, PyRecursionError, PyRuntimeError};
+use pyo3::gc::PyVisit;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
+use pyo3::PyTraverseError;
 
 use pyo3::types::PyString;
 
@@ -440,6 +442,33 @@ impl SerializationCallable {
             exclude: exclude.map(|v| v.into_py(py)),
         }
     }
+
+    fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
+        if let Some(include) = &self.include {
+            visit.call(include)?;
+        }
+        if let Some(exclude) = &self.exclude {
+            visit.call(exclude)?;
+        }
+        if let Some(model) = &self.extra_owned.model {
+            visit.call(model)?;
+        }
+        if let Some(fallback) = &self.extra_owned.fallback {
+            visit.call(fallback)?;
+        }
+        if let Some(context) = &self.extra_owned.context {
+            visit.call(context)?;
+        }
+        Ok(())
+    }
+
+    fn __clear__(&mut self) {
+        self.include = None;
+        self.exclude = None;
+        self.extra_owned.model = None;
+        self.extra_owned.fallback = None;
+        self.extra_owned.context = None;
+    }
 }
 
 #[pymethods]
@@ -488,6 +517,8 @@ struct SerializationInfo {
     include: Option<PyObject>,
     #[pyo3(get)]
     exclude: Option<PyObject>,
+    #[pyo3(get)]
+    context: Option<PyObject>,
     _mode: SerMode,
     #[pyo3(get)]
     by_alias: bool,
@@ -515,6 +546,7 @@ impl SerializationInfo {
                 Some(field_name) => Ok(Self {
                     include: include.map(|i| i.into_py(py)),
                     exclude: exclude.map(|e| e.into_py(py)),
+                    context: extra.context.map(Into::into),
                     _mode: extra.mode.clone(),
                     by_alias: extra.by_alias,
                     exclude_unset: extra.exclude_unset,
@@ -531,6 +563,7 @@ impl SerializationInfo {
             Ok(Self {
                 include: include.map(|i| i.into_py(py)),
                 exclude: exclude.map(|e| e.into_py(py)),
+                context: extra.context.map(Into::into),
                 _mode: extra.mode.clone(),
                 by_alias: extra.by_alias,
                 exclude_unset: extra.exclude_unset,
@@ -540,6 +573,25 @@ impl SerializationInfo {
                 field_name: None,
             })
         }
+    }
+
+    fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
+        if let Some(include) = &self.include {
+            visit.call(include)?;
+        }
+        if let Some(exclude) = &self.exclude {
+            visit.call(exclude)?;
+        }
+        if let Some(context) = &self.context {
+            visit.call(context)?;
+        }
+        Ok(())
+    }
+
+    fn __clear__(&mut self) {
+        self.include = None;
+        self.exclude = None;
+        self.context = None;
     }
 }
 
@@ -563,6 +615,9 @@ impl SerializationInfo {
         if let Some(ref exclude) = self.exclude {
             d.set_item("exclude", exclude)?;
         }
+        if let Some(ref context) = self.context {
+            d.set_item("context", context)?;
+        }
         d.set_item("mode", self.mode(py))?;
         d.set_item("by_alias", self.by_alias)?;
         d.set_item("exclude_unset", self.exclude_unset)?;
@@ -574,13 +629,17 @@ impl SerializationInfo {
 
     fn __repr__(&self, py: Python) -> PyResult<String> {
         Ok(format!(
-            "SerializationInfo(include={}, exclude={}, mode='{}', by_alias={}, exclude_unset={}, exclude_defaults={}, exclude_none={}, round_trip={})",
+            "SerializationInfo(include={}, exclude={}, context={}, mode='{}', by_alias={}, exclude_unset={}, exclude_defaults={}, exclude_none={}, round_trip={})",
             match self.include {
                 Some(ref include) => include.as_ref(py).repr()?.to_str()?,
                 None => "None",
             },
             match self.exclude {
                 Some(ref exclude) => exclude.as_ref(py).repr()?.to_str()?,
+                None => "None",
+            },
+            match self.context {
+                Some(ref context) => context.as_ref(py).repr()?.to_str()?,
                 None => "None",
             },
             self._mode,
