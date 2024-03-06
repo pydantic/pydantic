@@ -123,6 +123,10 @@ class SerializationInfo(Protocol):
     def exclude(self) -> IncExCall: ...
 
     @property
+    def context(self) -> Any | None:
+        """Current serialization context."""
+
+    @property
     def mode(self) -> str: ...
 
     @property

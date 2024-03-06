@@ -1,8 +1,10 @@
 use std::borrow::Cow;
 
+use pyo3::gc::PyVisit;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyIterator};
+use pyo3::PyTraverseError;
 
 use serde::ser::SerializeSeq;
 
@@ -172,6 +174,33 @@ impl SerializationIterator {
             include: include.map(|v| v.into_py(py)),
             exclude: exclude.map(|v| v.into_py(py)),
         }
+    }
+
+    fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
+        if let Some(include) = &self.include {
+            visit.call(include)?;
+        }
+        if let Some(exclude) = &self.exclude {
+            visit.call(exclude)?;
+        }
+        if let Some(model) = &self.extra_owned.model {
+            visit.call(model)?;
+        }
+        if let Some(fallback) = &self.extra_owned.fallback {
+            visit.call(fallback)?;
+        }
+        if let Some(context) = &self.extra_owned.context {
+            visit.call(context)?;
+        }
+        Ok(())
+    }
+
+    fn __clear__(&mut self) {
+        self.include = None;
+        self.exclude = None;
+        self.extra_owned.model = None;
+        self.extra_owned.fallback = None;
+        self.extra_owned.context = None;
     }
 }
 
