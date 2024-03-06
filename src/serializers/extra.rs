@@ -45,6 +45,7 @@ impl SerializationState {
         round_trip: bool,
         serialize_unknown: bool,
         fallback: Option<&'py PyAny>,
+        context: Option<&'py PyAny>,
     ) -> Extra<'py> {
         Extra::new(
             py,
@@ -59,6 +60,7 @@ impl SerializationState {
             &self.rec_guard,
             serialize_unknown,
             fallback,
+            context,
         )
     }
 
@@ -90,6 +92,7 @@ pub(crate) struct Extra<'a> {
     pub field_name: Option<&'a str>,
     pub serialize_unknown: bool,
     pub fallback: Option<&'a PyAny>,
+    pub context: Option<&'a PyAny>,
 }
 
 impl<'a> Extra<'a> {
@@ -107,6 +110,7 @@ impl<'a> Extra<'a> {
         rec_guard: &'a SerRecursionState,
         serialize_unknown: bool,
         fallback: Option<&'a PyAny>,
+        context: Option<&'a PyAny>,
     ) -> Self {
         Self {
             mode,
@@ -124,6 +128,7 @@ impl<'a> Extra<'a> {
             field_name: None,
             serialize_unknown,
             fallback,
+            context,
         }
     }
 
@@ -178,10 +183,11 @@ pub(crate) struct ExtraOwned {
     config: SerializationConfig,
     rec_guard: SerRecursionState,
     check: SerCheck,
-    model: Option<PyObject>,
+    pub model: Option<PyObject>,
     field_name: Option<String>,
     serialize_unknown: bool,
-    fallback: Option<PyObject>,
+    pub fallback: Option<PyObject>,
+    pub context: Option<PyObject>,
 }
 
 impl ExtraOwned {
@@ -201,6 +207,7 @@ impl ExtraOwned {
             field_name: extra.field_name.map(ToString::to_string),
             serialize_unknown: extra.serialize_unknown,
             fallback: extra.fallback.map(Into::into),
+            context: extra.context.map(Into::into),
         }
     }
 
@@ -221,6 +228,7 @@ impl ExtraOwned {
             field_name: self.field_name.as_deref(),
             serialize_unknown: self.serialize_unknown,
             fallback: self.fallback.as_ref().map(|m| m.as_ref(py)),
+            context: self.context.as_ref().map(|m| m.as_ref(py)),
         }
     }
 }
