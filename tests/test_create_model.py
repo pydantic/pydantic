@@ -5,6 +5,7 @@ import typing
 from typing import Generic, Optional, Tuple, TypeVar
 
 import pytest
+import typing_extensions
 
 from pydantic import (
     BaseModel,
@@ -551,7 +552,7 @@ def test_create_model_expect_field_info_as_metadata():
     'annotation_type,field_info', [(bool, Field(alias='foo_bool_alias')), (str, Field(alias='foo_str_alias'))]
 )
 def test_create_model_typing_extension_field_info(annotation_type, field_info):
-    annotated_foo = typing.Annotated[annotation_type, field_info]
+    annotated_foo = typing_extensions.Annotated[annotation_type, field_info]
     model = create_model('FooModel', foo=annotated_foo)
 
     foo = model.model_fields.get('foo')
