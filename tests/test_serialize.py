@@ -1159,3 +1159,39 @@ def test_subclass_support_unions_with_forward_ref() -> None:
 
     foo_recursive = Foo(items=[Foo(items=[Baz(bar_id=42, baz_id=99)])])
     assert foo_recursive.model_dump() == {'items': [{'items': [{'bar_id': 42}]}]}
+
+
+def test_serialize_python_context() -> None:
+    contexts: List[Any] = [None, None, {'foo': 'bar'}]
+
+    class Model(BaseModel):
+        x: int
+
+        @field_serializer('x')
+        def serialize_x(self, v: int, info: SerializationInfo) -> int:
+            assert info.context == contexts.pop(0)
+            return v
+
+    m = Model.model_construct(**{'x': 1})
+    m.model_dump()
+    m.model_dump(context=None)
+    m.model_dump(context={'foo': 'bar'})
+    assert contexts == []
+
+
+def test_serialize_json_context() -> None:
+    contexts: List[Any] = [None, None, {'foo': 'bar'}]
+
+    class Model(BaseModel):
+        x: int
+
+        @field_serializer('x')
+        def serialize_x(self, v: int, info: SerializationInfo) -> int:
+            assert info.context == contexts.pop(0)
+            return v
+
+    m = Model.model_construct(**{'x': 1})
+    m.model_dump_json()
+    m.model_dump_json(context=None)
+    m.model_dump_json(context={'foo': 'bar'})
+    assert contexts == []
