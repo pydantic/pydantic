@@ -2395,6 +2395,97 @@ def test_sequence_strict():
     assert TypeAdapter(Sequence[int]).validate_python((), strict=True) == ()
 
 
+def test_list_strict() -> None:
+    class LaxModel(BaseModel):
+        v: List[int]
+
+        model_config = ConfigDict(strict=False)
+
+    class StrictModel(BaseModel):
+        v: List[int]
+
+        model_config = ConfigDict(strict=True)
+
+    assert LaxModel(v=(1, 2)).v == [1, 2]
+    assert LaxModel(v=('1', 2)).v == [1, 2]
+    # Tuple should be rejected
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel(v=(1, 2))
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list', 'input': (1, 2)}
+    ]
+    # Strict in each list item
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel(v=['1', 2])
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'int_type', 'loc': ('v', 0), 'msg': 'Input should be a valid integer', 'input': '1'}
+    ]
+
+
+@pytest.mark.parametrize('cls', [Set, FrozenSet])
+def test_set_strict(cls) -> None:
+    _error_names = {'Set': 'set_type', 'FrozenSet': 'frozen_set_type'}
+    _converter = {Set: set, FrozenSet: frozenset}
+
+    class LaxModel(BaseModel):
+        v: cls[int]
+
+        model_config = ConfigDict(strict=False)
+
+    class StrictModel(BaseModel):
+        v: cls[int]
+
+        model_config = ConfigDict(strict=True)
+
+    assert LaxModel(v=(1, 2)).v == _converter[cls]((1, 2))
+    assert LaxModel(v=('1', 2)).v == _converter[cls]((1, 2))
+    # Tuple should be rejected
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel(v=(1, 2))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': _error_names[cls.__name__],
+            'loc': ('v',),
+            'msg': f'Input should be a valid {cls.__name__.lower()}',
+            'input': (1, 2),
+        }
+    ]
+    # Strict in each set item
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel(v=_converter[cls](('1', 2)))
+    err_info = exc_info.value.errors(include_url=False)
+    # Sets are not ordered
+    del err_info[0]['loc']
+    assert err_info == [{'type': 'int_type', 'msg': 'Input should be a valid integer', 'input': '1'}]
+
+
+def test_tuple_strict() -> None:
+    class LaxModel(BaseModel):
+        v: Tuple[int, int]
+
+        model_config = ConfigDict(strict=False)
+
+    class StrictModel(BaseModel):
+        v: Tuple[int, int]
+
+        model_config = ConfigDict(strict=True)
+
+    assert LaxModel(v=[1, 2]).v == (1, 2)
+    assert LaxModel(v=['1', 2]).v == (1, 2)
+    # Tuple should be rejected
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel(v=[1, 2])
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'tuple_type', 'loc': ('v',), 'msg': 'Input should be a valid tuple', 'input': [1, 2]}
+    ]
+    # Strict in each list item
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel(v=('1', 2))
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'int_type', 'loc': ('v', 0), 'msg': 'Input should be a valid integer', 'input': '1'}
+    ]
+
+
 def test_int_validation():
     class Model(BaseModel):
         a: PositiveInt = None
