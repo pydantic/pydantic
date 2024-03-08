@@ -325,7 +325,7 @@ class SequenceValidator:
                 )
             else:
                 coerce_instance_wrap = partial(core_schema.no_info_after_validator_function, self.mapped_origin)
-            # Due that we are using list schema in deque/Counter, strict should be overwrite if it's given
+            # Due that we are using list schema in deque/Counter, strict should be overwritten if it's given
             metadata['strict'] = False
             constrained_schema = core_schema.list_schema(items_schema, **metadata)
 
