@@ -2379,11 +2379,12 @@ def test_model_validate_strict() -> None:
 
 @pytest.mark.xfail(
     reason='To make validating json with strict=True work with sequence types it must be handled in pydantic-core'
-    'See issue: '
+    'See issue: https://github.com/pydantic/pydantic/issues/8930'
 )
 def test_model_validate_list_strict() -> None:
     # FIXME: This change must be implemented in pydantic-core. When ConfigDict(strict=False)
     # the validate_json method is not overwriting strict false coming from sequence like schema
+    # See: https://github.com/pydantic/pydantic/issues/8930
 
     class LaxModel(BaseModel):
         x: List[str]
