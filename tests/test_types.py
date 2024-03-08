@@ -2422,37 +2422,66 @@ def test_list_strict() -> None:
     ]
 
 
-@pytest.mark.parametrize('cls', [Set, FrozenSet])
-def test_set_strict(cls) -> None:
-    _error_names = {'Set': 'set_type', 'FrozenSet': 'frozen_set_type'}
-    _converter = {Set: set, FrozenSet: frozenset}
-
+def test_set_strict() -> None:
     class LaxModel(BaseModel):
-        v: cls[int]
+        v: Set[int]
 
         model_config = ConfigDict(strict=False)
 
     class StrictModel(BaseModel):
-        v: cls[int]
+        v: Set[int]
 
         model_config = ConfigDict(strict=True)
 
-    assert LaxModel(v=(1, 2)).v == _converter[cls]((1, 2))
-    assert LaxModel(v=('1', 2)).v == _converter[cls]((1, 2))
+    assert LaxModel(v=(1, 2)).v == {1, 2}
+    assert LaxModel(v=('1', 2)).v == {1, 2}
     # Tuple should be rejected
     with pytest.raises(ValidationError) as exc_info:
         StrictModel(v=(1, 2))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': _error_names[cls.__name__],
+            'type': 'set_type',
             'loc': ('v',),
-            'msg': f'Input should be a valid {cls.__name__.lower()}',
+            'msg': 'Input should be a valid set',
             'input': (1, 2),
         }
     ]
     # Strict in each set item
     with pytest.raises(ValidationError) as exc_info:
-        StrictModel(v=_converter[cls](('1', 2)))
+        StrictModel(v={'1', 2})
+    err_info = exc_info.value.errors(include_url=False)
+    # Sets are not ordered
+    del err_info[0]['loc']
+    assert err_info == [{'type': 'int_type', 'msg': 'Input should be a valid integer', 'input': '1'}]
+
+
+def test_frozenset_strict() -> None:
+    class LaxModel(BaseModel):
+        v: FrozenSet[int]
+
+        model_config = ConfigDict(strict=False)
+
+    class StrictModel(BaseModel):
+        v: FrozenSet[int]
+
+        model_config = ConfigDict(strict=True)
+
+    assert LaxModel(v=(1, 2)).v == frozenset((1, 2))
+    assert LaxModel(v=('1', 2)).v == frozenset((1, 2))
+    # Tuple should be rejected
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel(v=(1, 2))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'frozen_set_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid frozenset',
+            'input': (1, 2),
+        }
+    ]
+    # Strict in each set item
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel(v=frozenset(('1', 2)))
     err_info = exc_info.value.errors(include_url=False)
     # Sets are not ordered
     del err_info[0]['loc']
@@ -2472,7 +2501,7 @@ def test_tuple_strict() -> None:
 
     assert LaxModel(v=[1, 2]).v == (1, 2)
     assert LaxModel(v=['1', 2]).v == (1, 2)
-    # Tuple should be rejected
+    # List should be rejected
     with pytest.raises(ValidationError) as exc_info:
         StrictModel(v=[1, 2])
     assert exc_info.value.errors(include_url=False) == [
