@@ -48,7 +48,6 @@ from . import _core_utils, _decorators, _discriminated_union, _known_annotated_m
 from ._config import ConfigWrapper, ConfigWrapperStack
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._core_utils import (
-    NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY,
     CoreSchemaOrField,
     collect_invalid_schemas,
     define_expected_missing_refs,
@@ -302,7 +301,6 @@ class GenerateSchema:
         '_config_wrapper_stack',
         '_types_namespace_stack',
         '_typevars_map',
-        '_needs_apply_discriminated_union',
         '_has_invalid_schema',
         'field_name_stack',
         'defs',
@@ -318,7 +316,6 @@ class GenerateSchema:
         self._config_wrapper_stack = ConfigWrapperStack(config_wrapper)
         self._types_namespace_stack = TypesNamespaceStack(types_namespace)
         self._typevars_map = typevars_map
-        self._needs_apply_discriminated_union = False
         self._has_invalid_schema = False
         self.field_name_stack = _FieldNameStack()
         self.defs = _Definitions()
@@ -335,7 +332,6 @@ class GenerateSchema:
         obj._config_wrapper_stack = config_wrapper_stack
         obj._types_namespace_stack = types_namespace_stack
         obj._typevars_map = typevars_map
-        obj._needs_apply_discriminated_union = False
         obj._has_invalid_schema = False
         obj.field_name_stack = _FieldNameStack()
         obj.defs = defs
@@ -416,15 +412,10 @@ class GenerateSchema:
             )
         except _discriminated_union.MissingDefinitionForUnionRef:
             # defer until defs are resolved
-            _discriminated_union.set_discriminator(
+            _discriminated_union.set_discriminator_in_metadata(
                 schema,
                 discriminator,
             )
-            if 'metadata' in schema:
-                schema['metadata'][NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY] = True
-            else:
-                schema['metadata'] = {NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY: True}
-            self._needs_apply_discriminated_union = True
             return schema
 
     class CollectedInvalid(Exception):
@@ -719,24 +710,16 @@ class GenerateSchema:
         return args[0], args[1]
 
     def _post_process_generated_schema(self, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-        if 'metadata' in schema:
-            metadata = schema['metadata']
-            metadata[NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY] = self._needs_apply_discriminated_union
-        else:
-            schema['metadata'] = {
-                NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY: self._needs_apply_discriminated_union,
-            }
+        if 'metadata' not in schema:
+            schema['metadata'] = {}
         return schema
 
     def _generate_schema(self, obj: Any) -> core_schema.CoreSchema:
         """Recursively generate a pydantic-core schema for any supported python type."""
         has_invalid_schema = self._has_invalid_schema
         self._has_invalid_schema = False
-        needs_apply_discriminated_union = self._needs_apply_discriminated_union
-        self._needs_apply_discriminated_union = False
-        schema = self._post_process_generated_schema(self._generate_schema_inner(obj))
+        schema = self._generate_schema_inner(obj)
         self._has_invalid_schema = self._has_invalid_schema or has_invalid_schema
-        self._needs_apply_discriminated_union = self._needs_apply_discriminated_union or needs_apply_discriminated_union
         return schema
 
     def _generate_schema_inner(self, obj: Any) -> core_schema.CoreSchema:
@@ -965,7 +948,7 @@ class GenerateSchema:
         # Apply an alias_generator if
         # 1. An alias is not specified
         # 2. An alias is specified, but the priority is <= 1
-        if alias_generator and (
+        if (
             field_info.alias_priority is None
             or field_info.alias_priority <= 1
             or field_info.alias is None
@@ -1000,6 +983,49 @@ class GenerateSchema:
                 field_info.serialization_alias = serialization_alias or alias
             if field_info.validation_alias is None:
                 field_info.validation_alias = validation_alias or alias
+
+    @staticmethod
+    def _apply_alias_generator_to_computed_field_info(
+        alias_generator: Callable[[str], str] | AliasGenerator,
+        computed_field_info: ComputedFieldInfo,
+        computed_field_name: str,
+    ):
+        """Apply an alias_generator to alias on a ComputedFieldInfo instance if appropriate.
+
+        Args:
+            alias_generator: A callable that takes a string and returns a string, or an AliasGenerator instance.
+            computed_field_info: The ComputedFieldInfo instance to which the alias_generator is (maybe) applied.
+            computed_field_name: The name of the computed field from which to generate the alias.
+        """
+        # Apply an alias_generator if
+        # 1. An alias is not specified
+        # 2. An alias is specified, but the priority is <= 1
+
+        if (
+            computed_field_info.alias_priority is None
+            or computed_field_info.alias_priority <= 1
+            or computed_field_info.alias is None
+        ):
+            alias, validation_alias, serialization_alias = None, None, None
+
+            if isinstance(alias_generator, AliasGenerator):
+                alias, validation_alias, serialization_alias = alias_generator.generate_aliases(computed_field_name)
+            elif isinstance(alias_generator, Callable):
+                alias = alias_generator(computed_field_name)
+                if not isinstance(alias, str):
+                    raise TypeError(f'alias_generator {alias_generator} must return str, not {alias.__class__}')
+
+            # if priority is not set, we set to 1
+            # which supports the case where the alias_generator from a child class is used
+            # to generate an alias for a field in a parent class
+            if computed_field_info.alias_priority is None or computed_field_info.alias_priority <= 1:
+                computed_field_info.alias_priority = 1
+
+            # if the priority is 1, then we set the aliases to the generated alias
+            # note that we use the serialization_alias with priority over alias, as computed_field
+            # aliases are used for serialization only (not validation)
+            if computed_field_info.alias_priority == 1:
+                computed_field_info.alias = serialization_alias or alias
 
     def _common_field_schema(  # C901
         self, name: str, field_info: FieldInfo, decorators: DecoratorInfos
@@ -1625,20 +1651,12 @@ class GenerateSchema:
             filter_field_decorator_info_by_field(field_serializers.values(), d.cls_var_name),
             computed_field=True,
         )
-        # Handle alias_generator using similar logic to that from
-        # pydantic._internal._generate_schema.GenerateSchema._common_field_schema,
-        # with field_info -> d.info and name -> d.cls_var_name
+
         alias_generator = self._config_wrapper.alias_generator
-        if alias_generator and (d.info.alias_priority is None or d.info.alias_priority <= 1):
-            alias = None
-            if isinstance(alias_generator, AliasGenerator) and alias_generator.alias is not None:
-                alias = alias_generator.alias(d.cls_var_name)
-            elif isinstance(alias_generator, Callable):
-                alias = alias_generator(d.cls_var_name)
-            if not isinstance(alias, str):
-                raise TypeError(f'alias_generator {alias_generator} must return str, not {alias.__class__}')
-            d.info.alias = alias
-            d.info.alias_priority = 1
+        if alias_generator is not None:
+            self._apply_alias_generator_to_computed_field_info(
+                alias_generator=alias_generator, computed_field_info=d.info, computed_field_name=d.cls_var_name
+            )
 
         def set_computed_field_metadata(schema: CoreSchemaOrField, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
             json_schema = handler(schema)
