@@ -109,7 +109,7 @@ def _type_has_config(type_: Any) -> bool:
 
 @final
 class TypeAdapter(Generic[T]):
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/type_adapter/
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/type_adapter/
 
     Type adapters provide a flexible way to perform validation and serialization based on a Python type.
 
