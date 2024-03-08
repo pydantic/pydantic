@@ -504,7 +504,6 @@ def test_config_strict():
     assert foo(1, ['bar', 'foobar']) == '1, bar'
     with pytest.raises(ValidationError) as exc_info:
         foo('foo', ('bar', 'foobar'))
-    # # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'int_type', 'loc': (0,), 'msg': 'Input should be a valid integer', 'input': 'foo'},
         {'type': 'list_type', 'loc': (1,), 'msg': 'Input should be a valid list', 'input': ('bar', 'foobar')},
