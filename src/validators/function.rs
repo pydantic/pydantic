@@ -26,11 +26,11 @@ struct FunctionInfo {
     pub info_arg: bool,
 }
 
-fn destructure_function_schema(schema: &PyDict) -> PyResult<FunctionInfo> {
-    let func_dict: &PyDict = schema.get_as_req(intern!(schema.py(), "function"))?;
-    let function: &PyAny = func_dict.get_as_req(intern!(schema.py(), "function"))?;
-    let func_type: &str = func_dict.get_as_req(intern!(schema.py(), "type"))?;
-    let info_arg = match func_type {
+fn destructure_function_schema(schema: &Bound<'_, PyDict>) -> PyResult<FunctionInfo> {
+    let func_dict: Bound<'_, PyDict> = schema.get_as_req(intern!(schema.py(), "function"))?;
+    let function = func_dict.get_as_req(intern!(schema.py(), "function"))?;
+    let func_type: Bound<'_, PyString> = func_dict.get_as_req(intern!(schema.py(), "type"))?;
+    let info_arg = match func_type.to_str()? {
         "with-info" => true,
         "no-info" => false,
         _ => unreachable!(),
@@ -39,7 +39,7 @@ fn destructure_function_schema(schema: &PyDict) -> PyResult<FunctionInfo> {
         .get_as::<&PyString>(intern!(schema.py(), "field_name"))?
         .map(Into::into);
     Ok(FunctionInfo {
-        function: function.into(),
+        function,
         field_name,
         info_arg,
     })
@@ -50,24 +50,24 @@ macro_rules! impl_build {
         impl BuildValidator for $impl_name {
             const EXPECTED_TYPE: &'static str = $name;
             fn build(
-                schema: &PyDict,
-                config: Option<&PyDict>,
+                schema: &Bound<'_, PyDict>,
+                config: Option<&Bound<'_, PyDict>>,
                 definitions: &mut DefinitionsBuilder<CombinedValidator>,
             ) -> PyResult<CombinedValidator> {
                 let py = schema.py();
-                let validator = build_validator(schema.get_as_req(intern!(py, "schema"))?, config, definitions)?;
+                let validator = build_validator(&schema.get_as_req(intern!(py, "schema"))?, config, definitions)?;
                 let func_info = destructure_function_schema(schema)?;
                 let name = format!(
                     "{}[{}(), {}]",
                     $name,
-                    function_name(func_info.function.as_ref(py))?,
+                    function_name(func_info.function.bind(py))?,
                     validator.get_name()
                 );
                 Ok(Self {
                     validator: Box::new(validator),
                     func: func_info.function,
                     config: match config {
-                        Some(c) => c.into(),
+                        Some(c) => c.clone().into(),
                         None => py.None(),
                     },
                     name,
@@ -75,46 +75,6 @@ macro_rules! impl_build {
                     info_arg: func_info.info_arg,
                 }
                 .into())
-            }
-        }
-    };
-}
-
-macro_rules! impl_validator {
-    ($name:ident) => {
-        impl_py_gc_traverse!($name {
-            validator,
-            func,
-            config
-        });
-
-        impl Validator for $name {
-            fn validate<'data>(
-                &self,
-                py: Python<'data>,
-                input: &'data impl Input<'data>,
-                state: &mut ValidationState<'_>,
-            ) -> ValResult<PyObject> {
-                let validate = |v, s: &mut ValidationState<'_>| self.validator.validate(py, v, s);
-                self._validate(validate, py, input, state)
-            }
-            fn validate_assignment<'data>(
-                &self,
-                py: Python<'data>,
-                obj: &'data PyAny,
-                field_name: &'data str,
-                field_value: &'data PyAny,
-                state: &mut ValidationState,
-            ) -> ValResult<PyObject> {
-                let validate = move |v, s: &mut ValidationState<'_>| {
-                    self.validator
-                        .validate_assignment(py, v, field_name, field_value, s)
-                };
-                self._validate(validate, py, obj, state)
-            }
-
-            fn get_name(&self) -> &str {
-                &self.name
             }
         }
     };
@@ -135,7 +95,7 @@ impl_build!(FunctionBeforeValidator, "function-before");
 impl FunctionBeforeValidator {
     fn _validate<'s, 'data>(
         &'s self,
-        call: impl FnOnce(&'data PyAny, &mut ValidationState<'_>) -> ValResult<PyObject>,
+        call: impl FnOnce(Bound<'data, PyAny>, &mut ValidationState<'_>) -> ValResult<PyObject>,
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &'s mut ValidationState<'_>,
@@ -147,11 +107,44 @@ impl FunctionBeforeValidator {
             self.func.call1(py, (input.to_object(py),))
         };
         let value = r.map_err(|e| convert_err(py, e, input))?;
-        call(value.into_ref(py), state)
+        call(value.into_bound(py), state)
     }
 }
 
-impl_validator!(FunctionBeforeValidator);
+impl_py_gc_traverse!(FunctionBeforeValidator {
+    validator,
+    func,
+    config
+});
+
+impl Validator for FunctionBeforeValidator {
+    fn validate<'data>(
+        &self,
+        py: Python<'data>,
+        input: &'data impl Input<'data>,
+        state: &mut ValidationState<'_>,
+    ) -> ValResult<PyObject> {
+        let validate = |v, s: &mut ValidationState<'_>| self.validator.validate(py, &v, s);
+        self._validate(validate, py, input, state)
+    }
+    fn validate_assignment<'data>(
+        &self,
+        py: Python<'data>,
+        obj: &Bound<'data, PyAny>,
+        field_name: &str,
+        field_value: &Bound<'data, PyAny>,
+        state: &mut ValidationState,
+    ) -> ValResult<PyObject> {
+        let validate = move |v, s: &mut ValidationState<'_>| {
+            self.validator.validate_assignment(py, &v, field_name, field_value, s)
+        };
+        self._validate(validate, py, obj, state)
+    }
+
+    fn get_name(&self) -> &str {
+        &self.name
+    }
+}
 
 #[derive(Debug)]
 pub struct FunctionAfterValidator {
@@ -184,7 +177,39 @@ impl FunctionAfterValidator {
     }
 }
 
-impl_validator!(FunctionAfterValidator);
+impl_py_gc_traverse!(FunctionAfterValidator {
+    validator,
+    func,
+    config
+});
+
+impl Validator for FunctionAfterValidator {
+    fn validate<'data>(
+        &self,
+        py: Python<'data>,
+        input: &'data impl Input<'data>,
+        state: &mut ValidationState<'_>,
+    ) -> ValResult<PyObject> {
+        let validate = |v, s: &mut ValidationState<'_>| self.validator.validate(py, v, s);
+        self._validate(validate, py, input, state)
+    }
+    fn validate_assignment<'data>(
+        &self,
+        py: Python<'data>,
+        obj: &Bound<'data, PyAny>,
+        field_name: &str,
+        field_value: &Bound<'data, PyAny>,
+        state: &mut ValidationState,
+    ) -> ValResult<PyObject> {
+        let validate =
+            move |v, s: &mut ValidationState<'_>| self.validator.validate_assignment(py, v, field_name, field_value, s);
+        self._validate(validate, py, obj, state)
+    }
+
+    fn get_name(&self) -> &str {
+        &self.name
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct FunctionPlainValidator {
@@ -199,8 +224,8 @@ impl BuildValidator for FunctionPlainValidator {
     const EXPECTED_TYPE: &'static str = "function-plain";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
@@ -208,13 +233,10 @@ impl BuildValidator for FunctionPlainValidator {
         Ok(Self {
             func: function_info.function.clone(),
             config: match config {
-                Some(c) => c.into(),
+                Some(c) => c.clone().into(),
                 None => py.None(),
             },
-            name: format!(
-                "function-plain[{}()]",
-                function_name(function_info.function.as_ref(py))?
-            ),
+            name: format!("function-plain[{}()]", function_name(function_info.function.bind(py))?),
             field_name: function_info.field_name.clone(),
             info_arg: function_info.info_arg,
         }
@@ -261,12 +283,12 @@ impl BuildValidator for FunctionWrapValidator {
     const EXPECTED_TYPE: &'static str = "function-wrap";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
-        let validator = build_validator(schema.get_as_req(intern!(py, "schema"))?, config, definitions)?;
+        let validator = build_validator(&schema.get_as_req(intern!(py, "schema"))?, config, definitions)?;
         let function_info = destructure_function_schema(schema)?;
         let hide_input_in_errors: bool = config.get_as(intern!(py, "hide_input_in_errors"))?.unwrap_or(false);
         let validation_error_cause: bool = config.get_as(intern!(py, "validation_error_cause"))?.unwrap_or(false);
@@ -274,10 +296,10 @@ impl BuildValidator for FunctionWrapValidator {
             validator: Arc::new(validator),
             func: function_info.function.clone(),
             config: match config {
-                Some(c) => c.into(),
+                Some(c) => c.clone().into(),
                 None => py.None(),
             },
-            name: format!("function-wrap[{}()]", function_name(function_info.function.as_ref(py))?),
+            name: format!("function-wrap[{}()]", function_name(function_info.function.bind(py))?),
             field_name: function_info.field_name.clone(),
             info_arg: function_info.info_arg,
             hide_input_in_errors,
@@ -290,7 +312,7 @@ impl BuildValidator for FunctionWrapValidator {
 impl FunctionWrapValidator {
     fn _validate<'s, 'data>(
         &'s self,
-        handler: &'s PyAny,
+        handler: &Bound<'_, PyAny>,
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
@@ -328,8 +350,8 @@ impl Validator for FunctionWrapValidator {
                 self.validation_error_cause,
             ),
         };
-        let handler = Py::new(py, handler)?.into_ref(py);
-        let result = self._validate(handler, py, input.to_object(py).into_ref(py), state);
+        let handler = Bound::new(py, handler)?;
+        let result = self._validate(handler.as_any(), py, input, state);
         state.exactness = handler.borrow_mut().validator.exactness;
         result
     }
@@ -337,9 +359,9 @@ impl Validator for FunctionWrapValidator {
     fn validate_assignment<'data>(
         &self,
         py: Python<'data>,
-        obj: &'data PyAny,
-        field_name: &'data str,
-        field_value: &'data PyAny,
+        obj: &Bound<'data, PyAny>,
+        field_name: &str,
+        field_value: &Bound<'data, PyAny>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         let handler = AssignmentValidatorCallable {
@@ -354,7 +376,7 @@ impl Validator for FunctionWrapValidator {
             updated_field_name: field_name.to_string(),
             updated_field_value: field_value.to_object(py),
         };
-        self._validate(Py::new(py, handler)?.into_ref(py), py, obj, state)
+        self._validate(Bound::new(py, handler)?.as_any(), py, obj, state)
     }
 
     fn get_name(&self) -> &str {
@@ -370,7 +392,12 @@ struct ValidatorCallable {
 
 #[pymethods]
 impl ValidatorCallable {
-    fn __call__(&mut self, py: Python, input_value: &PyAny, outer_location: Option<&PyAny>) -> PyResult<PyObject> {
+    fn __call__(
+        &mut self,
+        py: Python,
+        input_value: &Bound<'_, PyAny>,
+        outer_location: Option<&Bound<'_, PyAny>>,
+    ) -> PyResult<PyObject> {
         let outer_location = outer_location.map(Into::into);
         self.validator.validate(py, input_value, outer_location)
     }
@@ -398,13 +425,18 @@ struct AssignmentValidatorCallable {
 
 #[pymethods]
 impl AssignmentValidatorCallable {
-    fn __call__(&mut self, py: Python, input_value: &PyAny, outer_location: Option<&PyAny>) -> PyResult<PyObject> {
+    fn __call__(
+        &mut self,
+        py: Python,
+        input_value: &Bound<'_, PyAny>,
+        outer_location: Option<&Bound<'_, PyAny>>,
+    ) -> PyResult<PyObject> {
         let outer_location = outer_location.map(Into::into);
         self.validator.validate_assignment(
             py,
             input_value,
             self.updated_field_name.as_str(),
-            self.updated_field_value.as_ref(py),
+            self.updated_field_value.bind(py),
             outer_location,
         )
     }
@@ -440,18 +472,18 @@ macro_rules! py_err_string {
 /// as validation errors, `TypeError` is now considered as a runtime error to catch errors in function signatures
 pub fn convert_err<'a>(py: Python<'a>, err: PyErr, input: &'a impl Input<'a>) -> ValError {
     if err.is_instance_of::<PyValueError>(py) {
-        let error_value = err.value(py);
+        let error_value = err.value_bound(py);
         if let Ok(pydantic_value_error) = error_value.extract::<PydanticCustomError>() {
             pydantic_value_error.into_val_error(input)
         } else if let Ok(pydantic_error_type) = error_value.extract::<PydanticKnownError>() {
             pydantic_error_type.into_val_error(input)
-        } else if let Ok(validation_error) = err.value(py).extract::<ValidationError>() {
+        } else if let Ok(validation_error) = err.value_bound(py).extract::<ValidationError>() {
             validation_error.into_val_error()
         } else {
             py_err_string!(py, err, error_value, ValueError, input)
         }
     } else if err.is_instance_of::<PyAssertionError>(py) {
-        py_err_string!(py, err, err.value(py), AssertionError, input)
+        py_err_string!(py, err, err.value_bound(py), AssertionError, input)
     } else if err.is_instance_of::<PydanticOmit>(py) {
         ValError::Omit
     } else if err.is_instance_of::<PydanticUseDefault>(py) {
@@ -474,9 +506,9 @@ impl ValidationInfo {
     fn new(py: Python, extra: &Extra, config: &PyObject, field_name: Option<Py<PyString>>) -> Self {
         Self {
             config: config.clone_ref(py),
-            context: extra.context.map(Into::into),
+            context: extra.context.map(|ctx| ctx.clone().into()),
             field_name,
-            data: extra.data.map(Into::into),
+            data: extra.data.as_ref().map(|data| data.clone().into()),
             mode: extra.input_type,
         }
     }
@@ -498,16 +530,16 @@ impl ValidationInfo {
 impl ValidationInfo {
     fn __repr__(&self, py: Python) -> PyResult<String> {
         let context = match self.context {
-            Some(ref context) => safe_repr(context.as_ref(py)),
+            Some(ref context) => safe_repr(context.bind(py)).to_string(),
             None => "None".into(),
         };
-        let config = self.config.as_ref(py).repr()?;
+        let config = self.config.bind(py).repr()?;
         let data = match self.data {
-            Some(ref data) => safe_repr(data.as_ref(py)),
+            Some(ref data) => safe_repr(data.bind(py)).to_string(),
             None => "None".into(),
         };
         let field_name = match self.field_name {
-            Some(ref field_name) => safe_repr(field_name.as_ref(py)),
+            Some(ref field_name) => safe_repr(field_name.bind(py)).to_string(),
             None => "None".into(),
         };
         Ok(format!(

@@ -12,19 +12,19 @@ use super::{
     SerMode, TypeSerializer,
 };
 
-pub(crate) fn datetime_to_string(py_dt: &PyDateTime) -> PyResult<String> {
+pub(crate) fn datetime_to_string(py_dt: &Bound<'_, PyDateTime>) -> PyResult<String> {
     pydatetime_as_datetime(py_dt).map(|dt| dt.to_string())
 }
 
-pub(crate) fn date_to_string(py_date: &PyDate) -> PyResult<String> {
+pub(crate) fn date_to_string(py_date: &Bound<'_, PyDate>) -> PyResult<String> {
     pydate_as_date(py_date).map(|dt| dt.to_string())
 }
 
-pub(crate) fn time_to_string(py_time: &PyTime) -> PyResult<String> {
+pub(crate) fn time_to_string(py_time: &Bound<'_, PyTime>) -> PyResult<String> {
     pytime_as_time(py_time, None).map(|dt| dt.to_string())
 }
 
-fn downcast_date_reject_datetime(py_date: &PyAny) -> PyResult<&PyDate> {
+fn downcast_date_reject_datetime<'a, 'py>(py_date: &'a Bound<'py, PyAny>) -> PyResult<&'a Bound<'py, PyDate>> {
     if let Ok(py_date) = py_date.downcast::<PyDate>() {
         // because `datetime` is a subclass of `date` we have to check that the value is not a
         // `datetime` to avoid lossy serialization
@@ -45,8 +45,8 @@ macro_rules! build_serializer {
             const EXPECTED_TYPE: &'static str = $expected_type;
 
             fn build(
-                _schema: &PyDict,
-                _config: Option<&PyDict>,
+                _schema: &Bound<'_, PyDict>,
+                _config: Option<&Bound<'_, PyDict>>,
                 _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
             ) -> PyResult<CombinedSerializer> {
                 Ok(Self {}.into())
@@ -58,9 +58,9 @@ macro_rules! build_serializer {
         impl TypeSerializer for $struct_name {
             fn to_python(
                 &self,
-                value: &PyAny,
-                include: Option<&PyAny>,
-                exclude: Option<&PyAny>,
+                value: &Bound<'_, PyAny>,
+                include: Option<&Bound<'_, PyAny>>,
+                exclude: Option<&Bound<'_, PyAny>>,
                 extra: &Extra,
             ) -> PyResult<PyObject> {
                 let py = value.py();
@@ -79,7 +79,7 @@ macro_rules! build_serializer {
                 }
             }
 
-            fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+            fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
                 match $downcast(key) {
                     Ok(py_value) => Ok(Cow::Owned($convert_func(py_value)?)),
                     Err(_) => {
@@ -91,10 +91,10 @@ macro_rules! build_serializer {
 
             fn serde_serialize<S: serde::ser::Serializer>(
                 &self,
-                value: &PyAny,
+                value: &Bound<'_, PyAny>,
                 serializer: S,
-                include: Option<&PyAny>,
-                exclude: Option<&PyAny>,
+                include: Option<&Bound<'_, PyAny>>,
+                exclude: Option<&Bound<'_, PyAny>>,
                 extra: &Extra,
             ) -> Result<S::Ok, S::Error> {
                 match $downcast(value) {
@@ -121,8 +121,8 @@ macro_rules! build_serializer {
 build_serializer!(
     DatetimeSerializer,
     "datetime",
-    PyAny::downcast::<PyDateTime>,
+    PyAnyMethods::downcast::<PyDateTime>,
     datetime_to_string
 );
 build_serializer!(DateSerializer, "date", downcast_date_reject_datetime, date_to_string);
-build_serializer!(TimeSerializer, "time", PyAny::downcast::<PyTime>, time_to_string);
+build_serializer!(TimeSerializer, "time", PyAnyMethods::downcast::<PyTime>, time_to_string);

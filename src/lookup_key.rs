@@ -52,22 +52,23 @@ impl fmt::Display for LookupKey {
 }
 
 impl LookupKey {
-    pub fn from_py(py: Python, value: &PyAny, alt_alias: Option<&str>) -> PyResult<Self> {
+    pub fn from_py(py: Python, value: &Bound<'_, PyAny>, alt_alias: Option<&str>) -> PyResult<Self> {
         if let Ok(alias_py) = value.downcast::<PyString>() {
-            let alias: &str = alias_py.extract()?;
+            let alias: String = alias_py.extract()?;
+            let path1 = LookupPath::from_str(py, &alias, Some(alias_py.clone()));
             match alt_alias {
                 Some(alt_alias) => Ok(Self::Choice {
                     key1: alias.to_string(),
-                    py_key1: alias_py.into_py(py),
-                    path1: LookupPath::from_str(py, alias, Some(alias_py)),
+                    py_key1: alias_py.clone().into(),
+                    path1,
                     key2: alt_alias.to_string(),
-                    py_key2: PyString::new(py, alt_alias).into(),
+                    py_key2: PyString::new_bound(py, alt_alias).into(),
                     path2: LookupPath::from_str(py, alt_alias, None),
                 }),
-                None => Ok(Self::simple(py, alias, Some(alias_py))),
+                None => Ok(Self::simple(py, &alias, Some(alias_py.clone()))),
             }
         } else {
-            let list: &PyList = value.downcast()?;
+            let list = value.downcast::<PyList>()?;
             let first = match list.get_item(0) {
                 Ok(v) => v,
                 Err(_) => return py_schema_err!("Lookup paths should have at least one element"),
@@ -76,7 +77,9 @@ impl LookupKey {
                 // list of strings rather than list of lists
                 vec![LookupPath::from_list(list)?]
             } else {
-                list.iter().map(LookupPath::from_list).collect::<PyResult<_>>()?
+                list.iter()
+                    .map(|elem| LookupPath::from_list(&elem))
+                    .collect::<PyResult<_>>()?
             };
 
             if let Some(alt_alias) = alt_alias {
@@ -90,10 +93,10 @@ impl LookupKey {
         Self::simple(py, key, None)
     }
 
-    fn simple(py: Python, key: &str, opt_py_key: Option<&PyString>) -> Self {
-        let py_key = match opt_py_key {
-            Some(py_key) => py_key,
-            None => PyString::new(py, key),
+    fn simple(py: Python, key: &str, opt_py_key: Option<Bound<'_, PyString>>) -> Self {
+        let py_key = match &opt_py_key {
+            Some(py_key) => py_key.clone(),
+            None => PyString::new_bound(py, key),
         };
         Self::Simple {
             key: key.to_string(),
@@ -102,10 +105,10 @@ impl LookupKey {
         }
     }
 
-    pub fn py_get_dict_item<'data, 's>(
+    pub fn py_get_dict_item<'py, 's>(
         &'s self,
-        dict: &'data PyDict,
-    ) -> ValResult<Option<(&'s LookupPath, &'data PyAny)>> {
+        dict: &Bound<'py, PyDict>,
+    ) -> ValResult<Option<(&'s LookupPath, Bound<'py, PyAny>)>> {
         match self {
             Self::Simple { py_key, path, .. } => match dict.get_item(py_key)? {
                 Some(value) => Ok(Some((path, value))),
@@ -128,7 +131,7 @@ impl LookupKey {
                 for path in path_choices {
                     // iterate over the path and plug each value into the py_any from the last step, starting with dict
                     // this could just be a loop but should be somewhat faster with a functional design
-                    if let Some(v) = path.iter().try_fold(dict as &PyAny, |d, loc| loc.py_get_item(d)) {
+                    if let Some(v) = path.iter().try_fold((**dict).clone(), |d, loc| loc.py_get_item(&d)) {
                         // Successfully found an item, return it
                         return Ok(Some((path, v)));
                     }
@@ -139,22 +142,22 @@ impl LookupKey {
         }
     }
 
-    pub fn py_get_string_mapping_item<'data, 's>(
+    pub fn py_get_string_mapping_item<'py, 's>(
         &'s self,
-        dict: &'data PyDict,
-    ) -> ValResult<Option<(&'s LookupPath, StringMapping<'data>)>> {
+        dict: &Bound<'py, PyDict>,
+    ) -> ValResult<Option<(&'s LookupPath, StringMapping<'py>)>> {
         if let Some((path, py_any)) = self.py_get_dict_item(dict)? {
-            let value = StringMapping::new_value(py_any)?;
+            let value = StringMapping::new_value(&py_any)?;
             Ok(Some((path, value)))
         } else {
             Ok(None)
         }
     }
 
-    pub fn py_get_mapping_item<'data, 's>(
+    pub fn py_get_mapping_item<'py, 's>(
         &'s self,
-        dict: &'data PyMapping,
-    ) -> ValResult<Option<(&'s LookupPath, &'data PyAny)>> {
+        dict: &Bound<'py, PyMapping>,
+    ) -> ValResult<Option<(&'s LookupPath, Bound<'py, PyAny>)>> {
         match self {
             Self::Simple { py_key, path, .. } => match dict.get_item(py_key) {
                 Ok(value) => Ok(Some((path, value))),
@@ -177,7 +180,7 @@ impl LookupKey {
                 for path in path_choices {
                     // iterate over the path and plug each value into the py_any from the last step, starting with dict
                     // this could just be a loop but should be somewhat faster with a functional design
-                    if let Some(v) = path.iter().try_fold(dict as &PyAny, |d, loc| loc.py_get_item(d)) {
+                    if let Some(v) = path.iter().try_fold((**dict).clone(), |d, loc| loc.py_get_item(&d)) {
                         // Successfully found an item, return it
                         return Ok(Some((path, v)));
                     }
@@ -188,11 +191,11 @@ impl LookupKey {
         }
     }
 
-    pub fn py_get_attr<'data, 's>(
+    pub fn py_get_attr<'py, 's>(
         &'s self,
-        obj: &'data PyAny,
-        kwargs: Option<&'data PyDict>,
-    ) -> ValResult<Option<(&'s LookupPath, &'data PyAny)>> {
+        obj: &Bound<'py, PyAny>,
+        kwargs: Option<&Bound<'py, PyDict>>,
+    ) -> ValResult<Option<(&'s LookupPath, Bound<'py, PyAny>)>> {
         match self._py_get_attr(obj, kwargs) {
             Ok(v) => Ok(v),
             Err(err) => {
@@ -205,11 +208,11 @@ impl LookupKey {
         }
     }
 
-    pub fn _py_get_attr<'data, 's>(
+    pub fn _py_get_attr<'py, 's>(
         &'s self,
-        obj: &'data PyAny,
-        kwargs: Option<&'data PyDict>,
-    ) -> PyResult<Option<(&'s LookupPath, &'data PyAny)>> {
+        obj: &Bound<'py, PyAny>,
+        kwargs: Option<&Bound<'py, PyDict>>,
+    ) -> PyResult<Option<(&'s LookupPath, Bound<'py, PyAny>)>> {
         if let Some(dict) = kwargs {
             if let Ok(Some(item)) = self.py_get_dict_item(dict) {
                 return Ok(Some(item));
@@ -238,9 +241,9 @@ impl LookupKey {
                 'outer: for path in path_choices {
                     // similar to above, but using `py_get_attrs`, we can't use try_fold because of the extra Err
                     // so we have to loop manually
-                    let mut v = obj;
+                    let mut v = obj.clone();
                     for loc in path.iter() {
-                        v = match loc.py_get_attrs(v) {
+                        v = match loc.py_get_attrs(&v) {
                             Ok(Some(v)) => v,
                             Ok(None) => {
                                 continue 'outer;
@@ -340,20 +343,20 @@ impl fmt::Display for LookupPath {
 }
 
 impl LookupPath {
-    fn from_str(py: Python, key: &str, py_key: Option<&PyString>) -> Self {
+    fn from_str(py: Python, key: &str, py_key: Option<Bound<'_, PyString>>) -> Self {
         let py_key = match py_key {
             Some(py_key) => py_key,
-            None => PyString::new(py, key),
+            None => PyString::new_bound(py, key),
         };
         Self(vec![PathItem::S(key.to_string(), py_key.into())])
     }
 
-    fn from_list(obj: &PyAny) -> PyResult<LookupPath> {
+    fn from_list(obj: &Bound<'_, PyAny>) -> PyResult<LookupPath> {
         let v = obj
-            .extract::<&PyList>()?
+            .downcast::<PyList>()?
             .iter()
             .enumerate()
-            .map(|(index, obj)| PathItem::from_py(index, obj))
+            .map(|(index, obj)| PathItem::from_py(index, &obj))
             .collect::<PyResult<Vec<PathItem>>>()?;
 
         if v.is_empty() {
@@ -419,10 +422,10 @@ impl ToPyObject for PathItem {
 }
 
 impl PathItem {
-    pub fn from_py(index: usize, obj: &PyAny) -> PyResult<Self> {
+    pub fn from_py(index: usize, obj: &Bound<'_, PyAny>) -> PyResult<Self> {
         if let Ok(py_str_key) = obj.downcast::<PyString>() {
             let str_key = py_str_key.to_str()?.to_string();
-            Ok(Self::S(str_key, py_str_key.into()))
+            Ok(Self::S(str_key, py_str_key.clone().into()))
         } else if let Ok(usize_key) = obj.extract::<usize>() {
             if index == 0 {
                 py_err!(PyTypeError; "The first item in an alias path should be a string")
@@ -440,7 +443,7 @@ impl PathItem {
         }
     }
 
-    pub fn py_get_item<'a>(&self, py_any: &'a PyAny) -> Option<&'a PyAny> {
+    pub fn py_get_item<'py>(&self, py_any: &Bound<'py, PyAny>) -> Option<Bound<'py, PyAny>> {
         // we definitely don't want to index strings, so explicitly omit this case
         if py_any.downcast::<PyString>().is_ok() {
             None
@@ -457,7 +460,7 @@ impl PathItem {
         }
     }
 
-    pub fn py_get_attrs<'a>(&self, obj: &'a PyAny) -> PyResult<Option<&'a PyAny>> {
+    pub fn py_get_attrs<'py>(&self, obj: &Bound<'py, PyAny>) -> PyResult<Option<Bound<'py, PyAny>>> {
         match self {
             Self::S(_, py_key) => {
                 // if obj is a dict, we want to use get_item, not getattr
@@ -500,11 +503,11 @@ impl PathItem {
 
 /// wrapper around `getattr` that returns `Ok(None)` for attribute errors, but returns other errors
 /// We don't check `try_from_attributes` because that check was performed on the top level object before we got here
-fn py_get_attrs<'a>(obj: &'a PyAny, attr_name: &Py<PyString>) -> PyResult<Option<&'a PyAny>> {
+fn py_get_attrs<'py>(obj: &Bound<'py, PyAny>, attr_name: &Py<PyString>) -> PyResult<Option<Bound<'py, PyAny>>> {
     match obj.getattr(attr_name.extract::<&PyString>(obj.py())?) {
         Ok(attr) => Ok(Some(attr)),
         Err(err) => {
-            if err.get_type(obj.py()).is_subclass_of::<PyAttributeError>()? {
+            if err.get_type_bound(obj.py()).is_subclass_of::<PyAttributeError>()? {
                 Ok(None)
             } else {
                 Err(err)

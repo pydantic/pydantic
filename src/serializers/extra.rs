@@ -44,8 +44,8 @@ impl SerializationState {
         exclude_none: bool,
         round_trip: bool,
         serialize_unknown: bool,
-        fallback: Option<&'py PyAny>,
-        context: Option<&'py PyAny>,
+        fallback: Option<&'py Bound<'py, PyAny>>,
+        context: Option<&'py Bound<'py, PyAny>>,
     ) -> Extra<'py> {
         Extra::new(
             py,
@@ -88,11 +88,11 @@ pub(crate) struct Extra<'a> {
     // data representing the current model field
     // that is being serialized, if this is a model serializer
     // it will be None otherwise
-    pub model: Option<&'a PyAny>,
+    pub model: Option<&'a Bound<'a, PyAny>>,
     pub field_name: Option<&'a str>,
     pub serialize_unknown: bool,
-    pub fallback: Option<&'a PyAny>,
-    pub context: Option<&'a PyAny>,
+    pub fallback: Option<&'a Bound<'a, PyAny>>,
+    pub context: Option<&'a Bound<'a, PyAny>>,
 }
 
 impl<'a> Extra<'a> {
@@ -109,8 +109,8 @@ impl<'a> Extra<'a> {
         config: &'a SerializationConfig,
         rec_guard: &'a SerRecursionState,
         serialize_unknown: bool,
-        fallback: Option<&'a PyAny>,
-        context: Option<&'a PyAny>,
+        fallback: Option<&'a Bound<'a, PyAny>>,
+        context: Option<&'a Bound<'a, PyAny>>,
     ) -> Self {
         Self {
             mode,
@@ -139,7 +139,7 @@ impl<'a> Extra<'a> {
         // See how validation has &mut ValidationState passed around; we should aim to refactor
         // to match that.
         self: &'x mut &'y Self,
-        value: &PyAny,
+        value: &Bound<'_, PyAny>,
         def_ref_id: usize,
     ) -> PyResult<RecursionGuard<'x, &'y Self>> {
         RecursionGuard::new(self, value.as_ptr() as usize, def_ref_id).map_err(|e| match e {
@@ -148,7 +148,7 @@ impl<'a> Extra<'a> {
         })
     }
 
-    pub fn serialize_infer<'py>(&'py self, value: &'py PyAny) -> super::infer::SerializeInfer<'py> {
+    pub fn serialize_infer<'py>(&'py self, value: &'py Bound<'py, PyAny>) -> super::infer::SerializeInfer<'py> {
         super::infer::SerializeInfer::new(value, None, None, self)
     }
 }
@@ -203,11 +203,11 @@ impl ExtraOwned {
             config: extra.config.clone(),
             rec_guard: extra.rec_guard.clone(),
             check: extra.check,
-            model: extra.model.map(Into::into),
+            model: extra.model.map(|model| model.clone().into()),
             field_name: extra.field_name.map(ToString::to_string),
             serialize_unknown: extra.serialize_unknown,
-            fallback: extra.fallback.map(Into::into),
-            context: extra.context.map(Into::into),
+            fallback: extra.fallback.map(|fallback| fallback.clone().into()),
+            context: extra.context.map(|context| context.clone().into()),
         }
     }
 
@@ -224,11 +224,11 @@ impl ExtraOwned {
             config: &self.config,
             rec_guard: &self.rec_guard,
             check: self.check,
-            model: self.model.as_ref().map(|m| m.as_ref(py)),
+            model: self.model.as_ref().map(|m| m.bind(py)),
             field_name: self.field_name.as_deref(),
             serialize_unknown: self.serialize_unknown,
-            fallback: self.fallback.as_ref().map(|m| m.as_ref(py)),
-            context: self.context.as_ref().map(|m| m.as_ref(py)),
+            fallback: self.fallback.as_ref().map(|m| m.bind(py)),
+            context: self.context.as_ref().map(|m| m.bind(py)),
         }
     }
 }
@@ -299,7 +299,7 @@ impl CollectWarnings {
         }
     }
 
-    pub fn on_fallback_py(&self, field_type: &str, value: &PyAny, extra: &Extra) -> PyResult<()> {
+    pub fn on_fallback_py(&self, field_type: &str, value: &Bound<'_, PyAny>, extra: &Extra) -> PyResult<()> {
         // special case for None as it's very common e.g. as a default value
         if value.is_none() {
             Ok(())
@@ -314,7 +314,7 @@ impl CollectWarnings {
     pub fn on_fallback_ser<S: serde::ser::Serializer>(
         &self,
         field_type: &str,
-        value: &PyAny,
+        value: &Bound<'_, PyAny>,
         extra: &Extra,
     ) -> Result<(), S::Error> {
         // special case for None as it's very common e.g. as a default value
@@ -331,9 +331,12 @@ impl CollectWarnings {
         }
     }
 
-    fn fallback_warning(&self, field_type: &str, value: &PyAny) {
+    fn fallback_warning(&self, field_type: &str, value: &Bound<'_, PyAny>) {
         if self.active {
-            let type_name = value.get_type().name().unwrap_or("<unknown python object>");
+            let type_name = value
+                .get_type()
+                .qualname()
+                .unwrap_or_else(|_| "<unknown python object>".to_owned());
             self.add_warning(format!(
                 "Expected `{field_type}` but got `{type_name}` - serialized value may not be as expected"
             ));
@@ -354,8 +357,8 @@ impl CollectWarnings {
             match *self.warnings.borrow() {
                 Some(ref warnings) => {
                     let message = format!("Pydantic serializer warnings:\n  {}", warnings.join("\n  "));
-                    let user_warning_type = py.import("builtins")?.getattr("UserWarning")?;
-                    PyErr::warn(py, user_warning_type, &message, 0)
+                    let user_warning_type = py.import_bound("builtins")?.getattr("UserWarning")?;
+                    PyErr::warn_bound(py, &user_warning_type, &message, 0)
                 }
                 _ => Ok(()),
             }

@@ -23,13 +23,13 @@ const UUID_IS_SAFE: &str = "is_safe";
 static UUID_TYPE: GILOnceCell<Py<PyType>> = GILOnceCell::new();
 
 fn import_type(py: Python, module: &str, attr: &str) -> PyResult<Py<PyType>> {
-    py.import(module)?.getattr(attr)?.extract()
+    py.import_bound(module)?.getattr(attr)?.extract()
 }
 
-fn get_uuid_type(py: Python) -> PyResult<&PyType> {
+fn get_uuid_type(py: Python) -> PyResult<&Bound<'_, PyType>> {
     Ok(UUID_TYPE
         .get_or_init(py, || import_type(py, "uuid", "UUID").unwrap())
-        .as_ref(py))
+        .bind(py))
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -68,8 +68,8 @@ impl BuildValidator for UuidValidator {
     const EXPECTED_TYPE: &'static str = "uuid";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
@@ -113,7 +113,7 @@ impl Validator for UuidValidator {
         } else if state.strict_or(self.strict) && state.extra().input_type == InputType::Python {
             Err(ValError::new(
                 ErrorType::IsInstanceOf {
-                    class: class.name().unwrap_or("UUID").to_string(),
+                    class: class.qualname().unwrap_or_else(|_| "UUID".to_owned()),
                     context: None,
                 },
                 input,
@@ -140,7 +140,7 @@ impl Validator for UuidValidator {
                     ));
                 }
             }
-            self.create_py_uuid(py, class, &uuid)
+            self.create_py_uuid(class, &uuid)
         }
     }
 
@@ -213,16 +213,16 @@ impl UuidValidator {
     ///
     /// This implementation does not use the Python `__init__` function to speed up the process,
     /// as the `__init__` function in the Python `uuid` module performs extensive checks.
-    fn create_py_uuid(&self, py: Python<'_>, py_type: &PyType, uuid: &Uuid) -> ValResult<Py<PyAny>> {
-        let class = create_class(py_type)?;
-        let dc = class.as_ref(py);
+    fn create_py_uuid(&self, py_type: &Bound<'_, PyType>, uuid: &Uuid) -> ValResult<PyObject> {
+        let py = py_type.py();
+        let dc = create_class(py_type)?;
         let int = uuid.as_u128();
         let safe = py
-            .import(intern!(py, "uuid"))?
+            .import_bound(intern!(py, "uuid"))?
             .getattr(intern!(py, "SafeUUID"))?
             .get_item("safe")?;
-        force_setattr(py, dc, intern!(py, UUID_INT), int)?;
-        force_setattr(py, dc, intern!(py, UUID_IS_SAFE), safe)?;
-        Ok(dc.to_object(py))
+        force_setattr(py, &dc, intern!(py, UUID_INT), int)?;
+        force_setattr(py, &dc, intern!(py, UUID_IS_SAFE), safe)?;
+        Ok(dc.into())
     }
 }

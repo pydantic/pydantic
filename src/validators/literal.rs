@@ -36,14 +36,14 @@ pub struct LiteralLookup<T: Debug> {
 }
 
 impl<T: Debug> LiteralLookup<T> {
-    pub fn new<'py>(py: Python<'py>, expected: impl Iterator<Item = (&'py PyAny, T)>) -> PyResult<Self> {
+    pub fn new<'py>(py: Python<'py>, expected: impl Iterator<Item = (Bound<'py, PyAny>, T)>) -> PyResult<Self> {
         let mut expected_int = AHashMap::new();
         let mut expected_str: AHashMap<String, usize> = AHashMap::new();
         let mut expected_bool = BoolLiteral {
             true_id: None,
             false_id: None,
         };
-        let expected_py = PyDict::new(py);
+        let expected_py = PyDict::new_bound(py);
         let mut values = Vec::new();
         for (k, v) in expected {
             let id = values.len();
@@ -66,7 +66,7 @@ impl<T: Debug> LiteralLookup<T> {
                     .map_err(|_| py_schema_error_type!("error extracting str {:?}", k))?;
                 expected_str.insert(str.to_string(), id);
             } else {
-                expected_py.set_item(k, id)?;
+                expected_py.set_item(&k, id)?;
             }
         }
 
@@ -139,7 +139,7 @@ impl<T: Debug> LiteralLookup<T> {
             // We don't use ? to unpack the result of `get_item` in the next line because unhashable
             // inputs will produce a TypeError, which in this case we just want to treat equivalently
             // to a failed lookup
-            if let Ok(Some(v)) = expected_py.as_ref(py).get_item(input) {
+            if let Ok(Some(v)) = expected_py.bind(py).get_item(input) {
                 let id: usize = v.extract().unwrap();
                 return Ok(Some((input, &self.values[id])));
             }
@@ -167,21 +167,21 @@ impl BuildValidator for LiteralValidator {
     const EXPECTED_TYPE: &'static str = "literal";
 
     fn build(
-        schema: &PyDict,
-        _config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        _config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
-        let expected: &PyList = schema.get_as_req(intern!(schema.py(), "expected"))?;
+        let expected: Bound<PyList> = schema.get_as_req(intern!(schema.py(), "expected"))?;
         if expected.is_empty() {
             return py_schema_err!("`expected` should have length > 0");
         }
         let py = expected.py();
         let mut repr_args: Vec<String> = Vec::new();
-        for item in expected {
+        for item in expected.iter() {
             repr_args.push(item.repr()?.extract()?);
         }
         let (expected_repr, name) = expected_repr_name(repr_args, "literal");
-        let lookup = LiteralLookup::new(py, expected.iter().map(|v| (v, v.to_object(py))))?;
+        let lookup = LiteralLookup::new(py, expected.into_iter().map(|v| (v.clone(), v.into())))?;
         Ok(CombinedValidator::Literal(Self {
             lookup,
             expected_repr,

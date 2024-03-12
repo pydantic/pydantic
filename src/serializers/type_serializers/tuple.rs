@@ -29,12 +29,12 @@ impl BuildSerializer for TupleSerializer {
     const EXPECTED_TYPE: &'static str = "tuple";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
-        let items: &PyList = schema.get_as_req(intern!(py, "items_schema"))?;
+        let items: Bound<'_, PyList> = schema.get_as_req(intern!(py, "items_schema"))?;
         let serializers: Vec<CombinedSerializer> = items
             .iter()
             .map(|item| CombinedSerializer::build(item.downcast()?, config, definitions))
@@ -62,9 +62,9 @@ impl_py_gc_traverse!(TupleSerializer { serializers });
 impl TypeSerializer for TupleSerializer {
     fn to_python(
         &self,
-        value: &PyAny,
-        include: Option<&PyAny>,
-        exclude: Option<&PyAny>,
+        value: &Bound<'_, PyAny>,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> PyResult<PyObject> {
         match value.downcast::<PyTuple>() {
@@ -77,13 +77,13 @@ impl TypeSerializer for TupleSerializer {
                 self.for_each_tuple_item_and_serializer(py_tuple, include, exclude, extra, |entry| {
                     entry
                         .serializer
-                        .to_python(entry.item, entry.include, entry.exclude, extra)
+                        .to_python(&entry.item, entry.include.as_ref(), entry.exclude.as_ref(), extra)
                         .map(|item| items.push(item))
                 })??;
 
                 match extra.mode {
-                    SerMode::Json => Ok(PyList::new(py, items).into_py(py)),
-                    _ => Ok(PyTuple::new(py, items).into_py(py)),
+                    SerMode::Json => Ok(PyList::new_bound(py, items).into_py(py)),
+                    _ => Ok(PyTuple::new_bound(py, items).into_py(py)),
                 }
             }
             Err(_) => {
@@ -93,7 +93,7 @@ impl TypeSerializer for TupleSerializer {
         }
     }
 
-    fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
         match key.downcast::<PyTuple>() {
             Ok(py_tuple) => {
                 let mut key_builder = KeyBuilder::new();
@@ -101,7 +101,7 @@ impl TypeSerializer for TupleSerializer {
                 self.for_each_tuple_item_and_serializer(py_tuple, None, None, extra, |entry| {
                     entry
                         .serializer
-                        .json_key(entry.item, extra)
+                        .json_key(&entry.item, extra)
                         .map(|key| key_builder.push(&key))
                 })??;
 
@@ -116,25 +116,25 @@ impl TypeSerializer for TupleSerializer {
 
     fn serde_serialize<S: serde::ser::Serializer>(
         &self,
-        value: &PyAny,
+        value: &Bound<'_, PyAny>,
         serializer: S,
-        include: Option<&PyAny>,
-        exclude: Option<&PyAny>,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         match value.downcast::<PyTuple>() {
             Ok(py_tuple) => {
-                let py_tuple: &PyTuple = py_tuple.downcast().map_err(py_err_se_err)?;
+                let py_tuple = py_tuple.downcast::<PyTuple>().map_err(py_err_se_err)?;
 
                 let n_items = py_tuple.len();
                 let mut seq = serializer.serialize_seq(Some(n_items))?;
 
                 self.for_each_tuple_item_and_serializer(py_tuple, include, exclude, extra, |entry| {
                     seq.serialize_element(&PydanticSerializer::new(
-                        entry.item,
+                        &entry.item,
                         entry.serializer,
-                        entry.include,
-                        entry.exclude,
+                        entry.include.as_ref(),
+                        entry.exclude.as_ref(),
                         extra,
                     ))
                 })
@@ -159,9 +159,9 @@ impl TypeSerializer for TupleSerializer {
 }
 
 struct TupleSerializerEntry<'a, 'py> {
-    item: &'py PyAny,
-    include: Option<&'py PyAny>,
-    exclude: Option<&'py PyAny>,
+    item: Bound<'py, PyAny>,
+    include: Option<Bound<'py, PyAny>>,
+    exclude: Option<Bound<'py, PyAny>>,
     serializer: &'a CombinedSerializer,
 }
 
@@ -174,9 +174,9 @@ impl TupleSerializer {
     /// levels of `Result`.
     fn for_each_tuple_item_and_serializer<E>(
         &self,
-        tuple: &PyTuple,
-        include: Option<&PyAny>,
-        exclude: Option<&PyAny>,
+        tuple: &Bound<'_, PyTuple>,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
         mut f: impl for<'a, 'py> FnMut(TupleSerializerEntry<'a, 'py>) -> Result<(), E>,
     ) -> PyResult<Result<(), E>> {

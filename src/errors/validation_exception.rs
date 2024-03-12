@@ -5,8 +5,8 @@ use std::str::from_utf8;
 use pyo3::exceptions::{PyKeyError, PyTypeError, PyValueError};
 use pyo3::ffi;
 use pyo3::intern;
-use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
+use pyo3::sync::GILOnceCell;
 use pyo3::types::{PyDict, PyList, PyString};
 use serde::ser::{Error, SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer};
@@ -73,7 +73,7 @@ impl ValidationError {
                                 return cause_problem;
                             }
                         }
-                        PyErr::from_value(err.as_ref(py))
+                        PyErr::from_value_bound(err.into_bound(py).into_any())
                     }
                     Err(err) => err,
                 }
@@ -202,9 +202,9 @@ fn include_url_env(py: Python) -> bool {
         match std::env::var_os("PYDANTIC_ERRORS_OMIT_URL") {
             Some(val) => {
                 // We don't care whether warning succeeded or not, hence the assignment
-                let _ = PyErr::warn(
+                let _ = PyErr::warn_bound(
                     py,
-                    py.get_type::<pyo3::exceptions::PyDeprecationWarning>(),
+                    &py.get_type_bound::<pyo3::exceptions::PyDeprecationWarning>(),
                     "PYDANTIC_ERRORS_OMIT_URL is deprecated, use PYDANTIC_ERRORS_INCLUDE_URL instead",
                     1,
                 );
@@ -253,14 +253,17 @@ impl ValidationError {
     fn from_exception_data(
         py: Python,
         title: PyObject,
-        line_errors: &PyList,
+        line_errors: Bound<'_, PyList>,
         input_type: &str,
         hide_input: bool,
     ) -> PyResult<Py<Self>> {
         Py::new(
             py,
             Self {
-                line_errors: line_errors.iter().map(PyLineError::try_from).collect::<PyResult<_>>()?,
+                line_errors: line_errors
+                    .iter()
+                    .map(|error| PyLineError::try_from(&error))
+                    .collect::<PyResult<_>>()?,
                 title,
                 input_type: InputType::try_from(input_type)?,
                 hide_input,
@@ -287,7 +290,7 @@ impl ValidationError {
     ) -> PyResult<Py<PyList>> {
         let url_prefix = get_url_prefix(py, include_url);
         let mut iteration_error = None;
-        let list = PyList::new(
+        let list = PyList::new_bound(
             py,
             // PyList::new takes ExactSizeIterator, so if an error occurs during iteration we
             // fill the list with None before returning the error; the list will then be thrown
@@ -318,7 +321,7 @@ impl ValidationError {
         include_url: bool,
         include_context: bool,
         include_input: bool,
-    ) -> PyResult<&'py PyString> {
+    ) -> PyResult<Bound<'py, PyString>> {
         let state = SerializationState::new("iso8601", "utf8", "constants")?;
         let extra = state.extra(py, &SerMode::Json, true, false, false, true, None, None);
         let serializer = ValidationErrorSerializer {
@@ -347,7 +350,7 @@ impl ValidationError {
             }
         };
         let s = from_utf8(&bytes).map_err(json_py_err)?;
-        Ok(PyString::new(py, s))
+        Ok(PyString::new_bound(py, s))
     }
 
     fn __repr__(&self, py: Python) -> String {
@@ -358,12 +361,12 @@ impl ValidationError {
         self.__repr__(py)
     }
 
-    fn __reduce__(slf: &PyCell<Self>) -> PyResult<(&PyAny, PyObject)> {
+    fn __reduce__<'py>(slf: &Bound<'py, Self>) -> PyResult<(Bound<'py, PyAny>, PyObject)> {
         let py = slf.py();
         let callable = slf.getattr("from_exception_data")?;
         let borrow = slf.try_borrow()?;
         let args = (
-            borrow.title.as_ref(py),
+            borrow.title.bind(py),
             borrow.errors(py, include_url_env(py), true, true)?,
             borrow.input_type.into_py(py),
             borrow.hide_input,
@@ -463,11 +466,11 @@ impl From<PyLineError> for ValLineError {
     }
 }
 
-impl TryFrom<&PyAny> for PyLineError {
+impl TryFrom<&Bound<'_, PyAny>> for PyLineError {
     type Error = PyErr;
 
-    fn try_from(value: &PyAny) -> PyResult<Self> {
-        let dict: &PyDict = value.downcast()?;
+    fn try_from(value: &Bound<'_, PyAny>) -> PyResult<Self> {
+        let dict = value.downcast::<PyDict>()?;
         let py = value.py();
 
         let type_raw = dict
@@ -485,7 +488,7 @@ impl TryFrom<&PyAny> for PyLineError {
             ));
         };
 
-        let location = Location::try_from(dict.get_item("loc")?)?;
+        let location = Location::try_from(dict.get_item("loc")?.as_ref())?;
 
         let input_value = match dict.get_item("input")? {
             Some(i) => i.into_py(py),
@@ -513,7 +516,7 @@ impl PyLineError {
         input_type: InputType,
         include_input: bool,
     ) -> PyResult<PyObject> {
-        let dict = PyDict::new(py);
+        let dict = PyDict::new_bound(py);
         dict.set_item("type", self.error_type.type_string())?;
         dict.set_item("loc", self.location.to_object(py))?;
         dict.set_item("msg", self.error_type.render_message(py, input_type)?)?;
@@ -555,11 +558,11 @@ impl PyLineError {
         write!(output, "  {message} [type={}", self.error_type.type_string())?;
 
         if !hide_input {
-            let input_value = self.input_value.as_ref(py);
+            let input_value = self.input_value.bind(py);
             let input_str = safe_repr(input_value);
-            truncate_input_value!(output, &input_str);
+            truncate_input_value!(output, &input_str.to_cow());
 
-            if let Ok(type_) = input_value.get_type().name() {
+            if let Ok(type_) = input_value.get_type().qualname() {
                 write!(output, ", input_type={type_}")?;
             }
         }
@@ -663,13 +666,13 @@ impl<'py> Serialize for PyLineErrorSerializer<'py> {
         if self.include_input {
             map.serialize_entry(
                 "input",
-                &self.extra.serialize_infer(self.line_error.input_value.as_ref(py)),
+                &self.extra.serialize_infer(self.line_error.input_value.bind(py)),
             )?;
         }
 
         if self.include_context {
             if let Some(context) = self.line_error.error_type.py_dict(py).map_err(py_err_json::<S>)? {
-                map.serialize_entry("ctx", &self.extra.serialize_infer(context.as_ref(py)))?;
+                map.serialize_entry("ctx", &self.extra.serialize_infer(context.bind(py)))?;
             }
         }
         if let Some(url_prefix) = self.url_prefix {

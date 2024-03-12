@@ -18,8 +18,8 @@ impl BuildSerializer for AnySerializer {
     const EXPECTED_TYPE: &'static str = "any";
 
     fn build(
-        _schema: &PyDict,
-        _config: Option<&PyDict>,
+        _schema: &Bound<'_, PyDict>,
+        _config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         Ok(Self {}.into())
@@ -31,24 +31,24 @@ impl_py_gc_traverse!(AnySerializer {});
 impl TypeSerializer for AnySerializer {
     fn to_python(
         &self,
-        value: &PyAny,
-        include: Option<&PyAny>,
-        exclude: Option<&PyAny>,
+        value: &Bound<'_, PyAny>,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> PyResult<PyObject> {
         infer_to_python(value, include, exclude, extra)
     }
 
-    fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
         infer_json_key(key, extra)
     }
 
     fn serde_serialize<S: Serializer>(
         &self,
-        value: &PyAny,
+        value: &Bound<'_, PyAny>,
         serializer: S,
-        include: Option<&PyAny>,
-        exclude: Option<&PyAny>,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         infer_serialize(value, serializer, include, exclude, extra)

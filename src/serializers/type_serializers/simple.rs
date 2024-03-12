@@ -20,8 +20,8 @@ impl BuildSerializer for NoneSerializer {
     const EXPECTED_TYPE: &'static str = "none";
 
     fn build(
-        _schema: &PyDict,
-        _config: Option<&PyDict>,
+        _schema: &Bound<'_, PyDict>,
+        _config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         Ok(Self {}.into())
@@ -37,9 +37,9 @@ impl_py_gc_traverse!(NoneSerializer {});
 impl TypeSerializer for NoneSerializer {
     fn to_python(
         &self,
-        value: &PyAny,
-        include: Option<&PyAny>,
-        exclude: Option<&PyAny>,
+        value: &Bound<'_, PyAny>,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> PyResult<PyObject> {
         let py = value.py();
@@ -53,7 +53,7 @@ impl TypeSerializer for NoneSerializer {
         }
     }
 
-    fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
         match extra.ob_type_lookup.is_type(key, ObType::None) {
             IsType::Exact => none_json_key(),
             _ => {
@@ -65,10 +65,10 @@ impl TypeSerializer for NoneSerializer {
 
     fn serde_serialize<S: serde::ser::Serializer>(
         &self,
-        value: &PyAny,
+        value: &Bound<'_, PyAny>,
         serializer: S,
-        include: Option<&PyAny>,
-        exclude: Option<&PyAny>,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         match extra.ob_type_lookup.is_type(value, ObType::None) {
@@ -94,8 +94,8 @@ macro_rules! build_simple_serializer {
             const EXPECTED_TYPE: &'static str = $expected_type;
 
             fn build(
-                _schema: &PyDict,
-                _config: Option<&PyDict>,
+                _schema: &Bound<'_, PyDict>,
+                _config: Option<&Bound<'_, PyDict>>,
                 _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
             ) -> PyResult<CombinedSerializer> {
                 Ok(Self {}.into())
@@ -107,9 +107,9 @@ macro_rules! build_simple_serializer {
         impl TypeSerializer for $struct_name {
             fn to_python(
                 &self,
-                value: &PyAny,
-                include: Option<&PyAny>,
-                exclude: Option<&PyAny>,
+                value: &Bound<'_, PyAny>,
+                include: Option<&Bound<'_, PyAny>>,
+                exclude: Option<&Bound<'_, PyAny>>,
                 extra: &Extra,
             ) -> PyResult<PyObject> {
                 let py = value.py();
@@ -132,7 +132,7 @@ macro_rules! build_simple_serializer {
                 }
             }
 
-            fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+            fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
                 match extra.ob_type_lookup.is_type(key, $ob_type) {
                     IsType::Exact | IsType::Subclass => $key_method(key),
                     IsType::False => {
@@ -144,10 +144,10 @@ macro_rules! build_simple_serializer {
 
             fn serde_serialize<S: serde::ser::Serializer>(
                 &self,
-                value: &PyAny,
+                value: &Bound<'_, PyAny>,
                 serializer: S,
-                include: Option<&PyAny>,
-                exclude: Option<&PyAny>,
+                include: Option<&Bound<'_, PyAny>>,
+                exclude: Option<&Bound<'_, PyAny>>,
                 extra: &Extra,
             ) -> Result<S::Ok, S::Error> {
                 match value.extract::<$rust_type>() {
@@ -172,14 +172,14 @@ macro_rules! build_simple_serializer {
     };
 }
 
-pub(crate) fn to_str_json_key(key: &PyAny) -> PyResult<Cow<str>> {
-    Ok(key.str()?.to_string_lossy())
+pub(crate) fn to_str_json_key<'py>(key: &Bound<'py, PyAny>) -> PyResult<Cow<'py, str>> {
+    Ok(Cow::Owned(key.str()?.to_string_lossy().into_owned()))
 }
 
 build_simple_serializer!(IntSerializer, "int", Int, ObType::Int, to_str_json_key, true);
 
-pub(crate) fn bool_json_key(key: &PyAny) -> PyResult<Cow<str>> {
-    let v = if key.is_true().unwrap_or(false) {
+pub(crate) fn bool_json_key<'py>(key: &Bound<'py, PyAny>) -> PyResult<Cow<'py, str>> {
+    let v = if key.is_truthy().unwrap_or(false) {
         "true"
     } else {
         "false"

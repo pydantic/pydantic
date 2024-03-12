@@ -15,17 +15,17 @@ impl BuildSerializer for ChainBuilder {
     const EXPECTED_TYPE: &'static str = "chain";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let last_schema = schema
-            .get_as_req::<&PyList>(intern!(schema.py(), "steps"))?
+            .get_as_req::<Bound<'_, PyList>>(intern!(schema.py(), "steps"))?
             .iter()
             .last()
             .unwrap()
-            .downcast()?;
-        CombinedSerializer::build(last_schema, config, definitions)
+            .downcast_into()?;
+        CombinedSerializer::build(&last_schema, config, definitions)
     }
 }
 
@@ -35,12 +35,12 @@ impl BuildSerializer for CustomErrorBuilder {
     const EXPECTED_TYPE: &'static str = "custom-error";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
-        let sub_schema: &PyDict = schema.get_as_req(intern!(schema.py(), "schema"))?;
-        CombinedSerializer::build(sub_schema, config, definitions)
+        let sub_schema = schema.get_as_req(intern!(schema.py(), "schema"))?;
+        CombinedSerializer::build(&sub_schema, config, definitions)
     }
 }
 
@@ -50,13 +50,13 @@ impl BuildSerializer for CallBuilder {
     const EXPECTED_TYPE: &'static str = "call";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
-        let return_schema = schema.get_as::<&PyDict>(intern!(schema.py(), "return_schema"))?;
+        let return_schema = schema.get_as(intern!(schema.py(), "return_schema"))?;
         match return_schema {
-            Some(return_schema) => CombinedSerializer::build(return_schema, config, definitions),
+            Some(return_schema) => CombinedSerializer::build(&return_schema, config, definitions),
             None => AnySerializer::build(schema, config, definitions),
         }
     }
@@ -68,12 +68,12 @@ impl BuildSerializer for LaxOrStrictBuilder {
     const EXPECTED_TYPE: &'static str = "lax-or-strict";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
-        let strict_schema: &PyDict = schema.get_as_req(intern!(schema.py(), "strict_schema"))?;
-        CombinedSerializer::build(strict_schema, config, definitions)
+        let strict_schema = schema.get_as_req(intern!(schema.py(), "strict_schema"))?;
+        CombinedSerializer::build(&strict_schema, config, definitions)
     }
 }
 
@@ -83,8 +83,8 @@ impl BuildSerializer for ArgumentsBuilder {
     const EXPECTED_TYPE: &'static str = "arguments";
 
     fn build(
-        _schema: &PyDict,
-        _config: Option<&PyDict>,
+        _schema: &Bound<'_, PyDict>,
+        _config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         py_schema_err!("`arguments` validators require a custom serializer")
@@ -99,8 +99,8 @@ macro_rules! any_build_serializer {
             const EXPECTED_TYPE: &'static str = $expected_type;
 
             fn build(
-                schema: &PyDict,
-                config: Option<&PyDict>,
+                schema: &Bound<'_, PyDict>,
+                config: Option<&Bound<'_, PyDict>>,
                 definitions: &mut DefinitionsBuilder<CombinedSerializer>,
             ) -> PyResult<CombinedSerializer> {
                 AnySerializer::build(schema, config, definitions)

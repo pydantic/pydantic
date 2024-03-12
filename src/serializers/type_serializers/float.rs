@@ -24,8 +24,8 @@ impl BuildSerializer for FloatSerializer {
     const EXPECTED_TYPE: &'static str = "float";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let inf_nan_mode = config
@@ -41,9 +41,9 @@ impl_py_gc_traverse!(FloatSerializer {});
 impl TypeSerializer for FloatSerializer {
     fn to_python(
         &self,
-        value: &PyAny,
-        include: Option<&PyAny>,
-        exclude: Option<&PyAny>,
+        value: &Bound<'_, PyAny>,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> PyResult<PyObject> {
         let py = value.py();
@@ -63,7 +63,7 @@ impl TypeSerializer for FloatSerializer {
         }
     }
 
-    fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
         match extra.ob_type_lookup.is_type(key, ObType::Float) {
             IsType::Exact | IsType::Subclass => to_str_json_key(key),
             IsType::False => {
@@ -75,10 +75,10 @@ impl TypeSerializer for FloatSerializer {
 
     fn serde_serialize<S: Serializer>(
         &self,
-        value: &PyAny,
+        value: &Bound<'_, PyAny>,
         serializer: S,
-        include: Option<&PyAny>,
-        exclude: Option<&PyAny>,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         match value.extract::<f64>() {

@@ -51,17 +51,17 @@ impl BuildValidator for UnionValidator {
     const EXPECTED_TYPE: &'static str = "union";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let choices: Vec<(CombinedValidator, Option<String>)> = schema
-            .get_as_req::<&PyList>(intern!(py, "choices"))?
+            .get_as_req::<Bound<'_, PyList>>(intern!(py, "choices"))?
             .iter()
             .map(|choice| {
                 let mut label: Option<String> = None;
-                let choice: &PyAny = match choice.downcast::<PyTuple>() {
+                let choice = match choice.downcast::<PyTuple>() {
                     Ok(py_tuple) => {
                         let choice = py_tuple.get_item(0)?;
                         label = Some(py_tuple.get_item(1)?.to_string());
@@ -69,14 +69,14 @@ impl BuildValidator for UnionValidator {
                     }
                     Err(_) => choice,
                 };
-                Ok((build_validator(choice, config, definitions)?, label))
+                Ok((build_validator(&choice, config, definitions)?, label))
             })
             .collect::<PyResult<Vec<(CombinedValidator, Option<String>)>>>()?;
 
         let auto_collapse = || schema.get_as_req(intern!(py, "auto_collapse")).unwrap_or(true);
         let mode = schema
-            .get_as::<&str>(intern!(py, "mode"))?
-            .map_or(Ok(UnionMode::Smart), UnionMode::from_str)?;
+            .get_as::<Bound<'_, PyString>>(intern!(py, "mode"))?
+            .map_or(Ok(UnionMode::Smart), |mode| mode.to_str().and_then(UnionMode::from_str))?;
         match choices.len() {
             0 => py_schema_err!("One or more union choices required"),
             1 if auto_collapse() => Ok(choices.into_iter().next().unwrap().0),
@@ -284,7 +284,7 @@ enum Discriminator {
 }
 
 impl Discriminator {
-    fn new(py: Python, raw: &PyAny) -> PyResult<Self> {
+    fn new(py: Python, raw: &Bound<'_, PyAny>) -> PyResult<Self> {
         if raw.is_callable() {
             return Ok(Self::Function(raw.to_object(py)));
         } else if let Ok(py_str) = raw.downcast::<PyString>() {
@@ -332,24 +332,24 @@ impl BuildValidator for TaggedUnionValidator {
     const EXPECTED_TYPE: &'static str = "tagged-union";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
-        let discriminator = Discriminator::new(py, schema.get_as_req(intern!(py, "discriminator"))?)?;
+        let discriminator = Discriminator::new(py, &schema.get_as_req(intern!(py, "discriminator"))?)?;
         let discriminator_repr = discriminator.to_string_py(py)?;
 
-        let choices = PyDict::new(py);
+        let choices = PyDict::new_bound(py);
         let mut tags_repr = String::with_capacity(50);
         let mut descr = String::with_capacity(50);
         let mut first = true;
         let mut discriminators = Vec::with_capacity(choices.len());
-        let schema_choices: &PyDict = schema.get_as_req(intern!(py, "choices"))?;
+        let schema_choices: Bound<PyDict> = schema.get_as_req(intern!(py, "choices"))?;
         let mut lookup_map = Vec::with_capacity(choices.len());
         for (choice_key, choice_schema) in schema_choices {
-            discriminators.push(choice_key);
-            let validator = build_validator(choice_schema, config, definitions)?;
+            discriminators.push(choice_key.clone());
+            let validator = build_validator(&choice_schema, config, definitions)?;
             let tag_repr = choice_key.repr()?.to_string();
             if first {
                 first = false;
@@ -399,13 +399,11 @@ impl Validator for TaggedUnionValidator {
         match self.discriminator {
             Discriminator::LookupKey(ref lookup_key) => {
                 macro_rules! find_validator {
-                    ($get_method:ident, $($dict:ident),+) => {{
+                    ($get_method:ident, $($dict:expr),+) => {{
                         // note all these methods return PyResult<Option<(data, data)>>, the outer Err is just for
                         // errors when getting attributes which should be "raised"
                         match lookup_key.$get_method($( $dict ),+)? {
-                            Some((_, value)) => {
-                                Ok(value.to_object(py).into_ref(py))
-                            }
+                            Some((_, value)) => Ok(value.to_object(py)),
                             None => Err(self.tag_not_found(input)),
                         }
                     }};
@@ -413,24 +411,32 @@ impl Validator for TaggedUnionValidator {
                 let from_attributes = state.extra().from_attributes.unwrap_or(self.from_attributes);
                 let dict = input.validate_model_fields(self.strict, from_attributes)?;
                 let tag = match dict {
-                    GenericMapping::PyDict(dict) => find_validator!(py_get_dict_item, dict),
-                    GenericMapping::PyMapping(mapping) => find_validator!(py_get_mapping_item, mapping),
-                    GenericMapping::StringMapping(d) => find_validator!(py_get_dict_item, d),
-                    GenericMapping::PyGetAttr(obj, kwargs) => find_validator!(py_get_attr, obj, kwargs),
+                    GenericMapping::PyDict(dict) => {
+                        find_validator!(py_get_dict_item, &dict)
+                    }
+                    GenericMapping::PyMapping(mapping) => {
+                        find_validator!(py_get_mapping_item, &mapping)
+                    }
+                    GenericMapping::StringMapping(d) => {
+                        find_validator!(py_get_dict_item, &d)
+                    }
+                    GenericMapping::PyGetAttr(obj, kwargs) => {
+                        find_validator!(py_get_attr, &obj, kwargs.as_ref())
+                    }
                     GenericMapping::JsonObject(mapping) => find_validator!(json_get, mapping),
                 }?;
-                self.find_call_validator(py, tag, input, state)
+                self.find_call_validator(py, tag.bind(py), input, state)
             }
             Discriminator::Function(ref func) => {
-                let tag = func.call1(py, (input.to_object(py),))?;
+                let tag: Py<PyAny> = func.call1(py, (input.to_object(py),))?;
                 if tag.is_none(py) {
                     Err(self.tag_not_found(input))
                 } else {
-                    self.find_call_validator(py, tag.into_ref(py), input, state)
+                    self.find_call_validator(py, tag.bind(py), input, state)
                 }
             }
             Discriminator::SelfSchema => {
-                self.find_call_validator(py, self.self_schema_tag(py, input)?.as_ref(), input, state)
+                self.find_call_validator(py, self.self_schema_tag(py, input)?.as_any(), input, state)
             }
         }
     }
@@ -441,45 +447,43 @@ impl Validator for TaggedUnionValidator {
 }
 
 impl TaggedUnionValidator {
-    fn self_schema_tag<'s, 'data>(
-        &'s self,
+    fn self_schema_tag<'data>(
+        &self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-    ) -> ValResult<&'data PyString> {
+    ) -> ValResult<Bound<'data, PyString>> {
         let dict = input.strict_dict()?;
-        let either_tag = match dict {
+        let tag = match &dict {
             GenericMapping::PyDict(dict) => match dict.get_item(intern!(py, "type"))? {
-                Some(t) => t.validate_str(true, false)?.into_inner(),
+                Some(t) => t.downcast_into::<PyString>()?,
                 None => return Err(self.tag_not_found(input)),
             },
             _ => unreachable!(),
         };
-        let tag_cow = either_tag.as_cow()?;
-        let tag = tag_cow.as_ref();
+        let tag = tag.to_str()?;
         // custom logic to distinguish between different function and tuple schemas
         if tag == "function" {
-            let mode = match dict {
-                GenericMapping::PyDict(dict) => match dict.get_item(intern!(py, "mode"))? {
-                    Some(m) => Some(m.validate_str(true, false)?.into_inner()),
-                    None => None,
-                },
-                _ => unreachable!(),
+            let GenericMapping::PyDict(dict) = dict else {
+                unreachable!()
             };
-            let mode = mode.ok_or_else(|| self.tag_not_found(input))?;
-            match mode.as_cow()?.as_ref() {
-                "plain" => Ok(intern!(py, "function-plain")),
-                "wrap" => Ok(intern!(py, "function-wrap")),
-                _ => Ok(intern!(py, "function")),
-            }
+            let Some(mode) = dict.get_item(intern!(py, "mode"))? else {
+                return Err(self.tag_not_found(input));
+            };
+            let tag = match mode.validate_str(true, false)?.into_inner().as_cow()?.as_ref() {
+                "plain" => Ok(intern!(py, "function-plain").to_owned()),
+                "wrap" => Ok(intern!(py, "function-wrap").to_owned()),
+                _ => Ok(intern!(py, "function").to_owned()),
+            };
+            tag
         } else {
-            Ok(PyString::new(py, tag))
+            Ok(PyString::new_bound(py, tag))
         }
     }
 
     fn find_call_validator<'s, 'data>(
         &'s self,
         py: Python<'data>,
-        tag: &'data PyAny,
+        tag: &Bound<'data, PyAny>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {

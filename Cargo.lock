@@ -148,30 +148,17 @@ checksum = "62b02a5381cc465bd3041d84623d0fa3b66738b52b8e2fc3bab8ad63ab032f4a"
 
 [[package]]
 name = "jiter"
-version = "0.0.6"
+version = "0.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87db066a99f69382be06d02313f8ce989996b53a04a8a70cfd1a6483a56227f7"
+checksum = "c2a1b6e316923afd3087ec73829f646a67c18f3a5bd61624247b05e652e4a99d"
 dependencies = [
  "ahash",
  "hashbrown",
- "lexical-core",
+ "lexical-parse-float",
  "num-bigint",
  "num-traits",
  "pyo3",
  "smallvec",
-]
-
-[[package]]
-name = "lexical-core"
-version = "0.8.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2cde5de06e8d4c2faabc400238f9ae1c74d5412d03a7bd067645ccbc47070e46"
-dependencies = [
- "lexical-parse-float",
- "lexical-parse-integer",
- "lexical-util",
- "lexical-write-float",
- "lexical-write-integer",
 ]
 
 [[package]]
@@ -201,27 +188,6 @@ version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5255b9ff16ff898710eb9eb63cb39248ea8a5bb036bea8085b1a767ff6c4e3fc"
 dependencies = [
- "static_assertions",
-]
-
-[[package]]
-name = "lexical-write-float"
-version = "0.8.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "accabaa1c4581f05a3923d1b4cfd124c329352288b7b9da09e766b0668116862"
-dependencies = [
- "lexical-util",
- "lexical-write-integer",
- "static_assertions",
-]
-
-[[package]]
-name = "lexical-write-integer"
-version = "0.8.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1b6f3d1f4422866b68192d62f77bc5c700bee84f3069f2469d7bc8c77852446"
-dependencies = [
- "lexical-util",
  "static_assertions",
 ]
 
@@ -363,9 +329,9 @@ dependencies = [
 
 [[package]]
 name = "pyo3"
-version = "0.20.3"
+version = "0.21.0-beta.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "53bdbb96d49157e65d45cc287af5f32ffadd5f4761438b527b055fb0d4bb8233"
+checksum = "5d0c41d899f822e5f39186d6da130a822a0a43edb19992b51bf4ef6cd0b4cfd1"
 dependencies = [
  "cfg-if",
  "indoc",
@@ -382,9 +348,9 @@ dependencies = [
 
 [[package]]
 name = "pyo3-build-config"
-version = "0.20.3"
+version = "0.21.0-beta.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "deaa5745de3f5231ce10517a1f5dd97d53e5a2fd77aa6b5842292085831d48d7"
+checksum = "5509c2aa78c7e770077e41ba86f806e60dcee812e924ccb2d6fe78c0a0128ce2"
 dependencies = [
  "once_cell",
  "python3-dll-a",
@@ -393,9 +359,9 @@ dependencies = [
 
 [[package]]
 name = "pyo3-ffi"
-version = "0.20.3"
+version = "0.21.0-beta.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62b42531d03e08d4ef1f6e85a2ed422eb678b8cd62b762e53891c05faf0d4afa"
+checksum = "e6bb234a86ed619a661f3bb3c2493aaff9cb937e33e198d17f5f20a15881e155"
 dependencies = [
  "libc",
  "pyo3-build-config",
@@ -403,9 +369,9 @@ dependencies = [
 
 [[package]]
 name = "pyo3-macros"
-version = "0.20.3"
+version = "0.21.0-beta.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7305c720fa01b8055ec95e484a6eca7a83c841267f0dd5280f0c8b8551d2c158"
+checksum = "f0b787de2c6832eb1eb393c9f82f976a5a87bda979780d9b853878846a8d2e4b"
 dependencies = [
  "proc-macro2",
  "pyo3-macros-backend",
@@ -415,9 +381,9 @@ dependencies = [
 
 [[package]]
 name = "pyo3-macros-backend"
-version = "0.20.3"
+version = "0.21.0-beta.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c7e9b68bb9c3149c5b0cade5d07f953d6d125eb4337723c4ccdb665f1f96185"
+checksum = "5e3b7beed357786d2afe845871964e824ad8af0df38a403f7d01cdc81aadb211"
 dependencies = [
  "heck",
  "proc-macro2",

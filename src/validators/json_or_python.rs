@@ -20,16 +20,16 @@ impl BuildValidator for JsonOrPython {
     const EXPECTED_TYPE: &'static str = "json-or-python";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
-        let json_schema: &PyDict = schema.get_as_req(intern!(py, "json_schema"))?;
-        let python_schema: &PyDict = schema.get_as_req(intern!(py, "python_schema"))?;
+        let json_schema = schema.get_as_req(intern!(py, "json_schema"))?;
+        let python_schema = schema.get_as_req(intern!(py, "python_schema"))?;
 
-        let json = build_validator(json_schema, config, definitions)?;
-        let python = build_validator(python_schema, config, definitions)?;
+        let json = build_validator(&json_schema, config, definitions)?;
+        let python = build_validator(&python_schema, config, definitions)?;
 
         let name = format!(
             "{}[json={},python={}]",

@@ -20,15 +20,15 @@ impl BuildSerializer for WithDefaultSerializer {
     const EXPECTED_TYPE: &'static str = "default";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
         let default = DefaultType::new(schema)?;
 
-        let sub_schema: &PyDict = schema.get_as_req(intern!(py, "schema"))?;
-        let serializer = Box::new(CombinedSerializer::build(sub_schema, config, definitions)?);
+        let sub_schema = schema.get_as_req(intern!(py, "schema"))?;
+        let serializer = Box::new(CombinedSerializer::build(&sub_schema, config, definitions)?);
 
         Ok(Self { default, serializer }.into())
     }
@@ -39,24 +39,24 @@ impl_py_gc_traverse!(WithDefaultSerializer { default, serializer });
 impl TypeSerializer for WithDefaultSerializer {
     fn to_python(
         &self,
-        value: &PyAny,
-        include: Option<&PyAny>,
-        exclude: Option<&PyAny>,
+        value: &Bound<'_, PyAny>,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> PyResult<PyObject> {
         self.serializer.to_python(value, include, exclude, extra)
     }
 
-    fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
         self.serializer.json_key(key, extra)
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
         &self,
-        value: &PyAny,
+        value: &Bound<'_, PyAny>,
         serializer: S,
-        include: Option<&PyAny>,
-        exclude: Option<&PyAny>,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         self.serializer

@@ -38,7 +38,9 @@ impl<'a> ValidationState<'a> {
             extra,
         };
         let result = f(&mut new_state);
-        match new_state.exactness {
+        let exactness = new_state.exactness;
+        drop(new_state);
+        match exactness {
             Some(exactness) => self.floor_exactness(exactness),
             None => self.exactness = None,
         }
@@ -53,7 +55,10 @@ impl<'a> ValidationState<'a> {
         f: impl FnOnce(&mut Extra<'a>),
     ) -> ValidationStateWithReboundExtra<'state, 'a> {
         #[allow(clippy::unnecessary_struct_initialization)]
-        let old_extra = Extra { ..self.extra };
+        let old_extra = Extra {
+            data: self.extra.data.clone(),
+            ..self.extra
+        };
         f(&mut self.extra);
         ValidationStateWithReboundExtra { state: self, old_extra }
     }

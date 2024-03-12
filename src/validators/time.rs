@@ -1,6 +1,6 @@
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyString, PyTime};
+use pyo3::types::{PyDict, PyString};
 
 use speedate::Time;
 
@@ -24,8 +24,8 @@ impl BuildValidator for TimeValidator {
     const EXPECTED_TYPE: &'static str = "time";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let s = Self {
@@ -85,8 +85,8 @@ impl Validator for TimeValidator {
     }
 }
 
-fn convert_pytime(schema: &PyDict, field: &PyString) -> PyResult<Option<Time>> {
-    match schema.get_as::<&PyTime>(field)? {
+fn convert_pytime(schema: &Bound<'_, PyDict>, field: &Bound<'_, PyString>) -> PyResult<Option<Time>> {
+    match schema.get_as(field)? {
         Some(date) => Ok(Some(EitherTime::Py(date).as_raw()?)),
         None => Ok(None),
     }
@@ -102,7 +102,7 @@ struct TimeConstraints {
 }
 
 impl TimeConstraints {
-    fn from_py(schema: &PyDict) -> PyResult<Option<Self>> {
+    fn from_py(schema: &Bound<'_, PyDict>) -> PyResult<Option<Self>> {
         let py = schema.py();
         let c = Self {
             le: convert_pytime(schema, intern!(py, "le"))?,

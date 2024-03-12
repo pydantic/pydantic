@@ -47,10 +47,10 @@ impl<'a> Input<'a> for JsonValue {
         matches!(self, JsonValue::Null)
     }
 
-    fn as_kwargs(&'a self, py: Python<'a>) -> Option<&'a PyDict> {
+    fn as_kwargs(&self, py: Python<'a>) -> Option<Bound<'a, PyDict>> {
         match self {
             JsonValue::Object(object) => {
-                let dict = PyDict::new(py);
+                let dict = PyDict::new_bound(py);
                 for (k, v) in object.iter() {
                     dict.set_item(k, v.to_object(py)).unwrap();
                 }
@@ -154,12 +154,12 @@ impl<'a> Input<'a> for JsonValue {
         }
     }
 
-    fn strict_decimal(&'a self, py: Python<'a>) -> ValResult<&'a PyAny> {
+    fn strict_decimal(&'a self, py: Python<'a>) -> ValResult<Bound<'a, PyAny>> {
         match self {
-            JsonValue::Float(f) => create_decimal(PyString::new(py, &f.to_string()), self, py),
+            JsonValue::Float(f) => create_decimal(&PyString::new_bound(py, &f.to_string()), self),
 
             JsonValue::Str(..) | JsonValue::Int(..) | JsonValue::BigInt(..) => {
-                create_decimal(self.to_object(py).into_ref(py), self, py)
+                create_decimal(self.to_object(py).bind(py), self)
             }
             _ => Err(ValError::new(ErrorTypeDefaults::DecimalType, self)),
         }
@@ -327,7 +327,7 @@ impl<'a> Input<'a> for String {
         InputValue::Json(JsonValue::Str(self.clone()))
     }
 
-    fn as_kwargs(&'a self, _py: Python<'a>) -> Option<&'a PyDict> {
+    fn as_kwargs(&self, _py: Python<'a>) -> Option<Bound<'a, PyDict>> {
         None
     }
 
@@ -377,8 +377,8 @@ impl<'a> Input<'a> for String {
         str_as_float(self, self).map(ValidationMatch::lax)
     }
 
-    fn strict_decimal(&'a self, py: Python<'a>) -> ValResult<&'a PyAny> {
-        create_decimal(self.to_object(py).into_ref(py), self, py)
+    fn strict_decimal(&'a self, py: Python<'a>) -> ValResult<Bound<'a, PyAny>> {
+        create_decimal(self.to_object(py).bind(py), self)
     }
 
     #[cfg_attr(has_coverage_attribute, coverage(off))]

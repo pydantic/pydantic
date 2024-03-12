@@ -20,13 +20,13 @@ pub struct ListValidator {
 }
 
 pub fn get_items_schema(
-    schema: &PyDict,
-    config: Option<&PyDict>,
+    schema: &Bound<'_, PyDict>,
+    config: Option<&Bound<'_, PyDict>>,
     definitions: &mut DefinitionsBuilder<CombinedValidator>,
 ) -> PyResult<Option<CombinedValidator>> {
     match schema.get_item(pyo3::intern!(schema.py(), "items_schema"))? {
         Some(d) => {
-            let validator = build_validator(d, config, definitions)?;
+            let validator = build_validator(&d, config, definitions)?;
             match validator {
                 CombinedValidator::Any(_) => Ok(None),
                 _ => Ok(Some(validator)),
@@ -96,8 +96,8 @@ impl BuildValidator for ListValidator {
     const EXPECTED_TYPE: &'static str = "list";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();

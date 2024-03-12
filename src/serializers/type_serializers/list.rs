@@ -26,13 +26,13 @@ impl BuildSerializer for ListSerializer {
     const EXPECTED_TYPE: &'static str = "list";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
-        let item_serializer = match schema.get_as::<&PyDict>(intern!(py, "items_schema"))? {
-            Some(items_schema) => CombinedSerializer::build(items_schema, config, definitions)?,
+        let item_serializer = match schema.get_as(intern!(py, "items_schema"))? {
+            Some(items_schema) => CombinedSerializer::build(&items_schema, config, definitions)?,
             None => AnySerializer::build(schema, config, definitions)?,
         };
         let name = format!("{}[{}]", Self::EXPECTED_TYPE, item_serializer.get_name());
@@ -50,9 +50,9 @@ impl_py_gc_traverse!(ListSerializer { item_serializer });
 impl TypeSerializer for ListSerializer {
     fn to_python(
         &self,
-        value: &PyAny,
-        include: Option<&PyAny>,
-        exclude: Option<&PyAny>,
+        value: &Bound<'_, PyAny>,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> PyResult<PyObject> {
         match value.downcast::<PyList>() {
@@ -64,7 +64,12 @@ impl TypeSerializer for ListSerializer {
                 for (index, element) in py_list.iter().enumerate() {
                     let op_next = self.filter.index_filter(index, include, exclude, value.len().ok())?;
                     if let Some((next_include, next_exclude)) = op_next {
-                        items.push(item_serializer.to_python(element, next_include, next_exclude, extra)?);
+                        items.push(item_serializer.to_python(
+                            &element,
+                            next_include.as_ref(),
+                            next_exclude.as_ref(),
+                            extra,
+                        )?);
                     }
                 }
                 Ok(items.into_py(py))
@@ -76,16 +81,16 @@ impl TypeSerializer for ListSerializer {
         }
     }
 
-    fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
         self._invalid_as_json_key(key, extra, Self::EXPECTED_TYPE)
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
         &self,
-        value: &PyAny,
+        value: &Bound<'_, PyAny>,
         serializer: S,
-        include: Option<&PyAny>,
-        exclude: Option<&PyAny>,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         match value.downcast::<PyList>() {
@@ -99,8 +104,13 @@ impl TypeSerializer for ListSerializer {
                         .index_filter(index, include, exclude, Some(py_list.len()))
                         .map_err(py_err_se_err)?;
                     if let Some((next_include, next_exclude)) = op_next {
-                        let item_serialize =
-                            PydanticSerializer::new(element, item_serializer, next_include, next_exclude, extra);
+                        let item_serialize = PydanticSerializer::new(
+                            &element,
+                            item_serializer,
+                            next_include.as_ref(),
+                            next_exclude.as_ref(),
+                            extra,
+                        );
                         seq.serialize_element(&item_serialize)?;
                     }
                 }

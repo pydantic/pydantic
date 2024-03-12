@@ -1,6 +1,7 @@
 use pyo3::exceptions::PyTypeError;
 use pyo3::intern;
 use pyo3::prelude::*;
+use pyo3::types::PyString;
 use pyo3::types::{PyDict, PyTuple};
 
 use crate::errors::ValResult;
@@ -23,22 +24,22 @@ impl BuildValidator for CallValidator {
     const EXPECTED_TYPE: &'static str = "call";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
 
-        let arguments_schema: &PyAny = schema.get_as_req(intern!(py, "arguments_schema"))?;
-        let arguments_validator = Box::new(build_validator(arguments_schema, config, definitions)?);
+        let arguments_schema = schema.get_as_req(intern!(py, "arguments_schema"))?;
+        let arguments_validator = Box::new(build_validator(&arguments_schema, config, definitions)?);
 
         let return_schema = schema.get_item(intern!(py, "return_schema"))?;
         let return_validator = match return_schema {
-            Some(return_schema) => Some(Box::new(build_validator(return_schema, config, definitions)?)),
+            Some(return_schema) => Some(Box::new(build_validator(&return_schema, config, definitions)?)),
             None => None,
         };
-        let function: &PyAny = schema.get_as_req(intern!(py, "function"))?;
-        let function_name: &str = match schema.get_as(intern!(py, "function_name"))? {
+        let function: Bound<'_, PyAny> = schema.get_as_req(intern!(py, "function"))?;
+        let function_name: Py<PyString> = match schema.get_as(intern!(py, "function_name"))? {
             Some(name) => name,
             None => {
                 match function.getattr(intern!(py, "__name__")) {
@@ -48,12 +49,13 @@ impl BuildValidator for CallValidator {
                         if let Ok(func) = function.getattr(intern!(py, "func")) {
                             func.getattr(intern!(py, "__name__"))?.extract()?
                         } else {
-                            "<unknown>"
+                            intern!(py, "<unknown>").clone().into()
                         }
                     }
                 }
             }
         };
+        let function_name = function_name.bind(py);
         let name = format!("{}[{function_name}]", Self::EXPECTED_TYPE);
 
         Ok(Self {
@@ -79,12 +81,12 @@ impl Validator for CallValidator {
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
-        let args = self.arguments_validator.validate(py, input, state)?;
+        let args = self.arguments_validator.validate(py, input, state)?.into_bound(py);
 
-        let return_value = if let Ok((args, kwargs)) = args.extract::<(&PyTuple, &PyDict)>(py) {
-            self.function.call(py, args, Some(kwargs))?
-        } else if let Ok(kwargs) = args.downcast::<PyDict>(py) {
-            self.function.call(py, (), Some(kwargs))?
+        let return_value = if let Ok((args, kwargs)) = args.extract::<(Bound<PyTuple>, Bound<PyDict>)>() {
+            self.function.call_bound(py, args, Some(&kwargs))?
+        } else if let Ok(kwargs) = args.downcast::<PyDict>() {
+            self.function.call_bound(py, (), Some(kwargs))?
         } else {
             let msg = "Arguments validator should return a tuple of (args, kwargs) or a dict of kwargs";
             return Err(PyTypeError::new_err(msg).into());
@@ -92,7 +94,7 @@ impl Validator for CallValidator {
 
         if let Some(return_validator) = &self.return_validator {
             return_validator
-                .validate(py, return_value.into_ref(py), state)
+                .validate(py, return_value.bind(py), state)
                 .map_err(|e| e.with_outer_location("return"))
         } else {
             Ok(return_value.to_object(py))

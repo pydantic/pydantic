@@ -18,8 +18,8 @@ impl BuildSerializer for TypedDictBuilder {
     const EXPECTED_TYPE: &'static str = "typed-dict";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
@@ -32,23 +32,23 @@ impl BuildSerializer for TypedDictBuilder {
             _ => FieldsMode::SimpleDict,
         };
 
-        let fields_dict: &PyDict = schema.get_as_req(intern!(py, "fields"))?;
+        let fields_dict: Bound<'_, PyDict> = schema.get_as_req(intern!(py, "fields"))?;
         let mut fields: AHashMap<String, SerField> = AHashMap::with_capacity(fields_dict.len());
 
         let extra_serializer = match (schema.get_item(intern!(py, "extras_schema"))?, &fields_mode) {
             (Some(v), FieldsMode::TypedDictAllow) => {
-                Some(CombinedSerializer::build(v.extract()?, config, definitions)?)
+                Some(CombinedSerializer::build(&v.extract()?, config, definitions)?)
             }
             (Some(_), _) => return py_schema_err!("extras_schema can only be used if extra_behavior=allow"),
             (_, _) => None,
         };
 
         for (key, value) in fields_dict {
-            let key_py: &PyString = key.downcast()?;
+            let key_py = key.downcast_into::<PyString>()?;
             let key: String = key_py.extract()?;
-            let field_info: &PyDict = value.downcast()?;
+            let field_info = value.downcast()?;
 
-            let key_py: Py<PyString> = key_py.into_py(py);
+            let key_py: Py<PyString> = key_py.into();
             let required = field_info.get_as(intern!(py, "required"))?.unwrap_or(total);
 
             if field_info.get_as(intern!(py, "serialization_exclude"))? == Some(true) {
@@ -57,7 +57,7 @@ impl BuildSerializer for TypedDictBuilder {
                 let alias: Option<String> = field_info.get_as(intern!(py, "serialization_alias"))?;
 
                 let schema = field_info.get_as_req(intern!(py, "schema"))?;
-                let serializer = CombinedSerializer::build(schema, config, definitions)
+                let serializer = CombinedSerializer::build(&schema, config, definitions)
                     .map_err(|e| py_schema_error_type!("Field `{}`:\n  {}", key, e))?;
                 fields.insert(key, SerField::new(py, key_py, alias, Some(serializer), required));
             }
