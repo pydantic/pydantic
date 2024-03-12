@@ -635,13 +635,13 @@ class TestBenchmarkDateX:
     def test_core_future(self, benchmark):
         v = SchemaValidator({'type': 'date', 'gt': date.today()})
 
-        benchmark(v.validate_python, date(2032, 1, 1))
+        benchmark(v.validate_python, date(2932, 1, 1))
 
     @pytest.mark.benchmark(group='date future')
     def test_core_future_str(self, benchmark):
         v = SchemaValidator({'type': 'date', 'gt': date.today()})
 
-        benchmark(v.validate_python, str(date(2032, 1, 1)))
+        benchmark(v.validate_python, str(date(2932, 1, 1)))
 
 
 class TestBenchmarkUnion:
