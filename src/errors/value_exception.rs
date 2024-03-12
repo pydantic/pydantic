@@ -89,7 +89,7 @@ impl PydanticCustomError {
     }
 
     pub fn message(&self, py: Python) -> PyResult<String> {
-        Self::format_message(&self.message_template, self.context.as_ref().map(|c| c.as_ref(py)))
+        Self::format_message(&self.message_template, self.context.as_ref().map(|c| c.bind(py)))
     }
 
     fn __str__(&self, py: Python) -> PyResult<String> {
@@ -99,7 +99,7 @@ impl PydanticCustomError {
     fn __repr__(&self, py: Python) -> PyResult<String> {
         let msg = self.message(py)?;
         match self.context.as_ref() {
-            Some(ctx) => Ok(format!("{msg} [type={}, context={}]", self.error_type, ctx.as_ref(py))),
+            Some(ctx) => Ok(format!("{msg} [type={}, context={}]", self.error_type, ctx.bind(py))),
             None => Ok(format!("{msg} [type={}, context=None]", self.error_type)),
         }
     }
@@ -115,14 +115,14 @@ impl PydanticCustomError {
         ValError::new(error_type, input)
     }
 
-    pub fn format_message(message_template: &str, context: Option<&PyDict>) -> PyResult<String> {
+    pub fn format_message(message_template: &str, context: Option<&Bound<'_, PyDict>>) -> PyResult<String> {
         let mut message = message_template.to_string();
         if let Some(ctx) = context {
-            for (key, value) in ctx {
-                let key: &PyString = key.downcast()?;
+            for (key, value) in ctx.iter() {
+                let key = key.downcast::<PyString>()?;
                 if let Ok(py_str) = value.downcast::<PyString>() {
                     message = message.replace(&format!("{{{}}}", key.to_str()?), py_str.to_str()?);
-                } else if let Some(value_int) = extract_i64(value) {
+                } else if let Some(value_int) = extract_i64(&value) {
                     message = message.replace(&format!("{{{}}}", key.to_str()?), &value_int.to_string());
                 } else {
                     // fallback for anything else just in case
@@ -174,11 +174,7 @@ impl PydanticKnownError {
     fn __repr__(&self, py: Python) -> PyResult<String> {
         let msg = self.message(py)?;
         match self.context(py)?.as_ref() {
-            Some(ctx) => Ok(format!(
-                "{msg} [type={}, context={}]",
-                self.error_type(),
-                ctx.as_ref(py)
-            )),
+            Some(ctx) => Ok(format!("{msg} [type={}, context={}]", self.error_type(), ctx.bind(py))),
             None => Ok(format!("{msg} [type={}, context=None]", self.error_type())),
         }
     }

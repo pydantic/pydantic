@@ -44,14 +44,15 @@ impl BuildValidator for TypedDictValidator {
     const EXPECTED_TYPE: &'static str = "typed-dict";
 
     fn build(
-        schema: &PyDict,
-        _config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        _config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
 
         // typed dicts ignore the parent config and always use the config from this TypedDict
         let config = schema.get_as(intern!(py, "config"))?;
+        let config = config.as_ref();
 
         let strict = is_strict(schema, config)?;
 
@@ -62,21 +63,22 @@ impl BuildValidator for TypedDictValidator {
         let extra_behavior = ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)?;
 
         let extras_validator = match (schema.get_item(intern!(py, "extras_schema"))?, &extra_behavior) {
-            (Some(v), ExtraBehavior::Allow) => Some(Box::new(build_validator(v, config, definitions)?)),
+            (Some(v), ExtraBehavior::Allow) => Some(Box::new(build_validator(&v, config, definitions)?)),
             (Some(_), _) => return py_schema_err!("extras_schema can only be used if extra_behavior=allow"),
             (_, _) => None,
         };
 
-        let fields_dict: &PyDict = schema.get_as_req(intern!(py, "fields"))?;
+        let fields_dict: Bound<'_, PyDict> = schema.get_as_req(intern!(py, "fields"))?;
         let mut fields: Vec<TypedDictField> = Vec::with_capacity(fields_dict.len());
 
         for (key, value) in fields_dict {
-            let field_info: &PyDict = value.downcast()?;
-            let field_name: &str = key.extract()?;
+            let field_info = value.downcast::<PyDict>()?;
+            let field_name_py = key.downcast_into::<PyString>()?;
+            let field_name = field_name_py.to_str()?;
 
             let schema = field_info.get_as_req(intern!(py, "schema"))?;
 
-            let validator = match build_validator(schema, config, definitions) {
+            let validator = match build_validator(&schema, config, definitions) {
                 Ok(v) => v,
                 Err(err) => return py_schema_err!("Field \"{}\":\n  {}", field_name, err),
             };
@@ -112,7 +114,7 @@ impl BuildValidator for TypedDictValidator {
             let lookup_key = match field_info.get_item(intern!(py, "validation_alias"))? {
                 Some(alias) => {
                     let alt_alias = if populate_by_name { Some(field_name) } else { None };
-                    LookupKey::from_py(py, alias, alt_alias)?
+                    LookupKey::from_py(py, &alias, alt_alias)?
                 }
                 None => LookupKey::from_string(py, field_name),
             };
@@ -120,7 +122,7 @@ impl BuildValidator for TypedDictValidator {
             fields.push(TypedDictField {
                 name: field_name.to_string(),
                 lookup_key,
-                name_py: PyString::new(py, field_name).into(),
+                name_py: field_name_py.into(),
                 validator,
                 required,
             });
@@ -152,7 +154,7 @@ impl Validator for TypedDictValidator {
         let strict = state.strict_or(self.strict);
         let dict = input.validate_dict(strict)?;
 
-        let output_dict = PyDict::new(py);
+        let output_dict = PyDict::new_bound(py);
         let mut errors: Vec<ValLineError> = Vec::with_capacity(self.fields.len());
 
         // we only care about which keys have been used if we're iterating over the object for extra after
@@ -173,9 +175,9 @@ impl Validator for TypedDictValidator {
         }
 
         macro_rules! process {
-            ($dict:ident, $get_method:ident, $iter:ty $(,$kwargs:ident)?) => {{
+            ($dict:expr, $get_method:ident, $iter:ty $(,$kwargs:expr)?) => {{
                 match state.with_new_extra(Extra {
-                    data: Some(output_dict),
+                    data: Some(output_dict.clone()),
                     ..*state.extra()
                 }, |state| {
                     for field in &self.fields {
@@ -278,7 +280,7 @@ impl Validator for TypedDictValidator {
                                     ValLineError::new_with_loc(
                                         ErrorTypeDefaults::ExtraForbidden,
                                         value,
-                                        raw_key,
+                                        raw_key.clone(),
                                     )
 
                                 );
@@ -310,10 +312,14 @@ impl Validator for TypedDictValidator {
             }};
         }
         match dict {
-            GenericMapping::PyDict(d) => process!(d, py_get_dict_item, DictGenericIterator),
-            GenericMapping::PyMapping(d) => process!(d, py_get_mapping_item, MappingGenericIterator),
-            GenericMapping::StringMapping(d) => process!(d, py_get_string_mapping_item, StringMappingGenericIterator),
-            GenericMapping::PyGetAttr(d, kwargs) => process!(d, py_get_attr, AttributesGenericIterator, kwargs),
+            GenericMapping::PyDict(d) => {
+                process!(&d, py_get_dict_item, DictGenericIterator);
+            }
+            GenericMapping::PyMapping(d) => process!(&d, py_get_mapping_item, MappingGenericIterator),
+            GenericMapping::StringMapping(d) => process!(&d, py_get_string_mapping_item, StringMappingGenericIterator),
+            GenericMapping::PyGetAttr(d, kwargs) => {
+                process!(&d, py_get_attr, AttributesGenericIterator, kwargs.as_ref());
+            }
             GenericMapping::JsonObject(d) => process!(d, json_get, JsonObjectGenericIterator),
         }
 

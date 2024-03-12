@@ -37,8 +37,8 @@ impl BuildValidator for UrlValidator {
     const EXPECTED_TYPE: &'static str = "url";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let (allowed_schemes, name) = get_allowed_schemas(schema, Self::EXPECTED_TYPE)?;
@@ -165,8 +165,8 @@ impl BuildValidator for MultiHostUrlValidator {
     const EXPECTED_TYPE: &'static str = "multi-host-url";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let (allowed_schemes, name) = get_allowed_schemas(schema, Self::EXPECTED_TYPE)?;
@@ -501,7 +501,7 @@ fn check_sub_defaults(
     Ok(())
 }
 
-fn get_allowed_schemas(schema: &PyDict, name: &'static str) -> PyResult<(AllowedSchemas, String)> {
+fn get_allowed_schemas(schema: &Bound<'_, PyDict>, name: &'static str) -> PyResult<(AllowedSchemas, String)> {
     match schema.get_as::<&PyList>(intern!(schema.py(), "allowed_schemes"))? {
         Some(list) => {
             if list.is_empty() {

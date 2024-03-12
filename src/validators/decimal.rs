@@ -16,17 +16,17 @@ use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationSta
 
 static DECIMAL_TYPE: GILOnceCell<Py<PyType>> = GILOnceCell::new();
 
-pub fn get_decimal_type(py: Python) -> Py<PyType> {
+pub fn get_decimal_type(py: Python) -> &Bound<'_, PyType> {
     DECIMAL_TYPE
         .get_or_init(py, || {
-            py.import("decimal")
+            py.import_bound("decimal")
                 .and_then(|decimal_module| decimal_module.getattr("Decimal"))
                 .unwrap()
                 .extract::<&PyType>()
                 .unwrap()
                 .into()
         })
-        .clone()
+        .bind(py)
 }
 
 #[derive(Debug, Clone)]
@@ -46,8 +46,8 @@ pub struct DecimalValidator {
 impl BuildValidator for DecimalValidator {
     const EXPECTED_TYPE: &'static str = "decimal";
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
@@ -83,12 +83,14 @@ impl_py_gc_traverse!(DecimalValidator {
     gt
 });
 
-fn extract_decimal_digits_info(decimal: &PyAny, normalized: bool, py: Python<'_>) -> ValResult<(u64, u64)> {
-    let mut normalized_decimal: Option<&PyAny> = None;
+fn extract_decimal_digits_info(decimal: &Bound<'_, PyAny>, normalized: bool) -> ValResult<(u64, u64)> {
+    let py = decimal.py();
+    let mut normalized_decimal: Option<Bound<'_, PyAny>> = None;
     if normalized {
-        normalized_decimal = Some(decimal.call_method0(intern!(py, "normalize")).unwrap_or(decimal));
+        normalized_decimal = decimal.call_method0(intern!(py, "normalize")).ok();
     }
-    let (_, digit_tuple, exponent): (&PyAny, &PyTuple, &PyAny) = normalized_decimal
+    let (_, digit_tuple, exponent): (Bound<'_, PyAny>, Bound<'_, PyTuple>, Bound<'_, PyAny>) = normalized_decimal
+        .as_ref()
         .unwrap_or(decimal)
         .call_method0(intern!(py, "as_tuple"))?
         .extract()?;
@@ -129,8 +131,8 @@ impl Validator for DecimalValidator {
             }
 
             if self.check_digits {
-                if let Ok((normalized_decimals, normalized_digits)) = extract_decimal_digits_info(decimal, true, py) {
-                    if let Ok((decimals, digits)) = extract_decimal_digits_info(decimal, false, py) {
+                if let Ok((normalized_decimals, normalized_digits)) = extract_decimal_digits_info(&decimal, true) {
+                    if let Ok((decimals, digits)) = extract_decimal_digits_info(&decimal, false) {
                         if let Some(max_digits) = self.max_digits {
                             if (digits > max_digits) & (normalized_digits > max_digits) {
                                 return Err(ValError::new(
@@ -181,20 +183,17 @@ impl Validator for DecimalValidator {
 
         if let Some(multiple_of) = &self.multiple_of {
             // fraction = (decimal / multiple_of) % 1
-            let fraction: &PyAny = unsafe {
-                let division = PyObject::from_owned_ptr_or_err(
-                    py,
-                    pyo3::ffi::PyNumber_TrueDivide(decimal.as_ptr(), multiple_of.as_ptr()),
-                )?;
+            let fraction = unsafe {
+                let division = decimal.div(multiple_of)?;
                 let one = 1.to_object(py);
-                py.from_owned_ptr_or_err(pyo3::ffi::PyNumber_Remainder(division.as_ptr(), one.as_ptr()))?
+                Bound::from_owned_ptr_or_err(py, pyo3::ffi::PyNumber_Remainder(division.as_ptr(), one.as_ptr()))?
             };
             let zero = 0.to_object(py);
             if !fraction.eq(&zero)? {
                 return Err(ValError::new(
                     ErrorType::MultipleOf {
                         multiple_of: multiple_of.to_string().into(),
-                        context: Some([("multiple_of", multiple_of)].into_py_dict(py).into()),
+                        context: Some([("multiple_of", multiple_of)].into_py_dict_bound(py).into()),
                     },
                     input,
                 ));
@@ -217,7 +216,7 @@ impl Validator for DecimalValidator {
                 return Err(ValError::new(
                     ErrorType::LessThanEqual {
                         le: Number::String(le.to_string()),
-                        context: Some([("le", le)].into_py_dict(py).into()),
+                        context: Some([("le", le)].into_py_dict_bound(py).into()),
                     },
                     input,
                 ));
@@ -228,7 +227,7 @@ impl Validator for DecimalValidator {
                 return Err(ValError::new(
                     ErrorType::LessThan {
                         lt: Number::String(lt.to_string()),
-                        context: Some([("lt", lt)].into_py_dict(py).into()),
+                        context: Some([("lt", lt)].into_py_dict_bound(py).into()),
                     },
                     input,
                 ));
@@ -239,7 +238,7 @@ impl Validator for DecimalValidator {
                 return Err(ValError::new(
                     ErrorType::GreaterThanEqual {
                         ge: Number::String(ge.to_string()),
-                        context: Some([("ge", ge)].into_py_dict(py).into()),
+                        context: Some([("ge", ge)].into_py_dict_bound(py).into()),
                     },
                     input,
                 ));
@@ -250,7 +249,7 @@ impl Validator for DecimalValidator {
                 return Err(ValError::new(
                     ErrorType::GreaterThan {
                         gt: Number::String(gt.to_string()),
-                        context: Some([("gt", gt)].into_py_dict(py).into()),
+                        context: Some([("gt", gt)].into_py_dict_bound(py).into()),
                     },
                     input,
                 ));
@@ -265,33 +264,25 @@ impl Validator for DecimalValidator {
     }
 }
 
-pub(crate) fn create_decimal<'a>(arg: &'a PyAny, input: &'a impl Input<'a>, py: Python<'a>) -> ValResult<&'a PyAny> {
-    let decimal_type_obj: Py<PyType> = get_decimal_type(py);
-    decimal_type_obj
-        .call1(py, (arg,))
-        .map_err(|e| {
-            let decimal_exception = match arg
-                .py()
-                .import("decimal")
-                .and_then(|decimal_module| decimal_module.getattr("DecimalException"))
-            {
-                Ok(decimal_exception) => decimal_exception,
-                Err(e) => return ValError::InternalErr(e),
-            };
-            handle_decimal_new_error(arg.py(), input.as_error_value(), e, decimal_exception)
-        })
-        .map(|v| v.into_ref(py))
+pub(crate) fn create_decimal<'a>(arg: &Bound<'a, PyAny>, input: &'a impl Input<'a>) -> ValResult<Bound<'a, PyAny>> {
+    let py = arg.py();
+    get_decimal_type(py).call1((arg,)).map_err(|e| {
+        let decimal_exception = match py
+            .import_bound("decimal")
+            .and_then(|decimal_module| decimal_module.getattr("DecimalException"))
+        {
+            Ok(decimal_exception) => decimal_exception,
+            Err(e) => return ValError::InternalErr(e),
+        };
+        handle_decimal_new_error(input.as_error_value(), e, decimal_exception)
+    })
 }
 
-fn handle_decimal_new_error<'a>(
-    py: Python<'a>,
-    input: InputValue,
-    error: PyErr,
-    decimal_exception: &'a PyAny,
-) -> ValError {
+fn handle_decimal_new_error(input: InputValue, error: PyErr, decimal_exception: Bound<'_, PyAny>) -> ValError {
+    let py = decimal_exception.py();
     if error.matches(py, decimal_exception) {
         ValError::new_custom_input(ErrorTypeDefaults::DecimalParsing, input)
-    } else if error.matches(py, PyTypeError::type_object(py)) {
+    } else if error.matches(py, PyTypeError::type_object_bound(py)) {
         ValError::new_custom_input(ErrorTypeDefaults::DecimalType, input)
     } else {
         ValError::InternalErr(error)

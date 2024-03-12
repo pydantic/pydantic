@@ -17,8 +17,8 @@ impl BuildSerializer for StrSerializer {
     const EXPECTED_TYPE: &'static str = "str";
 
     fn build(
-        _schema: &PyDict,
-        _config: Option<&PyDict>,
+        _schema: &Bound<'_, PyDict>,
+        _config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         Ok(Self {}.into())
@@ -30,16 +30,16 @@ impl_py_gc_traverse!(StrSerializer {});
 impl TypeSerializer for StrSerializer {
     fn to_python(
         &self,
-        value: &PyAny,
-        include: Option<&PyAny>,
-        exclude: Option<&PyAny>,
+        value: &Bound<'_, PyAny>,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> PyResult<PyObject> {
         let py = value.py();
         match extra.ob_type_lookup.is_type(value, ObType::Str) {
             IsType::Exact => Ok(value.into_py(py)),
             IsType::Subclass => match extra.mode {
-                SerMode::Json => Ok(value.extract::<&str>()?.into_py(py)),
+                SerMode::Json => Ok(value.downcast::<PyString>()?.to_str()?.into_py(py)),
                 _ => Ok(value.into_py(py)),
             },
             IsType::False => {
@@ -49,9 +49,10 @@ impl TypeSerializer for StrSerializer {
         }
     }
 
-    fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
         if let Ok(py_str) = key.downcast::<PyString>() {
-            Ok(py_str.to_string_lossy())
+            // FIXME py cow to avoid the copy
+            Ok(Cow::Owned(py_str.to_string_lossy().into_owned()))
         } else {
             extra.warnings.on_fallback_py(self.get_name(), key, extra)?;
             infer_json_key(key, extra)
@@ -60,10 +61,10 @@ impl TypeSerializer for StrSerializer {
 
     fn serde_serialize<S: serde::ser::Serializer>(
         &self,
-        value: &PyAny,
+        value: &Bound<'_, PyAny>,
         serializer: S,
-        include: Option<&PyAny>,
-        exclude: Option<&PyAny>,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         match value.downcast::<PyString>() {
@@ -80,7 +81,10 @@ impl TypeSerializer for StrSerializer {
     }
 }
 
-pub fn serialize_py_str<S: serde::ser::Serializer>(py_str: &PyString, serializer: S) -> Result<S::Ok, S::Error> {
+pub fn serialize_py_str<S: serde::ser::Serializer>(
+    py_str: &Bound<'_, PyString>,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
     let s = py_str.to_str().map_err(py_err_se_err)?;
     serializer.serialize_str(s)
 }

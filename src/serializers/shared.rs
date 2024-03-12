@@ -2,8 +2,8 @@ use std::borrow::Cow;
 use std::fmt::Debug;
 
 use pyo3::exceptions::PyTypeError;
-use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
+use pyo3::sync::GILOnceCell;
 use pyo3::types::{PyDict, PyString};
 use pyo3::{intern, PyTraverseError, PyVisit};
 
@@ -27,8 +27,8 @@ pub(crate) trait BuildSerializer: Sized {
     const EXPECTED_TYPE: &'static str;
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer>;
 }
@@ -50,8 +50,8 @@ macro_rules! combined_serializer {
         impl CombinedSerializer {
             fn find_serializer(
                 lookup_type: &str,
-                schema: &PyDict,
-                config: Option<&PyDict>,
+                schema: &Bound<'_, PyDict>,
+                config: Option<&Bound<'_, PyDict>>,
                 definitions: &mut DefinitionsBuilder<CombinedSerializer>
             ) -> PyResult<CombinedSerializer> {
                 match lookup_type {
@@ -146,16 +146,16 @@ combined_serializer! {
 
 impl CombinedSerializer {
     fn _build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
         let type_key = intern!(py, "type");
 
-        if let Some(ser_schema) = schema.get_as::<&PyDict>(intern!(py, "serialization"))? {
-            let op_ser_type: Option<&str> = ser_schema.get_as(type_key)?;
-            match op_ser_type {
+        if let Some(ser_schema) = schema.get_as::<Bound<'_, PyDict>>(intern!(py, "serialization"))? {
+            let op_ser_type: Option<Bound<'_, PyString>> = ser_schema.get_as(type_key)?;
+            match op_ser_type.as_ref().map(|py_str| py_str.to_str()).transpose()? {
                 Some("function-plain") => {
                     // `function-plain` is a special case, not included in `find_serializer` since it means
                     // something different in `schema.type`
@@ -185,15 +185,15 @@ impl CombinedSerializer {
                 Some(ser_type) => {
                     // otherwise if `schema.serialization.type` is defined, use that with `find_serializer`
                     // instead of `schema.type`. In this case it's an error if a serializer isn't found.
-                    return Self::find_serializer(ser_type, ser_schema, config, definitions);
+                    return Self::find_serializer(ser_type, &ser_schema, config, definitions);
                 }
                 // if `schema.serialization.type` is None, fall back to `schema.type`
                 None => (),
             };
         }
 
-        let type_: &str = schema.get_as_req(type_key)?;
-        Self::find_serializer(type_, schema, config, definitions)
+        let type_: Bound<'_, PyString> = schema.get_as_req(type_key)?;
+        Self::find_serializer(type_.to_str()?, schema, config, definitions)
     }
 }
 
@@ -202,8 +202,8 @@ impl BuildSerializer for CombinedSerializer {
     const EXPECTED_TYPE: &'static str = "";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         Self::_build(schema, config, definitions)
@@ -257,20 +257,20 @@ impl PyGcTraverse for CombinedSerializer {
 pub(crate) trait TypeSerializer: Send + Sync + Clone + Debug {
     fn to_python(
         &self,
-        value: &PyAny,
-        include: Option<&PyAny>,
-        exclude: Option<&PyAny>,
+        value: &Bound<'_, PyAny>,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> PyResult<PyObject>;
 
-    fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>>;
+    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>>;
 
-    fn _invalid_as_json_key<'py>(
+    fn _invalid_as_json_key<'a>(
         &self,
-        key: &'py PyAny,
+        key: &'a Bound<'_, PyAny>,
         extra: &Extra,
         expected_type: &'static str,
-    ) -> PyResult<Cow<'py, str>> {
+    ) -> PyResult<Cow<'a, str>> {
         match extra.ob_type_lookup.is_type(key, ObType::None) {
             IsType::Exact | IsType::Subclass => py_err!(PyTypeError; "`{}` not valid as object key", expected_type),
             IsType::False => {
@@ -282,10 +282,10 @@ pub(crate) trait TypeSerializer: Send + Sync + Clone + Debug {
 
     fn serde_serialize<S: serde::ser::Serializer>(
         &self,
-        value: &PyAny,
+        value: &Bound<'_, PyAny>,
         serializer: S,
-        include: Option<&PyAny>,
-        exclude: Option<&PyAny>,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error>;
 
@@ -302,19 +302,19 @@ pub(crate) trait TypeSerializer: Send + Sync + Clone + Debug {
 }
 
 pub(crate) struct PydanticSerializer<'py> {
-    value: &'py PyAny,
+    value: &'py Bound<'py, PyAny>,
     serializer: &'py CombinedSerializer,
-    include: Option<&'py PyAny>,
-    exclude: Option<&'py PyAny>,
+    include: Option<&'py Bound<'py, PyAny>>,
+    exclude: Option<&'py Bound<'py, PyAny>>,
     extra: &'py Extra<'py>,
 }
 
 impl<'py> PydanticSerializer<'py> {
     pub(crate) fn new(
-        value: &'py PyAny,
+        value: &'py Bound<'py, PyAny>,
         serializer: &'py CombinedSerializer,
-        include: Option<&'py PyAny>,
-        exclude: Option<&'py PyAny>,
+        include: Option<&'py Bound<'py, PyAny>>,
+        exclude: Option<&'py Bound<'py, PyAny>>,
         extra: &'py Extra<'py>,
     ) -> Self {
         Self {
@@ -336,10 +336,10 @@ impl<'py> Serialize for PydanticSerializer<'py> {
 
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn to_json_bytes(
-    value: &PyAny,
+    value: &Bound<'_, PyAny>,
     serializer: &CombinedSerializer,
-    include: Option<&PyAny>,
-    exclude: Option<&PyAny>,
+    include: Option<&Bound<'_, PyAny>>,
+    exclude: Option<&Bound<'_, PyAny>>,
     extra: &Extra,
     indent: Option<usize>,
     expected_json_size: usize,
@@ -364,18 +364,25 @@ pub(crate) fn to_json_bytes(
     Ok(bytes)
 }
 
-pub(super) fn any_dataclass_iter<'py>(
-    dataclass: &'py PyAny,
-) -> PyResult<(impl Iterator<Item = PyResult<(&'py PyAny, &'py PyAny)>> + 'py, &PyDict)> {
+pub(super) fn any_dataclass_iter<'a, 'py>(
+    dataclass: &'a Bound<'py, PyAny>,
+) -> PyResult<(
+    impl Iterator<Item = PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>> + 'a,
+    Bound<'py, PyDict>,
+)>
+where
+    'py: 'a,
+{
     let py = dataclass.py();
-    let fields: &PyDict = dataclass.getattr(intern!(py, "__dataclass_fields__"))?.downcast()?;
+    let fields = dataclass
+        .getattr(intern!(py, "__dataclass_fields__"))?
+        .downcast_into::<PyDict>()?;
     let field_type_marker = get_field_marker(py)?;
 
-    let next = move |(field_name, field): (&'py PyAny, &'py PyAny)| -> PyResult<Option<(&'py PyAny, &'py PyAny)>> {
+    let next = move |(field_name, field): (Bound<'py, PyAny>, Bound<'py, PyAny>)| -> PyResult<Option<(Bound<'py, PyAny>, Bound<'py, PyAny>)>> {
         let field_type = field.getattr(intern!(py, "_field_type"))?;
-        if field_type.is(field_type_marker) {
-            let field_name: &PyString = field_name.downcast()?;
-            let value = dataclass.getattr(field_name)?;
+        if field_type.is(&field_type_marker) {
+            let value = dataclass.getattr(field_name.downcast::<PyString>()?)?;
             Ok(Some((field_name, value)))
         } else {
             Ok(None)
@@ -388,9 +395,9 @@ pub(super) fn any_dataclass_iter<'py>(
 static DC_FIELD_MARKER: GILOnceCell<PyObject> = GILOnceCell::new();
 
 /// needed to match the logic from dataclasses.fields `tuple(f for f in fields.values() if f._field_type is _FIELD)`
-fn get_field_marker(py: Python<'_>) -> PyResult<&PyAny> {
+fn get_field_marker(py: Python<'_>) -> PyResult<Bound<'_, PyAny>> {
     let field_type_marker_obj = DC_FIELD_MARKER.get_or_try_init(py, || {
-        py.import("dataclasses")?.getattr("_FIELD").map(|f| f.into_py(py))
+        py.import_bound("dataclasses")?.getattr("_FIELD").map(|f| f.into_py(py))
     })?;
-    Ok(field_type_marker_obj.as_ref(py))
+    Ok(field_type_marker_obj.bind(py).clone())
 }

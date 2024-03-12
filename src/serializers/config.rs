@@ -2,9 +2,9 @@ use std::borrow::Cow;
 use std::str::{from_utf8, FromStr, Utf8Error};
 
 use base64::Engine;
+use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDelta, PyDict};
-use pyo3::{intern, PyNativeType};
+use pyo3::types::{PyDelta, PyDict, PyString};
 
 use serde::ser::Error;
 
@@ -23,7 +23,7 @@ pub(crate) struct SerializationConfig {
 }
 
 impl SerializationConfig {
-    pub fn from_config(config: Option<&PyDict>) -> PyResult<Self> {
+    pub fn from_config(config: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
         let timedelta_mode = TimedeltaMode::from_config(config)?;
         let bytes_mode = BytesMode::from_config(config)?;
         let inf_nan_mode = InfNanMode::from_config(config)?;
@@ -44,7 +44,7 @@ impl SerializationConfig {
 }
 
 pub trait FromConfig {
-    fn from_config(config: Option<&PyDict>) -> PyResult<Self>
+    fn from_config(config: Option<&Bound<'_, PyDict>>) -> PyResult<Self>
     where
         Self: Sized;
 }
@@ -72,12 +72,12 @@ macro_rules! serialization_mode {
         }
 
         impl FromConfig for $name {
-            fn from_config(config: Option<&PyDict>) -> PyResult<Self> {
+            fn from_config(config: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
                 let Some(config_dict) = config else {
                     return Ok(Self::default());
                 };
-                let raw_mode = config_dict.get_as::<&str>(intern!(config_dict.py(), $config_key))?;
-                raw_mode.map_or_else(|| Ok(Self::default()), Self::from_str)
+                let raw_mode = config_dict.get_as::<Bound<'_, PyString>>(intern!(config_dict.py(), $config_key))?;
+                raw_mode.map_or_else(|| Ok(Self::default()), |raw| Self::from_str(&raw.to_cow()?))
             }
         }
 
@@ -107,7 +107,7 @@ serialization_mode! {
 }
 
 impl TimedeltaMode {
-    fn total_seconds(py_timedelta: &PyDelta) -> PyResult<&PyAny> {
+    fn total_seconds<'py>(py_timedelta: &Bound<'py, PyDelta>) -> PyResult<Bound<'py, PyAny>> {
         py_timedelta.call_method0(intern!(py_timedelta.py(), "total_seconds"))
     }
 
@@ -121,7 +121,7 @@ impl TimedeltaMode {
                 // convert to int via a py timedelta not duration since we know this this case the input would have
                 // been a py timedelta
                 let py_timedelta = either_delta.try_into_py(py)?;
-                let seconds = Self::total_seconds(py_timedelta)?;
+                let seconds = Self::total_seconds(&py_timedelta)?;
                 Ok(seconds.into_py(py))
             }
         }
@@ -135,7 +135,7 @@ impl TimedeltaMode {
             }
             Self::Float => {
                 let py_timedelta = either_delta.try_into_py(py)?;
-                let seconds: f64 = Self::total_seconds(py_timedelta)?.extract()?;
+                let seconds: f64 = Self::total_seconds(&py_timedelta)?.extract()?;
                 Ok(seconds.to_string().into())
             }
         }
@@ -154,7 +154,7 @@ impl TimedeltaMode {
             }
             Self::Float => {
                 let py_timedelta = either_delta.try_into_py(py).map_err(py_err_se_err)?;
-                let seconds = Self::total_seconds(py_timedelta).map_err(py_err_se_err)?;
+                let seconds = Self::total_seconds(&py_timedelta).map_err(py_err_se_err)?;
                 let seconds: f64 = seconds.extract().map_err(py_err_se_err)?;
                 serializer.serialize_f64(seconds)
             }
@@ -163,7 +163,7 @@ impl TimedeltaMode {
 }
 
 impl BytesMode {
-    pub fn bytes_to_string<'py>(&self, py: Python, bytes: &'py [u8]) -> PyResult<Cow<'py, str>> {
+    pub fn bytes_to_string<'a>(&self, py: Python, bytes: &'a [u8]) -> PyResult<Cow<'a, str>> {
         match self {
             Self::Utf8 => from_utf8(bytes)
                 .map_err(|err| utf8_py_error(py, err, bytes))
@@ -190,15 +190,14 @@ impl BytesMode {
 }
 
 pub fn utf8_py_error(py: Python, err: Utf8Error, data: &[u8]) -> PyErr {
-    match pyo3::exceptions::PyUnicodeDecodeError::new_utf8(py, data, err) {
-        Ok(decode_err) => PyErr::from_value(decode_err),
+    match pyo3::exceptions::PyUnicodeDecodeError::new_utf8_bound(py, data, err) {
+        Ok(decode_err) => PyErr::from_value_bound(decode_err.into_any()),
         Err(err) => err,
     }
 }
 
 impl FromPyObject<'_> for InfNanMode {
-    fn extract(ob: &'_ PyAny) -> PyResult<Self> {
-        let s = ob.extract::<&str>()?;
-        Self::from_str(s)
+    fn extract_bound(ob: &Bound<'_, PyAny>) -> PyResult<Self> {
+        Self::from_str(ob.downcast::<PyString>()?.to_str()?)
     }
 }

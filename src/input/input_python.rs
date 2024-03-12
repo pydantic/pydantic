@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use std::str::from_utf8;
 
+use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{
     PyBool, PyByteArray, PyBytes, PyDate, PyDateTime, PyDict, PyFloat, PyFrozenSet, PyInt, PyIterator, PyList,
@@ -8,7 +9,6 @@ use pyo3::types::{
 };
 #[cfg(not(PyPy))]
 use pyo3::types::{PyDictItems, PyDictKeys, PyDictValues};
-use pyo3::{intern, PyTypeInfo};
 
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 
@@ -34,18 +34,18 @@ use super::{
 
 #[cfg(not(PyPy))]
 macro_rules! extract_dict_keys {
-    ($py:expr, $obj:ident) => {
+    ($py:expr, $obj:expr) => {
         $obj.downcast::<PyDictKeys>()
             .ok()
-            .map(|v| PyIterator::from_object(v).unwrap())
+            .map(|v| PyIterator::from_bound_object(v).unwrap())
     };
 }
 
 #[cfg(PyPy)]
 macro_rules! extract_dict_keys {
-    ($py:expr, $obj:ident) => {
+    ($py:expr, $obj:expr) => {
         if is_dict_keys_type($obj) {
-            Some(PyIterator::from_object($obj).unwrap())
+            Some(PyIterator::from_bound_object($obj).unwrap())
         } else {
             None
         }
@@ -54,18 +54,18 @@ macro_rules! extract_dict_keys {
 
 #[cfg(not(PyPy))]
 macro_rules! extract_dict_values {
-    ($py:expr, $obj:ident) => {
+    ($py:expr, $obj:expr) => {
         $obj.downcast::<PyDictValues>()
             .ok()
-            .map(|v| PyIterator::from_object(v).unwrap())
+            .map(|v| PyIterator::from_bound_object(v).unwrap())
     };
 }
 
 #[cfg(PyPy)]
 macro_rules! extract_dict_values {
-    ($py:expr, $obj:ident) => {
+    ($py:expr, $obj:expr) => {
         if is_dict_values_type($obj) {
-            Some(PyIterator::from_object($obj).unwrap())
+            Some(PyIterator::from_bound_object($obj).unwrap())
         } else {
             None
         }
@@ -74,26 +74,26 @@ macro_rules! extract_dict_values {
 
 #[cfg(not(PyPy))]
 macro_rules! extract_dict_items {
-    ($py:expr, $obj:ident) => {
+    ($py:expr, $obj:expr) => {
         $obj.downcast::<PyDictItems>()
             .ok()
-            .map(|v| PyIterator::from_object(v).unwrap())
+            .map(|v| PyIterator::from_bound_object(v).unwrap())
     };
 }
 
 #[cfg(PyPy)]
 macro_rules! extract_dict_items {
-    ($py:expr, $obj:ident) => {
+    ($py:expr, $obj:expr) => {
         if is_dict_items_type($obj) {
-            Some(PyIterator::from_object($obj).unwrap())
+            Some(PyIterator::from_bound_object($obj).unwrap())
         } else {
             None
         }
     };
 }
 
-impl From<&PyAny> for LocItem {
-    fn from(py_any: &PyAny) -> Self {
+impl From<&Bound<'_, PyAny>> for LocItem {
+    fn from(py_any: &Bound<'_, PyAny>) -> Self {
         if let Ok(py_str) = py_any.downcast::<PyString>() {
             py_str.to_string_lossy().as_ref().into()
         } else if let Some(key_int) = extract_i64(py_any) {
@@ -104,15 +104,15 @@ impl From<&PyAny> for LocItem {
     }
 }
 
-impl From<PyAny> for LocItem {
-    fn from(py_any: PyAny) -> Self {
+impl From<Bound<'_, PyAny>> for LocItem {
+    fn from(py_any: Bound<'_, PyAny>) -> Self {
         (&py_any).into()
     }
 }
 
-impl<'a> Input<'a> for PyAny {
+impl<'a> Input<'a> for Bound<'a, PyAny> {
     fn as_error_value(&self) -> InputValue {
-        InputValue::Python(self.into())
+        InputValue::Python(self.clone().into())
     }
 
     fn identity(&self) -> Option<usize> {
@@ -120,10 +120,10 @@ impl<'a> Input<'a> for PyAny {
     }
 
     fn is_none(&self) -> bool {
-        self.is_none()
+        PyAnyMethods::is_none(self)
     }
 
-    fn input_is_instance(&self, class: &PyType) -> Option<&PyAny> {
+    fn input_is_instance(&self, class: &Bound<'_, PyType>) -> Option<&Bound<'a, PyAny>> {
         if self.is_instance(class).unwrap_or(false) {
             Some(self)
         } else {
@@ -135,11 +135,11 @@ impl<'a> Input<'a> for PyAny {
         true
     }
 
-    fn as_kwargs(&'a self, _py: Python<'a>) -> Option<&'a PyDict> {
-        self.downcast::<PyDict>().ok()
+    fn as_kwargs(&self, _py: Python<'a>) -> Option<Bound<'a, PyDict>> {
+        self.downcast::<PyDict>().ok().map(Clone::clone)
     }
 
-    fn input_is_subclass(&self, class: &PyType) -> PyResult<bool> {
+    fn input_is_subclass(&self, class: &Bound<'_, PyType>) -> PyResult<bool> {
         match self.downcast::<PyType>() {
             Ok(py_type) => py_type.is_subclass(class),
             Err(_) => Ok(false),
@@ -160,13 +160,13 @@ impl<'a> Input<'a> for PyAny {
 
     fn validate_args(&'a self) -> ValResult<GenericArguments<'a>> {
         if let Ok(dict) = self.downcast::<PyDict>() {
-            Ok(PyArgs::new(None, Some(dict)).into())
+            Ok(PyArgs::new(None, Some(dict.clone())).into())
         } else if let Ok(args_kwargs) = self.extract::<ArgsKwargs>() {
-            let args = args_kwargs.args.into_ref(self.py());
-            let kwargs = args_kwargs.kwargs.map(|d| d.into_ref(self.py()));
+            let args = args_kwargs.args.into_bound(self.py());
+            let kwargs = args_kwargs.kwargs.map(|d| d.into_bound(self.py()));
             Ok(PyArgs::new(Some(args), kwargs).into())
         } else if let Ok(tuple) = self.downcast::<PyTuple>() {
-            Ok(PyArgs::new(Some(tuple), None).into())
+            Ok(PyArgs::new(Some(tuple.clone()), None).into())
         } else if let Ok(list) = self.downcast::<PyList>() {
             Ok(PyArgs::new(Some(list.to_tuple()), None).into())
         } else {
@@ -176,10 +176,10 @@ impl<'a> Input<'a> for PyAny {
 
     fn validate_dataclass_args(&'a self, class_name: &str) -> ValResult<GenericArguments<'a>> {
         if let Ok(dict) = self.downcast::<PyDict>() {
-            Ok(PyArgs::new(None, Some(dict)).into())
+            Ok(PyArgs::new(None, Some(dict.clone())).into())
         } else if let Ok(args_kwargs) = self.extract::<ArgsKwargs>() {
-            let args = args_kwargs.args.into_ref(self.py());
-            let kwargs = args_kwargs.kwargs.map(|d| d.into_ref(self.py()));
+            let args = args_kwargs.args.into_bound(self.py());
+            let kwargs = args_kwargs.kwargs.map(|d| d.into_bound(self.py()));
             Ok(PyArgs::new(Some(args), kwargs).into())
         } else {
             let class_name = class_name.to_string();
@@ -199,7 +199,7 @@ impl<'a> Input<'a> for PyAny {
         coerce_numbers_to_str: bool,
     ) -> ValResult<ValidationMatch<EitherString<'a>>> {
         if let Ok(py_str) = self.downcast_exact::<PyString>() {
-            return Ok(ValidationMatch::exact(py_str.into()));
+            return Ok(ValidationMatch::exact(py_str.clone().into()));
         } else if let Ok(py_str) = self.downcast::<PyString>() {
             // force to a rust string to make sure behavior is consistent whether or not we go via a
             // rust string in StrConstrainedValidator - e.g. to_lower
@@ -219,17 +219,17 @@ impl<'a> Input<'a> for PyAny {
                     match from_utf8(unsafe { py_byte_array.as_bytes() }) {
                         // Why Python not Rust? to avoid an unnecessary allocation on the Rust side, the
                         // final output needs to be Python anyway.
-                        Ok(s) => Ok(PyString::new(self.py(), s).into()),
+                        Ok(s) => Ok(PyString::new_bound(self.py(), s).into()),
                         Err(_) => Err(ValError::new(ErrorTypeDefaults::StringUnicode, self)),
                     }
-                } else if coerce_numbers_to_str && !PyBool::is_exact_type_of(self) && {
+                } else if coerce_numbers_to_str && !self.is_exact_instance_of::<PyBool>() && {
                     let py = self.py();
-                    let decimal_type: Py<PyType> = get_decimal_type(py);
+                    let decimal_type = get_decimal_type(py);
 
                     // only allow int, float, and decimal (not bool)
                     self.is_instance_of::<PyInt>()
                         || self.is_instance_of::<PyFloat>()
-                        || self.is_instance(decimal_type.as_ref(py)).unwrap_or_default()
+                        || self.is_instance(decimal_type).unwrap_or_default()
                 } {
                     Ok(self.str()?.into())
                 } else if let Some(enum_val) = maybe_as_enum(self) {
@@ -293,7 +293,7 @@ impl<'a> Input<'a> for PyAny {
 
     fn validate_int(&'a self, strict: bool) -> ValResult<ValidationMatch<EitherInt<'a>>> {
         if self.is_exact_instance_of::<PyInt>() {
-            return Ok(ValidationMatch::exact(EitherInt::Py(self)));
+            return Ok(ValidationMatch::exact(EitherInt::Py(self.clone())));
         } else if self.is_instance_of::<PyInt>() {
             // bools are a subclass of int, so check for bool type in this specific case
             let exactness = if self.is_instance_of::<PyBool>() {
@@ -316,7 +316,7 @@ impl<'a> Input<'a> for PyAny {
                 } else if self.is_exact_instance_of::<PyFloat>() {
                     float_as_int(self, self.extract::<f64>()?)
                 } else if let Ok(decimal) = self.strict_decimal(self.py()) {
-                    decimal_as_int(self.py(), self, decimal)
+                    decimal_as_int(self, &decimal)
                 } else if let Ok(float) = self.extract::<f64>() {
                     float_as_int(self, float)
                 } else if let Some(enum_val) = maybe_as_enum(self) {
@@ -332,16 +332,16 @@ impl<'a> Input<'a> for PyAny {
     }
 
     fn exact_int(&'a self) -> ValResult<EitherInt<'a>> {
-        if PyInt::is_exact_type_of(self) {
-            Ok(EitherInt::Py(self))
+        if self.is_exact_instance_of::<PyInt>() {
+            Ok(EitherInt::Py(self.clone()))
         } else {
             Err(ValError::new(ErrorTypeDefaults::IntType, self))
         }
     }
 
     fn exact_str(&'a self) -> ValResult<EitherString<'a>> {
-        if let Ok(py_str) = <PyString as PyTryFrom>::try_from_exact(self) {
-            Ok(EitherString::Py(py_str))
+        if let Ok(py_str) = self.downcast_exact() {
+            Ok(EitherString::Py(py_str.clone()))
         } else {
             Err(ValError::new(ErrorTypeDefaults::IntType, self))
         }
@@ -349,7 +349,7 @@ impl<'a> Input<'a> for PyAny {
 
     fn validate_float(&'a self, strict: bool) -> ValResult<ValidationMatch<EitherFloat<'a>>> {
         if let Ok(float) = self.downcast_exact::<PyFloat>() {
-            return Ok(ValidationMatch::exact(EitherFloat::Py(float)));
+            return Ok(ValidationMatch::exact(EitherFloat::Py(float.clone())));
         }
 
         if !strict {
@@ -374,44 +374,42 @@ impl<'a> Input<'a> for PyAny {
         Err(ValError::new(ErrorTypeDefaults::FloatType, self))
     }
 
-    fn strict_decimal(&'a self, py: Python<'a>) -> ValResult<&'a PyAny> {
-        let decimal_type_obj: Py<PyType> = get_decimal_type(py);
-        let decimal_type = decimal_type_obj.as_ref(py);
+    fn strict_decimal(&'a self, py: Python<'a>) -> ValResult<Bound<'a, PyAny>> {
+        let decimal_type = get_decimal_type(py);
         // Fast path for existing decimal objects
         if self.is_exact_instance(decimal_type) {
-            return Ok(self);
+            return Ok(self.clone());
         }
 
         // Try subclasses of decimals, they will be upcast to Decimal
         if self.is_instance(decimal_type)? {
-            return create_decimal(self, self, py);
+            return create_decimal(self, self);
         }
 
         Err(ValError::new(
             ErrorType::IsInstanceOf {
-                class: decimal_type.name().unwrap_or("Decimal").to_string(),
+                class: decimal_type.qualname().unwrap_or_else(|_| "Decimal".to_owned()),
                 context: None,
             },
             self,
         ))
     }
 
-    fn lax_decimal(&'a self, py: Python<'a>) -> ValResult<&'a PyAny> {
-        let decimal_type_obj: Py<PyType> = get_decimal_type(py);
-        let decimal_type = decimal_type_obj.as_ref(py);
+    fn lax_decimal(&'a self, py: Python<'a>) -> ValResult<Bound<'a, PyAny>> {
+        let decimal_type = get_decimal_type(py);
         // Fast path for existing decimal objects
         if self.is_exact_instance(decimal_type) {
-            return Ok(self);
+            return Ok(self.clone());
         }
 
         if self.is_instance_of::<PyString>() || (self.is_instance_of::<PyInt>() && !self.is_instance_of::<PyBool>()) {
             // checking isinstance for str / int / bool is fast compared to decimal / float
-            create_decimal(self, self, py)
+            create_decimal(self, self)
         } else if self.is_instance(decimal_type)? {
             // upcast subclasses to decimal
-            return create_decimal(self, self, py);
+            return create_decimal(self, self);
         } else if self.is_instance_of::<PyFloat>() {
-            create_decimal(self.str()?, self, py)
+            create_decimal(self.str()?.as_any(), self)
         } else {
             Err(ValError::new(ErrorTypeDefaults::DecimalType, self))
         }
@@ -419,7 +417,7 @@ impl<'a> Input<'a> for PyAny {
 
     fn strict_dict(&'a self) -> ValResult<GenericMapping<'a>> {
         if let Ok(dict) = self.downcast::<PyDict>() {
-            Ok(dict.into())
+            Ok(dict.clone().into())
         } else {
             Err(ValError::new(ErrorTypeDefaults::DictType, self))
         }
@@ -427,9 +425,9 @@ impl<'a> Input<'a> for PyAny {
 
     fn lax_dict(&'a self) -> ValResult<GenericMapping<'a>> {
         if let Ok(dict) = self.downcast::<PyDict>() {
-            Ok(dict.into())
+            Ok(dict.clone().into())
         } else if let Ok(mapping) = self.downcast::<PyMapping>() {
-            Ok(mapping.into())
+            Ok(mapping.clone().into())
         } else {
             Err(ValError::new(ErrorTypeDefaults::DictType, self))
         }
@@ -439,17 +437,17 @@ impl<'a> Input<'a> for PyAny {
         if from_attributes {
             // if from_attributes, first try a dict, then mapping then from_attributes
             if let Ok(dict) = self.downcast::<PyDict>() {
-                return Ok(dict.into());
+                return Ok(dict.clone().into());
             } else if !strict {
                 if let Ok(mapping) = self.downcast::<PyMapping>() {
-                    return Ok(mapping.into());
+                    return Ok(mapping.clone().into());
                 }
             }
 
             if from_attributes_applicable(self) {
-                Ok(self.into())
-            } else if let Ok((obj, kwargs)) = self.extract::<(&PyAny, &PyDict)>() {
-                if from_attributes_applicable(obj) {
+                Ok(self.clone().into())
+            } else if let Ok((obj, kwargs)) = self.extract() {
+                if from_attributes_applicable(&obj) {
                     Ok(GenericMapping::PyGetAttr(obj, Some(kwargs)))
                 } else {
                     Err(ValError::new(ErrorTypeDefaults::ModelAttributesType, self))
@@ -548,15 +546,15 @@ impl<'a> Input<'a> for PyAny {
     fn extract_generic_iterable(&'a self) -> ValResult<GenericIterable<'a>> {
         // Handle concrete non-overlapping types first, then abstract types
         if let Ok(iterable) = self.downcast::<PyList>() {
-            Ok(GenericIterable::List(iterable))
+            Ok(GenericIterable::List(iterable.clone()))
         } else if let Ok(iterable) = self.downcast::<PyTuple>() {
-            Ok(GenericIterable::Tuple(iterable))
+            Ok(GenericIterable::Tuple(iterable.clone()))
         } else if let Ok(iterable) = self.downcast::<PySet>() {
-            Ok(GenericIterable::Set(iterable))
+            Ok(GenericIterable::Set(iterable.clone()))
         } else if let Ok(iterable) = self.downcast::<PyFrozenSet>() {
-            Ok(GenericIterable::FrozenSet(iterable))
+            Ok(GenericIterable::FrozenSet(iterable.clone()))
         } else if let Ok(iterable) = self.downcast::<PyDict>() {
-            Ok(GenericIterable::Dict(iterable))
+            Ok(GenericIterable::Dict(iterable.clone()))
         } else if let Some(iterable) = extract_dict_keys!(self.py(), self) {
             Ok(GenericIterable::DictKeys(iterable))
         } else if let Some(iterable) = extract_dict_values!(self.py(), self) {
@@ -564,15 +562,15 @@ impl<'a> Input<'a> for PyAny {
         } else if let Some(iterable) = extract_dict_items!(self.py(), self) {
             Ok(GenericIterable::DictItems(iterable))
         } else if let Ok(iterable) = self.downcast::<PyMapping>() {
-            Ok(GenericIterable::Mapping(iterable))
+            Ok(GenericIterable::Mapping(iterable.clone()))
         } else if let Ok(iterable) = self.downcast::<PyString>() {
-            Ok(GenericIterable::PyString(iterable))
+            Ok(GenericIterable::PyString(iterable.clone()))
         } else if let Ok(iterable) = self.downcast::<PyBytes>() {
-            Ok(GenericIterable::Bytes(iterable))
+            Ok(GenericIterable::Bytes(iterable.clone()))
         } else if let Ok(iterable) = self.downcast::<PyByteArray>() {
-            Ok(GenericIterable::PyByteArray(iterable))
+            Ok(GenericIterable::PyByteArray(iterable.clone()))
         } else if let Ok(iterable) = self.downcast::<PySequence>() {
-            Ok(GenericIterable::Sequence(iterable))
+            Ok(GenericIterable::Sequence(iterable.clone()))
         } else if let Ok(iterable) = self.iter() {
             Ok(GenericIterable::Iterator(iterable))
         } else {
@@ -590,13 +588,13 @@ impl<'a> Input<'a> for PyAny {
 
     fn validate_date(&self, strict: bool) -> ValResult<ValidationMatch<EitherDate>> {
         if let Ok(date) = self.downcast_exact::<PyDate>() {
-            Ok(ValidationMatch::exact(date.into()))
-        } else if PyDateTime::is_type_of(self) {
+            Ok(ValidationMatch::exact(date.clone().into()))
+        } else if self.is_instance_of::<PyDateTime>() {
             // have to check if it's a datetime first, otherwise the line below converts to a date
             // even if we later try coercion from a datetime, we don't want to return a datetime now
             Err(ValError::new(ErrorTypeDefaults::DateType, self))
         } else if let Ok(date) = self.downcast::<PyDate>() {
-            Ok(ValidationMatch::strict(date.into()))
+            Ok(ValidationMatch::strict(date.clone().into()))
         } else if let Some(bytes) = {
             if strict {
                 None
@@ -621,9 +619,9 @@ impl<'a> Input<'a> for PyAny {
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
     ) -> ValResult<ValidationMatch<EitherTime>> {
         if let Ok(time) = self.downcast_exact::<PyTime>() {
-            return Ok(ValidationMatch::exact(time.into()));
+            return Ok(ValidationMatch::exact(time.clone().into()));
         } else if let Ok(time) = self.downcast::<PyTime>() {
-            return Ok(ValidationMatch::strict(time.into()));
+            return Ok(ValidationMatch::strict(time.clone().into()));
         }
 
         'lax: {
@@ -633,7 +631,7 @@ impl<'a> Input<'a> for PyAny {
                     bytes_as_time(self, str.as_bytes(), microseconds_overflow_behavior)
                 } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
                     bytes_as_time(self, py_bytes.as_bytes(), microseconds_overflow_behavior)
-                } else if PyBool::is_exact_type_of(self) {
+                } else if self.is_exact_instance_of::<PyBool>() {
                     Err(ValError::new(ErrorTypeDefaults::TimeType, self))
                 } else if let Some(int) = extract_i64(self) {
                     int_as_time(self, int, 0)
@@ -655,9 +653,9 @@ impl<'a> Input<'a> for PyAny {
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
     ) -> ValResult<ValidationMatch<EitherDateTime>> {
         if let Ok(dt) = self.downcast_exact::<PyDateTime>() {
-            return Ok(ValidationMatch::exact(dt.into()));
+            return Ok(ValidationMatch::exact(dt.clone().into()));
         } else if let Ok(dt) = self.downcast::<PyDateTime>() {
-            return Ok(ValidationMatch::strict(dt.into()));
+            return Ok(ValidationMatch::strict(dt.clone().into()));
         }
 
         'lax: {
@@ -667,7 +665,7 @@ impl<'a> Input<'a> for PyAny {
                     bytes_as_datetime(self, str.as_bytes(), microseconds_overflow_behavior)
                 } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
                     bytes_as_datetime(self, py_bytes.as_bytes(), microseconds_overflow_behavior)
-                } else if PyBool::is_exact_type_of(self) {
+                } else if self.is_exact_instance_of::<PyBool>() {
                     Err(ValError::new(ErrorTypeDefaults::DatetimeType, self))
                 } else if let Some(int) = extract_i64(self) {
                     int_as_datetime(self, int, 0)
@@ -721,8 +719,15 @@ impl<'a> Input<'a> for PyAny {
     }
 }
 
-impl BorrowInput for &'_ PyAny {
-    type Input<'a> = PyAny where Self: 'a;
+impl BorrowInput for Bound<'_, PyAny> {
+    type Input<'a> = Bound<'a, PyAny> where Self: 'a;
+    fn borrow_input(&self) -> &Self::Input<'_> {
+        self
+    }
+}
+
+impl BorrowInput for Borrowed<'_, '_, PyAny> {
+    type Input<'a> = Bound<'a, PyAny> where Self: 'a;
     fn borrow_input(&self) -> &Self::Input<'_> {
         self
     }
@@ -730,23 +735,24 @@ impl BorrowInput for &'_ PyAny {
 
 /// Best effort check of whether it's likely to make sense to inspect obj for attributes and iterate over it
 /// with `obj.dir()`
-fn from_attributes_applicable(obj: &PyAny) -> bool {
-    let module_name = match obj.get_type().getattr(intern!(obj.py(), "__module__")) {
-        Ok(module) => match module.extract::<&str>() {
-            Ok(s) => s,
-            Err(_) => return false,
-        },
-        Err(_) => return false,
+fn from_attributes_applicable(obj: &Bound<'_, PyAny>) -> bool {
+    let Some(module_name) = obj
+        .get_type()
+        .getattr(intern!(obj.py(), "__module__"))
+        .ok()
+        .and_then(|module_name| module_name.downcast_into::<PyString>().ok())
+    else {
+        return false;
     };
     // I don't think it's a very good list at all! But it doesn't have to be at perfect, it just needs to avoid
     // the most egregious foot guns, it's mostly just to catch "builtins"
     // still happy to add more or do something completely different if anyone has a better idea???
     // dbg!(obj, module_name);
-    !matches!(module_name, "builtins" | "datetime" | "collections")
+    !matches!(module_name.to_str(), Ok("builtins" | "datetime" | "collections"))
 }
 
 /// Utility for extracting a string from a PyAny, if possible.
-fn maybe_as_string(v: &PyAny, unicode_error: ErrorType) -> ValResult<Option<Cow<str>>> {
+fn maybe_as_string<'a>(v: &'a Bound<'_, PyAny>, unicode_error: ErrorType) -> ValResult<Option<Cow<'a, str>>> {
     if let Ok(py_string) = v.downcast::<PyString>() {
         let str = py_string_str(py_string)?;
         Ok(Some(Cow::Borrowed(str)))
@@ -761,11 +767,11 @@ fn maybe_as_string(v: &PyAny, unicode_error: ErrorType) -> ValResult<Option<Cow<
 }
 
 /// Utility for extracting an enum value, if possible.
-fn maybe_as_enum(v: &PyAny) -> Option<&PyAny> {
+fn maybe_as_enum<'py>(v: &Bound<'py, PyAny>) -> Option<Bound<'py, PyAny>> {
     let py = v.py();
     let enum_meta_object = get_enum_meta_object(py);
     let meta_type = v.get_type().get_type();
-    if meta_type.is(&enum_meta_object) {
+    if meta_type.is(enum_meta_object) {
         v.getattr(intern!(py, "value")).ok()
     } else {
         None
@@ -773,55 +779,55 @@ fn maybe_as_enum(v: &PyAny) -> Option<&PyAny> {
 }
 
 #[cfg(PyPy)]
-static DICT_KEYS_TYPE: pyo3::once_cell::GILOnceCell<Py<PyType>> = pyo3::once_cell::GILOnceCell::new();
+static DICT_KEYS_TYPE: pyo3::sync::GILOnceCell<Py<PyType>> = pyo3::sync::GILOnceCell::new();
 
 #[cfg(PyPy)]
-fn is_dict_keys_type(v: &PyAny) -> bool {
+fn is_dict_keys_type(v: &Bound<'_, PyAny>) -> bool {
     let py = v.py();
     let keys_type = DICT_KEYS_TYPE
         .get_or_init(py, || {
             py.eval("type({}.keys())", None, None)
                 .unwrap()
-                .extract::<&PyType>()
+                .downcast::<PyType>()
                 .unwrap()
                 .into()
         })
-        .as_ref(py);
+        .bind(py);
     v.is_instance(keys_type).unwrap_or(false)
 }
 
 #[cfg(PyPy)]
-static DICT_VALUES_TYPE: pyo3::once_cell::GILOnceCell<Py<PyType>> = pyo3::once_cell::GILOnceCell::new();
+static DICT_VALUES_TYPE: pyo3::sync::GILOnceCell<Py<PyType>> = pyo3::sync::GILOnceCell::new();
 
 #[cfg(PyPy)]
-fn is_dict_values_type(v: &PyAny) -> bool {
+fn is_dict_values_type(v: &Bound<'_, PyAny>) -> bool {
     let py = v.py();
     let values_type = DICT_VALUES_TYPE
         .get_or_init(py, || {
             py.eval("type({}.values())", None, None)
                 .unwrap()
-                .extract::<&PyType>()
+                .downcast::<PyType>()
                 .unwrap()
                 .into()
         })
-        .as_ref(py);
+        .bind(py);
     v.is_instance(values_type).unwrap_or(false)
 }
 
 #[cfg(PyPy)]
-static DICT_ITEMS_TYPE: pyo3::once_cell::GILOnceCell<Py<PyType>> = pyo3::once_cell::GILOnceCell::new();
+static DICT_ITEMS_TYPE: pyo3::sync::GILOnceCell<Py<PyType>> = pyo3::sync::GILOnceCell::new();
 
 #[cfg(PyPy)]
-fn is_dict_items_type(v: &PyAny) -> bool {
+fn is_dict_items_type(v: &Bound<'_, PyAny>) -> bool {
     let py = v.py();
     let items_type = DICT_ITEMS_TYPE
         .get_or_init(py, || {
             py.eval("type({}.items())", None, None)
                 .unwrap()
-                .extract::<&PyType>()
+                .downcast::<PyType>()
                 .unwrap()
                 .into()
         })
-        .as_ref(py);
+        .bind(py);
     v.is_instance(items_type).unwrap_or(false)
 }

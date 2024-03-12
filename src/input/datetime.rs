@@ -20,7 +20,7 @@ use crate::tools::py_err;
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum EitherDate<'a> {
     Raw(Date),
-    Py(&'a PyDate),
+    Py(Bound<'a, PyDate>),
 }
 
 impl<'a> From<Date> for EitherDate<'a> {
@@ -29,13 +29,13 @@ impl<'a> From<Date> for EitherDate<'a> {
     }
 }
 
-impl<'a> From<&'a PyDate> for EitherDate<'a> {
-    fn from(date: &'a PyDate) -> Self {
+impl<'a> From<Bound<'a, PyDate>> for EitherDate<'a> {
+    fn from(date: Bound<'a, PyDate>) -> Self {
         Self::Py(date)
     }
 }
 
-pub fn pydate_as_date(py_date: &PyAny) -> PyResult<Date> {
+pub fn pydate_as_date(py_date: &Bound<'_, PyAny>) -> PyResult<Date> {
     let py = py_date.py();
     Ok(Date {
         year: py_date.getattr(intern!(py, "year"))?.extract()?,
@@ -55,7 +55,7 @@ impl<'a> EitherDate<'a> {
     pub fn try_into_py(self, py: Python<'_>) -> PyResult<PyObject> {
         let date = match self {
             Self::Py(date) => Ok(date),
-            Self::Raw(date) => PyDate::new(py, date.year.into(), date.month, date.day),
+            Self::Raw(date) => PyDate::new_bound(py, date.year.into(), date.month, date.day),
         }?;
         Ok(date.into_py(py))
     }
@@ -64,7 +64,7 @@ impl<'a> EitherDate<'a> {
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum EitherTime<'a> {
     Raw(Time),
-    Py(&'a PyTime),
+    Py(Bound<'a, PyTime>),
 }
 
 impl<'a> From<Time> for EitherTime<'a> {
@@ -73,8 +73,8 @@ impl<'a> From<Time> for EitherTime<'a> {
     }
 }
 
-impl<'a> From<&'a PyTime> for EitherTime<'a> {
-    fn from(time: &'a PyTime) -> Self {
+impl<'a> From<Bound<'a, PyTime>> for EitherTime<'a> {
+    fn from(time: Bound<'a, PyTime>) -> Self {
         Self::Py(time)
     }
 }
@@ -82,8 +82,8 @@ impl<'a> From<&'a PyTime> for EitherTime<'a> {
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum EitherTimedelta<'a> {
     Raw(Duration),
-    PyExact(&'a PyDelta),
-    PySubclass(&'a PyDelta),
+    PyExact(Bound<'a, PyDelta>),
+    PySubclass(Bound<'a, PyDelta>),
 }
 
 impl<'a> From<Duration> for EitherTimedelta<'a> {
@@ -101,29 +101,29 @@ impl<'a> EitherTimedelta<'a> {
         }
     }
 
-    pub fn try_into_py(&self, py: Python<'a>) -> PyResult<&'a PyDelta> {
+    pub fn try_into_py(&self, py: Python<'a>) -> PyResult<Bound<'a, PyDelta>> {
         match self {
-            Self::PyExact(timedelta) => Ok(*timedelta),
-            Self::PySubclass(timedelta) => Ok(*timedelta),
+            Self::PyExact(timedelta) => Ok(timedelta.clone()),
+            Self::PySubclass(timedelta) => Ok(timedelta.clone()),
             Self::Raw(duration) => duration_as_pytimedelta(py, duration),
         }
     }
 }
 
-impl<'a> TryFrom<&'a PyAny> for EitherTimedelta<'a> {
+impl<'a> TryFrom<&'_ Bound<'a, PyAny>> for EitherTimedelta<'a> {
     type Error = PyErr;
 
-    fn try_from(value: &'a PyAny) -> PyResult<Self> {
-        if let Ok(dt) = <PyDelta as PyTryFrom>::try_from_exact(value) {
-            Ok(EitherTimedelta::PyExact(dt))
+    fn try_from(value: &Bound<'a, PyAny>) -> PyResult<Self> {
+        if let Ok(dt) = value.downcast_exact() {
+            Ok(EitherTimedelta::PyExact(dt.clone()))
         } else {
-            let dt = value.downcast::<PyDelta>()?;
-            Ok(EitherTimedelta::PySubclass(dt))
+            let dt = value.downcast()?;
+            Ok(EitherTimedelta::PySubclass(dt.clone()))
         }
     }
 }
 
-pub fn pytimedelta_exact_as_duration(py_timedelta: &PyDelta) -> Duration {
+pub fn pytimedelta_exact_as_duration(py_timedelta: &Bound<'_, PyDelta>) -> Duration {
     // see https://docs.python.org/3/c-api/datetime.html#c.PyDateTime_DELTA_GET_DAYS
     // days can be negative, but seconds and microseconds are always positive.
     let mut days = py_timedelta.get_days(); // -999999999 to 999999999
@@ -146,7 +146,7 @@ pub fn pytimedelta_exact_as_duration(py_timedelta: &PyDelta) -> Duration {
     Duration::new(positive, days as u32, seconds as u32, microseconds as u32).unwrap()
 }
 
-pub fn pytimedelta_subclass_as_duration(py_timedelta: &PyDelta) -> PyResult<Duration> {
+pub fn pytimedelta_subclass_as_duration(py_timedelta: &Bound<'_, PyDelta>) -> PyResult<Duration> {
     let total_seconds: f64 = py_timedelta
         .call_method0(intern!(py_timedelta.py(), "total_seconds"))?
         .extract()?;
@@ -162,9 +162,9 @@ pub fn pytimedelta_subclass_as_duration(py_timedelta: &PyDelta) -> PyResult<Dura
         .map_err(|err| PyValueError::new_err(err.to_string()))
 }
 
-pub fn duration_as_pytimedelta<'py>(py: Python<'py>, duration: &Duration) -> PyResult<&'py PyDelta> {
+pub fn duration_as_pytimedelta<'py>(py: Python<'py>, duration: &Duration) -> PyResult<Bound<'py, PyDelta>> {
     let sign = if duration.positive { 1 } else { -1 };
-    PyDelta::new(
+    PyDelta::new_bound(
         py,
         sign * duration.day as i32,
         sign * duration.second as i32,
@@ -173,16 +173,16 @@ pub fn duration_as_pytimedelta<'py>(py: Python<'py>, duration: &Duration) -> PyR
     )
 }
 
-pub fn pytime_as_time(py_time: &PyAny, py_dt: Option<&PyAny>) -> PyResult<Time> {
+pub fn pytime_as_time(py_time: &Bound<'_, PyAny>, py_dt: Option<&Bound<'_, PyAny>>) -> PyResult<Time> {
     let py = py_time.py();
 
     let tzinfo = py_time.getattr(intern!(py, "tzinfo"))?;
-    let tz_offset: Option<i32> = if tzinfo.is_none() {
+    let tz_offset: Option<i32> = if PyAnyMethods::is_none(&tzinfo) {
         None
     } else {
         let offset_delta = tzinfo.call_method1(intern!(py, "utcoffset"), (py_dt,))?;
         // as per the docs, utcoffset() can return None
-        if offset_delta.is_none() {
+        if PyAnyMethods::is_none(&offset_delta) {
             None
         } else {
             let offset_seconds: f64 = offset_delta.call_method0(intern!(py, "total_seconds"))?.extract()?;
@@ -210,25 +210,24 @@ impl<'a> EitherTime<'a> {
     pub fn try_into_py(self, py: Python<'_>) -> PyResult<PyObject> {
         let time = match self {
             Self::Py(time) => Ok(time),
-            Self::Raw(time) => PyTime::new(
+            Self::Raw(time) => PyTime::new_bound(
                 py,
                 time.hour,
                 time.minute,
                 time.second,
                 time.microsecond,
-                time_as_tzinfo(py, &time)?,
+                time_as_tzinfo(py, &time)?.as_ref(),
             ),
         }?;
         Ok(time.into_py(py))
     }
 }
 
-fn time_as_tzinfo<'py>(py: Python<'py>, time: &Time) -> PyResult<Option<&'py PyTzInfo>> {
+fn time_as_tzinfo<'py>(py: Python<'py>, time: &Time) -> PyResult<Option<Bound<'py, PyTzInfo>>> {
     match time.tz_offset {
         Some(offset) => {
             let tz_info: TzInfo = offset.try_into()?;
-            let py_tz_info = Py::new(py, tz_info)?.to_object(py).into_ref(py);
-            Ok(Some(py_tz_info.extract()?))
+            Ok(Some(Bound::new(py, tz_info)?.into_any().downcast_into()?))
         }
         None => Ok(None),
     }
@@ -237,7 +236,7 @@ fn time_as_tzinfo<'py>(py: Python<'py>, time: &Time) -> PyResult<Option<&'py PyT
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum EitherDateTime<'a> {
     Raw(DateTime),
-    Py(&'a PyDateTime),
+    Py(Bound<'a, PyDateTime>),
 }
 
 impl<'a> From<DateTime> for EitherDateTime<'a> {
@@ -246,13 +245,13 @@ impl<'a> From<DateTime> for EitherDateTime<'a> {
     }
 }
 
-impl<'a> From<&'a PyDateTime> for EitherDateTime<'a> {
-    fn from(dt: &'a PyDateTime) -> Self {
+impl<'a> From<Bound<'a, PyDateTime>> for EitherDateTime<'a> {
+    fn from(dt: Bound<'a, PyDateTime>) -> Self {
         Self::Py(dt)
     }
 }
 
-pub fn pydatetime_as_datetime(py_dt: &PyAny) -> PyResult<DateTime> {
+pub fn pydatetime_as_datetime(py_dt: &Bound<'_, PyAny>) -> PyResult<DateTime> {
     Ok(DateTime {
         date: pydate_as_date(py_dt)?,
         time: pytime_as_time(py_dt, Some(py_dt))?,
@@ -269,7 +268,7 @@ impl<'a> EitherDateTime<'a> {
 
     pub fn try_into_py(self, py: Python<'a>) -> PyResult<PyObject> {
         let dt = match self {
-            Self::Raw(datetime) => PyDateTime::new(
+            Self::Raw(datetime) => PyDateTime::new_bound(
                 py,
                 datetime.date.year.into(),
                 datetime.date.month,
@@ -278,9 +277,9 @@ impl<'a> EitherDateTime<'a> {
                 datetime.time.minute,
                 datetime.time.second,
                 datetime.time.microsecond,
-                time_as_tzinfo(py, &datetime.time)?,
+                time_as_tzinfo(py, &datetime.time)?.as_ref(),
             )?,
-            Self::Py(dt) => dt,
+            Self::Py(dt) => dt.clone(),
         };
         Ok(dt.into_py(py))
     }
@@ -391,9 +390,9 @@ pub fn float_as_datetime<'a>(input: &'a impl Input<'a>, timestamp: f64) -> ValRe
     int_as_datetime(input, timestamp.floor() as i64, microseconds.round() as u32)
 }
 
-pub fn date_as_datetime(date: &PyDate) -> PyResult<EitherDateTime> {
+pub fn date_as_datetime<'py>(date: &Bound<'py, PyDate>) -> PyResult<EitherDateTime<'py>> {
     let py = date.py();
-    let dt = PyDateTime::new(
+    let dt = PyDateTime::new_bound(
         py,
         date.getattr(intern!(py, "year"))?.extract()?,
         date.getattr(intern!(py, "month"))?.extract()?,
@@ -516,21 +515,21 @@ impl TzInfo {
         Self::try_from(seconds.trunc() as i32)
     }
 
-    fn utcoffset<'py>(&self, py: Python<'py>, _dt: &PyAny) -> PyResult<&'py PyDelta> {
-        PyDelta::new(py, 0, self.seconds, 0, true)
+    fn utcoffset<'py>(&self, py: Python<'py>, _dt: &Bound<'_, PyAny>) -> PyResult<Bound<'py, PyDelta>> {
+        PyDelta::new_bound(py, 0, self.seconds, 0, true)
     }
 
-    fn tzname(&self, _dt: &PyAny) -> String {
+    fn tzname(&self, _dt: &Bound<'_, PyAny>) -> String {
         self.__str__()
     }
 
-    fn dst(&self, _dt: &PyAny) -> Option<&PyDelta> {
+    fn dst(&self, _dt: &Bound<'_, PyAny>) -> Option<&PyDelta> {
         None
     }
 
-    fn fromutc<'py>(&self, dt: &'py PyDateTime) -> PyResult<&'py PyAny> {
+    fn fromutc<'py>(&self, dt: &Bound<'py, PyDateTime>) -> PyResult<Bound<'py, PyAny>> {
         let py = dt.py();
-        dt.call_method1("__add__", (self.utcoffset(py, py.None().as_ref(py))?,))
+        dt.call_method1("__add__", (self.utcoffset(py, py.None().bind(py))?,))
     }
 
     fn __repr__(&self) -> String {

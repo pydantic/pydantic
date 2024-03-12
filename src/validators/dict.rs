@@ -30,17 +30,17 @@ impl BuildValidator for DictValidator {
     const EXPECTED_TYPE: &'static str = "dict";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let key_validator = match schema.get_item(intern!(py, "keys_schema"))? {
-            Some(schema) => Box::new(build_validator(schema, config, definitions)?),
+            Some(schema) => Box::new(build_validator(&schema, config, definitions)?),
             None => Box::new(AnyValidator::build(schema, config, definitions)?),
         };
         let value_validator = match schema.get_item(intern!(py, "values_schema"))? {
-            Some(d) => Box::new(build_validator(d, config, definitions)?),
+            Some(d) => Box::new(build_validator(&d, config, definitions)?),
             None => Box::new(AnyValidator::build(schema, config, definitions)?),
         };
         let name = format!(
@@ -77,14 +77,14 @@ impl Validator for DictValidator {
         let dict = input.validate_dict(strict)?;
         match dict {
             GenericMapping::PyDict(py_dict) => {
-                self.validate_generic_mapping(py, input, DictGenericIterator::new(py_dict)?, state)
+                self.validate_generic_mapping(py, input, DictGenericIterator::new(&py_dict)?, state)
             }
             GenericMapping::PyMapping(mapping) => {
                 state.floor_exactness(super::Exactness::Lax);
-                self.validate_generic_mapping(py, input, MappingGenericIterator::new(mapping)?, state)
+                self.validate_generic_mapping(py, input, MappingGenericIterator::new(&mapping)?, state)
             }
             GenericMapping::StringMapping(dict) => {
-                self.validate_generic_mapping(py, input, StringMappingGenericIterator::new(dict)?, state)
+                self.validate_generic_mapping(py, input, StringMappingGenericIterator::new(&dict)?, state)
             }
             GenericMapping::PyGetAttr(_, _) => unreachable!(),
             GenericMapping::JsonObject(json_object) => {
@@ -111,7 +111,7 @@ impl DictValidator {
         >,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
-        let output = PyDict::new(py);
+        let output = PyDict::new_bound(py);
         let mut errors: Vec<ValLineError> = Vec::new();
 
         let key_validator = self.key_validator.as_ref();

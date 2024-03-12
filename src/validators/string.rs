@@ -20,8 +20,8 @@ impl BuildValidator for StrValidator {
     const EXPECTED_TYPE: &'static str = "str";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let con_str_validator = StrConstrainedValidator::build(schema, config)?;
@@ -129,11 +129,11 @@ impl Validator for StrConstrainedValidator {
         }
 
         let py_string = if self.to_lower {
-            PyString::new(py, &str.to_lowercase())
+            PyString::new_bound(py, &str.to_lowercase())
         } else if self.to_upper {
-            PyString::new(py, &str.to_uppercase())
+            PyString::new_bound(py, &str.to_uppercase())
         } else if self.strip_whitespace {
-            PyString::new(py, str)
+            PyString::new_bound(py, str)
         } else {
             // we haven't modified the string, return the original as it might be a PyString
             either_str.as_py_string(py)
@@ -147,15 +147,23 @@ impl Validator for StrConstrainedValidator {
 }
 
 impl StrConstrainedValidator {
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Self> {
+    fn build(schema: &Bound<'_, PyDict>, config: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
         let py = schema.py();
 
         let pattern = schema
             .get_as(intern!(py, "pattern"))?
             .map(|s| {
-                let regex_engine =
-                    schema_or_config(schema, config, intern!(py, "regex_engine"), intern!(py, "regex_engine"))?
-                        .unwrap_or(RegexEngine::RUST_REGEX);
+                let regex_engine = schema_or_config::<Bound<'_, PyString>>(
+                    schema,
+                    config,
+                    intern!(py, "regex_engine"),
+                    intern!(py, "regex_engine"),
+                )?;
+                let regex_engine = regex_engine
+                    .as_ref()
+                    .map(|s| s.to_str())
+                    .transpose()?
+                    .unwrap_or(RegexEngine::RUST_REGEX);
                 Pattern::compile(py, s, regex_engine)
             })
             .transpose()?;
@@ -177,7 +185,9 @@ impl StrConstrainedValidator {
             schema_or_config(schema, config, intern!(py, "to_upper"), intern!(py, "str_to_upper"))?.unwrap_or(false);
 
         let coerce_numbers_to_str = match config {
-            Some(c) => c.get_item("coerce_numbers_to_str")?.map_or(Ok(false), PyAny::is_true)?,
+            Some(c) => c
+                .get_item("coerce_numbers_to_str")?
+                .map_or(Ok(false), |any| any.is_truthy())?,
             None => false,
         };
 
@@ -229,7 +239,7 @@ impl Pattern {
                 RegexEngine::RustRegex(Regex::new(&pattern).map_err(|e| py_schema_error_type!("{}", e))?)
             }
             RegexEngine::PYTHON_RE => {
-                let re_compile = py.import(intern!(py, "re"))?.getattr(intern!(py, "compile"))?;
+                let re_compile = py.import_bound(intern!(py, "re"))?.getattr(intern!(py, "compile"))?;
                 RegexEngine::PythonRe(re_compile.call1((&pattern,))?.into())
             }
             _ => return Err(py_schema_error_type!("Invalid regex engine: {}", engine)),

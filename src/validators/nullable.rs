@@ -19,12 +19,12 @@ impl BuildValidator for NullableValidator {
     const EXPECTED_TYPE: &'static str = "nullable";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
-        let schema: &PyAny = schema.get_as_req(intern!(schema.py(), "schema"))?;
-        let validator = Box::new(build_validator(schema, config, definitions)?);
+        let schema = schema.get_as_req(intern!(schema.py(), "schema"))?;
+        let validator = Box::new(build_validator(&schema, config, definitions)?);
         let name = format!("{}[{}]", Self::EXPECTED_TYPE, validator.get_name());
         Ok(Self { validator, name }.into())
     }

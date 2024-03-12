@@ -1,10 +1,10 @@
-use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
+use pyo3::sync::GILOnceCell;
 use pyo3::types::{
     PyBool, PyByteArray, PyBytes, PyDate, PyDateTime, PyDelta, PyDict, PyFloat, PyFrozenSet, PyInt, PyIterator, PyList,
-    PySet, PyString, PyTime, PyTuple, PyType,
+    PyNone, PySet, PyString, PyTime, PyTuple, PyType,
 };
-use pyo3::{intern, AsPyPointer, PyTypeInfo};
+use pyo3::{intern, PyTypeInfo};
 
 use strum::Display;
 use strum_macros::EnumString;
@@ -62,13 +62,18 @@ pub enum IsType {
 impl ObTypeLookup {
     fn new(py: Python) -> Self {
         Self {
-            none: py.None().as_ref(py).get_type_ptr() as usize,
+            none: PyNone::type_object_raw(py) as usize,
             int: PyInt::type_object_raw(py) as usize,
             bool: PyBool::type_object_raw(py) as usize,
             float: PyFloat::type_object_raw(py) as usize,
             list: PyList::type_object_raw(py) as usize,
             dict: PyDict::type_object_raw(py) as usize,
-            decimal_object: py.import("decimal").unwrap().getattr("Decimal").unwrap().to_object(py),
+            decimal_object: py
+                .import_bound("decimal")
+                .unwrap()
+                .getattr("Decimal")
+                .unwrap()
+                .to_object(py),
             string: PyString::type_object_raw(py) as usize,
             bytes: PyBytes::type_object_raw(py) as usize,
             bytearray: PyByteArray::type_object_raw(py) as usize,
@@ -81,16 +86,21 @@ impl ObTypeLookup {
             timedelta: PyDelta::type_object_raw(py) as usize,
             url: PyUrl::type_object_raw(py) as usize,
             multi_host_url: PyMultiHostUrl::type_object_raw(py) as usize,
-            enum_object: py.import("enum").unwrap().getattr("Enum").unwrap().to_object(py),
+            enum_object: py.import_bound("enum").unwrap().getattr("Enum").unwrap().to_object(py),
             generator_object: py
-                .import("types")
+                .import_bound("types")
                 .unwrap()
                 .getattr("GeneratorType")
                 .unwrap()
                 .to_object(py),
-            path_object: py.import("pathlib").unwrap().getattr("Path").unwrap().to_object(py),
-            pattern_object: py.import("re").unwrap().getattr("Pattern").unwrap().to_object(py),
-            uuid_object: py.import("uuid").unwrap().getattr("UUID").unwrap().to_object(py),
+            path_object: py
+                .import_bound("pathlib")
+                .unwrap()
+                .getattr("Path")
+                .unwrap()
+                .to_object(py),
+            pattern_object: py.import_bound("re").unwrap().getattr("Pattern").unwrap().to_object(py),
+            uuid_object: py.import_bound("uuid").unwrap().getattr("UUID").unwrap().to_object(py),
         }
     }
 
@@ -98,8 +108,8 @@ impl ObTypeLookup {
         TYPE_LOOKUP.get_or_init(py, || Self::new(py))
     }
 
-    pub fn is_type(&self, value: &PyAny, expected_ob_type: ObType) -> IsType {
-        match self.ob_type_is_expected(Some(value), value.get_type(), &expected_ob_type) {
+    pub fn is_type(&self, value: &Bound<'_, PyAny>, expected_ob_type: ObType) -> IsType {
+        match self.ob_type_is_expected(Some(value), &value.get_type(), &expected_ob_type) {
             IsType::False => {
                 if expected_ob_type == self.fallback_isinstance(value) {
                     IsType::Subclass
@@ -111,7 +121,12 @@ impl ObTypeLookup {
         }
     }
 
-    fn ob_type_is_expected(&self, op_value: Option<&PyAny>, py_type: &PyType, expected_ob_type: &ObType) -> IsType {
+    fn ob_type_is_expected(
+        &self,
+        op_value: Option<&Bound<'_, PyAny>>,
+        py_type: &Bound<'_, PyType>,
+        expected_ob_type: &ObType,
+    ) -> IsType {
         let type_ptr = py_type.as_ptr();
         let ob_type = type_ptr as usize;
         let ans = match expected_ob_type {
@@ -166,7 +181,7 @@ impl ObTypeLookup {
             // it's not null
             match get_base_type(py_type) {
                 // as below, we don't want to tests for dataclass etc. again, so we pass None as op_value
-                Some(base_type) => match self.ob_type_is_expected(None, base_type, expected_ob_type) {
+                Some(base_type) => match self.ob_type_is_expected(None, &base_type, expected_ob_type) {
                     IsType::False => IsType::False,
                     _ => IsType::Subclass,
                 },
@@ -175,14 +190,14 @@ impl ObTypeLookup {
         }
     }
 
-    pub fn get_type(&self, value: &PyAny) -> ObType {
-        match self.lookup_by_ob_type(Some(value), value.get_type()) {
+    pub fn get_type(&self, value: &Bound<'_, PyAny>) -> ObType {
+        match self.lookup_by_ob_type(Some(value), &value.get_type()) {
             ObType::Unknown => self.fallback_isinstance(value),
             ob_type => ob_type,
         }
     }
 
-    fn lookup_by_ob_type(&self, op_value: Option<&PyAny>, py_type: &PyType) -> ObType {
+    fn lookup_by_ob_type(&self, op_value: Option<&Bound<'_, PyAny>>, py_type: &Bound<'_, PyType>) -> ObType {
         let ob_type = py_type.as_ptr() as usize;
         // this should be pretty fast, but still order is a bit important, so the most common types should come first
         // thus we don't follow the order of ObType
@@ -253,18 +268,18 @@ impl ObTypeLookup {
             // if `ob_type` didn't match any member of self, we try again with the next base type pointer
             match get_base_type(py_type) {
                 // we don't want to tests for dataclass etc. again, so we pass None as op_value
-                Some(base_type) => self.lookup_by_ob_type(None, base_type),
+                Some(base_type) => self.lookup_by_ob_type(None, &base_type),
                 None => ObType::Unknown,
             }
         }
     }
 
-    fn is_enum(&self, op_value: Option<&PyAny>, py_type: &PyType) -> bool {
+    fn is_enum(&self, op_value: Option<&Bound<'_, PyAny>>, py_type: &Bound<'_, PyType>) -> bool {
         // only test on the type itself, not base types
         if op_value.is_some() {
-            let enum_meta_type = self.enum_object.as_ref(py_type.py()).get_type();
+            let enum_meta_type = self.enum_object.bind(py_type.py()).get_type();
             let meta_type = py_type.get_type();
-            meta_type.is(enum_meta_type)
+            meta_type.is(&enum_meta_type)
         } else {
             false
         }
@@ -279,53 +294,53 @@ impl ObTypeLookup {
     /// In addition, some types have inheritance set as a bitflag on the type object:
     /// https://github.com/python/cpython/blob/v3.12.0rc1/Include/object.h#L546-L553
     /// Hence they come first
-    fn fallback_isinstance(&self, value: &PyAny) -> ObType {
+    fn fallback_isinstance(&self, value: &Bound<'_, PyAny>) -> ObType {
         let py = value.py();
-        if PyInt::is_type_of(value) {
+        if value.is_instance_of::<PyInt>() {
             ObType::IntSubclass
-        } else if PyString::is_type_of(value) {
+        } else if value.is_instance_of::<PyString>() {
             ObType::StrSubclass
-        } else if PyBytes::is_type_of(value) {
+        } else if value.is_instance_of::<PyBytes>() {
             ObType::Bytes
-        } else if PyList::is_type_of(value) {
+        } else if value.is_instance_of::<PyList>() {
             ObType::List
-        } else if PyTuple::is_type_of(value) {
+        } else if value.is_instance_of::<PyTuple>() {
             ObType::Tuple
-        } else if PyDict::is_type_of(value) {
+        } else if value.is_instance_of::<PyDict>() {
             ObType::Dict
-        } else if PyBool::is_type_of(value) {
+        } else if value.is_instance_of::<PyBool>() {
             ObType::Bool
-        } else if PyFloat::is_type_of(value) {
+        } else if value.is_instance_of::<PyFloat>() {
             ObType::FloatSubclass
-        } else if PyByteArray::is_type_of(value) {
+        } else if value.is_instance_of::<PyByteArray>() {
             ObType::Bytearray
-        } else if PySet::is_type_of(value) {
+        } else if value.is_instance_of::<PySet>() {
             ObType::Set
-        } else if PyFrozenSet::is_type_of(value) {
+        } else if value.is_instance_of::<PyFrozenSet>() {
             ObType::Frozenset
-        } else if PyDateTime::is_type_of(value) {
+        } else if value.is_instance_of::<PyDateTime>() {
             ObType::Datetime
-        } else if PyDate::is_type_of(value) {
+        } else if value.is_instance_of::<PyDate>() {
             ObType::Date
-        } else if PyTime::is_type_of(value) {
+        } else if value.is_instance_of::<PyTime>() {
             ObType::Time
-        } else if PyDelta::is_type_of(value) {
+        } else if value.is_instance_of::<PyDelta>() {
             ObType::Timedelta
-        } else if PyUrl::is_type_of(value) {
+        } else if value.is_instance_of::<PyUrl>() {
             ObType::Url
-        } else if PyMultiHostUrl::is_type_of(value) {
+        } else if value.is_instance_of::<PyMultiHostUrl>() {
             ObType::MultiHostUrl
-        } else if value.is_instance(self.decimal_object.as_ref(py)).unwrap_or(false) {
+        } else if value.is_instance(self.decimal_object.bind(py)).unwrap_or(false) {
             ObType::Decimal
-        } else if value.is_instance(self.uuid_object.as_ref(py)).unwrap_or(false) {
+        } else if value.is_instance(self.uuid_object.bind(py)).unwrap_or(false) {
             ObType::Uuid
-        } else if value.is_instance(self.enum_object.as_ref(py)).unwrap_or(false) {
+        } else if value.is_instance(self.enum_object.bind(py)).unwrap_or(false) {
             ObType::Enum
-        } else if value.is_instance(self.generator_object.as_ref(py)).unwrap_or(false) {
+        } else if value.is_instance(self.generator_object.bind(py)).unwrap_or(false) {
             ObType::Generator
-        } else if value.is_instance(self.path_object.as_ref(py)).unwrap_or(false) {
+        } else if value.is_instance(self.path_object.bind(py)).unwrap_or(false) {
             ObType::Path
-        } else if value.is_instance(self.pattern_object.as_ref(py)).unwrap_or(false) {
+        } else if value.is_instance(self.pattern_object.bind(py)).unwrap_or(false) {
             ObType::Pattern
         } else {
             ObType::Unknown
@@ -333,7 +348,7 @@ impl ObTypeLookup {
     }
 }
 
-fn is_dataclass(op_value: Option<&PyAny>) -> bool {
+fn is_dataclass(op_value: Option<&Bound<'_, PyAny>>) -> bool {
     if let Some(value) = op_value {
         value
             .hasattr(intern!(value.py(), "__dataclass_fields__"))
@@ -344,7 +359,7 @@ fn is_dataclass(op_value: Option<&PyAny>) -> bool {
     }
 }
 
-fn is_pydantic_serializable(op_value: Option<&PyAny>) -> bool {
+fn is_pydantic_serializable(op_value: Option<&Bound<'_, PyAny>>) -> bool {
     if let Some(value) = op_value {
         value
             .hasattr(intern!(value.py(), "__pydantic_serializer__"))
@@ -355,7 +370,7 @@ fn is_pydantic_serializable(op_value: Option<&PyAny>) -> bool {
     }
 }
 
-fn is_generator(op_value: Option<&PyAny>) -> bool {
+fn is_generator(op_value: Option<&Bound<'_, PyAny>>) -> bool {
     if let Some(value) = op_value {
         value.downcast::<PyIterator>().is_ok()
     } else {
@@ -432,8 +447,12 @@ impl PartialEq for ObType {
     }
 }
 
-fn get_base_type(py_type: &PyType) -> Option<&PyType> {
+fn get_base_type<'py>(py_type: &Bound<'py, PyType>) -> Option<Bound<'py, PyType>> {
     let base_type_ptr = unsafe { (*py_type.as_type_ptr()).tp_base };
     // Safety: `base_type_ptr` must be a valid pointer to a Python type object, or null.
-    unsafe { py_type.py().from_borrowed_ptr_or_opt(base_type_ptr.cast()) }
+    if base_type_ptr.is_null() {
+        None
+    } else {
+        Some(unsafe { PyType::from_borrowed_type_ptr(py_type.py(), base_type_ptr) })
+    }
 }

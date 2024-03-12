@@ -22,9 +22,9 @@ pub enum InputType {
 impl IntoPy<PyObject> for InputType {
     fn into_py(self, py: Python<'_>) -> PyObject {
         match self {
-            Self::Json => intern!(py, "json").into(),
-            Self::Python => intern!(py, "python").into(),
-            Self::String => intern!(py, "string").into(),
+            Self::Json => intern!(py, "json").into_py(py),
+            Self::Python => intern!(py, "python").into_py(py),
+            Self::String => intern!(py, "string").into_py(py),
         }
     }
 }
@@ -57,7 +57,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject + Into<LocItem> + Sized {
         false
     }
 
-    fn input_is_instance(&self, _class: &PyType) -> Option<&PyAny> {
+    fn input_is_instance(&self, _class: &Bound<'_, PyType>) -> Option<&Bound<'a, PyAny>> {
         None
     }
 
@@ -65,9 +65,9 @@ pub trait Input<'a>: fmt::Debug + ToPyObject + Into<LocItem> + Sized {
         false
     }
 
-    fn as_kwargs(&'a self, py: Python<'a>) -> Option<&'a PyDict>;
+    fn as_kwargs(&self, py: Python<'a>) -> Option<Bound<'a, PyDict>>;
 
-    fn input_is_subclass(&self, _class: &PyType) -> PyResult<bool> {
+    fn input_is_subclass(&self, _class: &Bound<'_, PyType>) -> PyResult<bool> {
         Ok(false)
     }
 
@@ -119,16 +119,16 @@ pub trait Input<'a>: fmt::Debug + ToPyObject + Into<LocItem> + Sized {
 
     fn validate_float(&'a self, strict: bool) -> ValResult<ValidationMatch<EitherFloat<'a>>>;
 
-    fn validate_decimal(&'a self, strict: bool, py: Python<'a>) -> ValResult<&'a PyAny> {
+    fn validate_decimal(&'a self, strict: bool, py: Python<'a>) -> ValResult<Bound<'a, PyAny>> {
         if strict {
             self.strict_decimal(py)
         } else {
             self.lax_decimal(py)
         }
     }
-    fn strict_decimal(&'a self, py: Python<'a>) -> ValResult<&'a PyAny>;
+    fn strict_decimal(&'a self, py: Python<'a>) -> ValResult<Bound<'a, PyAny>>;
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn lax_decimal(&'a self, py: Python<'a>) -> ValResult<&'a PyAny> {
+    fn lax_decimal(&'a self, py: Python<'a>) -> ValResult<Bound<'a, PyAny>> {
         self.strict_decimal(py)
     }
 

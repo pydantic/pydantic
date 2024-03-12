@@ -21,13 +21,13 @@ pub struct SetValidator {
 macro_rules! set_build {
     () => {
         fn build(
-            schema: &PyDict,
-            config: Option<&PyDict>,
+            schema: &Bound<'_, PyDict>,
+            config: Option<&Bound<'_, PyDict>>,
             definitions: &mut DefinitionsBuilder<CombinedValidator>,
         ) -> PyResult<CombinedValidator> {
             let py = schema.py();
             let item_validator = match schema.get_item(pyo3::intern!(schema.py(), "items_schema"))? {
-                Some(d) => Box::new(crate::validators::build_validator(d, config, definitions)?),
+                Some(d) => Box::new(crate::validators::build_validator(&d, config, definitions)?),
                 None => Box::new(crate::validators::any::AnyValidator::build(
                     schema,
                     config,
@@ -71,8 +71,8 @@ impl Validator for SetValidator {
             _ => Exactness::Lax,
         };
         state.floor_exactness(exactness);
-        let set = PySet::empty(py)?;
-        collection.validate_to_set(py, set, input, self.max_length, "Set", &self.item_validator, state)?;
+        let set = PySet::empty_bound(py)?;
+        collection.validate_to_set(py, &set, input, self.max_length, "Set", &self.item_validator, state)?;
         min_length_check!(input, "Set", self.min_length, set);
         Ok(set.into_py(py))
     }

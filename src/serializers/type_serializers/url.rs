@@ -21,8 +21,8 @@ macro_rules! build_serializer {
             const EXPECTED_TYPE: &'static str = $expected_type;
 
             fn build(
-                _schema: &PyDict,
-                _config: Option<&PyDict>,
+                _schema: &Bound<'_, PyDict>,
+                _config: Option<&Bound<'_, PyDict>>,
                 _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
             ) -> PyResult<CombinedSerializer> {
                 Ok(Self {}.into())
@@ -34,9 +34,9 @@ macro_rules! build_serializer {
         impl TypeSerializer for $struct_name {
             fn to_python(
                 &self,
-                value: &PyAny,
-                include: Option<&PyAny>,
-                exclude: Option<&PyAny>,
+                value: &Bound<'_, PyAny>,
+                include: Option<&Bound<'_, PyAny>>,
+                exclude: Option<&Bound<'_, PyAny>>,
                 extra: &Extra,
             ) -> PyResult<PyObject> {
                 let py = value.py();
@@ -52,7 +52,7 @@ macro_rules! build_serializer {
                 }
             }
 
-            fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+            fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
                 match key.extract::<$extract>() {
                     Ok(py_url) => Ok(Cow::Owned(py_url.__str__().to_string())),
                     Err(_) => {
@@ -64,10 +64,10 @@ macro_rules! build_serializer {
 
             fn serde_serialize<S: serde::ser::Serializer>(
                 &self,
-                value: &PyAny,
+                value: &Bound<'_, PyAny>,
                 serializer: S,
-                include: Option<&PyAny>,
-                exclude: Option<&PyAny>,
+                include: Option<&Bound<'_, PyAny>>,
+                exclude: Option<&Bound<'_, PyAny>>,
                 extra: &Extra,
             ) -> Result<S::Ok, S::Error> {
                 match value.extract::<$extract>() {

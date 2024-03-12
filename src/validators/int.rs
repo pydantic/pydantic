@@ -19,8 +19,8 @@ impl BuildValidator for IntValidator {
     const EXPECTED_TYPE: &'static str = "int";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
@@ -145,7 +145,7 @@ impl Validator for ConstrainedIntValidator {
 }
 
 impl ConstrainedIntValidator {
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<CombinedValidator> {
+    fn build(schema: &Bound<'_, PyDict>, config: Option<&Bound<'_, PyDict>>) -> PyResult<CombinedValidator> {
         let py = schema.py();
         Ok(Self {
             strict: is_strict(schema, config)?,

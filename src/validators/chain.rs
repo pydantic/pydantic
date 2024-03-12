@@ -20,14 +20,14 @@ impl BuildValidator for ChainValidator {
     const EXPECTED_TYPE: &'static str = "chain";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let steps: Vec<CombinedValidator> = schema
-            .get_as_req::<&PyList>(intern!(schema.py(), "steps"))?
+            .get_as_req::<Bound<'_, PyList>>(intern!(schema.py(), "steps"))?
             .iter()
-            .map(|step| build_validator_steps(step, config, definitions))
+            .map(|step| build_validator_steps(&step, config, definitions))
             .collect::<PyResult<Vec<Vec<CombinedValidator>>>>()?
             .into_iter()
             .flatten()
@@ -54,9 +54,9 @@ impl BuildValidator for ChainValidator {
 
 // either a vec of the steps from a nested `ChainValidator`, or a length-1 vec containing the validator
 // to be flattened into `steps` above
-fn build_validator_steps<'a>(
-    step: &'a PyAny,
-    config: Option<&'a PyDict>,
+fn build_validator_steps(
+    step: &Bound<'_, PyAny>,
+    config: Option<&Bound<'_, PyDict>>,
     definitions: &mut DefinitionsBuilder<CombinedValidator>,
 ) -> PyResult<Vec<CombinedValidator>> {
     let validator = build_validator(step, config, definitions)?;
@@ -80,7 +80,7 @@ impl Validator for ChainValidator {
         let first_step = steps_iter.next().unwrap();
         let value = first_step.validate(py, input, state)?;
 
-        steps_iter.try_fold(value, |v, step| step.validate(py, v.into_ref(py), state))
+        steps_iter.try_fold(value, |v, step| step.validate(py, v.bind(py), state))
     }
 
     fn get_name(&self) -> &str {

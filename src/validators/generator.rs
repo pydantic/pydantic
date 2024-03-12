@@ -5,7 +5,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::errors::{ErrorType, LocItem, ValError, ValResult};
-use crate::input::{GenericIterator, Input};
+use crate::input::{BorrowInput, GenericIterator, Input};
 use crate::recursion_guard::RecursionState;
 use crate::tools::SchemaDict;
 use crate::ValidationError;
@@ -29,8 +29,8 @@ impl BuildValidator for GeneratorValidator {
     const EXPECTED_TYPE: &'static str = "generator";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let item_validator = get_items_schema(schema, config, definitions)?.map(Arc::new);
@@ -145,7 +145,9 @@ impl ValidatorIterator {
                                     ));
                                 }
                             }
-                            validator.validate(py, next, Some(index.into())).map(Some)
+                            validator
+                                .validate(py, next.borrow_input(), Some(index.into()))
+                                .map(Some)
                         }
                         None => Ok(Some(next.to_object(py))),
                     },
@@ -238,7 +240,7 @@ impl InternalValidator {
         Self {
             name: name.to_string(),
             validator,
-            data: extra.data.map(|d| d.into_py(py)),
+            data: extra.data.as_ref().map(|d| d.clone().into()),
             strict: extra.strict,
             from_attributes: extra.from_attributes,
             context: extra.context.map(|d| d.into_py(py)),
@@ -254,18 +256,18 @@ impl InternalValidator {
     pub fn validate_assignment<'data>(
         &mut self,
         py: Python<'data>,
-        model: &'data PyAny,
-        field_name: &'data str,
-        field_value: &'data PyAny,
+        model: &Bound<'data, PyAny>,
+        field_name: &str,
+        field_value: &Bound<'data, PyAny>,
         outer_location: Option<LocItem>,
     ) -> PyResult<PyObject> {
         let extra = Extra {
             input_type: self.validation_mode,
-            data: self.data.as_ref().map(|data| data.as_ref(py)),
+            data: self.data.as_ref().map(|data| data.bind(py).clone()),
             strict: self.strict,
             from_attributes: self.from_attributes,
-            context: self.context.as_ref().map(|data| data.as_ref(py)),
-            self_instance: self.self_instance.as_ref().map(|data| data.as_ref(py)),
+            context: self.context.as_ref().map(|data| data.bind(py)),
+            self_instance: self.self_instance.as_ref().map(|data| data.bind(py)),
         };
         let mut state = ValidationState::new(extra, &mut self.recursion_guard);
         state.exactness = self.exactness;
@@ -295,11 +297,11 @@ impl InternalValidator {
     ) -> PyResult<PyObject> {
         let extra = Extra {
             input_type: self.validation_mode,
-            data: self.data.as_ref().map(|data| data.as_ref(py)),
+            data: self.data.as_ref().map(|data| data.bind(py).clone()),
             strict: self.strict,
             from_attributes: self.from_attributes,
-            context: self.context.as_ref().map(|data| data.as_ref(py)),
-            self_instance: self.self_instance.as_ref().map(|data| data.as_ref(py)),
+            context: self.context.as_ref().map(|data| data.bind(py)),
+            self_instance: self.self_instance.as_ref().map(|data| data.bind(py)),
         };
         let mut state = ValidationState::new(extra, &mut self.recursion_guard);
         state.exactness = self.exactness;

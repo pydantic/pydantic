@@ -19,8 +19,8 @@ use super::{
 
 #[derive(Debug, Clone)]
 pub enum StringMapping<'py> {
-    String(&'py PyString),
-    Mapping(&'py PyDict),
+    String(Bound<'py, PyString>),
+    Mapping(Bound<'py, PyDict>),
 }
 
 impl<'py> ToPyObject for StringMapping<'py> {
@@ -33,19 +33,19 @@ impl<'py> ToPyObject for StringMapping<'py> {
 }
 
 impl<'py> StringMapping<'py> {
-    pub fn new_key(py_key: &'py PyAny) -> ValResult<StringMapping> {
+    pub fn new_key(py_key: &Bound<'py, PyAny>) -> ValResult<Self> {
         if let Ok(py_str) = py_key.downcast::<PyString>() {
-            Ok(Self::String(py_str))
+            Ok(Self::String(py_str.clone()))
         } else {
             Err(ValError::new(ErrorTypeDefaults::StringType, py_key))
         }
     }
 
-    pub fn new_value(py_value: &'py PyAny) -> ValResult<Self> {
+    pub fn new_value(py_value: &Bound<'py, PyAny>) -> ValResult<Self> {
         if let Ok(py_str) = py_value.downcast::<PyString>() {
-            Ok(Self::String(py_str))
+            Ok(Self::String(py_str.clone()))
         } else if let Ok(value) = py_value.downcast::<PyDict>() {
-            Ok(Self::Mapping(value))
+            Ok(Self::Mapping(value.clone()))
         } else {
             Err(ValError::new(ErrorTypeDefaults::StringType, py_value))
         }
@@ -56,7 +56,7 @@ impl From<StringMapping<'_>> for LocItem {
     fn from(string_mapping: StringMapping<'_>) -> Self {
         match string_mapping {
             StringMapping::String(s) => s.to_string_lossy().as_ref().into(),
-            StringMapping::Mapping(d) => safe_repr(d).to_string().into(),
+            StringMapping::Mapping(d) => safe_repr(&d).to_string().into(),
         }
     }
 }
@@ -69,7 +69,7 @@ impl<'a> Input<'a> for StringMapping<'a> {
         }
     }
 
-    fn as_kwargs(&'a self, _py: Python<'a>) -> Option<&'a PyDict> {
+    fn as_kwargs(&self, _py: Python<'a>) -> Option<Bound<'a, PyDict>> {
         None
     }
 
@@ -81,7 +81,7 @@ impl<'a> Input<'a> for StringMapping<'a> {
     fn validate_dataclass_args(&'a self, _dataclass_name: &str) -> ValResult<GenericArguments<'a>> {
         match self {
             StringMapping::String(_) => Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self)),
-            StringMapping::Mapping(m) => Ok(GenericArguments::StringMapping(m)),
+            StringMapping::Mapping(m) => Ok(GenericArguments::StringMapping(m.clone())),
         }
     }
 
@@ -91,7 +91,7 @@ impl<'a> Input<'a> for StringMapping<'a> {
         _coerce_numbers_to_str: bool,
     ) -> ValResult<ValidationMatch<EitherString<'a>>> {
         match self {
-            Self::String(s) => Ok(ValidationMatch::strict((*s).into())),
+            Self::String(s) => Ok(ValidationMatch::strict(s.clone().into())),
             Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::StringType, self)),
         }
     }
@@ -124,9 +124,9 @@ impl<'a> Input<'a> for StringMapping<'a> {
         }
     }
 
-    fn strict_decimal(&'a self, py: Python<'a>) -> ValResult<&'a PyAny> {
+    fn strict_decimal(&'a self, _py: Python<'a>) -> ValResult<Bound<'a, PyAny>> {
         match self {
-            Self::String(s) => create_decimal(s, self, py),
+            Self::String(s) => create_decimal(s, self),
             Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::DecimalType, self)),
         }
     }
@@ -134,7 +134,7 @@ impl<'a> Input<'a> for StringMapping<'a> {
     fn strict_dict(&'a self) -> ValResult<GenericMapping<'a>> {
         match self {
             Self::String(_) => Err(ValError::new(ErrorTypeDefaults::DictType, self)),
-            Self::Mapping(d) => Ok(GenericMapping::StringMapping(d)),
+            Self::Mapping(d) => Ok(GenericMapping::StringMapping(d.clone())),
         }
     }
 
