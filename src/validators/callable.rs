@@ -14,8 +14,8 @@ impl BuildValidator for CallableValidator {
     const EXPECTED_TYPE: &'static str = "callable";
 
     fn build(
-        _schema: &PyDict,
-        _config: Option<&PyDict>,
+        _schema: &Bound<'_, PyDict>,
+        _config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         Ok(Self.into())

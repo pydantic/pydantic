@@ -22,13 +22,13 @@ impl BuildSerializer for DataclassArgsBuilder {
     const EXPECTED_TYPE: &'static str = "dataclass-args";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
 
-        let fields_list: &PyList = schema.get_as_req(intern!(py, "fields"))?;
+        let fields_list: Bound<'_, PyList> = schema.get_as_req(intern!(py, "fields"))?;
         let mut fields: AHashMap<String, SerField> = AHashMap::with_capacity(fields_list.len());
 
         let fields_mode = match ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)? {
@@ -37,16 +37,16 @@ impl BuildSerializer for DataclassArgsBuilder {
         };
 
         for (index, item) in fields_list.iter().enumerate() {
-            let field_info: &PyDict = item.downcast()?;
+            let field_info = item.downcast::<PyDict>()?;
             let name: String = field_info.get_as_req(intern!(py, "name"))?;
 
-            let key_py: Py<PyString> = PyString::new(py, &name).into_py(py);
+            let key_py: Py<PyString> = PyString::new_bound(py, &name).into();
 
             if field_info.get_as(intern!(py, "serialization_exclude"))? == Some(true) {
                 fields.insert(name, SerField::new(py, key_py, None, None, true));
             } else {
                 let schema = field_info.get_as_req(intern!(py, "schema"))?;
-                let serializer = CombinedSerializer::build(schema, config, definitions)
+                let serializer = CombinedSerializer::build(&schema, config, definitions)
                     .map_err(|e| py_schema_error_type!("Field `{}`:\n  {}", index, e))?;
 
                 let alias = field_info.get_as(intern!(py, "serialization_alias"))?;
@@ -72,8 +72,8 @@ impl BuildSerializer for DataclassSerializer {
     const EXPECTED_TYPE: &'static str = "dataclass";
 
     fn build(
-        schema: &PyDict,
-        _config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        _config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
@@ -82,8 +82,8 @@ impl BuildSerializer for DataclassSerializer {
         let config = schema.get_as(intern!(py, "config"))?;
 
         let class: &PyType = schema.get_as_req(intern!(py, "cls"))?;
-        let sub_schema: &PyDict = schema.get_as_req(intern!(py, "schema"))?;
-        let serializer = Box::new(CombinedSerializer::build(sub_schema, config, definitions)?);
+        let sub_schema = schema.get_as_req(intern!(py, "schema"))?;
+        let serializer = Box::new(CombinedSerializer::build(&sub_schema, config.as_ref(), definitions)?);
 
         let fields = schema
             .get_as_req::<&PyList>(intern!(py, "fields"))?
@@ -102,20 +102,20 @@ impl BuildSerializer for DataclassSerializer {
 }
 
 impl DataclassSerializer {
-    fn allow_value(&self, value: &PyAny, extra: &Extra) -> PyResult<bool> {
+    fn allow_value(&self, value: &Bound<'_, PyAny>, extra: &Extra) -> PyResult<bool> {
         match extra.check {
-            SerCheck::Strict => Ok(value.get_type().is(self.class.as_ref(value.py()))),
-            SerCheck::Lax => value.is_instance(self.class.as_ref(value.py())),
+            SerCheck::Strict => Ok(value.get_type().is(self.class.bind(value.py()))),
+            SerCheck::Lax => value.is_instance(self.class.bind(value.py())),
             SerCheck::None => value.hasattr(intern!(value.py(), "__dataclass_fields__")),
         }
     }
 
-    fn get_inner_value<'py>(&self, value: &'py PyAny) -> PyResult<&'py PyAny> {
+    fn get_inner_value<'py>(&self, value: &Bound<'py, PyAny>) -> PyResult<Bound<'py, PyDict>> {
         let py = value.py();
-        let dict = PyDict::new(py);
+        let dict = PyDict::new_bound(py);
 
         for field_name in &self.fields {
-            let field_name = field_name.as_ref(py);
+            let field_name = field_name.bind(py);
             dict.set_item(field_name, value.getattr(field_name)?)?;
         }
         Ok(dict)
@@ -127,9 +127,9 @@ impl_py_gc_traverse!(DataclassSerializer { class, serializer });
 impl TypeSerializer for DataclassSerializer {
     fn to_python(
         &self,
-        value: &PyAny,
-        include: Option<&PyAny>,
-        exclude: Option<&PyAny>,
+        value: &Bound<'_, PyAny>,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> PyResult<PyObject> {
         let dc_extra = Extra {
@@ -147,11 +147,11 @@ impl TypeSerializer for DataclassSerializer {
                     dc_extra,
                 )?;
 
-                fields_serializer.add_computed_fields_python(Some(value), output_dict, include, exclude, extra)?;
+                fields_serializer.add_computed_fields_python(Some(value), &output_dict, include, exclude, extra)?;
                 Ok(output_dict.into_py(py))
             } else {
                 let inner_value = self.get_inner_value(value)?;
-                self.serializer.to_python(inner_value, include, exclude, &dc_extra)
+                self.serializer.to_python(&inner_value, include, exclude, &dc_extra)
             }
         } else {
             extra.warnings.on_fallback_py(self.get_name(), value, &dc_extra)?;
@@ -159,7 +159,7 @@ impl TypeSerializer for DataclassSerializer {
         }
     }
 
-    fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
         if self.allow_value(key, extra)? {
             infer_json_key_known(ObType::Dataclass, key, extra)
         } else {
@@ -170,10 +170,10 @@ impl TypeSerializer for DataclassSerializer {
 
     fn serde_serialize<S: serde::ser::Serializer>(
         &self,
-        value: &PyAny,
+        value: &Bound<'_, PyAny>,
         serializer: S,
-        include: Option<&PyAny>,
-        exclude: Option<&PyAny>,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         let model = Some(value);
@@ -194,7 +194,7 @@ impl TypeSerializer for DataclassSerializer {
             } else {
                 let inner_value = self.get_inner_value(value).map_err(py_err_se_err)?;
                 self.serializer
-                    .serde_serialize(inner_value, serializer, include, exclude, extra)
+                    .serde_serialize(&inner_value, serializer, include, exclude, extra)
             }
         } else {
             extra.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
@@ -213,15 +213,14 @@ impl TypeSerializer for DataclassSerializer {
 
 fn known_dataclass_iter<'a, 'py>(
     fields: &'a [Py<PyString>],
-    dataclass: &'py PyAny,
-) -> impl Iterator<Item = PyResult<(&'py PyAny, &'py PyAny)>> + 'a
+    dataclass: &'a Bound<'py, PyAny>,
+) -> impl Iterator<Item = PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>> + 'a
 where
     'py: 'a,
 {
     let py = dataclass.py();
     fields.iter().map(move |field| {
-        let field_ref = field.clone_ref(py).into_ref(py);
-        let value = dataclass.getattr(field_ref)?;
-        Ok((field_ref as &PyAny, value))
+        let value = dataclass.getattr(field)?;
+        Ok((field.bind(py).clone().into_any(), value))
     })
 }

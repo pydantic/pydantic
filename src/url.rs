@@ -5,8 +5,8 @@ use std::hash::{Hash, Hasher};
 
 use idna::punycode::decode_to_string;
 use pyo3::exceptions::PyValueError;
-use pyo3::once_cell::GILOnceCell;
 use pyo3::pyclass::CompareOp;
+use pyo3::sync::GILOnceCell;
 use pyo3::types::{PyDict, PyType};
 use pyo3::{intern, prelude::*};
 use url::Url;
@@ -34,15 +34,15 @@ impl PyUrl {
 }
 
 fn build_schema_validator(py: Python, schema_type: &str) -> SchemaValidator {
-    let schema: &PyDict = PyDict::new(py);
+    let schema = PyDict::new_bound(py);
     schema.set_item("type", schema_type).unwrap();
-    SchemaValidator::py_new(py, schema, None).unwrap()
+    SchemaValidator::py_new(py, &schema, None).unwrap()
 }
 
 #[pymethods]
 impl PyUrl {
     #[new]
-    pub fn py_new(py: Python, url: &PyAny) -> PyResult<Self> {
+    pub fn py_new(py: Python, url: &Bound<'_, PyAny>) -> PyResult<Self> {
         let schema_obj = SCHEMA_DEFINITION_URL
             .get_or_init(py, || build_schema_validator(py, "url"))
             .validate_python(py, url, None, None, None, None)?;
@@ -158,8 +158,8 @@ impl PyUrl {
     #[classmethod]
     #[pyo3(signature=(*, scheme, host, username=None, password=None, port=None, path=None, query=None, fragment=None))]
     #[allow(clippy::too_many_arguments)]
-    pub fn build<'a>(
-        cls: &'a PyType,
+    pub fn build<'py>(
+        cls: &Bound<'py, PyType>,
         scheme: &str,
         host: &str,
         username: Option<&str>,
@@ -168,7 +168,7 @@ impl PyUrl {
         path: Option<&str>,
         query: Option<&str>,
         fragment: Option<&str>,
-    ) -> PyResult<&'a PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let url_host = UrlHostParts {
             username: username.map(Into::into),
             password: password.map(Into::into),
@@ -218,7 +218,7 @@ static SCHEMA_DEFINITION_MULTI_HOST_URL: GILOnceCell<SchemaValidator> = GILOnceC
 #[pymethods]
 impl PyMultiHostUrl {
     #[new]
-    pub fn py_new(py: Python, url: &PyAny) -> PyResult<Self> {
+    pub fn py_new(py: Python, url: &Bound<'_, PyAny>) -> PyResult<Self> {
         let schema_obj = SCHEMA_DEFINITION_MULTI_HOST_URL
             .get_or_init(py, || build_schema_validator(py, "multi-host-url"))
             .validate_python(py, url, None, None, None, None)?;
@@ -230,7 +230,7 @@ impl PyMultiHostUrl {
         self.ref_url.scheme()
     }
 
-    pub fn hosts<'py>(&self, py: Python<'py>) -> PyResult<Vec<&'py PyDict>> {
+    pub fn hosts<'py>(&self, py: Python<'py>) -> PyResult<Vec<Bound<'py, PyDict>>> {
         if let Some(extra_urls) = &self.extra_urls {
             let mut hosts = Vec::with_capacity(extra_urls.len() + 1);
             for url in extra_urls {
@@ -358,8 +358,8 @@ impl PyMultiHostUrl {
     #[classmethod]
     #[pyo3(signature=(*, scheme, hosts=None, path=None, query=None, fragment=None, host=None, username=None, password=None, port=None))]
     #[allow(clippy::too_many_arguments)]
-    pub fn build<'a>(
-        cls: &'a PyType,
+    pub fn build<'py>(
+        cls: &Bound<'py, PyType>,
         scheme: &str,
         hosts: Option<Vec<UrlHostParts>>,
         path: Option<&str>,
@@ -370,7 +370,7 @@ impl PyMultiHostUrl {
         username: Option<&str>,
         password: Option<&str>,
         port: Option<u16>,
-    ) -> PyResult<&'a PyAny> {
+    ) -> PyResult<Bound<'py, PyAny>> {
         let mut url =
             if hosts.is_some() && (host.is_some() || username.is_some() || password.is_some() || port.is_some()) {
                 return Err(PyValueError::new_err(
@@ -434,7 +434,7 @@ impl UrlHostParts {
 }
 
 impl FromPyObject<'_> for UrlHostParts {
-    fn extract(ob: &'_ PyAny) -> PyResult<Self> {
+    fn extract_bound(ob: &Bound<'_, PyAny>) -> PyResult<Self> {
         let py = ob.py();
         let dict = ob.downcast::<PyDict>()?;
         Ok(UrlHostParts {
@@ -464,13 +464,13 @@ impl fmt::Display for UrlHostParts {
     }
 }
 
-fn host_to_dict<'a>(py: Python<'a>, lib_url: &Url) -> PyResult<&'a PyDict> {
-    let dict = PyDict::new(py);
+fn host_to_dict<'a>(py: Python<'a>, lib_url: &Url) -> PyResult<Bound<'a, PyDict>> {
+    let dict = PyDict::new_bound(py);
     dict.set_item(
         "username",
         match lib_url.username() {
             "" => py.None(),
-            user => user.into_py(py),
+            user => user.to_object(py),
         },
     )?;
     dict.set_item("password", lib_url.password())?;

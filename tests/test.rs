@@ -45,8 +45,8 @@ mod tests {
                     },
                 ]
             }";
-            let schema: &PyDict = py.eval(code, None, None).unwrap().extract().unwrap();
-            SchemaSerializer::py_new(py, schema, None).unwrap();
+            let schema: Bound<'_, PyDict> = py.eval_bound(code, None, None).unwrap().extract().unwrap();
+            SchemaSerializer::py_new(schema, None).unwrap();
         });
     }
 
@@ -73,18 +73,22 @@ schema = {
 }
 a = A()
             "#;
-            let locals = PyDict::new(py);
-            py.run(code, None, Some(locals)).unwrap();
-            let a: &PyAny = locals.get_item("a").unwrap().unwrap().extract().unwrap();
-            let schema: &PyDict = locals.get_item("schema").unwrap().unwrap().extract().unwrap();
-            let serialized: Vec<u8> = SchemaSerializer::py_new(py, schema, None)
+            let locals = PyDict::new_bound(py);
+            py.run_bound(code, None, Some(&locals)).unwrap();
+            let a = locals.get_item("a").unwrap().unwrap();
+            let schema = locals
+                .get_item("schema")
+                .unwrap()
+                .unwrap()
+                .downcast_into::<PyDict>()
+                .unwrap();
+            let serialized = SchemaSerializer::py_new(schema, None)
                 .unwrap()
                 .to_json(
-                    py, a, None, None, None, true, false, false, false, false, true, None, None,
+                    py, &a, None, None, None, true, false, false, false, false, true, None, None,
                 )
-                .unwrap()
-                .extract(py)
                 .unwrap();
+            let serialized: &[u8] = serialized.extract(py).unwrap();
             assert_eq!(serialized, b"{\"b\":\"b\"}");
         });
     }
@@ -106,13 +110,13 @@ schema = {
 }
 json_input = '{"a": "something"}'
             "#;
-            let locals = PyDict::new(py);
-            py.run(code, None, Some(locals)).unwrap();
-            let schema: &PyDict = locals.get_item("schema").unwrap().unwrap().extract().unwrap();
-            let json_input: &PyAny = locals.get_item("json_input").unwrap().unwrap().extract().unwrap();
-            let binding = SchemaValidator::py_new(py, schema, None)
+            let locals = PyDict::new_bound(py);
+            py.run_bound(code, None, Some(&locals)).unwrap();
+            let schema = locals.get_item("schema").unwrap().unwrap();
+            let json_input = locals.get_item("json_input").unwrap().unwrap();
+            let binding = SchemaValidator::py_new(py, &schema, None)
                 .unwrap()
-                .validate_json(py, json_input, None, None, None)
+                .validate_json(py, &json_input, None, None, None)
                 .unwrap();
             let validation_result: &PyAny = binding.extract(py).unwrap();
             let repr = format!("{}", validation_result.repr().unwrap());
@@ -159,26 +163,21 @@ schema = {
 dump_json_input_1 = 1
 dump_json_input_2 = {'a': 'something'}
             ";
-            let locals = PyDict::new(py);
-            py.run(code, None, Some(locals)).unwrap();
-            let schema: &PyDict = locals.get_item("schema").unwrap().unwrap().extract().unwrap();
-            let dump_json_input_1: &PyAny = locals
-                .get_item("dump_json_input_1")
+            let locals = PyDict::new_bound(py);
+            py.run_bound(code, None, Some(&locals)).unwrap();
+            let schema = locals
+                .get_item("schema")
                 .unwrap()
                 .unwrap()
-                .extract()
+                .downcast_into::<PyDict>()
                 .unwrap();
-            let dump_json_input_2: &PyAny = locals
-                .get_item("dump_json_input_2")
-                .unwrap()
-                .unwrap()
-                .extract()
-                .unwrap();
-            let binding = SchemaSerializer::py_new(py, schema, None)
-                .unwrap()
+            let dump_json_input_1 = locals.get_item("dump_json_input_1").unwrap().unwrap();
+            let dump_json_input_2 = locals.get_item("dump_json_input_2").unwrap().unwrap();
+            let serializer = SchemaSerializer::py_new(schema, None).unwrap();
+            let serialization_result = serializer
                 .to_json(
                     py,
-                    dump_json_input_1,
+                    &dump_json_input_1,
                     None,
                     None,
                     None,
@@ -192,15 +191,13 @@ dump_json_input_2 = {'a': 'something'}
                     None,
                 )
                 .unwrap();
-            let serialization_result: &PyAny = binding.extract(py).unwrap();
-            let repr = format!("{}", serialization_result.repr().unwrap());
+            let repr = format!("{}", serialization_result.bind(py).repr().unwrap());
             assert_eq!(repr, "b'1'");
 
-            let binding = SchemaSerializer::py_new(py, schema, None)
-                .unwrap()
+            let serialization_result = serializer
                 .to_json(
                     py,
-                    dump_json_input_2,
+                    &dump_json_input_2,
                     None,
                     None,
                     None,
@@ -214,8 +211,7 @@ dump_json_input_2 = {'a': 'something'}
                     None,
                 )
                 .unwrap();
-            let serialization_result: &PyAny = binding.extract(py).unwrap();
-            let repr = format!("{}", serialization_result.repr().unwrap());
+            let repr = format!("{}", serialization_result.bind(py).repr().unwrap());
             assert_eq!(repr, "b'{\"a\":\"something\"}'");
         });
     }

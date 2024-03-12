@@ -16,8 +16,8 @@ pub struct FloatBuilder;
 impl BuildValidator for FloatBuilder {
     const EXPECTED_TYPE: &'static str = "float";
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
@@ -48,8 +48,8 @@ impl BuildValidator for FloatValidator {
     const EXPECTED_TYPE: &'static str = "float";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
@@ -175,8 +175,8 @@ impl Validator for ConstrainedFloatValidator {
 impl BuildValidator for ConstrainedFloatValidator {
     const EXPECTED_TYPE: &'static str = "float";
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();

@@ -1,7 +1,8 @@
 use pyo3::intern;
-use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
+use pyo3::sync::GILOnceCell;
 use pyo3::types::PyDict;
+use pyo3::types::PyString;
 use pyo3::PyTraverseError;
 use pyo3::PyVisit;
 
@@ -17,7 +18,7 @@ use crate::PydanticUndefinedType;
 static COPY_DEEPCOPY: GILOnceCell<PyObject> = GILOnceCell::new();
 
 fn get_deepcopy(py: Python) -> PyResult<PyObject> {
-    Ok(py.import("copy")?.getattr("deepcopy")?.into_py(py))
+    Ok(py.import_bound("copy")?.getattr("deepcopy")?.into_py(py))
 }
 
 #[derive(Debug, Clone)]
@@ -28,7 +29,7 @@ pub enum DefaultType {
 }
 
 impl DefaultType {
-    pub fn new(schema: &PyDict) -> PyResult<Self> {
+    pub fn new(schema: &Bound<'_, PyDict>) -> PyResult<Self> {
         let py = schema.py();
         match (
             schema.get_as(intern!(py, "default"))?,
@@ -81,13 +82,18 @@ impl BuildValidator for WithDefaultValidator {
     const EXPECTED_TYPE: &'static str = "default";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let default = DefaultType::new(schema)?;
-        let on_error = match schema.get_as::<&str>(intern!(py, "on_error"))? {
+        let on_error = match schema
+            .get_as::<Bound<'_, PyString>>(intern!(py, "on_error"))?
+            .as_ref()
+            .map(|s| s.to_str())
+            .transpose()?
+        {
             Some("raise") => OnError::Raise,
             Some("omit") => OnError::Omit,
             Some("default") => {
@@ -101,11 +107,11 @@ impl BuildValidator for WithDefaultValidator {
             _ => unreachable!(),
         };
 
-        let sub_schema: &PyAny = schema.get_as_req(intern!(schema.py(), "schema"))?;
-        let validator = Box::new(build_validator(sub_schema, config, definitions)?);
+        let sub_schema = schema.get_as_req(intern!(schema.py(), "schema"))?;
+        let validator = Box::new(build_validator(&sub_schema, config, definitions)?);
 
         let copy_default = if let DefaultType::Default(default_obj) = &default {
-            default_obj.as_ref(py).hash().is_err()
+            default_obj.bind(py).hash().is_err()
         } else {
             false
         };
@@ -166,7 +172,7 @@ impl Validator for WithDefaultValidator {
                     stored_dft
                 };
                 if self.validate_default {
-                    match self.validate(py, dft.into_ref(py), state) {
+                    match self.validate(py, dft.bind(py), state) {
                         Ok(v) => Ok(Some(v)),
                         Err(e) => {
                             if let Some(outer_loc) = outer_loc {

@@ -19,8 +19,8 @@ pub enum CustomError {
 
 impl CustomError {
     pub fn build(
-        schema: &PyDict,
-        _config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        _config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<Option<Self>> {
         let py = schema.py();
@@ -69,13 +69,13 @@ impl BuildValidator for CustomErrorValidator {
     const EXPECTED_TYPE: &'static str = "custom-error";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let custom_error = CustomError::build(schema, config, definitions)?.unwrap();
-        let schema: &PyAny = schema.get_as_req(intern!(schema.py(), "schema"))?;
-        let validator = Box::new(build_validator(schema, config, definitions)?);
+        let schema = schema.get_as_req(intern!(schema.py(), "schema"))?;
+        let validator = Box::new(build_validator(&schema, config, definitions)?);
         let name = format!("{}[{}]", Self::EXPECTED_TYPE, validator.get_name());
         Ok(Self {
             validator,

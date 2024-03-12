@@ -1,7 +1,7 @@
 use pyo3::intern;
-use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
-use pyo3::types::{PyDateTime, PyDict, PyString};
+use pyo3::sync::GILOnceCell;
+use pyo3::types::{PyDict, PyString};
 use speedate::{DateTime, Time};
 use std::cmp::Ordering;
 use strum::EnumMessage;
@@ -24,14 +24,14 @@ pub struct DateTimeValidator {
 }
 
 pub(crate) fn extract_microseconds_precision(
-    schema: &PyDict,
-    config: Option<&PyDict>,
+    schema: &Bound<'_, PyDict>,
+    config: Option<&Bound<'_, PyDict>>,
 ) -> PyResult<speedate::MicrosecondsPrecisionOverflowBehavior> {
     schema_or_config_same(schema, config, intern!(schema.py(), "microseconds_precision"))?
         .map_or(
             Ok(speedate::MicrosecondsPrecisionOverflowBehavior::Truncate),
             |v: &PyString| {
-                speedate::MicrosecondsPrecisionOverflowBehavior::try_from(String::extract(v).unwrap().as_str())
+                speedate::MicrosecondsPrecisionOverflowBehavior::try_from(v.extract::<String>().unwrap().as_str())
             },
         )
         .map_err(|_| {
@@ -43,8 +43,8 @@ impl BuildValidator for DateTimeValidator {
     const EXPECTED_TYPE: &'static str = "datetime";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         Ok(Self {
@@ -191,7 +191,7 @@ struct DateTimeConstraints {
 }
 
 impl DateTimeConstraints {
-    fn from_py(schema: &PyDict) -> PyResult<Option<Self>> {
+    fn from_py(schema: &Bound<'_, PyDict>) -> PyResult<Option<Self>> {
         let py = schema.py();
         let c = Self {
             le: py_datetime_as_datetime(schema, intern!(py, "le"))?,
@@ -209,8 +209,8 @@ impl DateTimeConstraints {
     }
 }
 
-fn py_datetime_as_datetime(schema: &PyDict, field: &PyString) -> PyResult<Option<DateTime>> {
-    match schema.get_as::<&PyDateTime>(field)? {
+fn py_datetime_as_datetime(schema: &Bound<'_, PyDict>, field: &Bound<'_, PyString>) -> PyResult<Option<DateTime>> {
+    match schema.get_as(field)? {
         Some(dt) => Ok(Some(EitherDateTime::Py(dt).as_raw()?)),
         None => Ok(None),
     }
@@ -249,7 +249,7 @@ pub struct NowConstraint {
 static TIME_LOCALTIME: GILOnceCell<PyObject> = GILOnceCell::new();
 
 fn get_localtime(py: Python) -> PyResult<PyObject> {
-    Ok(py.import("time")?.getattr("localtime")?.into_py(py))
+    Ok(py.import_bound("time")?.getattr("localtime")?.into_py(py))
 }
 
 impl NowConstraint {
@@ -261,19 +261,15 @@ impl NowConstraint {
             Ok(utc_offset)
         } else {
             let localtime = TIME_LOCALTIME.get_or_init(py, || get_localtime(py).unwrap());
-            localtime
-                .as_ref(py)
-                .call0()?
-                .getattr(intern!(py, "tm_gmtoff"))?
-                .extract()
+            localtime.bind(py).call0()?.getattr(intern!(py, "tm_gmtoff"))?.extract()
         }
     }
 
-    pub fn from_py(schema: &PyDict) -> PyResult<Option<Self>> {
+    pub fn from_py(schema: &Bound<'_, PyDict>) -> PyResult<Option<Self>> {
         let py = schema.py();
-        match schema.get_as(intern!(py, "now_op"))? {
+        match schema.get_as::<Bound<'_, PyString>>(intern!(py, "now_op"))? {
             Some(op) => Ok(Some(Self {
-                op: NowOp::from_str(op)?,
+                op: NowOp::from_str(op.to_str()?)?,
                 utc_offset: schema.get_as(intern!(py, "now_utc_offset"))?,
             })),
             None => Ok(None),
@@ -296,7 +292,7 @@ impl TZConstraint {
         }
     }
 
-    pub(super) fn from_py(schema: &PyDict) -> PyResult<Option<Self>> {
+    pub(super) fn from_py(schema: &Bound<'_, PyDict>) -> PyResult<Option<Self>> {
         let py = schema.py();
         let tz_constraint = match schema.get_item(intern!(py, "tz_constraint"))? {
             Some(c) => c,

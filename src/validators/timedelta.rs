@@ -24,10 +24,10 @@ struct TimedeltaConstraints {
     gt: Option<Duration>,
 }
 
-fn get_constraint(schema: &PyDict, key: &str) -> PyResult<Option<Duration>> {
+fn get_constraint(schema: &Bound<'_, PyDict>, key: &str) -> PyResult<Option<Duration>> {
     match schema.get_item(key)? {
         Some(value) => {
-            let either_timedelta = EitherTimedelta::try_from(value)?;
+            let either_timedelta = EitherTimedelta::try_from(&value)?;
             Ok(Some(either_timedelta.to_duration()?))
         }
         None => Ok(None),
@@ -38,8 +38,8 @@ impl BuildValidator for TimeDeltaValidator {
     const EXPECTED_TYPE: &'static str = "timedelta";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let constraints = TimedeltaConstraints {
@@ -88,7 +88,7 @@ impl Validator for TimeDeltaValidator {
                                     $constraint: pydelta_to_human_readable(duration_as_pytimedelta(py, constraint)?)
                                         .into(),
                                 },
-                                py_timedelta.as_ref(),
+                                py_timedelta.as_any(),
                             ));
                         }
                     }
@@ -107,7 +107,7 @@ impl Validator for TimeDeltaValidator {
         Self::EXPECTED_TYPE
     }
 }
-fn pydelta_to_human_readable(py_delta: &PyDelta) -> String {
+fn pydelta_to_human_readable(py_delta: Bound<'_, PyDelta>) -> String {
     let total_seconds = py_delta.get_seconds();
     let hours = total_seconds / 3600;
     let minutes = (total_seconds % 3600) / 60;

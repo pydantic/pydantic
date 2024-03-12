@@ -41,10 +41,10 @@ impl Validator for FrozenSetValidator {
             _ => Exactness::Lax,
         };
         state.floor_exactness(exactness);
-        let f_set = PyFrozenSet::empty(py)?;
+        let f_set = PyFrozenSet::empty_bound(py)?;
         collection.validate_to_set(
             py,
-            f_set,
+            &f_set,
             input,
             self.max_length,
             "Frozenset",

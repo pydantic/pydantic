@@ -9,17 +9,15 @@ use num_bigint::BigInt;
 
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
-use pyo3::types::iter::PyDictIterator;
+use pyo3::types::iter::{BoundDictIterator, BoundListIterator};
 use pyo3::types::{
     PyByteArray, PyBytes, PyDict, PyFloat, PyFrozenSet, PyIterator, PyList, PyMapping, PySequence, PySet, PyString,
     PyTuple,
 };
-use pyo3::{ffi, intern, PyNativeType};
+use pyo3::{ffi, intern};
 
 #[cfg(not(PyPy))]
 use pyo3::types::PyFunction;
-#[cfg(not(PyPy))]
-use pyo3::PyTypeInfo;
 use serde::{ser::Error, Serialize, Serializer};
 
 use crate::errors::{py_err_string, ErrorType, ErrorTypeDefaults, InputValue, ValError, ValLineError, ValResult};
@@ -27,7 +25,7 @@ use crate::tools::{extract_i64, py_err};
 use crate::validators::{CombinedValidator, Exactness, ValidationState, Validator};
 
 use super::input_string::StringMapping;
-use super::{py_error_on_minusone, Input};
+use super::{py_error_on_minusone, BorrowInput, Input};
 
 pub struct ValidationMatch<T>(T, Exactness);
 
@@ -67,22 +65,22 @@ impl<T> ValidationMatch<T> {
 /// This mostly matches python's definition of `Collection`.
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum GenericIterable<'a> {
-    List(&'a PyList),
-    Tuple(&'a PyTuple),
-    Set(&'a PySet),
-    FrozenSet(&'a PyFrozenSet),
-    Dict(&'a PyDict),
+    List(Bound<'a, PyList>),
+    Tuple(Bound<'a, PyTuple>),
+    Set(Bound<'a, PySet>),
+    FrozenSet(Bound<'a, PyFrozenSet>),
+    Dict(Bound<'a, PyDict>),
     // Treat dict values / keys / items as generic iterators
     // since PyPy doesn't export the concrete types
-    DictKeys(&'a PyIterator),
-    DictValues(&'a PyIterator),
-    DictItems(&'a PyIterator),
-    Mapping(&'a PyMapping),
-    PyString(&'a PyString),
-    Bytes(&'a PyBytes),
-    PyByteArray(&'a PyByteArray),
-    Sequence(&'a PySequence),
-    Iterator(&'a PyIterator),
+    DictKeys(Bound<'a, PyIterator>),
+    DictValues(Bound<'a, PyIterator>),
+    DictItems(Bound<'a, PyIterator>),
+    Mapping(Bound<'a, PyMapping>),
+    PyString(Bound<'a, PyString>),
+    Bytes(Bound<'a, PyBytes>),
+    PyByteArray(Bound<'a, PyByteArray>),
+    Sequence(Bound<'a, PySequence>),
+    Iterator(Bound<'a, PyIterator>),
     JsonArray(&'a [JsonValue]),
     JsonObject(&'a JsonObject),
     JsonString(&'a String),
@@ -92,10 +90,10 @@ impl<'a, 'py: 'a> GenericIterable<'a> {
     pub fn as_sequence_iterator(
         &self,
         py: Python<'py>,
-    ) -> PyResult<Box<dyn Iterator<Item = PyResult<&'a PyAny>> + 'a>> {
+    ) -> PyResult<Box<dyn Iterator<Item = PyResult<Bound<'a, PyAny>>> + 'a>> {
         match self {
-            GenericIterable::List(iter) => Ok(Box::new(iter.iter().map(Ok))),
-            GenericIterable::Tuple(iter) => Ok(Box::new(iter.iter().map(Ok))),
+            GenericIterable::List(iter) => Ok(Box::new(iter.clone().into_iter().map(Ok))),
+            GenericIterable::Tuple(iter) => Ok(Box::new(iter.clone().into_iter().map(Ok))),
             GenericIterable::Set(iter) => Ok(Box::new(iter.iter().map(Ok))),
             GenericIterable::FrozenSet(iter) => Ok(Box::new(iter.iter().map(Ok))),
             // Note that this iterates over only the keys, just like doing iter({}) in Python
@@ -111,26 +109,16 @@ impl<'a, 'py: 'a> GenericIterable<'a> {
             GenericIterable::Sequence(iter) => Ok(Box::new(iter.iter()?)),
             GenericIterable::Iterator(iter) => Ok(Box::new(iter.iter()?)),
             GenericIterable::JsonArray(iter) => Ok(Box::new(iter.iter().map(move |v| {
-                let v = v.to_object(py);
-                Ok(v.into_ref(py))
+                let v = v.to_object(py).into_bound(py);
+                Ok(v)
             }))),
             // Note that this iterates over only the keys, just like doing iter({}) in Python, just for consistency
             GenericIterable::JsonObject(iter) => Ok(Box::new(
-                iter.iter().map(move |(k, _)| Ok(k.to_object(py).into_ref(py))),
+                iter.iter().map(move |(k, _)| Ok(k.to_object(py).into_bound(py))),
             )),
-            GenericIterable::JsonString(s) => Ok(Box::new(PyString::new(py, s).iter()?)),
+            GenericIterable::JsonString(s) => Ok(Box::new(PyString::new_bound(py, s).iter()?)),
         }
     }
-}
-
-macro_rules! derive_from {
-    ($enum:ident, $key:ident, $type:ty $(, $extra_types:ident )*) => {
-        impl<'a> From<&'a $type> for $enum<'a> {
-            fn from(s: &'a $type) -> $enum<'a> {
-                Self::$key(s $(, $extra_types )*)
-            }
-        }
-    };
 }
 
 #[derive(Debug)]
@@ -188,7 +176,7 @@ macro_rules! any_next_error {
 #[allow(clippy::too_many_arguments)]
 fn validate_iter_to_vec<'a, 's>(
     py: Python<'a>,
-    iter: impl Iterator<Item = PyResult<&'a (impl Input<'a> + 'a)>>,
+    iter: impl Iterator<Item = PyResult<impl BorrowInput>>,
     capacity: usize,
     mut max_length_check: MaxLengthCheck<'a, impl Input<'a>>,
     validator: &'s CombinedValidator,
@@ -198,7 +186,7 @@ fn validate_iter_to_vec<'a, 's>(
     let mut errors: Vec<ValLineError> = Vec::new();
     for (index, item_result) in iter.enumerate() {
         let item = item_result.map_err(|e| any_next_error!(py, e, max_length_check.input, index))?;
-        match validator.validate(py, item, state) {
+        match validator.validate(py, item.borrow_input(), state) {
             Ok(item) => {
                 max_length_check.incr()?;
                 output.push(item);
@@ -225,7 +213,7 @@ pub trait BuildSet {
     fn build_len(&self) -> usize;
 }
 
-impl BuildSet for &PySet {
+impl BuildSet for Bound<'_, PySet> {
     fn build_add(&self, item: PyObject) -> PyResult<()> {
         self.add(item)
     }
@@ -235,7 +223,7 @@ impl BuildSet for &PySet {
     }
 }
 
-impl BuildSet for &PyFrozenSet {
+impl BuildSet for Bound<'_, PyFrozenSet> {
     fn build_add(&self, item: PyObject) -> PyResult<()> {
         py_error_on_minusone(self.py(), unsafe {
             // Safety: self.as_ptr() the _only_ pointer to the `frozenset`, and it's allowed
@@ -252,8 +240,8 @@ impl BuildSet for &PyFrozenSet {
 #[allow(clippy::too_many_arguments)]
 fn validate_iter_to_set<'a, 's>(
     py: Python<'a>,
-    set: impl BuildSet,
-    iter: impl Iterator<Item = PyResult<&'a (impl Input<'a> + 'a)>>,
+    set: &impl BuildSet,
+    iter: impl Iterator<Item = PyResult<impl BorrowInput>>,
     input: &'a (impl Input<'a> + 'a),
     field_type: &'static str,
     max_length: Option<usize>,
@@ -263,7 +251,7 @@ fn validate_iter_to_set<'a, 's>(
     let mut errors: Vec<ValLineError> = Vec::new();
     for (index, item_result) in iter.enumerate() {
         let item = item_result.map_err(|e| any_next_error!(py, e, input, index))?;
-        match validator.validate(py, item, state) {
+        match validator.validate(py, item.borrow_input(), state) {
             Ok(item) => {
                 set.build_add(item)?;
                 if let Some(max_length) = max_length {
@@ -301,14 +289,14 @@ fn validate_iter_to_set<'a, 's>(
 fn no_validator_iter_to_vec<'a, 's>(
     py: Python<'a>,
     input: &'a (impl Input<'a> + 'a),
-    iter: impl Iterator<Item = PyResult<&'a (impl Input<'a> + 'a)>>,
+    iter: impl Iterator<Item = PyResult<impl BorrowInput>>,
     mut max_length_check: MaxLengthCheck<'a, impl Input<'a>>,
 ) -> ValResult<Vec<PyObject>> {
     iter.enumerate()
         .map(|(index, result)| {
             let v = result.map_err(|e| any_next_error!(py, e, input, index))?;
             max_length_check.incr()?;
-            Ok(v.to_object(py))
+            Ok(v.borrow_input().to_object(py))
         })
         .collect()
 }
@@ -375,7 +363,7 @@ impl<'a> GenericIterable<'a> {
     pub fn validate_to_set<'s>(
         &'s self,
         py: Python<'a>,
-        set: impl BuildSet,
+        set: &impl BuildSet,
         input: &'a impl Input<'a>,
         max_length: Option<usize>,
         field_type: &'static str,
@@ -439,30 +427,45 @@ impl<'a> GenericIterable<'a> {
 
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum GenericMapping<'a> {
-    PyDict(&'a PyDict),
-    PyMapping(&'a PyMapping),
-    StringMapping(&'a PyDict),
-    PyGetAttr(&'a PyAny, Option<&'a PyDict>),
+    PyDict(Bound<'a, PyDict>),
+    PyMapping(Bound<'a, PyMapping>),
+    StringMapping(Bound<'a, PyDict>),
+    PyGetAttr(Bound<'a, PyAny>, Option<Bound<'a, PyDict>>),
     JsonObject(&'a JsonObject),
+}
+
+macro_rules! derive_from {
+    ($enum:ident, $key:ident, $type:ty $(, $extra_types:ident )*) => {
+        impl<'a> From<Bound<'a, $type>> for $enum<'a> {
+            fn from(s: Bound<'a, $type>) -> $enum<'a> {
+                Self::$key(s $(, $extra_types )*)
+            }
+        }
+    };
 }
 
 derive_from!(GenericMapping, PyDict, PyDict);
 derive_from!(GenericMapping, PyMapping, PyMapping);
 derive_from!(GenericMapping, PyGetAttr, PyAny, None);
-derive_from!(GenericMapping, JsonObject, JsonObject);
+
+impl<'a> From<&'a JsonObject> for GenericMapping<'a> {
+    fn from(s: &'a JsonObject) -> GenericMapping<'a> {
+        Self::JsonObject(s)
+    }
+}
 
 pub struct DictGenericIterator<'py> {
-    dict_iter: PyDictIterator<'py>,
+    dict_iter: BoundDictIterator<'py>,
 }
 
 impl<'py> DictGenericIterator<'py> {
-    pub fn new(dict: &'py PyDict) -> ValResult<Self> {
+    pub fn new(dict: &Bound<'py, PyDict>) -> ValResult<Self> {
         Ok(Self { dict_iter: dict.iter() })
     }
 }
 
 impl<'py> Iterator for DictGenericIterator<'py> {
-    type Item = ValResult<(&'py PyAny, &'py PyAny)>;
+    type Item = ValResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.dict_iter.next().map(Ok)
@@ -471,8 +474,8 @@ impl<'py> Iterator for DictGenericIterator<'py> {
 }
 
 pub struct MappingGenericIterator<'py> {
-    input: &'py PyAny,
-    iter: &'py PyIterator,
+    input: Bound<'py, PyAny>,
+    iter: Bound<'py, PyIterator>,
 }
 
 fn mapping_err<'py>(err: PyErr, py: Python<'py>, input: &'py impl Input<'py>) -> ValError {
@@ -486,22 +489,25 @@ fn mapping_err<'py>(err: PyErr, py: Python<'py>, input: &'py impl Input<'py>) ->
 }
 
 impl<'py> MappingGenericIterator<'py> {
-    pub fn new(mapping: &'py PyMapping) -> ValResult<Self> {
+    pub fn new(mapping: &Bound<'py, PyMapping>) -> ValResult<Self> {
         let py = mapping.py();
-        let input: &PyAny = mapping;
+        let input = mapping.as_any();
         let iter = mapping
             .items()
             .map_err(|e| mapping_err(e, py, input))?
             .iter()
             .map_err(|e| mapping_err(e, py, input))?;
-        Ok(Self { input, iter })
+        Ok(Self {
+            input: input.clone(),
+            iter,
+        })
     }
 }
 
 const MAPPING_TUPLE_ERROR: &str = "Mapping items must be tuples of (key, value) pairs";
 
 impl<'py> Iterator for MappingGenericIterator<'py> {
-    type Item = ValResult<(&'py PyAny, &'py PyAny)>;
+    type Item = ValResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>;
 
     fn next(&mut self) -> Option<Self::Item> {
         Some(match self.iter.next()? {
@@ -511,20 +517,20 @@ impl<'py> Iterator for MappingGenericIterator<'py> {
                         error: MAPPING_TUPLE_ERROR.into(),
                         context: None,
                     },
-                    self.input,
+                    &self.input,
                 )
             }),
-            Err(e) => Err(mapping_err(e, self.iter.py(), self.input)),
+            Err(e) => Err(mapping_err(e, self.iter.py(), &self.input)),
         })
     }
 }
 
 pub struct StringMappingGenericIterator<'py> {
-    dict_iter: PyDictIterator<'py>,
+    dict_iter: BoundDictIterator<'py>,
 }
 
 impl<'py> StringMappingGenericIterator<'py> {
-    pub fn new(dict: &'py PyDict) -> ValResult<Self> {
+    pub fn new(dict: &Bound<'py, PyDict>) -> ValResult<Self> {
         Ok(Self { dict_iter: dict.iter() })
     }
 }
@@ -536,11 +542,11 @@ impl<'py> Iterator for StringMappingGenericIterator<'py> {
     fn next(&mut self) -> Option<Self::Item> {
         match self.dict_iter.next() {
             Some((py_key, py_value)) => {
-                let key = match StringMapping::new_key(py_key) {
+                let key = match StringMapping::new_key(&py_key) {
                     Ok(key) => key,
                     Err(e) => return Some(Err(e)),
                 };
-                let value = match StringMapping::new_value(py_value) {
+                let value = match StringMapping::new_value(&py_value) {
                     Ok(value) => value,
                     Err(e) => return Some(Err(e)),
                 };
@@ -552,22 +558,22 @@ impl<'py> Iterator for StringMappingGenericIterator<'py> {
 }
 
 pub struct AttributesGenericIterator<'py> {
-    object: &'py PyAny,
-    // PyO3 should export this type upstream
-    attributes_iterator: <&'py PyList as IntoIterator>::IntoIter,
+    object: Bound<'py, PyAny>,
+    attributes_iterator: BoundListIterator<'py>,
 }
 
 impl<'py> AttributesGenericIterator<'py> {
-    pub fn new(py_any: &'py PyAny) -> ValResult<Self> {
+    pub fn new(py_any: &Bound<'py, PyAny>) -> ValResult<Self> {
+        let attributes_iterator = py_any.dir().into_iter();
         Ok(Self {
-            object: py_any,
-            attributes_iterator: py_any.dir().into_iter(),
+            object: py_any.clone(),
+            attributes_iterator,
         })
     }
 }
 
 impl<'py> Iterator for AttributesGenericIterator<'py> {
-    type Item = ValResult<(&'py PyAny, &'py PyAny)>;
+    type Item = ValResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>;
 
     fn next(&mut self) -> Option<Self::Item> {
         // loop until we find an attribute who's name does not start with underscore,
@@ -588,7 +594,7 @@ impl<'py> Iterator for AttributesGenericIterator<'py> {
                 // I think that's better than including static methods in the yielded attributes,
                 // if someone really wants fields, they can use an explicit field, or a function to modify input
                 #[cfg(not(PyPy))]
-                if !is_bound && !PyFunction::is_type_of(attr) {
+                if !is_bound && !attr.is_instance_of::<PyFunction>() {
                     return Some(Ok((name, attr)));
                 }
                 // MASSIVE HACK! PyFunction doesn't exist for PyPy,
@@ -639,11 +645,11 @@ impl From<JsonArray> for GenericIterator {
     }
 }
 
-impl From<&PyAny> for GenericIterator {
-    fn from(obj: &PyAny) -> Self {
+impl From<&Bound<'_, PyAny>> for GenericIterator {
+    fn from(obj: &Bound<'_, PyAny>) -> Self {
         let py_iter = GenericPyIterator {
-            obj: obj.to_object(obj.py()),
-            iter: obj.iter().unwrap().into_py(obj.py()),
+            obj: obj.clone().into(),
+            iter: obj.iter().unwrap().into(),
             index: 0,
         };
         Self::PyIterator(py_iter)
@@ -658,8 +664,10 @@ pub struct GenericPyIterator {
 }
 
 impl GenericPyIterator {
-    pub fn next<'a>(&'a mut self, py: Python<'a>) -> PyResult<Option<(&'a PyAny, usize)>> {
-        match self.iter.as_ref(py).next() {
+    pub fn next<'py>(&mut self, py: Python<'py>) -> PyResult<Option<(Bound<'py, PyAny>, usize)>> {
+        // TODO: .to_owned() is a workaround for PyO3 not allowing `.next()` to be called on
+        // the reference
+        match self.iter.bind(py).to_owned().next() {
             Some(Ok(next)) => {
                 let a = (next, self.index);
                 self.index += 1;
@@ -709,13 +717,13 @@ impl GenericJsonIterator {
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub struct PyArgs<'a> {
-    pub args: Option<&'a PyTuple>,
-    pub kwargs: Option<&'a PyDict>,
+pub struct PyArgs<'py> {
+    pub args: Option<Bound<'py, PyTuple>>,
+    pub kwargs: Option<Bound<'py, PyDict>>,
 }
 
-impl<'a> PyArgs<'a> {
-    pub fn new(args: Option<&'a PyTuple>, kwargs: Option<&'a PyDict>) -> Self {
+impl<'py> PyArgs<'py> {
+    pub fn new(args: Option<Bound<'py, PyTuple>>, kwargs: Option<Bound<'py, PyDict>>) -> Self {
         Self { args, kwargs }
     }
 }
@@ -736,7 +744,7 @@ impl<'a> JsonArgs<'a> {
 pub enum GenericArguments<'a> {
     Py(PyArgs<'a>),
     Json(JsonArgs<'a>),
-    StringMapping(&'a PyDict),
+    StringMapping(Bound<'a, PyDict>),
 }
 
 impl<'a> From<PyArgs<'a>> for GenericArguments<'a> {
@@ -754,7 +762,7 @@ impl<'a> From<JsonArgs<'a>> for GenericArguments<'a> {
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum EitherString<'a> {
     Cow(Cow<'a, str>),
-    Py(&'a PyString),
+    Py(Bound<'a, PyString>),
 }
 
 impl<'a> EitherString<'a> {
@@ -765,10 +773,10 @@ impl<'a> EitherString<'a> {
         }
     }
 
-    pub fn as_py_string(&'a self, py: Python<'a>) -> &'a PyString {
+    pub fn as_py_string(&'a self, py: Python<'a>) -> Bound<'a, PyString> {
         match self {
-            Self::Cow(cow) => PyString::new(py, cow),
-            Self::Py(py_string) => py_string,
+            Self::Cow(cow) => PyString::new_bound(py, cow),
+            Self::Py(py_string) => py_string.clone(),
         }
     }
 }
@@ -785,8 +793,8 @@ impl<'a> From<String> for EitherString<'a> {
     }
 }
 
-impl<'a> From<&'a PyString> for EitherString<'a> {
-    fn from(date: &'a PyString) -> Self {
+impl<'a> From<Bound<'a, PyString>> for EitherString<'a> {
+    fn from(date: Bound<'a, PyString>) -> Self {
         Self::Py(date)
     }
 }
@@ -797,33 +805,36 @@ impl<'a> IntoPy<PyObject> for EitherString<'a> {
     }
 }
 
-pub fn py_string_str(py_str: &PyString) -> ValResult<&str> {
-    py_str
-        .to_str()
-        .map_err(|_| ValError::new_custom_input(ErrorTypeDefaults::StringUnicode, InputValue::Python(py_str.into())))
+pub fn py_string_str<'a>(py_str: &'a Bound<'_, PyString>) -> ValResult<&'a str> {
+    py_str.to_str().map_err(|_| {
+        ValError::new_custom_input(
+            ErrorTypeDefaults::StringUnicode,
+            InputValue::Python(py_str.clone().into()),
+        )
+    })
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum EitherBytes<'a> {
     Cow(Cow<'a, [u8]>),
-    Py(&'a PyBytes),
+    Py(Bound<'a, PyBytes>),
 }
 
 impl<'a> From<Vec<u8>> for EitherBytes<'a> {
-    fn from(date: Vec<u8>) -> Self {
-        Self::Cow(Cow::Owned(date))
+    fn from(bytes: Vec<u8>) -> Self {
+        Self::Cow(Cow::Owned(bytes))
     }
 }
 
 impl<'a> From<&'a [u8]> for EitherBytes<'a> {
-    fn from(date: &'a [u8]) -> Self {
-        Self::Cow(Cow::Borrowed(date))
+    fn from(bytes: &'a [u8]) -> Self {
+        Self::Cow(Cow::Borrowed(bytes))
     }
 }
 
-impl<'a> From<&'a PyBytes> for EitherBytes<'a> {
-    fn from(date: &'a PyBytes) -> Self {
-        Self::Py(date)
+impl<'a> From<&'_ Bound<'a, PyBytes>> for EitherBytes<'a> {
+    fn from(bytes: &'_ Bound<'a, PyBytes>) -> Self {
+        Self::Py(bytes.clone())
     }
 }
 
@@ -846,7 +857,7 @@ impl<'a> EitherBytes<'a> {
 impl<'a> IntoPy<PyObject> for EitherBytes<'a> {
     fn into_py(self, py: Python<'_>) -> PyObject {
         match self {
-            EitherBytes::Cow(bytes) => PyBytes::new(py, &bytes).into_py(py),
+            EitherBytes::Cow(bytes) => PyBytes::new_bound(py, &bytes).into_py(py),
             EitherBytes::Py(py_bytes) => py_bytes.into_py(py),
         }
     }
@@ -857,11 +868,11 @@ pub enum EitherInt<'a> {
     I64(i64),
     U64(u64),
     BigInt(BigInt),
-    Py(&'a PyAny),
+    Py(Bound<'a, PyAny>),
 }
 
 impl<'a> EitherInt<'a> {
-    pub fn upcast(py_any: &'a PyAny) -> ValResult<Self> {
+    pub fn upcast(py_any: &Bound<'a, PyAny>) -> ValResult<Self> {
         // Safety: we know that py_any is a python int
         if let Some(int_64) = extract_i64(py_any) {
             Ok(Self::I64(int_64))
@@ -875,21 +886,18 @@ impl<'a> EitherInt<'a> {
             EitherInt::I64(i) => Ok(i),
             EitherInt::U64(u) => match i64::try_from(u) {
                 Ok(u) => Ok(u),
-                Err(_) => Err(ValError::new(
-                    ErrorTypeDefaults::IntParsingSize,
-                    u.into_py(py).into_ref(py),
-                )),
+                Err(_) => Err(ValError::new(ErrorTypeDefaults::IntParsingSize, u.into_py(py).bind(py))),
             },
             EitherInt::BigInt(u) => match i64::try_from(u) {
                 Ok(u) => Ok(u),
                 Err(e) => Err(ValError::new(
                     ErrorTypeDefaults::IntParsingSize,
-                    e.into_original().into_py(py).into_ref(py),
+                    e.into_original().into_py(py).bind(py),
                 )),
             },
             EitherInt::Py(i) => i
                 .extract()
-                .map_err(|_| ValError::new(ErrorTypeDefaults::IntParsingSize, i)),
+                .map_err(|_| ValError::new(ErrorTypeDefaults::IntParsingSize, &i)),
         }
     }
 
@@ -903,7 +911,7 @@ impl<'a> EitherInt<'a> {
             EitherInt::BigInt(b) => Ok(Int::Big(b.clone())),
             EitherInt::Py(i) => i
                 .extract()
-                .map_err(|_| ValError::new(ErrorTypeDefaults::IntParsingSize, *i)),
+                .map_err(|_| ValError::new(ErrorTypeDefaults::IntParsingSize, i)),
         }
     }
 
@@ -945,16 +953,16 @@ impl<'a> IntoPy<PyObject> for EitherInt<'a> {
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub enum EitherFloat<'a> {
     F64(f64),
-    Py(&'a PyFloat),
+    Py(Bound<'a, PyFloat>),
 }
 
 impl<'a> EitherFloat<'a> {
-    pub fn as_f64(self) -> f64 {
+    pub fn as_f64(&self) -> f64 {
         match self {
-            EitherFloat::F64(f) => f,
+            EitherFloat::F64(f) => *f,
             EitherFloat::Py(f) => f.value(),
         }
     }
@@ -1019,8 +1027,8 @@ impl<'a> Rem for &'a Int {
     }
 }
 
-impl<'a> FromPyObject<'a> for Int {
-    fn extract(obj: &'a PyAny) -> PyResult<Self> {
+impl FromPyObject<'_> for Int {
+    fn extract_bound(obj: &Bound<'_, PyAny>) -> PyResult<Self> {
         if let Some(i) = extract_i64(obj) {
             Ok(Int::I64(i))
         } else if let Ok(b) = obj.extract::<BigInt>() {

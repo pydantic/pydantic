@@ -20,13 +20,13 @@ impl BuildValidator for JsonValidator {
     const EXPECTED_TYPE: &'static str = "json";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let validator = match schema.get_as(intern!(schema.py(), "schema"))? {
             Some(schema) => {
-                let validator = build_validator(schema, config, definitions)?;
+                let validator = build_validator(&schema, config, definitions)?;
                 match validator {
                     CombinedValidator::Any(_) => None,
                     _ => Some(Box::new(validator)),
@@ -66,7 +66,7 @@ impl Validator for JsonValidator {
             None => {
                 let obj =
                     jiter::python_parse(py, json_bytes, true, true).map_err(|e| map_json_err(input, e, json_bytes))?;
-                Ok(obj)
+                Ok(obj.unbind())
             }
         }
     }

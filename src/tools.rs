@@ -6,39 +6,39 @@ use pyo3::types::{PyDict, PyString};
 use pyo3::{ffi, intern, FromPyObject};
 
 pub trait SchemaDict<'py> {
-    fn get_as<T>(&'py self, key: &PyString) -> PyResult<Option<T>>
+    fn get_as<T>(&self, key: &Bound<'_, PyString>) -> PyResult<Option<T>>
     where
         T: FromPyObject<'py>;
 
-    fn get_as_req<T>(&'py self, key: &PyString) -> PyResult<T>
+    fn get_as_req<T>(&self, key: &Bound<'_, PyString>) -> PyResult<T>
     where
         T: FromPyObject<'py>;
 }
 
-impl<'py> SchemaDict<'py> for PyDict {
-    fn get_as<T>(&'py self, key: &PyString) -> PyResult<Option<T>>
+impl<'py> SchemaDict<'py> for Bound<'py, PyDict> {
+    fn get_as<T>(&self, key: &Bound<'_, PyString>) -> PyResult<Option<T>>
     where
         T: FromPyObject<'py>,
     {
         match self.get_item(key)? {
-            Some(t) => Ok(Some(<T>::extract(t)?)),
+            Some(t) => t.extract().map(Some),
             None => Ok(None),
         }
     }
 
-    fn get_as_req<T>(&'py self, key: &PyString) -> PyResult<T>
+    fn get_as_req<T>(&self, key: &Bound<'_, PyString>) -> PyResult<T>
     where
         T: FromPyObject<'py>,
     {
         match self.get_item(key)? {
-            Some(t) => <T>::extract(t),
+            Some(t) => t.extract(),
             None => py_err!(PyKeyError; "{}", key),
         }
     }
 }
 
-impl<'py> SchemaDict<'py> for Option<&PyDict> {
-    fn get_as<T>(&'py self, key: &PyString) -> PyResult<Option<T>>
+impl<'py> SchemaDict<'py> for Option<&Bound<'py, PyDict>> {
+    fn get_as<T>(&self, key: &Bound<'_, PyString>) -> PyResult<Option<T>>
     where
         T: FromPyObject<'py>,
     {
@@ -49,7 +49,7 @@ impl<'py> SchemaDict<'py> for Option<&PyDict> {
     }
 
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn get_as_req<T>(&'py self, key: &PyString) -> PyResult<T>
+    fn get_as_req<T>(&self, key: &Bound<'_, PyString>) -> PyResult<T>
     where
         T: FromPyObject<'py>,
     {
@@ -82,27 +82,50 @@ macro_rules! py_err {
 }
 pub(crate) use py_err;
 
-pub fn function_name(f: &PyAny) -> PyResult<String> {
+pub fn function_name(f: &Bound<'_, PyAny>) -> PyResult<String> {
     match f.getattr(intern!(f.py(), "__name__")) {
         Ok(name) => name.extract(),
         _ => f.repr()?.extract(),
     }
 }
 
-pub fn safe_repr(v: &PyAny) -> Cow<str> {
+pub enum ReprOutput<'py> {
+    Python(Bound<'py, PyString>),
+    Fallback(String),
+}
+
+impl ReprOutput<'_> {
+    pub fn to_cow(&self) -> Cow<'_, str> {
+        match self {
+            ReprOutput::Python(s) => s.to_string_lossy(),
+            ReprOutput::Fallback(s) => s.into(),
+        }
+    }
+}
+
+impl std::fmt::Display for ReprOutput<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ReprOutput::Python(s) => write!(f, "{}", s.to_string_lossy()),
+            ReprOutput::Fallback(s) => write!(f, "{s}"),
+        }
+    }
+}
+
+pub fn safe_repr<'py>(v: &Bound<'py, PyAny>) -> ReprOutput<'py> {
     if let Ok(s) = v.repr() {
-        s.to_string_lossy()
-    } else if let Ok(name) = v.get_type().name() {
-        format!("<unprintable {name} object>").into()
+        ReprOutput::Python(s)
+    } else if let Ok(name) = v.get_type().qualname() {
+        ReprOutput::Fallback(format!("<unprintable {name} object>"))
     } else {
-        "<unprintable object>".into()
+        ReprOutput::Fallback("<unprintable object>".to_owned())
     }
 }
 
 /// Extract an i64 from a python object more quickly, see
 /// https://github.com/PyO3/pyo3/pull/3742#discussion_r1451763928
 #[cfg(not(any(target_pointer_width = "32", windows, PyPy)))]
-pub fn extract_i64(obj: &PyAny) -> Option<i64> {
+pub fn extract_i64(obj: &Bound<'_, PyAny>) -> Option<i64> {
     let val = unsafe { ffi::PyLong_AsLong(obj.as_ptr()) };
     if val == -1 && PyErr::occurred(obj.py()) {
         unsafe { ffi::PyErr_Clear() };
@@ -113,7 +136,7 @@ pub fn extract_i64(obj: &PyAny) -> Option<i64> {
 }
 
 #[cfg(any(target_pointer_width = "32", windows, PyPy))]
-pub fn extract_i64(v: &PyAny) -> Option<i64> {
+pub fn extract_i64(v: &Bound<'_, PyAny>) -> Option<i64> {
     if v.is_instance_of::<pyo3::types::PyInt>() {
         v.extract().ok()
     } else {

@@ -1,6 +1,7 @@
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
-use pyo3::PyDowncastError;
+use pyo3::DowncastError;
+use pyo3::DowncastIntoError;
 
 use jiter::JsonValue;
 
@@ -35,8 +36,14 @@ impl From<PyErr> for ValError {
     }
 }
 
-impl From<PyDowncastError<'_>> for ValError {
-    fn from(py_downcast: PyDowncastError) -> Self {
+impl From<DowncastError<'_, '_>> for ValError {
+    fn from(py_downcast: DowncastError) -> Self {
+        Self::InternalErr(PyTypeError::new_err(py_downcast.to_string()))
+    }
+}
+
+impl From<DowncastIntoError<'_>> for ValError {
+    fn from(py_downcast: DowncastIntoError) -> Self {
         Self::InternalErr(PyTypeError::new_err(py_downcast.to_string()))
     }
 }

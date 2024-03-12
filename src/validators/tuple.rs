@@ -5,6 +5,7 @@ use std::collections::VecDeque;
 
 use crate::build_tools::is_strict;
 use crate::errors::{py_err_string, ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
+use crate::input::BorrowInput;
 use crate::input::{GenericIterable, Input};
 use crate::tools::SchemaDict;
 use crate::validators::Exactness;
@@ -24,15 +25,15 @@ pub struct TupleValidator {
 impl BuildValidator for TupleValidator {
     const EXPECTED_TYPE: &'static str = "tuple";
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
-        let items: &PyList = schema.get_as_req(intern!(py, "items_schema"))?;
+        let items: Bound<'_, PyList> = schema.get_as_req(intern!(py, "items_schema"))?;
         let validators: Vec<CombinedValidator> = items
             .iter()
-            .map(|item| build_validator(item, config, definitions))
+            .map(|item| build_validator(&item, config, definitions))
             .collect::<PyResult<_>>()?;
 
         let mut validator_names = validators.iter().map(Validator::get_name).collect::<Vec<_>>();
@@ -59,7 +60,7 @@ impl_py_gc_traverse!(TupleValidator { validators });
 
 impl TupleValidator {
     #[allow(clippy::too_many_arguments)]
-    fn validate_tuple_items<'s, 'data, I: Input<'data> + 'data>(
+    fn validate_tuple_items<'s, 'data, I: BorrowInput + 'data>(
         &self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
@@ -67,13 +68,13 @@ impl TupleValidator {
         output: &mut Vec<PyObject>,
         errors: &mut Vec<ValLineError>,
         item_validators: &[CombinedValidator],
-        collection_iter: &mut NextCountingIterator<impl Iterator<Item = &'data I>>,
+        collection_iter: &mut NextCountingIterator<impl Iterator<Item = I>>,
         actual_length: Option<usize>,
     ) -> ValResult<()> {
         // Validate the head:
         for validator in item_validators {
             match collection_iter.next() {
-                Some((index, input_item)) => match validator.validate(py, input_item, state) {
+                Some((index, input_item)) => match validator.validate(py, input_item.borrow_input(), state) {
                     Ok(item) => self.push_output_item(input, output, item, actual_length)?,
                     Err(ValError::LineErrors(line_errors)) => {
                         errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
@@ -96,13 +97,13 @@ impl TupleValidator {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn validate_tuple_variable<'data, I: Input<'data> + 'data, InputT: Input<'data> + 'data>(
+    fn validate_tuple_variable<'data, I: BorrowInput + 'data, InputT: Input<'data> + 'data>(
         &self,
         py: Python<'data>,
         input: &'data InputT,
         state: &mut ValidationState,
         errors: &mut Vec<ValLineError>,
-        collection_iter: &mut NextCountingIterator<impl Iterator<Item = &'data I>>,
+        collection_iter: &mut NextCountingIterator<impl Iterator<Item = I>>,
         actual_length: Option<usize>,
     ) -> ValResult<Vec<PyObject>> {
         let expected_length = if self.variadic_item_index.is_some() {
@@ -133,7 +134,7 @@ impl TupleValidator {
             let n_tail_validators = tail_validators.len();
             if n_tail_validators == 0 {
                 for (index, input_item) in collection_iter {
-                    match variable_validator.validate(py, input_item, state) {
+                    match variable_validator.validate(py, input_item.borrow_input(), state) {
                         Ok(item) => self.push_output_item(input, &mut output, item, actual_length)?,
                         Err(ValError::LineErrors(line_errors)) => {
                             errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
@@ -147,8 +148,7 @@ impl TupleValidator {
                 // NB: We take from collection_iter.inner to avoid increasing the next calls count
                 // while populating the buffer. This means the index in the following loop is the
                 // right one for user errors.
-                let mut tail_buffer: VecDeque<&'data I> =
-                    collection_iter.inner.by_ref().take(n_tail_validators).collect();
+                let mut tail_buffer: VecDeque<I> = collection_iter.inner.by_ref().take(n_tail_validators).collect();
 
                 // Save the current index for the tail validation below when we recreate a new NextCountingIterator
                 let mut index = collection_iter.next_calls();
@@ -161,7 +161,7 @@ impl TupleValidator {
                     let buffered_item = tail_buffer.pop_front().unwrap();
                     tail_buffer.push_back(input_item);
 
-                    match variable_validator.validate(py, buffered_item, state) {
+                    match variable_validator.validate(py, buffered_item.borrow_input(), state) {
                         Ok(item) => self.push_output_item(input, &mut output, item, actual_length)?,
                         Err(ValError::LineErrors(line_errors)) => {
                             errors.extend(
@@ -326,7 +326,7 @@ impl Validator for TupleValidator {
         }
 
         if errors.is_empty() {
-            Ok(PyTuple::new(py, &output).into_py(py))
+            Ok(PyTuple::new_bound(py, output).into_py(py))
         } else {
             Err(ValError::LineErrors(errors))
         }

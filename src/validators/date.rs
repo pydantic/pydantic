@@ -24,8 +24,8 @@ impl BuildValidator for DateValidator {
     const EXPECTED_TYPE: &'static str = "date";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         Ok(Self {
@@ -158,7 +158,7 @@ struct DateConstraints {
 }
 
 impl DateConstraints {
-    fn from_py(schema: &PyDict) -> PyResult<Option<Self>> {
+    fn from_py(schema: &Bound<'_, PyDict>) -> PyResult<Option<Self>> {
         let py = schema.py();
         let c = Self {
             le: convert_pydate(schema, intern!(py, "le"))?,
@@ -175,8 +175,8 @@ impl DateConstraints {
     }
 }
 
-fn convert_pydate(schema: &PyDict, field: &PyString) -> PyResult<Option<Date>> {
-    match schema.get_as::<&PyDate>(field)? {
+fn convert_pydate(schema: &Bound<'_, PyDict>, field: &Bound<'_, PyString>) -> PyResult<Option<Date>> {
+    match schema.get_as::<Bound<'_, PyDate>>(field)? {
         Some(date) => Ok(Some(EitherDate::Py(date).as_raw()?)),
         None => Ok(None),
     }

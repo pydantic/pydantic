@@ -28,24 +28,24 @@ impl BuildSerializer for DictSerializer {
     const EXPECTED_TYPE: &'static str = "dict";
 
     fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
+        schema: &Bound<'_, PyDict>,
+        config: Option<&Bound<'_, PyDict>>,
         definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
-        let key_serializer = match schema.get_as::<&PyDict>(intern!(py, "keys_schema"))? {
-            Some(items_schema) => CombinedSerializer::build(items_schema, config, definitions)?,
+        let key_serializer = match schema.get_as(intern!(py, "keys_schema"))? {
+            Some(items_schema) => CombinedSerializer::build(&items_schema, config, definitions)?,
             None => AnySerializer::build(schema, config, definitions)?,
         };
-        let value_serializer = match schema.get_as::<&PyDict>(intern!(py, "values_schema"))? {
-            Some(items_schema) => CombinedSerializer::build(items_schema, config, definitions)?,
+        let value_serializer = match schema.get_as(intern!(py, "values_schema"))? {
+            Some(items_schema) => CombinedSerializer::build(&items_schema, config, definitions)?,
             None => AnySerializer::build(schema, config, definitions)?,
         };
-        let filter = match schema.get_as::<&PyDict>(intern!(py, "serialization"))? {
+        let filter = match schema.get_as::<Bound<'_, PyDict>>(intern!(py, "serialization"))? {
             Some(ser) => {
                 let include = ser.get_item(intern!(py, "include"))?;
                 let exclude = ser.get_item(intern!(py, "exclude"))?;
-                SchemaFilter::from_set_hash(include, exclude)?
+                SchemaFilter::from_set_hash(include.as_ref(), exclude.as_ref())?
             }
             None => SchemaFilter::default(),
         };
@@ -73,9 +73,9 @@ impl_py_gc_traverse!(DictSerializer {
 impl TypeSerializer for DictSerializer {
     fn to_python(
         &self,
-        value: &PyAny,
-        include: Option<&PyAny>,
-        exclude: Option<&PyAny>,
+        value: &Bound<'_, PyAny>,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> PyResult<PyObject> {
         let py = value.py();
@@ -83,15 +83,16 @@ impl TypeSerializer for DictSerializer {
             Ok(py_dict) => {
                 let value_serializer = self.value_serializer.as_ref();
 
-                let new_dict = PyDict::new(py);
-                for (key, value) in py_dict {
-                    let op_next = self.filter.key_filter(key, include, exclude)?;
+                let new_dict = PyDict::new_bound(py);
+                for (key, value) in py_dict.iter() {
+                    let op_next = self.filter.key_filter(&key, include, exclude)?;
                     if let Some((next_include, next_exclude)) = op_next {
                         let key = match extra.mode {
-                            SerMode::Json => self.key_serializer.json_key(key, extra)?.into_py(py),
-                            _ => self.key_serializer.to_python(key, None, None, extra)?,
+                            SerMode::Json => self.key_serializer.json_key(&key, extra)?.into_py(py),
+                            _ => self.key_serializer.to_python(&key, None, None, extra)?,
                         };
-                        let value = value_serializer.to_python(value, next_include, next_exclude, extra)?;
+                        let value =
+                            value_serializer.to_python(&value, next_include.as_ref(), next_exclude.as_ref(), extra)?;
                         new_dict.set_item(key, value)?;
                     }
                 }
@@ -104,16 +105,16 @@ impl TypeSerializer for DictSerializer {
         }
     }
 
-    fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
         self._invalid_as_json_key(key, extra, Self::EXPECTED_TYPE)
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
         &self,
-        value: &PyAny,
+        value: &Bound<'_, PyAny>,
         serializer: S,
-        include: Option<&PyAny>,
-        exclude: Option<&PyAny>,
+        include: Option<&Bound<'_, PyAny>>,
+        exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         match value.downcast::<PyDict>() {
@@ -122,12 +123,17 @@ impl TypeSerializer for DictSerializer {
                 let key_serializer = self.key_serializer.as_ref();
                 let value_serializer = self.value_serializer.as_ref();
 
-                for (key, value) in py_dict {
-                    let op_next = self.filter.key_filter(key, include, exclude).map_err(py_err_se_err)?;
+                for (key, value) in py_dict.iter() {
+                    let op_next = self.filter.key_filter(&key, include, exclude).map_err(py_err_se_err)?;
                     if let Some((next_include, next_exclude)) = op_next {
-                        let key = key_serializer.json_key(key, extra).map_err(py_err_se_err)?;
-                        let value_serialize =
-                            PydanticSerializer::new(value, value_serializer, next_include, next_exclude, extra);
+                        let key = key_serializer.json_key(&key, extra).map_err(py_err_se_err)?;
+                        let value_serialize = PydanticSerializer::new(
+                            &value,
+                            value_serializer,
+                            next_include.as_ref(),
+                            next_exclude.as_ref(),
+                            extra,
+                        );
                         map.serialize_entry(&key, &value_serialize)?;
                     }
                 }
