@@ -224,8 +224,8 @@ print(Model(x='test value').model_dump_json())
 #> {"x":"serialized test value"}
 ```
 
-!!! note A single serializer can also be called on all fields by passing the special value '*' to the [`@field_serializer`][pydantic.functional_serializers.field_serializer] decorator.
-
+!!! note
+    A single serializer can also be called on all fields by passing the special value '*' to the [`@field_serializer`][pydantic.functional_serializers.field_serializer] decorator.
 
 In addition, [`PlainSerializer`][pydantic.functional_serializers.PlainSerializer] and
 [`WrapSerializer`][pydantic.functional_serializers.WrapSerializer] enable you to use a function to modify the output of serialization.
