@@ -125,9 +125,8 @@ def check_validator_fields_against_field_name(
     Returns:
         `True` if field name is in validator fields, `False` otherwise.
     """
-    if isinstance(info, (ValidatorDecoratorInfo, FieldValidatorDecoratorInfo)):
-        if '*' in info.fields:
-            return True
+    if '*' in info.fields:
+        return True
     for v_field_name in info.fields:
         if v_field_name == field:
             return True
@@ -148,7 +147,7 @@ def check_decorator_fields_exist(decorators: Iterable[AnyFieldDecorator], fields
     """
     fields = set(fields)
     for dec in decorators:
-        if isinstance(dec.info, (ValidatorDecoratorInfo, FieldValidatorDecoratorInfo)) and '*' in dec.info.fields:
+        if '*' in dec.info.fields:
             continue
         if dec.info.check_fields is False:
             continue
