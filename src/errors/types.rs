@@ -43,7 +43,7 @@ pub fn list_all_errors(py: Python) -> PyResult<Bound<'_, PyList>> {
 }
 
 fn field_from_context<'py, T: FromPyObject<'py>>(
-    context: Option<&'py PyDict>,
+    context: Option<&Bound<'py, PyDict>>,
     field_name: &str,
     enum_name: &str,
     type_name_fn: fn() -> &'static str,
@@ -57,7 +57,7 @@ fn field_from_context<'py, T: FromPyObject<'py>>(
 }
 
 fn cow_field_from_context<'py, T: FromPyObject<'py>, B: ?Sized + 'static>(
-    context: Option<&'py PyDict>,
+    context: Option<&Bound<'py, PyDict>>,
     field_name: &str,
     enum_name: &str,
     _type_name_fn: fn() -> &'static str,
@@ -101,7 +101,7 @@ macro_rules! error_types {
             ),+,
         }
         impl ErrorType {
-            pub fn new(py: Python, value: &str, context: Option<&PyDict>) -> PyResult<Self> {
+            pub fn new(py: Python, value: &str, context: Option<Bound<'_, PyDict>>) -> PyResult<Self> {
                 let lookup = ERROR_TYPE_LOOKUP.get_or_init(py, Self::build_lookup);
                 let error_type = match lookup.get(value) {
                     Some(error_type) => error_type.clone(),
@@ -111,10 +111,10 @@ macro_rules! error_types {
                     $(
                         Self::$item { .. } => {
                             Ok(Self::$item {
-                                context: context.map(|c| c.into_py(py)),
                                 $(
-                                    $key: $ctx_fn(context, stringify!($key), stringify!($item), || stringify!($ctx_type))?,
+                                    $key: $ctx_fn(context.as_ref(), stringify!($key), stringify!($item), || stringify!($ctx_type))?,
                                 )*
+                                context: context.map(|c| c.unbind()),
                             })
                         },
                     )+

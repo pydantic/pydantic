@@ -30,11 +30,11 @@ impl ArgsKwargs {
 #[pymethods]
 impl ArgsKwargs {
     #[new]
-    fn py_new(py: Python, args: &PyTuple, kwargs: Option<&PyDict>) -> Self {
+    fn py_new(py: Python, args: &PyTuple, kwargs: Option<&Bound<'_, PyDict>>) -> Self {
         Self {
             args: args.into_py(py),
             kwargs: match kwargs {
-                Some(d) if !d.is_empty() => Some(d.into_py(py)),
+                Some(d) if !d.is_empty() => Some(d.to_owned().unbind()),
                 _ => None,
             },
         }
@@ -94,7 +94,7 @@ impl PydanticUndefinedType {
     }
 
     #[pyo3(signature = (_memo, /))]
-    fn __deepcopy__(&self, py: Python, _memo: &PyAny) -> Py<Self> {
+    fn __deepcopy__(&self, py: Python, _memo: &Bound<'_, PyAny>) -> Py<Self> {
         self.__copy__(py)
     }
 

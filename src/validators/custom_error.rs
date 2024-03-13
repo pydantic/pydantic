@@ -28,7 +28,7 @@ impl CustomError {
             Some(error_type) => error_type,
             None => return Ok(None),
         };
-        let context: Option<&PyDict> = schema.get_as(intern!(py, "custom_error_context"))?;
+        let context: Option<Bound<'_, PyDict>> = schema.get_as(intern!(py, "custom_error_context"))?;
 
         if ErrorType::valid_type(py, &error_type) {
             if schema.contains(intern!(py, "custom_error_message"))? {
@@ -41,7 +41,6 @@ impl CustomError {
             }
         } else {
             let error = PydanticCustomError::py_new(
-                py,
                 error_type,
                 schema.get_as_req::<String>(intern!(py, "custom_error_message"))?,
                 context,
