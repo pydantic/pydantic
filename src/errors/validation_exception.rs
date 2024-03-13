@@ -478,7 +478,7 @@ impl TryFrom<&Bound<'_, PyAny>> for PyLineError {
             .ok_or_else(|| PyKeyError::new_err("type"))?;
 
         let error_type = if let Ok(type_str) = type_raw.downcast::<PyString>() {
-            let context: Option<&PyDict> = dict.get_as(intern!(py, "ctx"))?;
+            let context: Option<Bound<'_, PyDict>> = dict.get_as(intern!(py, "ctx"))?;
             ErrorType::new(py, type_str.to_str()?, context)?
         } else if let Ok(custom_error) = type_raw.extract::<PydanticCustomError>() {
             ErrorType::new_custom_error(py, custom_error)
