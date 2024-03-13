@@ -533,9 +533,9 @@ def test_serialization_alias_from_alias():
     assert 'foo' in sig.parameters
 
 
-def test_serialization_by_alias_enforced_with_serialize_by_name():
+def test_serialization_by_alias_enforced_with_serialize_by_alias():
     class Model(BaseModel):
-        model_config = {'serialize_by_name': True}
+        model_config = {'serialize_by_alias': True}
         x: str = Field(alias='foo')
 
     m = Model(foo='bar')

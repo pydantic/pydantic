@@ -49,6 +49,7 @@ class ConfigWrapper:
     extra: ExtraValues | None
     frozen: bool
     populate_by_name: bool
+    serialize_by_alias: bool
     use_enum_values: bool
     validate_assignment: bool
     arbitrary_types_allowed: bool
@@ -227,6 +228,7 @@ config_defaults = ConfigDict(
     extra=None,
     frozen=False,
     populate_by_name=False,
+    serialize_by_alias=False,
     use_enum_values=False,
     validate_assignment=False,
     arbitrary_types_allowed=False,

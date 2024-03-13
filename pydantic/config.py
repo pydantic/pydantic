@@ -161,7 +161,7 @@ class ConfigDict(TypedDict, total=False):
     3. The model is populated by the field name `'name'`.
     """
 
-    serialize_by_name: bool
+    serialize_by_alias: bool
     """
     counter part to populate_by_name.
 
