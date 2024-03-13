@@ -363,6 +363,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Returns:
             A JSON string representation of the model.
         """
+        if self.model_config.get('serialize_by_name', False):
+            by_alias = True
         return self.__pydantic_serializer__.to_json(
             self,
             indent=indent,

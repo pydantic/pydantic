@@ -161,6 +161,13 @@ class ConfigDict(TypedDict, total=False):
     3. The model is populated by the field name `'name'`.
     """
 
+    serialize_by_name: bool
+    """
+    counter part to populate_by_name.
+
+    See https://github.com/pydantic/pydantic/issues/8379 for the background discussion.
+    """
+
     use_enum_values: bool
     """
     Whether to populate models with the `value` property of enums, rather than the raw enum.
