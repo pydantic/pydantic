@@ -589,7 +589,7 @@ impl Validator for DataclassValidator {
             self.validator
                 .validate_assignment(py, new_dict.as_any(), field_name, field_value, state)?;
 
-        let (dc_dict, _): (&PyDict, PyObject) = val_assignment_result.extract(py)?;
+        let (dc_dict, _): (Bound<'_, PyDict>, Bound<'_, PyAny>) = val_assignment_result.extract(py)?;
 
         if self.slots {
             let value = dc_dict

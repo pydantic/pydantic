@@ -65,11 +65,11 @@ pub struct PydanticCustomError {
 #[pymethods]
 impl PydanticCustomError {
     #[new]
-    pub fn py_new(py: Python, error_type: String, message_template: String, context: Option<&PyDict>) -> Self {
+    pub fn py_new(error_type: String, message_template: String, context: Option<Bound<'_, PyDict>>) -> Self {
         Self {
             error_type,
             message_template,
-            context: context.map(|c| c.into_py(py)),
+            context: context.map(Bound::unbind),
         }
     }
 
@@ -143,7 +143,7 @@ pub struct PydanticKnownError {
 #[pymethods]
 impl PydanticKnownError {
     #[new]
-    pub fn py_new(py: Python, error_type: &str, context: Option<&PyDict>) -> PyResult<Self> {
+    pub fn py_new(py: Python, error_type: &str, context: Option<Bound<'_, PyDict>>) -> PyResult<Self> {
         let error_type = ErrorType::new(py, error_type, context)?;
         Ok(Self { error_type })
     }

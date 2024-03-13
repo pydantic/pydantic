@@ -118,7 +118,7 @@ json_input = '{"a": "something"}'
                 .unwrap()
                 .validate_json(py, &json_input, None, None, None)
                 .unwrap();
-            let validation_result: &PyAny = binding.extract(py).unwrap();
+            let validation_result: Bound<'_, PyAny> = binding.extract(py).unwrap();
             let repr = format!("{}", validation_result.repr().unwrap());
             assert_eq!(repr, "{'a': 'something'}");
         });

@@ -63,7 +63,7 @@ type NextFilters<'py> = Option<(Option<Bound<'py, PyAny>>, Option<Bound<'py, PyA
 impl SchemaFilter<usize> {
     pub fn from_schema(schema: &Bound<'_, PyDict>) -> PyResult<Self> {
         let py = schema.py();
-        match schema.get_as::<&PyDict>(intern!(py, "serialization"))? {
+        match schema.get_as::<Bound<'_, PyDict>>(intern!(py, "serialization"))? {
             Some(ser) => {
                 let include = Self::build_set_ints(ser.get_item(intern!(py, "include"))?)?;
                 let exclude = Self::build_set_ints(ser.get_item(intern!(py, "exclude"))?)?;
@@ -73,13 +73,13 @@ impl SchemaFilter<usize> {
         }
     }
 
-    fn build_set_ints(v: Option<&PyAny>) -> PyResult<Option<AHashSet<usize>>> {
+    fn build_set_ints(v: Option<Bound<'_, PyAny>>) -> PyResult<Option<AHashSet<usize>>> {
         match v {
             Some(value) => {
                 if value.is_none() {
                     Ok(None)
                 } else {
-                    let py_set: &PySet = value.downcast()?;
+                    let py_set = value.downcast::<PySet>()?;
                     let mut set: AHashSet<usize> = AHashSet::with_capacity(py_set.len());
 
                     for item in py_set {

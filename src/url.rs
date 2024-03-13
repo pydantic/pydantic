@@ -147,7 +147,7 @@ impl PyUrl {
     }
 
     #[pyo3(signature = (_memo, /))]
-    pub fn __deepcopy__(&self, py: Python, _memo: &PyDict) -> Py<PyAny> {
+    pub fn __deepcopy__(&self, py: Python, _memo: Bound<'_, PyAny>) -> Py<PyAny> {
         self.clone().into_py(py)
     }
 
@@ -347,7 +347,7 @@ impl PyMultiHostUrl {
         true // an empty string is not a valid URL
     }
 
-    pub fn __deepcopy__(&self, py: Python, _memo: &PyDict) -> Py<PyAny> {
+    pub fn __deepcopy__(&self, py: Python, _memo: &Bound<'_, PyDict>) -> Py<PyAny> {
         self.clone().into_py(py)
     }
 

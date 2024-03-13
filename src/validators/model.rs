@@ -193,7 +193,11 @@ impl Validator for ModelValidator {
             .validator
             .validate_assignment(py, input_dict.as_any(), field_name, field_value, state)?;
 
-        let (validated_dict, validated_extra, validated_fields_set): (&PyDict, &PyAny, &PySet) = output.extract(py)?;
+        let (validated_dict, validated_extra, validated_fields_set): (
+            Bound<'_, PyDict>,
+            Bound<'_, PyAny>,
+            Bound<'_, PySet>,
+        ) = output.extract(py)?;
 
         if let Ok(fields_set) = model.getattr(intern!(py, DUNDER_FIELDS_SET_KEY)) {
             let fields_set = fields_set.downcast::<PySet>()?;
