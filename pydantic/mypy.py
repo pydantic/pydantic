@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import sys
 from configparser import ConfigParser
-from contextlib import ExitStack
 from typing import Any, Callable, Iterator
 
 from mypy.errorcodes import ErrorCode
@@ -367,9 +366,7 @@ class PydanticModelField:
             # however this plugin is called very late, so all types should be fully ready.
             # Also, it is tricky to avoid eager expansion of Self types here (e.g. because
             # we serialize attributes).
-            with ExitStack() as stack:
-                if MYPY_VERSION_TUPLE >= (1, 5):
-                    stack.enter_context(state.strict_optional_set(api.options.strict_optional))
+            with state.strict_optional_set(api.options.strict_optional):
                 return expand_type(self.type, {self.info.self_type.id: fill_typevars(current_info)})
         return self.type
 
