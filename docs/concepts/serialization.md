@@ -736,7 +736,6 @@ print(model.model_dump(context={'stopwords': ['document']}))
 ```
 
 
-
 ## `model_copy(...)`
 
 ??? api "API Documentation"
