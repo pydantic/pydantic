@@ -126,10 +126,6 @@ def plugin(version: str) -> type[Plugin]:
     return PydanticPlugin
 
 
-class _DeferAnalysis(Exception):
-    pass
-
-
 class PydanticPlugin(Plugin):
     """The Pydantic mypy plugin."""
 
@@ -482,13 +478,9 @@ class PydanticModelTransformer:
                 return False
 
         is_settings = any(base.fullname == BASESETTINGS_FULLNAME for base in info.mro[:-1])
-        try:
-            self.add_initializer(fields, config, is_settings, is_root_model)
-            self.add_model_construct_method(fields, config, is_settings)
-            self.set_frozen(fields, self._api, frozen=config.frozen is True)
-        except _DeferAnalysis:
-            if not self._api.final_iteration:
-                self._api.defer()
+        self.add_initializer(fields, config, is_settings, is_root_model)
+        self.add_model_construct_method(fields, config, is_settings)
+        self.set_frozen(fields, self._api, frozen=config.frozen is True)
 
         self.adjust_decorator_signatures()
 
