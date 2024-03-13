@@ -533,6 +533,17 @@ def test_serialization_alias_from_alias():
     assert 'foo' in sig.parameters
 
 
+def test_serialization_by_alias_enforced_with_serialize_by_name():
+    class Model(BaseModel):
+        model_config = {'serialize_by_name': True}
+        x: str = Field(alias='foo')
+
+    m = Model(foo='bar')
+    assert 'foo' in m.model_dump()
+    assert 'foo' in m.model_dump(by_alias=False)
+    assert 'foo' in m.model_dump_json(by_alias=False)
+
+
 @pytest.mark.parametrize(
     'field,expected',
     [
