@@ -796,3 +796,16 @@ def test_partial_creation_with_defer_build():
 
     # AssertionError: assert ['a', 'b'] == ['b']
     assert partial.model_json_schema()['required'] == ['b']
+
+
+def test_model_config_use_as_property():
+    """
+    Test: raises PydandicUserError when 'model_config' is used
+    as a property
+    """
+    with pytest.raises(PydanticUserError) as exc_info:
+
+        class MyModel(BaseModel):
+            model_config: str
+
+    assert exc_info.value.code == 'model-config-cannot-be-a-property'
