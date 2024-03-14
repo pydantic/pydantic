@@ -277,11 +277,11 @@ fn dict_value_error(bench: &mut Bencher) {
     Python::with_gil(|py| {
         let validator = build_schema_validator(
             py,
-            r#"{
+            r"{
                 'type': 'dict',
                 'keys_schema': {'type': 'str'},
                 'values_schema': {'type': 'int', 'lt': 0},
-            }"#,
+            }",
         );
 
         let code = format!(
@@ -322,7 +322,7 @@ fn typed_dict_json(bench: &mut Bencher) {
     Python::with_gil(|py| {
         let validator = build_schema_validator(
             py,
-            r#"{
+            r"{
           'type': 'typed-dict',
           'extra_behavior': 'ignore',
           'fields': {
@@ -337,7 +337,7 @@ fn typed_dict_json(bench: &mut Bencher) {
             'i': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
             'j': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
           },
-        }"#,
+        }",
         );
 
         let code = r#"{"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6, "g": 7, "h": 8, "i": 9, "j": 0}"#.to_string();
@@ -351,7 +351,7 @@ fn typed_dict_python(bench: &mut Bencher) {
     Python::with_gil(|py| {
         let validator = build_schema_validator(
             py,
-            r#"{
+            r"{
           'type': 'typed-dict',
           'extra_behavior': 'ignore',
           'fields': {
@@ -366,7 +366,7 @@ fn typed_dict_python(bench: &mut Bencher) {
             'i': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
             'j': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
           },
-        }"#,
+        }",
         );
 
         let code = r#"{"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6, "g": 7, "h": 8, "i": 9, "j": 0}"#.to_string();
@@ -384,7 +384,7 @@ fn typed_dict_deep_error(bench: &mut Bencher) {
     Python::with_gil(|py| {
         let validator = build_schema_validator(
             py,
-            r#"{
+            r"{
             'type': 'typed-dict',
             'fields': {
                 'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
@@ -405,7 +405,7 @@ fn typed_dict_deep_error(bench: &mut Bencher) {
                     }
                 },
             },
-        }"#,
+        }",
         );
 
         let code = "{'field_a': '1', 'field_b': {'field_c': '2', 'field_d': {'field_e': '4', 'field_f': 'xx'}}}";
@@ -557,7 +557,7 @@ fn literal_enums_few_python(bench: &mut Bencher) {
     Python::with_gil(|py| {
         let globals = PyDict::new_bound(py);
         py.run_bound(
-            r#"
+            r"
 from enum import Enum
 
 class Foo(Enum):
@@ -565,7 +565,7 @@ class Foo(Enum):
     v2 = object()
     v3 = object()
     v4 = object()
-"#,
+",
             Some(&globals),
             None,
         )
@@ -682,7 +682,7 @@ fn literal_mixed_few_python(bench: &mut Bencher) {
     Python::with_gil(|py| {
         let globals = PyDict::new_bound(py);
         py.run_bound(
-            r#"
+            r"
 from enum import Enum
 
 class Foo(Enum):
@@ -690,7 +690,7 @@ class Foo(Enum):
     v2 = object()
     v3 = object()
     v4 = object()
-"#,
+",
             Some(&globals),
             None,
         )

@@ -20,7 +20,7 @@ pub fn get_enum_meta_object(py: Python) -> &Bound<'_, PyAny> {
         .bind(py)
 }
 
-pub fn str_as_bool<'a>(input: &'a impl Input<'a>, str: &str) -> ValResult<bool> {
+pub fn str_as_bool<'py>(input: &impl Input<'py>, str: &str) -> ValResult<bool> {
     if str == "0"
         || str.eq_ignore_ascii_case("f")
         || str.eq_ignore_ascii_case("n")
@@ -42,7 +42,7 @@ pub fn str_as_bool<'a>(input: &'a impl Input<'a>, str: &str) -> ValResult<bool> 
     }
 }
 
-pub fn int_as_bool<'a>(input: &'a impl Input<'a>, int: i64) -> ValResult<bool> {
+pub fn int_as_bool<'py>(input: &impl Input<'py>, int: i64) -> ValResult<bool> {
     if int == 0 {
         Ok(false)
     } else if int == 1 {
@@ -72,7 +72,7 @@ fn strip_underscores(s: &str) -> Option<String> {
 /// max length of the input is 4300, see
 /// https://docs.python.org/3/whatsnew/3.11.html#other-cpython-implementation-changes and
 /// https://github.com/python/cpython/issues/95778 for more info in that length bound
-pub fn str_as_int<'s, 'l>(input: &'s impl Input<'s>, str: &'l str) -> ValResult<EitherInt<'s>> {
+pub fn str_as_int<'s>(input: &'s impl Input<'s>, str: &str) -> ValResult<EitherInt<'s>> {
     let str = str.trim();
     let len = str.len();
     if len > 4300 {
@@ -97,7 +97,7 @@ pub fn str_as_int<'s, 'l>(input: &'s impl Input<'s>, str: &'l str) -> ValResult<
 }
 
 /// parse a float as a float
-pub fn str_as_float<'s, 'l>(input: &'s impl Input<'s>, str: &'l str) -> ValResult<EitherFloat<'s>> {
+pub fn str_as_float<'s>(input: &'s impl Input<'s>, str: &str) -> ValResult<EitherFloat<'s>> {
     match str.trim().parse() {
         Ok(float) => Ok(EitherFloat::F64(float)),
         Err(_) => match strip_underscores(str).and_then(|stripped| stripped.parse().ok()) {
@@ -109,7 +109,7 @@ pub fn str_as_float<'s, 'l>(input: &'s impl Input<'s>, str: &'l str) -> ValResul
 
 /// parse a string as an int, `input` is required here to get lifetimes to match up
 ///
-fn _parse_str<'s, 'l>(_input: &'s impl Input<'s>, str: &'l str, len: usize) -> Option<EitherInt<'s>> {
+fn _parse_str<'s>(_input: &'s impl Input<'s>, str: &str, len: usize) -> Option<EitherInt<'s>> {
     if len < 19 {
         if let Ok(i) = str.parse::<i64>() {
             return Some(EitherInt::I64(i));

@@ -37,7 +37,7 @@ impl From<JsonValue> for LocItem {
     }
 }
 
-impl<'a> Input<'a> for JsonValue {
+impl<'py> Input<'py> for JsonValue {
     fn as_error_value(&self) -> InputValue {
         // cloning JsonValue is cheap due to use of Arc
         InputValue::Json(self.clone())
@@ -47,7 +47,7 @@ impl<'a> Input<'a> for JsonValue {
         matches!(self, JsonValue::Null)
     }
 
-    fn as_kwargs(&self, py: Python<'a>) -> Option<Bound<'a, PyDict>> {
+    fn as_kwargs(&self, py: Python<'py>) -> Option<Bound<'py, PyDict>> {
         match self {
             JsonValue::Object(object) => {
                 let dict = PyDict::new_bound(py);
@@ -60,7 +60,7 @@ impl<'a> Input<'a> for JsonValue {
         }
     }
 
-    fn validate_args(&'a self) -> ValResult<GenericArguments<'a>> {
+    fn validate_args(&self) -> ValResult<GenericArguments<'_>> {
         match self {
             JsonValue::Object(object) => Ok(JsonArgs::new(None, Some(object)).into()),
             JsonValue::Array(array) => Ok(JsonArgs::new(Some(array), None).into()),
@@ -68,7 +68,7 @@ impl<'a> Input<'a> for JsonValue {
         }
     }
 
-    fn validate_dataclass_args(&'a self, class_name: &str) -> ValResult<GenericArguments<'a>> {
+    fn validate_dataclass_args<'a>(&'a self, class_name: &str) -> ValResult<GenericArguments<'a>> {
         match self {
             JsonValue::Object(object) => Ok(JsonArgs::new(None, Some(object)).into()),
             _ => {
@@ -84,11 +84,7 @@ impl<'a> Input<'a> for JsonValue {
         }
     }
 
-    fn validate_str(
-        &'a self,
-        strict: bool,
-        coerce_numbers_to_str: bool,
-    ) -> ValResult<ValidationMatch<EitherString<'a>>> {
+    fn validate_str(&self, strict: bool, coerce_numbers_to_str: bool) -> ValResult<ValidationMatch<EitherString<'_>>> {
         // Justification for `strict` instead of `exact` is that in JSON strings can also
         // represent other datatypes such as UUID and date more exactly, so string is a
         // converting input
@@ -103,7 +99,7 @@ impl<'a> Input<'a> for JsonValue {
         }
     }
 
-    fn validate_bytes(&'a self, _strict: bool) -> ValResult<ValidationMatch<EitherBytes<'a>>> {
+    fn validate_bytes<'a>(&'a self, _strict: bool) -> ValResult<ValidationMatch<EitherBytes<'a, 'py>>> {
         match self {
             JsonValue::Str(s) => Ok(ValidationMatch::strict(s.as_bytes().into())),
             _ => Err(ValError::new(ErrorTypeDefaults::BytesType, self)),
@@ -126,7 +122,7 @@ impl<'a> Input<'a> for JsonValue {
         }
     }
 
-    fn validate_int(&'a self, strict: bool) -> ValResult<ValidationMatch<EitherInt<'a>>> {
+    fn validate_int(&self, strict: bool) -> ValResult<ValidationMatch<EitherInt<'_>>> {
         match self {
             JsonValue::Int(i) => Ok(ValidationMatch::exact(EitherInt::I64(*i))),
             JsonValue::BigInt(b) => Ok(ValidationMatch::exact(EitherInt::BigInt(b.clone()))),
@@ -137,14 +133,14 @@ impl<'a> Input<'a> for JsonValue {
         }
     }
 
-    fn exact_str(&'a self) -> ValResult<EitherString<'a>> {
+    fn exact_str(&self) -> ValResult<EitherString<'_>> {
         match self {
             JsonValue::Str(s) => Ok(s.as_str().into()),
             _ => Err(ValError::new(ErrorTypeDefaults::StringType, self)),
         }
     }
 
-    fn validate_float(&'a self, strict: bool) -> ValResult<ValidationMatch<EitherFloat<'a>>> {
+    fn validate_float(&self, strict: bool) -> ValResult<ValidationMatch<EitherFloat<'_>>> {
         match self {
             JsonValue::Float(f) => Ok(ValidationMatch::exact(EitherFloat::F64(*f))),
             JsonValue::Int(i) => Ok(ValidationMatch::strict(EitherFloat::F64(*i as f64))),
@@ -154,7 +150,7 @@ impl<'a> Input<'a> for JsonValue {
         }
     }
 
-    fn strict_decimal(&'a self, py: Python<'a>) -> ValResult<Bound<'a, PyAny>> {
+    fn strict_decimal(&self, py: Python<'py>) -> ValResult<Bound<'py, PyAny>> {
         match self {
             JsonValue::Float(f) => create_decimal(&PyString::new_bound(py, &f.to_string()), self),
 
@@ -165,29 +161,29 @@ impl<'a> Input<'a> for JsonValue {
         }
     }
 
-    fn validate_dict(&'a self, _strict: bool) -> ValResult<GenericMapping<'a>> {
+    fn validate_dict<'a>(&'a self, _strict: bool) -> ValResult<GenericMapping<'a, 'py>> {
         match self {
             JsonValue::Object(dict) => Ok(dict.into()),
             _ => Err(ValError::new(ErrorTypeDefaults::DictType, self)),
         }
     }
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_dict(&'a self) -> ValResult<GenericMapping<'a>> {
+    fn strict_dict<'a>(&'a self) -> ValResult<GenericMapping<'a, 'py>> {
         self.validate_dict(false)
     }
 
-    fn validate_list(&'a self, _strict: bool) -> ValResult<GenericIterable<'a>> {
+    fn validate_list<'a>(&'a self, _strict: bool) -> ValResult<GenericIterable<'a, 'py>> {
         match self {
             JsonValue::Array(a) => Ok(GenericIterable::JsonArray(a)),
             _ => Err(ValError::new(ErrorTypeDefaults::ListType, self)),
         }
     }
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_list(&'a self) -> ValResult<GenericIterable<'a>> {
+    fn strict_list<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
         self.validate_list(false)
     }
 
-    fn validate_tuple(&'a self, _strict: bool) -> ValResult<GenericIterable<'a>> {
+    fn validate_tuple<'a>(&'a self, _strict: bool) -> ValResult<GenericIterable<'a, 'py>> {
         // just as in set's case, List has to be allowed
         match self {
             JsonValue::Array(a) => Ok(GenericIterable::JsonArray(a)),
@@ -195,11 +191,11 @@ impl<'a> Input<'a> for JsonValue {
         }
     }
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_tuple(&'a self) -> ValResult<GenericIterable<'a>> {
+    fn strict_tuple<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
         self.validate_tuple(false)
     }
 
-    fn validate_set(&'a self, _strict: bool) -> ValResult<GenericIterable<'a>> {
+    fn validate_set<'a>(&'a self, _strict: bool) -> ValResult<GenericIterable<'a, 'py>> {
         // we allow a list here since otherwise it would be impossible to create a set from JSON
         match self {
             JsonValue::Array(a) => Ok(GenericIterable::JsonArray(a)),
@@ -207,11 +203,11 @@ impl<'a> Input<'a> for JsonValue {
         }
     }
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_set(&'a self) -> ValResult<GenericIterable<'a>> {
+    fn strict_set<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
         self.validate_set(false)
     }
 
-    fn validate_frozenset(&'a self, _strict: bool) -> ValResult<GenericIterable<'a>> {
+    fn validate_frozenset<'a>(&'a self, _strict: bool) -> ValResult<GenericIterable<'a, 'py>> {
         // we allow a list here since otherwise it would be impossible to create a frozenset from JSON
         match self {
             JsonValue::Array(a) => Ok(GenericIterable::JsonArray(a)),
@@ -219,11 +215,11 @@ impl<'a> Input<'a> for JsonValue {
         }
     }
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_frozenset(&'a self) -> ValResult<GenericIterable<'a>> {
+    fn strict_frozenset<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
         self.validate_frozenset(false)
     }
 
-    fn extract_generic_iterable(&self) -> ValResult<GenericIterable> {
+    fn extract_generic_iterable(&self) -> ValResult<GenericIterable<'_, 'py>> {
         match self {
             JsonValue::Array(a) => Ok(GenericIterable::JsonArray(a)),
             JsonValue::Str(s) => Ok(GenericIterable::JsonString(s)),
@@ -312,32 +308,32 @@ impl<'a> Input<'a> for JsonValue {
     }
 }
 
-impl BorrowInput for &'_ JsonValue {
-    type Input<'a> = JsonValue where Self: 'a;
-    fn borrow_input(&self) -> &Self::Input<'_> {
+impl BorrowInput<'_> for &'_ JsonValue {
+    type Input = JsonValue;
+    fn borrow_input(&self) -> &Self::Input {
         self
     }
 }
 
 /// Required for JSON Object keys so the string can behave like an Input
-impl<'a> Input<'a> for String {
+impl<'py> Input<'py> for String {
     fn as_error_value(&self) -> InputValue {
         // Justification for the clone: this is on the error pathway and we are generally ok
         // with errors having a performance penalty
         InputValue::Json(JsonValue::Str(self.clone()))
     }
 
-    fn as_kwargs(&self, _py: Python<'a>) -> Option<Bound<'a, PyDict>> {
+    fn as_kwargs(&self, _py: Python<'py>) -> Option<Bound<'py, PyDict>> {
         None
     }
 
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn validate_args(&'a self) -> ValResult<GenericArguments<'a>> {
+    fn validate_args(&self) -> ValResult<GenericArguments<'_>> {
         Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self))
     }
 
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn validate_dataclass_args(&'a self, class_name: &str) -> ValResult<GenericArguments<'a>> {
+    fn validate_dataclass_args<'a>(&'a self, class_name: &str) -> ValResult<GenericArguments<'a>> {
         let class_name = class_name.to_string();
         Err(ValError::new(
             ErrorType::DataclassType {
@@ -349,10 +345,10 @@ impl<'a> Input<'a> for String {
     }
 
     fn validate_str(
-        &'a self,
+        &self,
         _strict: bool,
         _coerce_numbers_to_str: bool,
-    ) -> ValResult<ValidationMatch<EitherString<'a>>> {
+    ) -> ValResult<ValidationMatch<EitherString<'_>>> {
         // Justification for `strict` instead of `exact` is that in JSON strings can also
         // represent other datatypes such as UUID and date more exactly, so string is a
         // converting input
@@ -361,7 +357,7 @@ impl<'a> Input<'a> for String {
         Ok(ValidationMatch::strict(self.as_str().into()))
     }
 
-    fn validate_bytes(&'a self, _strict: bool) -> ValResult<ValidationMatch<EitherBytes<'a>>> {
+    fn validate_bytes<'a>(&'a self, _strict: bool) -> ValResult<ValidationMatch<EitherBytes<'a, 'py>>> {
         Ok(ValidationMatch::strict(self.as_bytes().into()))
     }
 
@@ -369,44 +365,44 @@ impl<'a> Input<'a> for String {
         str_as_bool(self, self).map(ValidationMatch::lax)
     }
 
-    fn validate_int(&'a self, _strict: bool) -> ValResult<ValidationMatch<EitherInt<'a>>> {
+    fn validate_int(&self, _strict: bool) -> ValResult<ValidationMatch<EitherInt<'_>>> {
         str_as_int(self, self).map(ValidationMatch::lax)
     }
 
-    fn validate_float(&'a self, _strict: bool) -> ValResult<ValidationMatch<EitherFloat<'a>>> {
+    fn validate_float(&self, _strict: bool) -> ValResult<ValidationMatch<EitherFloat<'_>>> {
         str_as_float(self, self).map(ValidationMatch::lax)
     }
 
-    fn strict_decimal(&'a self, py: Python<'a>) -> ValResult<Bound<'a, PyAny>> {
+    fn strict_decimal(&self, py: Python<'py>) -> ValResult<Bound<'py, PyAny>> {
         create_decimal(self.to_object(py).bind(py), self)
     }
 
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_dict(&'a self) -> ValResult<GenericMapping<'a>> {
+    fn strict_dict<'a>(&'a self) -> ValResult<GenericMapping<'a, 'py>> {
         Err(ValError::new(ErrorTypeDefaults::DictType, self))
     }
 
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_list(&'a self) -> ValResult<GenericIterable<'a>> {
+    fn strict_list<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
         Err(ValError::new(ErrorTypeDefaults::ListType, self))
     }
 
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_tuple(&'a self) -> ValResult<GenericIterable<'a>> {
+    fn strict_tuple<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
         Err(ValError::new(ErrorTypeDefaults::TupleType, self))
     }
 
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_set(&'a self) -> ValResult<GenericIterable<'a>> {
+    fn strict_set<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
         Err(ValError::new(ErrorTypeDefaults::SetType, self))
     }
 
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_frozenset(&'a self) -> ValResult<GenericIterable<'a>> {
+    fn strict_frozenset<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
         Err(ValError::new(ErrorTypeDefaults::FrozenSetType, self))
     }
 
-    fn extract_generic_iterable(&'a self) -> ValResult<GenericIterable<'a>> {
+    fn extract_generic_iterable<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
         Ok(GenericIterable::JsonString(self))
     }
 
@@ -443,16 +439,16 @@ impl<'a> Input<'a> for String {
     }
 }
 
-impl BorrowInput for &'_ String {
-    type Input<'a> = String where Self: 'a;
-    fn borrow_input(&self) -> &Self::Input<'_> {
+impl BorrowInput<'_> for &'_ String {
+    type Input = String;
+    fn borrow_input(&self) -> &Self::Input {
         self
     }
 }
 
-impl BorrowInput for String {
-    type Input<'a> = String where Self: 'a;
-    fn borrow_input(&self) -> &Self::Input<'_> {
+impl BorrowInput<'_> for String {
+    type Input = String;
+    fn borrow_input(&self) -> &Self::Input {
         self
     }
 }

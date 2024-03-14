@@ -321,7 +321,7 @@ impl SchemaValidator {
     fn _validate<'s, 'data>(
         &'data self,
         py: Python<'data>,
-        input: &'data impl Input<'data>,
+        input: &impl Input<'data>,
         input_type: InputType,
         strict: Option<bool>,
         from_attributes: Option<bool>,
@@ -708,10 +708,10 @@ pub enum CombinedValidator {
 #[enum_dispatch(CombinedValidator)]
 pub trait Validator: Send + Sync + Debug {
     /// Do the actual validation for this schema/type
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject>;
 

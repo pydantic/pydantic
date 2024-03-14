@@ -27,10 +27,10 @@ impl BuildValidator for AnyValidator {
 impl_py_gc_traverse!(AnyValidator {});
 
 impl Validator for AnyValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         // in a union, Any should be preferred to doing lax coercions

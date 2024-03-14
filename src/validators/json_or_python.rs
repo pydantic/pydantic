@@ -49,10 +49,10 @@ impl BuildValidator for JsonOrPython {
 impl_py_gc_traverse!(JsonOrPython { json, python });
 
 impl Validator for JsonOrPython {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         match state.extra().input_type {

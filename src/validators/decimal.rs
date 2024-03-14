@@ -117,10 +117,10 @@ fn extract_decimal_digits_info(decimal: &Bound<'_, PyAny>, normalized: bool) -> 
 }
 
 impl Validator for DecimalValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         let decimal = input.validate_decimal(state.strict_or(self.strict), py)?;
@@ -264,7 +264,7 @@ impl Validator for DecimalValidator {
     }
 }
 
-pub(crate) fn create_decimal<'a>(arg: &Bound<'a, PyAny>, input: &'a impl Input<'a>) -> ValResult<Bound<'a, PyAny>> {
+pub(crate) fn create_decimal<'a>(arg: &Bound<'a, PyAny>, input: &impl Input<'a>) -> ValResult<Bound<'a, PyAny>> {
     let py = arg.py();
     get_decimal_type(py).call1((arg,)).map_err(|e| {
         let decimal_exception = match py
