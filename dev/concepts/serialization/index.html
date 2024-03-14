@@ -3431,6 +3431,10 @@ sub-models will not be converted to dictionaries.</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;test value&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>
 <span class="c1">#&gt; {&quot;x&quot;:&quot;serialized test value&quot;}</span>
 </code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A single serializer can also be called on all fields by passing the special value '*' to the <a class="autorefs autorefs-internal" href="../../api/functional_serializers/#pydantic.functional_serializers.field_serializer"><code>@field_serializer</code></a> decorator.</p>
+</div>
 <p>In addition, <a class="autorefs autorefs-internal" href="../../api/functional_serializers/#pydantic.functional_serializers.PlainSerializer"><code>PlainSerializer</code></a> and
 <a class="autorefs autorefs-internal" href="../../api/functional_serializers/#pydantic.functional_serializers.WrapSerializer"><code>WrapSerializer</code></a> enable you to use a function to modify the output of serialization.</p>
 <p>Both serializers accept optional arguments including:</p>
