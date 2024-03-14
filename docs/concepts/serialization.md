@@ -443,7 +443,7 @@ print(m.model_dump())  # note: the password field is not included
     fields would be included when serializing, even if subclasses get passed when instantiating the object. This helps
     prevent security risks when serializing subclasses with sensitive information, for example.
 
-If you want to preserve the old duck-typing serialization behavior, you can use a runtime setting, or annotate individual types.
+If you want v1-style duck-typing serialization behavior, you can use a runtime setting, or annotate individual types.
 
 * Field / type level: use the `SerializeAsAny` annotation
 * Runtime level: use the `serialize_as_any` flag when calling `model_dump()` or `model_dump_json()`
@@ -452,7 +452,7 @@ We discuss these options below in more detail:
 
 #### `SerializeAsAny` annotation:
 
-If you want to preserve the old duck-typing serialization behavior, this can be done using the `SerializeAsAny` annotation on a type:
+If you want duck-typing serialization behavior, this can be done using the `SerializeAsAny` annotation on a type:
 
 ```py
 from pydantic import BaseModel, SerializeAsAny
@@ -599,9 +599,9 @@ print(OuterModel(user=user).model_dump(serialize_as_any=False)) # (2)!
 1. Even nested `User` model instances are dumped with fields unique to `User` subclasses.
 2. Even nested `User` model instances are dumped without fields unique to `User` subclasses.
 
-#### Overridng the `serialize_as_any` default (False)
+#### Overriding the `serialize_as_any` default (False)
 
-You can override the default setting for `serialize_as_any` at the project level by configuring a subclass of `BaseModel` that overrides the default for the `serialize_as_any` argument to `model_dump()` and `model_dump_json()`.
+You can override the default setting for `serialize_as_any` by configuring a subclass of `BaseModel` that overrides the default for the `serialize_as_any` argument to `model_dump()` and `model_dump_json()`, and then use that as the base class (instead of `pydantic.BaseModel`) for any model you want to have this default behavior.
 
 For example, you could do the following if you want to use duck-typing serialization by default:
 
