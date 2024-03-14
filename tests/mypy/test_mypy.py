@@ -88,6 +88,7 @@ cases = (
             'plugin_success_baseConfig.py',
             'plugin_fail_baseConfig.py',
             'pydantic_settings.py',
+            'optional_optional_inheritance.py',
         ],
     ).build()
     # Strict plugin config
