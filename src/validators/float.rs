@@ -64,10 +64,10 @@ impl BuildValidator for FloatValidator {
 impl_py_gc_traverse!(FloatValidator {});
 
 impl Validator for FloatValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         let either_float = input.validate_float(state.strict_or(self.strict))?.unpack(state);
@@ -96,10 +96,10 @@ pub struct ConstrainedFloatValidator {
 impl_py_gc_traverse!(ConstrainedFloatValidator {});
 
 impl Validator for ConstrainedFloatValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         let either_float = input.validate_float(state.strict_or(self.strict))?.unpack(state);

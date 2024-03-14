@@ -145,10 +145,10 @@ impl_py_gc_traverse!(TypedDictValidator {
 });
 
 impl Validator for TypedDictValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         let strict = state.strict_or(self.strict);

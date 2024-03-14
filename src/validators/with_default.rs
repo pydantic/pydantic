@@ -134,10 +134,10 @@ impl BuildValidator for WithDefaultValidator {
 impl_py_gc_traverse!(WithDefaultValidator { default, validator });
 
 impl Validator for WithDefaultValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         if input.to_object(py).is(&self.undefined) {

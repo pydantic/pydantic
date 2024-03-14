@@ -70,10 +70,10 @@ fn build_validator_steps(
 impl_py_gc_traverse!(ChainValidator { steps });
 
 impl Validator for ChainValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         let mut steps_iter = self.steps.iter();

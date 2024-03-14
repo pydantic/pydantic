@@ -108,10 +108,10 @@ impl BuildValidator for ModelValidator {
 impl_py_gc_traverse!(ModelValidator { class, validator });
 
 impl Validator for ModelValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         if let Some(self_instance) = state.extra().self_instance {
@@ -227,7 +227,7 @@ impl ModelValidator {
         &'s self,
         py: Python<'data>,
         self_instance: &Bound<'s, PyAny>,
-        input: &'data impl Input<'data>,
+        input: &impl Input<'data>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         // we need to set `self_instance` to None for nested validators as we don't want to operate on self_instance
@@ -253,7 +253,7 @@ impl ModelValidator {
     fn validate_construct<'s, 'data>(
         &'s self,
         py: Python<'data>,
-        input: &'data impl Input<'data>,
+        input: &impl Input<'data>,
         existing_fields_set: Option<&Bound<'_, PyAny>>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
@@ -295,7 +295,7 @@ impl ModelValidator {
         &'s self,
         py: Python<'data>,
         instance: Bound<'_, PyAny>,
-        input: &'data impl Input<'data>,
+        input: &impl Input<'data>,
         extra: &Extra,
     ) -> ValResult<PyObject> {
         if let Some(ref post_init) = self.post_init {

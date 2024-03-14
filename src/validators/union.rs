@@ -104,7 +104,7 @@ impl UnionValidator {
     fn validate_smart<'data>(
         &self,
         py: Python<'data>,
-        input: &'data impl Input<'data>,
+        input: &impl Input<'data>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         let old_exactness = state.exactness;
@@ -170,7 +170,7 @@ impl UnionValidator {
     fn validate_left_to_right<'data>(
         &self,
         py: Python<'data>,
-        input: &'data impl Input<'data>,
+        input: &impl Input<'data>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         let mut errors = MaybeErrors::new(self.custom_error.as_ref());
@@ -202,10 +202,10 @@ impl PyGcTraverse for UnionValidator {
 }
 
 impl Validator for UnionValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         match self.mode {
@@ -390,10 +390,10 @@ impl BuildValidator for TaggedUnionValidator {
 impl_py_gc_traverse!(TaggedUnionValidator { discriminator, lookup });
 
 impl Validator for TaggedUnionValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         match self.discriminator {
@@ -450,7 +450,7 @@ impl TaggedUnionValidator {
     fn self_schema_tag<'data>(
         &self,
         py: Python<'data>,
-        input: &'data impl Input<'data>,
+        input: &impl Input<'data>,
     ) -> ValResult<Bound<'data, PyString>> {
         let dict = input.strict_dict()?;
         let tag = match &dict {
@@ -484,7 +484,7 @@ impl TaggedUnionValidator {
         &'s self,
         py: Python<'data>,
         tag: &Bound<'data, PyAny>,
-        input: &'data impl Input<'data>,
+        input: &impl Input<'data>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         if let Ok(Some((tag, validator))) = self.lookup.validate(py, tag) {
@@ -507,7 +507,7 @@ impl TaggedUnionValidator {
         }
     }
 
-    fn tag_not_found<'s, 'data>(&'s self, input: &'data impl Input<'data>) -> ValError {
+    fn tag_not_found<'s, 'data>(&'s self, input: &impl Input<'data>) -> ValError {
         match self.custom_error {
             Some(ref custom_error) => custom_error.as_val_error(input),
             None => ValError::new(

@@ -43,10 +43,10 @@ impl BuildValidator for IntValidator {
 impl_py_gc_traverse!(IntValidator {});
 
 impl Validator for IntValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         input
@@ -72,10 +72,10 @@ pub struct ConstrainedIntValidator {
 impl_py_gc_traverse!(ConstrainedIntValidator {});
 
 impl Validator for ConstrainedIntValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         let either_int = input.validate_int(state.strict_or(self.strict))?.unpack(state);

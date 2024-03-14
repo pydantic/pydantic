@@ -69,10 +69,10 @@ impl BuildValidator for DefinitionRefValidator {
 impl_py_gc_traverse!(DefinitionRefValidator {});
 
 impl Validator for DefinitionRefValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         self.definition.read(|validator| {

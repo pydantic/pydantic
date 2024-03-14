@@ -75,10 +75,10 @@ impl_py_gc_traverse!(CallValidator {
 });
 
 impl Validator for CallValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         let args = self.arguments_validator.validate(py, input, state)?.into_bound(py);

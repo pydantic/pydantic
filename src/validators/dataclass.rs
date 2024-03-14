@@ -141,10 +141,10 @@ impl_py_gc_traverse!(Field { validator });
 impl_py_gc_traverse!(DataclassArgsValidator { fields });
 
 impl Validator for DataclassArgsValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         let args = input.validate_dataclass_args(&self.dataclass_name)?;
@@ -529,10 +529,10 @@ impl BuildValidator for DataclassValidator {
 impl_py_gc_traverse!(DataclassValidator { class, validator });
 
 impl Validator for DataclassValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         if let Some(self_instance) = state.extra().self_instance {
@@ -614,7 +614,7 @@ impl DataclassValidator {
         &'s self,
         py: Python<'data>,
         self_instance: &Bound<'_, PyAny>,
-        input: &'data impl Input<'data>,
+        input: &impl Input<'data>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         // we need to set `self_instance` to None for nested validators as we don't want to operate on the self_instance
@@ -642,7 +642,7 @@ impl DataclassValidator {
         py: Python<'data>,
         dc: &Bound<'_, PyAny>,
         val_output: PyObject,
-        input: &'data impl Input<'data>,
+        input: &impl Input<'data>,
     ) -> ValResult<()> {
         let (dc_dict, post_init_kwargs): (Bound<'_, PyAny>, Bound<'_, PyAny>) = val_output.extract(py)?;
         if self.slots {

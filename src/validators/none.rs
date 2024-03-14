@@ -27,7 +27,7 @@ impl Validator for NoneValidator {
     fn validate<'data>(
         &self,
         py: Python<'data>,
-        input: &'data impl Input<'data>,
+        input: &impl Input<'data>,
         _state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         match input.is_none() {
