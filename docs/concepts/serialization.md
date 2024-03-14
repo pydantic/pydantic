@@ -500,6 +500,12 @@ the original schema will be included.
 If `serialize_as_any` is set to `False` (which is the default), the model will be serialized using the schema,
 which means that fields present in a subclass but not in the original schema will be ignored.
 
+!!! question "Why is this flag useful?"
+    Sometimes, you want to make sure that no matter what fields might have been added in subclasses,
+    the serialized object will only have the fields listed in the original type definition.
+    This can be useful if you add something like a `password: str` field in a subclass that you don't
+    want to accidentally include in the serialized output.
+
 For example:
 
 ```py
@@ -618,7 +624,7 @@ class MyBaseModel(BaseModel):
         return super().model_dump_json(serialize_as_any=True, **kwargs)
 
 
-class User(BaseModel):
+class User(MyBaseModel):
     name: str
 
 class UserInfo(User):
