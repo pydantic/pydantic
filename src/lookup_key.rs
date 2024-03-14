@@ -310,7 +310,7 @@ impl LookupKey {
     pub fn error<'d>(
         &self,
         error_type: ErrorType,
-        input: &'d impl Input<'d>,
+        input: &impl Input<'d>,
         loc_by_alias: bool,
         field_name: &str,
     ) -> ValLineError {

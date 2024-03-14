@@ -28,10 +28,10 @@ impl BuildValidator for FrozenSetValidator {
 impl_py_gc_traverse!(FrozenSetValidator { item_validator });
 
 impl Validator for FrozenSetValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         let collection = input.validate_frozenset(state.strict_or(self.strict))?;

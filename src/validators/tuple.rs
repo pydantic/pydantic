@@ -60,10 +60,10 @@ impl_py_gc_traverse!(TupleValidator { validators });
 
 impl TupleValidator {
     #[allow(clippy::too_many_arguments)]
-    fn validate_tuple_items<'s, 'data, I: BorrowInput + 'data>(
+    fn validate_tuple_items<'data, I: BorrowInput<'data>>(
         &self,
         py: Python<'data>,
-        input: &'data impl Input<'data>,
+        input: &impl Input<'data>,
         state: &mut ValidationState,
         output: &mut Vec<PyObject>,
         errors: &mut Vec<ValLineError>,
@@ -97,10 +97,10 @@ impl TupleValidator {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn validate_tuple_variable<'data, I: BorrowInput + 'data, InputT: Input<'data> + 'data>(
+    fn validate_tuple_variable<'data, I: BorrowInput<'data>, InputT: Input<'data>>(
         &self,
         py: Python<'data>,
-        input: &'data InputT,
+        input: &InputT,
         state: &mut ValidationState,
         errors: &mut Vec<ValLineError>,
         collection_iter: &mut NextCountingIterator<impl Iterator<Item = I>>,
@@ -218,7 +218,7 @@ impl TupleValidator {
 
     fn push_output_item<'data>(
         &self,
-        input: &'data impl Input<'data>,
+        input: &impl Input<'data>,
         output: &mut Vec<PyObject>,
         item: PyObject,
         actual_length: Option<usize>,
@@ -242,13 +242,13 @@ impl TupleValidator {
 }
 
 impl Validator for TupleValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
-        let collection: GenericIterable<'_> = input.validate_tuple(state.strict_or(self.strict))?;
+        let collection = input.validate_tuple(state.strict_or(self.strict))?;
         let exactness = match &collection {
             GenericIterable::Tuple(_) | GenericIterable::JsonArray(_) => Exactness::Exact,
             GenericIterable::List(_) => Exactness::Strict,

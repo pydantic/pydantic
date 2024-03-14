@@ -58,7 +58,7 @@ impl Validator for IsInstanceValidator {
     fn validate<'data>(
         &self,
         py: Python<'data>,
-        input: &'data impl Input<'data>,
+        input: &impl Input<'data>,
         _state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         if !input.is_python() {

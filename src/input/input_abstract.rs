@@ -46,7 +46,7 @@ impl TryFrom<&str> for InputType {
 /// the convention is to either implement:
 /// * `strict_*` & `lax_*` if they have different behavior
 /// * or, `validate_*` and `strict_*` to just call `validate_*` if the behavior for strict and lax is the same
-pub trait Input<'a>: fmt::Debug + ToPyObject + Into<LocItem> + Sized {
+pub trait Input<'py>: fmt::Debug + ToPyObject + Into<LocItem> + Sized {
     fn as_error_value(&self) -> InputValue;
 
     fn identity(&self) -> Option<usize> {
@@ -57,7 +57,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject + Into<LocItem> + Sized {
         false
     }
 
-    fn input_is_instance(&self, _class: &Bound<'_, PyType>) -> Option<&Bound<'a, PyAny>> {
+    fn input_is_instance(&self, _class: &Bound<'py, PyType>) -> Option<&Bound<'py, PyAny>> {
         None
     }
 
@@ -65,7 +65,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject + Into<LocItem> + Sized {
         false
     }
 
-    fn as_kwargs(&self, py: Python<'a>) -> Option<Bound<'a, PyDict>>;
+    fn as_kwargs(&self, py: Python<'py>) -> Option<Bound<'py, PyDict>>;
 
     fn input_is_subclass(&self, _class: &Bound<'_, PyType>) -> PyResult<bool> {
         Ok(false)
@@ -83,23 +83,19 @@ pub trait Input<'a>: fmt::Debug + ToPyObject + Into<LocItem> + Sized {
         false
     }
 
-    fn validate_args(&'a self) -> ValResult<GenericArguments<'a>>;
+    fn validate_args(&self) -> ValResult<GenericArguments<'_>>;
 
-    fn validate_dataclass_args(&'a self, dataclass_name: &str) -> ValResult<GenericArguments<'a>>;
+    fn validate_dataclass_args<'a>(&'a self, dataclass_name: &str) -> ValResult<GenericArguments<'a>>;
 
-    fn validate_str(
-        &'a self,
-        strict: bool,
-        coerce_numbers_to_str: bool,
-    ) -> ValResult<ValidationMatch<EitherString<'a>>>;
+    fn validate_str(&self, strict: bool, coerce_numbers_to_str: bool) -> ValResult<ValidationMatch<EitherString<'_>>>;
 
-    fn validate_bytes(&'a self, strict: bool) -> ValResult<ValidationMatch<EitherBytes<'a>>>;
+    fn validate_bytes<'a>(&'a self, strict: bool) -> ValResult<ValidationMatch<EitherBytes<'a, 'py>>>;
 
     fn validate_bool(&self, strict: bool) -> ValResult<ValidationMatch<bool>>;
 
-    fn validate_int(&'a self, strict: bool) -> ValResult<ValidationMatch<EitherInt<'a>>>;
+    fn validate_int(&self, strict: bool) -> ValResult<ValidationMatch<EitherInt<'_>>>;
 
-    fn exact_int(&'a self) -> ValResult<EitherInt<'a>> {
+    fn exact_int(&self) -> ValResult<EitherInt<'_>> {
         self.validate_int(true).and_then(|val_match| {
             val_match
                 .require_exact()
@@ -109,7 +105,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject + Into<LocItem> + Sized {
 
     /// Extract a String from the input, only allowing exact
     /// matches for a String (no subclasses)
-    fn exact_str(&'a self) -> ValResult<EitherString<'a>> {
+    fn exact_str(&self) -> ValResult<EitherString<'_>> {
         self.validate_str(true, false).and_then(|val_match| {
             val_match
                 .require_exact()
@@ -117,91 +113,91 @@ pub trait Input<'a>: fmt::Debug + ToPyObject + Into<LocItem> + Sized {
         })
     }
 
-    fn validate_float(&'a self, strict: bool) -> ValResult<ValidationMatch<EitherFloat<'a>>>;
+    fn validate_float(&self, strict: bool) -> ValResult<ValidationMatch<EitherFloat<'_>>>;
 
-    fn validate_decimal(&'a self, strict: bool, py: Python<'a>) -> ValResult<Bound<'a, PyAny>> {
+    fn validate_decimal(&self, strict: bool, py: Python<'py>) -> ValResult<Bound<'py, PyAny>> {
         if strict {
             self.strict_decimal(py)
         } else {
             self.lax_decimal(py)
         }
     }
-    fn strict_decimal(&'a self, py: Python<'a>) -> ValResult<Bound<'a, PyAny>>;
+    fn strict_decimal(&self, py: Python<'py>) -> ValResult<Bound<'py, PyAny>>;
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn lax_decimal(&'a self, py: Python<'a>) -> ValResult<Bound<'a, PyAny>> {
+    fn lax_decimal(&self, py: Python<'py>) -> ValResult<Bound<'py, PyAny>> {
         self.strict_decimal(py)
     }
 
-    fn validate_dict(&'a self, strict: bool) -> ValResult<GenericMapping<'a>> {
+    fn validate_dict<'a>(&'a self, strict: bool) -> ValResult<GenericMapping<'a, 'py>> {
         if strict {
             self.strict_dict()
         } else {
             self.lax_dict()
         }
     }
-    fn strict_dict(&'a self) -> ValResult<GenericMapping<'a>>;
+    fn strict_dict<'a>(&'a self) -> ValResult<GenericMapping<'a, 'py>>;
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn lax_dict(&'a self) -> ValResult<GenericMapping<'a>> {
+    fn lax_dict<'a>(&'a self) -> ValResult<GenericMapping<'a, 'py>> {
         self.strict_dict()
     }
 
-    fn validate_model_fields(&'a self, strict: bool, _from_attributes: bool) -> ValResult<GenericMapping<'a>> {
+    fn validate_model_fields<'a>(&'a self, strict: bool, _from_attributes: bool) -> ValResult<GenericMapping<'a, 'py>> {
         self.validate_dict(strict)
     }
 
-    fn validate_list(&'a self, strict: bool) -> ValResult<GenericIterable<'a>> {
+    fn validate_list<'a>(&'a self, strict: bool) -> ValResult<GenericIterable<'a, 'py>> {
         if strict {
             self.strict_list()
         } else {
             self.lax_list()
         }
     }
-    fn strict_list(&'a self) -> ValResult<GenericIterable<'a>>;
+    fn strict_list<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>>;
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn lax_list(&'a self) -> ValResult<GenericIterable<'a>> {
+    fn lax_list<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
         self.strict_list()
     }
 
-    fn validate_tuple(&'a self, strict: bool) -> ValResult<GenericIterable<'a>> {
+    fn validate_tuple<'a>(&'a self, strict: bool) -> ValResult<GenericIterable<'a, 'py>> {
         if strict {
             self.strict_tuple()
         } else {
             self.lax_tuple()
         }
     }
-    fn strict_tuple(&'a self) -> ValResult<GenericIterable<'a>>;
+    fn strict_tuple<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>>;
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn lax_tuple(&'a self) -> ValResult<GenericIterable<'a>> {
+    fn lax_tuple<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
         self.strict_tuple()
     }
 
-    fn validate_set(&'a self, strict: bool) -> ValResult<GenericIterable<'a>> {
+    fn validate_set<'a>(&'a self, strict: bool) -> ValResult<GenericIterable<'a, 'py>> {
         if strict {
             self.strict_set()
         } else {
             self.lax_set()
         }
     }
-    fn strict_set(&'a self) -> ValResult<GenericIterable<'a>>;
+    fn strict_set<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>>;
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn lax_set(&'a self) -> ValResult<GenericIterable<'a>> {
+    fn lax_set<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
         self.strict_set()
     }
 
-    fn validate_frozenset(&'a self, strict: bool) -> ValResult<GenericIterable<'a>> {
+    fn validate_frozenset<'a>(&'a self, strict: bool) -> ValResult<GenericIterable<'a, 'py>> {
         if strict {
             self.strict_frozenset()
         } else {
             self.lax_frozenset()
         }
     }
-    fn strict_frozenset(&'a self) -> ValResult<GenericIterable<'a>>;
+    fn strict_frozenset<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>>;
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn lax_frozenset(&'a self) -> ValResult<GenericIterable<'a>> {
+    fn lax_frozenset<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
         self.strict_frozenset()
     }
 
-    fn extract_generic_iterable(&'a self) -> ValResult<GenericIterable<'a>>;
+    fn extract_generic_iterable<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>>;
 
     fn validate_iter(&self) -> ValResult<GenericIterator>;
 
@@ -231,9 +227,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject + Into<LocItem> + Sized {
 /// this trait we abstract over whether the return value from the iterator is owned
 /// or borrowed; all we care about is that we can borrow it again with `borrow_input`
 /// for some lifetime 'a.
-pub trait BorrowInput {
-    type Input<'a>: Input<'a>
-    where
-        Self: 'a;
-    fn borrow_input(&self) -> &Self::Input<'_>;
+pub trait BorrowInput<'py> {
+    type Input: Input<'py>;
+    fn borrow_input(&self) -> &Self::Input;
 }

@@ -40,10 +40,10 @@ impl BuildValidator for TimeValidator {
 impl_py_gc_traverse!(TimeValidator {});
 
 impl Validator for TimeValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         let time = input

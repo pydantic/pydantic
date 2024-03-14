@@ -56,10 +56,10 @@ impl_py_gc_traverse!(LaxOrStrictValidator {
 });
 
 impl Validator for LaxOrStrictValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         if state.strict_or(self.strict) {

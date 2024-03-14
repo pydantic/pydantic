@@ -59,10 +59,10 @@ impl BuildValidator for DateTimeValidator {
 impl_py_gc_traverse!(DateTimeValidator {});
 
 impl Validator for DateTimeValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         let strict = state.strict_or(self.strict);
@@ -141,7 +141,7 @@ impl Validator for DateTimeValidator {
 
 /// In lax mode, if the input is not a datetime, we try parsing the input as a date and add the "00:00:00" time.
 /// Ok(None) means that this is not relevant to datetimes (the input was not a date nor a string)
-fn datetime_from_date<'data>(input: &'data impl Input<'data>) -> Result<Option<EitherDateTime<'data>>, ValError> {
+fn datetime_from_date<'data>(input: &impl Input<'data>) -> Result<Option<EitherDateTime<'data>>, ValError> {
     let either_date = match input.validate_date(false) {
         Ok(val_match) => val_match.into_inner(),
         // if the error was a parsing error, update the error type from DateParsing to DatetimeFromDateParsing
@@ -307,7 +307,7 @@ impl TZConstraint {
         }
     }
 
-    pub(super) fn tz_check<'d>(&self, tz_offset: Option<i32>, input: &'d impl Input<'d>) -> ValResult<()> {
+    pub(super) fn tz_check<'d>(&self, tz_offset: Option<i32>, input: &impl Input<'d>) -> ValResult<()> {
         match (self, tz_offset) {
             (TZConstraint::Aware(_), None) => return Err(ValError::new(ErrorTypeDefaults::TimezoneAware, input)),
             (TZConstraint::Aware(Some(tz_expected)), Some(tz_actual)) => {

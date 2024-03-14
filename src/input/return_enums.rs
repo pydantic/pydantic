@@ -64,36 +64,36 @@ impl<T> ValidationMatch<T> {
 /// can mostly be converted to each other in lax mode.
 /// This mostly matches python's definition of `Collection`.
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub enum GenericIterable<'a> {
-    List(Bound<'a, PyList>),
-    Tuple(Bound<'a, PyTuple>),
-    Set(Bound<'a, PySet>),
-    FrozenSet(Bound<'a, PyFrozenSet>),
-    Dict(Bound<'a, PyDict>),
+pub enum GenericIterable<'a, 'py> {
+    List(&'a Bound<'py, PyList>),
+    Tuple(&'a Bound<'py, PyTuple>),
+    Set(&'a Bound<'py, PySet>),
+    FrozenSet(&'a Bound<'py, PyFrozenSet>),
+    Dict(&'a Bound<'py, PyDict>),
     // Treat dict values / keys / items as generic iterators
     // since PyPy doesn't export the concrete types
-    DictKeys(Bound<'a, PyIterator>),
-    DictValues(Bound<'a, PyIterator>),
-    DictItems(Bound<'a, PyIterator>),
-    Mapping(Bound<'a, PyMapping>),
-    PyString(Bound<'a, PyString>),
-    Bytes(Bound<'a, PyBytes>),
-    PyByteArray(Bound<'a, PyByteArray>),
-    Sequence(Bound<'a, PySequence>),
-    Iterator(Bound<'a, PyIterator>),
+    DictKeys(Bound<'py, PyIterator>),
+    DictValues(Bound<'py, PyIterator>),
+    DictItems(Bound<'py, PyIterator>),
+    Mapping(&'a Bound<'py, PyMapping>),
+    PyString(&'a Bound<'py, PyString>),
+    Bytes(&'a Bound<'py, PyBytes>),
+    PyByteArray(&'a Bound<'py, PyByteArray>),
+    Sequence(&'a Bound<'py, PySequence>),
+    Iterator(Bound<'py, PyIterator>),
     JsonArray(&'a [JsonValue]),
     JsonObject(&'a JsonObject),
     JsonString(&'a String),
 }
 
-impl<'a, 'py: 'a> GenericIterable<'a> {
+impl<'py> GenericIterable<'_, 'py> {
     pub fn as_sequence_iterator(
         &self,
         py: Python<'py>,
-    ) -> PyResult<Box<dyn Iterator<Item = PyResult<Bound<'a, PyAny>>> + 'a>> {
+    ) -> PyResult<Box<dyn Iterator<Item = PyResult<Bound<'py, PyAny>>> + '_>> {
         match self {
-            GenericIterable::List(iter) => Ok(Box::new(iter.clone().into_iter().map(Ok))),
-            GenericIterable::Tuple(iter) => Ok(Box::new(iter.clone().into_iter().map(Ok))),
+            GenericIterable::List(iter) => Ok(Box::new(iter.iter().map(Ok))),
+            GenericIterable::Tuple(iter) => Ok(Box::new(iter.iter().map(Ok))),
             GenericIterable::Set(iter) => Ok(Box::new(iter.iter().map(Ok))),
             GenericIterable::FrozenSet(iter) => Ok(Box::new(iter.iter().map(Ok))),
             // Note that this iterates over only the keys, just like doing iter({}) in Python
@@ -130,7 +130,7 @@ struct MaxLengthCheck<'a, INPUT> {
     actual_length: Option<usize>,
 }
 
-impl<'a, INPUT: Input<'a>> MaxLengthCheck<'a, INPUT> {
+impl<'a, INPUT> MaxLengthCheck<'a, INPUT> {
     fn new(max_length: Option<usize>, field_type: &'a str, input: &'a INPUT, actual_length: Option<usize>) -> Self {
         Self {
             current_length: 0,
@@ -140,7 +140,9 @@ impl<'a, INPUT: Input<'a>> MaxLengthCheck<'a, INPUT> {
             actual_length,
         }
     }
+}
 
+impl<'a, INPUT: Input<'a>> MaxLengthCheck<'_, INPUT> {
     fn incr(&mut self) -> ValResult<()> {
         if let Some(max_length) = self.max_length {
             self.current_length += 1;
@@ -176,9 +178,9 @@ macro_rules! any_next_error {
 #[allow(clippy::too_many_arguments)]
 fn validate_iter_to_vec<'a, 's>(
     py: Python<'a>,
-    iter: impl Iterator<Item = PyResult<impl BorrowInput>>,
+    iter: impl Iterator<Item = PyResult<impl BorrowInput<'a>>>,
     capacity: usize,
-    mut max_length_check: MaxLengthCheck<'a, impl Input<'a>>,
+    mut max_length_check: MaxLengthCheck<'_, impl Input<'a>>,
     validator: &'s CombinedValidator,
     state: &mut ValidationState,
 ) -> ValResult<Vec<PyObject>> {
@@ -241,8 +243,8 @@ impl BuildSet for Bound<'_, PyFrozenSet> {
 fn validate_iter_to_set<'a, 's>(
     py: Python<'a>,
     set: &impl BuildSet,
-    iter: impl Iterator<Item = PyResult<impl BorrowInput>>,
-    input: &'a (impl Input<'a> + 'a),
+    iter: impl Iterator<Item = PyResult<impl BorrowInput<'a>>>,
+    input: &impl Input<'a>,
     field_type: &'static str,
     max_length: Option<usize>,
     validator: &'s CombinedValidator,
@@ -286,11 +288,11 @@ fn validate_iter_to_set<'a, 's>(
     }
 }
 
-fn no_validator_iter_to_vec<'a, 's>(
-    py: Python<'a>,
-    input: &'a (impl Input<'a> + 'a),
-    iter: impl Iterator<Item = PyResult<impl BorrowInput>>,
-    mut max_length_check: MaxLengthCheck<'a, impl Input<'a>>,
+fn no_validator_iter_to_vec<'py>(
+    py: Python<'py>,
+    input: &impl Input<'py>,
+    iter: impl Iterator<Item = PyResult<impl BorrowInput<'py>>>,
+    mut max_length_check: MaxLengthCheck<'_, impl Input<'py>>,
 ) -> ValResult<Vec<PyObject>> {
     iter.enumerate()
         .map(|(index, result)| {
@@ -304,7 +306,7 @@ fn no_validator_iter_to_vec<'a, 's>(
 // pretty arbitrary default capacity when creating vecs from iteration
 static DEFAULT_CAPACITY: usize = 10;
 
-impl<'a> GenericIterable<'a> {
+impl<'py> GenericIterable<'_, 'py> {
     pub fn generic_len(&self) -> Option<usize> {
         match &self {
             GenericIterable::List(iter) => Some(iter.len()),
@@ -328,13 +330,13 @@ impl<'a> GenericIterable<'a> {
     }
 
     #[allow(clippy::too_many_arguments)]
-    pub fn validate_to_vec<'s>(
-        &'s self,
-        py: Python<'a>,
-        input: &'a impl Input<'a>,
+    pub fn validate_to_vec(
+        &self,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         max_length: Option<usize>,
         field_type: &'static str,
-        validator: &'s CombinedValidator,
+        validator: &CombinedValidator,
         state: &mut ValidationState,
     ) -> ValResult<Vec<PyObject>> {
         let actual_length = self.generic_len();
@@ -360,14 +362,14 @@ impl<'a> GenericIterable<'a> {
     }
 
     #[allow(clippy::too_many_arguments)]
-    pub fn validate_to_set<'s>(
-        &'s self,
-        py: Python<'a>,
+    pub fn validate_to_set(
+        &self,
+        py: Python<'py>,
         set: &impl BuildSet,
-        input: &'a impl Input<'a>,
+        input: &impl Input<'py>,
         max_length: Option<usize>,
         field_type: &'static str,
-        validator: &'s CombinedValidator,
+        validator: &CombinedValidator,
         state: &mut ValidationState,
     ) -> ValResult<()> {
         macro_rules! validate_set {
@@ -388,10 +390,10 @@ impl<'a> GenericIterable<'a> {
         }
     }
 
-    pub fn to_vec<'s>(
-        &'s self,
-        py: Python<'a>,
-        input: &'a impl Input<'a>,
+    pub fn to_vec(
+        &self,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         field_type: &'static str,
         max_length: Option<usize>,
     ) -> ValResult<Vec<PyObject>> {
@@ -426,18 +428,18 @@ impl<'a> GenericIterable<'a> {
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub enum GenericMapping<'a> {
-    PyDict(Bound<'a, PyDict>),
-    PyMapping(Bound<'a, PyMapping>),
-    StringMapping(Bound<'a, PyDict>),
-    PyGetAttr(Bound<'a, PyAny>, Option<Bound<'a, PyDict>>),
+pub enum GenericMapping<'a, 'py> {
+    PyDict(&'a Bound<'py, PyDict>),
+    PyMapping(&'a Bound<'py, PyMapping>),
+    StringMapping(&'a Bound<'py, PyDict>),
+    PyGetAttr(Bound<'py, PyAny>, Option<Bound<'py, PyDict>>),
     JsonObject(&'a JsonObject),
 }
 
 macro_rules! derive_from {
     ($enum:ident, $key:ident, $type:ty $(, $extra_types:ident )*) => {
-        impl<'a> From<Bound<'a, $type>> for $enum<'a> {
-            fn from(s: Bound<'a, $type>) -> $enum<'a> {
+        impl<'a, 'py> From<&'a Bound<'py, $type>> for $enum<'a, 'py> {
+            fn from(s: &'a Bound<'py, $type>) -> Self {
                 Self::$key(s $(, $extra_types )*)
             }
         }
@@ -446,10 +448,9 @@ macro_rules! derive_from {
 
 derive_from!(GenericMapping, PyDict, PyDict);
 derive_from!(GenericMapping, PyMapping, PyMapping);
-derive_from!(GenericMapping, PyGetAttr, PyAny, None);
 
-impl<'a> From<&'a JsonObject> for GenericMapping<'a> {
-    fn from(s: &'a JsonObject) -> GenericMapping<'a> {
+impl<'a> From<&'a JsonObject> for GenericMapping<'a, '_> {
+    fn from(s: &'a JsonObject) -> Self {
         Self::JsonObject(s)
     }
 }
@@ -815,38 +816,38 @@ pub fn py_string_str<'a>(py_str: &'a Bound<'_, PyString>) -> ValResult<&'a str> 
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub enum EitherBytes<'a> {
+pub enum EitherBytes<'a, 'py> {
     Cow(Cow<'a, [u8]>),
-    Py(Bound<'a, PyBytes>),
+    Py(Bound<'py, PyBytes>),
 }
 
-impl<'a> From<Vec<u8>> for EitherBytes<'a> {
+impl<'a> From<Vec<u8>> for EitherBytes<'a, '_> {
     fn from(bytes: Vec<u8>) -> Self {
         Self::Cow(Cow::Owned(bytes))
     }
 }
 
-impl<'a> From<&'a [u8]> for EitherBytes<'a> {
+impl<'a> From<&'a [u8]> for EitherBytes<'a, '_> {
     fn from(bytes: &'a [u8]) -> Self {
         Self::Cow(Cow::Borrowed(bytes))
     }
 }
 
-impl<'a> From<&'_ Bound<'a, PyBytes>> for EitherBytes<'a> {
-    fn from(bytes: &'_ Bound<'a, PyBytes>) -> Self {
+impl<'a, 'py> From<&'a Bound<'py, PyBytes>> for EitherBytes<'a, 'py> {
+    fn from(bytes: &'a Bound<'py, PyBytes>) -> Self {
         Self::Py(bytes.clone())
     }
 }
 
-impl<'a> EitherBytes<'a> {
-    pub fn as_slice(&'a self) -> &[u8] {
+impl EitherBytes<'_, '_> {
+    pub fn as_slice(&self) -> &[u8] {
         match self {
             EitherBytes::Cow(bytes) => bytes,
             EitherBytes::Py(py_bytes) => py_bytes.as_bytes(),
         }
     }
 
-    pub fn len(&'a self) -> PyResult<usize> {
+    pub fn len(&self) -> PyResult<usize> {
         match self {
             EitherBytes::Cow(bytes) => Ok(bytes.len()),
             EitherBytes::Py(py_bytes) => py_bytes.len(),
@@ -854,7 +855,7 @@ impl<'a> EitherBytes<'a> {
     }
 }
 
-impl<'a> IntoPy<PyObject> for EitherBytes<'a> {
+impl IntoPy<PyObject> for EitherBytes<'_, '_> {
     fn into_py(self, py: Python<'_>) -> PyObject {
         match self {
             EitherBytes::Cow(bytes) => PyBytes::new_bound(py, &bytes).into_py(py),

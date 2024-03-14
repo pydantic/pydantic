@@ -97,7 +97,7 @@ impl FunctionBeforeValidator {
         &'s self,
         call: impl FnOnce(Bound<'data, PyAny>, &mut ValidationState<'_>) -> ValResult<PyObject>,
         py: Python<'data>,
-        input: &'data impl Input<'data>,
+        input: &impl Input<'data>,
         state: &'s mut ValidationState<'_>,
     ) -> ValResult<PyObject> {
         let r = if self.info_arg {
@@ -121,7 +121,7 @@ impl Validator for FunctionBeforeValidator {
     fn validate<'data>(
         &self,
         py: Python<'data>,
-        input: &'data impl Input<'data>,
+        input: &impl Input<'data>,
         state: &mut ValidationState<'_>,
     ) -> ValResult<PyObject> {
         let validate = |v, s: &mut ValidationState<'_>| self.validator.validate(py, &v, s);
@@ -161,9 +161,9 @@ impl_build!(FunctionAfterValidator, "function-after");
 impl FunctionAfterValidator {
     fn _validate<'s, 'data, I: Input<'data>>(
         &'s self,
-        call: impl FnOnce(&'data I, &mut ValidationState<'_>) -> ValResult<PyObject>,
+        call: impl FnOnce(&I, &mut ValidationState<'_>) -> ValResult<PyObject>,
         py: Python<'data>,
-        input: &'data I,
+        input: &I,
         state: &mut ValidationState<'_>,
     ) -> ValResult<PyObject> {
         let v = call(input, state)?;
@@ -187,10 +187,10 @@ impl Validator for FunctionAfterValidator {
     fn validate<'data>(
         &self,
         py: Python<'data>,
-        input: &'data impl Input<'data>,
+        input: &impl Input<'data>,
         state: &mut ValidationState<'_>,
     ) -> ValResult<PyObject> {
-        let validate = |v, s: &mut ValidationState<'_>| self.validator.validate(py, v, s);
+        let validate = |v: &_, s: &mut ValidationState<'_>| self.validator.validate(py, v, s);
         self._validate(validate, py, input, state)
     }
     fn validate_assignment<'data>(
@@ -201,8 +201,9 @@ impl Validator for FunctionAfterValidator {
         field_value: &Bound<'data, PyAny>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
-        let validate =
-            move |v, s: &mut ValidationState<'_>| self.validator.validate_assignment(py, v, field_name, field_value, s);
+        let validate = move |v: &Bound<'data, PyAny>, s: &mut ValidationState<'_>| {
+            self.validator.validate_assignment(py, v, field_name, field_value, s)
+        };
         self._validate(validate, py, obj, state)
     }
 
@@ -247,10 +248,10 @@ impl BuildValidator for FunctionPlainValidator {
 impl_py_gc_traverse!(FunctionPlainValidator { func, config });
 
 impl Validator for FunctionPlainValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         let r = if self.info_arg {
@@ -314,7 +315,7 @@ impl FunctionWrapValidator {
         &'s self,
         handler: &Bound<'_, PyAny>,
         py: Python<'data>,
-        input: &'data impl Input<'data>,
+        input: &impl Input<'data>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         let r = if self.info_arg {
@@ -334,10 +335,10 @@ impl_py_gc_traverse!(FunctionWrapValidator {
 });
 
 impl Validator for FunctionWrapValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         let handler = ValidatorCallable {
@@ -470,7 +471,7 @@ macro_rules! py_err_string {
 
 /// Only `ValueError` (including `PydanticCustomError` and `ValidationError`) and `AssertionError` are considered
 /// as validation errors, `TypeError` is now considered as a runtime error to catch errors in function signatures
-pub fn convert_err<'a>(py: Python<'a>, err: PyErr, input: &'a impl Input<'a>) -> ValError {
+pub fn convert_err<'a>(py: Python<'a>, err: PyErr, input: &impl Input<'a>) -> ValError {
     if err.is_instance_of::<PyValueError>(py) {
         let error_value = err.value_bound(py);
         if let Ok(pydantic_value_error) = error_value.extract::<PydanticCustomError>() {

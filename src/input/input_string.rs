@@ -61,7 +61,7 @@ impl From<StringMapping<'_>> for LocItem {
     }
 }
 
-impl<'a> Input<'a> for StringMapping<'a> {
+impl<'py> Input<'py> for StringMapping<'py> {
     fn as_error_value(&self) -> InputValue {
         match self {
             Self::String(s) => s.as_error_value(),
@@ -69,16 +69,16 @@ impl<'a> Input<'a> for StringMapping<'a> {
         }
     }
 
-    fn as_kwargs(&self, _py: Python<'a>) -> Option<Bound<'a, PyDict>> {
+    fn as_kwargs(&self, _py: Python<'py>) -> Option<Bound<'py, PyDict>> {
         None
     }
 
-    fn validate_args(&'a self) -> ValResult<GenericArguments<'a>> {
+    fn validate_args(&self) -> ValResult<GenericArguments<'_>> {
         // do we want to support this?
         Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self))
     }
 
-    fn validate_dataclass_args(&'a self, _dataclass_name: &str) -> ValResult<GenericArguments<'a>> {
+    fn validate_dataclass_args<'a>(&'a self, _dataclass_name: &str) -> ValResult<GenericArguments<'a>> {
         match self {
             StringMapping::String(_) => Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self)),
             StringMapping::Mapping(m) => Ok(GenericArguments::StringMapping(m.clone())),
@@ -86,17 +86,17 @@ impl<'a> Input<'a> for StringMapping<'a> {
     }
 
     fn validate_str(
-        &'a self,
+        &self,
         _strict: bool,
         _coerce_numbers_to_str: bool,
-    ) -> ValResult<ValidationMatch<EitherString<'a>>> {
+    ) -> ValResult<ValidationMatch<EitherString<'_>>> {
         match self {
             Self::String(s) => Ok(ValidationMatch::strict(s.clone().into())),
             Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::StringType, self)),
         }
     }
 
-    fn validate_bytes(&'a self, _strict: bool) -> ValResult<ValidationMatch<EitherBytes<'a>>> {
+    fn validate_bytes<'a>(&'a self, _strict: bool) -> ValResult<ValidationMatch<EitherBytes<'a, 'py>>> {
         match self {
             Self::String(s) => py_string_str(s).map(|b| ValidationMatch::strict(b.as_bytes().into())),
             Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::BytesType, self)),
@@ -110,51 +110,51 @@ impl<'a> Input<'a> for StringMapping<'a> {
         }
     }
 
-    fn validate_int(&'a self, _strict: bool) -> ValResult<ValidationMatch<EitherInt<'a>>> {
+    fn validate_int(&self, _strict: bool) -> ValResult<ValidationMatch<EitherInt<'_>>> {
         match self {
             Self::String(s) => str_as_int(self, py_string_str(s)?).map(ValidationMatch::strict),
             Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::IntType, self)),
         }
     }
 
-    fn validate_float(&'a self, _strict: bool) -> ValResult<ValidationMatch<EitherFloat<'a>>> {
+    fn validate_float(&self, _strict: bool) -> ValResult<ValidationMatch<EitherFloat<'_>>> {
         match self {
             Self::String(s) => str_as_float(self, py_string_str(s)?).map(ValidationMatch::strict),
             Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::FloatType, self)),
         }
     }
 
-    fn strict_decimal(&'a self, _py: Python<'a>) -> ValResult<Bound<'a, PyAny>> {
+    fn strict_decimal(&self, _py: Python<'py>) -> ValResult<Bound<'py, PyAny>> {
         match self {
             Self::String(s) => create_decimal(s, self),
             Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::DecimalType, self)),
         }
     }
 
-    fn strict_dict(&'a self) -> ValResult<GenericMapping<'a>> {
+    fn strict_dict<'a>(&'a self) -> ValResult<GenericMapping<'a, 'py>> {
         match self {
             Self::String(_) => Err(ValError::new(ErrorTypeDefaults::DictType, self)),
-            Self::Mapping(d) => Ok(GenericMapping::StringMapping(d.clone())),
+            Self::Mapping(d) => Ok(GenericMapping::StringMapping(d)),
         }
     }
 
-    fn strict_list(&'a self) -> ValResult<GenericIterable<'a>> {
+    fn strict_list<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
         Err(ValError::new(ErrorTypeDefaults::ListType, self))
     }
 
-    fn strict_tuple(&'a self) -> ValResult<GenericIterable<'a>> {
+    fn strict_tuple<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
         Err(ValError::new(ErrorTypeDefaults::TupleType, self))
     }
 
-    fn strict_set(&'a self) -> ValResult<GenericIterable<'a>> {
+    fn strict_set<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
         Err(ValError::new(ErrorTypeDefaults::SetType, self))
     }
 
-    fn strict_frozenset(&'a self) -> ValResult<GenericIterable<'a>> {
+    fn strict_frozenset<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
         Err(ValError::new(ErrorTypeDefaults::FrozenSetType, self))
     }
 
-    fn extract_generic_iterable(&'a self) -> ValResult<GenericIterable<'a>> {
+    fn extract_generic_iterable<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
         Err(ValError::new(ErrorTypeDefaults::IterableType, self))
     }
 
@@ -206,9 +206,9 @@ impl<'a> Input<'a> for StringMapping<'a> {
     }
 }
 
-impl BorrowInput for StringMapping<'_> {
-    type Input<'a> = StringMapping<'a> where Self: 'a;
-    fn borrow_input(&self) -> &Self::Input<'_> {
+impl<'py> BorrowInput<'py> for StringMapping<'py> {
+    type Input = Self;
+    fn borrow_input(&self) -> &Self::Input {
         self
     }
 }

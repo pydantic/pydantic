@@ -58,10 +58,10 @@ impl BuildValidator for SetValidator {
 impl_py_gc_traverse!(SetValidator { item_validator });
 
 impl Validator for SetValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         let collection = input.validate_set(state.strict_or(self.strict))?;

@@ -67,24 +67,24 @@ impl_py_gc_traverse!(DictValidator {
 });
 
 impl Validator for DictValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
+        py: Python<'py>,
+        input: &impl Input<'py>,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
         let strict = state.strict_or(self.strict);
         let dict = input.validate_dict(strict)?;
         match dict {
             GenericMapping::PyDict(py_dict) => {
-                self.validate_generic_mapping(py, input, DictGenericIterator::new(&py_dict)?, state)
+                self.validate_generic_mapping(py, input, DictGenericIterator::new(py_dict)?, state)
             }
             GenericMapping::PyMapping(mapping) => {
                 state.floor_exactness(super::Exactness::Lax);
-                self.validate_generic_mapping(py, input, MappingGenericIterator::new(&mapping)?, state)
+                self.validate_generic_mapping(py, input, MappingGenericIterator::new(mapping)?, state)
             }
             GenericMapping::StringMapping(dict) => {
-                self.validate_generic_mapping(py, input, StringMappingGenericIterator::new(&dict)?, state)
+                self.validate_generic_mapping(py, input, StringMappingGenericIterator::new(dict)?, state)
             }
             GenericMapping::PyGetAttr(_, _) => unreachable!(),
             GenericMapping::JsonObject(json_object) => {
@@ -99,15 +99,12 @@ impl Validator for DictValidator {
 }
 
 impl DictValidator {
-    fn validate_generic_mapping<'s, 'data>(
-        &'s self,
+    fn validate_generic_mapping<'data>(
+        &self,
         py: Python<'data>,
-        input: &'data impl Input<'data>,
+        input: &impl Input<'data>,
         mapping_iter: impl Iterator<
-            Item = ValResult<(
-                impl BorrowInput + Clone + Into<LocItem> + 'data,
-                impl BorrowInput + 'data,
-            )>,
+            Item = ValResult<(impl BorrowInput<'data> + Clone + Into<LocItem>, impl BorrowInput<'data>)>,
         >,
         state: &mut ValidationState,
     ) -> ValResult<PyObject> {
