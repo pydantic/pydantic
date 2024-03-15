@@ -1344,20 +1344,20 @@ def test_assert_raises_validation_error():
         @field_validator('a')
         @classmethod
         def check_a(cls, v: Any):
-            assert v == 'a', 'invalid a'
+            if v != 'a':
+                raise AssertionError('invalid a')
             return v
 
     Model(a='a')
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
-    injected_by_pytest = "assert 'snap' == 'a'\n  - a\n  + snap"
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'error': HasRepr(repr(AssertionError("invalid a\nassert 'snap' == 'a'\n  - a\n  + snap")))},
+            'ctx': {'error': HasRepr(repr(AssertionError('invalid a')))},
             'input': 'snap',
             'loc': ('a',),
-            'msg': f'Assertion failed, invalid a\n{injected_by_pytest}',
+            'msg': 'Assertion failed, invalid a',
             'type': 'assertion_error',
         }
     ]
