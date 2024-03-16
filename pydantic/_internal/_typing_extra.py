@@ -471,4 +471,4 @@ else:
 
 def is_self_type(tp: Any) -> bool:
     """Check if a given class is a Self type (from `typing` or `typing_extensions`)"""
-    return isinstance(tp, typing_base) and tp._name == 'Self'
+    return isinstance(tp, typing_base) and getattr(tp, '_name', None) == 'Self'
