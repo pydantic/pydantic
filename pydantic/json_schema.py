@@ -732,9 +732,25 @@ class GenerateJsonSchema:
         # jsonify the expected values
         expected = [to_jsonable_python(v) for v in expected]
 
-        result: dict[str, Any] = {'enum': expected}
+        result: dict[str, Any] = {}
         if len(expected) == 1:
             result['const'] = expected[0]
+
+        if self._config.json_schema_literal_type == 'enum':
+            result['enum'] = expected
+        elif self._config.json_schema_literal_type == 'oneof-const':
+            # TODO (reesehyde): do we want this condition or not? why do we still produce 'enum' for single values?
+            if len(expected) > 1:
+                descriptions = schema.get('metadata', {}).get('enum_case_descriptions', {})
+                members = []
+                for e in expected:
+                    member = {'const': e}
+                    if e in descriptions:
+                        member['description'] = descriptions[e]
+                    members.append(member)
+                result['oneOf'] = members
+        else:
+            raise ValueError(f"Unknown literal type '{self._config.json_schema_literal_type}'")
 
         types = {type(e) for e in expected}
         if types == {str}:

@@ -65,9 +65,15 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
         description = None
     updates = {'title': enum_type.__name__, 'description': description}
     updates = {k: v for k, v in updates.items() if v is not None}
+    case_descriptions = {
+        c.value: inspect.cleandoc(c.__doc__)
+        for c in cases
+        if c.__doc__ is not None and inspect.cleandoc(c.__doc__) != description
+    }
 
     def get_json_schema(_, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-        json_schema = handler(core_schema.literal_schema([x.value for x in cases], ref=enum_ref))
+        metadata = {'enum_case_descriptions': case_descriptions}
+        json_schema = handler(core_schema.literal_schema([x.value for x in cases], ref=enum_ref, metadata=metadata))
         original_schema = handler.resolve_ref_schema(json_schema)
         update_json_schema(original_schema, updates)
         return json_schema
