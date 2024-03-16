@@ -946,7 +946,7 @@ class ConfigDict(TypedDict, total=False):
 
     json_schema_literal_type: Literal['enum', 'oneof-const']
     """
-    Whether to produce JSON Schema output of multiple Literal values as with 'enum' or 'oneOf' with 'const'. Defaults
+    Whether to produce JSON Schema output of multiple Literal values as 'enum' or 'oneOf' with 'const' fields. Defaults
     to 'enum'. For example, the given the following model:
 
     ```py
@@ -964,7 +964,6 @@ class ConfigDict(TypedDict, total=False):
 
     With the default `enum` value the JSON Schema will be:
 
-    TODO (rmehyde): is there a `jsonschema` type here?
     ```json
     {
         'title': 'Model',
