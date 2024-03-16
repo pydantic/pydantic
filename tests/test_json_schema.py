@@ -609,6 +609,7 @@ def test_enum_schema_oneof_const_single_value():
     }
 
 
+@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason="ListEnum doesn't work in 3.8")
 def test_enum_schema_oneof_const_list_enum():
     class ListEnum(List[int], Enum):
         a = [123]
