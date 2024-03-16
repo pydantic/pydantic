@@ -859,8 +859,6 @@ class GenerateSchema:
 
         if _typing_extra.is_dataclass(obj):
             return self._dataclass_schema(obj, None)
-        # if _typing_extra.is_self(obj):
-        #     pass
         res = self._get_prepare_pydantic_annotations_for_known_type(obj, ())
         if res is not None:
             source_type, annotations = res
