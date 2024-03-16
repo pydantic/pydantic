@@ -944,6 +944,69 @@ class ConfigDict(TypedDict, total=False):
         can be different depending on the Python version used.
     '''
 
+    json_schema_literal_type: Literal['enum', 'oneof-const']
+    """
+    Whether to produce JSON Schema output of multiple Literal values as with 'enum' or 'oneOf' with 'const'. Defaults
+    to 'enum'. For example, the given the following model:
+
+    ```py
+    from enum import Enum
+
+    from pydantic import BaseModel
+
+    class FooBar(str, Enum):
+        foo = 'foo'
+        bar = 'bar'
+
+    class Model(BaseModel):
+        enum: FooBar
+    ```
+
+    With the default `enum` value the JSON Schema will be:
+
+    TODO (rmehyde): is there a `jsonschema` type here?
+    ```json
+    {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'enum': {'$ref': '#/$defs/FooBar'}},
+        'required': ['enum'],
+        '$defs': {
+            'FooBar': {
+                'title': 'FooBar',
+                'enum': ['foo', 'bar'],
+                'type': 'string',
+            }
+        },
+    }
+    ```
+
+    With the 'oneof-const' value the JSON Schema will be:
+
+    ```json
+    {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'enum': {'$ref': '#/$defs/FooBar'}},
+        'required': ['enum'],
+        '$defs': {
+            'FooBar': {
+                'title': 'FooBar',
+                'oneOf': [
+                    {'const': 'foo'},
+                    {'const': 'bar'},
+                ],
+                'type': 'string',
+            }
+        },
+    }
+    ```
+
+    Additionally, if a `__doc__` property is set on the attributes of an `Enum`, they will be used as descriptions in
+    the JSON schema `oneOf` members. For an example of setting `__doc__` on enum members, see
+    [this StackOverflow issue](https://stackoverflow.com/a/50473952).
+    """
+
 
 _TypeT = TypeVar('_TypeT', bound=type)
 
