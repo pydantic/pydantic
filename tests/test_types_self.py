@@ -37,4 +37,39 @@ def test_recursive_model_invalid(Self):
         ValidationError,
         match=r'ref\.ref\s+Input should be a valid dictionary or instance of SelfRef \[type=model_type,',
     ):
-        SelfRef(data=1, ref={'data': 2, 'ref': 3}).model_dump() == {'data': 1, 'ref': {'data': 2, 'ref': None}}
+        SelfRef(data=1, ref={'data': 2, 'ref': 3}).model_dump()
+
+
+def test_recursive_model_with_subclass(Self):
+    """
+    Self refs should be valid in covariant direction
+    """
+
+    class SelfRef(BaseModel):
+        data: int
+        ref: Self | None = None
+
+    class SubSelfRef(SelfRef):
+        pass
+
+    assert SubSelfRef(data=1, ref=SubSelfRef(data=2)).model_dump() == {'data': 1, 'ref': {'data': 2, 'ref': None}}
+    assert SelfRef(data=1, ref=SubSelfRef(data=2)).model_dump() == {'data': 1, 'ref': {'data': 2, 'ref': None}}
+
+
+def test_recursive_model_with_subclass_invalid(Self):
+    """
+    Self refs are invalid in contravariant direction
+    """
+
+    class SelfRef(BaseModel):
+        data: int
+        ref: Self | None = None
+
+    class SubSelfRef(SelfRef):
+        pass
+
+    with pytest.raises(
+        ValidationError,
+        match=r'ref\s+Input should be a valid dictionary or instance of SubSelfRef \[type=model_type,',
+    ):
+        SubSelfRef(data=1, ref=SelfRef(data=2)).model_dump()
