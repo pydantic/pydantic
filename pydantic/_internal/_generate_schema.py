@@ -78,7 +78,7 @@ from ._fields import collect_dataclass_fields, get_type_hints_infer_globalns
 from ._forward_ref import PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, has_instance_in_type, recursively_defined_type_refs, replace_types
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
-from ._typing_extra import is_finalvar
+from ._typing_extra import is_finalvar, is_self_type
 from ._utils import lenient_issubclass
 
 if TYPE_CHECKING:
@@ -640,7 +640,7 @@ class GenerateSchema:
         decide whether to use a `__pydantic_core_schema__` attribute, or generate a fresh schema.
         """
         # avoid calling `__get_pydantic_core_schema__` if we've already visited this object
-        if obj is typing.Self:
+        if is_self_type(obj):
             obj = self.model_type_stack.get()
         with self.defs.get_schema_or_ref(obj) as (_, maybe_schema):
             if maybe_schema is not None:
