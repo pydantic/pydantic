@@ -502,6 +502,113 @@ def test_enum_schema_cleandoc():
     }
 
 
+def test_enum_schema_oneof_const():
+    class FooBar(str, Enum):
+        """
+        This enum Foos and Bars
+        """
+
+        foo = 'foo'
+        bar = 'bar'
+
+    class Model(BaseModel):
+        model_config = ConfigDict(json_schema_literal_type='oneof-const')
+
+        enum: FooBar
+
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'enum': {'$ref': '#/$defs/FooBar'}},
+        'required': ['enum'],
+        '$defs': {
+            'FooBar': {
+                'title': 'FooBar',
+                'description': 'This enum Foos and Bars',
+                'oneOf': [
+                    {'const': 'foo'},
+                    {'const': 'bar'},
+                ],
+                'type': 'string',
+            }
+        },
+    }
+
+
+def test_enum_schema_oneof_const_member_docstring():
+    class DocumentedStrEnum(str, Enum):
+        """
+        Courtesy of Ethan Furman: https://stackoverflow.com/a/50473952
+        """
+
+        def __new__(cls, value, doc=None):
+            self = str.__new__(cls)
+            self._value_ = value
+            if doc is not None:
+                self.__doc__ = doc
+            return self
+
+    class FooBar(DocumentedStrEnum):
+        """
+        This enum Foos and Bars
+        """
+
+        foo = 'foo', 'this foos'
+        bar = 'bar', 'this bars'
+
+    class Model(BaseModel):
+        model_config = ConfigDict(json_schema_literal_type='oneof-const')
+
+        enum: FooBar
+
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'enum': {'$ref': '#/$defs/FooBar'}},
+        'required': ['enum'],
+        '$defs': {
+            'FooBar': {
+                'title': 'FooBar',
+                'description': 'This enum Foos and Bars',
+                'oneOf': [
+                    {'const': 'foo', 'description': 'this foos'},
+                    {'const': 'bar', 'description': 'this bars'},
+                ],
+                'type': 'string',
+            }
+        },
+    }
+
+
+def test_enum_schema_oneof_const_single_value():
+    class FooEnum(str, Enum):
+        """
+        The Foo Enum
+        """
+
+        foo = 'foo'
+
+    class Model(BaseModel):
+        model_config = ConfigDict(json_schema_literal_type='oneof-const')
+
+        enum: FooEnum
+
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'enum': {'$ref': '#/$defs/FooEnum'}},
+        'required': ['enum'],
+        '$defs': {
+            'FooEnum': {
+                'title': 'FooEnum',
+                'description': 'The Foo Enum',
+                'const': 'foo',
+                'type': 'string',
+            }
+        },
+    }
+
+
 def test_decimal_json_schema():
     class Model(BaseModel):
         a: bytes = b'foobar'
