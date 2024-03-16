@@ -739,14 +739,19 @@ class GenerateJsonSchema:
         if self._config.json_schema_literal_type == 'enum':
             result['enum'] = expected
         elif self._config.json_schema_literal_type == 'oneof-const':
-            # TODO (reesehyde): do we want this condition or not? why do we still produce 'enum' for single values?
+            # TODO (rmehyde): do we want this condition or not? why do we still produce 'enum' for single values?
             if len(expected) > 1:
-                descriptions = schema.get('metadata', {}).get('enum_case_descriptions', {})
+                descriptions = schema.get('metadata', {}).get('enum_case_descriptions', [])
                 members = []
                 for e in expected:
                     member = {'const': e}
-                    if e in descriptions:
-                        member['description'] = descriptions[e]
+
+                    try:
+                        description_idx = [d[0] for d in descriptions].index(e)
+                        member['description'] = descriptions[description_idx][1]
+                    except ValueError:
+                        pass
+
                     members.append(member)
                 result['oneOf'] = members
         else:

@@ -609,6 +609,34 @@ def test_enum_schema_oneof_const_single_value():
     }
 
 
+def test_enum_schema_oneof_const_list_enum():
+    class ListEnum(List[int], Enum):
+        a = [123]
+        b = [456]
+
+    class Model(BaseModel):
+        model_config = ConfigDict(json_schema_literal_type='oneof-const')
+
+        enum: ListEnum
+
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'enum': {'$ref': '#/$defs/ListEnum'}},
+        'required': ['enum'],
+        '$defs': {
+            'ListEnum': {
+                'title': 'ListEnum',
+                'oneOf': [
+                    {'const': [123]},
+                    {'const': [456]},
+                ],
+                'type': 'array',
+            }
+        },
+    }
+
+
 def test_decimal_json_schema():
     class Model(BaseModel):
         a: bytes = b'foobar'
