@@ -273,7 +273,8 @@ if TYPE_CHECKING:
 
 @overload
 def field_validator(
-    __field: str,
+    field: str,
+    /,
     *fields: str,
     mode: Literal['before', 'after', 'plain'] = ...,
     check_fields: bool | None = ...,
@@ -283,7 +284,8 @@ def field_validator(
 
 @overload
 def field_validator(
-    __field: str,
+    field: str,
+    /,
     *fields: str,
     mode: Literal['wrap'],
     check_fields: bool | None = ...,
@@ -295,7 +297,8 @@ FieldValidatorModes: TypeAlias = Literal['before', 'after', 'wrap', 'plain']
 
 
 def field_validator(
-    __field: str,
+    field: str,
+    /,
     *fields: str,
     mode: FieldValidatorModes = 'after',
     check_fields: bool | None = None,
@@ -341,7 +344,7 @@ def field_validator(
     For more in depth examples, see [Field Validators](../concepts/validators.md#field-validators).
 
     Args:
-        __field: The first field the `field_validator` should be called on; this is separate
+        field: The first field the `field_validator` should be called on; this is separate
             from `fields` to ensure an error is raised if you don't pass at least one.
         *fields: Additional field(s) the `field_validator` should be called on.
         mode: Specifies whether to validate the fields before or after validation.
@@ -356,13 +359,13 @@ def field_validator(
             - If the args passed to `@field_validator` as fields are not strings.
             - If `@field_validator` applied to instance methods.
     """
-    if isinstance(__field, FunctionType):
+    if isinstance(field, FunctionType):
         raise PydanticUserError(
             '`@field_validator` should be used with fields and keyword arguments, not bare. '
             "E.g. usage should be `@validator('<field_name>', ...)`",
             code='validator-no-fields',
         )
-    fields = __field, *fields
+    fields = field, *fields
     if not all(isinstance(field, str) for field in fields):
         raise PydanticUserError(
             '`@field_validator` fields should be passed as separate string args. '

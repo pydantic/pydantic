@@ -1353,6 +1353,7 @@ def test_discriminated_union_basemodel_instance_value():
 
     t = Top(sub=A(l='a'))
     assert isinstance(t, Top)
+    # insert_assert(model_json_schema(Top))
     assert model_json_schema(Top) == {
         'title': 'Top',
         'type': 'object',
@@ -1365,8 +1366,18 @@ def test_discriminated_union_basemodel_instance_value():
         },
         'required': ['sub'],
         '$defs': {
-            'A': {'properties': {'l': {'const': 'a', 'title': 'L'}}, 'required': ['l'], 'title': 'A', 'type': 'object'},
-            'B': {'properties': {'l': {'const': 'b', 'title': 'L'}}, 'required': ['l'], 'title': 'B', 'type': 'object'},
+            'A': {
+                'properties': {'l': {'const': 'a', 'enum': ['a'], 'title': 'L', 'type': 'string'}},
+                'required': ['l'],
+                'title': 'A',
+                'type': 'object',
+            },
+            'B': {
+                'properties': {'l': {'const': 'b', 'enum': ['b'], 'title': 'L', 'type': 'string'}},
+                'required': ['l'],
+                'title': 'B',
+                'type': 'object',
+            },
         },
     }
 

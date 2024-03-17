@@ -184,7 +184,8 @@ if TYPE_CHECKING:
 
 @overload
 def field_serializer(
-    __field: str,
+    field: str,
+    /,
     *fields: str,
     return_type: Any = ...,
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
@@ -195,7 +196,8 @@ def field_serializer(
 
 @overload
 def field_serializer(
-    __field: str,
+    field: str,
+    /,
     *fields: str,
     mode: Literal['plain'],
     return_type: Any = ...,
@@ -207,7 +209,8 @@ def field_serializer(
 
 @overload
 def field_serializer(
-    __field: str,
+    field: str,
+    /,
     *fields: str,
     mode: Literal['wrap'],
     return_type: Any = ...,
@@ -304,7 +307,8 @@ def model_serializer(
 
 
 def model_serializer(
-    __f: Callable[..., Any] | None = None,
+    f: Callable[..., Any] | None = None,
+    /,
     *,
     mode: Literal['plain', 'wrap'] = 'plain',
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
@@ -339,7 +343,7 @@ def model_serializer(
     See [Custom serializers](../concepts/serialization.md#custom-serializers) for more information.
 
     Args:
-        __f: The function to be decorated.
+        f: The function to be decorated.
         mode: The serialization mode.
 
             - `'plain'` means the function will be called instead of the default serialization logic
@@ -356,10 +360,10 @@ def model_serializer(
         dec_info = _decorators.ModelSerializerDecoratorInfo(mode=mode, return_type=return_type, when_used=when_used)
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
-    if __f is None:
+    if f is None:
         return dec
     else:
-        return dec(__f)  # type: ignore
+        return dec(f)  # type: ignore
 
 
 AnyType = TypeVar('AnyType')

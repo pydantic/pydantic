@@ -32,8 +32,8 @@ class GenerateJsonSchemaHandler(GetJsonSchemaHandler):
         self.handler = handler_override or generate_json_schema.generate_inner
         self.mode = generate_json_schema.mode
 
-    def __call__(self, __core_schema: CoreSchemaOrField) -> JsonSchemaValue:
-        return self.handler(__core_schema)
+    def __call__(self, core_schema: CoreSchemaOrField, /) -> JsonSchemaValue:
+        return self.handler(core_schema)
 
     def resolve_ref_schema(self, maybe_ref_json_schema: JsonSchemaValue) -> JsonSchemaValue:
         """Resolves `$ref` in the json schema.
@@ -78,8 +78,8 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
         self._generate_schema = generate_schema
         self._ref_mode = ref_mode
 
-    def __call__(self, __source_type: Any) -> core_schema.CoreSchema:
-        schema = self._handler(__source_type)
+    def __call__(self, source_type: Any, /) -> core_schema.CoreSchema:
+        schema = self._handler(source_type)
         ref = schema.get('ref')
         if self._ref_mode == 'to-def':
             if ref is not None:
@@ -92,8 +92,8 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
     def _get_types_namespace(self) -> dict[str, Any] | None:
         return self._generate_schema._types_namespace
 
-    def generate_schema(self, __source_type: Any) -> core_schema.CoreSchema:
-        return self._generate_schema.generate_schema(__source_type)
+    def generate_schema(self, source_type: Any, /) -> core_schema.CoreSchema:
+        return self._generate_schema.generate_schema(source_type)
 
     @property
     def field_name(self) -> str | None:

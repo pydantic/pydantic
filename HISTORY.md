@@ -1,3 +1,16 @@
+## v2.6.4 (2024-03-12)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.6.4)
+
+### What's Changed
+
+#### Fixes
+
+* Fix usage of `AliasGenerator` with `computed_field` decorator by @sydney-runkle in [#8806](https://github.com/pydantic/pydantic/pull/8806)
+* Fix nested discriminated union schema gen, pt 2 by @sydney-runkle in [#8932](https://github.com/pydantic/pydantic/pull/8932)
+* Fix bug with no_strict_optional=True caused by API deferral by @dmontagu in [#8826](https://github.com/pydantic/pydantic/pull/8826)
+
+
 ## v2.6.3 (2024-02-27)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.6.3)

@@ -974,60 +974,54 @@ def test_lax_or_strict_definitions() -> None:
     discriminated_schema = apply_discriminator(core_schema.union_schema([cat, dog]), 'kind')
     # insert_assert(discriminated_schema)
     assert discriminated_schema == {
-        'type': 'definitions',
-        'schema': {
-            'type': 'tagged-union',
-            'choices': {
-                'cat': {
+        'type': 'tagged-union',
+        'choices': {
+            'cat': {
+                'type': 'typed-dict',
+                'fields': {'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['cat']}}},
+            },
+            'DOG': {
+                'type': 'lax-or-strict',
+                'lax_schema': {
                     'type': 'typed-dict',
                     'fields': {
-                        'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['cat']}}
+                        'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['DOG']}}
                     },
                 },
-                'DOG': {
-                    'type': 'lax-or-strict',
-                    'lax_schema': {
+                'strict_schema': {
+                    'type': 'definitions',
+                    'schema': {
                         'type': 'typed-dict',
                         'fields': {
-                            'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['DOG']}}
+                            'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['dog']}}
                         },
                     },
-                    'strict_schema': {
-                        'type': 'definitions',
-                        'schema': {
-                            'type': 'typed-dict',
-                            'fields': {
-                                'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['dog']}}
-                            },
-                        },
-                        'definitions': [{'type': 'int', 'ref': 'my-int-definition'}],
-                    },
-                },
-                'dog': {
-                    'type': 'lax-or-strict',
-                    'lax_schema': {
-                        'type': 'typed-dict',
-                        'fields': {
-                            'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['DOG']}}
-                        },
-                    },
-                    'strict_schema': {
-                        'type': 'definitions',
-                        'schema': {
-                            'type': 'typed-dict',
-                            'fields': {
-                                'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['dog']}}
-                            },
-                        },
-                        'definitions': [{'type': 'int', 'ref': 'my-int-definition'}],
-                    },
+                    'definitions': [{'type': 'int', 'ref': 'my-int-definition'}],
                 },
             },
-            'discriminator': 'kind',
-            'strict': False,
-            'from_attributes': True,
+            'dog': {
+                'type': 'lax-or-strict',
+                'lax_schema': {
+                    'type': 'typed-dict',
+                    'fields': {
+                        'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['DOG']}}
+                    },
+                },
+                'strict_schema': {
+                    'type': 'definitions',
+                    'schema': {
+                        'type': 'typed-dict',
+                        'fields': {
+                            'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['dog']}}
+                        },
+                    },
+                    'definitions': [{'type': 'int', 'ref': 'my-int-definition'}],
+                },
+            },
         },
-        'definitions': [{'type': 'str', 'ref': 'my-str-definition'}],
+        'discriminator': 'kind',
+        'strict': False,
+        'from_attributes': True,
     }
 
 
@@ -1235,16 +1229,28 @@ def test_union_in_submodel() -> None:
             },
             'UnionModel1': {
                 'properties': {
-                    'type': {'const': 1, 'default': 1, 'title': 'Type'},
-                    'other': {'const': 'UnionModel1', 'default': 'UnionModel1', 'title': 'Other'},
+                    'type': {'const': 1, 'default': 1, 'enum': [1], 'title': 'Type', 'type': 'integer'},
+                    'other': {
+                        'const': 'UnionModel1',
+                        'default': 'UnionModel1',
+                        'enum': ['UnionModel1'],
+                        'title': 'Other',
+                        'type': 'string',
+                    },
                 },
                 'title': 'UnionModel1',
                 'type': 'object',
             },
             'UnionModel2': {
                 'properties': {
-                    'type': {'const': 2, 'default': 2, 'title': 'Type'},
-                    'other': {'const': 'UnionModel2', 'default': 'UnionModel2', 'title': 'Other'},
+                    'type': {'const': 2, 'default': 2, 'enum': [2], 'title': 'Type', 'type': 'integer'},
+                    'other': {
+                        'const': 'UnionModel2',
+                        'default': 'UnionModel2',
+                        'enum': ['UnionModel2'],
+                        'title': 'Other',
+                        'type': 'string',
+                    },
                 },
                 'title': 'UnionModel2',
                 'type': 'object',
@@ -1317,11 +1323,12 @@ def test_sequence_discriminated_union():
         pet: Sequence[Pet]
         n: int
 
+    # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
         '$defs': {
             'Cat': {
                 'properties': {
-                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'pet_type': {'const': 'cat', 'enum': ['cat'], 'title': 'Pet Type', 'type': 'string'},
                     'meows': {'title': 'Meows', 'type': 'integer'},
                 },
                 'required': ['pet_type', 'meows'],
@@ -1330,7 +1337,7 @@ def test_sequence_discriminated_union():
             },
             'Dog': {
                 'properties': {
-                    'pet_type': {'const': 'dog', 'title': 'Pet Type'},
+                    'pet_type': {'const': 'dog', 'enum': ['dog'], 'title': 'Pet Type', 'type': 'string'},
                     'barks': {'title': 'Barks', 'type': 'number'},
                 },
                 'required': ['pet_type', 'barks'],
@@ -1796,12 +1803,13 @@ def test_nested_discriminator() -> None:
         blending: float
 
     MyModel.model_rebuild()
+    # insert_assert(MyModel.model_json_schema())
     assert MyModel.model_json_schema() == {
         '$defs': {
             'Step_A': {
                 'properties': {
                     'count': {'title': 'Count', 'type': 'integer'},
-                    'type': {'const': 'stepA', 'title': 'Type'},
+                    'type': {'const': 'stepA', 'enum': ['stepA'], 'title': 'Type', 'type': 'string'},
                 },
                 'required': ['type', 'count'],
                 'title': 'Step_A',
@@ -1809,7 +1817,7 @@ def test_nested_discriminator() -> None:
             },
             'Step_B': {
                 'properties': {
-                    'type': {'const': 'stepB', 'title': 'Type'},
+                    'type': {'const': 'stepB', 'enum': ['stepB'], 'title': 'Type', 'type': 'string'},
                     'value': {'title': 'Value', 'type': 'number'},
                 },
                 'required': ['type', 'value'],
@@ -1829,7 +1837,7 @@ def test_nested_discriminator() -> None:
                         'title': 'Steps',
                     },
                     'sub_models': {'items': {'$ref': '#/$defs/SubModel'}, 'title': 'Sub Models', 'type': 'array'},
-                    'type': {'const': 'mixed', 'title': 'Type'},
+                    'type': {'const': 'mixed', 'enum': ['mixed'], 'title': 'Type', 'type': 'string'},
                 },
                 'required': ['type', 'sub_models', 'blending'],
                 'title': 'SubModel',
@@ -1847,7 +1855,7 @@ def test_nested_discriminator() -> None:
                 'title': 'Steps',
             },
             'sub_models': {'items': {'$ref': '#/$defs/SubModel'}, 'title': 'Sub Models', 'type': 'array'},
-            'type': {'const': 'mixed', 'title': 'Type'},
+            'type': {'const': 'mixed', 'enum': ['mixed'], 'title': 'Type', 'type': 'string'},
         },
         'required': ['type', 'sub_models'],
         'title': 'MyModel',
@@ -1959,3 +1967,41 @@ def test_recursive_discriminated_union_with_pydantic_dataclass() -> None:
         if 'Foo' in definition['ref']:
             for field in definition['schema']['fields']:
                 assert field['schema']['type'] == 'tagged-union' if field['name'] == 'x' else True
+
+
+def test_discriminated_union_with_nested_dataclass() -> None:
+    @pydantic_dataclass
+    class Cat:
+        type: Literal['cat'] = 'cat'
+
+    @pydantic_dataclass
+    class Dog:
+        type: Literal['dog'] = 'dog'
+
+    @pydantic_dataclass
+    class NestedDataClass:
+        animal: Annotated[Union[Cat, Dog], Discriminator('type')]
+
+    @pydantic_dataclass
+    class Root:
+        data_class: NestedDataClass
+
+    ta = TypeAdapter(Root)
+    assert ta.core_schema['schema']['fields'][0]['schema']['schema']['fields'][0]['schema']['type'] == 'tagged-union'
+
+
+def test_discriminated_union_with_nested_typed_dicts() -> None:
+    class Cat(TypedDict):
+        type: Literal['cat']
+
+    class Dog(TypedDict):
+        type: Literal['dog']
+
+    class NestedTypedDict(TypedDict):
+        animal: Annotated[Union[Cat, Dog], Discriminator('type')]
+
+    class Root(TypedDict):
+        data_class: NestedTypedDict
+
+    ta = TypeAdapter(Root)
+    assert ta.core_schema['fields']['data_class']['schema']['fields']['animal']['schema']['type'] == 'tagged-union'

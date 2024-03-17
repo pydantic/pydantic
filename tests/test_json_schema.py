@@ -2256,10 +2256,11 @@ def test_literal_schema():
         c: Literal['a', 1]
         d: Literal['a', Literal['b'], 1, 2]
 
+    # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
         'properties': {
-            'a': {'const': 1, 'title': 'A'},
-            'b': {'const': 'a', 'title': 'B'},
+            'a': {'const': 1, 'enum': [1], 'title': 'A', 'type': 'integer'},
+            'b': {'const': 'a', 'enum': ['a'], 'title': 'B', 'type': 'string'},
             'c': {'enum': ['a', 1], 'title': 'C'},
             'd': {'enum': ['a', 'b', 1, 2], 'title': 'D'},
         },
@@ -2281,7 +2282,7 @@ def test_literal_enum():
     # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
         'properties': {
-            'kind': {'const': 'foo', 'title': 'Kind'},
+            'kind': {'const': 'foo', 'enum': ['foo'], 'title': 'Kind', 'type': 'string'},
             'other': {'enum': ['foo', 'bar'], 'title': 'Other', 'type': 'string'},
         },
         'required': ['kind', 'other'],
@@ -2323,7 +2324,7 @@ def test_literal_types() -> None:
             'int_literal': {'enum': [123, 456], 'title': 'Int Literal', 'type': 'integer'},
             'float_literal': {'$ref': '#/$defs/FloatEnum'},
             'bool_literal': {'enum': [True, False], 'title': 'Bool Literal', 'type': 'boolean'},
-            'none_literal': {'const': None, 'title': 'None Literal'},
+            'none_literal': {'const': None, 'enum': [None], 'title': 'None Literal'},
             'list_literal': {'$ref': '#/$defs/ListEnum'},
             'mixed_literal': {'enum': [123, 'abc'], 'title': 'Mixed Literal'},
         },
@@ -3641,13 +3642,13 @@ def test_discriminated_union():
     assert Model.model_json_schema() == {
         '$defs': {
             'Cat': {
-                'properties': {'pet_type': {'const': 'cat', 'title': 'Pet Type'}},
+                'properties': {'pet_type': {'const': 'cat', 'enum': ['cat'], 'title': 'Pet Type', 'type': 'string'}},
                 'required': ['pet_type'],
                 'title': 'Cat',
                 'type': 'object',
             },
             'Dog': {
-                'properties': {'pet_type': {'const': 'dog', 'title': 'Pet Type'}},
+                'properties': {'pet_type': {'const': 'dog', 'enum': ['dog'], 'title': 'Pet Type', 'type': 'string'}},
                 'required': ['pet_type'],
                 'title': 'Dog',
                 'type': 'object',
@@ -3697,13 +3698,13 @@ def test_discriminated_annotated_union():
     assert Model.model_json_schema() == {
         '$defs': {
             'Cat': {
-                'properties': {'pet_type': {'const': 'cat', 'title': 'Pet Type'}},
+                'properties': {'pet_type': {'const': 'cat', 'enum': ['cat'], 'title': 'Pet Type', 'type': 'string'}},
                 'required': ['pet_type'],
                 'title': 'Cat',
                 'type': 'object',
             },
             'Dog': {
-                'properties': {'pet_type': {'const': 'dog', 'title': 'Pet Type'}},
+                'properties': {'pet_type': {'const': 'dog', 'enum': ['dog'], 'title': 'Pet Type', 'type': 'string'}},
                 'required': ['pet_type'],
                 'title': 'Dog',
                 'type': 'object',
@@ -3756,13 +3757,14 @@ def test_nested_discriminated_union():
     class Cat(BaseModel):
         pet: Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]
 
+    # insert_assert(Cat.model_json_schema())
     assert Cat.model_json_schema() == {
         '$defs': {
             'BlackCatWithHeight': {
                 'properties': {
-                    'color': {'const': 'black', 'title': 'Color'},
+                    'color': {'const': 'black', 'enum': ['black'], 'title': 'Color', 'type': 'string'},
                     'height': {'title': 'Height', 'type': 'number'},
-                    'info': {'const': 'height', 'title': 'Info'},
+                    'info': {'const': 'height', 'enum': ['height'], 'title': 'Info', 'type': 'string'},
                 },
                 'required': ['color', 'info', 'height'],
                 'title': 'BlackCatWithHeight',
@@ -3770,8 +3772,8 @@ def test_nested_discriminated_union():
             },
             'BlackCatWithWeight': {
                 'properties': {
-                    'color': {'const': 'black', 'title': 'Color'},
-                    'info': {'const': 'weight', 'title': 'Info'},
+                    'color': {'const': 'black', 'enum': ['black'], 'title': 'Color', 'type': 'string'},
+                    'info': {'const': 'weight', 'enum': ['weight'], 'title': 'Info', 'type': 'string'},
                     'weight': {'title': 'Weight', 'type': 'number'},
                 },
                 'required': ['color', 'info', 'weight'],
@@ -3780,7 +3782,7 @@ def test_nested_discriminated_union():
             },
             'WhiteCat': {
                 'properties': {
-                    'color': {'const': 'white', 'title': 'Color'},
+                    'color': {'const': 'white', 'enum': ['white'], 'title': 'Color', 'type': 'string'},
                     'white_cat_info': {'title': 'White Cat Info', 'type': 'string'},
                 },
                 'required': ['color', 'white_cat_info'],
@@ -3863,9 +3865,9 @@ def test_deeper_nested_discriminated_annotated_union():
             'BlackCatWithHeight': {
                 'properties': {
                     'black_infos': {'title': 'Black Infos', 'type': 'string'},
-                    'color': {'const': 'black', 'title': 'Color'},
-                    'info': {'const': 'height', 'title': 'Info'},
-                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'color': {'const': 'black', 'enum': ['black'], 'title': 'Color', 'type': 'string'},
+                    'info': {'const': 'height', 'enum': ['height'], 'title': 'Info', 'type': 'string'},
+                    'pet_type': {'const': 'cat', 'enum': ['cat'], 'title': 'Pet Type', 'type': 'string'},
                 },
                 'required': ['pet_type', 'color', 'info', 'black_infos'],
                 'title': 'BlackCatWithHeight',
@@ -3874,9 +3876,9 @@ def test_deeper_nested_discriminated_annotated_union():
             'BlackCatWithWeight': {
                 'properties': {
                     'black_infos': {'title': 'Black Infos', 'type': 'string'},
-                    'color': {'const': 'black', 'title': 'Color'},
-                    'info': {'const': 'weight', 'title': 'Info'},
-                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'color': {'const': 'black', 'enum': ['black'], 'title': 'Color', 'type': 'string'},
+                    'info': {'const': 'weight', 'enum': ['weight'], 'title': 'Info', 'type': 'string'},
+                    'pet_type': {'const': 'cat', 'enum': ['cat'], 'title': 'Pet Type', 'type': 'string'},
                 },
                 'required': ['pet_type', 'color', 'info', 'black_infos'],
                 'title': 'BlackCatWithWeight',
@@ -3885,7 +3887,7 @@ def test_deeper_nested_discriminated_annotated_union():
             'Dog': {
                 'properties': {
                     'dog_name': {'title': 'Dog Name', 'type': 'string'},
-                    'pet_type': {'const': 'dog', 'title': 'Pet Type'},
+                    'pet_type': {'const': 'dog', 'enum': ['dog'], 'title': 'Pet Type', 'type': 'string'},
                 },
                 'required': ['pet_type', 'dog_name'],
                 'title': 'Dog',
@@ -3893,8 +3895,8 @@ def test_deeper_nested_discriminated_annotated_union():
             },
             'WhiteCat': {
                 'properties': {
-                    'color': {'const': 'white', 'title': 'Color'},
-                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'color': {'const': 'white', 'enum': ['white'], 'title': 'Color', 'type': 'string'},
+                    'pet_type': {'const': 'cat', 'enum': ['cat'], 'title': 'Pet Type', 'type': 'string'},
                     'white_infos': {'title': 'White Infos', 'type': 'string'},
                 },
                 'required': ['pet_type', 'color', 'white_infos'],
@@ -4047,9 +4049,9 @@ def test_discriminated_annotated_union_literal_enum():
             'BlackCatWithHeight': {
                 'properties': {
                     'black_infos': {'title': 'Black Infos', 'type': 'string'},
-                    'color': {'const': 'black', 'title': 'Color'},
-                    'info': {'const': 0, 'title': 'Info'},
-                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'color': {'const': 'black', 'enum': ['black'], 'title': 'Color', 'type': 'string'},
+                    'info': {'const': 0, 'enum': [0], 'title': 'Info', 'type': 'integer'},
+                    'pet_type': {'const': 'cat', 'enum': ['cat'], 'title': 'Pet Type', 'type': 'string'},
                 },
                 'required': ['pet_type', 'color', 'info', 'black_infos'],
                 'title': 'BlackCatWithHeight',
@@ -4058,9 +4060,9 @@ def test_discriminated_annotated_union_literal_enum():
             'BlackCatWithWeight': {
                 'properties': {
                     'black_infos': {'title': 'Black Infos', 'type': 'string'},
-                    'color': {'const': 'black', 'title': 'Color'},
-                    'info': {'const': 1, 'title': 'Info'},
-                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'color': {'const': 'black', 'enum': ['black'], 'title': 'Color', 'type': 'string'},
+                    'info': {'const': 1, 'enum': [1], 'title': 'Info', 'type': 'integer'},
+                    'pet_type': {'const': 'cat', 'enum': ['cat'], 'title': 'Pet Type', 'type': 'string'},
                 },
                 'required': ['pet_type', 'color', 'info', 'black_infos'],
                 'title': 'BlackCatWithWeight',
@@ -4069,7 +4071,7 @@ def test_discriminated_annotated_union_literal_enum():
             'Dog': {
                 'properties': {
                     'dog_name': {'title': 'Dog Name', 'type': 'string'},
-                    'pet_type': {'const': 'dog', 'title': 'Pet Type'},
+                    'pet_type': {'const': 'dog', 'enum': ['dog'], 'title': 'Pet Type', 'type': 'string'},
                 },
                 'required': ['pet_type', 'dog_name'],
                 'title': 'Dog',
@@ -4077,8 +4079,8 @@ def test_discriminated_annotated_union_literal_enum():
             },
             'WhiteCat': {
                 'properties': {
-                    'color': {'const': 'white', 'title': 'Color'},
-                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'color': {'const': 'white', 'enum': ['white'], 'title': 'Color', 'type': 'string'},
+                    'pet_type': {'const': 'cat', 'enum': ['cat'], 'title': 'Pet Type', 'type': 'string'},
                     'white_infos': {'title': 'White Infos', 'type': 'string'},
                 },
                 'required': ['pet_type', 'color', 'white_infos'],
@@ -4197,7 +4199,7 @@ def test_alias_same():
             'Cat': {
                 'properties': {
                     'c': {'title': 'C', 'type': 'string'},
-                    'typeOfPet': {'const': 'cat', 'title': 'Typeofpet'},
+                    'typeOfPet': {'const': 'cat', 'enum': ['cat'], 'title': 'Typeofpet', 'type': 'string'},
                 },
                 'required': ['typeOfPet', 'c'],
                 'title': 'Cat',
@@ -4206,7 +4208,7 @@ def test_alias_same():
             'Dog': {
                 'properties': {
                     'd': {'title': 'D', 'type': 'string'},
-                    'typeOfPet': {'const': 'dog', 'title': 'Typeofpet'},
+                    'typeOfPet': {'const': 'dog', 'enum': ['dog'], 'title': 'Typeofpet', 'type': 'string'},
                 },
                 'required': ['typeOfPet', 'd'],
                 'title': 'Dog',
@@ -4248,6 +4250,7 @@ def test_nested_python_dataclasses():
         # This is the same behavior as in v1
         child: List[ChildModel]
 
+    # insert_assert(model_json_schema(dataclass(NestedModel)))
     assert model_json_schema(dataclass(NestedModel)) == {
         '$defs': {
             'ChildModel': {
@@ -4287,13 +4290,14 @@ def test_discriminated_union_in_list():
         pets: Pet
         n: int
 
+    # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
         '$defs': {
             'BlackCat': {
                 'properties': {
                     'black_name': {'title': 'Black Name', 'type': 'string'},
-                    'color': {'const': 'black', 'title': 'Color'},
-                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'color': {'const': 'black', 'enum': ['black'], 'title': 'Color', 'type': 'string'},
+                    'pet_type': {'const': 'cat', 'enum': ['cat'], 'title': 'Pet Type', 'type': 'string'},
                 },
                 'required': ['pet_type', 'color', 'black_name'],
                 'title': 'BlackCat',
@@ -4302,7 +4306,7 @@ def test_discriminated_union_in_list():
             'Dog': {
                 'properties': {
                     'name': {'title': 'Name', 'type': 'string'},
-                    'pet_type': {'const': 'dog', 'title': 'Pet Type'},
+                    'pet_type': {'const': 'dog', 'enum': ['dog'], 'title': 'Pet Type', 'type': 'string'},
                 },
                 'required': ['pet_type', 'name'],
                 'title': 'Dog',
@@ -4310,8 +4314,8 @@ def test_discriminated_union_in_list():
             },
             'WhiteCat': {
                 'properties': {
-                    'color': {'const': 'white', 'title': 'Color'},
-                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'color': {'const': 'white', 'enum': ['white'], 'title': 'Color', 'type': 'string'},
+                    'pet_type': {'const': 'cat', 'enum': ['cat'], 'title': 'Pet Type', 'type': 'string'},
                     'white_name': {'title': 'White Name', 'type': 'string'},
                 },
                 'required': ['pet_type', 'color', 'white_name'],

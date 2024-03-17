@@ -1035,7 +1035,8 @@ def computed_field(__func: PropertyT) -> PropertyT:
 
 
 def computed_field(
-    __f: PropertyT | None = None,
+    func: PropertyT | None = None,
+    /,
     *,
     alias: str | None = None,
     alias_priority: int | None = None,
@@ -1166,7 +1167,7 @@ def computed_field(
     ```
 
     Args:
-        __f: the function to wrap.
+        func: the function to wrap.
         alias: alias to use when serializing this computed field, only used when `by_alias=True`
         alias_priority: priority of the alias. This affects whether an alias generator is used
         title: Title to use when including this computed field in JSON Schema
@@ -1221,7 +1222,7 @@ def computed_field(
         )
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
-    if __f is None:
+    if func is None:
         return dec
     else:
-        return dec(__f)
+        return dec(func)

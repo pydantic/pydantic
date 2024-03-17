@@ -562,9 +562,7 @@ def test_use_no_fields():
 
 
 def test_use_no_fields_field_validator():
-    with pytest.raises(
-        TypeError, match=re.escape("field_validator() missing 1 required positional argument: '__field'")
-    ):
+    with pytest.raises(TypeError, match=re.escape("field_validator() missing 1 required positional argument: 'field'")):
 
         class Model(BaseModel):
             a: str
@@ -844,6 +842,18 @@ def test_validate_child_extra():
         Child(a='snap')
 
 
+def test_validate_all():
+    class MyModel(BaseModel):
+        x: int
+
+        @field_validator('*')
+        @classmethod
+        def validate_all(cls, v: Any):
+            return v * 2
+
+    assert MyModel(x=10).x == 20
+
+
 def test_validate_child_all():
     with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
@@ -862,6 +872,22 @@ def test_validate_child_all():
         assert Child(a='this is foobar good').a == 'this is foobar good'
         with pytest.raises(ValidationError):
             Child(a='snap')
+
+    class Parent(BaseModel):
+        a: str
+
+    class Child(Parent):
+        @field_validator('*')
+        @classmethod
+        def check_a(cls, v: Any):
+            if 'foobar' not in v:
+                raise ValueError('"foobar" not found in a')
+            return v
+
+    assert Parent(a='this is not a child').a == 'this is not a child'
+    assert Child(a='this is foobar good').a == 'this is foobar good'
+    with pytest.raises(ValidationError):
+        Child(a='snap')
 
 
 def test_validate_parent():
@@ -908,6 +934,26 @@ def test_validate_parent_all():
             Parent(a='snap')
         with pytest.raises(ValidationError):
             Child(a='snap')
+
+    class Parent(BaseModel):
+        a: str
+
+        @field_validator('*')
+        @classmethod
+        def check_a(cls, v: Any):
+            if 'foobar' not in v:
+                raise ValueError('"foobar" not found in a')
+            return v
+
+    class Child(Parent):
+        pass
+
+    assert Parent(a='this is foobar good').a == 'this is foobar good'
+    assert Child(a='this is foobar good').a == 'this is foobar good'
+    with pytest.raises(ValidationError):
+        Parent(a='snap')
+    with pytest.raises(ValidationError):
+        Child(a='snap')
 
 
 def test_inheritance_keep():
@@ -1298,20 +1344,20 @@ def test_assert_raises_validation_error():
         @field_validator('a')
         @classmethod
         def check_a(cls, v: Any):
-            assert v == 'a', 'invalid a'
+            if v != 'a':
+                raise AssertionError('invalid a')
             return v
 
     Model(a='a')
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
-    injected_by_pytest = "assert 'snap' == 'a'\n  - a\n  + snap"
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'error': HasRepr(repr(AssertionError("invalid a\nassert 'snap' == 'a'\n  - a\n  + snap")))},
+            'ctx': {'error': HasRepr(repr(AssertionError('invalid a')))},
             'input': 'snap',
             'loc': ('a',),
-            'msg': f'Assertion failed, invalid a\n{injected_by_pytest}',
+            'msg': 'Assertion failed, invalid a',
             'type': 'assertion_error',
         }
     ]
