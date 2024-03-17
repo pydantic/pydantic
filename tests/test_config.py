@@ -809,13 +809,13 @@ def test_model_config_as_model_field_raises():
 
 def test_dataclass_allowes_model_config_as_model_field():
     config_title = 'from_config'
-    model_field_title = 'model_field'
+    field_title = 'from_field'
 
     @pydantic_dataclass(config={'title': config_title})
     class MyDataclass:
         model_config: dict
 
-    m = MyDataclass(model_config={'title': model_field_title})
+    m = MyDataclass(model_config={'title': field_title})
 
-    assert m.model_config['title'] == model_field_title
+    assert m.model_config['title'] == field_title
     assert getattr(m, '__pydantic_config__')['title'] == config_title

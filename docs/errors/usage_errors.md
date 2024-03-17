@@ -1090,7 +1090,8 @@ pydantic.errors.PydanticUserError: Dataclass field bar has init=False and init_v
 ```
 
 ## `model_config` is used as a model field {#model-config-invalid-field-name}
-This error is raised when `model_config` is used as as property.
+
+This error is raised when `model_config` is used as the name of a field.
 ```py
 from pydantic import BaseModel, PydanticUserError
 

@@ -119,7 +119,7 @@ class ConfigWrapper:
         raw_annotations = namespace.get('__annotations__', {})
         if raw_annotations.get('model_config') and not config_dict_from_namespace:
             raise PydanticUserError(
-                '"model_config" cannot be used as a model field. Use "model_config" for model configuration',
+                '`model_config` cannot be used as a model field name. Use `model_config` for model configuration.',
                 code='model-config-invalid-field-name',
             )
 
