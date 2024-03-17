@@ -1089,7 +1089,7 @@ pydantic.errors.PydanticUserError: Dataclass field bar has init=False and init_v
 """
 ```
 
-## `model_config` is used as a model property {#model-config-cannot-be-a-property}
+## `model_config` is used as a model field {#model-config-invalid-field-name}
 This error is raised when `model_config` is used as as property.
 ```py
 from pydantic import BaseModel, PydanticUserError
@@ -1100,7 +1100,7 @@ try:
         model_config: str
 
 except PydanticUserError as exc_info:
-    assert exc_info.code == 'model-config-cannot-be-a-property'
+    assert exc_info.code == 'model-config-invalid-field-name'
 ```
 
 {% endraw %}

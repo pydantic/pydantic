@@ -61,7 +61,7 @@ PydanticErrorCodes = Literal[
     'unevaluable-type-annotation',
     'dataclass-init-false-extra-allow',
     'clashing-init-and-init-var',
-    'model-config-cannot-be-a-property',
+    'model-config-invalid-field-name',
 ]
 
 
