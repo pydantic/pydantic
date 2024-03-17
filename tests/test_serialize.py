@@ -1174,7 +1174,7 @@ def test_subclass_support_unions_with_forward_ref() -> None:
 
 
 def test_plain_serializer_with_std_type() -> None:
-    """Ensure that a plain serializer can be used with a standard type constructor, rather than having to use lambda x: std_type(x)"""
+    """Ensure that a plain serializer can be used with a standard type constructor, rather than having to use lambda x: std_type(x)."""
 
     class MyModel(BaseModel):
         x: Annotated[int, PlainSerializer(float)]
