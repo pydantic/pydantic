@@ -2,15 +2,38 @@ import sys
 import typing
 from collections.abc import Callable
 from os import PathLike
-from typing import TYPE_CHECKING, AbstractSet, Any
-from typing import Callable as TypingCallable  # type: ignore
-from typing import (ClassVar, Dict, ForwardRef, Generator, Iterable, List,
-                    Mapping, NewType, Optional, Sequence, Set, Tuple, Type,
-                    TypeVar, Union, _eval_type, cast, get_type_hints)
+from typing import (  # type: ignore
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable as TypingCallable,
+    ClassVar,
+    Dict,
+    ForwardRef,
+    Generator,
+    Iterable,
+    List,
+    Mapping,
+    NewType,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    _eval_type,
+    cast,
+    get_type_hints,
+)
 
-from typing_extensions import Annotated, Final, Literal
-from typing_extensions import NotRequired as TypedDictNotRequired
-from typing_extensions import Required as TypedDictRequired
+from typing_extensions import (
+    Annotated,
+    Final,
+    Literal,
+    NotRequired as TypedDictNotRequired,
+    Required as TypedDictRequired,
+)
 
 try:
     from typing import _TypingBase as typing_base  # type: ignore
@@ -294,7 +317,6 @@ __all__ = (
     'is_union',
     'StrPath',
     'MappingIntStrAny',
-    'is_self_type'
 )
 
 
