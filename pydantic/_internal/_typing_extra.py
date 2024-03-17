@@ -277,10 +277,16 @@ def get_function_type_hints(
     """Like `typing.get_type_hints`, but doesn't convert `X` to `Optional[X]` if the default value is `None`, also
     copes with `partial`.
     """
-    if isinstance(function, partial):
-        annotations = function.func.__annotations__
-    else:
-        annotations = function.__annotations__
+    try:
+        if isinstance(function, partial):
+            annotations = function.func.__annotations__
+        else:
+            annotations = function.__annotations__
+    except AttributeError:
+        type_hints = get_type_hints(function)
+        if isinstance(function, type):
+            type_hints.setdefault('return', type)
+        return type_hints
 
     globalns = add_module_globals(function)
     type_hints = {}
