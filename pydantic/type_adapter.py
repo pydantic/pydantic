@@ -219,7 +219,7 @@ class TypeAdapter(Generic[T]):
             self._module_name = module
 
         self._schema_handlers: tuple[CoreSchema, SchemaValidator, SchemaSerializer] | None = None
-        if not TypeAdapter._defer_build(type, config):
+        if not self._defer_build(type, config):
             self._init_schema_handlers()
 
     def _init_schema_handlers(self) -> tuple[CoreSchema, SchemaValidator, SchemaSerializer]:
@@ -274,24 +274,23 @@ class TypeAdapter(Generic[T]):
         _, _, serializer = self._init_schema_handlers()
         return serializer
 
-    @staticmethod
-    def _defer_build(type: Any, type_adapter_config: ConfigDict | None) -> bool:
-        config = type_adapter_config
+    @classmethod
+    def _defer_build(cls, type_: Any, type_adapter_config: ConfigDict | None) -> bool:
+        config = type_adapter_config if type_adapter_config is not None else cls._model_config(type_)
+        return cls._is_defer_build_config(config) if config is not None else False
 
-        if config is None:
-            src_type: Any = (
-                get_args(type)[0] if _typing_extra.is_annotated(type) else type  # FastAPI heavily uses Annotated
-            )
-            if _utils.lenient_issubclass(src_type, BaseModel):
-                config = src_type.model_config
-            else:
-                config = getattr(src_type, '__pydantic_config__', None)
-
-        return (
-            config is not None
-            and config.get('defer_build', False) is True
-            and config.get('defer_build_mode', 'only_model') != 'only_model'
+    @classmethod
+    def _model_config(cls, type_: Any) -> ConfigDict | None:
+        src_type: Any = (
+            get_args(type_)[0] if _typing_extra.is_annotated(type_) else type_  # FastAPI heavily uses Annotated
         )
+        if _utils.lenient_issubclass(src_type, BaseModel):
+            return src_type.model_config
+        return getattr(src_type, '__pydantic_config__', None)
+
+    @classmethod
+    def _is_defer_build_config(cls, config: ConfigDict) -> bool:
+        return config.get('defer_build', False) is True and config.get('defer_build_mode', 'only_model') != 'only_model'
 
     def validate_python(
         self,
