@@ -512,11 +512,9 @@ def test_enum_schema_oneof_const():
         bar = 'bar'
 
     class Model(BaseModel):
-        model_config = ConfigDict(json_schema_literal_type='oneof-const')
-
         enum: FooBar
 
-    assert Model.model_json_schema() == {
+    assert Model.model_json_schema(literal_type='oneof-const') == {
         'title': 'Model',
         'type': 'object',
         'properties': {'enum': {'$ref': '#/$defs/FooBar'}},
@@ -557,11 +555,9 @@ def test_enum_schema_oneof_const_member_docstring():
         bar = 'bar', 'this bars'
 
     class Model(BaseModel):
-        model_config = ConfigDict(json_schema_literal_type='oneof-const')
-
         enum: FooBar
 
-    assert Model.model_json_schema() == {
+    assert Model.model_json_schema(literal_type='oneof-const') == {
         'title': 'Model',
         'type': 'object',
         'properties': {'enum': {'$ref': '#/$defs/FooBar'}},
@@ -589,11 +585,9 @@ def test_enum_schema_oneof_const_single_value():
         foo = 'foo'
 
     class Model(BaseModel):
-        model_config = ConfigDict(json_schema_literal_type='oneof-const')
-
         enum: FooEnum
 
-    assert Model.model_json_schema() == {
+    assert Model.model_json_schema(literal_type='oneof-const') == {
         'title': 'Model',
         'type': 'object',
         'properties': {'enum': {'$ref': '#/$defs/FooEnum'}},
@@ -616,11 +610,9 @@ def test_enum_schema_oneof_const_list_enum():
         b = [456]
 
     class Model(BaseModel):
-        model_config = ConfigDict(json_schema_literal_type='oneof-const')
-
         enum: ListEnum
 
-    assert Model.model_json_schema() == {
+    assert Model.model_json_schema(literal_type='oneof-const') == {
         'title': 'Model',
         'type': 'object',
         'properties': {'enum': {'$ref': '#/$defs/ListEnum'}},

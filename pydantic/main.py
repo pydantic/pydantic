@@ -7,7 +7,7 @@ import types
 import typing
 import warnings
 from copy import copy, deepcopy
-from typing import Any, ClassVar, Dict, Generator, Set, Tuple, TypeVar, Union
+from typing import Any, ClassVar, Dict, Generator, Literal, Set, Tuple, TypeVar, Union
 
 import pydantic_core
 import typing_extensions
@@ -383,6 +383,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         ref_template: str = DEFAULT_REF_TEMPLATE,
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
         mode: JsonSchemaMode = 'validation',
+        literal_type: Literal['enum', 'oneof-const'] = 'enum',
     ) -> dict[str, Any]:
         """Generates a JSON schema for a model class.
 
@@ -392,12 +393,19 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             schema_generator: To override the logic used to generate the JSON schema, as a subclass of
                 `GenerateJsonSchema` with your desired modifications
             mode: The mode in which to generate the schema.
+            literal_type: Whether to generate Literal values using `enum` or `oneOf` + `const`. `oneof-const` will
+                add docstrings to member `description`s if available.
 
         Returns:
             The JSON schema for the given model class.
         """
         return model_json_schema(
-            cls, by_alias=by_alias, ref_template=ref_template, schema_generator=schema_generator, mode=mode
+            cls,
+            by_alias=by_alias,
+            ref_template=ref_template,
+            schema_generator=schema_generator,
+            mode=mode,
+            literal_type=literal_type,
         )
 
     @classmethod

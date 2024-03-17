@@ -63,7 +63,6 @@ if TYPE_CHECKING:
     from ._internal._schema_generation_shared import GetJsonSchemaFunction
     from .main import BaseModel
 
-
 CoreSchemaOrFieldType = Literal[core_schema.CoreSchemaType, core_schema.CoreSchemaFieldType]
 """
 A type alias for defined schema types that represents a union of
@@ -242,6 +241,7 @@ class GenerateJsonSchema:
             this value can be modified on subclasses to easily control which warnings are emitted.
         by_alias: Whether to use field aliases when generating the schema.
         ref_template: The format string used when generating reference names.
+        literal_type: Whether to generate Literal values using `enum` or `oneOf` + `const`.
         core_to_json_refs: A mapping of core refs to JSON refs.
         core_to_defs_refs: A mapping of core refs to definition refs.
         defs_to_core_refs: A mapping of definition refs to core refs.
@@ -262,9 +262,15 @@ class GenerateJsonSchema:
     # this value can be modified on subclasses to easily control which warnings are emitted
     ignored_warning_kinds: set[JsonSchemaWarningKind] = {'skipped-choice'}
 
-    def __init__(self, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE):
+    def __init__(
+        self,
+        by_alias: bool = True,
+        ref_template: str = DEFAULT_REF_TEMPLATE,
+        literal_type: Literal['enum', 'oneof-const'] = 'enum',
+    ):
         self.by_alias = by_alias
         self.ref_template = ref_template
+        self.literal_type = literal_type
 
         self.core_to_json_refs: dict[CoreModeRef, JsonRef] = {}
         self.core_to_defs_refs: dict[CoreModeRef, DefsRef] = {}
@@ -736,9 +742,9 @@ class GenerateJsonSchema:
         if len(expected) == 1:
             result['const'] = expected[0]
 
-        if self._config.json_schema_literal_type == 'enum':
+        if self.literal_type == 'enum':
             result['enum'] = expected
-        elif self._config.json_schema_literal_type == 'oneof-const':
+        elif self.literal_type == 'oneof-const':
             # TODO (rmehyde): do we want this condition or not? why do we still produce 'enum' for single values?
             if len(expected) > 1:
                 descriptions = schema.get('metadata', {}).get('enum_case_descriptions', [])
@@ -755,7 +761,7 @@ class GenerateJsonSchema:
                     members.append(member)
                 result['oneOf'] = members
         else:
-            raise ValueError(f"Unknown literal type '{self._config.json_schema_literal_type}'")
+            raise ValueError(f"Unknown literal type '{self.literal_type}'")
 
         types = {type(e) for e in expected}
         if types == {str}:
@@ -2178,6 +2184,7 @@ def model_json_schema(
     ref_template: str = DEFAULT_REF_TEMPLATE,
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
     mode: JsonSchemaMode = 'validation',
+    literal_type: Literal['enum', 'oneof-const'] = 'enum',
 ) -> dict[str, Any]:
     """Utility function to generate a JSON Schema for a model.
 
@@ -2191,13 +2198,19 @@ def model_json_schema(
 
             - 'validation': Generate a JSON Schema for validating data.
             - 'serialization': Generate a JSON Schema for serializing data.
+        literal_type: Whether to generate Literal values using `enum` or `oneOf` + `const`. `oneof-const` will
+                add docstrings to member `description`s if available.
 
     Returns:
         The generated JSON Schema.
     """
     from .main import BaseModel
 
-    schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
+    schema_generator_instance = schema_generator(
+        by_alias=by_alias,
+        ref_template=ref_template,
+        literal_type=literal_type,
+    )
     if isinstance(cls.__pydantic_validator__, _mock_val_ser.MockValSer):
         cls.__pydantic_validator__.rebuild()
 
