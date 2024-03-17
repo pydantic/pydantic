@@ -714,6 +714,19 @@ class ConfigDict(TypedDict, total=False):
     This can be useful to avoid the overhead of building models which are only
     used nested within other models, or when you want to manually define type namespace via
     [`Model.model_rebuild(_types_namespace=...)`][pydantic.BaseModel.model_rebuild]. Defaults to False.
+
+    See also [`defer_build_mode`][pydantic.config.ConfigDict.defer_build_mode].
+    """
+
+    defer_build_mode: Literal['only_model', 'always']
+    """
+    Controls when [`defer_build`][pydantic.config.ConfigDict.defer_build] is applicable. Defaults to `"only_model"`.
+
+    Due to backwards compatibility reasons [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] does not by default
+    respect `defer_build`. Meaning when `defer_build` is `True` and `defer_build_mode` is the default `"only_model"`
+    then `TypeAdapter` immediately constructs validator and serializer instead of postponing it until the first model
+    validation. Set this to `"always"` to make `TypeAdapter` respect the `defer_build` so it postpones validator and
+    serializer construction until the first validation.
     """
 
     plugin_settings: dict[str, object] | None

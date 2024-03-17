@@ -75,6 +75,7 @@ class ConfigWrapper:
     protected_namespaces: tuple[str, ...]
     hide_input_in_errors: bool
     defer_build: bool
+    defer_build_mode: Literal['only_model', 'always']
     plugin_settings: dict[str, object] | None
     schema_generator: type[GenerateSchema] | None
     json_schema_serialization_defaults_required: bool
@@ -254,6 +255,7 @@ config_defaults = ConfigDict(
     hide_input_in_errors=False,
     json_encoders=None,
     defer_build=False,
+    defer_build_mode='only_model',
     plugin_settings=None,
     schema_generator=None,
     json_schema_serialization_defaults_required=False,

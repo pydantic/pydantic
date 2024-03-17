@@ -118,6 +118,12 @@ class TypeAdapter(Generic[T]):
 
     **Note:** `TypeAdapter` instances are not types, and cannot be used as type annotations for fields.
 
+    **Note:** By default, `TypeAdapter` does not respect the
+    [`defer_build=True`][pydantic.config.ConfigDict.defer_build] setting in the
+    [`model_config`][pydantic.BaseModel.model_config] or in the `TypeAdapter` constructor `config`. You need to also
+    explicitly set [`defer_build_mode="always"`][pydantic.config.ConfigDict.defer_build_mode] of the config to defer
+    the model validator and serializer construction. This is required due to backwards compatibility reasons.
+
     Attributes:
         core_schema: The core schema for the type.
         validator (SchemaValidator): The schema validator for the type.
@@ -270,16 +276,22 @@ class TypeAdapter(Generic[T]):
 
     @staticmethod
     def _defer_build(type: Any, type_adapter_config: ConfigDict | None) -> bool:
-        if type_adapter_config is not None and type_adapter_config.get('defer_build', False):
-            return True
+        config = type_adapter_config
 
-        src_type: Any = get_args(type)[0] if _typing_extra.is_annotated(type) else type
-        if _utils.lenient_issubclass(src_type, BaseModel):
-            config: ConfigDict | None = src_type.model_config
-        else:
-            config = getattr(src_type, '__pydantic_config__', None)
+        if config is None:
+            src_type: Any = (
+                get_args(type)[0] if _typing_extra.is_annotated(type) else type  # FastAPI heavily uses Annotated
+            )
+            if _utils.lenient_issubclass(src_type, BaseModel):
+                config = src_type.model_config
+            else:
+                config = getattr(src_type, '__pydantic_config__', None)
 
-        return config is not None and config.get('defer_build', False)
+        return (
+            config is not None
+            and config.get('defer_build', False) is True
+            and config.get('defer_build_mode', 'only_model') != 'only_model'
+        )
 
     def validate_python(
         self,
