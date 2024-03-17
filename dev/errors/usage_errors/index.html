@@ -2978,6 +2978,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#model-config-invalid-field-name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        model_config is used as a model field
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3731,6 +3742,17 @@
     <span class="md-ellipsis">
       
         Incompatible init and init_var settings on dataclass field
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-config-invalid-field-name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        model_config is used as a model field
       
     </span>
   </a>
@@ -4648,6 +4670,18 @@ This combination is not allowed.
 <span class="sd">pydantic.errors.PydanticUserError: Dataclass field bar has init=False and init_var=True, but these are mutually exclusive.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
+<h2 id="model-config-invalid-field-name"><code>model_config</code> is used as a model field<a class="headerlink" href="#model-config-invalid-field-name" title="Permanent link">&para;</a></h2>
+<p>This error is raised when <code>model_config</code> is used as the name of a field.
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span>
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">model_config</span><span class="p">:</span> <span class="nb">str</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;model-config-invalid-field-name&#39;</span>
+</code></pre></div></p>
 
 
 
