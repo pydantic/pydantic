@@ -19,7 +19,7 @@
 
 #### Packaging
 
-* Update `pydantic-settings`  version in the docs by @hramezani in [#8906](https://github.com/pydantic/pydantic/pull/8906)
+* Update `pydantic-settings` version in the docs by @hramezani in [#8906](https://github.com/pydantic/pydantic/pull/8906)
 
 #### Fixes
 
