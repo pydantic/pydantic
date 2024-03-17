@@ -544,6 +544,18 @@ def test_serialization_by_alias_enforced_with_serialize_by_alias():
     assert 'foo' in m.model_dump_json(by_alias=False)
 
 
+def test_serialization_by_alias_nested():
+    class InnerModel(BaseModel):
+        a: str = Field(alias='a_alias')
+
+    class Model(BaseModel):
+        b: InnerModel = Field(alias='b_alias')
+        model_config = ConfigDict(serialize_by_alias=True)
+
+    example = {'b_alias': {'a_alias': 'a_value'}}
+    assert example == Model(**example).model_dump()
+
+
 @pytest.mark.parametrize(
     'field,expected',
     [
