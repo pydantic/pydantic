@@ -1,11 +1,9 @@
 import platform
 import re
-import sys
-import typing
 from typing import Generic, Optional, Tuple, TypeVar
 
 import pytest
-import typing_extensions
+from typing_extensions import Annotated
 
 from pydantic import (
     BaseModel,
@@ -519,7 +517,6 @@ def test_create_model_non_annotated():
         create_model('FooModel', foo=(str, ...), bar=123)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason='typing.Annotated is introduced after python3.9')
 @pytest.mark.parametrize(
     'annotation_type,field_info',
     [
@@ -528,7 +525,7 @@ def test_create_model_non_annotated():
     ],
 )
 def test_create_model_typing_annotated_field_info(annotation_type, field_info):
-    annotated_foo = typing.Annotated[annotation_type, field_info]
+    annotated_foo = Annotated[annotation_type, field_info]
     model = create_model('FooModel', foo=annotated_foo, bar=(int, 123))
 
     assert model.model_fields.keys() == {'foo', 'bar'}
@@ -541,33 +538,13 @@ def test_create_model_typing_annotated_field_info(annotation_type, field_info):
     assert foo.description == field_info.description
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason='typing.Annotated is introduced after python3.9')
 def test_create_model_expect_field_info_as_metadata_typing():
-    annotated_foo = typing_extensions.Annotated[int, 10]
+    annotated_foo = Annotated[int, 10]
 
-    with pytest.raises(PydanticUserError):
+    with pytest.raises(
+        PydanticUserError, match=r'Field definitions should be a Annotated\[<type>, FieldInfo\((...)\)\]'
+    ):
         create_model('FooModel', foo=annotated_foo)
-
-
-def test_create_model_expect_field_info_as_metadata_typing_extensions():
-    annotated_foo = typing_extensions.Annotated[int, 10]
-
-    with pytest.raises(PydanticUserError):
-        create_model('FooModel', foo=annotated_foo)
-
-
-@pytest.mark.parametrize(
-    'annotation_type,field_info', [(bool, Field(alias='foo_bool_alias')), (str, Field(alias='foo_str_alias'))]
-)
-def test_create_model_typing_extension_field_info(annotation_type, field_info):
-    annotated_foo = typing_extensions.Annotated[annotation_type, field_info]
-    model = create_model('FooModel', foo=annotated_foo)
-
-    foo = model.model_fields.get('foo')
-
-    assert foo is not None
-    assert foo.annotation == annotation_type
-    assert foo.alias == field_info.alias
 
 
 def test_create_model_tuple():

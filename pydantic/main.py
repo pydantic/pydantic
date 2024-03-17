@@ -1479,7 +1479,7 @@ def create_model(  # noqa: C901
         elif _typing_extra.is_annotated(f_def):
             (f_annotation, f_value, *_) = typing_extensions.get_args(
                 f_def
-            )  # first two input are expected from Annotated
+            )  # first two input are expected from Annotated, refer to https://docs.python.org/3/library/typing.html#typing.Annotated
             from .fields import FieldInfo
 
             if not isinstance(f_value, FieldInfo):
