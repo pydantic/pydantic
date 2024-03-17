@@ -1171,3 +1171,14 @@ def test_subclass_support_unions_with_forward_ref() -> None:
 
     foo_recursive = Foo(items=[Foo(items=[Baz(bar_id=42, baz_id=99)])])
     assert foo_recursive.model_dump() == {'items': [{'items': [{'bar_id': 42}]}]}
+
+
+def test_plain_serializer_with_std_type() -> None:
+    """Ensure that a plain serializer can be used with a standard type constructor, rather than having to use lambda x: std_type(x)"""
+
+    class MyModel(BaseModel):
+        x: Annotated[int, PlainSerializer(float)]
+
+    m = MyModel(x=1)
+    assert m.model_dump() == {'x': 1.0}
+    assert m.model_dump_json() == '{"x":1.0}'
