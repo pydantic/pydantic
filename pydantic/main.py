@@ -1484,7 +1484,7 @@ def create_model(  # noqa: C901
 
             if not isinstance(f_value, FieldInfo):
                 raise PydanticUserError(
-                    'Field definitions should be a Annotated[<type>, FieldInfo(...)]',
+                    'Field definitions should be a Annotated[<type>, <FieldInfo>]',
                     code='create-model-field-definitions',
                 )
 

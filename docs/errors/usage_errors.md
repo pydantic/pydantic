@@ -628,7 +628,7 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'create-model-field-definitions'
 ```
 
-Or when you use `typing_extensions.Annotated` module with invalid input
+Or when you use [`typing.Annotated`][] with invalid input
 
 ```py
 from typing_extensions import Annotated

@@ -542,7 +542,7 @@ def test_create_model_expect_field_info_as_metadata_typing():
     annotated_foo = Annotated[int, 10]
 
     with pytest.raises(
-        PydanticUserError, match=r'Field definitions should be a Annotated\[<type>, FieldInfo\((...)\)\]'
+        PydanticUserError, match=r'Field definitions should be a Annotated\[<type>, <FieldInfo>\]'
     ):
         create_model('FooModel', foo=annotated_foo)
 
