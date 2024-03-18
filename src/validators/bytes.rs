@@ -43,8 +43,8 @@ impl Validator for BytesValidator {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         input
             .validate_bytes(state.strict_or(self.strict))
@@ -69,8 +69,8 @@ impl Validator for BytesConstrainedValidator {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let either_bytes = input.validate_bytes(state.strict_or(self.strict))?.unpack(state);
         let len = either_bytes.len()?;

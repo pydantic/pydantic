@@ -5,6 +5,7 @@ use pyo3::DowncastIntoError;
 
 use jiter::JsonValue;
 
+use crate::input::BorrowInput;
 use crate::input::Input;
 
 use super::location::{LocItem, Location};
@@ -12,13 +13,19 @@ use super::types::ErrorType;
 
 pub type ValResult<T> = Result<T, ValError>;
 
-pub trait AsErrorValue {
-    fn as_error_value(&self) -> InputValue;
+pub trait ToErrorValue {
+    fn to_error_value(&self) -> InputValue;
 }
 
-impl<'a, T: Input<'a>> AsErrorValue for T {
-    fn as_error_value(&self) -> InputValue {
-        Input::as_error_value(self)
+impl<'a, T: BorrowInput<'a>> ToErrorValue for T {
+    fn to_error_value(&self) -> InputValue {
+        Input::as_error_value(self.borrow_input())
+    }
+}
+
+impl ToErrorValue for &'_ dyn ToErrorValue {
+    fn to_error_value(&self) -> InputValue {
+        (**self).to_error_value()
     }
 }
 
@@ -55,11 +62,11 @@ impl From<Vec<ValLineError>> for ValError {
 }
 
 impl ValError {
-    pub fn new(error_type: ErrorType, input: &impl AsErrorValue) -> ValError {
+    pub fn new(error_type: ErrorType, input: impl ToErrorValue) -> ValError {
         Self::LineErrors(vec![ValLineError::new(error_type, input)])
     }
 
-    pub fn new_with_loc(error_type: ErrorType, input: &impl AsErrorValue, loc: impl Into<LocItem>) -> ValError {
+    pub fn new_with_loc(error_type: ErrorType, input: impl ToErrorValue, loc: impl Into<LocItem>) -> ValError {
         Self::LineErrors(vec![ValLineError::new_with_loc(error_type, input, loc)])
     }
 
@@ -94,26 +101,26 @@ pub struct ValLineError {
 }
 
 impl ValLineError {
-    pub fn new(error_type: ErrorType, input: &impl AsErrorValue) -> ValLineError {
+    pub fn new(error_type: ErrorType, input: impl ToErrorValue) -> ValLineError {
         Self {
             error_type,
-            input_value: input.as_error_value(),
+            input_value: input.to_error_value(),
             location: Location::default(),
         }
     }
 
-    pub fn new_with_loc(error_type: ErrorType, input: &impl AsErrorValue, loc: impl Into<LocItem>) -> ValLineError {
+    pub fn new_with_loc(error_type: ErrorType, input: impl ToErrorValue, loc: impl Into<LocItem>) -> ValLineError {
         Self {
             error_type,
-            input_value: input.as_error_value(),
+            input_value: input.to_error_value(),
             location: Location::new_some(loc.into()),
         }
     }
 
-    pub fn new_with_full_loc(error_type: ErrorType, input: &impl AsErrorValue, location: Location) -> ValLineError {
+    pub fn new_with_full_loc(error_type: ErrorType, input: impl ToErrorValue, location: Location) -> ValLineError {
         Self {
             error_type,
-            input_value: input.as_error_value(),
+            input_value: input.to_error_value(),
             location,
         }
     }

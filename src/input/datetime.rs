@@ -14,6 +14,7 @@ use std::hash::Hasher;
 use strum::EnumMessage;
 
 use super::Input;
+use crate::errors::ToErrorValue;
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::tools::py_err;
 
@@ -285,7 +286,7 @@ impl<'a> EitherDateTime<'a> {
     }
 }
 
-pub fn bytes_as_date<'a>(input: &'a impl Input<'a>, bytes: &[u8]) -> ValResult<EitherDate<'a>> {
+pub fn bytes_as_date<'py>(input: &(impl Input<'py> + ?Sized), bytes: &[u8]) -> ValResult<EitherDate<'py>> {
     match Date::parse_bytes(bytes) {
         Ok(date) => Ok(date.into()),
         Err(err) => Err(ValError::new(
@@ -298,11 +299,11 @@ pub fn bytes_as_date<'a>(input: &'a impl Input<'a>, bytes: &[u8]) -> ValResult<E
     }
 }
 
-pub fn bytes_as_time<'a>(
-    input: &'a impl Input<'a>,
+pub fn bytes_as_time<'py>(
+    input: &(impl Input<'py> + ?Sized),
     bytes: &[u8],
     microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-) -> ValResult<EitherTime<'a>> {
+) -> ValResult<EitherTime<'py>> {
     match Time::parse_bytes_with_config(
         bytes,
         &TimeConfig {
@@ -321,11 +322,11 @@ pub fn bytes_as_time<'a>(
     }
 }
 
-pub fn bytes_as_datetime<'a, 'b>(
-    input: &'a impl Input<'a>,
-    bytes: &'b [u8],
+pub fn bytes_as_datetime<'py>(
+    input: &(impl Input<'py> + ?Sized),
+    bytes: &[u8],
     microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-) -> ValResult<EitherDateTime<'a>> {
+) -> ValResult<EitherDateTime<'py>> {
     match DateTime::parse_bytes_with_config(
         bytes,
         &TimeConfig {
@@ -344,11 +345,11 @@ pub fn bytes_as_datetime<'a, 'b>(
     }
 }
 
-pub fn int_as_datetime<'a>(
-    input: &'a impl Input<'a>,
+pub fn int_as_datetime<'py>(
+    input: &(impl Input<'py> + ?Sized),
     timestamp: i64,
     timestamp_microseconds: u32,
-) -> ValResult<EitherDateTime> {
+) -> ValResult<EitherDateTime<'py>> {
     match DateTime::from_timestamp_with_config(
         timestamp,
         timestamp_microseconds,
@@ -382,7 +383,7 @@ macro_rules! nan_check {
     };
 }
 
-pub fn float_as_datetime<'a>(input: &'a impl Input<'a>, timestamp: f64) -> ValResult<EitherDateTime> {
+pub fn float_as_datetime<'py>(input: &(impl Input<'py> + ?Sized), timestamp: f64) -> ValResult<EitherDateTime<'py>> {
     nan_check!(input, timestamp, DatetimeParsing);
     let microseconds = timestamp.fract().abs() * 1_000_000.0;
     // checking for extra digits in microseconds is unreliable with large floats,
@@ -408,11 +409,11 @@ pub fn date_as_datetime<'py>(date: &Bound<'py, PyDate>) -> PyResult<EitherDateTi
 
 const MAX_U32: i64 = u32::MAX as i64;
 
-pub fn int_as_time<'a>(
-    input: &'a impl Input<'a>,
+pub fn int_as_time<'py>(
+    input: &(impl Input<'py> + ?Sized),
     timestamp: i64,
     timestamp_microseconds: u32,
-) -> ValResult<EitherTime> {
+) -> ValResult<EitherTime<'py>> {
     let time_timestamp: u32 = match timestamp {
         t if t < 0_i64 => {
             return Err(ValError::new(
@@ -447,14 +448,14 @@ pub fn int_as_time<'a>(
     }
 }
 
-pub fn float_as_time<'a>(input: &'a impl Input<'a>, timestamp: f64) -> ValResult<EitherTime> {
+pub fn float_as_time<'py>(input: &(impl Input<'py> + ?Sized), timestamp: f64) -> ValResult<EitherTime<'py>> {
     nan_check!(input, timestamp, TimeParsing);
     let microseconds = timestamp.fract().abs() * 1_000_000.0;
     // round for same reason as above
     int_as_time(input, timestamp.floor() as i64, microseconds.round() as u32)
 }
 
-fn map_timedelta_err<'a>(input: &'a impl Input<'a>, err: ParseError) -> ValError {
+fn map_timedelta_err(input: impl ToErrorValue, err: ParseError) -> ValError {
     ValError::new(
         ErrorType::TimeDeltaParsing {
             error: Cow::Borrowed(err.get_documentation().unwrap_or_default()),
@@ -464,11 +465,11 @@ fn map_timedelta_err<'a>(input: &'a impl Input<'a>, err: ParseError) -> ValError
     )
 }
 
-pub fn bytes_as_timedelta<'a, 'b>(
-    input: &'a impl Input<'a>,
-    bytes: &'b [u8],
+pub fn bytes_as_timedelta<'py>(
+    input: &(impl Input<'py> + ?Sized),
+    bytes: &[u8],
     microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-) -> ValResult<EitherTimedelta<'a>> {
+) -> ValResult<EitherTimedelta<'py>> {
     match Duration::parse_bytes_with_config(
         bytes,
         &TimeConfig {
@@ -481,7 +482,7 @@ pub fn bytes_as_timedelta<'a, 'b>(
     }
 }
 
-pub fn int_as_duration<'a>(input: &'a impl Input<'a>, total_seconds: i64) -> ValResult<Duration> {
+pub fn int_as_duration(input: impl ToErrorValue, total_seconds: i64) -> ValResult<Duration> {
     let positive = total_seconds >= 0;
     let total_seconds = total_seconds.unsigned_abs();
     // we can safely unwrap here since we've guaranteed seconds and microseconds can't cause overflow
@@ -490,7 +491,7 @@ pub fn int_as_duration<'a>(input: &'a impl Input<'a>, total_seconds: i64) -> Val
     Duration::new(positive, days, seconds, 0).map_err(|err| map_timedelta_err(input, err))
 }
 
-pub fn float_as_duration<'a>(input: &'a impl Input<'a>, total_seconds: f64) -> ValResult<Duration> {
+pub fn float_as_duration(input: impl ToErrorValue, total_seconds: f64) -> ValResult<Duration> {
     nan_check!(input, total_seconds, TimeDeltaParsing);
     let positive = total_seconds >= 0_f64;
     let total_seconds = total_seconds.abs();

@@ -89,8 +89,8 @@ impl Validator for UuidValidator {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let class = get_uuid_type(py)?;
         if let Some(py_input) = input.input_is_instance(class) {
@@ -150,7 +150,7 @@ impl Validator for UuidValidator {
 }
 
 impl UuidValidator {
-    fn get_uuid<'s, 'data>(&'s self, input: &impl Input<'data>) -> ValResult<Uuid> {
+    fn get_uuid<'py>(&self, input: &(impl Input<'py> + ?Sized)) -> ValResult<Uuid> {
         let uuid = match input.exact_str().ok() {
             Some(either_string) => {
                 let cow = either_string.as_cow()?;

@@ -43,11 +43,11 @@ impl BuildValidator for IsSubclassValidator {
 impl_py_gc_traverse!(IsSubclassValidator { class });
 
 impl Validator for IsSubclassValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &impl Input<'data>,
-        _state: &mut ValidationState,
+        py: Python<'py>,
+        input: &(impl Input<'py> + ?Sized),
+        _state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         match input.input_is_subclass(self.class.bind(py))? {
             true => Ok(input.to_object(py)),

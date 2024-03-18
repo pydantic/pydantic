@@ -73,12 +73,12 @@ impl<'py> Input<'py> for StringMapping<'py> {
         None
     }
 
-    fn validate_args(&self) -> ValResult<GenericArguments<'_>> {
+    fn validate_args(&self) -> ValResult<GenericArguments<'_, 'py>> {
         // do we want to support this?
         Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self))
     }
 
-    fn validate_dataclass_args<'a>(&'a self, _dataclass_name: &str) -> ValResult<GenericArguments<'a>> {
+    fn validate_dataclass_args<'a>(&'a self, _dataclass_name: &str) -> ValResult<GenericArguments<'a, 'py>> {
         match self {
             StringMapping::String(_) => Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self)),
             StringMapping::Mapping(m) => Ok(GenericArguments::StringMapping(m.clone())),
@@ -162,7 +162,7 @@ impl<'py> Input<'py> for StringMapping<'py> {
         Err(ValError::new(ErrorTypeDefaults::IterableType, self))
     }
 
-    fn validate_date(&self, _strict: bool) -> ValResult<ValidationMatch<EitherDate>> {
+    fn validate_date(&self, _strict: bool) -> ValResult<ValidationMatch<EitherDate<'py>>> {
         match self {
             Self::String(s) => bytes_as_date(self, py_string_str(s)?.as_bytes()).map(ValidationMatch::strict),
             Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::DateType, self)),
@@ -173,7 +173,7 @@ impl<'py> Input<'py> for StringMapping<'py> {
         &self,
         _strict: bool,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<ValidationMatch<EitherTime>> {
+    ) -> ValResult<ValidationMatch<EitherTime<'py>>> {
         match self {
             Self::String(s) => bytes_as_time(self, py_string_str(s)?.as_bytes(), microseconds_overflow_behavior)
                 .map(ValidationMatch::strict),
@@ -185,7 +185,7 @@ impl<'py> Input<'py> for StringMapping<'py> {
         &self,
         _strict: bool,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<ValidationMatch<EitherDateTime>> {
+    ) -> ValResult<ValidationMatch<EitherDateTime<'py>>> {
         match self {
             Self::String(s) => bytes_as_datetime(self, py_string_str(s)?.as_bytes(), microseconds_overflow_behavior)
                 .map(ValidationMatch::strict),
@@ -197,7 +197,7 @@ impl<'py> Input<'py> for StringMapping<'py> {
         &self,
         _strict: bool,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<ValidationMatch<EitherTimedelta>> {
+    ) -> ValResult<ValidationMatch<EitherTimedelta<'py>>> {
         match self {
             Self::String(s) => bytes_as_timedelta(self, py_string_str(s)?.as_bytes(), microseconds_overflow_behavior)
                 .map(ValidationMatch::strict),

@@ -43,8 +43,8 @@ impl Validator for TimeValidator {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let time = input
             .validate_time(state.strict_or(self.strict), self.microseconds_precision)?

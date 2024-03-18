@@ -62,8 +62,8 @@ impl Validator for GeneratorValidator {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let iterator = input.validate_iter()?;
         let validator = self.item_validator.as_ref().map(|v| {
@@ -253,12 +253,12 @@ impl InternalValidator {
         }
     }
 
-    pub fn validate_assignment<'data>(
+    pub fn validate_assignment<'py>(
         &mut self,
-        py: Python<'data>,
-        model: &Bound<'data, PyAny>,
+        py: Python<'py>,
+        model: &Bound<'py, PyAny>,
         field_name: &str,
-        field_value: &Bound<'data, PyAny>,
+        field_value: &Bound<'py, PyAny>,
         outer_location: Option<LocItem>,
     ) -> PyResult<PyObject> {
         let extra = Extra {
@@ -289,10 +289,10 @@ impl InternalValidator {
         result
     }
 
-    pub fn validate<'data>(
+    pub fn validate<'py>(
         &mut self,
-        py: Python<'data>,
-        input: &impl Input<'data>,
+        py: Python<'py>,
+        input: &(impl Input<'py> + ?Sized),
         outer_location: Option<LocItem>,
     ) -> PyResult<PyObject> {
         let extra = Extra {

@@ -8,6 +8,7 @@ use strum::EnumMessage;
 
 use crate::build_tools::{is_strict, py_schema_error_type};
 use crate::build_tools::{py_schema_err, schema_or_config_same};
+use crate::errors::ToErrorValue;
 use crate::errors::{py_err_string, ErrorType, ErrorTypeDefaults, ValError, ValResult};
 use crate::input::{EitherDateTime, Input};
 
@@ -62,8 +63,8 @@ impl Validator for DateTimeValidator {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let strict = state.strict_or(self.strict);
         let datetime = match input.validate_datetime(strict, self.microseconds_precision) {
@@ -141,7 +142,7 @@ impl Validator for DateTimeValidator {
 
 /// In lax mode, if the input is not a datetime, we try parsing the input as a date and add the "00:00:00" time.
 /// Ok(None) means that this is not relevant to datetimes (the input was not a date nor a string)
-fn datetime_from_date<'data>(input: &impl Input<'data>) -> Result<Option<EitherDateTime<'data>>, ValError> {
+fn datetime_from_date<'py>(input: &(impl Input<'py> + ?Sized)) -> Result<Option<EitherDateTime<'py>>, ValError> {
     let either_date = match input.validate_date(false) {
         Ok(val_match) => val_match.into_inner(),
         // if the error was a parsing error, update the error type from DateParsing to DatetimeFromDateParsing
@@ -307,7 +308,7 @@ impl TZConstraint {
         }
     }
 
-    pub(super) fn tz_check<'d>(&self, tz_offset: Option<i32>, input: &impl Input<'d>) -> ValResult<()> {
+    pub(super) fn tz_check(&self, tz_offset: Option<i32>, input: impl ToErrorValue) -> ValResult<()> {
         match (self, tz_offset) {
             (TZConstraint::Aware(_), None) => return Err(ValError::new(ErrorTypeDefaults::TimezoneAware, input)),
             (TZConstraint::Aware(Some(tz_expected)), Some(tz_actual)) => {

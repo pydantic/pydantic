@@ -61,8 +61,8 @@ impl Validator for SetValidator {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let collection = input.validate_set(state.strict_or(self.strict))?;
         let exactness = match &collection {
