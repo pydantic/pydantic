@@ -115,7 +115,7 @@ def test_self_type_with_field(Self):
 def test_self_type_json_schema(Self):
     class SelfRef(BaseModel):
         x: int
-        refs: List[Self] | None = []
+        refs: Optional[List[Self]] = []
 
     assert SelfRef.model_json_schema() == {
         '$defs': {
