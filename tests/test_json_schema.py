@@ -3,6 +3,7 @@ import math
 import re
 import sys
 import typing
+import warnings
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
@@ -1382,8 +1383,12 @@ def test_callable_fallback_with_non_serializable_default(warning_match):
     class MyGenerator(GenerateJsonSchema):
         ignored_warning_kinds = ()
 
-    with pytest.warns(PydanticJsonSchemaWarning, match=warning_match):
-        model_schema = Model.model_json_schema(schema_generator=MyGenerator)
+    with warnings.catch_warnings():
+        # we need to explicitly ignore the other warning in pytest-8
+        # TODO: rewrite it to use two nested pytest.warns() when pytest-7 is no longer supported
+        warnings.simplefilter("ignore")
+        with pytest.warns(PydanticJsonSchemaWarning, match=warning_match):
+            model_schema = Model.model_json_schema(schema_generator=MyGenerator)
     assert model_schema == {
         'properties': {'callback': {'title': 'Callback', 'type': 'integer'}},
         'title': 'Model',
