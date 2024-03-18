@@ -709,23 +709,29 @@ class ConfigDict(TypedDict, total=False):
 
     defer_build: bool
     """
-    Whether to defer model validator and serializer construction until the first model validation.
+    Whether to defer model validator and serializer construction until the first model validation. Defaults to False.
 
     This can be useful to avoid the overhead of building models which are only
     used nested within other models, or when you want to manually define type namespace via
-    [`Model.model_rebuild(_types_namespace=...)`][pydantic.BaseModel.model_rebuild]. Defaults to False.
+    [`Model.model_rebuild(_types_namespace=...)`][pydantic.BaseModel.model_rebuild].
 
     See also [`defer_build_mode`][pydantic.config.ConfigDict.defer_build_mode].
+
+    !!! note
+        `defer_build` does not work by default with FastAPI Pydantic models. Meaning the validator and serializer
+        is constructed immediately when the model is used in FastAPI routes instead of construction being deferred.
+        You also need to use [`defer_build_mode='always'`][pydantic.config.ConfigDict.defer_build_mode] with
+        FastAPI models.
     """
 
     defer_build_mode: Literal['only_model', 'always']
     """
-    Controls when [`defer_build`][pydantic.config.ConfigDict.defer_build] is applicable. Defaults to `"only_model"`.
+    Controls when [`defer_build`][pydantic.config.ConfigDict.defer_build] is applicable. Defaults to `'only_model'`.
 
     Due to backwards compatibility reasons [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] does not by default
-    respect `defer_build`. Meaning when `defer_build` is `True` and `defer_build_mode` is the default `"only_model"`
+    respect `defer_build`. Meaning when `defer_build` is `True` and `defer_build_mode` is the default `'only_model'`
     then `TypeAdapter` immediately constructs validator and serializer instead of postponing it until the first model
-    validation. Set this to `"always"` to make `TypeAdapter` respect the `defer_build` so it postpones validator and
+    validation. Set this to `'always'` to make `TypeAdapter` respect the `defer_build` so it postpones validator and
     serializer construction until the first validation.
     """
 
