@@ -1,5 +1,6 @@
 import dataclasses
 import typing
+from typing import List, Optional, Union
 
 import pytest
 import typing_extensions
@@ -89,7 +90,7 @@ def test_recursive_model_with_subclass_override(Self):
 
     class SubSelfRef(SelfRef):
         y: int
-        ref: SelfRef | Self | None = None
+        ref: Optional[Union[SelfRef, Self]] = None
 
     assert SubSelfRef(x=1, ref=SubSelfRef(x=3, y=4), y=2).model_dump() == {
         'x': 1,
@@ -114,7 +115,7 @@ def test_self_type_with_field(Self):
 def test_self_type_json_schema(Self):
     class SelfRef(BaseModel):
         x: int
-        refs: typing.List[Self] | None = []
+        refs: List[Self] | None = []
 
     assert SelfRef.model_json_schema() == {
         '$defs': {
