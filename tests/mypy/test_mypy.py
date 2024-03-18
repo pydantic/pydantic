@@ -196,11 +196,11 @@ def test_mypy_results(config_filename: str, python_filename: str, request: pytes
         existing_output_code = test_config.existing.output_path.read_text()
         print(f'Comparing output with {test_config.existing.output_path}')
     else:
-        print('Expecting no mypy errors')
+        print(f'Comparing output with {input_path} (expecting no mypy errors)')
 
     merged_output = merge_python_and_mypy_output(input_code, mypy_out)
 
-    if merged_output == existing_output_code:
+    if merged_output == (existing_output_code or input_code):
         # Test passed, no changes needed
         pass
     elif request.config.getoption('update_mypy'):

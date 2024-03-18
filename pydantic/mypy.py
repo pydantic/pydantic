@@ -550,7 +550,7 @@ class PydanticModelTransformer:
                     for arg_name, arg in zip(stmt.rvalue.arg_names, stmt.rvalue.args):
                         if arg_name is None:
                             continue
-                        config.update(self.get_config_update(arg_name, arg))
+                        config.update(self.get_config_update(arg_name, arg, lax_extra=True))
                 elif isinstance(stmt.rvalue, DictExpr):  # dict literals
                     for key_expr, value_expr in stmt.rvalue.items:
                         if not isinstance(key_expr, StrExpr):
@@ -944,7 +944,7 @@ class PydanticModelTransformer:
                 var._fullname = info.fullname + '.' + var.name
                 info.names[var.name] = SymbolTableNode(MDEF, var)
 
-    def get_config_update(self, name: str, arg: Expression) -> ModelConfigData | None:
+    def get_config_update(self, name: str, arg: Expression, lax_extra: bool = False) -> ModelConfigData | None:
         """Determines the config update due to a single kwarg in the ConfigDict definition.
 
         Warns if a tracked config attribute is set to a value the plugin doesn't know how to interpret (e.g., an int)
@@ -957,11 +957,16 @@ class PydanticModelTransformer:
             elif isinstance(arg, MemberExpr):
                 forbid_extra = arg.name == 'forbid'
             else:
-                # Do not emit an error for other types of `arg` (e.g., `NameExpr`, `ConditionalExpr`, etc.)
-                # It would be nice if we could type-check these better, but I don't know what the API is to
-                # evaluate an expr into its type and then check if that type is compatible with the expected type.
-                # Note that you can still get proper type checking via: `model_config = ConfigDict(...)`, it's just that
-                # if you don't use an explicit string, the plugin won't be able to infer whether extra is forbidden.
+                if not lax_extra:
+                    # Only emit an error for other types of `arg` (e.g., `NameExpr`, `ConditionalExpr`, etc.) when
+                    # reading from a config class, etc. If a ConfigDict is used, then we don't want to emit an error
+                    # because you'll get type checking from the ConfigDict itself.
+                    #
+                    # It would be nice if we could introspect the types better otherwise, but I don't know what the API
+                    # is to evaluate an expr into its type and then check if that type is compatible with the expected
+                    # type. Note that you can still get proper type checking via: `model_config = ConfigDict(...)`, just
+                    # if you don't use an explicit string, the plugin won't be able to infer whether extra is forbidden.
+                    error_invalid_config_value(name, self._api, arg)
                 return None
             return ModelConfigData(forbid_extra=forbid_extra)
         if name == 'alias_generator':

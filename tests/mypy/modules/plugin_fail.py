@@ -51,10 +51,6 @@ class BadExtraModel(BaseModel):
     model_config = ConfigDict(extra=1)  # type: ignore[typeddict-item]
 
 
-class BadExtraButIgnoredModel(BaseModel):
-    model_config = ConfigDict(extra=1)  # type: ignore[typeddict-item,pydantic-config]
-
-
 class KwargsBadExtraModel(BaseModel, extra=1):
     pass
 
