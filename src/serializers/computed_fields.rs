@@ -71,16 +71,18 @@ impl ComputedFields {
             // Do not serialize computed fields
             return Ok(());
         }
+
         for computed_field in &self.0 {
             let property_name_py = computed_field.property_name_py.bind(model.py());
-            let value = model.getattr(property_name_py).map_err(py_err_se_err)?;
-            if extra.exclude_none && value.is_none() {
-                continue;
-            }
+
             if let Some((next_include, next_exclude)) = filter
                 .key_filter(property_name_py, include, exclude)
                 .map_err(py_err_se_err)?
             {
+                let value = model.getattr(property_name_py).map_err(py_err_se_err)?;
+                if extra.exclude_none && value.is_none() {
+                    continue;
+                }
                 let cfs = ComputedFieldSerializer {
                     model,
                     computed_field,
