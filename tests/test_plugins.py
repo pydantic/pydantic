@@ -13,17 +13,17 @@ from pydantic.plugin import (
     ValidateJsonHandlerProtocol,
     ValidatePythonHandlerProtocol,
     ValidateStringsHandlerProtocol,
+    _loader,
 )
-from pydantic.plugin._loader import _plugins
 
 
 @contextlib.contextmanager
 def install_plugin(plugin: PydanticPluginProtocol) -> Generator[None, None, None]:
-    _plugins[plugin.__class__.__qualname__] = plugin
+    _loader._plugins = {plugin.__class__.__qualname__: plugin}
     try:
         yield
     finally:
-        _plugins.clear()
+        _loader._plugins = None
 
 
 def test_on_validate_json_on_success() -> None:
