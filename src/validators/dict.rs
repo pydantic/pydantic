@@ -70,8 +70,8 @@ impl Validator for DictValidator {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let strict = state.strict_or(self.strict);
         let dict = input.validate_dict(strict)?;
@@ -99,14 +99,14 @@ impl Validator for DictValidator {
 }
 
 impl DictValidator {
-    fn validate_generic_mapping<'data>(
+    fn validate_generic_mapping<'py>(
         &self,
-        py: Python<'data>,
-        input: &impl Input<'data>,
+        py: Python<'py>,
+        input: &(impl Input<'py> + ?Sized),
         mapping_iter: impl Iterator<
-            Item = ValResult<(impl BorrowInput<'data> + Clone + Into<LocItem>, impl BorrowInput<'data>)>,
+            Item = ValResult<(impl BorrowInput<'py> + Clone + Into<LocItem>, impl BorrowInput<'py>)>,
         >,
-        state: &mut ValidationState,
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let output = PyDict::new_bound(py);
         let mut errors: Vec<ValLineError> = Vec::new();

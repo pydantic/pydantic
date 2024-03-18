@@ -144,8 +144,8 @@ impl Validator for DataclassArgsValidator {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let args = input.validate_dataclass_args(&self.dataclass_name)?;
 
@@ -382,13 +382,13 @@ impl Validator for DataclassArgsValidator {
         }
     }
 
-    fn validate_assignment<'data>(
+    fn validate_assignment<'py>(
         &self,
-        py: Python<'data>,
-        obj: &Bound<'data, PyAny>,
+        py: Python<'py>,
+        obj: &Bound<'py, PyAny>,
         field_name: &str,
-        field_value: &Bound<'data, PyAny>,
-        state: &mut ValidationState,
+        field_value: &Bound<'py, PyAny>,
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let dict = obj.downcast::<PyDict>()?;
 
@@ -532,8 +532,8 @@ impl Validator for DataclassValidator {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         if let Some(self_instance) = state.extra().self_instance {
             // in the case that self_instance is Some, we're calling validation from within `BaseModel.__init__`
@@ -569,13 +569,13 @@ impl Validator for DataclassValidator {
         }
     }
 
-    fn validate_assignment<'data>(
+    fn validate_assignment<'py>(
         &self,
-        py: Python<'data>,
-        obj: &Bound<'data, PyAny>,
+        py: Python<'py>,
+        obj: &Bound<'py, PyAny>,
         field_name: &str,
-        field_value: &Bound<'data, PyAny>,
-        state: &mut ValidationState,
+        field_value: &Bound<'py, PyAny>,
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         if self.frozen {
             return Err(ValError::new(ErrorTypeDefaults::FrozenInstance, field_value));
@@ -610,12 +610,12 @@ impl Validator for DataclassValidator {
 
 impl DataclassValidator {
     /// here we just call the inner validator, then set attributes on `self_instance`
-    fn validate_init<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
+    fn validate_init<'py>(
+        &self,
+        py: Python<'py>,
         self_instance: &Bound<'_, PyAny>,
-        input: &impl Input<'data>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         // we need to set `self_instance` to None for nested validators as we don't want to operate on the self_instance
         // instance anymore
@@ -637,12 +637,12 @@ impl DataclassValidator {
         Ok(dict)
     }
 
-    fn set_dict_call<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
+    fn set_dict_call<'py>(
+        &self,
+        py: Python<'py>,
         dc: &Bound<'_, PyAny>,
         val_output: PyObject,
-        input: &impl Input<'data>,
+        input: &(impl Input<'py> + ?Sized),
     ) -> ValResult<()> {
         let (dc_dict, post_init_kwargs): (Bound<'_, PyAny>, Bound<'_, PyAny>) = val_output.extract(py)?;
         if self.slots {

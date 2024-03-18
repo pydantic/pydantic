@@ -8,7 +8,7 @@ use smallvec::SmallVec;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{is_strict, schema_or_config};
-use crate::errors::{ErrorType, ValError, ValLineError, ValResult};
+use crate::errors::{ErrorType, ToErrorValue, ValError, ValLineError, ValResult};
 use crate::input::{GenericMapping, Input};
 use crate::lookup_key::LookupKey;
 use crate::py_gc::PyGcTraverse;
@@ -101,11 +101,11 @@ impl BuildValidator for UnionValidator {
 }
 
 impl UnionValidator {
-    fn validate_smart<'data>(
+    fn validate_smart<'py>(
         &self,
-        py: Python<'data>,
-        input: &impl Input<'data>,
-        state: &mut ValidationState,
+        py: Python<'py>,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let old_exactness = state.exactness;
         let strict = state.strict_or(self.strict);
@@ -167,11 +167,11 @@ impl UnionValidator {
         Err(errors.into_val_error(input))
     }
 
-    fn validate_left_to_right<'data>(
+    fn validate_left_to_right<'py>(
         &self,
-        py: Python<'data>,
-        input: &impl Input<'data>,
-        state: &mut ValidationState,
+        py: Python<'py>,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let mut errors = MaybeErrors::new(self.custom_error.as_ref());
 
@@ -205,8 +205,8 @@ impl Validator for UnionValidator {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         match self.mode {
             UnionMode::Smart => self.validate_smart(py, input, state),
@@ -249,7 +249,7 @@ impl<'a> MaybeErrors<'a> {
         }
     }
 
-    fn into_val_error<'i>(self, input: &impl Input<'i>) -> ValError {
+    fn into_val_error(self, input: impl ToErrorValue) -> ValError {
         match self {
             Self::Custom(custom_error) => custom_error.as_val_error(input),
             Self::Errors(errors) => ValError::LineErrors(
@@ -393,8 +393,8 @@ impl Validator for TaggedUnionValidator {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         match self.discriminator {
             Discriminator::LookupKey(ref lookup_key) => {
@@ -447,11 +447,11 @@ impl Validator for TaggedUnionValidator {
 }
 
 impl TaggedUnionValidator {
-    fn self_schema_tag<'data>(
+    fn self_schema_tag<'py>(
         &self,
-        py: Python<'data>,
-        input: &impl Input<'data>,
-    ) -> ValResult<Bound<'data, PyString>> {
+        py: Python<'py>,
+        input: &(impl Input<'py> + ?Sized),
+    ) -> ValResult<Bound<'py, PyString>> {
         let dict = input.strict_dict()?;
         let tag = match &dict {
             GenericMapping::PyDict(dict) => match dict.get_item(intern!(py, "type"))? {
@@ -480,12 +480,12 @@ impl TaggedUnionValidator {
         }
     }
 
-    fn find_call_validator<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        tag: &Bound<'data, PyAny>,
-        input: &impl Input<'data>,
-        state: &mut ValidationState,
+    fn find_call_validator<'py>(
+        &self,
+        py: Python<'py>,
+        tag: &Bound<'py, PyAny>,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         if let Ok(Some((tag, validator))) = self.lookup.validate(py, tag) {
             return match validator.validate(py, input, state) {
@@ -507,7 +507,7 @@ impl TaggedUnionValidator {
         }
     }
 
-    fn tag_not_found<'s, 'data>(&'s self, input: &impl Input<'data>) -> ValError {
+    fn tag_not_found<'py>(&self, input: &(impl Input<'py> + ?Sized)) -> ValError {
         match self.custom_error {
             Some(ref custom_error) => custom_error.as_val_error(input),
             None => ValError::new(

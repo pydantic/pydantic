@@ -5,10 +5,10 @@ use pyo3::types::{IntoPyDict, PyDict, PyTuple, PyType};
 use pyo3::{prelude::*, PyTypeInfo};
 
 use crate::build_tools::{is_strict, schema_or_config_same};
-use crate::errors::ValError;
+use crate::errors::ErrorType;
 use crate::errors::ValResult;
-use crate::errors::{ErrorType, InputValue};
 use crate::errors::{ErrorTypeDefaults, Number};
+use crate::errors::{ToErrorValue, ValError};
 use crate::input::Input;
 use crate::tools::SchemaDict;
 
@@ -120,8 +120,8 @@ impl Validator for DecimalValidator {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let decimal = input.validate_decimal(state.strict_or(self.strict), py)?;
 
@@ -264,7 +264,7 @@ impl Validator for DecimalValidator {
     }
 }
 
-pub(crate) fn create_decimal<'a>(arg: &Bound<'a, PyAny>, input: &impl Input<'a>) -> ValResult<Bound<'a, PyAny>> {
+pub(crate) fn create_decimal<'py>(arg: &Bound<'py, PyAny>, input: impl ToErrorValue) -> ValResult<Bound<'py, PyAny>> {
     let py = arg.py();
     get_decimal_type(py).call1((arg,)).map_err(|e| {
         let decimal_exception = match py
@@ -274,16 +274,16 @@ pub(crate) fn create_decimal<'a>(arg: &Bound<'a, PyAny>, input: &impl Input<'a>)
             Ok(decimal_exception) => decimal_exception,
             Err(e) => return ValError::InternalErr(e),
         };
-        handle_decimal_new_error(input.as_error_value(), e, decimal_exception)
+        handle_decimal_new_error(input, e, decimal_exception)
     })
 }
 
-fn handle_decimal_new_error(input: InputValue, error: PyErr, decimal_exception: Bound<'_, PyAny>) -> ValError {
+fn handle_decimal_new_error(input: impl ToErrorValue, error: PyErr, decimal_exception: Bound<'_, PyAny>) -> ValError {
     let py = decimal_exception.py();
     if error.matches(py, decimal_exception) {
-        ValError::new_custom_input(ErrorTypeDefaults::DecimalParsing, input)
+        ValError::new(ErrorTypeDefaults::DecimalParsing, input)
     } else if error.matches(py, PyTypeError::type_object_bound(py)) {
-        ValError::new_custom_input(ErrorTypeDefaults::DecimalType, input)
+        ValError::new(ErrorTypeDefaults::DecimalType, input)
     } else {
         ValError::InternalErr(error)
     }

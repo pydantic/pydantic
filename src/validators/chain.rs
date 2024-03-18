@@ -73,8 +73,8 @@ impl Validator for ChainValidator {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let mut steps_iter = self.steps.iter();
         let first_step = steps_iter.next().unwrap();

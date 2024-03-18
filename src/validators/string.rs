@@ -44,8 +44,8 @@ impl Validator for StrValidator {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         input
             .validate_str(state.strict_or(self.strict), self.coerce_numbers_to_str)
@@ -76,8 +76,8 @@ impl Validator for StrConstrainedValidator {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let either_str = input
             .validate_str(state.strict_or(self.strict), self.coerce_numbers_to_str)?

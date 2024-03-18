@@ -6,7 +6,8 @@ use pyo3::types::{PyAny, PyDict, PyString};
 use pyo3::{intern, PyTraverseError, PyVisit};
 
 use crate::errors::{
-    ErrorType, PydanticCustomError, PydanticKnownError, PydanticOmit, ValError, ValResult, ValidationError,
+    ErrorType, PydanticCustomError, PydanticKnownError, PydanticOmit, ToErrorValue, ValError, ValResult,
+    ValidationError,
 };
 use crate::input::Input;
 use crate::py_gc::PyGcTraverse;
@@ -93,12 +94,12 @@ pub struct FunctionBeforeValidator {
 impl_build!(FunctionBeforeValidator, "function-before");
 
 impl FunctionBeforeValidator {
-    fn _validate<'s, 'data>(
+    fn _validate<'s, 'py>(
         &'s self,
-        call: impl FnOnce(Bound<'data, PyAny>, &mut ValidationState<'_>) -> ValResult<PyObject>,
-        py: Python<'data>,
-        input: &impl Input<'data>,
-        state: &'s mut ValidationState<'_>,
+        call: impl FnOnce(Bound<'py, PyAny>, &mut ValidationState<'_, 'py>) -> ValResult<PyObject>,
+        py: Python<'py>,
+        input: &(impl Input<'py> + ?Sized),
+        state: &'s mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let r = if self.info_arg {
             let info = ValidationInfo::new(py, state.extra(), &self.config, self.field_name.clone());
@@ -118,24 +119,24 @@ impl_py_gc_traverse!(FunctionBeforeValidator {
 });
 
 impl Validator for FunctionBeforeValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &impl Input<'data>,
-        state: &mut ValidationState<'_>,
+        py: Python<'py>,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
-        let validate = |v, s: &mut ValidationState<'_>| self.validator.validate(py, &v, s);
+        let validate = |v, s: &mut ValidationState<'_, 'py>| self.validator.validate(py, &v, s);
         self._validate(validate, py, input, state)
     }
-    fn validate_assignment<'data>(
+    fn validate_assignment<'py>(
         &self,
-        py: Python<'data>,
-        obj: &Bound<'data, PyAny>,
+        py: Python<'py>,
+        obj: &Bound<'py, PyAny>,
         field_name: &str,
-        field_value: &Bound<'data, PyAny>,
-        state: &mut ValidationState,
+        field_value: &Bound<'py, PyAny>,
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
-        let validate = move |v, s: &mut ValidationState<'_>| {
+        let validate = move |v, s: &mut ValidationState<'_, 'py>| {
             self.validator.validate_assignment(py, &v, field_name, field_value, s)
         };
         self._validate(validate, py, obj, state)
@@ -159,12 +160,12 @@ pub struct FunctionAfterValidator {
 impl_build!(FunctionAfterValidator, "function-after");
 
 impl FunctionAfterValidator {
-    fn _validate<'s, 'data, I: Input<'data>>(
-        &'s self,
-        call: impl FnOnce(&I, &mut ValidationState<'_>) -> ValResult<PyObject>,
-        py: Python<'data>,
+    fn _validate<'py, I: Input<'py> + ?Sized>(
+        &self,
+        call: impl FnOnce(&I, &mut ValidationState<'_, 'py>) -> ValResult<PyObject>,
+        py: Python<'py>,
         input: &I,
-        state: &mut ValidationState<'_>,
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let v = call(input, state)?;
         let r = if self.info_arg {
@@ -184,24 +185,24 @@ impl_py_gc_traverse!(FunctionAfterValidator {
 });
 
 impl Validator for FunctionAfterValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &impl Input<'data>,
-        state: &mut ValidationState<'_>,
+        py: Python<'py>,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
-        let validate = |v: &_, s: &mut ValidationState<'_>| self.validator.validate(py, v, s);
+        let validate = |v: &_, s: &mut ValidationState<'_, 'py>| self.validator.validate(py, v, s);
         self._validate(validate, py, input, state)
     }
-    fn validate_assignment<'data>(
+    fn validate_assignment<'py>(
         &self,
-        py: Python<'data>,
-        obj: &Bound<'data, PyAny>,
+        py: Python<'py>,
+        obj: &Bound<'py, PyAny>,
         field_name: &str,
-        field_value: &Bound<'data, PyAny>,
-        state: &mut ValidationState,
+        field_value: &Bound<'py, PyAny>,
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
-        let validate = move |v: &Bound<'data, PyAny>, s: &mut ValidationState<'_>| {
+        let validate = move |v: &Bound<'py, PyAny>, s: &mut ValidationState<'_, 'py>| {
             self.validator.validate_assignment(py, v, field_name, field_value, s)
         };
         self._validate(validate, py, obj, state)
@@ -251,8 +252,8 @@ impl Validator for FunctionPlainValidator {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let r = if self.info_arg {
             let info = ValidationInfo::new(py, state.extra(), &self.config, self.field_name.clone());
@@ -311,12 +312,12 @@ impl BuildValidator for FunctionWrapValidator {
 }
 
 impl FunctionWrapValidator {
-    fn _validate<'s, 'data>(
-        &'s self,
+    fn _validate<'py>(
+        &self,
         handler: &Bound<'_, PyAny>,
-        py: Python<'data>,
-        input: &impl Input<'data>,
-        state: &mut ValidationState,
+        py: Python<'py>,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let r = if self.info_arg {
             let info = ValidationInfo::new(py, state.extra(), &self.config, self.field_name.clone());
@@ -338,8 +339,8 @@ impl Validator for FunctionWrapValidator {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let handler = ValidatorCallable {
             validator: InternalValidator::new(
@@ -357,13 +358,13 @@ impl Validator for FunctionWrapValidator {
         result
     }
 
-    fn validate_assignment<'data>(
+    fn validate_assignment<'py>(
         &self,
-        py: Python<'data>,
-        obj: &Bound<'data, PyAny>,
+        py: Python<'py>,
+        obj: &Bound<'py, PyAny>,
         field_name: &str,
-        field_value: &Bound<'data, PyAny>,
-        state: &mut ValidationState,
+        field_value: &Bound<'py, PyAny>,
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let handler = AssignmentValidatorCallable {
             validator: InternalValidator::new(
@@ -471,7 +472,7 @@ macro_rules! py_err_string {
 
 /// Only `ValueError` (including `PydanticCustomError` and `ValidationError`) and `AssertionError` are considered
 /// as validation errors, `TypeError` is now considered as a runtime error to catch errors in function signatures
-pub fn convert_err<'a>(py: Python<'a>, err: PyErr, input: &impl Input<'a>) -> ValError {
+pub fn convert_err(py: Python<'_>, err: PyErr, input: impl ToErrorValue) -> ValError {
     if err.is_instance_of::<PyValueError>(py) {
         let error_value = err.value_bound(py);
         if let Ok(pydantic_value_error) = error_value.extract::<PydanticCustomError>() {

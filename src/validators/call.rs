@@ -78,8 +78,8 @@ impl Validator for CallValidator {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let args = self.arguments_validator.validate(py, input, state)?.into_bound(py);
 

@@ -318,19 +318,16 @@ impl SchemaValidator {
 
 impl SchemaValidator {
     #[allow(clippy::too_many_arguments)]
-    fn _validate<'s, 'data>(
-        &'data self,
-        py: Python<'data>,
-        input: &impl Input<'data>,
+    fn _validate<'py>(
+        &self,
+        py: Python<'py>,
+        input: &(impl Input<'py> + ?Sized),
         input_type: InputType,
         strict: Option<bool>,
         from_attributes: Option<bool>,
-        context: Option<&Bound<'data, PyAny>>,
-        self_instance: Option<&Bound<'_, PyAny>>,
-    ) -> ValResult<PyObject>
-    where
-        's: 'data,
-    {
+        context: Option<&Bound<'py, PyAny>>,
+        self_instance: Option<&Bound<'py, PyAny>>,
+    ) -> ValResult<PyObject> {
         let mut recursion_guard = RecursionState::default();
         let mut state = ValidationState::new(
             Extra::new(strict, from_attributes, context, self_instance, input_type),
@@ -564,27 +561,27 @@ pub fn build_validator(
 /// More (mostly immutable) data to pass between validators, should probably be class `Context`,
 /// but that would confuse it with context as per pydantic/pydantic#1549
 #[derive(Debug)]
-pub struct Extra<'a> {
+pub struct Extra<'a, 'py> {
     /// Validation mode
     pub input_type: InputType,
     /// This is used as the `data` kwargs to validator functions
-    pub data: Option<Bound<'a, PyDict>>,
+    pub data: Option<Bound<'py, PyDict>>,
     /// whether we're in strict or lax mode
     pub strict: Option<bool>,
     /// Validation time setting of `from_attributes`
     pub from_attributes: Option<bool>,
     /// context used in validator functions
-    pub context: Option<&'a Bound<'a, PyAny>>,
+    pub context: Option<&'a Bound<'py, PyAny>>,
     /// This is an instance of the model or dataclass being validated, when validation is performed from `__init__`
-    self_instance: Option<&'a Bound<'a, PyAny>>,
+    self_instance: Option<&'a Bound<'py, PyAny>>,
 }
 
-impl<'a> Extra<'a> {
+impl<'a, 'py> Extra<'a, 'py> {
     pub fn new(
         strict: Option<bool>,
         from_attributes: Option<bool>,
-        context: Option<&'a Bound<'a, PyAny>>,
-        self_instance: Option<&'a Bound<'a, PyAny>>,
+        context: Option<&'a Bound<'py, PyAny>>,
+        self_instance: Option<&'a Bound<'py, PyAny>>,
         input_type: InputType,
     ) -> Self {
         Extra {
@@ -598,7 +595,7 @@ impl<'a> Extra<'a> {
     }
 }
 
-impl<'a> Extra<'a> {
+impl Extra<'_, '_> {
     pub fn as_strict(&self) -> Self {
         Self {
             input_type: self.input_type,
@@ -711,29 +708,29 @@ pub trait Validator: Send + Sync + Debug {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject>;
 
     /// Get a default value, currently only used by `WithDefaultValidator`
-    fn default_value(
+    fn default_value<'py>(
         &self,
-        _py: Python<'_>,
+        _py: Python<'py>,
         _outer_loc: Option<impl Into<LocItem>>,
-        _state: &mut ValidationState,
+        _state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Option<PyObject>> {
         Ok(None)
     }
 
     /// Validate assignment to a field of a model
     #[allow(clippy::too_many_arguments)]
-    fn validate_assignment<'data>(
+    fn validate_assignment<'py>(
         &self,
-        _py: Python<'data>,
-        _obj: &Bound<'data, PyAny>,
+        _py: Python<'py>,
+        _obj: &Bound<'py, PyAny>,
         _field_name: &str,
-        _field_value: &Bound<'data, PyAny>,
-        _state: &mut ValidationState,
+        _field_value: &Bound<'py, PyAny>,
+        _state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let py_err = PyTypeError::new_err(format!("validate_assignment is not supported for {}", self.get_name()));
         Err(py_err.into())

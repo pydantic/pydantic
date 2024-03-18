@@ -91,7 +91,11 @@ impl<T: Debug> LiteralLookup<T> {
         })
     }
 
-    pub fn validate<'a, 'py, I: Input<'py>>(&self, py: Python<'py>, input: &'a I) -> ValResult<Option<(&'a I, &T)>> {
+    pub fn validate<'a, 'py, I: Input<'py> + ?Sized>(
+        &self,
+        py: Python<'py>,
+        input: &'a I,
+    ) -> ValResult<Option<(&'a I, &T)>> {
         if let Some(expected_bool) = &self.expected_bool {
             if let Ok(bool_value) = input.validate_bool(true) {
                 if bool_value.into_inner() {
@@ -189,11 +193,11 @@ impl BuildValidator for LiteralValidator {
 impl_py_gc_traverse!(LiteralValidator { lookup });
 
 impl Validator for LiteralValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &impl Input<'data>,
-        _state: &mut ValidationState,
+        py: Python<'py>,
+        input: &(impl Input<'py> + ?Sized),
+        _state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         match self.lookup.validate(py, input)? {
             Some((_, v)) => Ok(v.clone()),

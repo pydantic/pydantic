@@ -28,8 +28,8 @@ impl Validator for CallableValidator {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         state.floor_exactness(Exactness::Lax);
         match input.callable() {

@@ -72,8 +72,8 @@ impl Validator for DefinitionRefValidator {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         self.definition.read(|validator| {
             let validator = validator.unwrap();
@@ -88,13 +88,13 @@ impl Validator for DefinitionRefValidator {
         })
     }
 
-    fn validate_assignment<'data>(
+    fn validate_assignment<'py>(
         &self,
-        py: Python<'data>,
-        obj: &Bound<'data, PyAny>,
+        py: Python<'py>,
+        obj: &Bound<'py, PyAny>,
         field_name: &str,
-        field_value: &Bound<'data, PyAny>,
-        state: &mut ValidationState,
+        field_value: &Bound<'py, PyAny>,
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         self.definition.read(|validator| {
             let validator = validator.unwrap();
