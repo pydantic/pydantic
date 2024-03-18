@@ -8,8 +8,8 @@ use pyo3::types::{PyDict, PyList, PyMapping, PyString};
 use jiter::{JsonObject, JsonValue};
 
 use crate::build_tools::py_schema_err;
-use crate::errors::{py_err_string, ErrorType, ValError, ValLineError, ValResult};
-use crate::input::{Input, StringMapping};
+use crate::errors::{py_err_string, ErrorType, ToErrorValue, ValError, ValLineError, ValResult};
+use crate::input::StringMapping;
 use crate::tools::{extract_i64, py_err};
 
 /// Used for getting items from python dicts, python objects, or JSON objects, in different ways
@@ -307,10 +307,10 @@ impl LookupKey {
         }
     }
 
-    pub fn error<'d>(
+    pub fn error(
         &self,
         error_type: ErrorType,
-        input: &impl Input<'d>,
+        input: impl ToErrorValue,
         loc_by_alias: bool,
         field_name: &str,
     ) -> ValLineError {

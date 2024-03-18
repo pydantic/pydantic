@@ -119,8 +119,8 @@ impl Validator for ListValidator {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let seq = input.validate_list(state.strict_or(self.strict))?;
         let exactness = match &seq {

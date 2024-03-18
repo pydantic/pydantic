@@ -160,7 +160,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         self.is_callable()
     }
 
-    fn validate_args(&self) -> ValResult<GenericArguments<'_>> {
+    fn validate_args(&self) -> ValResult<GenericArguments<'_, 'py>> {
         if let Ok(dict) = self.downcast::<PyDict>() {
             Ok(PyArgs::new(None, Some(dict.clone())).into())
         } else if let Ok(args_kwargs) = self.extract::<ArgsKwargs>() {
@@ -176,7 +176,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         }
     }
 
-    fn validate_dataclass_args<'a>(&'a self, class_name: &str) -> ValResult<GenericArguments<'a>> {
+    fn validate_dataclass_args<'a>(&'a self, class_name: &str) -> ValResult<GenericArguments<'a, 'py>> {
         if let Ok(dict) = self.downcast::<PyDict>() {
             Ok(PyArgs::new(None, Some(dict.clone())).into())
         } else if let Ok(args_kwargs) = self.extract::<ArgsKwargs>() {
@@ -584,7 +584,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         }
     }
 
-    fn validate_date(&self, strict: bool) -> ValResult<ValidationMatch<EitherDate>> {
+    fn validate_date(&self, strict: bool) -> ValResult<ValidationMatch<EitherDate<'py>>> {
         if let Ok(date) = self.downcast_exact::<PyDate>() {
             Ok(ValidationMatch::exact(date.clone().into()))
         } else if self.is_instance_of::<PyDateTime>() {
@@ -615,7 +615,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         &self,
         strict: bool,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<ValidationMatch<EitherTime>> {
+    ) -> ValResult<ValidationMatch<EitherTime<'py>>> {
         if let Ok(time) = self.downcast_exact::<PyTime>() {
             return Ok(ValidationMatch::exact(time.clone().into()));
         } else if let Ok(time) = self.downcast::<PyTime>() {
@@ -649,7 +649,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         &self,
         strict: bool,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<ValidationMatch<EitherDateTime>> {
+    ) -> ValResult<ValidationMatch<EitherDateTime<'py>>> {
         if let Ok(dt) = self.downcast_exact::<PyDateTime>() {
             return Ok(ValidationMatch::exact(dt.clone().into()));
         } else if let Ok(dt) = self.downcast::<PyDateTime>() {
@@ -685,7 +685,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         &self,
         strict: bool,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<ValidationMatch<EitherTimedelta>> {
+    ) -> ValResult<ValidationMatch<EitherTimedelta<'py>>> {
         if let Ok(either_dt) = EitherTimedelta::try_from(self) {
             let exactness = if matches!(either_dt, EitherTimedelta::PyExact(_)) {
                 Exactness::Exact

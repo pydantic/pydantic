@@ -4,7 +4,7 @@ use pyo3::exceptions::PyValueError;
 use pyo3::types::{PyDict, PyType};
 use pyo3::{intern, prelude::*};
 
-use crate::errors::{ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
+use crate::errors::{ErrorTypeDefaults, InputValue, ValError, ValResult};
 use crate::tools::py_err;
 use crate::{PyMultiHostUrl, PyUrl};
 
@@ -46,7 +46,7 @@ impl TryFrom<&str> for InputType {
 /// the convention is to either implement:
 /// * `strict_*` & `lax_*` if they have different behavior
 /// * or, `validate_*` and `strict_*` to just call `validate_*` if the behavior for strict and lax is the same
-pub trait Input<'py>: fmt::Debug + ToPyObject + Into<LocItem> + Sized {
+pub trait Input<'py>: fmt::Debug + ToPyObject {
     fn as_error_value(&self) -> InputValue;
 
     fn identity(&self) -> Option<usize> {
@@ -83,9 +83,9 @@ pub trait Input<'py>: fmt::Debug + ToPyObject + Into<LocItem> + Sized {
         false
     }
 
-    fn validate_args(&self) -> ValResult<GenericArguments<'_>>;
+    fn validate_args(&self) -> ValResult<GenericArguments<'_, 'py>>;
 
-    fn validate_dataclass_args<'a>(&'a self, dataclass_name: &str) -> ValResult<GenericArguments<'a>>;
+    fn validate_dataclass_args<'a>(&'a self, dataclass_name: &str) -> ValResult<GenericArguments<'a, 'py>>;
 
     fn validate_str(&self, strict: bool, coerce_numbers_to_str: bool) -> ValResult<ValidationMatch<EitherString<'_>>>;
 
@@ -201,25 +201,25 @@ pub trait Input<'py>: fmt::Debug + ToPyObject + Into<LocItem> + Sized {
 
     fn validate_iter(&self) -> ValResult<GenericIterator>;
 
-    fn validate_date(&self, strict: bool) -> ValResult<ValidationMatch<EitherDate>>;
+    fn validate_date(&self, strict: bool) -> ValResult<ValidationMatch<EitherDate<'py>>>;
 
     fn validate_time(
         &self,
         strict: bool,
         microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<ValidationMatch<EitherTime>>;
+    ) -> ValResult<ValidationMatch<EitherTime<'py>>>;
 
     fn validate_datetime(
         &self,
         strict: bool,
         microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<ValidationMatch<EitherDateTime>>;
+    ) -> ValResult<ValidationMatch<EitherDateTime<'py>>>;
 
     fn validate_timedelta(
         &self,
         strict: bool,
         microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<ValidationMatch<EitherTimedelta>>;
+    ) -> ValResult<ValidationMatch<EitherTimedelta<'py>>>;
 }
 
 /// The problem to solve here is that iterating collections often returns owned
@@ -228,6 +228,13 @@ pub trait Input<'py>: fmt::Debug + ToPyObject + Into<LocItem> + Sized {
 /// or borrowed; all we care about is that we can borrow it again with `borrow_input`
 /// for some lifetime 'a.
 pub trait BorrowInput<'py> {
-    type Input: Input<'py>;
+    type Input: Input<'py> + ?Sized;
     fn borrow_input(&self) -> &Self::Input;
+}
+
+impl<'py, T: Input<'py> + ?Sized> BorrowInput<'py> for &'_ T {
+    type Input = T;
+    fn borrow_input(&self) -> &Self::Input {
+        self
+    }
 }

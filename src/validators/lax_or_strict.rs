@@ -59,8 +59,8 @@ impl Validator for LaxOrStrictValidator {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         if state.strict_or(self.strict) {
             self.strict_validator.validate(py, input, state)

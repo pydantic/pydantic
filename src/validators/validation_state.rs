@@ -9,15 +9,15 @@ pub enum Exactness {
     Exact,
 }
 
-pub struct ValidationState<'a> {
+pub struct ValidationState<'a, 'py> {
     pub recursion_guard: &'a mut RecursionState,
     pub exactness: Option<Exactness>,
     // deliberately make Extra readonly
-    extra: Extra<'a>,
+    extra: Extra<'a, 'py>,
 }
 
-impl<'a> ValidationState<'a> {
-    pub fn new(extra: Extra<'a>, recursion_guard: &'a mut RecursionState) -> Self {
+impl<'a, 'py> ValidationState<'a, 'py> {
+    pub fn new(extra: Extra<'a, 'py>, recursion_guard: &'a mut RecursionState) -> Self {
         Self {
             recursion_guard, // Don't care about exactness unless doing union validation
             exactness: None,
@@ -27,8 +27,8 @@ impl<'a> ValidationState<'a> {
 
     pub fn with_new_extra<'r, R: 'r>(
         &mut self,
-        extra: Extra<'_>,
-        f: impl for<'s> FnOnce(&'s mut ValidationState<'_>) -> R,
+        extra: Extra<'_, 'py>,
+        f: impl for<'s> FnOnce(&'s mut ValidationState<'_, 'py>) -> R,
     ) -> R {
         // TODO: It would be nice to implement this function with a drop guard instead of a closure,
         // but lifetimes get in a tangle. Maybe someone brave wants to have a go at unpicking lifetimes.
@@ -52,8 +52,8 @@ impl<'a> ValidationState<'a> {
     /// When `ValidationStateWithReboundExtra` drops, the extra field is restored to its original value.
     pub fn rebind_extra<'state>(
         &'state mut self,
-        f: impl FnOnce(&mut Extra<'a>),
-    ) -> ValidationStateWithReboundExtra<'state, 'a> {
+        f: impl FnOnce(&mut Extra<'a, 'py>),
+    ) -> ValidationStateWithReboundExtra<'state, 'a, 'py> {
         #[allow(clippy::unnecessary_struct_initialization)]
         let old_extra = Extra {
             data: self.extra.data.clone(),
@@ -63,7 +63,7 @@ impl<'a> ValidationState<'a> {
         ValidationStateWithReboundExtra { state: self, old_extra }
     }
 
-    pub fn extra(&self) -> &'_ Extra<'a> {
+    pub fn extra(&self) -> &'_ Extra<'a, 'py> {
         &self.extra
     }
 
@@ -89,32 +89,32 @@ impl<'a> ValidationState<'a> {
     }
 }
 
-impl ContainsRecursionState for ValidationState<'_> {
+impl ContainsRecursionState for ValidationState<'_, '_> {
     fn access_recursion_state<R>(&mut self, f: impl FnOnce(&mut RecursionState) -> R) -> R {
         f(self.recursion_guard)
     }
 }
 
-pub struct ValidationStateWithReboundExtra<'state, 'a> {
-    state: &'state mut ValidationState<'a>,
-    old_extra: Extra<'a>,
+pub struct ValidationStateWithReboundExtra<'state, 'a, 'py> {
+    state: &'state mut ValidationState<'a, 'py>,
+    old_extra: Extra<'a, 'py>,
 }
 
-impl<'a> std::ops::Deref for ValidationStateWithReboundExtra<'_, 'a> {
-    type Target = ValidationState<'a>;
+impl<'a, 'py> std::ops::Deref for ValidationStateWithReboundExtra<'_, 'a, 'py> {
+    type Target = ValidationState<'a, 'py>;
 
     fn deref(&self) -> &Self::Target {
         self.state
     }
 }
 
-impl<'a> std::ops::DerefMut for ValidationStateWithReboundExtra<'_, 'a> {
+impl std::ops::DerefMut for ValidationStateWithReboundExtra<'_, '_, '_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.state
     }
 }
 
-impl Drop for ValidationStateWithReboundExtra<'_, '_> {
+impl Drop for ValidationStateWithReboundExtra<'_, '_, '_> {
     fn drop(&mut self) {
         std::mem::swap(&mut self.state.extra, &mut self.old_extra);
     }

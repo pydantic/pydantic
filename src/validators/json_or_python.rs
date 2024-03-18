@@ -52,8 +52,8 @@ impl Validator for JsonOrPython {
     fn validate<'py>(
         &self,
         py: Python<'py>,
-        input: &impl Input<'py>,
-        state: &mut ValidationState,
+        input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         match state.extra().input_type {
             InputType::Python => self.python.validate(py, input, state),

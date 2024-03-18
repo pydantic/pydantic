@@ -60,7 +60,7 @@ impl<'py> Input<'py> for JsonValue {
         }
     }
 
-    fn validate_args(&self) -> ValResult<GenericArguments<'_>> {
+    fn validate_args(&self) -> ValResult<GenericArguments<'_, 'py>> {
         match self {
             JsonValue::Object(object) => Ok(JsonArgs::new(None, Some(object)).into()),
             JsonValue::Array(array) => Ok(JsonArgs::new(Some(array), None).into()),
@@ -68,7 +68,7 @@ impl<'py> Input<'py> for JsonValue {
         }
     }
 
-    fn validate_dataclass_args<'a>(&'a self, class_name: &str) -> ValResult<GenericArguments<'a>> {
+    fn validate_dataclass_args<'a>(&'a self, class_name: &str) -> ValResult<GenericArguments<'a, 'py>> {
         match self {
             JsonValue::Object(object) => Ok(JsonArgs::new(None, Some(object)).into()),
             _ => {
@@ -241,7 +241,7 @@ impl<'py> Input<'py> for JsonValue {
         }
     }
 
-    fn validate_date(&self, _strict: bool) -> ValResult<ValidationMatch<EitherDate>> {
+    fn validate_date(&self, _strict: bool) -> ValResult<ValidationMatch<EitherDate<'py>>> {
         match self {
             JsonValue::Str(v) => bytes_as_date(self, v.as_bytes()).map(ValidationMatch::strict),
             _ => Err(ValError::new(ErrorTypeDefaults::DateType, self)),
@@ -251,7 +251,7 @@ impl<'py> Input<'py> for JsonValue {
         &self,
         strict: bool,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<ValidationMatch<EitherTime>> {
+    ) -> ValResult<ValidationMatch<EitherTime<'py>>> {
         match self {
             JsonValue::Str(v) => {
                 bytes_as_time(self, v.as_bytes(), microseconds_overflow_behavior).map(ValidationMatch::strict)
@@ -277,7 +277,7 @@ impl<'py> Input<'py> for JsonValue {
         &self,
         strict: bool,
         microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<ValidationMatch<EitherDateTime>> {
+    ) -> ValResult<ValidationMatch<EitherDateTime<'py>>> {
         match self {
             JsonValue::Str(v) => {
                 bytes_as_datetime(self, v.as_bytes(), microseconds_overflow_behavior).map(ValidationMatch::strict)
@@ -292,7 +292,7 @@ impl<'py> Input<'py> for JsonValue {
         &self,
         strict: bool,
         microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<ValidationMatch<EitherTimedelta>> {
+    ) -> ValResult<ValidationMatch<EitherTimedelta<'py>>> {
         match self {
             JsonValue::Str(v) => {
                 bytes_as_timedelta(self, v.as_bytes(), microseconds_overflow_behavior).map(ValidationMatch::strict)
@@ -308,19 +308,12 @@ impl<'py> Input<'py> for JsonValue {
     }
 }
 
-impl BorrowInput<'_> for &'_ JsonValue {
-    type Input = JsonValue;
-    fn borrow_input(&self) -> &Self::Input {
-        self
-    }
-}
-
 /// Required for JSON Object keys so the string can behave like an Input
-impl<'py> Input<'py> for String {
+impl<'py> Input<'py> for str {
     fn as_error_value(&self) -> InputValue {
         // Justification for the clone: this is on the error pathway and we are generally ok
         // with errors having a performance penalty
-        InputValue::Json(JsonValue::Str(self.clone()))
+        InputValue::Json(JsonValue::Str(self.to_owned()))
     }
 
     fn as_kwargs(&self, _py: Python<'py>) -> Option<Bound<'py, PyDict>> {
@@ -328,12 +321,12 @@ impl<'py> Input<'py> for String {
     }
 
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn validate_args(&self) -> ValResult<GenericArguments<'_>> {
+    fn validate_args(&self) -> ValResult<GenericArguments<'_, 'py>> {
         Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self))
     }
 
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn validate_dataclass_args<'a>(&'a self, class_name: &str) -> ValResult<GenericArguments<'a>> {
+    fn validate_dataclass_args<'a>(&'a self, class_name: &str) -> ValResult<GenericArguments<'a, 'py>> {
         let class_name = class_name.to_string();
         Err(ValError::new(
             ErrorType::DataclassType {
@@ -354,7 +347,7 @@ impl<'py> Input<'py> for String {
         // converting input
         // TODO: in V3 we may want to make JSON str always win if in union, for consistency,
         // see https://github.com/pydantic/pydantic-core/pull/867#discussion_r1386582501
-        Ok(ValidationMatch::strict(self.as_str().into()))
+        Ok(ValidationMatch::strict(self.into()))
     }
 
     fn validate_bytes<'a>(&'a self, _strict: bool) -> ValResult<ValidationMatch<EitherBytes<'a, 'py>>> {
@@ -410,7 +403,7 @@ impl<'py> Input<'py> for String {
         Ok(string_to_vec(self).into())
     }
 
-    fn validate_date(&self, _strict: bool) -> ValResult<ValidationMatch<EitherDate>> {
+    fn validate_date(&self, _strict: bool) -> ValResult<ValidationMatch<EitherDate<'py>>> {
         bytes_as_date(self, self.as_bytes()).map(ValidationMatch::lax)
     }
 
@@ -418,7 +411,7 @@ impl<'py> Input<'py> for String {
         &self,
         _strict: bool,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<ValidationMatch<EitherTime>> {
+    ) -> ValResult<ValidationMatch<EitherTime<'py>>> {
         bytes_as_time(self, self.as_bytes(), microseconds_overflow_behavior).map(ValidationMatch::lax)
     }
 
@@ -426,7 +419,7 @@ impl<'py> Input<'py> for String {
         &self,
         _strict: bool,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<ValidationMatch<EitherDateTime>> {
+    ) -> ValResult<ValidationMatch<EitherDateTime<'py>>> {
         bytes_as_datetime(self, self.as_bytes(), microseconds_overflow_behavior).map(ValidationMatch::lax)
     }
 
@@ -434,20 +427,20 @@ impl<'py> Input<'py> for String {
         &self,
         _strict: bool,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<ValidationMatch<EitherTimedelta>> {
+    ) -> ValResult<ValidationMatch<EitherTimedelta<'py>>> {
         bytes_as_timedelta(self, self.as_bytes(), microseconds_overflow_behavior).map(ValidationMatch::lax)
     }
 }
 
 impl BorrowInput<'_> for &'_ String {
-    type Input = String;
+    type Input = str;
     fn borrow_input(&self) -> &Self::Input {
         self
     }
 }
 
 impl BorrowInput<'_> for String {
-    type Input = String;
+    type Input = str;
     fn borrow_input(&self) -> &Self::Input {
         self
     }

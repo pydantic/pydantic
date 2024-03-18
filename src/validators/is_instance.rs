@@ -55,11 +55,11 @@ impl BuildValidator for IsInstanceValidator {
 impl_py_gc_traverse!(IsInstanceValidator { class });
 
 impl Validator for IsInstanceValidator {
-    fn validate<'data>(
+    fn validate<'py>(
         &self,
-        py: Python<'data>,
-        input: &impl Input<'data>,
-        _state: &mut ValidationState,
+        py: Python<'py>,
+        input: &(impl Input<'py> + ?Sized),
+        _state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         if !input.is_python() {
             return Err(ValError::InternalErr(PyNotImplementedError::new_err(
