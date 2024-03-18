@@ -4,10 +4,10 @@ Plugin interface for Pydantic plugins, and related types.
 """
 from __future__ import annotations
 
-from typing import Any, Callable, NamedTuple
+from typing import Any, Callable, NamedTuple, TypeVar
 
 from pydantic_core import CoreConfig, CoreSchema, ValidationError
-from typing_extensions import Literal, Protocol, TypeAlias
+from typing_extensions import Literal, ParamSpec, Protocol, TypeAlias
 
 __all__ = (
     'PydanticPluginProtocol',
@@ -21,6 +21,9 @@ __all__ = (
 )
 
 NewSchemaReturns: TypeAlias = 'tuple[ValidatePythonHandlerProtocol | None, ValidateJsonHandlerProtocol | None, ValidateStringsHandlerProtocol | None]'
+
+P = ParamSpec('P')
+R = TypeVar('R')
 
 
 class SchemaTypePath(NamedTuple):
@@ -101,6 +104,8 @@ class BaseValidateHandlerProtocol(Protocol):
             exception: The exception raised during validation.
         """
         return
+
+    wrap_validator: Callable[[Callable[P, R]], Callable[P, R]] | None = None
 
 
 class ValidatePythonHandlerProtocol(BaseValidateHandlerProtocol, Protocol):

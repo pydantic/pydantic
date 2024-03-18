@@ -92,47 +92,50 @@ class PluggableSchemaValidator:
 
 
 def build_wrapper(func: Callable[P, R], event_handlers: list[BaseValidateHandlerProtocol]) -> Callable[P, R]:
-    if not event_handlers:
-        return func
-    else:
-        on_enters = tuple(h.on_enter for h in event_handlers if filter_handlers(h, 'on_enter'))
-        on_successes = tuple(h.on_success for h in event_handlers if filter_handlers(h, 'on_success'))
-        on_errors = tuple(h.on_error for h in event_handlers if filter_handlers(h, 'on_error'))
-        on_exceptions = tuple(h.on_exception for h in event_handlers if filter_handlers(h, 'on_exception'))
+    for handler in event_handlers:
+        wrap_validator = getattr(handler, 'wrap_validator', None)
+        if wrap_validator:
+            func = wrap_validator(func)
+        else:
+            func = wrap_with_old_handler(func, handler)
 
-        @functools.wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            for on_enter_handler in on_enters:
-                on_enter_handler(*args, **kwargs)
-
-            try:
-                result = func(*args, **kwargs)
-            except ValidationError as error:
-                for on_error_handler in on_errors:
-                    on_error_handler(error)
-                raise
-            except Exception as exception:
-                for on_exception_handler in on_exceptions:
-                    on_exception_handler(exception)
-                raise
-            else:
-                for on_success_handler in on_successes:
-                    on_success_handler(result)
-                return result
-
-        return wrapper
+    return func
 
 
-def filter_handlers(handler_cls: BaseValidateHandlerProtocol, method_name: str) -> bool:
+def wrap_with_old_handler(func: Callable[P, R], handler: BaseValidateHandlerProtocol) -> Callable[P, R]:
+    on_enter = get_handler_method(handler, 'on_enter')
+    on_success = get_handler_method(handler, 'on_success')
+    on_error = get_handler_method(handler, 'on_error')
+    on_exception = get_handler_method(handler, 'on_exception')
+
+    @functools.wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        on_enter(*args, **kwargs)
+        try:
+            result = func(*args, **kwargs)
+        except ValidationError as error:
+            on_error(error)
+            raise
+        except Exception as exception:
+            on_exception(exception)
+            raise
+        else:
+            on_success(result)
+            return result
+
+    return wrapper
+
+
+def get_handler_method(handler: BaseValidateHandlerProtocol, method_name: str) -> Callable[..., None]:
     """Filter out handler methods which are not implemented by the plugin directly - e.g. are missing
     or are inherited from the protocol.
     """
-    handler = getattr(handler_cls, method_name, None)
+    handler = getattr(handler, method_name, None)
     if handler is None:
-        return False
+        return lambda *args, **kwargs: None
     elif handler.__module__ == 'pydantic.plugin':
         # this is the original handler, from the protocol due to runtime inheritance
         # we don't want to call it
-        return False
+        return lambda *args, **kwargs: None
     else:
-        return True
+        return handler
