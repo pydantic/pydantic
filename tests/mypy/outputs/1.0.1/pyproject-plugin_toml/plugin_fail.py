@@ -57,12 +57,6 @@ KwargsForbidExtraModel(x=1)
 
 class BadExtraModel(BaseModel):
     model_config = ConfigDict(extra=1)  # type: ignore[typeddict-item]
-# MYPY: error: Invalid value for "Config.extra"  [pydantic-config]
-# MYPY: note: Error code "pydantic-config" not covered by "type: ignore" comment
-
-
-class BadExtraButIgnoredModel(BaseModel):
-    model_config = ConfigDict(extra=1)  # type: ignore[typeddict-item,pydantic-config]
 
 
 class KwargsBadExtraModel(BaseModel, extra=1):
