@@ -1,9 +1,11 @@
+import dataclasses
 import typing
 
 import pytest
 import typing_extensions
+from typing_extensions import NamedTuple, TypedDict
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 
 
 @pytest.fixture(
@@ -41,9 +43,7 @@ def test_recursive_model_invalid(Self):
 
 
 def test_recursive_model_with_subclass(Self):
-    """
-    Self refs should be valid and should reference the correct class in covariant direction
-    """
+    """Self refs should be valid and should reference the correct class in covariant direction"""
 
     class SelfRef(BaseModel):
         x: int
@@ -64,9 +64,7 @@ def test_recursive_model_with_subclass(Self):
 
 
 def test_recursive_model_with_subclass_invalid(Self):
-    """
-    Self refs are invalid in contravariant direction
-    """
+    """Self refs are invalid in contravariant direction"""
 
     class SelfRef(BaseModel):
         x: int
@@ -80,3 +78,93 @@ def test_recursive_model_with_subclass_invalid(Self):
         match=r'ref\s+Input should be a valid dictionary or instance of SubSelfRef \[type=model_type,',
     ):
         SubSelfRef(x=1, ref=SelfRef(x=2), y=3).model_dump()
+
+
+def test_recursive_model_with_subclass_override(Self):
+    """Self refs should be overridable"""
+
+    class SelfRef(BaseModel):
+        x: int
+        ref: Self | None = None
+
+    class SubSelfRef(SelfRef):
+        y: int
+        ref: SelfRef | Self | None = None
+
+    assert SubSelfRef(x=1, ref=SubSelfRef(x=3, y=4), y=2).model_dump() == {
+        'x': 1,
+        'ref': {'x': 3, 'ref': None, 'y': 4},
+        'y': 2,
+    }
+    assert SubSelfRef(x=1, ref=SelfRef(x=3, y=4), y=2).model_dump() == {
+        'x': 1,
+        'ref': {'x': 3, 'ref': None},
+        'y': 2,
+    }
+
+
+def test_self_type_with_field(Self):
+    with pytest.raises(TypeError, match=r'The following constraints cannot be applied.*\'gt\''):
+
+        class SelfRef(BaseModel):
+            x: int
+            refs: typing.List[Self] = Field(..., gt=0)
+
+
+def test_self_type_json_schema(Self):
+    class SelfRef(BaseModel):
+        x: int
+        refs: typing.List[Self] | None = []
+
+    assert SelfRef.model_json_schema() == {
+        '$defs': {
+            'SelfRef': {
+                'properties': {
+                    'x': {'title': 'X', 'type': 'integer'},
+                    'refs': {
+                        'anyOf': [{'items': {'$ref': '#/$defs/SelfRef'}, 'type': 'array'}, {'type': 'null'}],
+                        'default': [],
+                        'title': 'Refs',
+                    },
+                },
+                'required': ['x'],
+                'title': 'SelfRef',
+                'type': 'object',
+            }
+        },
+        'allOf': [{'$ref': '#/$defs/SelfRef'}],
+    }
+
+
+def test_self_type_in_named_tuple(Self):
+    class SelfRefNamedTuple(NamedTuple):
+        x: int
+        ref: Self | None
+
+    ta = TypeAdapter(SelfRefNamedTuple)
+    assert ta.validate_python({'x': 1, 'ref': {'x': 2, 'ref': None}}) == (1, (2, None))
+
+
+def test_self_type_in_typed_dict(Self):
+    class SelfRefTypedDict(TypedDict):
+        x: int
+        ref: Self | None
+
+    ta = TypeAdapter(SelfRefTypedDict)
+    assert ta.validate_python({'x': 1, 'ref': {'x': 2, 'ref': None}}) == {'x': 1, 'ref': {'x': 2, 'ref': None}}
+
+
+def test_self_type_in_dataclass(Self):
+    @dataclasses.dataclass(frozen=True)
+    class SelfRef:
+        x: int
+        ref: Self | None
+
+    class Model(BaseModel):
+        item: SelfRef
+
+    m = Model.model_validate({'item': {'x': 1, 'ref': {'x': 2, 'ref': None}}})
+    assert m.item.x == 1
+    assert m.item.ref.x == 2
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        m.item.ref.x = 3

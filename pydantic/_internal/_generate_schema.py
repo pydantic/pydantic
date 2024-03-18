@@ -1243,7 +1243,10 @@ class GenerateSchema:
         """
         from ..fields import FieldInfo
 
-        with self.defs.get_schema_or_ref(typed_dict_cls) as (typed_dict_ref, maybe_schema):
+        with self.model_type_stack.push(typed_dict_cls), self.defs.get_schema_or_ref(typed_dict_cls) as (
+            typed_dict_ref,
+            maybe_schema,
+        ):
             if maybe_schema is not None:
                 return maybe_schema
 
@@ -1330,7 +1333,10 @@ class GenerateSchema:
 
     def _namedtuple_schema(self, namedtuple_cls: Any, origin: Any) -> core_schema.CoreSchema:
         """Generate schema for a NamedTuple."""
-        with self.defs.get_schema_or_ref(namedtuple_cls) as (namedtuple_ref, maybe_schema):
+        with self.model_type_stack.push(namedtuple_cls), self.defs.get_schema_or_ref(namedtuple_cls) as (
+            namedtuple_ref,
+            maybe_schema,
+        ):
             if maybe_schema is not None:
                 return maybe_schema
             typevars_map = get_standard_typevars_map(namedtuple_cls)
@@ -1519,7 +1525,10 @@ class GenerateSchema:
         self, dataclass: type[StandardDataclass], origin: type[StandardDataclass] | None
     ) -> core_schema.CoreSchema:
         """Generate schema for a dataclass."""
-        with self.defs.get_schema_or_ref(dataclass) as (dataclass_ref, maybe_schema):
+        with self.model_type_stack.push(dataclass), self.defs.get_schema_or_ref(dataclass) as (
+            dataclass_ref,
+            maybe_schema,
+        ):
             if maybe_schema is not None:
                 return maybe_schema
 
@@ -2300,15 +2309,15 @@ class _ModelTypeStack:
     __slots__ = ('_stack',)
 
     def __init__(self) -> None:
-        self._stack: list[str] = []
+        self._stack: list[type] = []
 
     @contextmanager
-    def push(self, type_obj: str) -> Iterator[None]:
+    def push(self, type_obj: type) -> Iterator[None]:
         self._stack.append(type_obj)
         yield
         self._stack.pop()
 
-    def get(self) -> str | None:
+    def get(self) -> type | None:
         if self._stack:
             return self._stack[-1]
         else:
