@@ -4304,6 +4304,16 @@ Pydantic V2.</p>
 <span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;create-model-field-definitions&#39;</span>
 </code></pre></div>
+<p>Or when you use <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>typing.Annotated</code></a> with invalid input</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">create_model</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">create_model</span><span class="p">(</span><span class="s1">&#39;FooModel&#39;</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;NotFieldInfoValue&#39;</span><span class="p">])</span>
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;create-model-field-definitions&#39;</span>
+</code></pre></div>
 <h2 id="create-model-config-base"><code>create_model</code> config base<a class="headerlink" href="#create-model-config-base" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you use both <code>__config__</code> and <code>__base__</code> together in <code>create_model</code>.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">create_model</span>

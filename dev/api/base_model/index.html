@@ -8959,7 +8959,8 @@ if <code>None</code>, the value is taken from <code>sys._getframe(1)</code></p>
           <td>
             <div class="doc-md-description">
               <p>Attributes of the new model. They should be passed in the format:
-<code>&lt;name&gt;=(&lt;type&gt;, &lt;default value&gt;)</code> or <code>&lt;name&gt;=(&lt;type&gt;, &lt;FieldInfo&gt;)</code>.</p>
+<code>&lt;name&gt;=(&lt;type&gt;, &lt;default value&gt;)</code>, <code>&lt;name&gt;=(&lt;type&gt;, &lt;FieldInfo&gt;)</code>, or <code>typing.Annotated[&lt;type&gt;, &lt;FieldInfo&gt;]</code>.
+Any additional metadata in <code>typing.Annotated[&lt;type&gt;, &lt;FieldInfo&gt;, ...]</code> will be ignored.</p>
             </div>
           </td>
           <td>
@@ -9119,7 +9120,21 @@ if <code>None</code>, the value is taken from <code>sys._getframe(1)</code></p>
 <span class="normal">1506</span>
 <span class="normal">1507</span>
 <span class="normal">1508</span>
-<span class="normal">1509</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+<span class="normal">1509</span>
+<span class="normal">1510</span>
+<span class="normal">1511</span>
+<span class="normal">1512</span>
+<span class="normal">1513</span>
+<span class="normal">1514</span>
+<span class="normal">1515</span>
+<span class="normal">1516</span>
+<span class="normal">1517</span>
+<span class="normal">1518</span>
+<span class="normal">1519</span>
+<span class="normal">1520</span>
+<span class="normal">1521</span>
+<span class="normal">1522</span>
+<span class="normal">1523</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">__model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">__config__</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -9147,7 +9162,8 @@ if <code>None</code>, the value is taken from <code>sys._getframe(1)</code></p>
 <span class="sd">        __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.</span>
 <span class="sd">        __slots__: Deprecated. Should not be passed to `create_model`.</span>
 <span class="sd">        **field_definitions: Attributes of the new model. They should be passed in the format:</span>
-<span class="sd">            `&lt;name&gt;=(&lt;type&gt;, &lt;default value&gt;)` or `&lt;name&gt;=(&lt;type&gt;, &lt;FieldInfo&gt;)`.</span>
+<span class="sd">            `&lt;name&gt;=(&lt;type&gt;, &lt;default value&gt;)`, `&lt;name&gt;=(&lt;type&gt;, &lt;FieldInfo&gt;)`, or `typing.Annotated[&lt;type&gt;, &lt;FieldInfo&gt;]`.</span>
+<span class="sd">            Any additional metadata in `typing.Annotated[&lt;type&gt;, &lt;FieldInfo&gt;, ...]` will be ignored.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        The new [model][pydantic.BaseModel].</span>
@@ -9187,6 +9203,19 @@ if <code>None</code>, the value is taken from <code>sys._getframe(1)</code></p>
                     <span class="s1">&#39;Field definitions should be a `(&lt;type&gt;, &lt;default&gt;)`.&#39;</span><span class="p">,</span>
                     <span class="n">code</span><span class="o">=</span><span class="s1">&#39;create-model-field-definitions&#39;</span><span class="p">,</span>
                 <span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+
+        <span class="k">elif</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">is_annotated</span><span class="p">(</span><span class="n">f_def</span><span class="p">):</span>
+            <span class="p">(</span><span class="n">f_annotation</span><span class="p">,</span> <span class="n">f_value</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span><span class="p">)</span> <span class="o">=</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">get_args</span><span class="p">(</span>
+                <span class="n">f_def</span>
+            <span class="p">)</span>  <span class="c1"># first two input are expected from Annotated, refer to https://docs.python.org/3/library/typing.html#typing.Annotated</span>
+            <span class="kn">from</span> <span class="nn">.fields</span> <span class="kn">import</span> <span class="n">FieldInfo</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f_value</span><span class="p">,</span> <span class="n">FieldInfo</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
+                    <span class="s1">&#39;Field definitions should be a Annotated[&lt;type&gt;, &lt;FieldInfo&gt;]&#39;</span><span class="p">,</span>
+                    <span class="n">code</span><span class="o">=</span><span class="s1">&#39;create-model-field-definitions&#39;</span><span class="p">,</span>
+                <span class="p">)</span>
+
         <span class="k">else</span><span class="p">:</span>
             <span class="n">f_annotation</span><span class="p">,</span> <span class="n">f_value</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">f_def</span>
 
