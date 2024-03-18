@@ -957,7 +957,11 @@ class PydanticModelTransformer:
             elif isinstance(arg, MemberExpr):
                 forbid_extra = arg.name == 'forbid'
             else:
-                error_invalid_config_value(name, self._api, arg)
+                # Do not emit an error for other types of `arg` (e.g., `NameExpr`, `ConditionalExpr`, etc.)
+                # It would be nice if we could type-check these better, but I don't know what the API is to
+                # evaluate an expr into its type and then check if that type is compatible with the expected type.
+                # Note that you can still get proper type checking via: `model_config = ConfigDict(...)`, it's just that
+                # if you don't use an explicit string, the plugin won't be able to infer whether extra is forbidden.
                 return None
             return ModelConfigData(forbid_extra=forbid_extra)
         if name == 'alias_generator':

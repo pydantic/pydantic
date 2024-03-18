@@ -87,7 +87,6 @@ cases = (
             'plugin_fail.py',
             'plugin_success_baseConfig.py',
             'plugin_fail_baseConfig.py',
-            'plugin_optional_inheritance.py',
             'pydantic_settings.py',
         ],
     ).build()
@@ -105,6 +104,8 @@ cases = (
     # One-off cases
     + [
         ('mypy-plugin.ini', 'custom_constructor.py'),
+        ('mypy-plugin.ini', 'config_conditional_extra.py'),
+        ('mypy-plugin.ini', 'plugin_optional_inheritance.py'),
         ('mypy-plugin.ini', 'generics.py'),
         ('mypy-plugin.ini', 'root_models.py'),
         ('mypy-plugin-strict.ini', 'plugin_default_factory.py'),
