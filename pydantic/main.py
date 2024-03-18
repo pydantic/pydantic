@@ -1105,35 +1105,37 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         )
         from .deprecated import parse
 
-        try:
-            obj = parse.load_str_bytes(
-                b,
-                proto=proto,
-                content_type=content_type,
-                encoding=encoding,
-                allow_pickle=allow_pickle,
-            )
-        except (ValueError, TypeError) as exc:
-            import json
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            try:
+                obj = parse.load_str_bytes(
+                    b,
+                    proto=proto,
+                    content_type=content_type,
+                    encoding=encoding,
+                    allow_pickle=allow_pickle,
+                )
+            except (ValueError, TypeError) as exc:
+                import json
 
-            # try to match V1
-            if isinstance(exc, UnicodeDecodeError):
-                type_str = 'value_error.unicodedecode'
-            elif isinstance(exc, json.JSONDecodeError):
-                type_str = 'value_error.jsondecode'
-            elif isinstance(exc, ValueError):
-                type_str = 'value_error'
-            else:
-                type_str = 'type_error'
+                # try to match V1
+                if isinstance(exc, UnicodeDecodeError):
+                    type_str = 'value_error.unicodedecode'
+                elif isinstance(exc, json.JSONDecodeError):
+                    type_str = 'value_error.jsondecode'
+                elif isinstance(exc, ValueError):
+                    type_str = 'value_error'
+                else:
+                    type_str = 'type_error'
 
-            # ctx is missing here, but since we've added `input` to the error, we're not pretending it's the same
-            error: pydantic_core.InitErrorDetails = {
-                # The type: ignore on the next line is to ignore the requirement of LiteralString
-                'type': pydantic_core.PydanticCustomError(type_str, str(exc)),  # type: ignore
-                'loc': ('__root__',),
-                'input': b,
-            }
-            raise pydantic_core.ValidationError.from_exception_data(cls.__name__, [error])
+                # ctx is missing here, but since we've added `input` to the error, we're not pretending it's the same
+                error: pydantic_core.InitErrorDetails = {
+                    # The type: ignore on the next line is to ignore the requirement of LiteralString
+                    'type': pydantic_core.PydanticCustomError(type_str, str(exc)),  # type: ignore
+                    'loc': ('__root__',),
+                    'input': b,
+                }
+                raise pydantic_core.ValidationError.from_exception_data(cls.__name__, [error])
         return cls.model_validate(obj)
 
     @classmethod
@@ -1158,14 +1160,16 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         )
         from .deprecated import parse
 
-        obj = parse.load_file(
-            path,
-            proto=proto,
-            content_type=content_type,
-            encoding=encoding,
-            allow_pickle=allow_pickle,
-        )
-        return cls.parse_obj(obj)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            obj = parse.load_file(
+                path,
+                proto=proto,
+                content_type=content_type,
+                encoding=encoding,
+                allow_pickle=allow_pickle,
+            )
+            return cls.parse_obj(obj)
 
     @classmethod
     @typing_extensions.deprecated(
