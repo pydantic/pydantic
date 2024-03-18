@@ -47,7 +47,7 @@ def _create_module_file(code, tmp_path, name):
 def disable_error_urls():
     # Don't add URLs during docs tests when printing
     # Otherwise we'll get version numbers in the URLs that will update frequently
-    os.environ['PYDANTIC_ERRORS_OMIT_URL'] = 'true'
+    os.environ['PYDANTIC_ERRORS_INCLUDE_URL'] = 'false'
 
 
 @pytest.fixture
