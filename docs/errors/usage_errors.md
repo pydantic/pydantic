@@ -628,6 +628,19 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'create-model-field-definitions'
 ```
 
+Or when you use [`typing.Annotated`][] with invalid input
+
+```py
+from typing_extensions import Annotated
+
+from pydantic import PydanticUserError, create_model
+
+try:
+    create_model('FooModel', foo=Annotated[str, 'NotFieldInfoValue'])
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'create-model-field-definitions'
+```
+
 ## `create_model` config base {#create-model-config-base}
 
 This error is raised when you use both `__config__` and `__base__` together in `create_model`.
