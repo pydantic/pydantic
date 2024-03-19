@@ -375,18 +375,18 @@ def test_eval_type_backport():
 
 
 @pytest.mark.parametrize('defer_build', [False, True])
-@pytest.mark.parametrize('defer_build_mode', ['only_model', 'always'])
+@pytest.mark.parametrize('defer_build_mode', [('model',), ('type_adapter',), ('model', 'type_adapter')])
 @pytest.mark.parametrize('is_annotated', [False, True])  # FastAPI heavily uses Annotated
 def test_respects_defer_build(
-    defer_build: bool, defer_build_mode: Literal['only_model', 'always'], is_annotated: bool
+    defer_build: bool, defer_build_mode: tuple[Literal['model', 'type_adapter']], is_annotated: bool
 ) -> None:
-    class Model(BaseModel, defer_build=defer_build, defer_build_mode=defer_build_mode):
+    class Model(BaseModel, defer_build=defer_build, _defer_build_mode=defer_build_mode):
         x: int
 
     class SubModel(Model):
         y: Optional[int] = None
 
-    @pydantic.dataclasses.dataclass(config=ConfigDict(defer_build=defer_build, defer_build_mode=defer_build_mode))
+    @pydantic.dataclasses.dataclass(config=ConfigDict(defer_build=defer_build, _defer_build_mode=defer_build_mode))
     class DataClassModel:
         x: int
 
@@ -395,7 +395,7 @@ def test_respects_defer_build(
         y: Optional[int] = None
 
     class TypedDictModel(TypedDict):
-        __pydantic_config__ = ConfigDict(defer_build=defer_build, defer_build_mode=defer_build_mode)  # type: ignore
+        __pydantic_config__ = ConfigDict(defer_build=defer_build, _defer_build_mode=defer_build_mode)  # type: ignore
         x: int
 
     models: list[tuple[type, Optional[ConfigDict]]] = [
@@ -406,15 +406,15 @@ def test_respects_defer_build(
         (DataClassModel, None),
         (SubDataClassModel, None),
         (TypedDictModel, None),
-        (Dict[str, int], ConfigDict(defer_build=defer_build, defer_build_mode=defer_build_mode)),
+        (Dict[str, int], ConfigDict(defer_build=defer_build, _defer_build_mode=defer_build_mode)),
     ]
 
     for model, adapter_config in models:
         tested_model = Annotated[model, Field(title='abc')] if is_annotated else model
 
         ta = TypeAdapter(tested_model, config=adapter_config)
-        if defer_build and defer_build_mode == 'always':
-            assert ta._schema_handlers is None, f'{tested_model} should be defer_build'
+        if defer_build and 'type_adapter' in defer_build_mode:
+            assert ta._schema_handlers is None, f'{tested_model} should be built deferred'
         else:
             assert ta._schema_handlers is not None
 

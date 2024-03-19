@@ -121,8 +121,9 @@ class TypeAdapter(Generic[T]):
     **Note:** By default, `TypeAdapter` does not respect the
     [`defer_build=True`][pydantic.config.ConfigDict.defer_build] setting in the
     [`model_config`][pydantic.BaseModel.model_config] or in the `TypeAdapter` constructor `config`. You need to also
-    explicitly set [`defer_build_mode="always"`][pydantic.config.ConfigDict.defer_build_mode] of the config to defer
-    the model validator and serializer construction. This is required due to backwards compatibility reasons.
+    explicitly set [`_defer_build_mode=('model', 'type_adapter')`][pydantic.config.ConfigDict._defer_build_mode] of the
+    config to defer the model validator and serializer construction. Thus, this feature is opt-in to ensure backwards
+    compatibility.
 
     Attributes:
         core_schema: The core schema for the type.
@@ -290,7 +291,7 @@ class TypeAdapter(Generic[T]):
 
     @classmethod
     def _is_defer_build_config(cls, config: ConfigDict) -> bool:
-        return config.get('defer_build', False) is True and config.get('defer_build_mode', 'only_model') != 'only_model'
+        return config.get('defer_build', False) is True and 'type_adapter' in config.get('_defer_build_mode', tuple())
 
     def validate_python(
         self,
