@@ -27,7 +27,7 @@ _inspect_validator = _decorators.inspect_validator
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class AfterValidator:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **after** the inner validation logic.
 
@@ -83,7 +83,7 @@ class AfterValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class BeforeValidator:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **before** the inner validation logic.
 
@@ -127,7 +127,7 @@ class BeforeValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class PlainValidator:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **instead** of the inner validation logic.
 
@@ -153,18 +153,33 @@ class PlainValidator:
     func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        # Note that for some valid uses of PlainValidator, it is not possible to generate a core schema for the
+        # source_type, so calling `handler(source_type)` will error, which prevents us from generating a proper
+        # serialization schema. To work around this for use cases that will not involve serialization, we simply
+        # catch any PydanticSchemaGenerationError that may be raised while attempting to build the serialization schema
+        # and abort any attempts to handle special serialization.
+        from pydantic import PydanticSchemaGenerationError
+
+        try:
+            schema = handler(source_type)
+            serialization = core_schema.wrap_serializer_function_ser_schema(function=lambda v, h: h(v), schema=schema)
+        except PydanticSchemaGenerationError:
+            serialization = None
+
         info_arg = _inspect_validator(self.func, 'plain')
         if info_arg:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
-            return core_schema.with_info_plain_validator_function(func, field_name=handler.field_name)
+            return core_schema.with_info_plain_validator_function(
+                func, field_name=handler.field_name, serialization=serialization
+            )
         else:
             func = cast(core_schema.NoInfoValidatorFunction, self.func)
-            return core_schema.no_info_plain_validator_function(func)
+            return core_schema.no_info_plain_validator_function(func, serialization=serialization)
 
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class WrapValidator:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **around** the inner validation logic.
 
@@ -258,7 +273,8 @@ if TYPE_CHECKING:
 
 @overload
 def field_validator(
-    __field: str,
+    field: str,
+    /,
     *fields: str,
     mode: Literal['before', 'after', 'plain'] = ...,
     check_fields: bool | None = ...,
@@ -268,7 +284,8 @@ def field_validator(
 
 @overload
 def field_validator(
-    __field: str,
+    field: str,
+    /,
     *fields: str,
     mode: Literal['wrap'],
     check_fields: bool | None = ...,
@@ -280,12 +297,13 @@ FieldValidatorModes: TypeAlias = Literal['before', 'after', 'wrap', 'plain']
 
 
 def field_validator(
-    __field: str,
+    field: str,
+    /,
     *fields: str,
     mode: FieldValidatorModes = 'after',
     check_fields: bool | None = None,
 ) -> Callable[[Any], Any]:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/validators/#field-validators
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/validators/#field-validators
 
     Decorate methods on the class indicating that they should be used to validate fields.
 
@@ -326,7 +344,7 @@ def field_validator(
     For more in depth examples, see [Field Validators](../concepts/validators.md#field-validators).
 
     Args:
-        __field: The first field the `field_validator` should be called on; this is separate
+        field: The first field the `field_validator` should be called on; this is separate
             from `fields` to ensure an error is raised if you don't pass at least one.
         *fields: Additional field(s) the `field_validator` should be called on.
         mode: Specifies whether to validate the fields before or after validation.
@@ -341,13 +359,13 @@ def field_validator(
             - If the args passed to `@field_validator` as fields are not strings.
             - If `@field_validator` applied to instance methods.
     """
-    if isinstance(__field, FunctionType):
+    if isinstance(field, FunctionType):
         raise PydanticUserError(
             '`@field_validator` should be used with fields and keyword arguments, not bare. '
             "E.g. usage should be `@validator('<field_name>', ...)`",
             code='validator-no-fields',
         )
-    fields = __field, *fields
+    fields = field, *fields
     if not all(isinstance(field, str) for field in fields):
         raise PydanticUserError(
             '`@field_validator` fields should be passed as separate string args. '
@@ -356,7 +374,7 @@ def field_validator(
         )
 
     def dec(
-        f: Callable[..., Any] | staticmethod[Any, Any] | classmethod[Any, Any, Any]
+        f: Callable[..., Any] | staticmethod[Any, Any] | classmethod[Any, Any, Any],
     ) -> _decorators.PydanticDescriptorProxy[Any]:
         if _decorators.is_instance_method_from_sig(f):
             raise PydanticUserError(
@@ -534,7 +552,7 @@ def model_validator(
     *,
     mode: Literal['wrap', 'before', 'after'],
 ) -> Any:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/validators/#model-validators
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/validators/#model-validators
 
     Decorate model methods for validation purposes.
 

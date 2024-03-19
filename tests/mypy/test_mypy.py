@@ -104,12 +104,17 @@ cases = (
     # One-off cases
     + [
         ('mypy-plugin.ini', 'custom_constructor.py'),
+        ('mypy-plugin.ini', 'config_conditional_extra.py'),
+        ('mypy-plugin.ini', 'plugin_optional_inheritance.py'),
         ('mypy-plugin.ini', 'generics.py'),
         ('mypy-plugin.ini', 'root_models.py'),
         ('mypy-plugin-strict.ini', 'plugin_default_factory.py'),
         ('mypy-plugin-strict-no-any.ini', 'dataclass_no_any.py'),
         ('mypy-plugin-very-strict.ini', 'metaclass_args.py'),
         ('pyproject-default.toml', 'computed_fields.py'),
+        ('pyproject-default.toml', 'with_config_decorator.py'),
+        ('pyproject-plugin-no-strict-optional.toml', 'no_strict_optional.py'),
+        ('pyproject-plugin-strict-equality.toml', 'strict_equality.py'),
     ]
 )
 
@@ -190,16 +195,21 @@ def test_mypy_results(config_filename: str, python_filename: str, request: pytes
     if test_config.existing is not None:
         existing_output_code = test_config.existing.output_path.read_text()
         print(f'Comparing output with {test_config.existing.output_path}')
+    else:
+        print(f'Comparing output with {input_path} (expecting no mypy errors)')
 
     merged_output = merge_python_and_mypy_output(input_code, mypy_out)
 
-    if merged_output == existing_output_code:
+    if merged_output == (existing_output_code or input_code):
         # Test passed, no changes needed
         pass
     elif request.config.getoption('update_mypy'):
         test_config.current.output_path.parent.mkdir(parents=True, exist_ok=True)
         test_config.current.output_path.write_text(merged_output)
     else:
+        print('**** Merged Output ****')
+        print(merged_output)
+        print('***********************')
         assert existing_output_code is not None, 'No output file found, run `make test-mypy-update` to create it'
         assert merged_output == existing_output_code
         expected_returncode = get_expected_return_code(existing_output_code)
@@ -277,7 +287,7 @@ def merge_python_and_mypy_output(source_code: str, mypy_output: str) -> str:
         if not line:
             continue
         try:
-            line_number, message = line.split(':', maxsplit=1)
+            line_number, message = re.split(r':(?:\d+:)?', line, maxsplit=1)
             merged_lines.insert(int(line_number), (f'# MYPY: {message.strip()}', True))
         except ValueError:
             # This could happen due to lack of a ':' in `line`, or the pre-':' contents not being a number

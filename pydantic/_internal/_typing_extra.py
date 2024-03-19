@@ -5,12 +5,13 @@ import dataclasses
 import sys
 import types
 import typing
+import warnings
 from collections.abc import Callable
 from functools import partial
 from types import GetSetDescriptorType
 from typing import TYPE_CHECKING, Any, Final
 
-from typing_extensions import Annotated, Literal, TypeAliasType, TypeGuard, get_args, get_origin
+from typing_extensions import Annotated, Literal, TypeAliasType, TypeGuard, deprecated, get_args, get_origin
 
 if TYPE_CHECKING:
     from ._dataclasses import StandardDataclass
@@ -62,6 +63,11 @@ LITERAL_TYPES: set[Any] = {Literal}
 if hasattr(typing, 'Literal'):
     LITERAL_TYPES.add(typing.Literal)  # type: ignore
 
+# Check if `deprecated` is a type to prevent errors when using typing_extensions < 4.9.0
+DEPRECATED_TYPES: tuple[Any, ...] = (deprecated,) if isinstance(deprecated, type) else ()
+if hasattr(warnings, 'deprecated'):
+    DEPRECATED_TYPES = (*DEPRECATED_TYPES, warnings.deprecated)  # type: ignore
+
 NONE_TYPES: tuple[Any, ...] = (None, NoneType, *(tp[None] for tp in LITERAL_TYPES))
 
 
@@ -78,6 +84,10 @@ def is_callable_type(type_: type[Any]) -> bool:
 
 def is_literal_type(type_: type[Any]) -> bool:
     return Literal is not None and get_origin(type_) in LITERAL_TYPES
+
+
+def is_deprecated_instance(instance: Any) -> TypeGuard[deprecated]:
+    return isinstance(instance, DEPRECATED_TYPES)
 
 
 def literal_values(type_: type[Any]) -> tuple[Any, ...]:
@@ -267,10 +277,16 @@ def get_function_type_hints(
     """Like `typing.get_type_hints`, but doesn't convert `X` to `Optional[X]` if the default value is `None`, also
     copes with `partial`.
     """
-    if isinstance(function, partial):
-        annotations = function.func.__annotations__
-    else:
-        annotations = function.__annotations__
+    try:
+        if isinstance(function, partial):
+            annotations = function.func.__annotations__
+        else:
+            annotations = function.__annotations__
+    except AttributeError:
+        type_hints = get_type_hints(function)
+        if isinstance(function, type):
+            type_hints.setdefault('return', type)
+        return type_hints
 
     globalns = add_module_globals(function)
     type_hints = {}

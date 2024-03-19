@@ -32,6 +32,7 @@ from pydantic import (
     field_serializer,
     field_validator,
     model_validator,
+    with_config,
 )
 from pydantic._internal._mock_val_ser import MockValSer
 from pydantic.dataclasses import is_pydantic_dataclass, rebuild_dataclass
@@ -1352,6 +1353,7 @@ def test_discriminated_union_basemodel_instance_value():
 
     t = Top(sub=A(l='a'))
     assert isinstance(t, Top)
+    # insert_assert(model_json_schema(Top))
     assert model_json_schema(Top) == {
         'title': 'Top',
         'type': 'object',
@@ -1364,8 +1366,18 @@ def test_discriminated_union_basemodel_instance_value():
         },
         'required': ['sub'],
         '$defs': {
-            'A': {'properties': {'l': {'const': 'a', 'title': 'L'}}, 'required': ['l'], 'title': 'A', 'type': 'object'},
-            'B': {'properties': {'l': {'const': 'b', 'title': 'L'}}, 'required': ['l'], 'title': 'B', 'type': 'object'},
+            'A': {
+                'properties': {'l': {'const': 'a', 'enum': ['a'], 'title': 'L', 'type': 'string'}},
+                'required': ['l'],
+                'title': 'A',
+                'type': 'object',
+            },
+            'B': {
+                'properties': {'l': {'const': 'b', 'enum': ['b'], 'title': 'L', 'type': 'string'}},
+                'required': ['l'],
+                'title': 'B',
+                'type': 'object',
+            },
         },
     }
 
@@ -1619,6 +1631,79 @@ def test_cross_module_cyclic_reference_dataclass(create_module):
             'type': 'unexpected_keyword_argument',
         }
     ]
+
+
+@pytest.mark.parametrize(
+    'dataclass_decorator',
+    [
+        pydantic.dataclasses.dataclass,
+        dataclasses.dataclass,
+    ],
+    ids=['pydantic', 'stdlib'],
+)
+def test_base_dataclasses_annotations_resolving(create_module, dataclass_decorator: Callable):
+    @create_module
+    def module():
+        import dataclasses
+        from typing import NewType
+
+        OddInt = NewType('OddInt', int)
+
+        @dataclasses.dataclass
+        class D1:
+            d1: 'OddInt'
+            s: str
+
+            __pydantic_config__ = {'str_to_lower': True}
+
+    @dataclass_decorator
+    class D2(module.D1):
+        d2: int
+
+    assert TypeAdapter(D2).validate_python({'d1': 1, 'd2': 2, 's': 'ABC'}) == D2(d1=1, d2=2, s='abc')
+
+
+@pytest.mark.parametrize(
+    'dataclass_decorator',
+    [
+        pydantic.dataclasses.dataclass,
+        dataclasses.dataclass,
+    ],
+    ids=['pydantic', 'stdlib'],
+)
+def test_base_dataclasses_annotations_resolving_with_override(create_module, dataclass_decorator: Callable):
+    @create_module
+    def module1():
+        import dataclasses
+        from typing import NewType
+
+        IDType = NewType('IDType', int)
+
+        @dataclasses.dataclass
+        class D1:
+            db_id: 'IDType'
+
+            __pydantic_config__ = {'str_to_lower': True}
+
+    @create_module
+    def module2():
+        import dataclasses
+        from typing import NewType
+
+        IDType = NewType('IDType', str)
+
+        @dataclasses.dataclass
+        class D2:
+            db_id: 'IDType'
+            s: str
+
+            __pydantic_config__ = {'str_to_lower': False}
+
+    @dataclass_decorator
+    class D3(module1.D1, module2.D2):
+        ...
+
+    assert TypeAdapter(D3).validate_python({'db_id': 42, 's': 'ABC'}) == D3(db_id=42, s='abc')
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python < 3.10')
@@ -2406,6 +2491,24 @@ def test_model_config_override_in_decorator_empty_config() -> None:
     assert ta.validate_python({'x': 'ABC '}).x == 'ABC '
 
 
+def test_dataclasses_with_config_decorator():
+    @dataclasses.dataclass
+    @with_config(ConfigDict(str_to_lower=True))
+    class Model1:
+        x: str
+
+    ta = TypeAdapter(Model1)
+    assert ta.validate_python({'x': 'ABC'}).x == 'abc'
+
+    @with_config(ConfigDict(str_to_lower=True))
+    @dataclasses.dataclass
+    class Model2:
+        x: str
+
+    ta = TypeAdapter(Model2)
+    assert ta.validate_python({'x': 'ABC'}).x == 'abc'
+
+
 def test_pydantic_field_annotation():
     @pydantic.dataclasses.dataclass
     class Model:
@@ -2648,3 +2751,158 @@ def test_validate_strings():
         n: Nested
 
     assert Model.model_validate_strings({'n': {'d': '2017-01-01'}}).n.d == date(2017, 1, 1)
+
+
+@pytest.mark.parametrize('field_constructor', [dataclasses.field, pydantic.dataclasses.Field])
+@pytest.mark.parametrize('extra', ['ignore', 'forbid'])
+def test_init_false_not_in_signature(extra, field_constructor):
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra=extra))
+    class MyDataclass:
+        a: int = field_constructor(init=False, default=-1)
+        b: int = pydantic.dataclasses.Field(default=2)
+
+    signature = inspect.signature(MyDataclass)
+    # `a` should not be in the __init__
+    assert 'a' not in signature.parameters.keys()
+    assert 'b' in signature.parameters.keys()
+
+
+init_test_cases = [
+    ({'a': 2, 'b': -1}, 'ignore', {'a': 2, 'b': 1}),
+    ({'a': 2}, 'ignore', {'a': 2, 'b': 1}),
+    (
+        {'a': 2, 'b': -1},
+        'forbid',
+        [
+            {
+                'type': 'unexpected_keyword_argument',
+                'loc': ('b',),
+                'msg': 'Unexpected keyword argument',
+                'input': -1,
+            }
+        ],
+    ),
+    ({'a': 2}, 'forbid', {'a': 2, 'b': 1}),
+]
+
+
+@pytest.mark.parametrize('field_constructor', [dataclasses.field, pydantic.dataclasses.Field])
+@pytest.mark.parametrize(
+    'input_data,extra,expected',
+    init_test_cases,
+)
+def test_init_false_with_post_init(input_data, extra, expected, field_constructor):
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra=extra))
+    class MyDataclass:
+        a: int
+        b: int = field_constructor(init=False)
+
+        def __post_init__(self):
+            self.b = 1
+
+    if isinstance(expected, list):
+        with pytest.raises(ValidationError) as exc_info:
+            MyDataclass(**input_data)
+
+        assert exc_info.value.errors(include_url=False) == expected
+    else:
+        assert dataclasses.asdict(MyDataclass(**input_data)) == expected
+
+
+@pytest.mark.parametrize('field_constructor', [dataclasses.field, pydantic.dataclasses.Field])
+@pytest.mark.parametrize(
+    'input_data,extra,expected',
+    init_test_cases,
+)
+def test_init_false_with_default(input_data, extra, expected, field_constructor):
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra=extra))
+    class MyDataclass:
+        a: int
+        b: int = field_constructor(init=False, default=1)
+
+    if isinstance(expected, list):
+        with pytest.raises(ValidationError) as exc_info:
+            MyDataclass(**input_data)
+
+        assert exc_info.value.errors(include_url=False) == expected
+    else:
+        assert dataclasses.asdict(MyDataclass(**input_data)) == expected
+
+
+def test_disallow_extra_allow_and_init_false() -> None:
+    with pytest.raises(PydanticUserError, match='This combination is not allowed.'):
+
+        @pydantic.dataclasses.dataclass(config=ConfigDict(extra='allow'))
+        class A:
+            a: int = Field(init=False, default=1)
+
+
+def test_disallow_init_false_and_init_var_true() -> None:
+    with pytest.raises(PydanticUserError, match='mutually exclusive.'):
+
+        @pydantic.dataclasses.dataclass
+        class Foo:
+            bar: str = Field(..., init=False, init_var=True)
+
+
+def test_annotations_valid_for_field_inheritance() -> None:
+    # testing https://github.com/pydantic/pydantic/issues/8670
+
+    @pydantic.dataclasses.dataclass()
+    class A:
+        a: int = pydantic.dataclasses.Field()
+
+    @pydantic.dataclasses.dataclass()
+    class B(A):
+        ...
+
+    assert B.__pydantic_fields__['a'].annotation is int
+
+    assert B(a=1).a == 1
+
+
+def test_annotations_valid_for_field_inheritance_with_existing_field() -> None:
+    # variation on testing https://github.com/pydantic/pydantic/issues/8670
+
+    @pydantic.dataclasses.dataclass()
+    class A:
+        a: int = pydantic.dataclasses.Field()
+
+    @pydantic.dataclasses.dataclass()
+    class B(A):
+        b: str = pydantic.dataclasses.Field()
+
+    assert B.__pydantic_fields__['a'].annotation is int
+    assert B.__pydantic_fields__['b'].annotation is str
+
+    b = B(a=1, b='b')
+    assert b.a == 1
+    assert b.b == 'b'
+
+
+def test_annotation_with_double_override() -> None:
+    @pydantic.dataclasses.dataclass()
+    class A:
+        a: int
+        b: int
+        c: int = pydantic.dataclasses.Field()
+        d: int = pydantic.dataclasses.Field()
+
+    # note, the order of fields is different here, as to test that the annotation
+    # is correctly set on the field no matter the base's default / current class's default
+    @pydantic.dataclasses.dataclass()
+    class B(A):
+        a: str
+        c: str
+        b: str = pydantic.dataclasses.Field()
+        d: str = pydantic.dataclasses.Field()
+
+    @pydantic.dataclasses.dataclass()
+    class C(B):
+        ...
+
+    for class_ in [B, C]:
+        instance = class_(a='a', b='b', c='c', d='d')
+        for field_name in ['a', 'b', 'c', 'd']:
+            assert class_.__pydantic_fields__[field_name].annotation is str
+            assert getattr(instance, field_name) == field_name

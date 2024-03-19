@@ -481,6 +481,7 @@ else:
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+
 # This types superclass should be Set[T], but cython chokes on that...
 class ConstrainedSet(set):  # type: ignore
     # Needed for pydantic to detect that this is a set
@@ -568,6 +569,7 @@ def confrozenset(
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ LIST TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 # This types superclass should be List[T], but cython chokes on that...
 class ConstrainedList(list):  # type: ignore
@@ -1082,19 +1084,6 @@ BYTE_SIZES = {
     'tib': 2**40,
     'pib': 2**50,
     'eib': 2**60,
-    'bit': 1/8,
-    'kbit': 10**3/8,
-    'mbit': 10**6/8,
-    'gbit': 10**9/8,
-    'tbit': 10**12/8,
-    'pbit': 10**15/8,
-    'ebit': 10**18/8,
-    'kibit': 2**10/8,
-    'mibit': 2**20/8,
-    'gibit': 2**30/8,
-    'tibit': 2**40/8,
-    'pibit': 2**50/8,
-    'eibit': 2**60/8,
 }
 BYTE_SIZES.update({k.lower()[0]: v for k, v in BYTE_SIZES.items() if 'i' not in k})
 byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
@@ -1107,7 +1096,6 @@ class ByteSize(int):
 
     @classmethod
     def validate(cls, v: StrIntFloat) -> 'ByteSize':
-
         try:
             return cls(int(v))
         except ValueError:
@@ -1129,7 +1117,6 @@ class ByteSize(int):
         return cls(int(float(scalar) * unit_mult))
 
     def human_readable(self, decimal: bool = False) -> str:
-
         if decimal:
             divisor = 1000
             units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
@@ -1148,7 +1135,6 @@ class ByteSize(int):
         return f'{num:0.1f}{final_unit}'
 
     def to(self, unit: str) -> float:
-
         try:
             unit_div = BYTE_SIZES[unit.lower()]
         except KeyError:

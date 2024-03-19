@@ -441,7 +441,7 @@ from typing_extensions import Annotated
 from pydantic import BaseModel, GetCoreSchemaHandler
 
 
-@dataclass
+@dataclass(frozen=True)  # (1)!
 class MyAfterValidator:
     func: Callable[[Any], Any]
 
@@ -460,10 +460,11 @@ class Model(BaseModel):
     name: Username
 
 
-assert Model(name='ABC').name == 'abc'
+assert Model(name='ABC').name == 'abc'  # (2)!
 ```
 
-Notice that type checkers will not complain about assigning `'abc'` to `Username` like they did in the previous example because they do not consider `Username` to be a distinct type from `str`.
+1. The `frozen=True` specification makes `MyAfterValidator` hashable. Without this, a union such as `Username | None` will raise an error.
+2. Notice that type checkers will not complain about assigning `'ABC'` to `Username` like they did in the previous example because they do not consider `Username` to be a distinct type from `str`.
 
 #### Handling third-party types
 

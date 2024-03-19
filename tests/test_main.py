@@ -2842,11 +2842,12 @@ def test_extra_validator_named() -> None:
 
     class Model(BaseModel):
         model_config = ConfigDict(extra='allow')
+        __pydantic_extra__: 'dict[str, Foo]'
 
     class Child(Model):
-        __pydantic_extra__: Dict[str, Foo]
+        y: int
 
-    m = Child(a={'x': '1'})
+    m = Child(a={'x': '1'}, y=2)
     assert m.__pydantic_extra__ == {'a': Foo(x=1)}
 
     # insert_assert(Child.model_json_schema())
@@ -2860,7 +2861,8 @@ def test_extra_validator_named() -> None:
             }
         },
         'additionalProperties': {'$ref': '#/$defs/Foo'},
-        'properties': {},
+        'properties': {'y': {'title': 'Y', 'type': 'integer'}},
+        'required': ['y'],
         'title': 'Child',
         'type': 'object',
     }

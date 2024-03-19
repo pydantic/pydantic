@@ -20,6 +20,7 @@ from pydantic import (
     ConfigDict,
     Field,
     GetCoreSchemaHandler,
+    PlainSerializer,
     PydanticDeprecatedSince20,
     PydanticUserError,
     TypeAdapter,
@@ -555,17 +556,13 @@ def test_use_no_fields():
         class Model(BaseModel):
             a: str
 
-            with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
-
-                @validator()
-                def checker(cls, v):
-                    return v
+            @validator()
+            def checker(cls, v):
+                return v
 
 
 def test_use_no_fields_field_validator():
-    with pytest.raises(
-        TypeError, match=re.escape("field_validator() missing 1 required positional argument: '__field'")
-    ):
+    with pytest.raises(TypeError, match=re.escape("field_validator() missing 1 required positional argument: 'field'")):
 
         class Model(BaseModel):
             a: str
@@ -845,6 +842,18 @@ def test_validate_child_extra():
         Child(a='snap')
 
 
+def test_validate_all():
+    class MyModel(BaseModel):
+        x: int
+
+        @field_validator('*')
+        @classmethod
+        def validate_all(cls, v: Any):
+            return v * 2
+
+    assert MyModel(x=10).x == 20
+
+
 def test_validate_child_all():
     with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
@@ -863,6 +872,22 @@ def test_validate_child_all():
         assert Child(a='this is foobar good').a == 'this is foobar good'
         with pytest.raises(ValidationError):
             Child(a='snap')
+
+    class Parent(BaseModel):
+        a: str
+
+    class Child(Parent):
+        @field_validator('*')
+        @classmethod
+        def check_a(cls, v: Any):
+            if 'foobar' not in v:
+                raise ValueError('"foobar" not found in a')
+            return v
+
+    assert Parent(a='this is not a child').a == 'this is not a child'
+    assert Child(a='this is foobar good').a == 'this is foobar good'
+    with pytest.raises(ValidationError):
+        Child(a='snap')
 
 
 def test_validate_parent():
@@ -909,6 +934,26 @@ def test_validate_parent_all():
             Parent(a='snap')
         with pytest.raises(ValidationError):
             Child(a='snap')
+
+    class Parent(BaseModel):
+        a: str
+
+        @field_validator('*')
+        @classmethod
+        def check_a(cls, v: Any):
+            if 'foobar' not in v:
+                raise ValueError('"foobar" not found in a')
+            return v
+
+    class Child(Parent):
+        pass
+
+    assert Parent(a='this is foobar good').a == 'this is foobar good'
+    assert Child(a='this is foobar good').a == 'this is foobar good'
+    with pytest.raises(ValidationError):
+        Parent(a='snap')
+    with pytest.raises(ValidationError):
+        Child(a='snap')
 
 
 def test_inheritance_keep():
@@ -1299,20 +1344,20 @@ def test_assert_raises_validation_error():
         @field_validator('a')
         @classmethod
         def check_a(cls, v: Any):
-            assert v == 'a', 'invalid a'
+            if v != 'a':
+                raise AssertionError('invalid a')
             return v
 
     Model(a='a')
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
-    injected_by_pytest = "assert 'snap' == 'a'\n  - a\n  + snap"
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'error': HasRepr(repr(AssertionError("invalid a\nassert 'snap' == 'a'\n  - a\n  + snap")))},
+            'ctx': {'error': HasRepr(repr(AssertionError('invalid a')))},
             'input': 'snap',
             'loc': ('a',),
-            'msg': f'Assertion failed, invalid a\n{injected_by_pytest}',
+            'msg': 'Assertion failed, invalid a',
             'type': 'assertion_error',
         }
     ]
@@ -2806,3 +2851,35 @@ def test_validate_default_raises_for_dataclasses() -> None:
             'ctx': {'error': IsInstance(AssertionError)},
         },
     ]
+
+
+def test_plain_validator_plain_serializer() -> None:
+    """https://github.com/pydantic/pydantic/issues/8512"""
+    ser_type = str
+    serializer = PlainSerializer(lambda x: ser_type(int(x)), return_type=ser_type)
+    validator = PlainValidator(lambda x: bool(int(x)))
+
+    class Blah(BaseModel):
+        foo: Annotated[bool, validator, serializer]
+        bar: Annotated[bool, serializer, validator]
+
+    blah = Blah(foo='0', bar='1')
+    data = blah.model_dump()
+    assert isinstance(data['foo'], ser_type)
+    assert isinstance(data['bar'], ser_type)
+
+
+def test_plain_validator_with_unsupported_type() -> None:
+    class UnsupportedClass:
+        pass
+
+    PreviouslySupportedType = Annotated[
+        UnsupportedClass,
+        PlainValidator(lambda _: UnsupportedClass()),
+    ]
+
+    type_adapter = TypeAdapter(PreviouslySupportedType)
+
+    model = type_adapter.validate_python('abcdefg')
+    assert isinstance(model, UnsupportedClass)
+    assert isinstance(type_adapter.dump_python(model), UnsupportedClass)

@@ -19,7 +19,7 @@ if typing.TYPE_CHECKING:
     from ._internal._generate_schema import GenerateSchema as GenerateSchema
     from .aliases import AliasChoices, AliasGenerator, AliasPath
     from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
-    from .config import ConfigDict
+    from .config import ConfigDict, with_config
     from .errors import *
     from .fields import Field, PrivateAttr, computed_field
     from .functional_serializers import (
@@ -80,6 +80,7 @@ __all__ = (
     'WrapSerializer',
     # config
     'ConfigDict',
+    'with_config',
     # deprecated V1 config, these are imported via `__getattr__` below
     'BaseConfig',
     'Extra',
@@ -161,6 +162,7 @@ __all__ = (
     'DirectoryPath',
     'NewPath',
     'Json',
+    'Secret',
     'SecretStr',
     'SecretBytes',
     'StrictBool',
@@ -234,6 +236,7 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'WrapSerializer': (__package__, '.functional_serializers'),
     # config
     'ConfigDict': (__package__, '.config'),
+    'with_config': (__package__, '.config'),
     # validate call
     'validate_call': (__package__, '.validate_call_decorator'),
     # errors
@@ -308,6 +311,7 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'DirectoryPath': (__package__, '.types'),
     'NewPath': (__package__, '.types'),
     'Json': (__package__, '.types'),
+    'Secret': (__package__, '.types'),
     'SecretStr': (__package__, '.types'),
     'SecretBytes': (__package__, '.types'),
     'StrictBool': (__package__, '.types'),

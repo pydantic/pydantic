@@ -8,7 +8,7 @@ from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6
 from typing import TYPE_CHECKING, Any
 
 from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
-from typing_extensions import Annotated, TypeAlias
+from typing_extensions import Annotated, Self, TypeAlias
 
 from ._internal import _fields, _repr, _schema_generation_shared
 from ._migration import getattr_migration
@@ -119,7 +119,7 @@ from pydantic import BaseModel, HttpUrl, ValidationError
 class MyModel(BaseModel):
     url: HttpUrl
 
-m = MyModel(url='http://www.example.com')
+m = MyModel(url='http://www.example.com')  # (1)!
 print(m.url)
 #> http://www.example.com/
 
@@ -143,6 +143,8 @@ except ValidationError as e:
       Input should be a valid URL, relative URL without a base [type=url_parsing, input_value='not a url', input_type=str]
     '''
 ```
+
+1. Note: mypy would prefer `m = MyModel(url=HttpUrl('http://www.example.com'))`, but Pydantic will convert the string to an HttpUrl instance anyway.
 
 "International domains" (e.g. a URL where the host or TLD includes non-ascii characters) will be encoded via
 [punycode](https://en.wikipedia.org/wiki/Punycode) (see
@@ -413,8 +415,8 @@ else:
             return field_schema
 
         @classmethod
-        def _validate(cls, __input_value: str) -> str:
-            return validate_email(__input_value)[1]
+        def _validate(cls, input_value: str, /) -> str:
+            return validate_email(input_value)[1]
 
 
 class NameEmail(_repr.Representation):
@@ -477,25 +479,32 @@ class NameEmail(_repr.Representation):
         _handler: GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
         import_email_validator()
+
         return core_schema.no_info_after_validator_function(
             cls._validate,
-            core_schema.union_schema(
-                [core_schema.is_instance_schema(cls), core_schema.str_schema()],
-                custom_error_type='name_email_type',
-                custom_error_message='Input is not a valid NameEmail',
+            core_schema.json_or_python_schema(
+                json_schema=core_schema.str_schema(),
+                python_schema=core_schema.union_schema(
+                    [core_schema.is_instance_schema(cls), core_schema.str_schema()],
+                    custom_error_type='name_email_type',
+                    custom_error_message='Input is not a valid NameEmail',
+                ),
+                serialization=core_schema.to_string_ser_schema(),
             ),
-            serialization=core_schema.to_string_ser_schema(),
         )
 
     @classmethod
-    def _validate(cls, __input_value: NameEmail | str) -> NameEmail:
-        if isinstance(__input_value, cls):
-            return __input_value
+    def _validate(cls, input_value: Self | str, /) -> Self:
+        if isinstance(input_value, cls):
+            return input_value
         else:
-            name, email = validate_email(__input_value)  # type: ignore[arg-type]
+            name, email = validate_email(input_value)
             return cls(name, email)
 
     def __str__(self) -> str:
+        if '@' in self.name:
+            return f'"{self.name}" <{self.email}>'
+
         return f'{self.name} <{self.email}>'
 
 
@@ -562,8 +571,8 @@ class IPvAnyAddress:
         )
 
     @classmethod
-    def _validate(cls, __input_value: Any) -> IPv4Address | IPv6Address:
-        return cls(__input_value)  # type: ignore[return-value]
+    def _validate(cls, input_value: Any, /) -> IPv4Address | IPv6Address:
+        return cls(input_value)  # type: ignore[return-value]
 
 
 class IPvAnyInterface:
@@ -602,8 +611,8 @@ class IPvAnyInterface:
         )
 
     @classmethod
-    def _validate(cls, __input_value: NetworkType) -> IPv4Interface | IPv6Interface:
-        return cls(__input_value)  # type: ignore[return-value]
+    def _validate(cls, input_value: NetworkType, /) -> IPv4Interface | IPv6Interface:
+        return cls(input_value)  # type: ignore[return-value]
 
 
 class IPvAnyNetwork:
@@ -644,8 +653,8 @@ class IPvAnyNetwork:
         )
 
     @classmethod
-    def _validate(cls, __input_value: NetworkType) -> IPv4Network | IPv6Network:
-        return cls(__input_value)  # type: ignore[return-value]
+    def _validate(cls, input_value: NetworkType, /) -> IPv4Network | IPv6Network:
+        return cls(input_value)  # type: ignore[return-value]
 
 
 def _build_pretty_email_regex() -> re.Pattern[str]:

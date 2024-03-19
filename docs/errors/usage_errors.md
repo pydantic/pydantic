@@ -424,7 +424,7 @@ except PydanticUserError as exc_info:
 
 ## `TypedDict` version {#typed-dict-version}
 
-This error is raised when you use `typing.TypedDict`
+This error is raised when you use [typing.TypedDict][]
 instead of `typing_extensions.TypedDict` on Python < 3.12.
 
 ## Model parent field overridden {#model-field-overridden}
@@ -624,6 +624,19 @@ from pydantic import PydanticUserError, create_model
 
 try:
     create_model('FooModel', foo=(str, 'default value', 'more'))
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'create-model-field-definitions'
+```
+
+Or when you use [`typing.Annotated`][] with invalid input
+
+```py
+from typing_extensions import Annotated
+
+from pydantic import PydanticUserError, create_model
+
+try:
+    create_model('FooModel', foo=Annotated[str, 'NotFieldInfoValue'])
 except PydanticUserError as exc_info:
     assert exc_info.code == 'create-model-field-definitions'
 ```
@@ -1044,6 +1057,64 @@ from pydantic import BaseModel, Field
 
 class Model(BaseModel):
     date: datetime.date = Field(description='A date')
+```
+
+## Incompatible `dataclass` `init` and `extra` settings {#dataclass-init-false-extra-allow}
+
+Pydantic does not allow the specification of the `extra='allow'` setting on a dataclass
+while any of the fields have `init=False` set.
+
+Thus, you may not do something like the following:
+
+```py test="skip"
+from pydantic import ConfigDict, Field
+from pydantic.dataclasses import dataclass
+
+
+@dataclass(config=ConfigDict(extra='allow'))
+class A:
+    a: int = Field(init=False, default=1)
+```
+
+The above snippet results in the following error during schema building for the `A` dataclass:
+
+```
+pydantic.errors.PydanticUserError: Field a has `init=False` and dataclass has config setting `extra="allow"`.
+This combination is not allowed.
+```
+
+## Incompatible `init` and `init_var` settings on `dataclass` field {#clashing-init-and-init-var}
+
+The `init=False` and `init_var=True` settings are mutually exclusive. Doing so results in the `PydanticUserError` shown in the example below.
+
+```py test="skip"
+from pydantic import Field
+from pydantic.dataclasses import dataclass
+
+
+@dataclass
+class Foo:
+    bar: str = Field(..., init=False, init_var=True)
+
+
+"""
+pydantic.errors.PydanticUserError: Dataclass field bar has init=False and init_var=True, but these are mutually exclusive.
+"""
+```
+
+## `model_config` is used as a model field {#model-config-invalid-field-name}
+
+This error is raised when `model_config` is used as the name of a field.
+```py
+from pydantic import BaseModel, PydanticUserError
+
+try:
+
+    class Model(BaseModel):
+        model_config: str
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'model-config-invalid-field-name'
 ```
 
 {% endraw %}

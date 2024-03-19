@@ -7,7 +7,7 @@ from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, overload
 from warnings import warn
 
-from typing_extensions import Literal, Protocol, TypeAlias
+from typing_extensions import Literal, Protocol, TypeAlias, deprecated
 
 from .._internal import _decorators, _decorators_v1
 from ..errors import PydanticUserError
@@ -79,6 +79,12 @@ else:
     DeprecationWarning = PydanticDeprecatedSince20
 
 
+@deprecated(
+    'Pydantic V1 style `@validator` validators are deprecated.'
+    ' You should migrate to Pydantic V2 style `@field_validator` validators,'
+    ' see the migration guide for more details',
+    category=None,
+)
 def validator(
     __field: str,
     *fields: str,
@@ -109,6 +115,14 @@ def validator(
         Callable: A decorator that can be used to decorate a
             function to be used as a validator.
     """
+    warn(
+        'Pydantic V1 style `@validator` validators are deprecated.'
+        ' You should migrate to Pydantic V2 style `@field_validator` validators,'
+        ' see the migration guide for more details',
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if allow_reuse is True:  # pragma: no cover
         warn(_ALLOW_REUSE_WARNING_MESSAGE, DeprecationWarning)
     fields = tuple((__field, *fields))
@@ -124,14 +138,6 @@ def validator(
             "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`",
             code='validator-invalid-fields',
         )
-
-    warn(
-        'Pydantic V1 style `@validator` validators are deprecated.'
-        ' You should migrate to Pydantic V2 style `@field_validator` validators,'
-        ' see the migration guide for more details',
-        DeprecationWarning,
-        stacklevel=2,
-    )
 
     mode: Literal['before', 'after'] = 'before' if pre is True else 'after'
 
@@ -198,6 +204,12 @@ def root_validator(
     ...
 
 
+@deprecated(
+    'Pydantic V1 style `@root_validator` validators are deprecated.'
+    ' You should migrate to Pydantic V2 style `@model_validator` validators,'
+    ' see the migration guide for more details',
+    category=None,
+)
 def root_validator(
     *__args,
     pre: bool = False,

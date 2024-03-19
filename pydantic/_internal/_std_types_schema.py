@@ -82,27 +82,16 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
         # so that we can still generate a valid json schema.
         return core_schema.is_instance_schema(enum_type, metadata={'pydantic_js_functions': [get_json_schema]})
 
-    use_enum_values = config.get('use_enum_values', False)
-
     if len(cases) == 1:
         expected = repr(cases[0].value)
     else:
         expected = ', '.join([repr(case.value) for case in cases[:-1]]) + f' or {cases[-1].value!r}'
 
-    if use_enum_values:
-
-        def to_enum(__input_value: Any) -> Enum:
-            try:
-                return enum_type(__input_value).value
-            except ValueError:
-                raise PydanticCustomError('enum', 'Input should be {expected}', {'expected': expected})
-    else:
-
-        def to_enum(__input_value: Any) -> Enum:
-            try:
-                return enum_type(__input_value)
-            except ValueError:
-                raise PydanticCustomError('enum', 'Input should be {expected}', {'expected': expected})
+    def to_enum(__input_value: Any) -> Enum:
+        try:
+            return enum_type(__input_value)
+        except ValueError:
+            raise PydanticCustomError('enum', 'Input should be {expected}', {'expected': expected})
 
     to_enum_validator = core_schema.no_info_plain_validator_function(to_enum)
 
@@ -120,14 +109,18 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
     else:
         lax_schema = to_enum_validator
 
-    strict_python_schema = core_schema.is_instance_schema(enum_type)
-    if use_enum_values:
-        strict_python_schema = core_schema.no_info_after_validator_function(attrgetter('value'), strict_python_schema)
-
-    strict = core_schema.json_or_python_schema(json_schema=lax_schema, python_schema=strict_python_schema)
-    return core_schema.lax_or_strict_schema(
-        lax_schema=lax_schema, strict_schema=strict, ref=enum_ref, metadata={'pydantic_js_functions': [get_json_schema]}
+    enum_schema = core_schema.lax_or_strict_schema(
+        lax_schema=lax_schema,
+        strict_schema=core_schema.json_or_python_schema(
+            json_schema=lax_schema, python_schema=core_schema.is_instance_schema(enum_type)
+        ),
+        ref=enum_ref,
+        metadata={'pydantic_js_functions': [get_json_schema]},
     )
+    if config.get('use_enum_values', False):
+        enum_schema = core_schema.no_info_after_validator_function(attrgetter('value'), enum_schema)
+
+    return enum_schema
 
 
 @dataclasses.dataclass(**slots_true)

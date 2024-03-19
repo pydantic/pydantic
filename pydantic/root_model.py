@@ -24,19 +24,17 @@ if typing.TYPE_CHECKING:
     @dataclass_transform(kw_only_default=False, field_specifiers=(PydanticModelField,))
     class _RootModelMetaclass(_model_construction.ModelMetaclass):
         ...
-
-    Model = typing.TypeVar('Model', bound='BaseModel')
 else:
     _RootModelMetaclass = _model_construction.ModelMetaclass
 
 __all__ = ('RootModel',)
 
-
+Model = typing.TypeVar('Model', bound='BaseModel')
 RootModelRootType = typing.TypeVar('RootModelRootType')
 
 
 class RootModel(BaseModel, typing.Generic[RootModelRootType], metaclass=_RootModelMetaclass):
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/models/#rootmodel-and-custom-root-types
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/models/#rootmodel-and-custom-root-types
 
     A Pydantic `BaseModel` for the root object of the model.
 
@@ -132,11 +130,17 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType], metaclass=_RootMod
             exclude_none: bool = False,
             round_trip: bool = False,
             warnings: bool = True,
-        ) -> RootModelRootType:
+        ) -> Any:
             """This method is included just to get a more accurate return type for type checkers.
             It is included in this `if TYPE_CHECKING:` block since no override is actually necessary.
 
             See the documentation of `BaseModel.model_dump` for more details about the arguments.
+
+            Generally, this method will have a return type of `RootModelRootType`, assuming that `RootModelRootType` is
+            not a `BaseModel` subclass. If `RootModelRootType` is a `BaseModel` subclass, then the return
+            type will likely be `dict[str, Any]`, as `model_dump` calls are recursive. The return type could
+            even be something different, in the case of a custom serializer.
+            Thus, `Any` is used here to catch all of these cases.
             """
             ...
 
