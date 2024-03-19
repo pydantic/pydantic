@@ -605,6 +605,11 @@ print(OuterModel(user=user).model_dump(serialize_as_any=False)) # (2)!
 1. Even nested `User` model instances are dumped with fields unique to `User` subclasses.
 2. Even nested `User` model instances are dumped without fields unique to `User` subclasses.
 
+!!! note
+    The behavior of the `serialize_as_any` runtime flag is almost the same as the behavior of the `SerializeAsAny` annotation.
+    There are a few nuanced differences that we're working to resolve, but for the most part, you can expect the same behavior from both.
+    See more about the differences in this [active issue](https://github.com/pydantic/pydantic/issues/9049)
+
 #### Overriding the `serialize_as_any` default (False)
 
 You can override the default setting for `serialize_as_any` by configuring a subclass of `BaseModel` that overrides the default for the `serialize_as_any` argument to `model_dump()` and `model_dump_json()`, and then use that as the base class (instead of `pydantic.BaseModel`) for any model you want to have this default behavior.
