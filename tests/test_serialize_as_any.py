@@ -5,7 +5,7 @@ from typing import List, Optional
 import pytest
 from typing_extensions import TypedDict
 
-from pydantic import BaseModel, RootModel, SecretStr, SerializeAsAny, TypeAdapter
+from pydantic import BaseModel, ConfigDict, RootModel, SecretStr, SerializeAsAny, TypeAdapter
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 
@@ -127,3 +127,86 @@ def test_serialize_as_any_with_typed_dict() -> None:
         'name': 'pydantic',
         'password': 'password',
     }
+
+
+def test_serialize_as_any_flag_on_unrelated_models() -> None:
+    class Parent(BaseModel):
+        x: int
+
+    class Other(BaseModel):
+        y: str
+
+        model_config = ConfigDict(extra='allow')
+
+    ta = TypeAdapter(Parent)
+    other = Other(x=1, y='hello')
+    assert ta.dump_python(other, serialize_as_any=False) == {}
+    assert ta.dump_python(other, serialize_as_any=True) == {'y': 'hello', 'x': 1}
+
+
+def test_serialize_as_any_annotation_on_unrelated_models() -> None:
+    class Parent(BaseModel):
+        x: int
+
+    class Other(BaseModel):
+        y: str
+
+        model_config = ConfigDict(extra='allow')
+
+    ta = TypeAdapter(Parent)
+    other = Other(x=1, y='hello')
+    assert ta.dump_python(other) == {}
+
+    ta_any = TypeAdapter(SerializeAsAny[Parent])
+    assert ta_any.dump_python(other) == {'y': 'hello', 'x': 1}
+
+
+def test_serialize_as_any_with_inner_models() -> None:
+    """As with other serialization flags, serialize_as_any affects nested models as well."""
+
+    class Inner(BaseModel):
+        x: int
+
+    class Outer(BaseModel):
+        inner: Inner
+
+    class InnerChild(Inner):
+        y: int
+
+    ta = TypeAdapter(Outer)
+    inner_child = InnerChild(x=1, y=2)
+    outer = Outer(inner=inner_child)
+
+    assert ta.dump_python(outer, serialize_as_any=False) == {'inner': {'x': 1}}
+    assert ta.dump_python(outer, serialize_as_any=True) == {'inner': {'x': 1, 'y': 2}}
+
+
+def test_serialize_as_any_annotation_with_inner_models() -> None:
+    """The SerializeAsAny annotation does not affect nested models."""
+
+    class Inner(BaseModel):
+        x: int
+
+    class Outer(BaseModel):
+        inner: Inner
+
+    class InnerChild(Inner):
+        y: int
+
+    ta = TypeAdapter(SerializeAsAny[Outer])
+    inner_child = InnerChild(x=1, y=2)
+    outer = Outer(inner=inner_child)
+    assert ta.dump_python(outer) == {'inner': {'x': 1}}
+
+
+def test_serialize_as_any_flag_with_incorrect_list_el_type() -> None:
+    # a warning is raised when using the `serialize_as_any` flag
+    ta = TypeAdapter(List[int])
+    with pytest.warns(UserWarning, match='Expected `int` but got `str`'):
+        assert ta.dump_python(['a', 'b', 'c'], serialize_as_any=False) == ['a', 'b', 'c']
+
+
+def test_serialize_as_any_annotation_with_incorrect_list_el_type() -> None:
+    # notably, the warning is not raised when using the SerializeAsAny annotation
+    ta = TypeAdapter(SerializeAsAny[List[int]])
+    assert ta.dump_python(['a', 'b', 'c']) == ['a', 'b', 'c']
