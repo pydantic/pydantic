@@ -165,7 +165,7 @@ def test_tuple_validate(input_value, expected, variadic_item_index, items):
 )
 def test_tuple_validate_iterator(variadic_item_index, items):
     v = SchemaValidator(core_schema.tuple_schema(items_schema=items, variadic_item_index=variadic_item_index))
-    assert v.validate_python((x for x in [1, 2, '3'])) == (1, 2, 3)
+    assert v.validate_python(x for x in [1, 2, '3']) == (1, 2, 3)
 
 
 @pytest.mark.parametrize(

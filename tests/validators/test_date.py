@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -199,7 +199,7 @@ def test_date_strict_json_ctx():
         ({'gt': date(2000, 1, 1)}, '2000-01-01', Err('Input should be greater than 2000-01-01 [type=greater_than,')),
     ],
 )
-def test_date_kwargs(kwargs: Dict[str, Any], input_value: date, expected: Err | date):
+def test_date_kwargs(kwargs: dict[str, Any], input_value: date, expected: Err | date):
     v = SchemaValidator({'type': 'date', **kwargs})  # type: ignore
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
