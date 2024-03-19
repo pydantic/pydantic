@@ -23,6 +23,7 @@ use super::datetime::{
     float_as_duration, float_as_time, int_as_datetime, int_as_duration, int_as_time, EitherDate, EitherDateTime,
     EitherTime,
 };
+use super::input_abstract::ValMatch;
 use super::return_enums::ValidationMatch;
 use super::shared::{
     decimal_as_int, float_as_int, get_enum_meta_object, int_as_bool, str_as_bool, str_as_float, str_as_int,
@@ -461,24 +462,25 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         }
     }
 
-    fn strict_list<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
-        match self.lax_list()? {
-            GenericIterable::List(iter) => Ok(GenericIterable::List(iter)),
-            _ => Err(ValError::new(ErrorTypeDefaults::ListType, self)),
-        }
-    }
+    type List<'a> = GenericIterable<'a, 'py> where Self: 'a;
 
-    fn lax_list<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
-        match self
-            .extract_generic_iterable()
-            .map_err(|_| ValError::new(ErrorTypeDefaults::ListType, self))?
-        {
-            GenericIterable::PyString(_)
-            | GenericIterable::Bytes(_)
-            | GenericIterable::Dict(_)
-            | GenericIterable::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::ListType, self)),
-            other => Ok(other),
+    fn validate_list<'a>(&'a self, strict: bool) -> ValMatch<GenericIterable<'a, 'py>> {
+        if let Ok(list) = self.downcast::<PyList>() {
+            return Ok(ValidationMatch::exact(GenericIterable::List(list)));
+        } else if !strict {
+            match self.extract_generic_iterable() {
+                Ok(
+                    GenericIterable::PyString(_)
+                    | GenericIterable::Bytes(_)
+                    | GenericIterable::Dict(_)
+                    | GenericIterable::Mapping(_),
+                )
+                | Err(_) => {}
+                Ok(other) => return Ok(ValidationMatch::lax(other)),
+            }
         }
+
+        Err(ValError::new(ErrorTypeDefaults::ListType, self))
     }
 
     fn strict_tuple<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
