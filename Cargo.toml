@@ -24,7 +24,7 @@ include = [
     "!tests/.pytest_cache",
     "!*.so",
 ]
-rust-version = "1.70"
+rust-version = "1.76"
 
 [dependencies]
 pyo3 = { version = "0.21.0-beta.0", features = ["generate-import-lib", "num-bigint"] }

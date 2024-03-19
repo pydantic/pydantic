@@ -7,7 +7,7 @@ use ahash::AHashSet;
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{schema_or_config_same, ExtraBehavior};
 use crate::errors::{ErrorTypeDefaults, ValError, ValLineError, ValResult};
-use crate::input::{BorrowInput, GenericArguments, Input, ValidationMatch};
+use crate::input::{Arguments, BorrowInput, Input, KeywordArgs, PositionalArgs, ValidationMatch};
 use crate::lookup_key::LookupKey;
 
 use crate::tools::SchemaDict;
@@ -129,34 +129,6 @@ impl BuildValidator for ArgumentsValidator {
     }
 }
 
-macro_rules! py_get {
-    ($obj:ident, $index:ident) => {
-        $obj.get_item($index).ok()
-    };
-}
-pub(super) use py_get;
-
-macro_rules! py_slice {
-    ($obj:ident, $from:expr, $to:expr) => {
-        $obj.get_slice($from, $to)
-    };
-}
-pub(super) use py_slice;
-
-macro_rules! json_get {
-    ($obj:ident, $index:ident) => {
-        $obj.get($index)
-    };
-}
-pub(super) use json_get;
-
-macro_rules! json_slice {
-    ($obj:ident, $from:expr, $to:expr) => {
-        $obj[$from..$to]
-    };
-}
-pub(super) use json_slice;
-
 impl_py_gc_traverse!(Parameter { validator });
 
 impl_py_gc_traverse!(ArgumentsValidator {
@@ -179,158 +151,152 @@ impl Validator for ArgumentsValidator {
         let mut errors: Vec<ValLineError> = Vec::new();
         let mut used_kwargs: AHashSet<&str> = AHashSet::with_capacity(self.parameters.len());
 
-        macro_rules! process {
-            ($args:ident, $get_method:ident, $get_macro:ident, $slice_macro:ident) => {{
-                // go through arguments getting the value from args or kwargs and validating it
-                for (index, parameter) in self.parameters.iter().enumerate() {
-                    let mut pos_value = None;
-                    if let Some(args) = &$args.args {
-                        if parameter.positional {
-                            pos_value = $get_macro!(args, index);
-                        }
+        // go through arguments getting the value from args or kwargs and validating it
+        for (index, parameter) in self.parameters.iter().enumerate() {
+            let mut pos_value = None;
+            if let Some(args) = args.args() {
+                if parameter.positional {
+                    pos_value = args.get_item(index);
+                }
+            }
+            let mut kw_value = None;
+            if let Some(kwargs) = args.kwargs() {
+                if let Some(ref lookup_key) = parameter.kw_lookup_key {
+                    if let Some((lookup_path, value)) = kwargs.get_item(lookup_key)? {
+                        used_kwargs.insert(lookup_path.first_key());
+                        kw_value = Some((lookup_path, value));
                     }
-                    let mut kw_value = None;
-                    if let Some(kwargs) = &$args.kwargs {
-                        if let Some(ref lookup_key) = parameter.kw_lookup_key {
-                            if let Some((lookup_path, value)) = lookup_key.$get_method(&kwargs)? {
-                                used_kwargs.insert(lookup_path.first_key());
-                                kw_value = Some((lookup_path, value));
-                            }
-                        }
-                    }
+                }
+            }
 
-                    match (pos_value, kw_value) {
-                        (Some(_), Some((_, kw_value))) => {
-                            errors.push(ValLineError::new_with_loc(
-                                ErrorTypeDefaults::MultipleArgumentValues,
-                                kw_value.borrow_input(),
-                                parameter.name.clone(),
-                            ));
+            match (pos_value, kw_value) {
+                (Some(_), Some((_, kw_value))) => {
+                    errors.push(ValLineError::new_with_loc(
+                        ErrorTypeDefaults::MultipleArgumentValues,
+                        kw_value.borrow_input(),
+                        parameter.name.clone(),
+                    ));
+                }
+                (Some(pos_value), None) => match parameter.validator.validate(py, pos_value.borrow_input(), state) {
+                    Ok(value) => output_args.push(value),
+                    Err(ValError::LineErrors(line_errors)) => {
+                        errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
+                    }
+                    Err(err) => return Err(err),
+                },
+                (None, Some((lookup_path, kw_value))) => {
+                    match parameter.validator.validate(py, kw_value.borrow_input(), state) {
+                        Ok(value) => output_kwargs.set_item(parameter.kwarg_key.as_ref().unwrap(), value)?,
+                        Err(ValError::LineErrors(line_errors)) => {
+                            errors.extend(
+                                line_errors
+                                    .into_iter()
+                                    .map(|err| lookup_path.apply_error_loc(err, self.loc_by_alias, &parameter.name)),
+                            );
                         }
-                        (Some(pos_value), None) => {
-                            match parameter.validator.validate(py, pos_value.borrow_input(), state)
-                            {
-                                Ok(value) => output_args.push(value),
-                                Err(ValError::LineErrors(line_errors)) => {
-                                    errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
-                                }
-                                Err(err) => return Err(err),
-                            }
-                        }
-                        (None, Some((lookup_path, kw_value))) => {
-                            match parameter.validator.validate(py, kw_value.borrow_input(), state)
-                            {
-                                Ok(value) => output_kwargs.set_item(parameter.kwarg_key.as_ref().unwrap(), value)?,
-                                Err(ValError::LineErrors(line_errors)) => {
-                                    errors.extend(line_errors.into_iter().map(|err| {
-                                        lookup_path.apply_error_loc(err, self.loc_by_alias, &parameter.name)
-                                    }));
-                                }
-                                Err(err) => return Err(err),
-                            }
-                        }
-                        (None, None) => {
-                            if let Some(value) = parameter.validator.default_value(py, Some(parameter.name.as_str()), state)? {
-                                if let Some(ref kwarg_key) = parameter.kwarg_key {
-                                    output_kwargs.set_item(kwarg_key, value)?;
-                                } else {
-                                    output_args.push(value);
-                                }
-                            } else if let Some(ref lookup_key) = parameter.kw_lookup_key {
-                                let error_type = if parameter.positional {
-                                    ErrorTypeDefaults::MissingArgument
-                                } else {
-                                    ErrorTypeDefaults::MissingKeywordOnlyArgument
-                                };
-                                errors.push(lookup_key.error(
-                                    error_type,
-                                    input,
-                                    self.loc_by_alias,
-                                    &parameter.name,
-                                ));
-                            } else {
-                                errors.push(ValLineError::new_with_loc(ErrorTypeDefaults::MissingPositionalOnlyArgument, input, index));
-                            };
-                        }
+                        Err(err) => return Err(err),
                     }
                 }
-                // if there are args check any where index > positional_params_count since they won't have been checked yet
-                if let Some(args) = $args.args {
-                    let len = args.len();
-                    if len > self.positional_params_count {
-                        if let Some(ref validator) = self.var_args_validator {
-                            for (index, item) in $slice_macro!(args, self.positional_params_count, len).iter().enumerate() {
-                                match validator.validate(py, item.borrow_input(), state) {
-                                    Ok(value) => output_args.push(value),
-                                    Err(ValError::LineErrors(line_errors)) => {
-                                        errors.extend(
-                                            line_errors
-                                                .into_iter()
-                                                .map(|err| err.with_outer_location(index + self.positional_params_count)),
-                                        );
-                                    }
-                                    Err(err) => return Err(err),
-                                }
-                            }
+                (None, None) => {
+                    if let Some(value) = parameter
+                        .validator
+                        .default_value(py, Some(parameter.name.as_str()), state)?
+                    {
+                        if let Some(ref kwarg_key) = parameter.kwarg_key {
+                            output_kwargs.set_item(kwarg_key, value)?;
                         } else {
-                            for (index, item) in $slice_macro!(args, self.positional_params_count, len).iter().enumerate() {
-                                errors.push(ValLineError::new_with_loc(
-                                    ErrorTypeDefaults::UnexpectedPositionalArgument,
-                                    item.borrow_input(),
-                                    index + self.positional_params_count,
-                                ));
+                            output_args.push(value);
+                        }
+                    } else if let Some(ref lookup_key) = parameter.kw_lookup_key {
+                        let error_type = if parameter.positional {
+                            ErrorTypeDefaults::MissingArgument
+                        } else {
+                            ErrorTypeDefaults::MissingKeywordOnlyArgument
+                        };
+                        errors.push(lookup_key.error(error_type, input, self.loc_by_alias, &parameter.name));
+                    } else {
+                        errors.push(ValLineError::new_with_loc(
+                            ErrorTypeDefaults::MissingPositionalOnlyArgument,
+                            input,
+                            index,
+                        ));
+                    };
+                }
+            }
+        }
+        // if there are args check any where index > positional_params_count since they won't have been checked yet
+        if let Some(args) = args.args() {
+            let len = args.len();
+            if len > self.positional_params_count {
+                if let Some(ref validator) = self.var_args_validator {
+                    for (index, item) in args.iter().enumerate().skip(self.positional_params_count) {
+                        match validator.validate(py, item.borrow_input(), state) {
+                            Ok(value) => output_args.push(value),
+                            Err(ValError::LineErrors(line_errors)) => {
+                                errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
                             }
+                            Err(err) => return Err(err),
                         }
                     }
+                } else {
+                    for (index, item) in args.iter().enumerate().skip(self.positional_params_count) {
+                        errors.push(ValLineError::new_with_loc(
+                            ErrorTypeDefaults::UnexpectedPositionalArgument,
+                            item,
+                            index,
+                        ));
+                    }
                 }
-                // if there are kwargs check any that haven't been processed yet
-                if let Some(kwargs) = $args.kwargs {
-                    if kwargs.len() > used_kwargs.len() {
-                        for (raw_key, value) in kwargs.iter() {
-                            let either_str = match raw_key.validate_str(true, false).map(ValidationMatch::into_inner) {
-                                Ok(k) => k,
+            }
+        }
+        // if there are kwargs check any that haven't been processed yet
+        if let Some(kwargs) = args.kwargs() {
+            if kwargs.len() > used_kwargs.len() {
+                for result in kwargs.iter() {
+                    let (raw_key, value) = result?;
+                    let either_str = match raw_key
+                        .borrow_input()
+                        .validate_str(true, false)
+                        .map(ValidationMatch::into_inner)
+                    {
+                        Ok(k) => k,
+                        Err(ValError::LineErrors(line_errors)) => {
+                            for err in line_errors {
+                                errors.push(
+                                    err.with_outer_location(raw_key.clone())
+                                        .with_type(ErrorTypeDefaults::InvalidKey),
+                                );
+                            }
+                            continue;
+                        }
+                        Err(err) => return Err(err),
+                    };
+                    if !used_kwargs.contains(either_str.as_cow()?.as_ref()) {
+                        match self.var_kwargs_validator {
+                            Some(ref validator) => match validator.validate(py, value.borrow_input(), state) {
+                                Ok(value) => output_kwargs.set_item(either_str.as_py_string(py), value)?,
                                 Err(ValError::LineErrors(line_errors)) => {
                                     for err in line_errors {
-                                        errors.push(
-                                            err.with_outer_location(raw_key.clone())
-                                                .with_type(ErrorTypeDefaults::InvalidKey),
-                                        );
+                                        errors.push(err.with_outer_location(raw_key.clone()));
                                     }
-                                    continue;
                                 }
                                 Err(err) => return Err(err),
-                            };
-                            if !used_kwargs.contains(either_str.as_cow()?.as_ref()) {
-                                match self.var_kwargs_validator {
-                                    Some(ref validator) => match validator.validate(py, value.borrow_input(), state) {
-                                        Ok(value) => output_kwargs.set_item(either_str.as_py_string(py), value)?,
-                                        Err(ValError::LineErrors(line_errors)) => {
-                                            for err in line_errors {
-                                                errors.push(err.with_outer_location(raw_key.clone()));
-                                            }
-                                        }
-                                        Err(err) => return Err(err),
-                                    },
-                                    None => {
-                                        if let ExtraBehavior::Forbid = self.extra {
-                                            errors.push(ValLineError::new_with_loc(
-                                                ErrorTypeDefaults::UnexpectedKeywordArgument,
-                                                value.borrow_input(),
-                                                raw_key.clone(),
-                                            ));
-                                        }
-                                    }
+                            },
+                            None => {
+                                if let ExtraBehavior::Forbid = self.extra {
+                                    errors.push(ValLineError::new_with_loc(
+                                        ErrorTypeDefaults::UnexpectedKeywordArgument,
+                                        value,
+                                        raw_key.clone(),
+                                    ));
                                 }
-                        }}
+                            }
+                        }
                     }
                 }
-            }};
+            }
         }
-        match args {
-            GenericArguments::Py(a) => process!(a, py_get_dict_item, py_get, py_slice),
-            GenericArguments::Json(a) => process!(a, json_get, json_get, json_slice),
-            GenericArguments::StringMapping(_) => unimplemented!(),
-        }
+
         if !errors.is_empty() {
             Err(ValError::LineErrors(errors))
         } else {

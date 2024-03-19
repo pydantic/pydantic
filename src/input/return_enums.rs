@@ -784,49 +784,6 @@ impl GenericJsonIterator {
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub struct PyArgs<'py> {
-    pub args: Option<Bound<'py, PyTuple>>,
-    pub kwargs: Option<Bound<'py, PyDict>>,
-}
-
-impl<'py> PyArgs<'py> {
-    pub fn new(args: Option<Bound<'py, PyTuple>>, kwargs: Option<Bound<'py, PyDict>>) -> Self {
-        Self { args, kwargs }
-    }
-}
-
-#[cfg_attr(debug_assertions, derive(Debug))]
-pub struct JsonArgs<'a> {
-    pub args: Option<&'a [JsonValue]>,
-    pub kwargs: Option<&'a JsonObject>,
-}
-
-impl<'a> JsonArgs<'a> {
-    pub fn new(args: Option<&'a [JsonValue]>, kwargs: Option<&'a JsonObject>) -> Self {
-        Self { args, kwargs }
-    }
-}
-
-#[cfg_attr(debug_assertions, derive(Debug))]
-pub enum GenericArguments<'a, 'py> {
-    Py(PyArgs<'py>),
-    Json(JsonArgs<'a>),
-    StringMapping(Bound<'py, PyDict>),
-}
-
-impl<'py> From<PyArgs<'py>> for GenericArguments<'_, 'py> {
-    fn from(s: PyArgs<'py>) -> Self {
-        Self::Py(s)
-    }
-}
-
-impl<'a> From<JsonArgs<'a>> for GenericArguments<'a, '_> {
-    fn from(s: JsonArgs<'a>) -> Self {
-        Self::Json(s)
-    }
-}
-
-#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum EitherString<'a> {
     Cow(Cow<'a, str>),
     Py(Bound<'a, PyString>),
