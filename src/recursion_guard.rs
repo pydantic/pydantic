@@ -71,8 +71,11 @@ pub struct RecursionState {
     depth: u8,
 }
 
+// with debug_assertions enabled, function stacks are a bit bigger so need to be a bit more restricted
+const GUARD_OFFSET: u8 = if cfg!(debug_assertions) { 20 } else { 0 };
+
 // A hard limit to avoid stack overflows when rampant recursion occurs
-pub const RECURSION_GUARD_LIMIT: u8 = if cfg!(any(target_family = "wasm", all(windows, PyPy))) {
+pub const RECURSION_GUARD_LIMIT: u8 = (if cfg!(any(target_family = "wasm", all(windows, PyPy))) {
     // wasm and windows PyPy have very limited stack sizes
     49
 } else if cfg!(any(PyPy, windows)) {
@@ -80,7 +83,7 @@ pub const RECURSION_GUARD_LIMIT: u8 = if cfg!(any(target_family = "wasm", all(wi
     99
 } else {
     255
-};
+}) - GUARD_OFFSET;
 
 impl RecursionState {
     // insert a new value
@@ -92,17 +95,20 @@ impl RecursionState {
 
     // see #143 this is used as a backup in case the identity check recursion guard fails
     #[must_use]
-    #[cfg(any(target_family = "wasm", windows, PyPy))]
+    #[cfg(any(target_family = "wasm", windows, PyPy, debug_assertions))]
     pub fn incr_depth(&mut self) -> bool {
+        #[allow(clippy::assertions_on_constants)]
+        {
+            debug_assert!(RECURSION_GUARD_LIMIT < 255);
+        }
         // use saturating_add as it's faster (since there's no error path)
         // and the RECURSION_GUARD_LIMIT check will be hit before it overflows
-        debug_assert!(RECURSION_GUARD_LIMIT < 255);
         self.depth = self.depth.saturating_add(1);
         self.depth > RECURSION_GUARD_LIMIT
     }
 
     #[must_use]
-    #[cfg(not(any(target_family = "wasm", windows, PyPy)))]
+    #[cfg(not(any(target_family = "wasm", windows, PyPy, debug_assertions)))]
     pub fn incr_depth(&mut self) -> bool {
         debug_assert_eq!(RECURSION_GUARD_LIMIT, 255);
         // use checked_add to check if we've hit the limit

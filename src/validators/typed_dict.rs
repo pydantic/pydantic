@@ -1,5 +1,3 @@
-use std::ops::ControlFlow;
-
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
@@ -16,9 +14,7 @@ use crate::input::{
 use crate::lookup_key::LookupKey;
 use crate::tools::SchemaDict;
 
-use super::{
-    build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Extra, ValidationState, Validator,
-};
+use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 #[derive(Debug)]
 struct TypedDictField {
@@ -165,21 +161,11 @@ impl Validator for TypedDictValidator {
             _ => None,
         };
 
-        macro_rules! control_flow {
-            ($e: expr) => {
-                match $e {
-                    Ok(v) => ControlFlow::Continue(v),
-                    Err(err) => ControlFlow::Break(ValError::from(err)),
-                }
-            };
-        }
-
         macro_rules! process {
             ($dict:expr, $get_method:ident, $iter:ty $(,$kwargs:expr)?) => {{
-                match state.with_new_extra(Extra {
-                    data: Some(output_dict.clone()),
-                    ..*state.extra()
-                }, |state| {
+                {
+                    let state = &mut state.rebind_extra(|extra| extra.data = Some(output_dict.clone()));
+
                     for field in &self.fields {
                         let op_key_value = match field.lookup_key.$get_method($dict $(, $kwargs )? ) {
                             Ok(v) => v,
@@ -189,7 +175,7 @@ impl Validator for TypedDictValidator {
                                 }
                                 continue;
                             }
-                            Err(err) => return ControlFlow::Break(err),
+                            Err(err) => return Err(err),
                         };
                         if let Some((lookup_path, value)) = op_key_value {
                             if let Some(ref mut used_keys) = used_keys {
@@ -199,7 +185,7 @@ impl Validator for TypedDictValidator {
                             }
                             match field.validator.validate(py, value.borrow_input(), state) {
                                 Ok(value) => {
-                                    control_flow!(output_dict.set_item(&field.name_py, value))?;
+                                    output_dict.set_item(&field.name_py, value)?;
                                 }
                                 Err(ValError::Omit) => continue,
                                 Err(ValError::LineErrors(line_errors)) => {
@@ -210,7 +196,7 @@ impl Validator for TypedDictValidator {
                                         );
                                     }
                                 }
-                                Err(err) => return ControlFlow::Break(err),
+                                Err(err) => return Err(err),
                             }
                             continue;
                         }
@@ -218,7 +204,7 @@ impl Validator for TypedDictValidator {
                         match field.validator.default_value(py, Some(field.name.as_str()), state) {
                             Ok(Some(value)) => {
                                 // Default value exists, and passed validation if required
-                                control_flow!(output_dict.set_item(&field.name_py, value))?;
+                                output_dict.set_item(&field.name_py, value)?;
                             },
                             Ok(None) => {
                                 // This means there was no default value
@@ -241,13 +227,9 @@ impl Validator for TypedDictValidator {
                                     errors.push(err);
                                 }
                             }
-                            Err(err) => return ControlFlow::Break(err),
+                            Err(err) => return Err(err),
                         }
                     }
-                    ControlFlow::Continue(())
-                }) {
-                    ControlFlow::Continue(()) => {}
-                    ControlFlow::Break(err) => return Err(err),
                 }
 
                 if let Some(ref mut used_keys) = used_keys {

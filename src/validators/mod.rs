@@ -560,7 +560,7 @@ pub fn build_validator(
 
 /// More (mostly immutable) data to pass between validators, should probably be class `Context`,
 /// but that would confuse it with context as per pydantic/pydantic#1549
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Extra<'a, 'py> {
     /// Validation mode
     pub input_type: InputType,
