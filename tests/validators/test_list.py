@@ -438,7 +438,7 @@ class ListInputTestCase:
 LAX_MODE_INPUTS: List[Any] = [
     (1, 2, 3),
     frozenset((1, 2, 3)),
-    set((1, 2, 3)),
+    {1, 2, 3},
     deque([1, 2, 3]),
     {1: 'a', 2: 'b', 3: 'c'}.keys(),
     {'a': 1, 'b': 2, 'c': 3}.values(),

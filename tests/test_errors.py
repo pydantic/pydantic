@@ -397,7 +397,7 @@ def test_error_type(error_type, message, context):
 
 
 def test_all_errors_covered():
-    listed_types = set(error_type for error_type, *_ in all_errors)
+    listed_types = {error_type for error_type, *_ in all_errors}
     actual_types = {e['type'] for e in list_all_errors()}
     assert actual_types == listed_types
 
@@ -464,7 +464,7 @@ def test_custom_context_for_simple_error():
 def test_all_errors():
     errors = list_all_errors()
     # print(f'{len(errors)=}')
-    assert len(errors) == len(set(e['type'] for e in errors)), 'error types are not unique'
+    assert len(errors) == len({e['type'] for e in errors}), 'error types are not unique'
     # insert_assert(errors[:4])
     assert errors[:4] == [
         {
@@ -689,7 +689,7 @@ def test_validation_error_cause_config_variants(desc: str, config: CoreConfig, e
                 s.validate_python('anything')
             assert exc_info.value.__cause__ is None
         else:
-            raise AssertionError('Unhandled result: {}'.format(expected_result))
+            raise AssertionError(f'Unhandled result: {expected_result}')
 
 
 def test_validation_error_cause_traceback_preserved():
