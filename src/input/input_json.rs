@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use jiter::{JsonArray, JsonValue};
+use jiter::{JsonArray, JsonObject, JsonValue, LazyIndexMap};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString};
 use smallvec::SmallVec;
@@ -8,6 +8,7 @@ use speedate::MicrosecondsPrecisionOverflowBehavior;
 use strum::EnumMessage;
 
 use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
+use crate::lookup_key::{LookupKey, LookupPath};
 use crate::validators::decimal::create_decimal;
 
 use super::datetime::{
@@ -18,8 +19,8 @@ use super::input_abstract::{AsPyList, ConsumeIterator, Iterable, Never, ValMatch
 use super::return_enums::ValidationMatch;
 use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_float, str_as_int};
 use super::{
-    BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericArguments, GenericIterable,
-    GenericIterator, GenericMapping, Input, JsonArgs,
+    Arguments, BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericIterable,
+    GenericIterator, GenericMapping, Input, KeywordArgs, PositionalArgs,
 };
 
 /// This is required but since JSON object keys are always strings, I don't think it can be called
@@ -53,7 +54,7 @@ impl<'py> Input<'py> for JsonValue {
         match self {
             JsonValue::Object(object) => {
                 let dict = PyDict::new_bound(py);
-                for (k, v) in object.iter() {
+                for (k, v) in LazyIndexMap::iter(object) {
                     dict.set_item(k, v.to_object(py)).unwrap();
                 }
                 Some(dict)
@@ -62,17 +63,21 @@ impl<'py> Input<'py> for JsonValue {
         }
     }
 
-    fn validate_args(&self) -> ValResult<GenericArguments<'_, 'py>> {
+    type Arguments<'a> = JsonArgs<'a>
+    where
+        Self: 'a,;
+
+    fn validate_args(&self) -> ValResult<JsonArgs<'_>> {
         match self {
-            JsonValue::Object(object) => Ok(JsonArgs::new(None, Some(object)).into()),
-            JsonValue::Array(array) => Ok(JsonArgs::new(Some(array), None).into()),
+            JsonValue::Object(object) => Ok(JsonArgs::new(None, Some(object))),
+            JsonValue::Array(array) => Ok(JsonArgs::new(Some(array), None)),
             _ => Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self)),
         }
     }
 
-    fn validate_dataclass_args<'a>(&'a self, class_name: &str) -> ValResult<GenericArguments<'a, 'py>> {
+    fn validate_dataclass_args<'a>(&'a self, class_name: &str) -> ValResult<JsonArgs<'a>> {
         match self {
-            JsonValue::Object(object) => Ok(JsonArgs::new(None, Some(object)).into()),
+            JsonValue::Object(object) => Ok(JsonArgs::new(None, Some(object))),
             _ => {
                 let class_name = class_name.to_string();
                 Err(ValError::new(
@@ -320,13 +325,15 @@ impl<'py> Input<'py> for str {
         None
     }
 
+    type Arguments<'a> = Never;
+
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn validate_args(&self) -> ValResult<GenericArguments<'_, 'py>> {
+    fn validate_args(&self) -> ValResult<Never> {
         Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self))
     }
 
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn validate_dataclass_args<'a>(&'a self, class_name: &str) -> ValResult<GenericArguments<'a, 'py>> {
+    fn validate_dataclass_args(&self, class_name: &str) -> ValResult<Never> {
         let class_name = class_name.to_string();
         Err(ValError::new(
             ErrorType::DataclassType {
@@ -447,6 +454,13 @@ impl BorrowInput<'_> for String {
     }
 }
 
+impl BorrowInput<'_> for JsonValue {
+    type Input = JsonValue;
+    fn borrow_input(&self) -> &Self::Input {
+        self
+    }
+}
+
 fn string_to_vec(s: &str) -> JsonArray {
     JsonArray::new(s.chars().map(|c| JsonValue::Str(c.to_string())).collect())
 }
@@ -465,5 +479,59 @@ impl<'a> Iterable<'_> for &'a JsonArray {
 impl<'py> AsPyList<'py> for &'_ JsonArray {
     fn as_py_list(&self) -> Option<&Bound<'py, PyList>> {
         None
+    }
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub struct JsonArgs<'a> {
+    args: Option<&'a [JsonValue]>,
+    kwargs: Option<&'a JsonObject>,
+}
+
+impl<'a> JsonArgs<'a> {
+    fn new(args: Option<&'a [JsonValue]>, kwargs: Option<&'a JsonObject>) -> Self {
+        Self { args, kwargs }
+    }
+}
+
+impl<'a> Arguments<'_> for JsonArgs<'a> {
+    type Args = [JsonValue];
+    type Kwargs = JsonObject;
+
+    fn args(&self) -> Option<&Self::Args> {
+        self.args
+    }
+
+    fn kwargs(&self) -> Option<&Self::Kwargs> {
+        self.kwargs
+    }
+}
+
+impl PositionalArgs<'_> for [JsonValue] {
+    type Item<'a> = &'a JsonValue;
+
+    fn len(&self) -> usize {
+        <[JsonValue]>::len(self)
+    }
+    fn get_item(&self, index: usize) -> Option<Self::Item<'_>> {
+        self.get(index)
+    }
+    fn iter(&self) -> impl Iterator<Item = Self::Item<'_>> {
+        <[JsonValue]>::iter(self)
+    }
+}
+
+impl KeywordArgs<'_> for JsonObject {
+    type Key<'a> = &'a str;
+    type Item<'a> = &'a JsonValue;
+
+    fn len(&self) -> usize {
+        LazyIndexMap::len(self)
+    }
+    fn get_item<'k>(&self, key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>> {
+        key.json_get(self)
+    }
+    fn iter(&self) -> impl Iterator<Item = ValResult<(Self::Key<'_>, Self::Item<'_>)>> {
+        LazyIndexMap::iter(self).map(|(k, v)| Ok((k.as_str(), v)))
     }
 }
