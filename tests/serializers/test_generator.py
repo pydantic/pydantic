@@ -5,13 +5,11 @@ from pydantic_core import SchemaSerializer, core_schema
 
 
 def gen_ok(*things):
-    for thing in things:
-        yield thing
+    yield from things
 
 
 def gen_error(*things):
-    for thing in things:
-        yield thing
+    yield from things
     raise ValueError('oops')
 
 

@@ -4,7 +4,7 @@ import json
 import math
 import re
 from decimal import Decimal
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from dirty_equals import FunctionCheck, IsStr
@@ -157,7 +157,7 @@ def test_decimal_strict_json(input_value, expected):
         ({'lt': 0.123456}, 1, Err('Input should be less than 0.123456')),
     ],
 )
-def test_decimal_kwargs(py_and_json: PyAndJson, kwargs: Dict[str, Any], input_value, expected):
+def test_decimal_kwargs(py_and_json: PyAndJson, kwargs: dict[str, Any], input_value, expected):
     v = py_and_json({'type': 'decimal', **kwargs})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
