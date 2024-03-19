@@ -8,9 +8,9 @@ import pytest
 from pydantic_core import ValidationError
 from typing_extensions import Annotated, Literal, TypeAlias, TypedDict
 
-import pydantic
 from pydantic import BaseModel, Field, TypeAdapter, ValidationInfo, create_model, field_validator
 from pydantic.config import ConfigDict
+from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
 
 ItemType = TypeVar('ItemType')
@@ -378,7 +378,7 @@ def test_eval_type_backport():
 @pytest.mark.parametrize('defer_build_mode', [('model',), ('type_adapter',), ('model', 'type_adapter')])
 @pytest.mark.parametrize('is_annotated', [False, True])  # FastAPI heavily uses Annotated
 def test_respects_defer_build(
-    defer_build: bool, defer_build_mode: tuple[Literal['model', 'type_adapter']], is_annotated: bool
+    defer_build: bool, defer_build_mode: Tuple[Literal['model', 'type_adapter']], is_annotated: bool
 ) -> None:
     class Model(BaseModel, defer_build=defer_build, _defer_build_mode=defer_build_mode):
         x: int
@@ -386,11 +386,11 @@ def test_respects_defer_build(
     class SubModel(Model):
         y: Optional[int] = None
 
-    @pydantic.dataclasses.dataclass(config=ConfigDict(defer_build=defer_build, _defer_build_mode=defer_build_mode))
+    @pydantic_dataclass(config=ConfigDict(defer_build=defer_build, _defer_build_mode=defer_build_mode))
     class DataClassModel:
         x: int
 
-    @pydantic.dataclasses.dataclass
+    @pydantic_dataclass
     class SubDataClassModel(DataClassModel):
         y: Optional[int] = None
 

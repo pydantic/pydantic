@@ -721,7 +721,7 @@ class ConfigDict(TypedDict, total=False):
         `defer_build` does not work by default with FastAPI Pydantic models. Meaning the validator and serializer
         is constructed immediately when the model is used in FastAPI routes. You also need to define
         [`_defer_build_mode=('model', 'type_adapter')`][pydantic.config.ConfigDict._defer_build_mode] with FastAPI
-        models. This parameter is also required for the deferred building due to FastAPI relying on `TypeAdapter`s.
+        models. This parameter is required for the deferred building due to FastAPI relying on `TypeAdapter`s.
     """
 
     _defer_build_mode: tuple[Literal['model', 'type_adapter'], ...]
