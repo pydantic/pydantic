@@ -20,6 +20,7 @@ from typing import (
     Hashable,
     Iterator,
     List,
+    Pattern,
     Set,
     TypeVar,
     Union,
@@ -696,7 +697,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
     strict: bool | None = None
     min_length: int | None = None
     max_length: int | None = None
-    pattern: str | None = None
+    pattern: str | Pattern[str] | None = None
 
     def __iter__(self) -> Iterator[BaseMetadata]:
         if self.min_length is not None:
@@ -715,7 +716,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
                 strip_whitespace=self.strip_whitespace,
                 to_upper=self.to_upper,
                 to_lower=self.to_lower,
-                pattern=self.pattern,
+                pattern=self.pattern.pattern if isinstance(self.pattern, Pattern) else self.pattern,
             )
 
 
@@ -727,7 +728,7 @@ def constr(
     strict: bool | None = None,
     min_length: int | None = None,
     max_length: int | None = None,
-    pattern: str | None = None,
+    pattern: str | Pattern[str] | None = None,
 ) -> type[str]:
     """
     !!! warning "Discouraged"

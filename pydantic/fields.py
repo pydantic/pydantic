@@ -64,7 +64,7 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     strict: bool | None
     min_length: int | None
     max_length: int | None
-    pattern: str | None
+    pattern: str | typing.Pattern[str] | None
     allow_inf_nan: bool | None
     max_digits: int | None
     decimal_places: int | None
@@ -680,7 +680,7 @@ def Field(  # noqa: C901
     init: bool | None = _Unset,
     init_var: bool | None = _Unset,
     kw_only: bool | None = _Unset,
-    pattern: str | None = _Unset,
+    pattern: str | typing.Pattern[str] | None = _Unset,
     strict: bool | None = _Unset,
     gt: float | None = _Unset,
     ge: float | None = _Unset,
@@ -791,6 +791,9 @@ def Field(  # noqa: C901
     regex = extra.pop('regex', None)  # type: ignore
     if regex is not None:
         raise PydanticUserError('`regex` is removed. use `pattern` instead', code='removed-kwargs')
+
+    if isinstance(pattern, typing.Pattern):
+        pattern = pattern.pattern
 
     if extra:
         warn(
