@@ -1,7 +1,7 @@
 use std::fmt;
 
 use pyo3::exceptions::PyValueError;
-use pyo3::types::{PyDict, PyType};
+use pyo3::types::{PyDict, PyList, PyType};
 use pyo3::{intern, prelude::*};
 
 use crate::errors::{ErrorTypeDefaults, InputValue, ValError, ValResult};
@@ -41,6 +41,8 @@ impl TryFrom<&str> for InputType {
         }
     }
 }
+
+pub type ValMatch<T> = ValResult<ValidationMatch<T>>;
 
 /// all types have three methods: `validate_*`, `strict_*`, `lax_*`
 /// the convention is to either implement:
@@ -87,13 +89,13 @@ pub trait Input<'py>: fmt::Debug + ToPyObject {
 
     fn validate_dataclass_args<'a>(&'a self, dataclass_name: &str) -> ValResult<GenericArguments<'a, 'py>>;
 
-    fn validate_str(&self, strict: bool, coerce_numbers_to_str: bool) -> ValResult<ValidationMatch<EitherString<'_>>>;
+    fn validate_str(&self, strict: bool, coerce_numbers_to_str: bool) -> ValMatch<EitherString<'_>>;
 
-    fn validate_bytes<'a>(&'a self, strict: bool) -> ValResult<ValidationMatch<EitherBytes<'a, 'py>>>;
+    fn validate_bytes<'a>(&'a self, strict: bool) -> ValMatch<EitherBytes<'a, 'py>>;
 
-    fn validate_bool(&self, strict: bool) -> ValResult<ValidationMatch<bool>>;
+    fn validate_bool(&self, strict: bool) -> ValMatch<bool>;
 
-    fn validate_int(&self, strict: bool) -> ValResult<ValidationMatch<EitherInt<'_>>>;
+    fn validate_int(&self, strict: bool) -> ValMatch<EitherInt<'_>>;
 
     fn exact_int(&self) -> ValResult<EitherInt<'_>> {
         self.validate_int(true).and_then(|val_match| {
@@ -113,7 +115,7 @@ pub trait Input<'py>: fmt::Debug + ToPyObject {
         })
     }
 
-    fn validate_float(&self, strict: bool) -> ValResult<ValidationMatch<EitherFloat<'_>>>;
+    fn validate_float(&self, strict: bool) -> ValMatch<EitherFloat<'_>>;
 
     fn validate_decimal(&self, strict: bool, py: Python<'py>) -> ValResult<Bound<'py, PyAny>> {
         if strict {
@@ -145,18 +147,11 @@ pub trait Input<'py>: fmt::Debug + ToPyObject {
         self.validate_dict(strict)
     }
 
-    fn validate_list<'a>(&'a self, strict: bool) -> ValResult<GenericIterable<'a, 'py>> {
-        if strict {
-            self.strict_list()
-        } else {
-            self.lax_list()
-        }
-    }
-    fn strict_list<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>>;
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn lax_list<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
-        self.strict_list()
-    }
+    type List<'a>: Iterable<'py> + AsPyList<'py>
+    where
+        Self: 'a;
+
+    fn validate_list(&self, strict: bool) -> ValMatch<Self::List<'_>>;
 
     fn validate_tuple<'a>(&'a self, strict: bool) -> ValResult<GenericIterable<'a, 'py>> {
         if strict {
@@ -201,25 +196,25 @@ pub trait Input<'py>: fmt::Debug + ToPyObject {
 
     fn validate_iter(&self) -> ValResult<GenericIterator>;
 
-    fn validate_date(&self, strict: bool) -> ValResult<ValidationMatch<EitherDate<'py>>>;
+    fn validate_date(&self, strict: bool) -> ValMatch<EitherDate<'py>>;
 
     fn validate_time(
         &self,
         strict: bool,
         microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<ValidationMatch<EitherTime<'py>>>;
+    ) -> ValMatch<EitherTime<'py>>;
 
     fn validate_datetime(
         &self,
         strict: bool,
         microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<ValidationMatch<EitherDateTime<'py>>>;
+    ) -> ValMatch<EitherDateTime<'py>>;
 
     fn validate_timedelta(
         &self,
         strict: bool,
         microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<ValidationMatch<EitherTimedelta<'py>>>;
+    ) -> ValMatch<EitherTimedelta<'py>>;
 }
 
 /// The problem to solve here is that iterating collections often returns owned
@@ -236,5 +231,44 @@ impl<'py, T: Input<'py> + ?Sized> BorrowInput<'py> for &'_ T {
     type Input = T;
     fn borrow_input(&self) -> &Self::Input {
         self
+    }
+}
+
+pub enum Never {}
+
+// Pairs with Iterable below
+pub trait ConsumeIterator<T> {
+    type Output;
+    fn consume_iterator(self, iterator: impl Iterator<Item = T>) -> Self::Output;
+}
+
+// This slightly awkward trait is used to define types which can be iterable. This formulation
+// arises because the Python enums have several different underlying iterator types, and we want to
+// be able to dispatch over each of them without overhead.
+pub trait Iterable<'py> {
+    type Input: BorrowInput<'py>;
+    fn len(&self) -> Option<usize>;
+    fn iterate<R>(self, consumer: impl ConsumeIterator<PyResult<Self::Input>, Output = R>) -> ValResult<R>;
+}
+
+// Necessary for inputs which don't support certain types, e.g. String -> list
+impl<'py> Iterable<'py> for Never {
+    type Input = Bound<'py, PyAny>; // Doesn't really matter what this is
+    fn len(&self) -> Option<usize> {
+        unreachable!()
+    }
+    fn iterate<R>(self, _consumer: impl ConsumeIterator<PyResult<Self::Input>, Output = R>) -> ValResult<R> {
+        unreachable!()
+    }
+}
+
+// Optimization pathway for inputs which are already python lists
+pub trait AsPyList<'py>: Iterable<'py> {
+    fn as_py_list(&self) -> Option<&Bound<'py, PyList>>;
+}
+
+impl<'py> AsPyList<'py> for Never {
+    fn as_py_list(&self) -> Option<&Bound<'py, PyList>> {
+        unreachable!()
     }
 }

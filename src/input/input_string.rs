@@ -11,6 +11,7 @@ use crate::validators::decimal::create_decimal;
 use super::datetime::{
     bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, EitherDate, EitherDateTime, EitherTime,
 };
+use super::input_abstract::{Never, ValMatch};
 use super::shared::{str_as_bool, str_as_float, str_as_int};
 use super::{
     BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericArguments, GenericIterable,
@@ -138,7 +139,9 @@ impl<'py> Input<'py> for StringMapping<'py> {
         }
     }
 
-    fn strict_list<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
+    type List<'a> = Never where Self: 'a;
+
+    fn validate_list(&self, _strict: bool) -> ValMatch<Never> {
         Err(ValError::new(ErrorTypeDefaults::ListType, self))
     }
 

@@ -2,7 +2,8 @@ use std::borrow::Cow;
 
 use jiter::{JsonArray, JsonValue};
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyString};
+use pyo3::types::{PyDict, PyList, PyString};
+use smallvec::SmallVec;
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 use strum::EnumMessage;
 
@@ -13,6 +14,7 @@ use super::datetime::{
     bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, float_as_datetime, float_as_duration,
     float_as_time, int_as_datetime, int_as_duration, int_as_time, EitherDate, EitherDateTime, EitherTime,
 };
+use super::input_abstract::{AsPyList, ConsumeIterator, Iterable, Never, ValMatch};
 use super::return_enums::ValidationMatch;
 use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_float, str_as_int};
 use super::{
@@ -172,15 +174,13 @@ impl<'py> Input<'py> for JsonValue {
         self.validate_dict(false)
     }
 
-    fn validate_list<'a>(&'a self, _strict: bool) -> ValResult<GenericIterable<'a, 'py>> {
+    type List<'a> = &'a JsonArray;
+
+    fn validate_list(&self, _strict: bool) -> ValMatch<&JsonArray> {
         match self {
-            JsonValue::Array(a) => Ok(GenericIterable::JsonArray(a)),
+            JsonValue::Array(a) => Ok(ValidationMatch::strict(a)),
             _ => Err(ValError::new(ErrorTypeDefaults::ListType, self)),
         }
-    }
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_list<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
-        self.validate_list(false)
     }
 
     fn validate_tuple<'a>(&'a self, _strict: bool) -> ValResult<GenericIterable<'a, 'py>> {
@@ -375,8 +375,9 @@ impl<'py> Input<'py> for str {
         Err(ValError::new(ErrorTypeDefaults::DictType, self))
     }
 
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_list<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
+    type List<'a> = Never;
+
+    fn validate_list(&self, _strict: bool) -> ValMatch<Never> {
         Err(ValError::new(ErrorTypeDefaults::ListType, self))
     }
 
@@ -448,4 +449,21 @@ impl BorrowInput<'_> for String {
 
 fn string_to_vec(s: &str) -> JsonArray {
     JsonArray::new(s.chars().map(|c| JsonValue::Str(c.to_string())).collect())
+}
+
+impl<'a> Iterable<'_> for &'a JsonArray {
+    type Input = &'a JsonValue;
+
+    fn len(&self) -> Option<usize> {
+        Some(SmallVec::len(self))
+    }
+    fn iterate<R>(self, consumer: impl ConsumeIterator<PyResult<Self::Input>, Output = R>) -> ValResult<R> {
+        Ok(consumer.consume_iterator(self.iter().map(Ok)))
+    }
+}
+
+impl<'py> AsPyList<'py> for &'_ JsonArray {
+    fn as_py_list(&self) -> Option<&Bound<'py, PyList>> {
+        None
+    }
 }
