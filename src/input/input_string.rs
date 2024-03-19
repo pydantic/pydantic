@@ -14,8 +14,8 @@ use super::datetime::{
 use super::input_abstract::{Never, ValMatch};
 use super::shared::{str_as_bool, str_as_float, str_as_int};
 use super::{
-    BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericArguments, GenericIterable,
-    GenericIterator, GenericMapping, Input, ValidationMatch,
+    Arguments, BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericIterable,
+    GenericIterator, GenericMapping, Input, KeywordArgs, ValidationMatch,
 };
 
 #[derive(Debug, Clone)]
@@ -74,15 +74,17 @@ impl<'py> Input<'py> for StringMapping<'py> {
         None
     }
 
-    fn validate_args(&self) -> ValResult<GenericArguments<'_, 'py>> {
+    type Arguments<'a> = StringMappingArgs<'py> where Self: 'a;
+
+    fn validate_args(&self) -> ValResult<StringMappingArgs<'py>> {
         // do we want to support this?
         Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self))
     }
 
-    fn validate_dataclass_args<'a>(&'a self, _dataclass_name: &str) -> ValResult<GenericArguments<'a, 'py>> {
+    fn validate_dataclass_args<'a>(&'a self, _dataclass_name: &str) -> ValResult<StringMappingArgs<'py>> {
         match self {
             StringMapping::String(_) => Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self)),
-            StringMapping::Mapping(m) => Ok(GenericArguments::StringMapping(m.clone())),
+            StringMapping::Mapping(m) => Ok(StringMappingArgs(m.clone())),
         }
     }
 
@@ -213,5 +215,47 @@ impl<'py> BorrowInput<'py> for StringMapping<'py> {
     type Input = Self;
     fn borrow_input(&self) -> &Self::Input {
         self
+    }
+}
+
+pub struct StringMappingArgs<'py>(Bound<'py, PyDict>);
+
+impl<'py> Arguments<'py> for StringMappingArgs<'py> {
+    type Args = Never;
+    type Kwargs = Self;
+
+    fn args(&self) -> Option<&Self::Args> {
+        None
+    }
+
+    fn kwargs(&self) -> Option<&Self::Kwargs> {
+        Some(self)
+    }
+}
+
+impl<'py> KeywordArgs<'py> for StringMappingArgs<'py> {
+    type Key<'a> = Bound<'py, PyAny>
+    where
+        Self: 'a;
+
+    type Item<'a> = StringMapping<'py>
+    where
+        Self: 'a;
+
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    fn get_item<'k>(
+        &self,
+        key: &'k crate::lookup_key::LookupKey,
+    ) -> ValResult<Option<(&'k crate::lookup_key::LookupPath, Self::Item<'_>)>> {
+        key.py_get_string_mapping_item(&self.0)
+    }
+
+    fn iter(&self) -> impl Iterator<Item = ValResult<(Self::Key<'_>, Self::Item<'_>)>> {
+        self.0
+            .iter()
+            .map(|(key, val)| Ok((key, StringMapping::new_value(&val)?)))
     }
 }

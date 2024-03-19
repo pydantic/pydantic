@@ -4,13 +4,14 @@ use pyo3::exceptions::PyValueError;
 use pyo3::types::{PyDict, PyList, PyType};
 use pyo3::{intern, prelude::*};
 
-use crate::errors::{ErrorTypeDefaults, InputValue, ValError, ValResult};
+use crate::errors::{ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
+use crate::lookup_key::{LookupKey, LookupPath};
 use crate::tools::py_err;
 use crate::{PyMultiHostUrl, PyUrl};
 
 use super::datetime::{EitherDate, EitherDateTime, EitherTime, EitherTimedelta};
 use super::return_enums::{EitherBytes, EitherInt, EitherString};
-use super::{EitherFloat, GenericArguments, GenericIterable, GenericIterator, GenericMapping, ValidationMatch};
+use super::{EitherFloat, GenericIterable, GenericIterator, GenericMapping, ValidationMatch};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum InputType {
@@ -85,9 +86,13 @@ pub trait Input<'py>: fmt::Debug + ToPyObject {
         false
     }
 
-    fn validate_args(&self) -> ValResult<GenericArguments<'_, 'py>>;
+    type Arguments<'a>: Arguments<'py>
+    where
+        Self: 'a;
 
-    fn validate_dataclass_args<'a>(&'a self, dataclass_name: &str) -> ValResult<GenericArguments<'a, 'py>>;
+    fn validate_args(&self) -> ValResult<Self::Arguments<'_>>;
+
+    fn validate_dataclass_args<'a>(&'a self, dataclass_name: &str) -> ValResult<Self::Arguments<'a>>;
 
     fn validate_str(&self, strict: bool, coerce_numbers_to_str: bool) -> ValMatch<EitherString<'_>>;
 
@@ -234,12 +239,38 @@ impl<'py, T: Input<'py> + ?Sized> BorrowInput<'py> for &'_ T {
     }
 }
 
-pub enum Never {}
-
 // Pairs with Iterable below
 pub trait ConsumeIterator<T> {
     type Output;
     fn consume_iterator(self, iterator: impl Iterator<Item = T>) -> Self::Output;
+}
+
+pub trait Arguments<'py> {
+    type Args: PositionalArgs<'py> + ?Sized;
+    type Kwargs: KeywordArgs<'py> + ?Sized;
+
+    fn args(&self) -> Option<&Self::Args>;
+    fn kwargs(&self) -> Option<&Self::Kwargs>;
+}
+
+pub trait PositionalArgs<'py> {
+    type Item<'a>: BorrowInput<'py>
+    where
+        Self: 'a;
+    fn len(&self) -> usize;
+    fn get_item(&self, index: usize) -> Option<Self::Item<'_>>;
+    fn iter(&self) -> impl Iterator<Item = Self::Item<'_>>;
+}
+pub trait KeywordArgs<'py> {
+    type Key<'a>: BorrowInput<'py> + Clone + Into<LocItem>
+    where
+        Self: 'a;
+    type Item<'a>: BorrowInput<'py> + ToPyObject
+    where
+        Self: 'a;
+    fn len(&self) -> usize;
+    fn get_item<'k>(&self, key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>>;
+    fn iter(&self) -> impl Iterator<Item = ValResult<(Self::Key<'_>, Self::Item<'_>)>>;
 }
 
 // This slightly awkward trait is used to define types which can be iterable. This formulation
@@ -250,6 +281,16 @@ pub trait Iterable<'py> {
     fn len(&self) -> Option<usize>;
     fn iterate<R>(self, consumer: impl ConsumeIterator<PyResult<Self::Input>, Output = R>) -> ValResult<R>;
 }
+
+// Optimization pathway for inputs which are already python lists
+pub trait AsPyList<'py>: Iterable<'py> {
+    fn as_py_list(&self) -> Option<&Bound<'py, PyList>>;
+}
+
+/// This type is used for inputs which don't support certain types.
+/// It implements all the associated traits, but never actually gets called.
+
+pub enum Never {}
 
 // Necessary for inputs which don't support certain types, e.g. String -> list
 impl<'py> Iterable<'py> for Never {
@@ -262,13 +303,46 @@ impl<'py> Iterable<'py> for Never {
     }
 }
 
-// Optimization pathway for inputs which are already python lists
-pub trait AsPyList<'py>: Iterable<'py> {
-    fn as_py_list(&self) -> Option<&Bound<'py, PyList>>;
-}
-
 impl<'py> AsPyList<'py> for Never {
     fn as_py_list(&self) -> Option<&Bound<'py, PyList>> {
         unreachable!()
+    }
+}
+
+impl Arguments<'_> for Never {
+    type Args = Never;
+    type Kwargs = Never;
+    fn args(&self) -> Option<&Self::Args> {
+        unreachable!()
+    }
+    fn kwargs(&self) -> Option<&Self::Kwargs> {
+        unreachable!()
+    }
+}
+
+impl<'py> PositionalArgs<'py> for Never {
+    type Item<'a> = Bound<'py, PyAny> where Self: 'a;
+    fn len(&self) -> usize {
+        unreachable!()
+    }
+    fn get_item(&self, _index: usize) -> Option<Self::Item<'_>> {
+        unreachable!()
+    }
+    fn iter(&self) -> impl Iterator<Item = Self::Item<'_>> {
+        [].into_iter()
+    }
+}
+
+impl<'py> KeywordArgs<'py> for Never {
+    type Key<'a> = Bound<'py, PyAny> where Self: 'a;
+    type Item<'a> = Bound<'py, PyAny> where Self: 'a;
+    fn len(&self) -> usize {
+        unreachable!()
+    }
+    fn get_item<'k>(&self, _key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>> {
+        unreachable!()
+    }
+    fn iter(&self) -> impl Iterator<Item = ValResult<(Self::Key<'_>, Self::Item<'_>)>> {
+        [].into_iter()
     }
 }

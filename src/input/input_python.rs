@@ -28,9 +28,12 @@ use super::return_enums::ValidationMatch;
 use super::shared::{
     decimal_as_int, float_as_int, get_enum_meta_object, int_as_bool, str_as_bool, str_as_float, str_as_int,
 };
+use super::Arguments;
+use super::KeywordArgs;
+use super::PositionalArgs;
 use super::{
-    py_string_str, BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericArguments,
-    GenericIterable, GenericIterator, GenericMapping, Input, PyArgs,
+    py_string_str, BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericIterable,
+    GenericIterator, GenericMapping, Input,
 };
 
 #[cfg(not(PyPy))]
@@ -161,29 +164,31 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         self.is_callable()
     }
 
-    fn validate_args(&self) -> ValResult<GenericArguments<'_, 'py>> {
+    type Arguments<'a> = PyArgs<'py> where Self: 'a;
+
+    fn validate_args(&self) -> ValResult<PyArgs<'py>> {
         if let Ok(dict) = self.downcast::<PyDict>() {
-            Ok(PyArgs::new(None, Some(dict.clone())).into())
+            Ok(PyArgs::new(None, Some(dict.clone())))
         } else if let Ok(args_kwargs) = self.extract::<ArgsKwargs>() {
             let args = args_kwargs.args.into_bound(self.py());
             let kwargs = args_kwargs.kwargs.map(|d| d.into_bound(self.py()));
-            Ok(PyArgs::new(Some(args), kwargs).into())
+            Ok(PyArgs::new(Some(args), kwargs))
         } else if let Ok(tuple) = self.downcast::<PyTuple>() {
-            Ok(PyArgs::new(Some(tuple.clone()), None).into())
+            Ok(PyArgs::new(Some(tuple.clone()), None))
         } else if let Ok(list) = self.downcast::<PyList>() {
-            Ok(PyArgs::new(Some(list.to_tuple()), None).into())
+            Ok(PyArgs::new(Some(list.to_tuple()), None))
         } else {
             Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self))
         }
     }
 
-    fn validate_dataclass_args<'a>(&'a self, class_name: &str) -> ValResult<GenericArguments<'a, 'py>> {
+    fn validate_dataclass_args<'a>(&'a self, class_name: &str) -> ValResult<PyArgs<'py>> {
         if let Ok(dict) = self.downcast::<PyDict>() {
-            Ok(PyArgs::new(None, Some(dict.clone())).into())
+            Ok(PyArgs::new(None, Some(dict.clone())))
         } else if let Ok(args_kwargs) = self.extract::<ArgsKwargs>() {
             let args = args_kwargs.args.into_bound(self.py());
             let kwargs = args_kwargs.kwargs.map(|d| d.into_bound(self.py()));
-            Ok(PyArgs::new(Some(args), kwargs).into())
+            Ok(PyArgs::new(Some(args), kwargs))
         } else {
             let class_name = class_name.to_string();
             Err(ValError::new(
@@ -830,4 +835,78 @@ fn is_dict_items_type(v: &Bound<'_, PyAny>) -> bool {
         })
         .bind(py);
     v.is_instance(items_type).unwrap_or(false)
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub struct PyArgs<'py> {
+    pub args: Option<PyPosArgs<'py>>,
+    pub kwargs: Option<PyKwargs<'py>>,
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub struct PyPosArgs<'py>(Bound<'py, PyTuple>);
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub struct PyKwargs<'py>(Bound<'py, PyDict>);
+
+impl<'py> PyArgs<'py> {
+    pub fn new(args: Option<Bound<'py, PyTuple>>, kwargs: Option<Bound<'py, PyDict>>) -> Self {
+        Self {
+            args: args.map(PyPosArgs),
+            kwargs: kwargs.map(PyKwargs),
+        }
+    }
+}
+
+impl<'py> Arguments<'py> for PyArgs<'py> {
+    type Args = PyPosArgs<'py>;
+    type Kwargs = PyKwargs<'py>;
+
+    fn args(&self) -> Option<&PyPosArgs<'py>> {
+        self.args.as_ref()
+    }
+
+    fn kwargs(&self) -> Option<&PyKwargs<'py>> {
+        self.kwargs.as_ref()
+    }
+}
+
+impl<'py> PositionalArgs<'py> for PyPosArgs<'py> {
+    type Item<'a> = Borrowed<'a, 'py, PyAny> where Self: 'a;
+
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    fn get_item(&self, index: usize) -> Option<Self::Item<'_>> {
+        self.0.get_borrowed_item(index).ok()
+    }
+
+    fn iter(&self) -> impl Iterator<Item = Self::Item<'_>> {
+        self.0.iter_borrowed()
+    }
+}
+
+impl<'py> KeywordArgs<'py> for PyKwargs<'py> {
+    type Key<'a> = Bound<'py, PyAny>
+    where
+        Self: 'a;
+
+    type Item<'a> = Bound<'py, PyAny>
+    where
+        Self: 'a;
+
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    fn get_item<'k>(
+        &self,
+        key: &'k crate::lookup_key::LookupKey,
+    ) -> ValResult<Option<(&'k crate::lookup_key::LookupPath, Self::Item<'_>)>> {
+        key.py_get_dict_item(&self.0)
+    }
+
+    fn iter(&self) -> impl Iterator<Item = ValResult<(Self::Key<'_>, Self::Item<'_>)>> {
+        self.0.iter().map(Ok)
+    }
 }
