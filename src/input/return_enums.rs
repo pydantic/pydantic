@@ -26,6 +26,7 @@ use crate::errors::{
 use crate::tools::{extract_i64, py_err};
 use crate::validators::{CombinedValidator, Exactness, ValidationState, Validator};
 
+use super::input_abstract::{AsPyList, ConsumeIterator, Iterable};
 use super::input_string::StringMapping;
 use super::{py_error_on_minusone, BorrowInput, Input};
 
@@ -121,9 +122,31 @@ impl<'py> GenericIterable<'_, 'py> {
             GenericIterable::JsonString(s) => Ok(Box::new(PyString::new_bound(py, s).iter()?)),
         }
     }
+
+    pub fn as_sequence_iterator_py(&self) -> PyResult<Box<dyn Iterator<Item = PyResult<Bound<'py, PyAny>>> + '_>> {
+        match self {
+            GenericIterable::List(iter) => Ok(Box::new(iter.iter().map(Ok))),
+            GenericIterable::Tuple(iter) => Ok(Box::new(iter.iter().map(Ok))),
+            GenericIterable::Set(iter) => Ok(Box::new(iter.iter().map(Ok))),
+            GenericIterable::FrozenSet(iter) => Ok(Box::new(iter.iter().map(Ok))),
+            // Note that this iterates over only the keys, just like doing iter({}) in Python
+            GenericIterable::Dict(iter) => Ok(Box::new(iter.iter().map(|(k, _)| Ok(k)))),
+            GenericIterable::DictKeys(iter) => Ok(Box::new(iter.iter()?)),
+            GenericIterable::DictValues(iter) => Ok(Box::new(iter.iter()?)),
+            GenericIterable::DictItems(iter) => Ok(Box::new(iter.iter()?)),
+            // Note that this iterates over only the keys, just like doing iter({}) in Python
+            GenericIterable::Mapping(iter) => Ok(Box::new(iter.keys()?.iter()?)),
+            GenericIterable::PyString(iter) => Ok(Box::new(iter.iter()?)),
+            GenericIterable::Bytes(iter) => Ok(Box::new(iter.iter()?)),
+            GenericIterable::PyByteArray(iter) => Ok(Box::new(iter.iter()?)),
+            GenericIterable::Sequence(iter) => Ok(Box::new(iter.iter()?)),
+            GenericIterable::Iterator(iter) => Ok(Box::new(iter.iter()?)),
+            _ => unreachable!(),
+        }
+    }
 }
 
-struct MaxLengthCheck<'a, INPUT: ?Sized> {
+pub struct MaxLengthCheck<'a, INPUT: ?Sized> {
     current_length: usize,
     max_length: Option<usize>,
     field_type: &'a str,
@@ -132,7 +155,12 @@ struct MaxLengthCheck<'a, INPUT: ?Sized> {
 }
 
 impl<'a, INPUT: ?Sized> MaxLengthCheck<'a, INPUT> {
-    fn new(max_length: Option<usize>, field_type: &'a str, input: &'a INPUT, actual_length: Option<usize>) -> Self {
+    pub(crate) fn new(
+        max_length: Option<usize>,
+        field_type: &'a str,
+        input: &'a INPUT,
+        actual_length: Option<usize>,
+    ) -> Self {
         Self {
             current_length: 0,
             max_length,
@@ -177,7 +205,7 @@ macro_rules! any_next_error {
 }
 
 #[allow(clippy::too_many_arguments)]
-fn validate_iter_to_vec<'py>(
+pub(crate) fn validate_iter_to_vec<'py>(
     py: Python<'py>,
     iter: impl Iterator<Item = PyResult<impl BorrowInput<'py>>>,
     capacity: usize,
@@ -289,7 +317,7 @@ fn validate_iter_to_set<'py>(
     }
 }
 
-fn no_validator_iter_to_vec<'py>(
+pub(crate) fn no_validator_iter_to_vec<'py>(
     py: Python<'py>,
     input: &(impl Input<'py> + ?Sized),
     iter: impl Iterator<Item = PyResult<impl BorrowInput<'py>>>,
@@ -424,6 +452,43 @@ impl<'py> GenericIterable<'_, 'py> {
                 no_validator_iter_to_vec(py, input, collection.iter().map(Ok), max_length_check)
             }
             other => no_validator_iter_to_vec(py, input, other.as_sequence_iterator(py)?, max_length_check),
+        }
+    }
+}
+
+impl<'py> Iterable<'py> for GenericIterable<'_, 'py> {
+    type Input = Bound<'py, PyAny>;
+    fn len(&self) -> Option<usize> {
+        self.generic_len()
+    }
+    fn iterate<R>(self, consumer: impl ConsumeIterator<PyResult<Self::Input>, Output = R>) -> ValResult<R> {
+        match self {
+            GenericIterable::List(iter) => Ok(consumer.consume_iterator(iter.iter().map(Ok))),
+            GenericIterable::Tuple(iter) => Ok(consumer.consume_iterator(iter.iter().map(Ok))),
+            GenericIterable::Set(iter) => Ok(consumer.consume_iterator(iter.iter().map(Ok))),
+            GenericIterable::FrozenSet(iter) => Ok(consumer.consume_iterator(iter.iter().map(Ok))),
+            // Note that this iterates over only the keys, just like doing iter({}) in Python
+            GenericIterable::Dict(iter) => Ok(consumer.consume_iterator(iter.iter().map(|(k, _)| Ok(k)))),
+            GenericIterable::DictKeys(iter) => Ok(consumer.consume_iterator(iter.iter()?)),
+            GenericIterable::DictValues(iter) => Ok(consumer.consume_iterator(iter.iter()?)),
+            GenericIterable::DictItems(iter) => Ok(consumer.consume_iterator(iter.iter()?)),
+            // Note that this iterates over only the keys, just like doing iter({}) in Python
+            GenericIterable::Mapping(iter) => Ok(consumer.consume_iterator(iter.keys()?.iter()?)),
+            GenericIterable::PyString(iter) => Ok(consumer.consume_iterator(iter.iter()?)),
+            GenericIterable::Bytes(iter) => Ok(consumer.consume_iterator(iter.iter()?)),
+            GenericIterable::PyByteArray(iter) => Ok(consumer.consume_iterator(iter.iter()?)),
+            GenericIterable::Sequence(iter) => Ok(consumer.consume_iterator(iter.iter()?)),
+            GenericIterable::Iterator(iter) => Ok(consumer.consume_iterator(iter.iter()?)),
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl<'py> AsPyList<'py> for GenericIterable<'_, 'py> {
+    fn as_py_list(&self) -> Option<&Bound<'py, PyList>> {
+        match self {
+            GenericIterable::List(iter) => Some(iter),
+            _ => None,
         }
     }
 }
