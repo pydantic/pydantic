@@ -15,11 +15,7 @@ use crate::input::{
 use crate::lookup_key::LookupKey;
 use crate::tools::SchemaDict;
 
-use super::{
-    build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Extra, ValidationState, Validator,
-};
-
-use std::ops::ControlFlow;
+use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 #[derive(Debug)]
 struct Field {
@@ -164,21 +160,11 @@ impl Validator for ModelFieldsValidator {
             _ => None,
         };
 
-        macro_rules! control_flow {
-            ($e: expr) => {
-                match $e {
-                    Ok(v) => ControlFlow::Continue(v),
-                    Err(err) => ControlFlow::Break(ValError::from(err)),
-                }
-            };
-        }
-
         macro_rules! process {
             ($dict:expr, $get_method:ident, $iter:ty $(,$kwargs:expr)?) => {{
-                match state.with_new_extra(Extra {
-                    data: Some(model_dict.clone()),
-                    ..*state.extra()
-                }, |state| {
+                {
+                    let state = &mut state.rebind_extra(|extra| extra.data = Some(model_dict.clone()));
+
                     for field in &self.fields {
                         let op_key_value = match field.lookup_key.$get_method($dict $(, $kwargs )? ) {
                             Ok(v) => v,
@@ -188,7 +174,7 @@ impl Validator for ModelFieldsValidator {
                                 }
                                 continue;
                             }
-                            Err(err) => return ControlFlow::Break(err),
+                            Err(err) => return Err(err),
                         };
                         if let Some((lookup_path, value)) = op_key_value {
                             if let Some(ref mut used_keys) = used_keys {
@@ -198,7 +184,7 @@ impl Validator for ModelFieldsValidator {
                             }
                             match field.validator.validate(py, value.borrow_input(), state) {
                                 Ok(value) => {
-                                    control_flow!(model_dict.set_item(&field.name_py, value))?;
+                                    model_dict.set_item(&field.name_py, value)?;
                                     fields_set_vec.push(field.name_py.clone_ref(py));
                                 }
                                 Err(ValError::Omit) => continue,
@@ -210,7 +196,7 @@ impl Validator for ModelFieldsValidator {
                                         );
                                     }
                                 }
-                                Err(err) => return ControlFlow::Break(err),
+                                Err(err) => return Err(err),
                             }
                             continue;
                         }
@@ -218,7 +204,7 @@ impl Validator for ModelFieldsValidator {
                         match field.validator.default_value(py, Some(field.name.as_str()), state) {
                             Ok(Some(value)) => {
                                 // Default value exists, and passed validation if required
-                                control_flow!(model_dict.set_item(&field.name_py, value))?;
+                                model_dict.set_item(&field.name_py, value)?;
                             },
                             Ok(None) => {
                                 // This means there was no default value
@@ -239,13 +225,9 @@ impl Validator for ModelFieldsValidator {
                                     errors.push(err);
                                 }
                             }
-                            Err(err) => return ControlFlow::Break(err),
+                            Err(err) => return Err(err),
                         }
                     }
-                    ControlFlow::Continue(())
-                }) {
-                    ControlFlow::Continue(()) => {}
-                    ControlFlow::Break(err) => return Err(err),
                 }
 
                 if let Some(ref mut used_keys) = used_keys {
@@ -376,48 +358,43 @@ impl Validator for ModelFieldsValidator {
             }
         }
 
-        let new_extra = Extra {
-            data: Some(data_dict),
-            ..*state.extra()
-        };
+        let new_data = {
+            let state = &mut state.rebind_extra(move |extra| extra.data = Some(data_dict));
 
-        let new_data = if let Some(field) = self.fields.iter().find(|f| f.name == field_name) {
-            if field.frozen {
-                Err(ValError::new_with_loc(
-                    ErrorTypeDefaults::FrozenField,
-                    field_value,
-                    field.name.to_string(),
-                ))
-            } else {
-                prepare_result(
-                    state.with_new_extra(new_extra, |state| field.validator.validate(py, field_value, state)),
-                )
-            }
-        } else {
-            // Handle extra (unknown) field
-            // We partially use the extra_behavior for initialization / validation
-            // to determine how to handle assignment
-            // For models / typed dicts we forbid assigning extra attributes
-            // unless the user explicitly set extra_behavior to 'allow'
-            match self.extra_behavior {
-                ExtraBehavior::Allow => match self.extras_validator {
-                    Some(ref validator) => prepare_result(
-                        state.with_new_extra(new_extra, |state| validator.validate(py, field_value, state)),
-                    ),
-                    None => get_updated_dict(field_value.to_object(py)),
-                },
-                ExtraBehavior::Forbid | ExtraBehavior::Ignore => {
+            if let Some(field) = self.fields.iter().find(|f| f.name == field_name) {
+                if field.frozen {
                     return Err(ValError::new_with_loc(
-                        ErrorType::NoSuchAttribute {
-                            attribute: field_name.to_string(),
-                            context: None,
-                        },
+                        ErrorTypeDefaults::FrozenField,
                         field_value,
-                        field_name.to_string(),
-                    ))
+                        field.name.to_string(),
+                    ));
+                }
+
+                prepare_result(field.validator.validate(py, field_value, state))?
+            } else {
+                // Handle extra (unknown) field
+                // We partially use the extra_behavior for initialization / validation
+                // to determine how to handle assignment
+                // For models / typed dicts we forbid assigning extra attributes
+                // unless the user explicitly set extra_behavior to 'allow'
+                match self.extra_behavior {
+                    ExtraBehavior::Allow => match self.extras_validator {
+                        Some(ref validator) => prepare_result(validator.validate(py, field_value, state))?,
+                        None => get_updated_dict(field_value.to_object(py))?,
+                    },
+                    ExtraBehavior::Forbid | ExtraBehavior::Ignore => {
+                        return Err(ValError::new_with_loc(
+                            ErrorType::NoSuchAttribute {
+                                attribute: field_name.to_string(),
+                                context: None,
+                            },
+                            field_value,
+                            field_name.to_string(),
+                        ))
+                    }
                 }
             }
-        }?;
+        };
 
         let new_extra = match &self.extra_behavior {
             ExtraBehavior::Allow => {
