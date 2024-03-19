@@ -775,3 +775,20 @@ def test_computed_field_override_raises():
             @property
             def name(self) -> str:
                 return 'bar'
+
+
+@pytest.mark.skip(reason='waiting on next pydantic-core version, right now, causes a recursion error')
+def test_computed_field_excluded_from_model_dump_recursive() -> None:
+    # see https://github.com/pydantic/pydantic/issues/9015 for a more contextualized example
+    class Model(BaseModel):
+        bar: int
+
+        @computed_field
+        @property
+        def id(self) -> str:
+            str_obj = self.model_dump_json(exclude={'id'})
+            # you could imagine hashing str_obj, etc. but for simplicity, just wrap it in a descriptive string
+            return f'id: {str_obj}'
+
+    m = Model(bar=42)
+    assert m.model_dump() == {'bar': 42, 'id': 'id: {"bar":42}'}
