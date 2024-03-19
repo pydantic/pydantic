@@ -3,9 +3,10 @@ from __future__ import annotations as _annotations
 
 import sys
 from dataclasses import is_dataclass
+from functools import cached_property
 from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, cast, final, overload
 
-from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
+from pydantic_core import CoreConfig, CoreSchema, SchemaSerializer, SchemaValidator, Some
 from typing_extensions import Literal, get_args, is_typeddict
 
 from pydantic.errors import PydanticUserError
@@ -219,61 +220,44 @@ class TypeAdapter(Generic[T]):
         else:
             self._module_name = module
 
-        self._schema_handlers: tuple[CoreSchema, SchemaValidator, SchemaSerializer] | None = None
+        self._schema_initialized = False
         if not self._defer_build(type, config):
-            self._init_schema_handlers()
+            # Immediately initialize the core schema, validator and serializer
+            _, _, _ = (self.core_schema, self.validator, self.serializer)
 
-    def _init_schema_handlers(self) -> tuple[CoreSchema, SchemaValidator, SchemaSerializer]:
-        if self._schema_handlers is not None:
-            return self._schema_handlers
-
-        core_schema: CoreSchema
+    @cached_property
+    def core_schema(self) -> CoreSchema:
+        """Core schema"""
         try:
-            core_schema = _getattr_no_parents(self._type, '__pydantic_core_schema__')
+            return _getattr_no_parents(self._type, '__pydantic_core_schema__')
         except AttributeError:
-            core_schema = _get_schema(self._type, self._config_wrapper, parent_depth=self._parent_depth + 2)
+            return _get_schema(self._type, self._config_wrapper, parent_depth=self._parent_depth + 3)
+        finally:
+            self._schema_initialized = True
 
-        core_config = self._config_wrapper.core_config(None)
-        validator: SchemaValidator
+    @cached_property
+    def validator(self) -> SchemaValidator:
+        """Validator"""
         try:
-            validator = _getattr_no_parents(self._type, '__pydantic_validator__')
+            return _getattr_no_parents(self._type, '__pydantic_validator__')
         except AttributeError:
-            validator = create_schema_validator(
-                schema=core_schema,
+            return create_schema_validator(
+                schema=self.core_schema,
                 schema_type=self._type,
                 schema_type_module=self._module_name,
                 schema_type_name=str(self._type),
                 schema_kind='TypeAdapter',
-                config=core_config,
+                config=self._core_config,
                 plugin_settings=self._config_wrapper.plugin_settings,
             )
 
-        serializer: SchemaSerializer
-        try:
-            serializer = _getattr_no_parents(self._type, '__pydantic_serializer__')
-        except AttributeError:
-            serializer = SchemaSerializer(core_schema, core_config)
-
-        self._schema_handlers = core_schema, validator, serializer
-        return self._schema_handlers
-
-    @property
-    def core_schema(self) -> CoreSchema:
-        """Core schema"""
-        core_schema, _, _ = self._init_schema_handlers()
-        return core_schema
-
-    @property
-    def validator(self) -> SchemaValidator:
-        """Validator"""
-        _, validator, _ = self._init_schema_handlers()
-        return validator
-
-    @property
+    @cached_property
     def serializer(self) -> SchemaSerializer:
         """Serializer"""
-        _, _, serializer = self._init_schema_handlers()
-        return serializer
+        try:
+            return _getattr_no_parents(self._type, '__pydantic_serializer__')
+        except AttributeError:
+            return SchemaSerializer(self.core_schema, self._core_config)
 
     @classmethod
     def _defer_build(cls, type_: Any, type_adapter_config: ConfigDict | None) -> bool:
@@ -292,6 +276,10 @@ class TypeAdapter(Generic[T]):
     @classmethod
     def _is_defer_build_config(cls, config: ConfigDict) -> bool:
         return config.get('defer_build', False) is True and 'type_adapter' in config.get('_defer_build_mode', tuple())
+
+    @cached_property
+    def _core_config(self) -> CoreConfig:
+        return self._config_wrapper.core_config(None)
 
     def validate_python(
         self,

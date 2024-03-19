@@ -414,10 +414,12 @@ def test_respects_defer_build(
 
         ta = TypeAdapter(tested_model, config=adapter_config)
         if defer_build and 'type_adapter' in defer_build_mode:
-            assert ta._schema_handlers is None, f'{tested_model} should be built deferred'
+            assert not ta._schema_initialized, f'{tested_model} should be built deferred'
         else:
-            assert ta._schema_handlers is not None
+            assert ta._schema_initialized
 
-        validated = ta.validate_python({'x': 1})
+        validated = ta.validate_python({'x': 1})  # Sanity check it works
         assert (validated['x'] if isinstance(validated, dict) else getattr(validated, 'x')) == 1
-        assert ta._schema_handlers is not None
+
+        assert ta.core_schema
+        assert ta._schema_initialized
