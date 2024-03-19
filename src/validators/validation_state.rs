@@ -25,28 +25,6 @@ impl<'a, 'py> ValidationState<'a, 'py> {
         }
     }
 
-    pub fn with_new_extra<'r, R: 'r>(
-        &mut self,
-        extra: Extra<'_, 'py>,
-        f: impl for<'s> FnOnce(&'s mut ValidationState<'_, 'py>) -> R,
-    ) -> R {
-        // TODO: It would be nice to implement this function with a drop guard instead of a closure,
-        // but lifetimes get in a tangle. Maybe someone brave wants to have a go at unpicking lifetimes.
-        let mut new_state = ValidationState {
-            recursion_guard: self.recursion_guard,
-            exactness: self.exactness,
-            extra,
-        };
-        let result = f(&mut new_state);
-        let exactness = new_state.exactness;
-        drop(new_state);
-        match exactness {
-            Some(exactness) => self.floor_exactness(exactness),
-            None => self.exactness = None,
-        }
-        result
-    }
-
     /// Temporarily rebinds the extra field by calling `f` to modify extra.
     ///
     /// When `ValidationStateWithReboundExtra` drops, the extra field is restored to its original value.
@@ -54,11 +32,7 @@ impl<'a, 'py> ValidationState<'a, 'py> {
         &'state mut self,
         f: impl FnOnce(&mut Extra<'a, 'py>),
     ) -> ValidationStateWithReboundExtra<'state, 'a, 'py> {
-        #[allow(clippy::unnecessary_struct_initialization)]
-        let old_extra = Extra {
-            data: self.extra.data.clone(),
-            ..self.extra
-        };
+        let old_extra = self.extra.clone();
         f(&mut self.extra);
         ValidationStateWithReboundExtra { state: self, old_extra }
     }
