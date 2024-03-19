@@ -87,13 +87,11 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
     else:
         expected = ', '.join([repr(case.value) for case in cases[:-1]]) + f' or {cases[-1].value!r}'
 
-    def to_enum(__input_value: Any) -> Enum:
+    def to_enum(input_value: Any, /) -> Enum:
         try:
-            return enum_type(__input_value)
+            return enum_type(input_value)
         except ValueError:
             raise PydanticCustomError('enum', 'Input should be {expected}', {'expected': expected})
-
-    to_enum_validator = core_schema.no_info_plain_validator_function(to_enum)
 
     if issubclass(enum_type, int):
         # this handles `IntEnum`, and also `Foobar(int, Enum)`
@@ -107,7 +105,7 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
         js_updates['type'] = 'numeric'
         lax_schema = core_schema.no_info_after_validator_function(to_enum, core_schema.float_schema())
     else:
-        lax_schema = to_enum_validator
+        lax_schema = core_schema.no_info_plain_validator_function(to_enum)
 
     enum_schema = core_schema.lax_or_strict_schema(
         lax_schema=lax_schema,
