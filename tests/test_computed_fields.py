@@ -777,7 +777,7 @@ def test_computed_field_override_raises():
                 return 'bar'
 
 
-@pytest.mark.xfail(reason='waiting on next pydantic-core version, right now, causes a recursion error')
+@pytest.mark.skip(reason='waiting on next pydantic-core version, right now, causes a recursion error')
 def test_computed_field_excluded_from_model_dump_recursive() -> None:
     # see https://github.com/pydantic/pydantic/issues/9015 for a more contextualized example
     class Model(BaseModel):
