@@ -3,6 +3,7 @@ use std::str::from_utf8;
 
 use pyo3::intern;
 use pyo3::prelude::*;
+
 use pyo3::types::{
     PyBool, PyByteArray, PyBytes, PyDate, PyDateTime, PyDict, PyFloat, PyFrozenSet, PyInt, PyIterator, PyList,
     PyMapping, PySequence, PySet, PyString, PyTime, PyTuple, PyType,
@@ -24,16 +25,18 @@ use super::datetime::{
     EitherTime,
 };
 use super::input_abstract::ValMatch;
-use super::return_enums::ValidationMatch;
+use super::return_enums::{iterate_attributes, iterate_mapping_items, ValidationMatch};
 use super::shared::{
     decimal_as_int, float_as_int, get_enum_meta_object, int_as_bool, str_as_bool, str_as_float, str_as_int,
 };
 use super::Arguments;
+use super::ConsumeIterator;
 use super::KeywordArgs;
 use super::PositionalArgs;
+use super::ValidatedDict;
 use super::{
     py_string_str, BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericIterable,
-    GenericIterator, GenericMapping, Input,
+    GenericIterator, Input,
 };
 
 #[cfg(not(PyPy))]
@@ -419,40 +422,46 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         }
     }
 
-    fn strict_dict<'a>(&'a self) -> ValResult<GenericMapping<'a, 'py>> {
+    type Dict<'a> = GenericPyMapping<'a, 'py> where Self: 'a;
+
+    fn strict_dict<'a>(&'a self) -> ValResult<GenericPyMapping<'a, 'py>> {
         if let Ok(dict) = self.downcast::<PyDict>() {
-            Ok(dict.into())
+            Ok(GenericPyMapping::Dict(dict))
         } else {
             Err(ValError::new(ErrorTypeDefaults::DictType, self))
         }
     }
 
-    fn lax_dict<'a>(&'a self) -> ValResult<GenericMapping<'a, 'py>> {
+    fn lax_dict<'a>(&'a self) -> ValResult<GenericPyMapping<'a, 'py>> {
         if let Ok(dict) = self.downcast::<PyDict>() {
-            Ok(dict.into())
+            Ok(GenericPyMapping::Dict(dict))
         } else if let Ok(mapping) = self.downcast::<PyMapping>() {
-            Ok(mapping.into())
+            Ok(GenericPyMapping::Mapping(mapping))
         } else {
             Err(ValError::new(ErrorTypeDefaults::DictType, self))
         }
     }
 
-    fn validate_model_fields<'a>(&'a self, strict: bool, from_attributes: bool) -> ValResult<GenericMapping<'a, 'py>> {
+    fn validate_model_fields<'a>(
+        &'a self,
+        strict: bool,
+        from_attributes: bool,
+    ) -> ValResult<GenericPyMapping<'a, 'py>> {
         if from_attributes {
             // if from_attributes, first try a dict, then mapping then from_attributes
             if let Ok(dict) = self.downcast::<PyDict>() {
-                return Ok(dict.into());
+                return Ok(GenericPyMapping::Dict(dict));
             } else if !strict {
                 if let Ok(mapping) = self.downcast::<PyMapping>() {
-                    return Ok(mapping.into());
+                    return Ok(GenericPyMapping::Mapping(mapping));
                 }
             }
 
             if from_attributes_applicable(self) {
-                Ok(GenericMapping::PyGetAttr(self.to_owned(), None))
+                Ok(GenericPyMapping::GetAttr(self.to_owned(), None))
             } else if let Ok((obj, kwargs)) = self.extract() {
                 if from_attributes_applicable(&obj) {
-                    Ok(GenericMapping::PyGetAttr(obj, Some(kwargs)))
+                    Ok(GenericPyMapping::GetAttr(obj, Some(kwargs)))
                 } else {
                     Err(ValError::new(ErrorTypeDefaults::ModelAttributesType, self))
                 }
@@ -908,5 +917,51 @@ impl<'py> KeywordArgs<'py> for PyKwargs<'py> {
 
     fn iter(&self) -> impl Iterator<Item = ValResult<(Self::Key<'_>, Self::Item<'_>)>> {
         self.0.iter().map(Ok)
+    }
+}
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub enum GenericPyMapping<'a, 'py> {
+    Dict(&'a Bound<'py, PyDict>),
+    Mapping(&'a Bound<'py, PyMapping>),
+    GetAttr(Bound<'py, PyAny>, Option<Bound<'py, PyDict>>),
+}
+
+impl<'py> ValidatedDict<'py> for GenericPyMapping<'_, 'py> {
+    type Key<'a> = Bound<'py, PyAny>
+    where
+        Self: 'a;
+
+    type Item<'a> = Bound<'py, PyAny>
+    where
+        Self: 'a;
+
+    fn get_item<'k>(
+        &self,
+        key: &'k crate::lookup_key::LookupKey,
+    ) -> ValResult<Option<(&'k crate::lookup_key::LookupPath, Self::Item<'_>)>> {
+        match self {
+            Self::Dict(dict) => key.py_get_dict_item(dict),
+            Self::Mapping(mapping) => key.py_get_mapping_item(mapping),
+            Self::GetAttr(obj, dict) => key.py_get_attr(obj, dict.as_ref()),
+        }
+    }
+
+    fn as_py_dict(&self) -> Option<&Bound<'py, PyDict>> {
+        match self {
+            Self::Dict(dict) => Some(dict),
+            _ => None,
+        }
+    }
+
+    fn iterate<'a, R>(
+        &'a self,
+        consumer: impl ConsumeIterator<ValResult<(Self::Key<'a>, Self::Item<'a>)>, Output = R>,
+    ) -> ValResult<R> {
+        match self {
+            Self::Dict(dict) => Ok(consumer.consume_iterator(dict.iter().map(Ok))),
+            Self::Mapping(mapping) => Ok(consumer.consume_iterator(iterate_mapping_items(mapping)?)),
+            Self::GetAttr(obj, _) => Ok(consumer.consume_iterator(iterate_attributes(obj))),
+        }
     }
 }

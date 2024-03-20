@@ -5,6 +5,7 @@ use speedate::MicrosecondsPrecisionOverflowBehavior;
 
 use crate::errors::{ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::input::py_string_str;
+use crate::lookup_key::{LookupKey, LookupPath};
 use crate::tools::safe_repr;
 use crate::validators::decimal::create_decimal;
 
@@ -15,7 +16,7 @@ use super::input_abstract::{Never, ValMatch};
 use super::shared::{str_as_bool, str_as_float, str_as_int};
 use super::{
     Arguments, BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericIterable,
-    GenericIterator, GenericMapping, Input, KeywordArgs, ValidationMatch,
+    GenericIterator, Input, KeywordArgs, ValidatedDict, ValidationMatch,
 };
 
 #[derive(Debug, Clone)]
@@ -34,21 +35,26 @@ impl<'py> ToPyObject for StringMapping<'py> {
 }
 
 impl<'py> StringMapping<'py> {
-    pub fn new_key(py_key: &Bound<'py, PyAny>) -> ValResult<Self> {
-        if let Ok(py_str) = py_key.downcast::<PyString>() {
-            Ok(Self::String(py_str.clone()))
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::StringType, py_key))
+    pub fn new_key(py_key: Bound<'py, PyAny>) -> ValResult<Self> {
+        match py_key.downcast_into::<PyString>() {
+            Ok(value) => Ok(Self::String(value)),
+            Err(downcast_error) => Err(ValError::new(
+                ErrorTypeDefaults::StringType,
+                downcast_error.into_inner(),
+            )),
         }
     }
 
-    pub fn new_value(py_value: &Bound<'py, PyAny>) -> ValResult<Self> {
-        if let Ok(py_str) = py_value.downcast::<PyString>() {
-            Ok(Self::String(py_str.clone()))
-        } else if let Ok(value) = py_value.downcast::<PyDict>() {
-            Ok(Self::Mapping(value.clone()))
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::StringType, py_value))
+    pub fn new_value(py_value: Bound<'py, PyAny>) -> ValResult<Self> {
+        match py_value.downcast_into::<PyString>() {
+            Ok(py_str) => Ok(Self::String(py_str)),
+            Err(downcast_error) => match downcast_error.into_inner().downcast_into::<PyDict>() {
+                Ok(value) => Ok(Self::Mapping(value)),
+                Err(downcast_error) => Err(ValError::new(
+                    ErrorTypeDefaults::StringType,
+                    downcast_error.into_inner(),
+                )),
+            },
         }
     }
 }
@@ -74,17 +80,17 @@ impl<'py> Input<'py> for StringMapping<'py> {
         None
     }
 
-    type Arguments<'a> = StringMappingArgs<'py> where Self: 'a;
+    type Arguments<'a> = StringMappingDict<'py> where Self: 'a;
 
-    fn validate_args(&self) -> ValResult<StringMappingArgs<'py>> {
+    fn validate_args(&self) -> ValResult<StringMappingDict<'py>> {
         // do we want to support this?
         Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self))
     }
 
-    fn validate_dataclass_args<'a>(&'a self, _dataclass_name: &str) -> ValResult<StringMappingArgs<'py>> {
+    fn validate_dataclass_args<'a>(&'a self, _dataclass_name: &str) -> ValResult<StringMappingDict<'py>> {
         match self {
             StringMapping::String(_) => Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self)),
-            StringMapping::Mapping(m) => Ok(StringMappingArgs(m.clone())),
+            StringMapping::Mapping(m) => Ok(StringMappingDict(m.clone())),
         }
     }
 
@@ -134,10 +140,12 @@ impl<'py> Input<'py> for StringMapping<'py> {
         }
     }
 
-    fn strict_dict<'a>(&'a self) -> ValResult<GenericMapping<'a, 'py>> {
+    type Dict<'a> = StringMappingDict<'py> where Self: 'a;
+
+    fn strict_dict(&self) -> ValResult<StringMappingDict<'py>> {
         match self {
             Self::String(_) => Err(ValError::new(ErrorTypeDefaults::DictType, self)),
-            Self::Mapping(d) => Ok(GenericMapping::StringMapping(d)),
+            Self::Mapping(d) => Ok(StringMappingDict(d.clone())),
         }
     }
 
@@ -218,9 +226,9 @@ impl<'py> BorrowInput<'py> for StringMapping<'py> {
     }
 }
 
-pub struct StringMappingArgs<'py>(Bound<'py, PyDict>);
+pub struct StringMappingDict<'py>(Bound<'py, PyDict>);
 
-impl<'py> Arguments<'py> for StringMappingArgs<'py> {
+impl<'py> Arguments<'py> for StringMappingDict<'py> {
     type Args = Never;
     type Kwargs = Self;
 
@@ -233,8 +241,8 @@ impl<'py> Arguments<'py> for StringMappingArgs<'py> {
     }
 }
 
-impl<'py> KeywordArgs<'py> for StringMappingArgs<'py> {
-    type Key<'a> = Bound<'py, PyAny>
+impl<'py> KeywordArgs<'py> for StringMappingDict<'py> {
+    type Key<'a> = StringMapping<'py>
     where
         Self: 'a;
 
@@ -246,16 +254,39 @@ impl<'py> KeywordArgs<'py> for StringMappingArgs<'py> {
         self.0.len()
     }
 
-    fn get_item<'k>(
-        &self,
-        key: &'k crate::lookup_key::LookupKey,
-    ) -> ValResult<Option<(&'k crate::lookup_key::LookupPath, Self::Item<'_>)>> {
+    fn get_item<'k>(&self, key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>> {
         key.py_get_string_mapping_item(&self.0)
     }
 
     fn iter(&self) -> impl Iterator<Item = ValResult<(Self::Key<'_>, Self::Item<'_>)>> {
         self.0
             .iter()
-            .map(|(key, val)| Ok((key, StringMapping::new_value(&val)?)))
+            .map(|(key, val)| Ok((StringMapping::new_key(key)?, StringMapping::new_value(val)?)))
+    }
+}
+
+impl<'py> ValidatedDict<'py> for StringMappingDict<'py> {
+    type Key<'a> = StringMapping<'py>
+    where
+        Self: 'a;
+
+    type Item<'a> = StringMapping<'py>
+    where
+        Self: 'a;
+    fn get_item<'k>(&self, key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>> {
+        key.py_get_string_mapping_item(&self.0)
+    }
+    fn as_py_dict(&self) -> Option<&Bound<'py, PyDict>> {
+        None
+    }
+    fn iterate<'a, R>(
+        &'a self,
+        consumer: impl super::ConsumeIterator<ValResult<(Self::Key<'a>, Self::Item<'a>)>, Output = R>,
+    ) -> ValResult<R> {
+        Ok(consumer.consume_iterator(
+            self.0
+                .iter()
+                .map(|(key, val)| Ok((StringMapping::new_key(key)?, StringMapping::new_value(val)?))),
+        ))
     }
 }

@@ -5,10 +5,8 @@ use pyo3::types::PyDict;
 use crate::build_tools::is_strict;
 use crate::errors::{LocItem, ValError, ValLineError, ValResult};
 use crate::input::BorrowInput;
-use crate::input::{
-    DictGenericIterator, GenericMapping, Input, JsonObjectGenericIterator, MappingGenericIterator,
-    StringMappingGenericIterator,
-};
+use crate::input::ConsumeIterator;
+use crate::input::{Input, ValidatedDict};
 
 use crate::tools::SchemaDict;
 
@@ -75,22 +73,15 @@ impl Validator for DictValidator {
     ) -> ValResult<PyObject> {
         let strict = state.strict_or(self.strict);
         let dict = input.validate_dict(strict)?;
-        match dict {
-            GenericMapping::PyDict(py_dict) => {
-                self.validate_generic_mapping(py, input, DictGenericIterator::new(py_dict)?, state)
-            }
-            GenericMapping::PyMapping(mapping) => {
-                state.floor_exactness(super::Exactness::Lax);
-                self.validate_generic_mapping(py, input, MappingGenericIterator::new(mapping)?, state)
-            }
-            GenericMapping::StringMapping(dict) => {
-                self.validate_generic_mapping(py, input, StringMappingGenericIterator::new(dict)?, state)
-            }
-            GenericMapping::PyGetAttr(_, _) => unreachable!(),
-            GenericMapping::JsonObject(json_object) => {
-                self.validate_generic_mapping(py, input, JsonObjectGenericIterator::new(json_object)?, state)
-            }
-        }
+        dict.iterate(ValidateToDict {
+            py,
+            input,
+            min_length: self.min_length,
+            max_length: self.max_length,
+            key_validator: &self.key_validator,
+            value_validator: &self.value_validator,
+            state,
+        })?
     }
 
     fn get_name(&self) -> &str {
@@ -98,24 +89,30 @@ impl Validator for DictValidator {
     }
 }
 
-impl DictValidator {
-    fn validate_generic_mapping<'py>(
-        &self,
-        py: Python<'py>,
-        input: &(impl Input<'py> + ?Sized),
-        mapping_iter: impl Iterator<
-            Item = ValResult<(impl BorrowInput<'py> + Clone + Into<LocItem>, impl BorrowInput<'py>)>,
-        >,
-        state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<PyObject> {
-        let output = PyDict::new_bound(py);
+struct ValidateToDict<'a, 's, 'py, I: Input<'py> + ?Sized> {
+    py: Python<'py>,
+    input: &'a I,
+    min_length: Option<usize>,
+    max_length: Option<usize>,
+    key_validator: &'a CombinedValidator,
+    value_validator: &'a CombinedValidator,
+    state: &'a mut ValidationState<'s, 'py>,
+}
+
+impl<'py, Key, Value, I: Input<'py> + ?Sized> ConsumeIterator<ValResult<(Key, Value)>>
+    for ValidateToDict<'_, '_, 'py, I>
+where
+    Key: BorrowInput<'py> + Clone + Into<LocItem>,
+    Value: BorrowInput<'py>,
+{
+    type Output = ValResult<PyObject>;
+    fn consume_iterator(self, iterator: impl Iterator<Item = ValResult<(Key, Value)>>) -> ValResult<PyObject> {
+        let output = PyDict::new_bound(self.py);
         let mut errors: Vec<ValLineError> = Vec::new();
 
-        let key_validator = self.key_validator.as_ref();
-        let value_validator = self.value_validator.as_ref();
-        for item_result in mapping_iter {
+        for item_result in iterator {
             let (key, value) = item_result?;
-            let output_key = match key_validator.validate(py, key.borrow_input(), state) {
+            let output_key = match self.key_validator.validate(self.py, key.borrow_input(), self.state) {
                 Ok(value) => Some(value),
                 Err(ValError::LineErrors(line_errors)) => {
                     for err in line_errors {
@@ -127,7 +124,7 @@ impl DictValidator {
                 Err(ValError::Omit) => continue,
                 Err(err) => return Err(err),
             };
-            let output_value = match value_validator.validate(py, value.borrow_input(), state) {
+            let output_value = match self.value_validator.validate(self.py, value.borrow_input(), self.state) {
                 Ok(value) => Some(value),
                 Err(ValError::LineErrors(line_errors)) => {
                     for err in line_errors {
@@ -144,6 +141,7 @@ impl DictValidator {
         }
 
         if errors.is_empty() {
+            let input = self.input;
             length_check!(input, "Dictionary", self.min_length, self.max_length, output);
             Ok(output.into())
         } else {
