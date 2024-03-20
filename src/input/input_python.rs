@@ -138,6 +138,10 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         }
     }
 
+    fn input_is_exact_instance(&self, class: &Bound<'py, PyType>) -> bool {
+        self.is_exact_instance(class)
+    }
+
     fn is_python(&self) -> bool {
         true
     }

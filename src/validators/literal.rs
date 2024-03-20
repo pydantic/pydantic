@@ -1,11 +1,13 @@
 // Validator for things inside of a typing.Literal[]
 // which can be an int, a string, bytes or an Enum value (including `class Foo(str, Enum)` type enums)
 use core::fmt::Debug;
+use std::cmp::Ordering;
 
-use ahash::AHashMap;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 use pyo3::{intern, PyTraverseError, PyVisit};
+
+use ahash::AHashMap;
 
 use crate::build_tools::{py_schema_err, py_schema_error_type};
 use crate::errors::{ErrorType, ValError, ValResult};
@@ -15,7 +17,7 @@ use crate::tools::SchemaDict;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 struct BoolLiteral {
     pub true_id: Option<usize>,
     pub false_id: Option<usize>,
@@ -30,20 +32,21 @@ pub struct LiteralLookup<T: Debug> {
     expected_bool: Option<BoolLiteral>,
     expected_int: Option<AHashMap<i64, usize>>,
     expected_str: Option<AHashMap<String, usize>>,
-    // Catch all for Enum and bytes (the latter only because it is seldom used)
-    expected_py: Option<Py<PyDict>>,
+    // Catch all for hashable types like Enum and bytes (the latter only because it is seldom used)
+    expected_py_dict: Option<Py<PyDict>>,
+    // Catch all for unhashable types like list
+    expected_py_list: Option<Py<PyList>>,
+
     pub values: Vec<T>,
 }
 
 impl<T: Debug> LiteralLookup<T> {
     pub fn new<'py>(py: Python<'py>, expected: impl Iterator<Item = (Bound<'py, PyAny>, T)>) -> PyResult<Self> {
+        let mut expected_bool = BoolLiteral::default();
         let mut expected_int = AHashMap::new();
         let mut expected_str: AHashMap<String, usize> = AHashMap::new();
-        let mut expected_bool = BoolLiteral {
-            true_id: None,
-            false_id: None,
-        };
-        let expected_py = PyDict::new_bound(py);
+        let expected_py_dict = PyDict::new_bound(py);
+        let expected_py_list = PyList::empty_bound(py);
         let mut values = Vec::new();
         for (k, v) in expected {
             let id = values.len();
@@ -65,8 +68,8 @@ impl<T: Debug> LiteralLookup<T> {
                     .as_cow()
                     .map_err(|_| py_schema_error_type!("error extracting str {:?}", k))?;
                 expected_str.insert(str.to_string(), id);
-            } else {
-                expected_py.set_item(&k, id)?;
+            } else if expected_py_dict.set_item(&k, id).is_err() {
+                expected_py_list.append((&k, id))?;
             }
         }
 
@@ -83,9 +86,13 @@ impl<T: Debug> LiteralLookup<T> {
                 true => None,
                 false => Some(expected_str),
             },
-            expected_py: match expected_py.is_empty() {
+            expected_py_dict: match expected_py_dict.is_empty() {
                 true => None,
-                false => Some(expected_py.into()),
+                false => Some(expected_py_dict.into()),
+            },
+            expected_py_list: match expected_py_list.is_empty() {
+                true => None,
+                false => Some(expected_py_list.into()),
             },
             values,
         })
@@ -134,23 +141,84 @@ impl<T: Debug> LiteralLookup<T> {
                 }
             }
         }
-        // must be an enum or bytes
-        if let Some(expected_py) = &self.expected_py {
+        if let Some(expected_py_dict) = &self.expected_py_dict {
             // We don't use ? to unpack the result of `get_item` in the next line because unhashable
             // inputs will produce a TypeError, which in this case we just want to treat equivalently
             // to a failed lookup
-            if let Ok(Some(v)) = expected_py.bind(py).get_item(input) {
+            if let Ok(Some(v)) = expected_py_dict.bind(py).get_item(input) {
                 let id: usize = v.extract().unwrap();
                 return Ok(Some((input, &self.values[id])));
             }
         };
+        if let Some(expected_py_list) = &self.expected_py_list {
+            for item in expected_py_list.bind(py) {
+                let (k, id): (Bound<PyAny>, usize) = item.extract()?;
+                if k.compare(input.to_object(py).bind(py))
+                    .unwrap_or(Ordering::Less)
+                    .is_eq()
+                {
+                    return Ok(Some((input, &self.values[id])));
+                }
+            }
+        };
+        Ok(None)
+    }
+
+    /// Used by int enums
+    pub fn validate_int<'a, 'py, I: Input<'py> + ?Sized>(
+        &self,
+        py: Python<'py>,
+        input: &'a I,
+        strict: bool,
+    ) -> ValResult<Option<&T>> {
+        if let Some(expected_ints) = &self.expected_int {
+            if let Ok(either_int) = input.validate_int(strict) {
+                let int = either_int.into_inner().into_i64(py)?;
+                if let Some(id) = expected_ints.get(&int) {
+                    return Ok(Some(&self.values[*id]));
+                }
+            }
+        }
+        Ok(None)
+    }
+
+    /// Used by str enums
+    pub fn validate_str<'a, 'py, I: Input<'py> + ?Sized>(&self, input: &'a I, strict: bool) -> ValResult<Option<&T>> {
+        if let Some(expected_strings) = &self.expected_str {
+            if let Ok(either_str) = input.validate_str(strict, false) {
+                let s = either_str.into_inner();
+                if let Some(id) = expected_strings.get(s.as_cow()?.as_ref()) {
+                    return Ok(Some(&self.values[*id]));
+                }
+            }
+        }
+        Ok(None)
+    }
+
+    /// Used by float enums
+    pub fn validate_float<'a, 'py, I: Input<'py> + ?Sized>(
+        &self,
+        py: Python<'py>,
+        input: &'a I,
+        strict: bool,
+    ) -> ValResult<Option<&T>> {
+        if let Some(expected_py) = &self.expected_py_dict {
+            if let Ok(either_float) = input.validate_float(strict) {
+                let f = either_float.into_inner().as_f64();
+                let py_float = f.to_object(py);
+                if let Ok(Some(v)) = expected_py.bind(py).get_item(py_float.bind(py)) {
+                    let id: usize = v.extract().unwrap();
+                    return Ok(Some(&self.values[id]));
+                }
+            }
+        }
         Ok(None)
     }
 }
 
 impl<T: PyGcTraverse + Debug> PyGcTraverse for LiteralLookup<T> {
     fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
-        self.expected_py.py_gc_traverse(visit)?;
+        self.expected_py_dict.py_gc_traverse(visit)?;
         self.values.py_gc_traverse(visit)?;
         Ok(())
     }

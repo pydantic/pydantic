@@ -1,6 +1,7 @@
 import dataclasses
 import re
 from datetime import date
+from enum import Enum
 from typing import Any
 
 import pytest
@@ -24,6 +25,11 @@ class MyModel:
 class MyDataclass:
     x: int
     y: str
+
+
+class MyEnum(int, Enum):
+    a = 1
+    b = 2
 
 
 def ids_function(val):
@@ -75,6 +81,11 @@ all_schema_functions = [
         {'type': 'timedelta', 'microseconds_precision': 'error'},
     ),
     (core_schema.literal_schema, args(['a', 'b']), {'type': 'literal', 'expected': ['a', 'b']}),
+    (
+        core_schema.enum_schema,
+        args(MyEnum, list(MyEnum.__members__.values())),
+        {'type': 'enum', 'cls': MyEnum, 'members': [MyEnum.a, MyEnum.b]},
+    ),
     (core_schema.is_instance_schema, args(int), {'type': 'is-instance', 'cls': int}),
     (core_schema.callable_schema, args(), {'type': 'callable'}),
     (core_schema.list_schema, args(), {'type': 'list'}),

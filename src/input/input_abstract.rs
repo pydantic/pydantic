@@ -64,6 +64,10 @@ pub trait Input<'py>: fmt::Debug + ToPyObject {
         None
     }
 
+    fn input_is_exact_instance(&self, _class: &Bound<'py, PyType>) -> bool {
+        false
+    }
+
     fn is_python(&self) -> bool {
         false
     }

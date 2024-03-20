@@ -30,6 +30,7 @@ mod datetime;
 pub(crate) mod decimal;
 mod definitions;
 mod dict;
+mod enum_;
 mod float;
 mod frozenset;
 mod function;
@@ -513,6 +514,8 @@ pub fn build_validator(
         call::CallValidator,
         // literals
         literal::LiteralValidator,
+        // enums
+        enum_::BuildEnumValidator,
         // any
         any::AnyValidator,
         // bytes
@@ -656,6 +659,11 @@ pub enum CombinedValidator {
     FunctionCall(call::CallValidator),
     // literals
     Literal(literal::LiteralValidator),
+    // enums
+    IntEnum(enum_::EnumValidator<enum_::IntEnumValidator>),
+    StrEnum(enum_::EnumValidator<enum_::StrEnumValidator>),
+    FloatEnum(enum_::EnumValidator<enum_::FloatEnumValidator>),
+    PlainEnum(enum_::EnumValidator<enum_::PlainEnumValidator>),
     // any
     Any(any::AnyValidator),
     // bytes
