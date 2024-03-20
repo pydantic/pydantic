@@ -234,7 +234,7 @@ impl SchemaValidator {
         context: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<PyObject> {
         let t = InputType::String;
-        let string_mapping = StringMapping::new_value(&input).map_err(|e| self.prepare_validation_err(py, e, t))?;
+        let string_mapping = StringMapping::new_value(input).map_err(|e| self.prepare_validation_err(py, e, t))?;
 
         match self._validate(py, &string_mapping, t, strict, None, context, None) {
             Ok(r) => Ok(r),

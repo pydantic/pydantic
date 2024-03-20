@@ -147,7 +147,7 @@ impl LookupKey {
         dict: &Bound<'py, PyDict>,
     ) -> ValResult<Option<(&'s LookupPath, StringMapping<'py>)>> {
         if let Some((path, py_any)) = self.py_get_dict_item(dict)? {
-            let value = StringMapping::new_value(&py_any)?;
+            let value = StringMapping::new_value(py_any)?;
             Ok(Some((path, value)))
         } else {
             Ok(None)

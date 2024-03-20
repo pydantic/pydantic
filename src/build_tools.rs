@@ -164,7 +164,7 @@ macro_rules! py_schema_err {
 }
 pub(crate) use py_schema_err;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub(crate) enum ExtraBehavior {
     Allow,
     Forbid,
