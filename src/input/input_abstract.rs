@@ -11,7 +11,7 @@ use crate::{PyMultiHostUrl, PyUrl};
 
 use super::datetime::{EitherDate, EitherDateTime, EitherTime, EitherTimedelta};
 use super::return_enums::{EitherBytes, EitherInt, EitherString};
-use super::{EitherFloat, GenericIterable, GenericIterator, ValidationMatch};
+use super::{EitherFloat, GenericIterator, ValidationMatch};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum InputType {
@@ -166,46 +166,19 @@ pub trait Input<'py>: fmt::Debug + ToPyObject {
 
     fn validate_list(&self, strict: bool) -> ValMatch<Self::List<'_>>;
 
-    fn validate_tuple<'a>(&'a self, strict: bool) -> ValResult<GenericIterable<'a, 'py>> {
-        if strict {
-            self.strict_tuple()
-        } else {
-            self.lax_tuple()
-        }
-    }
-    fn strict_tuple<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>>;
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn lax_tuple<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
-        self.strict_tuple()
-    }
+    type Tuple<'a>: ValidatedTuple<'py>
+    where
+        Self: 'a;
 
-    fn validate_set<'a>(&'a self, strict: bool) -> ValResult<GenericIterable<'a, 'py>> {
-        if strict {
-            self.strict_set()
-        } else {
-            self.lax_set()
-        }
-    }
-    fn strict_set<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>>;
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn lax_set<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
-        self.strict_set()
-    }
+    fn validate_tuple(&self, strict: bool) -> ValMatch<Self::Tuple<'_>>;
 
-    fn validate_frozenset<'a>(&'a self, strict: bool) -> ValResult<GenericIterable<'a, 'py>> {
-        if strict {
-            self.strict_frozenset()
-        } else {
-            self.lax_frozenset()
-        }
-    }
-    fn strict_frozenset<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>>;
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn lax_frozenset<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
-        self.strict_frozenset()
-    }
+    type Set<'a>: ValidatedSet<'py>
+    where
+        Self: 'a;
 
-    fn extract_generic_iterable<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>>;
+    fn validate_set(&self, strict: bool) -> ValMatch<Self::Set<'_>>;
+
+    fn validate_frozenset(&self, strict: bool) -> ValMatch<Self::Set<'_>>;
 
     fn validate_iter(&self) -> ValResult<GenericIterator>;
 
@@ -303,11 +276,24 @@ pub trait ValidatedDict<'py> {
     ) -> ValResult<R>;
 }
 
-// Optimization pathway for inputs which are already python lists
+/// For validations from a list
 pub trait ValidatedList<'py> {
     type Item: BorrowInput<'py>;
     fn len(&self) -> Option<usize>;
     fn as_py_list(&self) -> Option<&Bound<'py, PyList>>;
+    fn iterate<R>(self, consumer: impl ConsumeIterator<PyResult<Self::Item>, Output = R>) -> ValResult<R>;
+}
+
+/// For validations from a tuple
+pub trait ValidatedTuple<'py> {
+    type Item: BorrowInput<'py>;
+    fn len(&self) -> Option<usize>;
+    fn iterate<R>(self, consumer: impl ConsumeIterator<PyResult<Self::Item>, Output = R>) -> ValResult<R>;
+}
+
+/// For validations from a set
+pub trait ValidatedSet<'py> {
+    type Item: BorrowInput<'py>;
     fn iterate<R>(self, consumer: impl ConsumeIterator<PyResult<Self::Item>, Output = R>) -> ValResult<R>;
 }
 
@@ -341,6 +327,23 @@ impl<'py> ValidatedList<'py> for Never {
     fn as_py_list(&self) -> Option<&Bound<'py, PyList>> {
         unreachable!()
     }
+    fn iterate<R>(self, _consumer: impl ConsumeIterator<PyResult<Self::Item>, Output = R>) -> ValResult<R> {
+        unreachable!()
+    }
+}
+
+impl<'py> ValidatedTuple<'py> for Never {
+    type Item = Bound<'py, PyAny>;
+    fn len(&self) -> Option<usize> {
+        unreachable!()
+    }
+    fn iterate<R>(self, _consumer: impl ConsumeIterator<PyResult<Self::Item>, Output = R>) -> ValResult<R> {
+        unreachable!()
+    }
+}
+
+impl<'py> ValidatedSet<'py> for Never {
+    type Item = Bound<'py, PyAny>;
     fn iterate<R>(self, _consumer: impl ConsumeIterator<PyResult<Self::Item>, Output = R>) -> ValResult<R> {
         unreachable!()
     }
