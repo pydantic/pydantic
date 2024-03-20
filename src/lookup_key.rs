@@ -260,12 +260,12 @@ impl LookupKey {
         }
     }
 
-    pub fn json_get<'data, 's>(
+    pub fn json_get<'a, 'data, 's>(
         &'s self,
-        dict: &'data JsonObject,
-    ) -> ValResult<Option<(&'s LookupPath, &'data JsonValue)>> {
+        dict: &'a JsonObject<'data>,
+    ) -> ValResult<Option<(&'s LookupPath, &'a JsonValue<'data>)>> {
         match self {
-            Self::Simple { key, path, .. } => match dict.get(key) {
+            Self::Simple { key, path, .. } => match dict.get(key.as_str()) {
                 Some(value) => Ok(Some((path, value))),
                 None => Ok(None),
             },
@@ -275,9 +275,9 @@ impl LookupKey {
                 key2,
                 path2,
                 ..
-            } => match dict.get(key1) {
+            } => match dict.get(key1.as_str()) {
                 Some(value) => Ok(Some((path1, value))),
-                None => match dict.get(key2) {
+                None => match dict.get(key2.as_str()) {
                     Some(value) => Ok(Some((path2, value))),
                     None => Ok(None),
                 },
@@ -475,7 +475,7 @@ impl PathItem {
         }
     }
 
-    pub fn json_get<'a>(&self, any_json: &'a JsonValue) -> Option<&'a JsonValue> {
+    pub fn json_get<'a, 'data>(&self, any_json: &'a JsonValue<'data>) -> Option<&'a JsonValue<'data>> {
         match any_json {
             JsonValue::Object(v_obj) => self.json_obj_get(v_obj),
             JsonValue::Array(v_array) => match self {
@@ -493,9 +493,9 @@ impl PathItem {
         }
     }
 
-    pub fn json_obj_get<'a>(&self, json_obj: &'a JsonObject) -> Option<&'a JsonValue> {
+    pub fn json_obj_get<'a, 'data>(&self, json_obj: &'a JsonObject<'data>) -> Option<&'a JsonValue<'data>> {
         match self {
-            Self::S(key, _) => json_obj.get(key),
+            Self::S(key, _) => json_obj.get(key.as_str()),
             _ => None,
         }
     }

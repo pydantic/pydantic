@@ -65,7 +65,7 @@ impl Validator for GeneratorValidator {
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
-        let iterator = input.validate_iter()?;
+        let iterator = input.validate_iter()?.into_static();
         let validator = self.item_validator.as_ref().map(|v| {
             InternalValidator::new(
                 py,
@@ -96,7 +96,7 @@ impl Validator for GeneratorValidator {
 #[pyclass(module = "pydantic_core._pydantic_core")]
 #[derive(Debug)]
 struct ValidatorIterator {
-    iterator: GenericIterator,
+    iterator: GenericIterator<'static>,
     validator: Option<InternalValidator>,
     min_length: Option<usize>,
     max_length: Option<usize>,

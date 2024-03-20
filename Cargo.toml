@@ -44,7 +44,7 @@ base64 = "0.21.7"
 num-bigint = "0.4.4"
 python3-dll-a = "0.2.7"
 uuid = "1.7.0"
-jiter = {version = "0.0.7", features = ["python"]}
+jiter = { version = "0.1.0", features = ["python"] }
 
 [lib]
 name = "_pydantic_core"

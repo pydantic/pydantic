@@ -475,7 +475,7 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         Err(ValError::new(ErrorTypeDefaults::FrozenSetType, self))
     }
 
-    fn validate_iter(&self) -> ValResult<GenericIterator> {
+    fn validate_iter(&self) -> ValResult<GenericIterator<'static>> {
         if self.iter().is_ok() {
             Ok(self.into())
         } else {

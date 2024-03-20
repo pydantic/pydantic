@@ -24,26 +24,26 @@ use super::{
 };
 
 /// This is required but since JSON object keys are always strings, I don't think it can be called
-impl From<&JsonValue> for LocItem {
+impl From<&JsonValue<'_>> for LocItem {
     fn from(json_value: &JsonValue) -> Self {
         match json_value {
             JsonValue::Int(i) => (*i).into(),
-            JsonValue::Str(s) => s.as_str().into(),
+            JsonValue::Str(s) => s.clone().into(),
             v => format!("{v:?}").into(),
         }
     }
 }
 
-impl From<JsonValue> for LocItem {
+impl From<JsonValue<'_>> for LocItem {
     fn from(json_value: JsonValue) -> Self {
         (&json_value).into()
     }
 }
 
-impl<'py> Input<'py> for JsonValue {
+impl<'py, 'data> Input<'py> for JsonValue<'data> {
     fn as_error_value(&self) -> InputValue {
         // cloning JsonValue is cheap due to use of Arc
-        InputValue::Json(self.clone())
+        InputValue::Json(self.to_static())
     }
 
     fn is_none(&self) -> bool {
@@ -63,11 +63,11 @@ impl<'py> Input<'py> for JsonValue {
         }
     }
 
-    type Arguments<'a> = JsonArgs<'a>
+    type Arguments<'a> = JsonArgs<'a, 'data>
     where
         Self: 'a,;
 
-    fn validate_args(&self) -> ValResult<JsonArgs<'_>> {
+    fn validate_args(&self) -> ValResult<JsonArgs<'_, 'data>> {
         match self {
             JsonValue::Object(object) => Ok(JsonArgs::new(None, Some(object))),
             JsonValue::Array(array) => Ok(JsonArgs::new(Some(array), None)),
@@ -75,7 +75,7 @@ impl<'py> Input<'py> for JsonValue {
         }
     }
 
-    fn validate_dataclass_args<'a>(&'a self, class_name: &str) -> ValResult<JsonArgs<'a>> {
+    fn validate_dataclass_args<'a>(&'a self, class_name: &str) -> ValResult<JsonArgs<'a, 'data>> {
         match self {
             JsonValue::Object(object) => Ok(JsonArgs::new(None, Some(object))),
             _ => {
@@ -98,7 +98,7 @@ impl<'py> Input<'py> for JsonValue {
         // TODO: in V3 we may want to make JSON str always win if in union, for consistency,
         // see https://github.com/pydantic/pydantic-core/pull/867#discussion_r1386582501
         match self {
-            JsonValue::Str(s) => Ok(ValidationMatch::strict(s.as_str().into())),
+            JsonValue::Str(s) => Ok(ValidationMatch::strict(s.as_ref().into())),
             JsonValue::Int(i) if !strict && coerce_numbers_to_str => Ok(ValidationMatch::lax(i.to_string().into())),
             JsonValue::BigInt(b) if !strict && coerce_numbers_to_str => Ok(ValidationMatch::lax(b.to_string().into())),
             JsonValue::Float(f) if !strict && coerce_numbers_to_str => Ok(ValidationMatch::lax(f.to_string().into())),
@@ -142,7 +142,7 @@ impl<'py> Input<'py> for JsonValue {
 
     fn exact_str(&self) -> ValResult<EitherString<'_>> {
         match self {
-            JsonValue::Str(s) => Ok(s.as_str().into()),
+            JsonValue::Str(s) => Ok(s.as_ref().into()),
             _ => Err(ValError::new(ErrorTypeDefaults::StringType, self)),
         }
     }
@@ -168,7 +168,7 @@ impl<'py> Input<'py> for JsonValue {
         }
     }
 
-    type Dict<'a> = &'a JsonObject;
+    type Dict<'a> = &'a JsonObject<'data> where Self: 'a;
 
     fn validate_dict(&self, _strict: bool) -> ValResult<Self::Dict<'_>> {
         match self {
@@ -181,18 +181,18 @@ impl<'py> Input<'py> for JsonValue {
         self.validate_dict(false)
     }
 
-    type List<'a> = &'a JsonArray;
+    type List<'a> = &'a JsonArray<'data> where Self: 'a;
 
-    fn validate_list(&self, _strict: bool) -> ValMatch<&JsonArray> {
+    fn validate_list(&self, _strict: bool) -> ValMatch<&JsonArray<'data>> {
         match self {
             JsonValue::Array(a) => Ok(ValidationMatch::exact(a)),
             _ => Err(ValError::new(ErrorTypeDefaults::ListType, self)),
         }
     }
 
-    type Tuple<'a> = &'a JsonArray;
+    type Tuple<'a> = &'a JsonArray<'data> where Self: 'a;
 
-    fn validate_tuple(&self, _strict: bool) -> ValMatch<&JsonArray> {
+    fn validate_tuple(&self, _strict: bool) -> ValMatch<&JsonArray<'data>> {
         // just as in set's case, List has to be allowed
         match self {
             JsonValue::Array(a) => Ok(ValidationMatch::strict(a)),
@@ -200,9 +200,9 @@ impl<'py> Input<'py> for JsonValue {
         }
     }
 
-    type Set<'a> = &'a JsonArray;
+    type Set<'a> = &'a JsonArray<'data> where Self: 'a;
 
-    fn validate_set(&self, _strict: bool) -> ValMatch<&JsonArray> {
+    fn validate_set(&self, _strict: bool) -> ValMatch<&JsonArray<'data>> {
         // we allow a list here since otherwise it would be impossible to create a set from JSON
         match self {
             JsonValue::Array(a) => Ok(ValidationMatch::strict(a)),
@@ -210,7 +210,7 @@ impl<'py> Input<'py> for JsonValue {
         }
     }
 
-    fn validate_frozenset(&self, _strict: bool) -> ValMatch<&JsonArray> {
+    fn validate_frozenset(&self, _strict: bool) -> ValMatch<&JsonArray<'data>> {
         // we allow a list here since otherwise it would be impossible to create a frozenset from JSON
         match self {
             JsonValue::Array(a) => Ok(ValidationMatch::strict(a)),
@@ -218,14 +218,14 @@ impl<'py> Input<'py> for JsonValue {
         }
     }
 
-    fn validate_iter(&self) -> ValResult<GenericIterator> {
+    fn validate_iter(&self) -> ValResult<GenericIterator<'static>> {
         match self {
-            JsonValue::Array(a) => Ok(a.clone().into()),
+            JsonValue::Array(a) => Ok(GenericIterator::from(a.clone()).into_static()),
             JsonValue::Str(s) => Ok(string_to_vec(s).into()),
             JsonValue::Object(object) => {
                 // return keys iterator to match python's behavior
                 let keys: JsonArray = JsonArray::new(object.keys().map(|k| JsonValue::Str(k.clone())).collect());
-                Ok(keys.into())
+                Ok(GenericIterator::from(keys).into_static())
             }
             _ => Err(ValError::new(ErrorTypeDefaults::IterableType, self)),
         }
@@ -303,7 +303,7 @@ impl<'py> Input<'py> for str {
     fn as_error_value(&self) -> InputValue {
         // Justification for the clone: this is on the error pathway and we are generally ok
         // with errors having a performance penalty
-        InputValue::Json(JsonValue::Str(self.to_owned()))
+        InputValue::Json(JsonValue::Str(self.to_owned().into()))
     }
 
     fn as_kwargs(&self, _py: Python<'py>) -> Option<Bound<'py, PyDict>> {
@@ -394,7 +394,7 @@ impl<'py> Input<'py> for str {
         Err(ValError::new(ErrorTypeDefaults::SetType, self))
     }
 
-    fn validate_iter(&self) -> ValResult<GenericIterator> {
+    fn validate_iter(&self) -> ValResult<GenericIterator<'static>> {
         Ok(string_to_vec(self).into())
     }
 
@@ -441,21 +441,21 @@ impl BorrowInput<'_> for String {
     }
 }
 
-impl BorrowInput<'_> for JsonValue {
-    type Input = JsonValue;
+impl<'data> BorrowInput<'_> for JsonValue<'data> {
+    type Input = JsonValue<'data>;
     fn borrow_input(&self) -> &Self::Input {
         self
     }
 }
 
-fn string_to_vec(s: &str) -> JsonArray {
-    JsonArray::new(s.chars().map(|c| JsonValue::Str(c.to_string())).collect())
+fn string_to_vec(s: &str) -> JsonArray<'static> {
+    JsonArray::new(s.chars().map(|c| JsonValue::Str(c.to_string().into())).collect())
 }
 
-impl<'py> ValidatedDict<'py> for &'_ JsonObject {
+impl<'py, 'data> ValidatedDict<'py> for &'_ JsonObject<'data> {
     type Key<'a> = &'a str where Self: 'a;
 
-    type Item<'a> = &'a JsonValue where Self: 'a;
+    type Item<'a> = &'a JsonValue<'data> where Self: 'a;
 
     fn get_item<'k>(&self, key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>> {
         key.json_get(self)
@@ -469,12 +469,12 @@ impl<'py> ValidatedDict<'py> for &'_ JsonObject {
         &'a self,
         consumer: impl ConsumeIterator<ValResult<(Self::Key<'a>, Self::Item<'a>)>, Output = R>,
     ) -> ValResult<R> {
-        Ok(consumer.consume_iterator(LazyIndexMap::iter(self).map(|(k, v)| Ok((k.as_str(), v)))))
+        Ok(consumer.consume_iterator(LazyIndexMap::iter(self).map(|(k, v)| Ok((k.as_ref(), v)))))
     }
 }
 
-impl<'a, 'py> ValidatedList<'py> for &'a JsonArray {
-    type Item = &'a JsonValue;
+impl<'a, 'py, 'data> ValidatedList<'py> for &'a JsonArray<'data> {
+    type Item = &'a JsonValue<'data>;
 
     fn len(&self) -> Option<usize> {
         Some(SmallVec::len(self))
@@ -487,8 +487,8 @@ impl<'a, 'py> ValidatedList<'py> for &'a JsonArray {
     }
 }
 
-impl<'a, 'py> ValidatedTuple<'py> for &'a JsonArray {
-    type Item = &'a JsonValue;
+impl<'a, 'data> ValidatedTuple<'_> for &'a JsonArray<'data> {
+    type Item = &'a JsonValue<'data>;
 
     fn len(&self) -> Option<usize> {
         Some(SmallVec::len(self))
@@ -498,8 +498,8 @@ impl<'a, 'py> ValidatedTuple<'py> for &'a JsonArray {
     }
 }
 
-impl<'a, 'py> ValidatedSet<'py> for &'a JsonArray {
-    type Item = &'a JsonValue;
+impl<'a, 'data> ValidatedSet<'_> for &'a JsonArray<'data> {
+    type Item = &'a JsonValue<'data>;
 
     fn iterate<R>(self, consumer: impl ConsumeIterator<PyResult<Self::Item>, Output = R>) -> ValResult<R> {
         Ok(consumer.consume_iterator(self.iter().map(Ok)))
@@ -507,20 +507,20 @@ impl<'a, 'py> ValidatedSet<'py> for &'a JsonArray {
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub struct JsonArgs<'a> {
-    args: Option<&'a [JsonValue]>,
-    kwargs: Option<&'a JsonObject>,
+pub struct JsonArgs<'a, 'data> {
+    args: Option<&'a [JsonValue<'data>]>,
+    kwargs: Option<&'a JsonObject<'data>>,
 }
 
-impl<'a> JsonArgs<'a> {
-    fn new(args: Option<&'a [JsonValue]>, kwargs: Option<&'a JsonObject>) -> Self {
+impl<'a, 'data> JsonArgs<'a, 'data> {
+    fn new(args: Option<&'a [JsonValue<'data>]>, kwargs: Option<&'a JsonObject<'data>>) -> Self {
         Self { args, kwargs }
     }
 }
 
-impl<'a> Arguments<'_> for JsonArgs<'a> {
-    type Args = [JsonValue];
-    type Kwargs = JsonObject;
+impl<'a, 'data> Arguments<'_> for JsonArgs<'a, 'data> {
+    type Args = [JsonValue<'data>];
+    type Kwargs = JsonObject<'data>;
 
     fn args(&self) -> Option<&Self::Args> {
         self.args
@@ -531,8 +531,8 @@ impl<'a> Arguments<'_> for JsonArgs<'a> {
     }
 }
 
-impl PositionalArgs<'_> for [JsonValue] {
-    type Item<'a> = &'a JsonValue;
+impl<'data> PositionalArgs<'_> for [JsonValue<'data>] {
+    type Item<'a> = &'a JsonValue<'data> where Self: 'a;
 
     fn len(&self) -> usize {
         <[JsonValue]>::len(self)
@@ -545,9 +545,9 @@ impl PositionalArgs<'_> for [JsonValue] {
     }
 }
 
-impl KeywordArgs<'_> for JsonObject {
-    type Key<'a> = &'a str;
-    type Item<'a> = &'a JsonValue;
+impl<'data> KeywordArgs<'_> for JsonObject<'data> {
+    type Key<'a> = &'a str where Self: 'a;
+    type Item<'a> = &'a JsonValue<'data> where Self: 'a;
 
     fn len(&self) -> usize {
         LazyIndexMap::len(self)
@@ -556,6 +556,6 @@ impl KeywordArgs<'_> for JsonObject {
         key.json_get(self)
     }
     fn iter(&self) -> impl Iterator<Item = ValResult<(Self::Key<'_>, Self::Item<'_>)>> {
-        LazyIndexMap::iter(self).map(|(k, v)| Ok((k.as_str(), v)))
+        LazyIndexMap::iter(self).map(|(k, v)| Ok((k.as_ref(), v)))
     }
 }
