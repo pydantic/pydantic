@@ -5,10 +5,9 @@ use std::collections::VecDeque;
 
 use crate::build_tools::is_strict;
 use crate::errors::{py_err_string, ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
-use crate::input::BorrowInput;
-use crate::input::{GenericIterable, Input};
+use crate::input::ConsumeIterator;
+use crate::input::{BorrowInput, Input, ValidatedTuple};
 use crate::tools::SchemaDict;
-use crate::validators::Exactness;
 
 use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
@@ -248,67 +247,19 @@ impl Validator for TupleValidator {
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
-        let collection = input.validate_tuple(state.strict_or(self.strict))?;
-        let exactness = match &collection {
-            GenericIterable::Tuple(_) | GenericIterable::JsonArray(_) => Exactness::Exact,
-            GenericIterable::List(_) => Exactness::Strict,
-            _ => Exactness::Lax,
-        };
-        state.floor_exactness(exactness);
-        let actual_length = collection.generic_len();
+        let collection = input.validate_tuple(state.strict_or(self.strict))?.unpack(state);
+        let actual_length = collection.len();
 
         let mut errors: Vec<ValLineError> = Vec::new();
 
-        let mut iteration_error = None;
-
-        macro_rules! iter {
-            ($collection_iter:expr) => {
-                self.validate_tuple_variable(
-                    py,
-                    input,
-                    state,
-                    &mut errors,
-                    &mut NextCountingIterator::new($collection_iter, 0),
-                    actual_length,
-                )
-            };
-        }
-
-        let output = match collection {
-            GenericIterable::List(collection_iter) => iter!(collection_iter.iter())?,
-            GenericIterable::Tuple(collection_iter) => iter!(collection_iter.iter())?,
-            GenericIterable::JsonArray(collection_iter) => iter!(collection_iter.iter())?,
-            other => iter!({
-                let mut sequence_iterator = other.as_sequence_iterator(py)?;
-                let iteration_error = &mut iteration_error;
-                let mut index: usize = 0;
-                std::iter::from_fn(move || {
-                    if iteration_error.is_some() {
-                        return None;
-                    }
-                    index += 1;
-                    match sequence_iterator.next() {
-                        Some(Ok(item)) => Some(item),
-                        Some(Err(e)) => {
-                            *iteration_error = Some(ValError::new_with_loc(
-                                ErrorType::IterationError {
-                                    error: py_err_string(py, e),
-                                    context: None,
-                                },
-                                input,
-                                index,
-                            ));
-                            None
-                        }
-                        None => None,
-                    }
-                })
-            })?,
-        };
-
-        if let Some(err) = iteration_error {
-            return Err(err);
-        }
+        let output = collection.iterate(ValidateToTuple {
+            py,
+            input,
+            actual_length,
+            validator: self,
+            errors: &mut errors,
+            state,
+        })??;
 
         if let Some(min_length) = self.min_length {
             let actual_length = output.len();
@@ -334,6 +285,68 @@ impl Validator for TupleValidator {
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+}
+
+struct ValidateToTuple<'a, 's, 'py, I: Input<'py> + ?Sized> {
+    py: Python<'py>,
+    input: &'a I,
+    actual_length: Option<usize>,
+    validator: &'a TupleValidator,
+    errors: &'a mut Vec<ValLineError>,
+    state: &'a mut ValidationState<'s, 'py>,
+}
+
+impl<'py, T, I> ConsumeIterator<PyResult<T>> for ValidateToTuple<'_, '_, 'py, I>
+where
+    T: BorrowInput<'py>,
+    I: Input<'py> + ?Sized,
+{
+    type Output = ValResult<Vec<PyObject>>;
+    fn consume_iterator(self, mut iterator: impl Iterator<Item = PyResult<T>>) -> ValResult<Vec<PyObject>> {
+        let mut iteration_error = None;
+
+        let output = self.validator.validate_tuple_variable(
+            self.py,
+            self.input,
+            self.state,
+            self.errors,
+            &mut NextCountingIterator::new(
+                {
+                    let iteration_error = &mut iteration_error;
+                    let mut index: usize = 0;
+                    std::iter::from_fn(move || {
+                        if iteration_error.is_some() {
+                            return None;
+                        }
+                        index += 1;
+                        match iterator.next() {
+                            Some(Ok(item)) => Some(item),
+                            Some(Err(e)) => {
+                                *iteration_error = Some(ValError::new_with_loc(
+                                    ErrorType::IterationError {
+                                        error: py_err_string(self.py, e),
+                                        context: None,
+                                    },
+                                    self.input,
+                                    index,
+                                ));
+                                None
+                            }
+                            None => None,
+                        }
+                    })
+                },
+                0,
+            ),
+            self.actual_length,
+        )?;
+
+        if let Some(err) = iteration_error {
+            return Err(err);
+        }
+
+        Ok(output)
     }
 }
 

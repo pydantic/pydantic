@@ -2,9 +2,8 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PySet};
 
 use crate::errors::ValResult;
-use crate::input::{GenericIterable, Input};
+use crate::input::{validate_iter_to_set, BorrowInput, ConsumeIterator, Input, ValidatedSet};
 use crate::tools::SchemaDict;
-use crate::validators::Exactness;
 
 use super::list::min_length_check;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
@@ -64,20 +63,50 @@ impl Validator for SetValidator {
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
-        let collection = input.validate_set(state.strict_or(self.strict))?;
-        let exactness = match &collection {
-            GenericIterable::Set(_) => Exactness::Exact,
-            GenericIterable::FrozenSet(_) | GenericIterable::JsonArray(_) => Exactness::Strict,
-            _ => Exactness::Lax,
-        };
-        state.floor_exactness(exactness);
+        let collection = input.validate_set(state.strict_or(self.strict))?.unpack(state);
         let set = PySet::empty_bound(py)?;
-        collection.validate_to_set(py, &set, input, self.max_length, "Set", &self.item_validator, state)?;
+        collection.iterate(ValidateToSet {
+            py,
+            input,
+            set: &set,
+            max_length: self.max_length,
+            item_validator: &self.item_validator,
+            state,
+        })??;
         min_length_check!(input, "Set", self.min_length, set);
         Ok(set.into_py(py))
     }
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+}
+
+struct ValidateToSet<'a, 's, 'py, I: Input<'py> + ?Sized> {
+    py: Python<'py>,
+    input: &'a I,
+    set: &'a Bound<'py, PySet>,
+    max_length: Option<usize>,
+    item_validator: &'a CombinedValidator,
+    state: &'a mut ValidationState<'s, 'py>,
+}
+
+impl<'py, T, I> ConsumeIterator<PyResult<T>> for ValidateToSet<'_, '_, 'py, I>
+where
+    T: BorrowInput<'py>,
+    I: Input<'py> + ?Sized,
+{
+    type Output = ValResult<()>;
+    fn consume_iterator(self, iterator: impl Iterator<Item = PyResult<T>>) -> ValResult<()> {
+        validate_iter_to_set(
+            self.py,
+            self.set,
+            iterator,
+            self.input,
+            "Set",
+            self.max_length,
+            self.item_validator,
+            self.state,
+        )
     }
 }
