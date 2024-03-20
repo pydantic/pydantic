@@ -321,20 +321,29 @@ pub(crate) fn iterate_attributes<'a, 'py>(
     })
 }
 
-#[derive(Debug, Clone)]
-pub enum GenericIterator {
+#[derive(Debug)]
+pub enum GenericIterator<'data> {
     PyIterator(GenericPyIterator),
-    JsonArray(GenericJsonIterator),
+    JsonArray(GenericJsonIterator<'data>),
 }
 
-impl From<JsonArray> for GenericIterator {
-    fn from(array: JsonArray) -> Self {
+impl GenericIterator<'_> {
+    pub(crate) fn into_static(self) -> GenericIterator<'static> {
+        match self {
+            GenericIterator::PyIterator(iter) => GenericIterator::PyIterator(iter),
+            GenericIterator::JsonArray(iter) => GenericIterator::JsonArray(iter.into_static()),
+        }
+    }
+}
+
+impl<'data> From<JsonArray<'data>> for GenericIterator<'data> {
+    fn from(array: JsonArray<'data>) -> Self {
         let json_iter = GenericJsonIterator { array, index: 0 };
         Self::JsonArray(json_iter)
     }
 }
 
-impl From<&Bound<'_, PyAny>> for GenericIterator {
+impl From<&Bound<'_, PyAny>> for GenericIterator<'_> {
     fn from(obj: &Bound<'_, PyAny>) -> Self {
         let py_iter = GenericPyIterator {
             obj: obj.clone().into(),
@@ -377,13 +386,13 @@ impl GenericPyIterator {
 }
 
 #[derive(Debug, Clone)]
-pub struct GenericJsonIterator {
-    array: JsonArray,
+pub struct GenericJsonIterator<'data> {
+    array: JsonArray<'data>,
     index: usize,
 }
 
-impl GenericJsonIterator {
-    pub fn next(&mut self, _py: Python) -> PyResult<Option<(&JsonValue, usize)>> {
+impl<'data> GenericJsonIterator<'data> {
+    pub fn next(&mut self, _py: Python) -> PyResult<Option<(&JsonValue<'data>, usize)>> {
         if self.index < self.array.len() {
             // panic here is impossible due to bounds check above; compiler should be
             // able to optimize it away even
@@ -397,11 +406,18 @@ impl GenericJsonIterator {
     }
 
     pub fn input_as_error_value(&self, _py: Python<'_>) -> InputValue {
-        InputValue::Json(JsonValue::Array(self.array.clone()))
+        InputValue::Json(JsonValue::Array(self.array.clone()).into_static())
     }
 
     pub fn index(&self) -> usize {
         self.index
+    }
+
+    pub fn into_static(self) -> GenericJsonIterator<'static> {
+        GenericJsonIterator {
+            array: JsonArray::new(self.array.iter().map(JsonValue::to_static).collect()),
+            index: self.index,
+        }
     }
 }
 
