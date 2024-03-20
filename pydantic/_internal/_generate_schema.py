@@ -496,9 +496,6 @@ class GenerateSchema:
             schema = self._generate_schema_inner(obj)
 
         metadata_js_function = _extract_get_pydantic_json_schema(obj, schema)
-        from devtools import debug
-
-        debug(schema, metadata_js_function)
         if metadata_js_function is not None:
             metadata_schema = resolve_original_schema(schema, self.defs.definitions)
             if metadata_schema:

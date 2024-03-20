@@ -84,7 +84,7 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
 
     if not cases:
 
-        def get_json_schema(_, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+        def get_json_schema_no_cases(_, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
             json_schema = handler(core_schema.enum_schema(enum_type, cases, sub_type=sub_type, ref=enum_ref))
             original_schema = handler.resolve_ref_schema(json_schema)
             update_json_schema(original_schema, js_updates)
@@ -96,7 +96,16 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
         # subclass enum.Enum (or subclasses of enum.Enum) if all parent classes have no cases.
         # We use the get_json_schema function when an Enum subclass has been declared with no cases
         # so that we can still generate a valid json schema.
-        return core_schema.is_instance_schema(enum_type, metadata={'pydantic_js_functions': [get_json_schema]})
+        return core_schema.is_instance_schema(
+            enum_type,
+            metadata={'pydantic_js_functions': [get_json_schema_no_cases]},
+        )
+
+    def get_json_schema(schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+        json_schema = handler(schema)
+        original_schema = handler.resolve_ref_schema(json_schema)
+        update_json_schema(original_schema, js_updates)
+        return json_schema
 
     enum_schema = core_schema.enum_schema(
         enum_type,
@@ -104,7 +113,9 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
         sub_type=sub_type,
         missing=None if enum_type._missing_ is Enum._missing_ else enum_type._missing_,
         ref=enum_ref,
+        metadata={'pydantic_js_functions': [get_json_schema]},
     )
+
     if config.get('use_enum_values', False):
         enum_schema = core_schema.no_info_after_validator_function(
             attrgetter('value'), enum_schema, serialization=value_ser_type
