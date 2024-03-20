@@ -1386,3 +1386,63 @@ class TestBenchmarkDecimal:
     @pytest.mark.benchmark(group='decimal from str')
     def test_decimal_from_string_limit(self, benchmark):
         benchmark(decimal.Decimal, '123.456789')
+
+
+class FooInt(int, Enum):
+    a = 1
+    b = 2
+    c = 3
+
+
+@pytest.mark.benchmark(group='enum int')
+def test_enum_int_python(benchmark):
+    def to_enum(input_value: Any, /) -> Enum:
+        try:
+            return FooInt(input_value)
+        except ValueError:
+            raise PydanticCustomError('enum', 'Input should be {expected}', {'expected': '1, 2 or 3'})
+
+    v = SchemaValidator(core_schema.no_info_after_validator_function(to_enum, core_schema.int_schema()))
+
+    assert v.validate_python(1) is FooInt.a
+
+    benchmark(v.validate_python, 1)
+
+
+@pytest.mark.benchmark(group='enum int')
+def test_enum_int_core(benchmark):
+    v = SchemaValidator(core_schema.enum_schema(FooInt, list(FooInt.__members__.values()), sub_type='int'))
+
+    assert v.validate_python(1) is FooInt.a
+
+    benchmark(v.validate_python, 1)
+
+
+class FooStr(str, Enum):
+    a = 'apple'
+    b = 'banana'
+    c = 'carrot'
+
+
+@pytest.mark.benchmark(group='enum str')
+def test_enum_str_python(benchmark):
+    def to_enum(input_value: Any, /) -> Enum:
+        try:
+            return FooStr(input_value)
+        except ValueError:
+            raise PydanticCustomError('enum', 'Input should be {expected}', {'expected': 'apple, banana or carrot'})
+
+    v = SchemaValidator(core_schema.no_info_after_validator_function(to_enum, core_schema.str_schema()))
+
+    assert v.validate_python('apple') is FooStr.a
+
+    benchmark(v.validate_python, 'apple')
+
+
+@pytest.mark.benchmark(group='enum str')
+def test_enum_str_core(benchmark):
+    v = SchemaValidator(core_schema.enum_schema(FooStr, list(FooStr.__members__.values()), sub_type='str'))
+
+    assert v.validate_python('apple') is FooStr.a
+
+    benchmark(v.validate_python, 'apple')

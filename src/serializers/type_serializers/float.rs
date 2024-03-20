@@ -20,6 +20,16 @@ pub struct FloatSerializer {
     inf_nan_mode: InfNanMode,
 }
 
+impl FloatSerializer {
+    pub fn new(py: Python, config: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
+        let inf_nan_mode = config
+            .and_then(|c| c.get_as(intern!(py, "ser_json_inf_nan")).transpose())
+            .transpose()?
+            .unwrap_or_default();
+        Ok(Self { inf_nan_mode })
+    }
+}
+
 impl BuildSerializer for FloatSerializer {
     const EXPECTED_TYPE: &'static str = "float";
 
@@ -28,11 +38,7 @@ impl BuildSerializer for FloatSerializer {
         config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
-        let inf_nan_mode = config
-            .and_then(|c| c.get_as(intern!(schema.py(), "ser_json_inf_nan")).transpose())
-            .transpose()?
-            .unwrap_or_default();
-        Ok(Self { inf_nan_mode }.into())
+        Self::new(schema.py(), config).map(Into::into)
     }
 }
 

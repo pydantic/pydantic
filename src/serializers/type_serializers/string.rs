@@ -13,6 +13,12 @@ use super::{
 #[derive(Debug, Clone)]
 pub struct StrSerializer;
 
+impl StrSerializer {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
 impl BuildSerializer for StrSerializer {
     const EXPECTED_TYPE: &'static str = "str";
 
@@ -21,7 +27,7 @@ impl BuildSerializer for StrSerializer {
         _config: Option<&Bound<'_, PyDict>>,
         _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
-        Ok(Self {}.into())
+        Ok(Self::new().into())
     }
 }
 

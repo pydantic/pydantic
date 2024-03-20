@@ -35,13 +35,7 @@ impl BuildValidator for IsInstanceValidator {
             return py_schema_err!("'cls' must be valid as the first argument to 'isinstance'");
         }
 
-        let class_repr = match schema.get_as(intern!(py, "cls_repr"))? {
-            Some(s) => s,
-            None => match class.extract::<&PyType>() {
-                Ok(t) => t.qualname()?.to_string(),
-                Err(_) => class.repr()?.extract()?,
-            },
-        };
+        let class_repr = class_repr(schema, &class)?;
         let name = format!("{}[{class_repr}]", Self::EXPECTED_TYPE);
         Ok(Self {
             class: class.into(),
@@ -83,5 +77,15 @@ impl Validator for IsInstanceValidator {
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+}
+
+pub fn class_repr(schema: &Bound<'_, PyDict>, class: &Bound<'_, PyAny>) -> PyResult<String> {
+    match schema.get_as(intern!(schema.py(), "cls_repr"))? {
+        Some(s) => Ok(s),
+        None => match class.extract::<&PyType>() {
+            Ok(t) => Ok(t.qualname()?.to_string()),
+            Err(_) => Ok(class.repr()?.extract()?),
+        },
     }
 }

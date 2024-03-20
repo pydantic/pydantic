@@ -139,6 +139,7 @@ combined_serializer! {
         JsonOrPython: super::type_serializers::json_or_python::JsonOrPythonSerializer;
         Union: super::type_serializers::union::UnionSerializer;
         Literal: super::type_serializers::literal::LiteralSerializer;
+        Enum: super::type_serializers::enum_::EnumSerializer;
         Recursive: super::type_serializers::definitions::DefinitionRefSerializer;
         Tuple: super::type_serializers::tuple::TupleSerializer;
     }
@@ -246,6 +247,7 @@ impl PyGcTraverse for CombinedSerializer {
             CombinedSerializer::JsonOrPython(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Union(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Literal(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Enum(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Recursive(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Tuple(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Uuid(inner) => inner.py_gc_traverse(visit),
