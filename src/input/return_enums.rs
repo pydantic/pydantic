@@ -1,23 +1,22 @@
 use std::borrow::Cow;
 use std::cmp::Ordering;
 use std::ops::Rem;
-use std::slice::Iter as SliceIter;
 use std::str::FromStr;
 
 use jiter::{JsonArray, JsonObject, JsonValue};
 use num_bigint::BigInt;
 
 use pyo3::exceptions::PyTypeError;
+use pyo3::ffi;
+use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::iter::{BoundDictIterator, BoundListIterator};
+#[cfg(not(PyPy))]
+use pyo3::types::PyFunction;
 use pyo3::types::{
     PyByteArray, PyBytes, PyDict, PyFloat, PyFrozenSet, PyIterator, PyList, PyMapping, PySequence, PySet, PyString,
     PyTuple,
 };
-use pyo3::{ffi, intern};
 
-#[cfg(not(PyPy))]
-use pyo3::types::PyFunction;
 use serde::{ser::Error, Serialize, Serializer};
 
 use crate::errors::{
@@ -26,9 +25,7 @@ use crate::errors::{
 use crate::tools::{extract_i64, py_err};
 use crate::validators::{CombinedValidator, Exactness, ValidationState, Validator};
 
-use super::input_abstract::{AsPyList, ConsumeIterator, Iterable};
-use super::input_string::StringMapping;
-use super::{py_error_on_minusone, BorrowInput, Input};
+use super::{py_error_on_minusone, BorrowInput, ConsumeIterator, Input, ValidatedList};
 
 pub struct ValidationMatch<T>(T, Exactness);
 
@@ -456,12 +453,12 @@ impl<'py> GenericIterable<'_, 'py> {
     }
 }
 
-impl<'py> Iterable<'py> for GenericIterable<'_, 'py> {
-    type Input = Bound<'py, PyAny>;
+impl<'py> ValidatedList<'py> for GenericIterable<'_, 'py> {
+    type Item = Bound<'py, PyAny>;
     fn len(&self) -> Option<usize> {
         self.generic_len()
     }
-    fn iterate<R>(self, consumer: impl ConsumeIterator<PyResult<Self::Input>, Output = R>) -> ValResult<R> {
+    fn iterate<R>(self, consumer: impl ConsumeIterator<PyResult<Self::Item>, Output = R>) -> ValResult<R> {
         match self {
             GenericIterable::List(iter) => Ok(consumer.consume_iterator(iter.iter().map(Ok))),
             GenericIterable::Tuple(iter) => Ok(consumer.consume_iterator(iter.iter().map(Ok))),
@@ -482,9 +479,6 @@ impl<'py> Iterable<'py> for GenericIterable<'_, 'py> {
             _ => unreachable!(),
         }
     }
-}
-
-impl<'py> AsPyList<'py> for GenericIterable<'_, 'py> {
     fn as_py_list(&self) -> Option<&Bound<'py, PyList>> {
         match self {
             GenericIterable::List(iter) => Some(iter),
@@ -493,56 +487,29 @@ impl<'py> AsPyList<'py> for GenericIterable<'_, 'py> {
     }
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-pub enum GenericMapping<'a, 'py> {
-    PyDict(&'a Bound<'py, PyDict>),
-    PyMapping(&'a Bound<'py, PyMapping>),
-    StringMapping(&'a Bound<'py, PyDict>),
-    PyGetAttr(Bound<'py, PyAny>, Option<Bound<'py, PyDict>>),
-    JsonObject(&'a JsonObject),
-}
-
-macro_rules! derive_from {
-    ($enum:ident, $key:ident, $type:ty $(, $extra_types:ident )*) => {
-        impl<'a, 'py> From<&'a Bound<'py, $type>> for $enum<'a, 'py> {
-            fn from(s: &'a Bound<'py, $type>) -> Self {
-                Self::$key(s $(, $extra_types )*)
-            }
-        }
-    };
-}
-
-derive_from!(GenericMapping, PyDict, PyDict);
-derive_from!(GenericMapping, PyMapping, PyMapping);
-
-impl<'a> From<&'a JsonObject> for GenericMapping<'a, '_> {
-    fn from(s: &'a JsonObject) -> Self {
-        Self::JsonObject(s)
-    }
-}
-
-pub struct DictGenericIterator<'py> {
-    dict_iter: BoundDictIterator<'py>,
-}
-
-impl<'py> DictGenericIterator<'py> {
-    pub fn new(dict: &Bound<'py, PyDict>) -> ValResult<Self> {
-        Ok(Self { dict_iter: dict.iter() })
-    }
-}
-
-impl<'py> Iterator for DictGenericIterator<'py> {
-    type Item = ValResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.dict_iter.next().map(Ok)
-    }
-    // size_hint is omitted as it isn't needed
-}
-
-pub struct MappingGenericIterator<'py> {
-    input: Bound<'py, PyAny>,
-    iter: Bound<'py, PyIterator>,
+pub(crate) fn iterate_mapping_items<'a, 'py>(
+    mapping: &'a Bound<'py, PyMapping>,
+) -> ValResult<impl Iterator<Item = ValResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>> + 'a> {
+    let py = mapping.py();
+    let input = mapping.as_any();
+    let iterator = mapping
+        .items()
+        .map_err(|e| mapping_err(e, py, input))?
+        .iter()
+        .map_err(|e| mapping_err(e, py, input))?
+        .map(move |item| match item {
+            Ok(item) => item.extract().map_err(|_| {
+                ValError::new(
+                    ErrorType::MappingType {
+                        error: MAPPING_TUPLE_ERROR.into(),
+                        context: None,
+                    },
+                    input,
+                )
+            }),
+            Err(e) => Err(mapping_err(e, py, input)),
+        });
+    Ok(iterator)
 }
 
 fn mapping_err<'py>(err: PyErr, py: Python<'py>, input: &'py (impl Input<'py> + ?Sized)) -> ValError {
@@ -555,97 +522,18 @@ fn mapping_err<'py>(err: PyErr, py: Python<'py>, input: &'py (impl Input<'py> + 
     )
 }
 
-impl<'py> MappingGenericIterator<'py> {
-    pub fn new(mapping: &Bound<'py, PyMapping>) -> ValResult<Self> {
-        let py = mapping.py();
-        let input = mapping.as_any();
-        let iter = mapping
-            .items()
-            .map_err(|e| mapping_err(e, py, input))?
-            .iter()
-            .map_err(|e| mapping_err(e, py, input))?;
-        Ok(Self {
-            input: input.clone(),
-            iter,
-        })
-    }
-}
-
 const MAPPING_TUPLE_ERROR: &str = "Mapping items must be tuples of (key, value) pairs";
 
-impl<'py> Iterator for MappingGenericIterator<'py> {
-    type Item = ValResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>;
+/// Iterate over attributes of an object
+pub(crate) fn iterate_attributes<'a, 'py>(
+    object: &'a Bound<'py, PyAny>,
+) -> impl Iterator<Item = ValResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>> + 'a {
+    let mut attributes_iterator = object.dir().into_iter();
 
-    fn next(&mut self) -> Option<Self::Item> {
-        Some(match self.iter.next()? {
-            Ok(item) => item.extract().map_err(|_| {
-                ValError::new(
-                    ErrorType::MappingType {
-                        error: MAPPING_TUPLE_ERROR.into(),
-                        context: None,
-                    },
-                    &self.input,
-                )
-            }),
-            Err(e) => Err(mapping_err(e, self.iter.py(), &self.input)),
-        })
-    }
-}
-
-pub struct StringMappingGenericIterator<'py> {
-    dict_iter: BoundDictIterator<'py>,
-}
-
-impl<'py> StringMappingGenericIterator<'py> {
-    pub fn new(dict: &Bound<'py, PyDict>) -> ValResult<Self> {
-        Ok(Self { dict_iter: dict.iter() })
-    }
-}
-
-impl<'py> Iterator for StringMappingGenericIterator<'py> {
-    // key (the first member of the tuple could be a simple String)
-    type Item = ValResult<(StringMapping<'py>, StringMapping<'py>)>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match self.dict_iter.next() {
-            Some((py_key, py_value)) => {
-                let key = match StringMapping::new_key(&py_key) {
-                    Ok(key) => key,
-                    Err(e) => return Some(Err(e)),
-                };
-                let value = match StringMapping::new_value(&py_value) {
-                    Ok(value) => value,
-                    Err(e) => return Some(Err(e)),
-                };
-                Some(Ok((key, value)))
-            }
-            None => None,
-        }
-    }
-}
-
-pub struct AttributesGenericIterator<'py> {
-    object: Bound<'py, PyAny>,
-    attributes_iterator: BoundListIterator<'py>,
-}
-
-impl<'py> AttributesGenericIterator<'py> {
-    pub fn new(py_any: &Bound<'py, PyAny>) -> ValResult<Self> {
-        let attributes_iterator = py_any.dir().into_iter();
-        Ok(Self {
-            object: py_any.clone(),
-            attributes_iterator,
-        })
-    }
-}
-
-impl<'py> Iterator for AttributesGenericIterator<'py> {
-    type Item = ValResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>;
-
-    fn next(&mut self) -> Option<Self::Item> {
+    std::iter::from_fn(move || {
         // loop until we find an attribute who's name does not start with underscore,
         // or we get to the end of the list of attributes
-        let name = self.attributes_iterator.next()?;
+        let name = attributes_iterator.next()?;
         // from benchmarks this is 14x faster than using the python `startswith` method
         let name_cow = match name.downcast::<PyString>() {
             Ok(name) => name.to_string_lossy(),
@@ -653,7 +541,7 @@ impl<'py> Iterator for AttributesGenericIterator<'py> {
         };
         if !name_cow.as_ref().starts_with('_') {
             // getattr is most likely to fail due to an exception in a @property, skip
-            if let Ok(attr) = self.object.getattr(name_cow.as_ref()) {
+            if let Ok(attr) = object.getattr(name_cow.as_ref()) {
                 // we don't want bound methods to be included, is there a better way to check?
                 // ref https://stackoverflow.com/a/18955425/949890
                 let is_bound = matches!(attr.hasattr(intern!(attr.py(), "__self__")), Ok(true));
@@ -674,29 +562,7 @@ impl<'py> Iterator for AttributesGenericIterator<'py> {
             }
         }
         None
-    }
-    // size_hint is omitted as it isn't needed
-}
-
-pub struct JsonObjectGenericIterator<'py> {
-    object_iter: SliceIter<'py, (String, JsonValue)>,
-}
-
-impl<'py> JsonObjectGenericIterator<'py> {
-    pub fn new(json_object: &'py JsonObject) -> ValResult<Self> {
-        Ok(Self {
-            object_iter: json_object.iter(),
-        })
-    }
-}
-
-impl<'py> Iterator for JsonObjectGenericIterator<'py> {
-    type Item = ValResult<(&'py String, &'py JsonValue)>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.object_iter.next().map(|(key, value)| Ok((key, value)))
-    }
-    // size_hint is omitted as it isn't needed
+    })
 }
 
 #[derive(Debug, Clone)]

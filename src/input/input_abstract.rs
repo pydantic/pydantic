@@ -11,7 +11,7 @@ use crate::{PyMultiHostUrl, PyUrl};
 
 use super::datetime::{EitherDate, EitherDateTime, EitherTime, EitherTimedelta};
 use super::return_enums::{EitherBytes, EitherInt, EitherString};
-use super::{EitherFloat, GenericIterable, GenericIterator, GenericMapping, ValidationMatch};
+use super::{EitherFloat, GenericIterable, GenericIterator, ValidationMatch};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum InputType {
@@ -135,24 +135,28 @@ pub trait Input<'py>: fmt::Debug + ToPyObject {
         self.strict_decimal(py)
     }
 
-    fn validate_dict<'a>(&'a self, strict: bool) -> ValResult<GenericMapping<'a, 'py>> {
+    type Dict<'a>: ValidatedDict<'py>
+    where
+        Self: 'a;
+
+    fn validate_dict(&self, strict: bool) -> ValResult<Self::Dict<'_>> {
         if strict {
             self.strict_dict()
         } else {
             self.lax_dict()
         }
     }
-    fn strict_dict<'a>(&'a self) -> ValResult<GenericMapping<'a, 'py>>;
+    fn strict_dict(&self) -> ValResult<Self::Dict<'_>>;
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn lax_dict<'a>(&'a self) -> ValResult<GenericMapping<'a, 'py>> {
+    fn lax_dict(&self) -> ValResult<Self::Dict<'_>> {
         self.strict_dict()
     }
 
-    fn validate_model_fields<'a>(&'a self, strict: bool, _from_attributes: bool) -> ValResult<GenericMapping<'a, 'py>> {
+    fn validate_model_fields(&self, strict: bool, _from_attributes: bool) -> ValResult<Self::Dict<'_>> {
         self.validate_dict(strict)
     }
 
-    type List<'a>: Iterable<'py> + AsPyList<'py>
+    type List<'a>: ValidatedList<'py>
     where
         Self: 'a;
 
@@ -239,12 +243,6 @@ impl<'py, T: Input<'py> + ?Sized> BorrowInput<'py> for &'_ T {
     }
 }
 
-// Pairs with Iterable below
-pub trait ConsumeIterator<T> {
-    type Output;
-    fn consume_iterator(self, iterator: impl Iterator<Item = T>) -> Self::Output;
-}
-
 pub trait Arguments<'py> {
     type Args: PositionalArgs<'py> + ?Sized;
     type Kwargs: KeywordArgs<'py> + ?Sized;
@@ -273,18 +271,40 @@ pub trait KeywordArgs<'py> {
     fn iter(&self) -> impl Iterator<Item = ValResult<(Self::Key<'_>, Self::Item<'_>)>>;
 }
 
-// This slightly awkward trait is used to define types which can be iterable. This formulation
-// arises because the Python enums have several different underlying iterator types, and we want to
-// be able to dispatch over each of them without overhead.
-pub trait Iterable<'py> {
-    type Input: BorrowInput<'py>;
-    fn len(&self) -> Option<usize>;
-    fn iterate<R>(self, consumer: impl ConsumeIterator<PyResult<Self::Input>, Output = R>) -> ValResult<R>;
+/// Some of the associated types like `ValidatedDict` and `ValidatedList` have multiple possible iterators
+/// depending on the source input. This trait allows to pass a generic consumer to these iterator-producing
+/// methods and dispatch over the different iterator types.
+pub trait ConsumeIterator<T> {
+    type Output;
+    fn consume_iterator(self, iterator: impl Iterator<Item = T>) -> Self::Output;
+}
+
+/// For validations from a dictionary
+pub trait ValidatedDict<'py> {
+    type Key<'a>: BorrowInput<'py> + Clone + Into<LocItem>
+    where
+        Self: 'a;
+    type Item<'a>: BorrowInput<'py>
+    where
+        Self: 'a;
+    fn get_item<'k>(&self, key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>>;
+    fn as_py_dict(&self) -> Option<&Bound<'py, PyDict>>;
+    // FIXME this is a bit of a leaky abstraction
+    fn is_py_get_attr(&self) -> bool {
+        false
+    }
+    fn iterate<'a, R>(
+        &'a self,
+        consumer: impl ConsumeIterator<ValResult<(Self::Key<'a>, Self::Item<'a>)>, Output = R>,
+    ) -> ValResult<R>;
 }
 
 // Optimization pathway for inputs which are already python lists
-pub trait AsPyList<'py>: Iterable<'py> {
+pub trait ValidatedList<'py> {
+    type Item: BorrowInput<'py>;
+    fn len(&self) -> Option<usize>;
     fn as_py_list(&self) -> Option<&Bound<'py, PyList>>;
+    fn iterate<R>(self, consumer: impl ConsumeIterator<PyResult<Self::Item>, Output = R>) -> ValResult<R>;
 }
 
 /// This type is used for inputs which don't support certain types.
@@ -292,19 +312,32 @@ pub trait AsPyList<'py>: Iterable<'py> {
 
 pub enum Never {}
 
-// Necessary for inputs which don't support certain types, e.g. String -> list
-impl<'py> Iterable<'py> for Never {
-    type Input = Bound<'py, PyAny>; // Doesn't really matter what this is
-    fn len(&self) -> Option<usize> {
+impl<'py> ValidatedDict<'py> for Never {
+    type Key<'a> = Bound<'py, PyAny>;
+    type Item<'a> = Bound<'py, PyAny>;
+    fn get_item<'k>(&self, _key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>> {
         unreachable!()
     }
-    fn iterate<R>(self, _consumer: impl ConsumeIterator<PyResult<Self::Input>, Output = R>) -> ValResult<R> {
+    fn as_py_dict(&self) -> Option<&Bound<'py, PyDict>> {
+        unreachable!()
+    }
+    fn iterate<'a, R>(
+        &'a self,
+        _consumer: impl ConsumeIterator<ValResult<(Self::Key<'a>, Self::Item<'a>)>, Output = R>,
+    ) -> ValResult<R> {
         unreachable!()
     }
 }
 
-impl<'py> AsPyList<'py> for Never {
+impl<'py> ValidatedList<'py> for Never {
+    type Item = Bound<'py, PyAny>;
+    fn len(&self) -> Option<usize> {
+        unreachable!()
+    }
     fn as_py_list(&self) -> Option<&Bound<'py, PyList>> {
+        unreachable!()
+    }
+    fn iterate<R>(self, _consumer: impl ConsumeIterator<PyResult<Self::Item>, Output = R>) -> ValResult<R> {
         unreachable!()
     }
 }

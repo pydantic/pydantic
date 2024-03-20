@@ -15,12 +15,12 @@ use super::datetime::{
     bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, float_as_datetime, float_as_duration,
     float_as_time, int_as_datetime, int_as_duration, int_as_time, EitherDate, EitherDateTime, EitherTime,
 };
-use super::input_abstract::{AsPyList, ConsumeIterator, Iterable, Never, ValMatch};
+use super::input_abstract::{ConsumeIterator, Never, ValMatch};
 use super::return_enums::ValidationMatch;
 use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_float, str_as_int};
 use super::{
     Arguments, BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericIterable,
-    GenericIterator, GenericMapping, Input, KeywordArgs, PositionalArgs,
+    GenericIterator, Input, KeywordArgs, PositionalArgs, ValidatedDict, ValidatedList,
 };
 
 /// This is required but since JSON object keys are always strings, I don't think it can be called
@@ -168,14 +168,16 @@ impl<'py> Input<'py> for JsonValue {
         }
     }
 
-    fn validate_dict<'a>(&'a self, _strict: bool) -> ValResult<GenericMapping<'a, 'py>> {
+    type Dict<'a> = &'a JsonObject;
+
+    fn validate_dict(&self, _strict: bool) -> ValResult<Self::Dict<'_>> {
         match self {
-            JsonValue::Object(dict) => Ok(dict.into()),
+            JsonValue::Object(dict) => Ok(dict),
             _ => Err(ValError::new(ErrorTypeDefaults::DictType, self)),
         }
     }
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_dict<'a>(&'a self) -> ValResult<GenericMapping<'a, 'py>> {
+    fn strict_dict(&self) -> ValResult<Self::Dict<'_>> {
         self.validate_dict(false)
     }
 
@@ -377,8 +379,10 @@ impl<'py> Input<'py> for str {
         create_decimal(self.to_object(py).bind(py), self)
     }
 
+    type Dict<'a> = Never;
+
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_dict<'a>(&'a self) -> ValResult<GenericMapping<'a, 'py>> {
+    fn strict_dict(&self) -> ValResult<Never> {
         Err(ValError::new(ErrorTypeDefaults::DictType, self))
     }
 
@@ -465,18 +469,36 @@ fn string_to_vec(s: &str) -> JsonArray {
     JsonArray::new(s.chars().map(|c| JsonValue::Str(c.to_string())).collect())
 }
 
-impl<'a> Iterable<'_> for &'a JsonArray {
-    type Input = &'a JsonValue;
+impl<'py> ValidatedDict<'py> for &'_ JsonObject {
+    type Key<'a> = &'a str where Self: 'a;
+
+    type Item<'a> = &'a JsonValue where Self: 'a;
+
+    fn get_item<'k>(&self, key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>> {
+        key.json_get(self)
+    }
+
+    fn as_py_dict(&self) -> Option<&Bound<'py, PyDict>> {
+        None
+    }
+
+    fn iterate<'a, R>(
+        &'a self,
+        consumer: impl ConsumeIterator<ValResult<(Self::Key<'a>, Self::Item<'a>)>, Output = R>,
+    ) -> ValResult<R> {
+        Ok(consumer.consume_iterator(LazyIndexMap::iter(self).map(|(k, v)| Ok((k.as_str(), v)))))
+    }
+}
+
+impl<'a, 'py> ValidatedList<'py> for &'a JsonArray {
+    type Item = &'a JsonValue;
 
     fn len(&self) -> Option<usize> {
         Some(SmallVec::len(self))
     }
-    fn iterate<R>(self, consumer: impl ConsumeIterator<PyResult<Self::Input>, Output = R>) -> ValResult<R> {
+    fn iterate<R>(self, consumer: impl ConsumeIterator<PyResult<Self::Item>, Output = R>) -> ValResult<R> {
         Ok(consumer.consume_iterator(self.iter().map(Ok)))
     }
-}
-
-impl<'py> AsPyList<'py> for &'_ JsonArray {
     fn as_py_list(&self) -> Option<&Bound<'py, PyList>> {
         None
     }

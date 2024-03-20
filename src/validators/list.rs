@@ -5,8 +5,7 @@ use pyo3::types::PyDict;
 
 use crate::errors::ValResult;
 use crate::input::{
-    no_validator_iter_to_vec, validate_iter_to_vec, AsPyList, BorrowInput, ConsumeIterator, Input, Iterable,
-    MaxLengthCheck,
+    no_validator_iter_to_vec, validate_iter_to_vec, BorrowInput, ConsumeIterator, Input, MaxLengthCheck, ValidatedList,
 };
 use crate::tools::SchemaDict;
 
