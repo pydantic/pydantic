@@ -82,7 +82,33 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
         # TODO this is an ugly hack, how do we trigger an Any schema for serialization?
         value_ser_type = core_schema.plain_serializer_function_ser_schema(lambda x: x)
 
-    if not cases:
+    if cases:
+
+        def get_json_schema(schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+            json_schema = handler(schema)
+            original_schema = handler.resolve_ref_schema(json_schema)
+            update_json_schema(original_schema, js_updates)
+            return json_schema
+
+        # we don't want to add the missing_func to the schema if it's the default one
+        default_missing_func = getattr(enum_type._missing_, '__func__', None) == Enum._missing_.__func__  # type: ignore
+        enum_schema = core_schema.enum_schema(
+            enum_type,
+            cases,
+            sub_type=sub_type,
+            missing_func=None if default_missing_func else enum_type._missing_,
+            ref=enum_ref,
+            metadata={'pydantic_js_functions': [get_json_schema]},
+        )
+
+        if config.get('use_enum_values', False):
+            enum_schema = core_schema.no_info_after_validator_function(
+                attrgetter('value'), enum_schema, serialization=value_ser_type
+            )
+
+        return enum_schema
+
+    else:
 
         def get_json_schema_no_cases(_, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
             json_schema = handler(core_schema.enum_schema(enum_type, cases, sub_type=sub_type, ref=enum_ref))
@@ -100,28 +126,6 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
             enum_type,
             metadata={'pydantic_js_functions': [get_json_schema_no_cases]},
         )
-
-    def get_json_schema(schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-        json_schema = handler(schema)
-        original_schema = handler.resolve_ref_schema(json_schema)
-        update_json_schema(original_schema, js_updates)
-        return json_schema
-
-    enum_schema = core_schema.enum_schema(
-        enum_type,
-        cases,
-        sub_type=sub_type,
-        missing=None if enum_type._missing_ is Enum._missing_ else enum_type._missing_,
-        ref=enum_ref,
-        metadata={'pydantic_js_functions': [get_json_schema]},
-    )
-
-    if config.get('use_enum_values', False):
-        enum_schema = core_schema.no_info_after_validator_function(
-            attrgetter('value'), enum_schema, serialization=value_ser_type
-        )
-
-    return enum_schema
 
 
 @dataclasses.dataclass(**slots_true)
