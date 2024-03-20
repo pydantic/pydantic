@@ -122,7 +122,7 @@ impl TypeSerializer for FormatSerializer {
         }
     }
 
-    fn json_key<'py>(&self, key: &Bound<'py, PyAny>, _extra: &Extra) -> PyResult<Cow<'py, str>> {
+    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, _extra: &Extra) -> PyResult<Cow<'a, str>> {
         if self.when_used.should_use_json(key) {
             let py_str = self
                 .call(key)
@@ -198,7 +198,7 @@ impl TypeSerializer for ToStringSerializer {
         }
     }
 
-    fn json_key<'py>(&self, key: &Bound<'py, PyAny>, _extra: &Extra) -> PyResult<Cow<'py, str>> {
+    fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, _extra: &Extra) -> PyResult<Cow<'a, str>> {
         if self.when_used.should_use_json(key) {
             Ok(Cow::Owned(key.str()?.to_string_lossy().into_owned()))
         } else {
