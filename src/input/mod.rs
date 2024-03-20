@@ -17,12 +17,12 @@ pub(crate) use datetime::{
 };
 pub(crate) use input_abstract::{
     Arguments, BorrowInput, ConsumeIterator, Input, InputType, KeywordArgs, PositionalArgs, ValidatedDict,
-    ValidatedList,
+    ValidatedList, ValidatedSet, ValidatedTuple,
 };
 pub(crate) use input_string::StringMapping;
 pub(crate) use return_enums::{
-    no_validator_iter_to_vec, py_string_str, validate_iter_to_vec, EitherBytes, EitherFloat, EitherInt, EitherString,
-    GenericIterable, GenericIterator, Int, MaxLengthCheck, ValidationMatch,
+    no_validator_iter_to_vec, py_string_str, validate_iter_to_set, validate_iter_to_vec, EitherBytes, EitherFloat,
+    EitherInt, EitherString, GenericIterator, Int, MaxLengthCheck, ValidationMatch,
 };
 
 // Defined here as it's not exported by pyo3

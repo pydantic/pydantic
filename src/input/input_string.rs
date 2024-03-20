@@ -15,8 +15,8 @@ use super::datetime::{
 use super::input_abstract::{Never, ValMatch};
 use super::shared::{str_as_bool, str_as_float, str_as_int};
 use super::{
-    Arguments, BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericIterable,
-    GenericIterator, Input, KeywordArgs, ValidatedDict, ValidationMatch,
+    Arguments, BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericIterator, Input,
+    KeywordArgs, ValidatedDict, ValidationMatch,
 };
 
 #[derive(Debug, Clone)]
@@ -155,20 +155,20 @@ impl<'py> Input<'py> for StringMapping<'py> {
         Err(ValError::new(ErrorTypeDefaults::ListType, self))
     }
 
-    fn strict_tuple<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
+    type Tuple<'a> = Never where Self: 'a;
+
+    fn validate_tuple(&self, _strict: bool) -> ValMatch<Never> {
         Err(ValError::new(ErrorTypeDefaults::TupleType, self))
     }
 
-    fn strict_set<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
+    type Set<'a> = Never where Self: 'a;
+
+    fn validate_set(&self, _strict: bool) -> ValMatch<Never> {
         Err(ValError::new(ErrorTypeDefaults::SetType, self))
     }
 
-    fn strict_frozenset<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
+    fn validate_frozenset(&self, _strict: bool) -> ValMatch<Never> {
         Err(ValError::new(ErrorTypeDefaults::FrozenSetType, self))
-    }
-
-    fn extract_generic_iterable<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
-        Err(ValError::new(ErrorTypeDefaults::IterableType, self))
     }
 
     fn validate_iter(&self) -> ValResult<GenericIterator> {

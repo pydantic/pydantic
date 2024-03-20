@@ -19,8 +19,8 @@ use super::input_abstract::{ConsumeIterator, Never, ValMatch};
 use super::return_enums::ValidationMatch;
 use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_float, str_as_int};
 use super::{
-    Arguments, BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericIterable,
-    GenericIterator, Input, KeywordArgs, PositionalArgs, ValidatedDict, ValidatedList,
+    Arguments, BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericIterator, Input,
+    KeywordArgs, PositionalArgs, ValidatedDict, ValidatedList, ValidatedSet, ValidatedTuple,
 };
 
 /// This is required but since JSON object keys are always strings, I don't think it can be called
@@ -185,53 +185,36 @@ impl<'py> Input<'py> for JsonValue {
 
     fn validate_list(&self, _strict: bool) -> ValMatch<&JsonArray> {
         match self {
-            JsonValue::Array(a) => Ok(ValidationMatch::strict(a)),
+            JsonValue::Array(a) => Ok(ValidationMatch::exact(a)),
             _ => Err(ValError::new(ErrorTypeDefaults::ListType, self)),
         }
     }
 
-    fn validate_tuple<'a>(&'a self, _strict: bool) -> ValResult<GenericIterable<'a, 'py>> {
+    type Tuple<'a> = &'a JsonArray;
+
+    fn validate_tuple(&self, _strict: bool) -> ValMatch<&JsonArray> {
         // just as in set's case, List has to be allowed
         match self {
-            JsonValue::Array(a) => Ok(GenericIterable::JsonArray(a)),
+            JsonValue::Array(a) => Ok(ValidationMatch::strict(a)),
             _ => Err(ValError::new(ErrorTypeDefaults::TupleType, self)),
         }
     }
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_tuple<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
-        self.validate_tuple(false)
-    }
 
-    fn validate_set<'a>(&'a self, _strict: bool) -> ValResult<GenericIterable<'a, 'py>> {
+    type Set<'a> = &'a JsonArray;
+
+    fn validate_set(&self, _strict: bool) -> ValMatch<&JsonArray> {
         // we allow a list here since otherwise it would be impossible to create a set from JSON
         match self {
-            JsonValue::Array(a) => Ok(GenericIterable::JsonArray(a)),
+            JsonValue::Array(a) => Ok(ValidationMatch::strict(a)),
             _ => Err(ValError::new(ErrorTypeDefaults::SetType, self)),
         }
     }
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_set<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
-        self.validate_set(false)
-    }
 
-    fn validate_frozenset<'a>(&'a self, _strict: bool) -> ValResult<GenericIterable<'a, 'py>> {
+    fn validate_frozenset(&self, _strict: bool) -> ValMatch<&JsonArray> {
         // we allow a list here since otherwise it would be impossible to create a frozenset from JSON
         match self {
-            JsonValue::Array(a) => Ok(GenericIterable::JsonArray(a)),
+            JsonValue::Array(a) => Ok(ValidationMatch::strict(a)),
             _ => Err(ValError::new(ErrorTypeDefaults::FrozenSetType, self)),
-        }
-    }
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_frozenset<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
-        self.validate_frozenset(false)
-    }
-
-    fn extract_generic_iterable(&self) -> ValResult<GenericIterable<'_, 'py>> {
-        match self {
-            JsonValue::Array(a) => Ok(GenericIterable::JsonArray(a)),
-            JsonValue::Str(s) => Ok(GenericIterable::JsonString(s)),
-            JsonValue::Object(object) => Ok(GenericIterable::JsonObject(object)),
-            _ => Err(ValError::new(ErrorTypeDefaults::IterableType, self)),
         }
     }
 
@@ -392,23 +375,23 @@ impl<'py> Input<'py> for str {
         Err(ValError::new(ErrorTypeDefaults::ListType, self))
     }
 
+    type Tuple<'a> = Never;
+
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_tuple<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
+    fn validate_tuple(&self, _strict: bool) -> ValMatch<Never> {
         Err(ValError::new(ErrorTypeDefaults::TupleType, self))
     }
 
+    type Set<'a> = Never;
+
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_set<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
+    fn validate_set(&self, _strict: bool) -> ValMatch<Never> {
         Err(ValError::new(ErrorTypeDefaults::SetType, self))
     }
 
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_frozenset<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
-        Err(ValError::new(ErrorTypeDefaults::FrozenSetType, self))
-    }
-
-    fn extract_generic_iterable<'a>(&'a self) -> ValResult<GenericIterable<'a, 'py>> {
-        Ok(GenericIterable::JsonString(self))
+    fn validate_frozenset(&self, _strict: bool) -> ValMatch<Never> {
+        Err(ValError::new(ErrorTypeDefaults::SetType, self))
     }
 
     fn validate_iter(&self) -> ValResult<GenericIterator> {
@@ -501,6 +484,25 @@ impl<'a, 'py> ValidatedList<'py> for &'a JsonArray {
     }
     fn as_py_list(&self) -> Option<&Bound<'py, PyList>> {
         None
+    }
+}
+
+impl<'a, 'py> ValidatedTuple<'py> for &'a JsonArray {
+    type Item = &'a JsonValue;
+
+    fn len(&self) -> Option<usize> {
+        Some(SmallVec::len(self))
+    }
+    fn iterate<R>(self, consumer: impl ConsumeIterator<PyResult<Self::Item>, Output = R>) -> ValResult<R> {
+        Ok(consumer.consume_iterator(self.iter().map(Ok)))
+    }
+}
+
+impl<'a, 'py> ValidatedSet<'py> for &'a JsonArray {
+    type Item = &'a JsonValue;
+
+    fn iterate<R>(self, consumer: impl ConsumeIterator<PyResult<Self::Item>, Output = R>) -> ValResult<R> {
+        Ok(consumer.consume_iterator(self.iter().map(Ok)))
     }
 }
 

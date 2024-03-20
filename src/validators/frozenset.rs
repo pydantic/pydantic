@@ -2,9 +2,8 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyFrozenSet};
 
 use crate::errors::ValResult;
-use crate::input::{GenericIterable, Input};
+use crate::input::{validate_iter_to_set, BorrowInput, ConsumeIterator, Input, ValidatedSet};
 use crate::tools::SchemaDict;
-use crate::validators::Exactness;
 
 use super::list::min_length_check;
 use super::set::set_build;
@@ -34,28 +33,50 @@ impl Validator for FrozenSetValidator {
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
-        let collection = input.validate_frozenset(state.strict_or(self.strict))?;
-        let exactness = match &collection {
-            GenericIterable::FrozenSet(_) => Exactness::Exact,
-            GenericIterable::Set(_) | GenericIterable::JsonArray(_) => Exactness::Strict,
-            _ => Exactness::Lax,
-        };
-        state.floor_exactness(exactness);
+        let collection = input.validate_frozenset(state.strict_or(self.strict))?.unpack(state);
         let f_set = PyFrozenSet::empty_bound(py)?;
-        collection.validate_to_set(
+        collection.iterate(ValidateToFrozenSet {
             py,
-            &f_set,
             input,
-            self.max_length,
-            "Frozenset",
-            &self.item_validator,
+            f_set: &f_set,
+            max_length: self.max_length,
+            item_validator: &self.item_validator,
             state,
-        )?;
+        })??;
         min_length_check!(input, "Frozenset", self.min_length, f_set);
         Ok(f_set.into_py(py))
     }
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+}
+
+struct ValidateToFrozenSet<'a, 's, 'py, I: Input<'py> + ?Sized> {
+    py: Python<'py>,
+    input: &'a I,
+    f_set: &'a Bound<'py, PyFrozenSet>,
+    max_length: Option<usize>,
+    item_validator: &'a CombinedValidator,
+    state: &'a mut ValidationState<'s, 'py>,
+}
+
+impl<'py, T, I> ConsumeIterator<PyResult<T>> for ValidateToFrozenSet<'_, '_, 'py, I>
+where
+    T: BorrowInput<'py>,
+    I: Input<'py> + ?Sized,
+{
+    type Output = ValResult<()>;
+    fn consume_iterator(self, iterator: impl Iterator<Item = PyResult<T>>) -> ValResult<()> {
+        validate_iter_to_set(
+            self.py,
+            self.f_set,
+            iterator,
+            self.input,
+            "Frozenset",
+            self.max_length,
+            self.item_validator,
+            self.state,
+        )
     }
 }
