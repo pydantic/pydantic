@@ -749,6 +749,44 @@ class GenerateJsonSchema:
             result['type'] = 'array'
         return result
 
+    def enum_schema(self, schema: core_schema.EnumSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches an Enum value.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        enum_type = schema['cls']
+        description = None if not enum_type.__doc__ else inspect.cleandoc(enum_type.__doc__)
+        if (
+            description == 'An enumeration.'
+        ):  # This is the default value provided by enum.EnumMeta.__new__; don't use it
+            description = None
+        result: dict[str, Any] = {'title': enum_type.__name__, 'description': description}
+        result = {k: v for k, v in result.items() if v is not None}
+
+        expected = [to_jsonable_python(v.value) for v in schema['members']]
+
+        result['enum'] = expected
+        if len(expected) == 1:
+            result['const'] = expected[0]
+
+        types = {type(e) for e in expected}
+        if isinstance(enum_type, str) or types == {str}:
+            result['type'] = 'string'
+        elif isinstance(enum_type, int) or types == {int}:
+            result['type'] = 'integer'
+        elif isinstance(enum_type, float) or types == {float}:
+            result['type'] = 'number'
+        elif types == {bool}:
+            result['type'] = 'boolean'
+        elif types == {list}:
+            result['type'] = 'array'
+
+        return result
+
     def is_instance_schema(self, schema: core_schema.IsInstanceSchema) -> JsonSchemaValue:
         """Handles JSON schema generation for a core schema that checks if a value is an instance of a class.
 
