@@ -45,6 +45,7 @@ __all__ = [
     'validate_email',
     'MySQLDsn',
     'MariaDBDsn',
+    'ClickhouseDsn',
 ]
 
 
@@ -353,6 +354,20 @@ MariaDBDsn = Annotated[
     ),
 ]
 """A type that will accept any MariaDB DSN.
+
+* User info required
+* TLD not required
+* Host required
+"""
+ClickhouseDsn = Annotated[
+    Url,
+    UrlConstraints(
+        allowed_schemes=['clickhouse+native', 'clickhouse+asynch'],
+        default_host='localhost',
+        default_port=9000,
+    ),
+]
+"""A type that will accept any ClickHouse DSN.
 
 * User info required
 * TLD not required
