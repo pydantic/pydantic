@@ -180,7 +180,7 @@ pub trait Input<'py>: fmt::Debug + ToPyObject {
 
     fn validate_frozenset(&self, strict: bool) -> ValMatch<Self::Set<'_>>;
 
-    fn validate_iter(&self) -> ValResult<GenericIterator>;
+    fn validate_iter(&self) -> ValResult<GenericIterator<'static>>;
 
     fn validate_date(&self, strict: bool) -> ValMatch<EitherDate<'py>>;
 

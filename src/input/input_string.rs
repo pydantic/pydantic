@@ -171,7 +171,7 @@ impl<'py> Input<'py> for StringMapping<'py> {
         Err(ValError::new(ErrorTypeDefaults::FrozenSetType, self))
     }
 
-    fn validate_iter(&self) -> ValResult<GenericIterator> {
+    fn validate_iter(&self) -> ValResult<GenericIterator<'static>> {
         Err(ValError::new(ErrorTypeDefaults::IterableType, self))
     }
 

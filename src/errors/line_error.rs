@@ -151,7 +151,7 @@ impl ValLineError {
 #[derive(Clone)]
 pub enum InputValue {
     Python(PyObject),
-    Json(JsonValue),
+    Json(JsonValue<'static>),
 }
 
 impl ToPyObject for InputValue {
