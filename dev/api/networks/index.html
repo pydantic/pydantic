@@ -1934,6 +1934,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.networks.ClickHouseDsn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ClickHouseDsn
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.networks.MAX_EMAIL_LENGTH" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3280,6 +3291,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.networks.ClickHouseDsn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ClickHouseDsn
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.networks.MAX_EMAIL_LENGTH" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3988,6 +4010,44 @@ More: https://nats.io</p>
 
 
 
+<h2 id="pydantic.networks.ClickHouseDsn" class="doc doc-heading">
+          <span class="doc doc-object-name doc-attribute-name">ClickHouseDsn</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#pydantic.networks.ClickHouseDsn" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">ClickHouseDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span>
+        <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span>
+            <span class="s2">&quot;clickhouse+native&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;clickhouse+asynch&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="n">default_host</span><span class="o">=</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span>
+        <span class="n">default_port</span><span class="o">=</span><span class="mi">9000</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">]</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>A type that will accept any ClickHouse DSN.</p>
+<ul>
+<li>User info required</li>
+<li>TLD not required</li>
+<li>Host required</li>
+</ul>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
 <h2 id="pydantic.networks.MAX_EMAIL_LENGTH" class="doc doc-heading">
           <span class="doc doc-object-name doc-attribute-name">MAX_EMAIL_LENGTH</span>
 
@@ -4235,9 +4295,9 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 
                 <details class="quote">
                   <summary>Source code in <code>pydantic/networks.py</code></summary>
-                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">460</span>
-<span class="normal">461</span>
-<span class="normal">462</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">email</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">email</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">email</span> <span class="o">=</span> <span class="n">email</span>
 </code></pre></div></td></tr></table></div>
@@ -4431,22 +4491,7 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 </details>
           <details class="quote">
             <summary>Source code in <code>pydantic/networks.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">676</span>
-<span class="normal">677</span>
-<span class="normal">678</span>
-<span class="normal">679</span>
-<span class="normal">680</span>
-<span class="normal">681</span>
-<span class="normal">682</span>
-<span class="normal">683</span>
-<span class="normal">684</span>
-<span class="normal">685</span>
-<span class="normal">686</span>
-<span class="normal">687</span>
-<span class="normal">688</span>
-<span class="normal">689</span>
-<span class="normal">690</span>
-<span class="normal">691</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">691</span>
 <span class="normal">692</span>
 <span class="normal">693</span>
 <span class="normal">694</span>
@@ -4469,7 +4514,22 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 <span class="normal">711</span>
 <span class="normal">712</span>
 <span class="normal">713</span>
-<span class="normal">714</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_email</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="normal">714</span>
+<span class="normal">715</span>
+<span class="normal">716</span>
+<span class="normal">717</span>
+<span class="normal">718</span>
+<span class="normal">719</span>
+<span class="normal">720</span>
+<span class="normal">721</span>
+<span class="normal">722</span>
+<span class="normal">723</span>
+<span class="normal">724</span>
+<span class="normal">725</span>
+<span class="normal">726</span>
+<span class="normal">727</span>
+<span class="normal">728</span>
+<span class="normal">729</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_email</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Email address validation using [email-validator](https://pypi.org/project/email-validator/).</span>
 
 <span class="sd">    Note:</span>
