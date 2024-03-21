@@ -45,7 +45,7 @@ __all__ = [
     'validate_email',
     'MySQLDsn',
     'MariaDBDsn',
-    'ClickhouseDsn',
+    'ClickHouseDsn',
 ]
 
 
@@ -359,7 +359,7 @@ MariaDBDsn = Annotated[
 * TLD not required
 * Host required
 """
-ClickhouseDsn = Annotated[
+ClickHouseDsn = Annotated[
     Url,
     UrlConstraints(
         allowed_schemes=['clickhouse+native', 'clickhouse+asynch'],

@@ -9,7 +9,7 @@ from pydantic import (
     AmqpDsn,
     AnyUrl,
     BaseModel,
-    ClickhouseDsn,
+    ClickHouseDsn,
     CockroachDsn,
     FileUrl,
     HttpUrl,
@@ -429,7 +429,7 @@ def test_mariadb_dsns(dsn):
 )
 def test_clickhouse_dsns(dsn):
     class Model(BaseModel):
-        a: ClickhouseDsn
+        a: ClickHouseDsn
 
     assert str(Model(a=dsn).a) == dsn
 

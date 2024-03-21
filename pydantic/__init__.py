@@ -124,7 +124,7 @@ __all__ = (
     'NatsDsn',
     'MySQLDsn',
     'MariaDBDsn',
-    'ClickhouseDsn',
+    'ClickHouseDsn',
     'validate_email',
     # root_model
     'RootModel',
@@ -278,7 +278,7 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'NatsDsn': (__package__, '.networks'),
     'MySQLDsn': (__package__, '.networks'),
     'MariaDBDsn': (__package__, '.networks'),
-    'ClickhouseDsn': (__package__, '.networks'),
+    'ClickHouseDsn': (__package__, '.networks'),
     'validate_email': (__package__, '.networks'),
     # root_model
     'RootModel': (__package__, '.root_model'),
