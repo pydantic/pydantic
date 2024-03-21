@@ -16,8 +16,8 @@ use crate::SchemaValidator;
 
 static SCHEMA_DEFINITION_URL: GILOnceCell<SchemaValidator> = GILOnceCell::new();
 
-#[pyclass(name = "Url", module = "pydantic_core._pydantic_core", subclass)]
-#[derive(Clone)]
+#[pyclass(name = "Url", module = "pydantic_core._pydantic_core", subclass, frozen)]
+#[derive(Clone, Hash)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct PyUrl {
     lib_url: Url,
@@ -28,8 +28,8 @@ impl PyUrl {
         Self { lib_url }
     }
 
-    pub fn into_url(self) -> Url {
-        self.lib_url
+    pub fn url(&self) -> &Url {
+        &self.lib_url
     }
 }
 
@@ -138,7 +138,7 @@ impl PyUrl {
 
     fn __hash__(&self) -> u64 {
         let mut s = DefaultHasher::new();
-        self.lib_url.to_string().hash(&mut s);
+        self.hash(&mut s);
         s.finish()
     }
 
@@ -192,8 +192,8 @@ impl PyUrl {
     }
 }
 
-#[pyclass(name = "MultiHostUrl", module = "pydantic_core._pydantic_core", subclass)]
-#[derive(Clone)]
+#[pyclass(name = "MultiHostUrl", module = "pydantic_core._pydantic_core", subclass, frozen)]
+#[derive(Clone, Hash)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct PyMultiHostUrl {
     ref_url: PyUrl,
@@ -206,6 +206,10 @@ impl PyMultiHostUrl {
             ref_url: PyUrl::new(ref_url),
             extra_urls,
         }
+    }
+
+    pub fn lib_url(&self) -> &Url {
+        &self.ref_url.lib_url
     }
 
     pub fn mut_lib_url(&mut self) -> &mut Url {
@@ -338,8 +342,7 @@ impl PyMultiHostUrl {
 
     fn __hash__(&self) -> u64 {
         let mut s = DefaultHasher::new();
-        self.ref_url.clone().into_url().to_string().hash(&mut s);
-        self.extra_urls.hash(&mut s);
+        self.hash(&mut s);
         s.finish()
     }
 

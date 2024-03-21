@@ -8,8 +8,9 @@ use ahash::AHashSet;
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{is_strict, schema_or_config_same, ExtraBehavior};
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
-use crate::input::InputType;
-use crate::input::{Arguments, BorrowInput, Input, KeywordArgs, PositionalArgs, ValidationMatch};
+use crate::input::{
+    input_as_python_instance, Arguments, BorrowInput, Input, InputType, KeywordArgs, PositionalArgs, ValidationMatch,
+};
 use crate::lookup_key::LookupKey;
 use crate::tools::SchemaDict;
 use crate::validators::function::convert_err;
@@ -501,7 +502,7 @@ impl Validator for DataclassValidator {
 
         // same logic as on models
         let class = self.class.bind(py);
-        if let Some(py_input) = input.input_is_instance(class) {
+        if let Some(py_input) = input_as_python_instance(input, class) {
             if self.revalidate.should_revalidate(py_input, class) {
                 let input_dict = self.dataclass_to_dict(py_input)?;
                 let val_output = self.validator.validate(py, input_dict.as_any(), state)?;

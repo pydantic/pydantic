@@ -9,6 +9,7 @@ use uuid::Variant;
 
 use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
+use crate::input::input_as_python_instance;
 use crate::input::Input;
 use crate::input::InputType;
 use crate::tools::SchemaDict;
@@ -93,7 +94,7 @@ impl Validator for UuidValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let class = get_uuid_type(py)?;
-        if let Some(py_input) = input.input_is_instance(class) {
+        if let Some(py_input) = input_as_python_instance(input, class) {
             if let Some(expected_version) = self.version {
                 let py_input_version: Option<usize> = py_input.getattr(intern!(py, "version"))?.extract()?;
                 if !match py_input_version {
