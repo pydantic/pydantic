@@ -59,17 +59,17 @@ def test_fastapi_startup_perf(benchmark: Any):
         bar: str
 
     class GetManyModel(BaseModel, Generic[T]):
-        res: List[T]
+        res: list[T]
 
     class GetManyModel2(GetManyModel[T], Generic[T]):
         foo: str
         bar: str
 
     class GetManyModel3(BaseModel, Generic[T]):
-        res: Dict[str, T]
+        res: dict[str, T]
 
     class GetManyModel4(BaseModel, Generic[T]):
-        res: Dict[str, List[T]]
+        res: dict[str, list[T]]
 
     class PutModel(BaseModel, Generic[T]):
         data: T
@@ -79,13 +79,13 @@ def test_fastapi_startup_perf(benchmark: Any):
         bar: str
 
     class PutManyModel(BaseModel, Generic[T]):
-        data: List[T]
+        data: list[T]
 
     class PutManyModel2(PutManyModel[T], Generic[T]):
         foo: str
         bar: str
 
-    api_models: List[Any] = [
+    api_models: list[Any] = [
         GetModel,
         GetModel2,
         GetManyModel,
