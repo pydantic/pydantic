@@ -55,16 +55,14 @@ impl Validator for IsInstanceValidator {
         input: &(impl Input<'py> + ?Sized),
         _state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
-        if !input.is_python() {
+        let Some(obj) = input.as_python() else {
             return Err(ValError::InternalErr(PyNotImplementedError::new_err(
                 "Cannot check isinstance when validating from json, \
                             use a JsonOrPython validator instead.",
             )));
-        }
-
-        let ob: Py<PyAny> = input.to_object(py);
-        match ob.bind(py).is_instance(self.class.bind(py))? {
-            true => Ok(ob),
+        };
+        match obj.is_instance(self.class.bind(py))? {
+            true => Ok(obj.clone().unbind()),
             false => Err(ValError::new(
                 ErrorType::IsInstanceOf {
                     class: self.class_repr.clone(),

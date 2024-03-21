@@ -4,18 +4,20 @@ use std::str::from_utf8;
 use pyo3::intern;
 use pyo3::prelude::*;
 
+use pyo3::types::PyType;
 use pyo3::types::{
     PyBool, PyByteArray, PyBytes, PyDate, PyDateTime, PyDict, PyFloat, PyFrozenSet, PyInt, PyIterator, PyList,
-    PyMapping, PySet, PyString, PyTime, PyTuple, PyType,
+    PyMapping, PySet, PyString, PyTime, PyTuple,
 };
 
+use pyo3::PyTypeCheck;
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 
 use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::tools::{extract_i64, safe_repr};
 use crate::validators::decimal::{create_decimal, get_decimal_type};
 use crate::validators::Exactness;
-use crate::{ArgsKwargs, PyMultiHostUrl, PyUrl};
+use crate::ArgsKwargs;
 
 use super::datetime::{
     bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, date_as_datetime, float_as_datetime,
@@ -40,6 +42,17 @@ use super::{
     Input,
 };
 
+pub(crate) fn downcast_python_input<'py, T: PyTypeCheck>(input: &(impl Input<'py> + ?Sized)) -> Option<&Bound<'py, T>> {
+    input.as_python().and_then(|any| any.downcast::<T>().ok())
+}
+
+pub(crate) fn input_as_python_instance<'a, 'py>(
+    input: &'a (impl Input<'py> + ?Sized),
+    class: &Bound<'py, PyType>,
+) -> Option<&'a Bound<'py, PyAny>> {
+    input.as_python().filter(|any| any.is_instance(class).unwrap_or(false))
+}
+
 impl From<&Bound<'_, PyAny>> for LocItem {
     fn from(py_any: &Bound<'_, PyAny>) -> Self {
         if let Ok(py_str) = py_any.downcast::<PyString>() {
@@ -63,53 +76,18 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         InputValue::Python(self.clone().into())
     }
 
-    fn identity(&self) -> Option<usize> {
-        Some(self.as_ptr() as usize)
-    }
-
     fn is_none(&self) -> bool {
         PyAnyMethods::is_none(self)
     }
 
-    fn input_is_instance(&self, class: &Bound<'py, PyType>) -> Option<&Bound<'py, PyAny>> {
-        if self.is_instance(class).unwrap_or(false) {
-            Some(self)
-        } else {
-            None
-        }
-    }
-
-    fn input_is_exact_instance(&self, class: &Bound<'py, PyType>) -> bool {
-        self.is_exact_instance(class)
-    }
-
-    fn is_python(&self) -> bool {
-        true
+    fn as_python(&self) -> Option<&Bound<'py, PyAny>> {
+        Some(self)
     }
 
     fn as_kwargs(&self, py: Python<'py>) -> Option<Bound<'py, PyDict>> {
         self.downcast::<PyDict>()
             .ok()
             .map(|dict| dict.to_owned().unbind().into_bound(py))
-    }
-
-    fn input_is_subclass(&self, class: &Bound<'_, PyType>) -> PyResult<bool> {
-        match self.downcast::<PyType>() {
-            Ok(py_type) => py_type.is_subclass(class),
-            Err(_) => Ok(false),
-        }
-    }
-
-    fn input_as_url(&self) -> Option<PyUrl> {
-        self.extract::<PyUrl>().ok()
-    }
-
-    fn input_as_multi_host_url(&self) -> Option<PyMultiHostUrl> {
-        self.extract::<PyMultiHostUrl>().ok()
-    }
-
-    fn callable(&self) -> bool {
-        self.is_callable()
     }
 
     type Arguments<'a> = PyArgs<'py> where Self: 'a;

@@ -1,13 +1,12 @@
 use std::fmt;
 
 use pyo3::exceptions::PyValueError;
-use pyo3::types::{PyDict, PyList, PyType};
+use pyo3::types::{PyDict, PyList};
 use pyo3::{intern, prelude::*};
 
 use crate::errors::{ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::lookup_key::{LookupKey, LookupPath};
 use crate::tools::py_err;
-use crate::{PyMultiHostUrl, PyUrl};
 
 use super::datetime::{EitherDate, EitherDateTime, EitherTime, EitherTimedelta};
 use super::return_enums::{EitherBytes, EitherInt, EitherString};
@@ -52,43 +51,15 @@ pub type ValMatch<T> = ValResult<ValidationMatch<T>>;
 pub trait Input<'py>: fmt::Debug + ToPyObject {
     fn as_error_value(&self) -> InputValue;
 
-    fn identity(&self) -> Option<usize> {
-        None
-    }
-
     fn is_none(&self) -> bool {
         false
     }
 
-    fn input_is_instance(&self, _class: &Bound<'py, PyType>) -> Option<&Bound<'py, PyAny>> {
+    fn as_python(&self) -> Option<&Bound<'py, PyAny>> {
         None
-    }
-
-    fn input_is_exact_instance(&self, _class: &Bound<'py, PyType>) -> bool {
-        false
-    }
-
-    fn is_python(&self) -> bool {
-        false
     }
 
     fn as_kwargs(&self, py: Python<'py>) -> Option<Bound<'py, PyDict>>;
-
-    fn input_is_subclass(&self, _class: &Bound<'_, PyType>) -> PyResult<bool> {
-        Ok(false)
-    }
-
-    fn input_as_url(&self) -> Option<PyUrl> {
-        None
-    }
-
-    fn input_as_multi_host_url(&self) -> Option<PyMultiHostUrl> {
-        None
-    }
-
-    fn callable(&self) -> bool {
-        false
-    }
 
     type Arguments<'a>: Arguments<'py>
     where

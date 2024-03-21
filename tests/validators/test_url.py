@@ -495,7 +495,7 @@ def test_url_to_url(url_validator, multi_host_url_validator):
     url2 = url_validator.validate_python(url)
     assert isinstance(url2, Url)
     assert str(url2) == 'https://example.com/'
-    assert url is not url2
+    assert url is url2
 
     multi_url = multi_host_url_validator.validate_python('https://example.com')
     assert isinstance(multi_url, MultiHostUrl)
@@ -982,7 +982,7 @@ def test_url_to_multi_url(url_validator, multi_host_url_validator):
     url3 = multi_host_url_validator.validate_python(url2)
     assert isinstance(url3, MultiHostUrl)
     assert str(url3) == 'https://example.com/'
-    assert url2 is not url3
+    assert url2 is url3
 
 
 def test_multi_wrong_type(multi_host_url_validator):

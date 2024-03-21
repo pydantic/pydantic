@@ -123,7 +123,7 @@ impl<T: Debug> LiteralLookup<T> {
             }
         }
         if let Some(expected_strings) = &self.expected_str {
-            let validation_result = if input.is_python() {
+            let validation_result = if input.as_python().is_some() {
                 input.exact_str()
             } else {
                 // Strings coming from JSON are treated as "strict" but not "exact" for reasons

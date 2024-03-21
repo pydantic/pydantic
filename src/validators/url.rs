@@ -12,6 +12,7 @@ use url::{ParseError, SyntaxViolation, Url};
 use crate::build_tools::{is_strict, py_schema_err};
 use crate::errors::ToErrorValue;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
+use crate::input::downcast_python_input;
 use crate::input::Input;
 use crate::tools::SchemaDict;
 use crate::url::{schema_is_special, PyMultiHostUrl, PyUrl};
@@ -67,10 +68,10 @@ impl Validator for UrlValidator {
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
-        let mut lib_url = self.get_url(input, state.strict_or(self.strict))?;
+        let mut either_url = self.get_url(input, state.strict_or(self.strict))?;
 
         if let Some((ref allowed_schemes, ref expected_schemes_repr)) = self.allowed_schemes {
-            if !allowed_schemes.contains(lib_url.scheme()) {
+            if !allowed_schemes.contains(either_url.url().scheme()) {
                 let expected_schemes = expected_schemes_repr.clone();
                 return Err(ValError::new(
                     ErrorType::UrlScheme {
@@ -83,7 +84,7 @@ impl Validator for UrlValidator {
         }
 
         match check_sub_defaults(
-            &mut lib_url,
+            &mut either_url,
             self.host_required,
             &self.default_host,
             self.default_port,
@@ -92,7 +93,7 @@ impl Validator for UrlValidator {
             Ok(()) => {
                 // Lax rather than strict to preserve V2.4 semantic that str wins over url in union
                 state.floor_exactness(Exactness::Lax);
-                Ok(PyUrl::new(lib_url).into_py(py))
+                Ok(either_url.into_py(py))
             }
             Err(error_type) => Err(ValError::new(error_type, input)),
         }
@@ -104,7 +105,7 @@ impl Validator for UrlValidator {
 }
 
 impl UrlValidator {
-    fn get_url<'py>(&self, input: &(impl Input<'py> + ?Sized), strict: bool) -> ValResult<Url> {
+    fn get_url<'py>(&self, input: &(impl Input<'py> + ?Sized), strict: bool) -> ValResult<EitherUrl<'py>> {
         match input.validate_str(strict, false) {
             Ok(val_match) => {
                 let either_str = val_match.into_inner();
@@ -113,20 +114,19 @@ impl UrlValidator {
 
                 self.check_length(input, url_str)?;
 
-                parse_url(url_str, input, strict)
+                parse_url(url_str, input, strict).map(EitherUrl::Rust)
             }
             Err(_) => {
                 // we don't need to worry about whether the url was parsed in strict mode before,
                 // even if it was, any syntax errors would have been fixed by the first validation
-                if let Some(py_url) = input.input_as_url() {
-                    let lib_url = py_url.into_url();
-                    self.check_length(input, lib_url.as_str())?;
-                    Ok(lib_url)
-                } else if let Some(multi_host_url) = input.input_as_multi_host_url() {
-                    let url_str = multi_host_url.__str__();
+                if let Some(py_url) = downcast_python_input::<PyUrl>(input) {
+                    self.check_length(input, py_url.get().url().as_str())?;
+                    Ok(EitherUrl::Py(py_url.clone()))
+                } else if let Some(multi_host_url) = downcast_python_input::<PyMultiHostUrl>(input) {
+                    let url_str = multi_host_url.get().__str__();
                     self.check_length(input, &url_str)?;
 
-                    parse_url(&url_str, input, strict)
+                    parse_url(&url_str, input, strict).map(EitherUrl::Rust)
                 } else {
                     Err(ValError::new(ErrorTypeDefaults::UrlType, input))
                 }
@@ -147,6 +147,39 @@ impl UrlValidator {
             }
         }
         Ok(())
+    }
+}
+
+enum EitherUrl<'py> {
+    Py(Bound<'py, PyUrl>),
+    Rust(Url),
+}
+
+impl EitherUrl<'_> {
+    fn into_py(self, py: Python) -> PyObject {
+        match self {
+            EitherUrl::Py(py_url) => py_url.into_py(py),
+            EitherUrl::Rust(rust_url) => PyUrl::new(rust_url).into_py(py),
+        }
+    }
+}
+
+impl CopyFromPyUrl for EitherUrl<'_> {
+    fn url(&self) -> &Url {
+        match self {
+            EitherUrl::Py(py_url) => py_url.get().url(),
+            EitherUrl::Rust(rust_url) => rust_url,
+        }
+    }
+
+    fn url_mut(&mut self) -> &mut Url {
+        if let EitherUrl::Py(py_url) = self {
+            *self = EitherUrl::Rust(py_url.get().url().clone());
+        }
+        match self {
+            EitherUrl::Py(_) => unreachable!(),
+            EitherUrl::Rust(rust_url) => rust_url,
+        }
     }
 }
 
@@ -204,7 +237,7 @@ impl Validator for MultiHostUrlValidator {
         let mut multi_url = self.get_url(input, state.strict_or(self.strict))?;
 
         if let Some((ref allowed_schemes, ref expected_schemes_repr)) = self.allowed_schemes {
-            if !allowed_schemes.contains(multi_url.scheme()) {
+            if !allowed_schemes.contains(multi_url.url().scheme()) {
                 let expected_schemes = expected_schemes_repr.clone();
                 return Err(ValError::new(
                     ErrorType::UrlScheme {
@@ -216,7 +249,7 @@ impl Validator for MultiHostUrlValidator {
             }
         }
         match check_sub_defaults(
-            multi_url.mut_lib_url(),
+            &mut multi_url,
             self.host_required,
             &self.default_host,
             self.default_port,
@@ -237,7 +270,7 @@ impl Validator for MultiHostUrlValidator {
 }
 
 impl MultiHostUrlValidator {
-    fn get_url<'py>(&self, input: &(impl Input<'py> + ?Sized), strict: bool) -> ValResult<PyMultiHostUrl> {
+    fn get_url<'py>(&self, input: &(impl Input<'py> + ?Sized), strict: bool) -> ValResult<EitherMultiHostUrl<'py>> {
         match input.validate_str(strict, false) {
             Ok(val_match) => {
                 let either_str = val_match.into_inner();
@@ -246,18 +279,20 @@ impl MultiHostUrlValidator {
 
                 self.check_length(input, || url_str.len())?;
 
-                parse_multihost_url(url_str, input, strict)
+                parse_multihost_url(url_str, input, strict).map(EitherMultiHostUrl::Rust)
             }
             Err(_) => {
                 // we don't need to worry about whether the url was parsed in strict mode before,
                 // even if it was, any syntax errors would have been fixed by the first validation
-                if let Some(multi_url) = input.input_as_multi_host_url() {
-                    self.check_length(input, || multi_url.__str__().len())?;
-                    Ok(multi_url)
-                } else if let Some(py_url) = input.input_as_url() {
-                    let lib_url = py_url.into_url();
-                    self.check_length(input, || lib_url.as_str().len())?;
-                    Ok(PyMultiHostUrl::new(lib_url, None))
+                if let Some(multi_url) = downcast_python_input::<PyMultiHostUrl>(input) {
+                    self.check_length(input, || multi_url.get().__str__().len())?;
+                    Ok(EitherMultiHostUrl::Py(multi_url.clone()))
+                } else if let Some(py_url) = downcast_python_input::<PyUrl>(input) {
+                    self.check_length(input, || py_url.get().url().as_str().len())?;
+                    Ok(EitherMultiHostUrl::Rust(PyMultiHostUrl::new(
+                        py_url.get().url().clone(),
+                        None,
+                    )))
                 } else {
                     Err(ValError::new(ErrorTypeDefaults::UrlType, input))
                 }
@@ -281,6 +316,39 @@ impl MultiHostUrlValidator {
             }
         }
         Ok(())
+    }
+}
+
+enum EitherMultiHostUrl<'py> {
+    Py(Bound<'py, PyMultiHostUrl>),
+    Rust(PyMultiHostUrl),
+}
+
+impl EitherMultiHostUrl<'_> {
+    fn into_py(self, py: Python) -> PyObject {
+        match self {
+            EitherMultiHostUrl::Py(py_multi_url) => py_multi_url.into_py(py),
+            EitherMultiHostUrl::Rust(rust_multi_url) => rust_multi_url.into_py(py),
+        }
+    }
+}
+
+impl CopyFromPyUrl for EitherMultiHostUrl<'_> {
+    fn url(&self) -> &Url {
+        match self {
+            EitherMultiHostUrl::Py(py_multi_url) => py_multi_url.get().lib_url(),
+            EitherMultiHostUrl::Rust(rust_multi_url) => rust_multi_url.lib_url(),
+        }
+    }
+
+    fn url_mut(&mut self) -> &mut Url {
+        if let EitherMultiHostUrl::Py(py_multi_url) = self {
+            *self = EitherMultiHostUrl::Rust(py_multi_url.get().clone());
+        }
+        match self {
+            EitherMultiHostUrl::Py(_) => unreachable!(),
+            EitherMultiHostUrl::Rust(rust_multi_url) => rust_multi_url.mut_lib_url(),
+        }
     }
 }
 
@@ -466,7 +534,7 @@ fn parse_url(url_str: &str, input: impl ToErrorValue, strict: bool) -> ValResult
 
 /// check host_required and substitute `default_host`, `default_port` & `default_path` if they aren't set
 fn check_sub_defaults(
-    lib_url: &mut Url,
+    url: &mut impl CopyFromPyUrl,
     host_required: bool,
     default_host: &Option<String>,
     default_port: Option<u16>,
@@ -476,9 +544,9 @@ fn check_sub_defaults(
         error: e.to_string(),
         context: None,
     };
-    if !lib_url.has_host() {
-        if let Some(ref default_host) = default_host {
-            lib_url.set_host(Some(default_host)).map_err(map_parse_err)?;
+    if let Some(ref default_host) = default_host {
+        if !url.url().has_host() {
+            url.url_mut().set_host(Some(default_host)).map_err(map_parse_err)?;
         } else if host_required {
             return Err(ErrorType::UrlParsing {
                 error: ParseError::EmptyHost.to_string(),
@@ -486,20 +554,27 @@ fn check_sub_defaults(
             });
         }
     }
-    if lib_url.port().is_none() {
-        if let Some(default_port) = default_port {
-            lib_url
+    if let Some(default_port) = default_port {
+        if url.url().port().is_none() {
+            url.url_mut()
                 .set_port(Some(default_port))
                 .map_err(|()| map_parse_err(ParseError::EmptyHost))?;
         }
     }
     if let Some(ref default_path) = default_path {
-        let path = lib_url.path();
+        let path = url.url().path();
         if path.is_empty() || path == "/" {
-            lib_url.set_path(default_path);
+            url.url_mut().set_path(default_path);
         }
     }
     Ok(())
+}
+
+/// Abstraction to create a new Url only when necessary if the existing Url is a PyUrl
+/// and needs to be updated with new defaults
+trait CopyFromPyUrl {
+    fn url(&self) -> &Url;
+    fn url_mut(&mut self) -> &mut Url;
 }
 
 fn get_allowed_schemas(schema: &Bound<'_, PyDict>, name: &'static str) -> PyResult<(AllowedSchemas, String)> {
