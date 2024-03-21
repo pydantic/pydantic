@@ -266,6 +266,7 @@ class SchemaSerializer:
         round_trip: bool = False,
         warnings: bool = True,
         fallback: Callable[[Any], Any] | None = None,
+        serialize_as_any: bool = False,
         context: dict[str, Any] | None = None,
     ) -> Any:
         """
@@ -286,6 +287,7 @@ class SchemaSerializer:
             warnings: Whether to log warnings when invalid fields are encountered.
             fallback: A function to call when an unknown value is encountered,
                 if `None` a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
+            serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
             context: The context to use for serialization, this is passed to functional serializers as
                 [`info.context`][pydantic_core.core_schema.SerializationInfo.context].
 
@@ -309,6 +311,7 @@ class SchemaSerializer:
         round_trip: bool = False,
         warnings: bool = True,
         fallback: Callable[[Any], Any] | None = None,
+        serialize_as_any: bool = False,
         context: dict[str, Any] | None = None,
     ) -> bytes:
         """
@@ -328,6 +331,7 @@ class SchemaSerializer:
             warnings: Whether to log warnings when invalid fields are encountered.
             fallback: A function to call when an unknown value is encountered,
                 if `None` a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
+            serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
             context: The context to use for serialization, this is passed to functional serializers as
                 [`info.context`][pydantic_core.core_schema.SerializationInfo.context].
 
@@ -352,6 +356,7 @@ def to_json(
     inf_nan_mode: Literal['null', 'constants'] = 'constants',
     serialize_unknown: bool = False,
     fallback: Callable[[Any], Any] | None = None,
+    serialize_as_any: bool = False,
     context: dict[str, Any] | None = None,
 ) -> bytes:
     """
@@ -374,6 +379,7 @@ def to_json(
             `"<Unserializable {value_type} object>"` will be used.
         fallback: A function to call when an unknown value is encountered,
             if `None` a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
+        serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
         context: The context to use for serialization, this is passed to functional serializers as
             [`info.context`][pydantic_core.core_schema.SerializationInfo.context].
 
@@ -416,6 +422,7 @@ def to_jsonable_python(
     inf_nan_mode: Literal['null', 'constants'] = 'constants',
     serialize_unknown: bool = False,
     fallback: Callable[[Any], Any] | None = None,
+    serialize_as_any: bool = False,
     context: dict[str, Any] | None = None,
 ) -> Any:
     """
@@ -438,6 +445,7 @@ def to_jsonable_python(
             `"<Unserializable {value_type} object>"` will be used.
         fallback: A function to call when an unknown value is encountered,
             if `None` a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
+        serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
         context: The context to use for serialization, this is passed to functional serializers as
             [`info.context`][pydantic_core.core_schema.SerializationInfo.context].
 
