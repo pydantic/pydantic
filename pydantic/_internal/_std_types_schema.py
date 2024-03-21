@@ -298,6 +298,7 @@ class SequenceValidator:
             items_schema = None
         else:
             items_schema = handler.generate_schema(self.item_source_type)
+
         metadata = {'min_length': self.min_length, 'max_length': self.max_length, 'strict': self.strict}
 
         if self.mapped_origin in (list, set, frozenset):
@@ -392,6 +393,7 @@ def sequence_like_prepare_pydantic_annotations(
 
     metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
     _known_annotated_metadata.check_metadata(metadata, _known_annotated_metadata.SEQUENCE_CONSTRAINTS, source_type)
+
     return (source_type, [SequenceValidator(mapped_origin, item_source_type, **metadata), *remaining_annotations])
 
 
