@@ -7,7 +7,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, cast, final, overload
 
 from pydantic_core import CoreConfig, CoreSchema, SchemaSerializer, SchemaValidator, Some
-from typing_extensions import Literal, get_args, is_typeddict
+from typing_extensions import Literal, Self, get_args, is_typeddict
 
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel
@@ -212,7 +212,7 @@ class TypeAdapter(Generic[T]):
             )
 
         self._type = type
-        self._config_wrapper = _config.ConfigWrapper(config)
+        self._config = config
         self._parent_depth = _parent_depth
         if module is None:
             f = sys._getframe(1)
@@ -220,27 +220,36 @@ class TypeAdapter(Generic[T]):
         else:
             self._module_name = module
 
-        self._schema_initialized = False
-        if not self._defer_build(type, config):
+        if not self._defer_build():
             # Immediately initialize the core schema, validator and serializer
+            self._dive_parent(1)  # +1 for this __init__
             _, _, _ = (self.core_schema, self.validator, self.serializer)
+
+    def _dive_parent(self, depth: int) -> Self:
+        if self._parent_depth is not None:
+            self._parent_depth += depth
+        return self
 
     @cached_property
     def core_schema(self) -> CoreSchema:
-        """Core schema"""
+        """The pydantic-core schema used to build the SchemaValidator and SchemaSerializer."""
         try:
             return _getattr_no_parents(self._type, '__pydantic_core_schema__')
         except AttributeError:
-            return _get_schema(self._type, self._config_wrapper, parent_depth=self._parent_depth + 3)
-        finally:
-            self._schema_initialized = True
+            self._dive_parent(2)  # +2 for @cached_property and self.core_schema
+            parent_depth = self._parent_depth
+            assert parent_depth is not None
+            self._parent_depth = None  # No need to track parent depth anymore
+
+            return _get_schema(self._type, self._config_wrapper, parent_depth=parent_depth)
 
     @cached_property
     def validator(self) -> SchemaValidator:
-        """Validator"""
+        """The pydantic-core SchemaValidator used to validate instances of the model."""
         try:
             return _getattr_no_parents(self._type, '__pydantic_validator__')
         except AttributeError:
+            self._dive_parent(2)  # +2 for @cached_property + validator
             return create_schema_validator(
                 schema=self.core_schema,
                 schema_type=self._type,
@@ -253,33 +262,36 @@ class TypeAdapter(Generic[T]):
 
     @cached_property
     def serializer(self) -> SchemaSerializer:
-        """Serializer"""
+        """The pydantic-core SchemaSerializer used to dump instances of the model."""
         try:
             return _getattr_no_parents(self._type, '__pydantic_serializer__')
         except AttributeError:
+            self._dive_parent(2)  # +2 for @cached_property + validator
             return SchemaSerializer(self.core_schema, self._core_config)
 
-    @classmethod
-    def _defer_build(cls, type_: Any, type_adapter_config: ConfigDict | None) -> bool:
-        config = type_adapter_config if type_adapter_config is not None else cls._model_config(type_)
-        return cls._is_defer_build_config(config) if config is not None else False
+    def _defer_build(self) -> bool:
+        config = self._config if self._config is not None else self._model_config()
+        return self._is_defer_build_config(config) if config is not None else False
 
-    @classmethod
-    def _model_config(cls, type_: Any) -> ConfigDict | None:
-        src_type: Any = (
-            get_args(type_)[0] if _typing_extra.is_annotated(type_) else type_  # FastAPI heavily uses Annotated
-        )
-        if _utils.lenient_issubclass(src_type, BaseModel):
-            return src_type.model_config
-        return getattr(src_type, '__pydantic_config__', None)
+    def _model_config(self) -> ConfigDict | None:
+        # FastAPI heavily uses Annotated
+        inner_type: Any = get_args(self._type)[0] if _typing_extra.is_annotated(self._type) else self._type
 
-    @classmethod
-    def _is_defer_build_config(cls, config: ConfigDict) -> bool:
+        if _utils.lenient_issubclass(inner_type, BaseModel):
+            return inner_type.model_config
+        return getattr(inner_type, '__pydantic_config__', None)
+
+    @staticmethod
+    def _is_defer_build_config(config: ConfigDict) -> bool:
         return config.get('defer_build', False) is True and 'type_adapter' in config.get('_defer_build_mode', tuple())
 
     @cached_property
     def _core_config(self) -> CoreConfig:
         return self._config_wrapper.core_config(None)
+
+    @cached_property
+    def _config_wrapper(self) -> _config.ConfigWrapper:
+        return _config.ConfigWrapper(self._config)
 
     def validate_python(
         self,
@@ -305,6 +317,7 @@ class TypeAdapter(Generic[T]):
         Returns:
             The validated object.
         """
+        self._dive_parent(1)  # +1 for validate_python
         return self.validator.validate_python(object, strict=strict, from_attributes=from_attributes, context=context)
 
     def validate_json(
@@ -322,6 +335,7 @@ class TypeAdapter(Generic[T]):
         Returns:
             The validated object.
         """
+        self._dive_parent(1)  # +1 for self.validate_json
         return self.validator.validate_json(data, strict=strict, context=context)
 
     def validate_strings(self, obj: Any, /, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> T:
@@ -335,6 +349,7 @@ class TypeAdapter(Generic[T]):
         Returns:
             The validated object.
         """
+        self._dive_parent(1)  # +1 for self.validate_strings
         return self.validator.validate_strings(obj, strict=strict, context=context)
 
     def get_default_value(self, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> Some[T] | None:
@@ -347,6 +362,7 @@ class TypeAdapter(Generic[T]):
         Returns:
             The default value wrapped in a `Some` if there is one or None if not.
         """
+        self._dive_parent(1)  # +1 for self.get_default_value
         return self.validator.get_default_value(strict=strict, context=context)
 
     def dump_python(
@@ -383,6 +399,7 @@ class TypeAdapter(Generic[T]):
         Returns:
             The serialized object.
         """
+        self._dive_parent(1)  # +1 for self.dump_python
         return self.serializer.to_python(
             instance,
             mode=mode,
@@ -433,6 +450,7 @@ class TypeAdapter(Generic[T]):
         Returns:
             The JSON representation of the given instance as bytes.
         """
+        self._dive_parent(1)  # +1 for self.dump_json
         return self.serializer.to_json(
             instance,
             indent=indent,
@@ -467,6 +485,7 @@ class TypeAdapter(Generic[T]):
             The JSON schema for the model as a dictionary.
         """
         schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
+        self._dive_parent(1)  # +1 for self.json_schema
         return schema_generator_instance.generate(self.core_schema, mode=mode)
 
     @staticmethod
@@ -504,7 +523,8 @@ class TypeAdapter(Generic[T]):
         """
         schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
 
-        inputs_ = [(key, mode, adapter.core_schema) for key, mode, adapter in inputs]
+        # +1 _dive_parent for TypeAdapter.json_schemas
+        inputs_ = [(key, mode, adapter._dive_parent(1).core_schema) for key, mode, adapter in inputs]
 
         json_schemas_map, definitions = schema_generator_instance.generate_definitions(inputs_)
 
