@@ -1,6 +1,6 @@
 import pytest
 
-from pydantic_core import SchemaSerializer, core_schema
+from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
 
 from ..conftest import plain_repr
 
@@ -60,3 +60,39 @@ def test_lax_or_strict_custom_ser():
     assert s.to_python('abc') == ' abc '
     assert s.to_python('abc', mode='json') == ' abc '
     assert s.to_json('abc') == b'" abc "'
+
+
+def test_serialize_with_extra_on_superclass() -> None:
+    class Parent:
+        x: int
+
+    class Other(Parent):
+        y: str
+
+    Parent.__pydantic_core_schema__ = core_schema.model_schema(
+        Parent,
+        core_schema.model_fields_schema(
+            {
+                'x': core_schema.model_field(core_schema.int_schema()),
+            }
+        ),
+        config=core_schema.CoreConfig(extra_fields_behavior='allow'),
+    )
+    Parent.__pydantic_validator__ = SchemaValidator(Parent.__pydantic_core_schema__)
+    Parent.__pydantic_serializer__ = SchemaSerializer(Parent.__pydantic_core_schema__)
+
+    Other.__pydantic_core_schema__ = core_schema.model_schema(
+        Other,
+        core_schema.model_fields_schema(
+            {
+                'x': core_schema.model_field(core_schema.int_schema()),
+                'y': core_schema.model_field(core_schema.str_schema()),
+            }
+        ),
+        config=core_schema.CoreConfig(extra_fields_behavior='forbid'),
+    )
+    Other.__pydantic_validator__ = SchemaValidator(Other.__pydantic_core_schema__)
+    Other.__pydantic_serializer__ = SchemaSerializer(Other.__pydantic_core_schema__)
+
+    other = Other.__pydantic_validator__.validate_python({'x': 1, 'y': 'some string'})
+    assert Parent.__pydantic_serializer__.to_python(other) == {'x': 1}
