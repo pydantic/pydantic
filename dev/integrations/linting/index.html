@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://docs.pydantic.dev/latest/concepts/json/">
+        <link rel="canonical" href="https://docs.pydantic.dev/latest/integrations/linting/">
       
       
-        <link rel="prev" href="../json_schema/">
+        <link rel="prev" href="../rich/">
       
       
-        <link rel="next" href="../types/">
+        <link rel="next" href="../../pydantic_people/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>JSON - Pydantic</title>
+        <title>Linting - Pydantic</title>
       
     
     
@@ -84,7 +84,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#json" class="md-skip">
+        <a href="#flake8-plugin" class="md-skip">
           Skip to content
         </a>
       
@@ -140,7 +140,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              JSON
+              Linting
             
           </span>
         </div>
@@ -263,13 +263,11 @@
         
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../models/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../concepts/models/" class="md-tabs__link">
           
   
   Concepts
@@ -346,11 +344,13 @@
         
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../integrations/mypy/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../mypy/" class="md-tabs__link">
           
   
   Integrations
@@ -707,8 +707,6 @@
       
   
   
-    
-  
   
     
     
@@ -718,12 +716,12 @@
       
       
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
         
           
           <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
@@ -743,7 +741,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -760,7 +758,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/" class="md-nav__link">
+      <a href="../../concepts/models/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -786,7 +784,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../fields/" class="md-nav__link">
+      <a href="../../concepts/fields/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -812,7 +810,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../json_schema/" class="md-nav__link">
+      <a href="../../concepts/json_schema/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -836,35 +834,9 @@
                 
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    
-  
-    JSON
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../concepts/json/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -879,50 +851,6 @@
   
 
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="Page contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#json-parsing" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Json Parsing
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#json-serialization" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        JSON Serialization
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -934,7 +862,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../types/" class="md-nav__link">
+      <a href="../../concepts/types/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -960,7 +888,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../unions/" class="md-nav__link">
+      <a href="../../concepts/unions/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -986,7 +914,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../alias/" class="md-nav__link">
+      <a href="../../concepts/alias/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1012,7 +940,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../config/" class="md-nav__link">
+      <a href="../../concepts/config/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1038,7 +966,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../serialization/" class="md-nav__link">
+      <a href="../../concepts/serialization/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1064,7 +992,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../validators/" class="md-nav__link">
+      <a href="../../concepts/validators/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1090,7 +1018,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dataclasses/" class="md-nav__link">
+      <a href="../../concepts/dataclasses/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1116,7 +1044,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../postponed_annotations/" class="md-nav__link">
+      <a href="../../concepts/postponed_annotations/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1142,7 +1070,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../strict_mode/" class="md-nav__link">
+      <a href="../../concepts/strict_mode/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1168,7 +1096,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../type_adapter/" class="md-nav__link">
+      <a href="../../concepts/type_adapter/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1194,7 +1122,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../validation_decorator/" class="md-nav__link">
+      <a href="../../concepts/validation_decorator/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1220,7 +1148,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../conversion_table/" class="md-nav__link">
+      <a href="../../concepts/conversion_table/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1246,7 +1174,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_settings/" class="md-nav__link">
+      <a href="../../concepts/pydantic_settings/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1272,7 +1200,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../performance/" class="md-nav__link">
+      <a href="../../concepts/performance/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1298,7 +1226,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../plugins/" class="md-nav__link">
+      <a href="../../concepts/plugins/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2595,6 +2523,8 @@
       
   
   
+    
+  
   
     
     
@@ -2604,12 +2534,12 @@
       
       
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
         
           
           <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
@@ -2629,7 +2559,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2646,7 +2576,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/mypy/" class="md-nav__link">
+      <a href="../mypy/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2672,7 +2602,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/pycharm/" class="md-nav__link">
+      <a href="../pycharm/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2698,7 +2628,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/hypothesis/" class="md-nav__link">
+      <a href="../hypothesis/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2724,7 +2654,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/visual_studio_code/" class="md-nav__link">
+      <a href="../visual_studio_code/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2750,7 +2680,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/datamodel_code_generator/" class="md-nav__link">
+      <a href="../datamodel_code_generator/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2776,7 +2706,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/devtools/" class="md-nav__link">
+      <a href="../devtools/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2802,7 +2732,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/rich/" class="md-nav__link">
+      <a href="../rich/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2826,9 +2756,33 @@
                 
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../../integrations/linting/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    
+  
+    Linting
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -2843,6 +2797,37 @@
   
 
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#flake8-plugin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flake8 plugin
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2924,8 +2909,6 @@
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -2934,21 +2917,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#json-parsing" class="md-nav__link">
+  <a href="#flake8-plugin" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Json Parsing
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#json-serialization" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        JSON Serialization
+        Flake8 plugin
       
     </span>
   </a>
@@ -2975,112 +2947,18 @@
   
 
 
-<div class="admonition warning">
-<p class="admonition-title">🚧 Work in Progress</p>
-<p>This page is a work in progress.</p>
-</div>
-<h1 id="json">JSON<a class="headerlink" href="#json" title="Permanent link">&para;</a></h1>
-<h2 id="json-parsing">Json Parsing<a class="headerlink" href="#json-parsing" title="Permanent link">&para;</a></h2>
-<details class="api">
-<summary>API Documentation</summary>
-<p><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate_json"><code>pydantic.main.BaseModel.model_validate_json</code></a><br>
-<a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter.validate_json"><code>pydantic.type_adapter.TypeAdapter.validate_json</code></a><br>
-<a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.from_json"><code>pydantic_core.from_json</code></a><br></p>
-</details>
-<p>Pydantic provides builtin JSON parsing, which helps achieve:</p>
-<ul>
-<li>Significant performance improvements without the cost of using a 3rd party library</li>
-<li>Support for custom errors</li>
-<li>Support for <code>strict</code> specifications</li>
-</ul>
-<p>Here's an example of Pydantic's builtin JSON parsing via the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate_json"><code>model_validate_json</code></a> method, showcasing the support for <code>strict</code> specifications while parsing JSON data that doesn't match the model's type annotations:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+  <h1>Linting</h1>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-
-<span class="k">class</span> <span class="nc">Event</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-    <span class="n">when</span><span class="p">:</span> <span class="n">date</span>
-    <span class="n">where</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
-
-
-<span class="n">json_data</span> <span class="o">=</span> <span class="s1">&#39;{&quot;when&quot;: &quot;1987-01-28&quot;, &quot;where&quot;: [51, -1]}&#39;</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">Event</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">json_data</span><span class="p">))</span>  <span class="c1"># (1)!</span>
-<span class="c1">#&gt; when=datetime.date(1987, 1, 28) where=(51, -1)</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Event</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;when&#39;</span><span class="p">:</span> <span class="s1">&#39;1987-01-28&#39;</span><span class="p">,</span> <span class="s1">&#39;where&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">51</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]})</span>  <span class="c1"># (2)!</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    2 validation errors for Event</span>
-<span class="sd">    when</span>
-<span class="sd">      Input should be a valid date [type=date_type, input_value=&#39;1987-01-28&#39;, input_type=str]</span>
-<span class="sd">    where</span>
-<span class="sd">      Input should be a valid tuple [type=tuple_type, input_value=[51, -1], input_type=list]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<h2 id="flake8-plugin">Flake8 plugin<a class="headerlink" href="#flake8-plugin" title="Permanent link">&para;</a></h2>
+<p>If using Flake8 in your project, a <a href="https://pypi.org/project/flake8-pydantic/">plugin</a> is available
+and can be installed using the following:</p>
+<div class="language-bash highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>flake8-pydantic
 </code></pre></div>
-<ol>
-<li>JSON has no <code>date</code> or tuple types, but Pydantic knows that so allows strings and arrays as inputs respectively when parsing JSON directly.</li>
-<li>If you pass the same values to the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate</code></a> method, Pydantic will raise a validation error because the <code>strict</code> configuration is enabled.</li>
-</ol>
-</div>
-<div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-
-<span class="k">class</span> <span class="nc">Event</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-    <span class="n">when</span><span class="p">:</span> <span class="n">date</span>
-    <span class="n">where</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
-
-
-<span class="n">json_data</span> <span class="o">=</span> <span class="s1">&#39;{&quot;when&quot;: &quot;1987-01-28&quot;, &quot;where&quot;: [51, -1]}&#39;</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">Event</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">json_data</span><span class="p">))</span>  <span class="c1"># (1)!</span>
-<span class="c1">#&gt; when=datetime.date(1987, 1, 28) where=(51, -1)</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Event</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;when&#39;</span><span class="p">:</span> <span class="s1">&#39;1987-01-28&#39;</span><span class="p">,</span> <span class="s1">&#39;where&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">51</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]})</span>  <span class="c1"># (2)!</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    2 validation errors for Event</span>
-<span class="sd">    when</span>
-<span class="sd">      Input should be a valid date [type=date_type, input_value=&#39;1987-01-28&#39;, input_type=str]</span>
-<span class="sd">    where</span>
-<span class="sd">      Input should be a valid tuple [type=tuple_type, input_value=[51, -1], input_type=list]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<p>The lint errors provided by this plugin are namespaced under the <code>PYDXXX</code> code. To ignore some unwanted
+rules, the Flake8 configuration can be adapted:</p>
+<div class="language-ini highlight"><pre><span></span><code><span class="k">[flake8]</span>
+<span class="na">extend-ignore</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">PYD001,PYD002</span>
 </code></pre></div>
-<ol>
-<li>JSON has no <code>date</code> or tuple types, but Pydantic knows that so allows strings and arrays as inputs respectively when parsing JSON directly.</li>
-<li>If you pass the same values to the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate</code></a> method, Pydantic will raise a validation error because the <code>strict</code> configuration is enabled.</li>
-</ol>
-</div>
-</div>
-</div>
-<p>In v2.5.0 and above, Pydantic uses <a href="https://docs.rs/jiter/latest/jiter/"><code>jiter</code></a>, a fast and iterable JSON parser, to parse JSON data.
-Using <code>jiter</code> compared to <code>serde</code> results in modest performance improvements that will get even better in the future.</p>
-<p>The <code>jiter</code> JSON parser is almost entirely compatible with the <code>serde</code> JSON parser,
-with one noticeable enhancement being that <code>jiter</code> supports deserialization of <code>inf</code> and <code>NaN</code> values.
-In the future, <code>jiter</code> is intended to enable support validation errors to include the location
-in the original JSON input which contained the invalid value.</p>
-<h2 id="json-serialization">JSON Serialization<a class="headerlink" href="#json-serialization" title="Permanent link">&para;</a></h2>
-<details class="api">
-<summary>API Documentation</summary>
-<p><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump_json"><code>pydantic.main.BaseModel.model_dump_json</code></a><br>
-<a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter.dump_json"><code>pydantic.type_adapter.TypeAdapter.dump_json</code></a><br>
-<a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.to_json"><code>pydantic_core.to_json</code></a><br></p>
-</details>
-<p>For more information on JSON serialization, see the <a href="../serialization/#modelmodel_dump_json">Serialization Concepts</a> page.</p>
 
 
 
