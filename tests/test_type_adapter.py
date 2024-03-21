@@ -79,6 +79,17 @@ def test_global_namespace_variables(defer_build: bool):
 
 
 @pytest.mark.parametrize('defer_build', [False, True])
+def test_model_global_namespace_variables(defer_build: bool):
+    class MyModel(BaseModel):
+        model_config = ConfigDict(defer_build=True, _defer_build_mode=DEFER_ENABLE_MODE) if defer_build else None
+        x: OuterDict
+
+    v = TypeAdapter(MyModel).validate_python
+    res = v({'x': {'foo': [1, '2']}})
+    assert res.model_dump() == {'x': {'foo': [1, 2]}}
+
+
+@pytest.mark.parametrize('defer_build', [False, True])
 def test_local_namespace_variables(defer_build: bool):
     config = ConfigDict(defer_build=True, _defer_build_mode=DEFER_ENABLE_MODE) if defer_build else None
 
@@ -91,10 +102,27 @@ def test_local_namespace_variables(defer_build: bool):
     assert res == {'foo': [1, 2]}
 
 
+@pytest.mark.parametrize('defer_build', [False, True])
+def test_model_local_namespace_variables(defer_build: bool):
+    IntList = List[int]  # noqa: F841
+
+    class MyModel(BaseModel):
+        model_config = ConfigDict(defer_build=True, _defer_build_mode=DEFER_ENABLE_MODE) if defer_build else None
+        x: Dict[str, 'IntList']
+
+    v = TypeAdapter(MyModel).validate_python
+
+    res = v({'x': {'foo': [1, '2']}})
+    assert res.model_dump() == {'x': {'foo': [1, 2]}}
+
+
+@pytest.mark.parametrize('defer_build', [False, True])
 @pytest.mark.skipif(sys.version_info < (3, 9), reason="ForwardRef doesn't accept module as a parameter in Python < 3.9")
-def test_top_level_fwd_ref():
+def test_top_level_fwd_ref(defer_build: bool):
+    config = ConfigDict(defer_build=True, _defer_build_mode=DEFER_ENABLE_MODE) if defer_build else None
+
     FwdRef = ForwardRef('OuterDict', module=__name__)
-    v = TypeAdapter(FwdRef).validate_python
+    v = TypeAdapter(FwdRef, config=config).validate_python
 
     res = v({'foo': [1, '2']})
     assert res == {'foo': [1, 2]}
@@ -383,9 +411,9 @@ def test_eval_type_backport():
     ]
 
 
-def defer_build_test_type_adapters(
-    defer_build: bool, defer_build_mode: Tuple[Literal['model', 'type_adapter']]
-) -> List[TypeAdapter]:
+def defer_build_test_models(
+    defer_build: bool, defer_build_mode: Tuple[Literal['model', 'type_adapter'], ...]
+) -> List[Tuple[type, Optional[ConfigDict]]]:
     class Model(BaseModel, defer_build=defer_build, _defer_build_mode=defer_build_mode):
         x: int
 
@@ -414,67 +442,73 @@ def defer_build_test_type_adapters(
         (TypedDictModel, None),
         (Dict[str, int], ConfigDict(defer_build=defer_build, _defer_build_mode=defer_build_mode)),
     ]
-    models = [
+    return [
         *models,
         # FastAPI heavily uses Annotated so test that as well
         *[(Annotated[model, Field(title='abc')], config) for model, config in models],
     ]
-    return [TypeAdapter(model, config=config) for model, config in models]
 
 
 @pytest.mark.parametrize('defer_build', [False, True])
 @pytest.mark.parametrize('defer_build_mode', [('model',), DEFER_ENABLE_MODE])
 def test_core_schema_respects_defer_build(
-    defer_build: bool,
-    defer_build_mode: Tuple[Literal['model', 'type_adapter']],
+    defer_build: bool, defer_build_mode: Tuple[Literal['model', 'type_adapter'], ...], generate_schema_calls
 ) -> None:
-    for type_adapter in defer_build_test_type_adapters(defer_build, defer_build_mode):
+    for model, config in defer_build_test_models(defer_build, defer_build_mode):
+        generate_schema_calls.reset()
+        built_in_type_adapter = 'Dict' in str(model) or 'Annotated' in str(model)
+
+        type_adapter = TypeAdapter(model, config=config)
+
         if defer_build and 'type_adapter' in defer_build_mode:
-            assert 'core_schema' not in type_adapter.__dict__, 'Should be built deferred via cached_property'
+            assert generate_schema_calls.count == 0, 'Should be built deferred'
+            assert 'core_schema' not in type_adapter.__dict__, 'Should be initialized deferred via cached_property'
         else:
-            assert type_adapter.__dict__.get('core_schema') is not None, 'Should be built before usage'
+            assert generate_schema_calls.count == (1 if built_in_type_adapter else 0), f'Should be built ({model})'
+            assert type_adapter.__dict__.get('core_schema') is not None, 'Should be initialized before usage'
 
         json_schema = type_adapter.json_schema()  # Use it
         assert "'type': 'integer'" in str(json_schema)  # Sanity check
 
-        assert type_adapter.__dict__.get('core_schema') is not None, 'Should be built after the usage'
+        assert type_adapter.__dict__.get('core_schema') is not None, 'Should be initialized after the usage'
 
 
 @pytest.mark.parametrize('defer_build', [False, True])
 @pytest.mark.parametrize('defer_build_mode', [('model',), DEFER_ENABLE_MODE])
 def test_validator_respects_defer_build(
-    defer_build: bool,
-    defer_build_mode: Tuple[Literal['model', 'type_adapter']],
+    defer_build: bool, defer_build_mode: Tuple[Literal['model', 'type_adapter'], ...]
 ) -> None:
-    for type_adapter in defer_build_test_type_adapters(defer_build, defer_build_mode):
+    for model, config in defer_build_test_models(defer_build, defer_build_mode):
+        type_adapter = TypeAdapter(model, config=config)
+
         if defer_build and 'type_adapter' in defer_build_mode:
-            assert 'validator' not in type_adapter.__dict__, 'Should be built deferred via cached_property'
+            assert 'validator' not in type_adapter.__dict__, 'Should be initialized deferred via cached_property'
         else:
-            assert type_adapter.__dict__.get('validator') is not None, 'Should be built before usage'
+            assert type_adapter.__dict__.get('validator') is not None, 'Should be initialized before usage'
 
         validated = type_adapter.validate_python({'x': 1})  # Use it
         assert (validated['x'] if isinstance(validated, dict) else getattr(validated, 'x')) == 1  # Sanity check
 
-        assert type_adapter.__dict__.get('validator') is not None, 'Should be built after the usage'
+        assert type_adapter.__dict__.get('validator') is not None, 'Should be initialized after the usage'
 
 
 @pytest.mark.parametrize('defer_build', [False, True])
 @pytest.mark.parametrize('defer_build_mode', [('model',), DEFER_ENABLE_MODE])
 def test_serializer_respects_defer_build(
-    defer_build: bool,
-    defer_build_mode: Tuple[Literal['model', 'type_adapter']],
+    defer_build: bool, defer_build_mode: Tuple[Literal['model', 'type_adapter'], ...]
 ) -> None:
-    for type_adapter in defer_build_test_type_adapters(defer_build, defer_build_mode):
-        type_ = type_adapter._type
-        type_ = get_args(type_)[0] if _typing_extra.is_annotated(type_) else type_
-        dumped = type_(x=1) if hasattr(type_, '__pydantic_complete__') else dict(x=1)
+    for model, config in defer_build_test_models(defer_build, defer_build_mode):
+        type_ = get_args(model)[0] if _typing_extra.is_annotated(model) else model
+        dumped = dict(x=1) if 'Dict[' in str(type_) else type_(x=1)
+
+        type_adapter = TypeAdapter(model, config=config)
 
         if defer_build and 'type_adapter' in defer_build_mode:
-            assert 'serializer' not in type_adapter.__dict__, 'Should be built deferred via cached_property'
+            assert 'serializer' not in type_adapter.__dict__, 'Should be initialized deferred via cached_property'
         else:
-            assert type_adapter.__dict__.get('serializer') is not None, 'Should be built before usage'
+            assert type_adapter.__dict__.get('serializer') is not None, 'Should be initialized before usage'
 
         raw = type_adapter.dump_json(dumped)  # Use it
         assert json.loads(raw.decode())['x'] == 1  # Sanity check
 
-        assert type_adapter.__dict__.get('serializer') is not None, 'Should be built after the usage'
+        assert type_adapter.__dict__.get('serializer') is not None, 'Should be initialized after the usage'

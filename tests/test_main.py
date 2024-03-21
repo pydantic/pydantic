@@ -48,6 +48,7 @@ from pydantic import (
     constr,
     field_validator,
 )
+from pydantic._internal._mock_val_ser import MockCoreSchema
 
 
 def test_success():
@@ -2990,13 +2991,15 @@ def test_deferred_core_schema() -> None:
     class Foo(BaseModel):
         x: 'Bar'
 
+    assert isinstance(Foo.__pydantic_core_schema__, MockCoreSchema)
     with pytest.raises(PydanticUserError, match='`Foo` is not fully defined'):
-        Foo.__pydantic_core_schema__
+        Foo.__pydantic_core_schema__['type']
 
     class Bar(BaseModel):
         pass
 
-    assert Foo.__pydantic_core_schema__
+    assert Foo.__pydantic_core_schema__['type'] == 'model'
+    assert isinstance(Foo.__pydantic_core_schema__, dict)
 
 
 def test_help(create_module):

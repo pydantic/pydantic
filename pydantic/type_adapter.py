@@ -198,10 +198,7 @@ class TypeAdapter(Generic[T]):
         Returns:
             A type adapter configured for the specified `type`.
         """
-        type_is_annotated: bool = _typing_extra.is_annotated(type)
-        annotated_type: Any = get_args(type)[0] if type_is_annotated else None
-        type_has_config: bool = _type_has_config(annotated_type if type_is_annotated else type)
-
+        type_has_config: bool = _type_has_config(TypeAdapter._annotated_type(type) or type)
         if type_has_config and config is not None:
             raise PydanticUserError(
                 'Cannot use `config` when the type is a BaseModel, dataclass or TypedDict.'
@@ -222,8 +219,7 @@ class TypeAdapter(Generic[T]):
 
         if not self._defer_build():
             # Immediately initialize the core schema, validator and serializer
-            self._dive_parent(1)  # +1 for this __init__
-            _, _, _ = (self.core_schema, self.validator, self.serializer)
+            _, _, _ = (self._dive_parent(1).core_schema, self.validator, self.serializer)  # +1 for this __init__
 
     def _dive_parent(self, depth: int) -> Self:
         if self._parent_depth is not None:
@@ -237,11 +233,10 @@ class TypeAdapter(Generic[T]):
             return _getattr_no_parents(self._type, '__pydantic_core_schema__')
         except AttributeError:
             self._dive_parent(2)  # +2 for @cached_property and self.core_schema
-            parent_depth = self._parent_depth
-            assert parent_depth is not None
-            self._parent_depth = None  # No need to track parent depth anymore
-
-            return _get_schema(self._type, self._config_wrapper, parent_depth=parent_depth)
+            assert self._parent_depth is not None, 'this should not happen!'
+            return _get_schema(self._type, self._config_wrapper, parent_depth=self._parent_depth)
+        finally:
+            self._parent_depth = None  # No need to track parent depth anymore, we only use this once in cached_property
 
     @cached_property
     def validator(self) -> SchemaValidator:
@@ -249,9 +244,9 @@ class TypeAdapter(Generic[T]):
         try:
             return _getattr_no_parents(self._type, '__pydantic_validator__')
         except AttributeError:
-            self._dive_parent(2)  # +2 for @cached_property + validator
+            core_schema = self._dive_parent(2).core_schema  # +2 for @cached_property + validator
             return create_schema_validator(
-                schema=self.core_schema,
+                schema=core_schema,
                 schema_type=self._type,
                 schema_type_module=self._module_name,
                 schema_type_name=str(self._type),
@@ -266,24 +261,27 @@ class TypeAdapter(Generic[T]):
         try:
             return _getattr_no_parents(self._type, '__pydantic_serializer__')
         except AttributeError:
-            self._dive_parent(2)  # +2 for @cached_property + validator
-            return SchemaSerializer(self.core_schema, self._core_config)
+            core_schema = self._dive_parent(2).core_schema  # +2 for @cached_property + validator
+            return SchemaSerializer(core_schema, self._core_config)
 
     def _defer_build(self) -> bool:
         config = self._config if self._config is not None else self._model_config()
         return self._is_defer_build_config(config) if config is not None else False
 
     def _model_config(self) -> ConfigDict | None:
-        # FastAPI heavily uses Annotated
-        inner_type: Any = get_args(self._type)[0] if _typing_extra.is_annotated(self._type) else self._type
+        type_: Any = self._annotated_type(self._type) or self._type  # FastAPI heavily uses Annotated
 
-        if _utils.lenient_issubclass(inner_type, BaseModel):
-            return inner_type.model_config
-        return getattr(inner_type, '__pydantic_config__', None)
+        if _utils.lenient_issubclass(type_, BaseModel):
+            return type_.model_config
+        return getattr(type_, '__pydantic_config__', None)
 
     @staticmethod
     def _is_defer_build_config(config: ConfigDict) -> bool:
         return config.get('defer_build', False) is True and 'type_adapter' in config.get('_defer_build_mode', tuple())
+
+    @staticmethod
+    def _annotated_type(type_: Any) -> Any | None:
+        return get_args(type_)[0] if _typing_extra.is_annotated(type_) else None
 
     @cached_property
     def _core_config(self) -> CoreConfig:
@@ -485,8 +483,9 @@ class TypeAdapter(Generic[T]):
             The JSON schema for the model as a dictionary.
         """
         schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
-        self._dive_parent(1)  # +1 for self.json_schema
-        return schema_generator_instance.generate(self.core_schema, mode=mode)
+
+        core_schema = self._dive_parent(1).core_schema  # +1 for self.json_schema
+        return schema_generator_instance.generate(core_schema, mode=mode)
 
     @staticmethod
     def json_schemas(

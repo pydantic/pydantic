@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Generic, Iterator, Mapping, TypeVar
 
-from pydantic_core import SchemaSerializer, SchemaValidator
+from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
 from typing_extensions import Literal
 
 from ..errors import PydanticErrorCodes, PydanticUserError
@@ -13,6 +13,53 @@ if TYPE_CHECKING:
 
 
 ValSer = TypeVar('ValSer', SchemaValidator, SchemaSerializer)
+
+
+class MockCoreSchema(Mapping[str, Any]):
+    """Mocker for `pydantic_core.CoreSchema` which optionally attempts to
+    rebuild the thing it's mocking when one of its methods is accessed and raises an error if that fails.
+    """
+
+    __slots__ = '_error_message', '_code', '_attempt_rebuild'
+
+    def __init__(
+        self,
+        error_message: str,
+        *,
+        code: PydanticErrorCodes,
+        attempt_rebuild: Callable[[], CoreSchema | None] | None = None,
+    ) -> None:
+        self._error_message = error_message
+        self._code: PydanticErrorCodes = code
+        self._attempt_rebuild = attempt_rebuild
+
+    def __contains__(self, key: Any) -> bool:
+        return self._get_built().__contains__(key)
+
+    def __getitem__(self, key: str) -> Any:
+        return self._get_built().__getitem__(key)
+
+    def __len__(self) -> int:
+        return self._get_built().__len__()
+
+    def __iter__(self) -> Iterator[str]:
+        return self._get_built().__iter__()
+
+    def _get_built(self) -> CoreSchema:
+        __tracebackhide__ = True
+        if self._attempt_rebuild:
+            if (schema := self._attempt_rebuild()) is not None:
+                return schema
+        raise PydanticUserError(self._error_message, code=self._code)
+
+    def rebuild(self) -> CoreSchema | None:
+        if self._attempt_rebuild:
+            val_ser = self._attempt_rebuild()
+            if val_ser is not None:
+                return val_ser
+            else:
+                raise PydanticUserError(self._error_message, code=self._code)
+        return None
 
 
 class MockValSer(Generic[ValSer]):
@@ -69,6 +116,18 @@ def set_model_mocks(cls: type[BaseModel], cls_name: str, undefined_name: str = '
         f' then call `{cls_name}.model_rebuild()`.'
     )
 
+    def attempt_rebuild_core_schema() -> CoreSchema | None:
+        if cls.model_rebuild(raise_errors=False, _parent_namespace_depth=5) is not False:
+            return cls.__pydantic_core_schema__
+        else:
+            return None
+
+    cls.__pydantic_core_schema__ = MockCoreSchema(  # type: ignore[assignment]
+        undefined_type_error_message,
+        code='class-not-fully-defined',
+        attempt_rebuild=attempt_rebuild_core_schema,
+    )
+
     def attempt_rebuild_validator() -> SchemaValidator | None:
         if cls.model_rebuild(raise_errors=False, _parent_namespace_depth=5) is not False:
             return cls.__pydantic_validator__
@@ -111,6 +170,18 @@ def set_dataclass_mocks(
     undefined_type_error_message = (
         f'`{cls_name}` is not fully defined; you should define {undefined_name},'
         f' then call `pydantic.dataclasses.rebuild_dataclass({cls_name})`.'
+    )
+
+    def attempt_rebuild_core_schema() -> CoreSchema | None:
+        if rebuild_dataclass(cls, raise_errors=False, _parent_namespace_depth=5) is not False:
+            return cls.__pydantic_core_schema__
+        else:
+            return None
+
+    cls.__pydantic_core_schema__ = MockCoreSchema(  # type: ignore[assignment]
+        undefined_type_error_message,
+        code='class-not-fully-defined',
+        attempt_rebuild=attempt_rebuild_core_schema,
     )
 
     def attempt_rebuild_validator() -> SchemaValidator | None:
