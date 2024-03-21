@@ -34,7 +34,7 @@ strum_macros = "0.26.1"
 serde_json = {version = "1.0.114", features = ["arbitrary_precision", "preserve_order"]}
 enum_dispatch = "0.3.8"
 serde = { version = "1.0.196", features = ["derive"] }
-speedate = "0.13.0"
+speedate = "0.14.0"
 smallvec = "1.13.1"
 ahash = "0.8.10"
 url = "2.5.0"
