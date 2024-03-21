@@ -8,6 +8,7 @@ use serde::ser::SerializeMap;
 use smallvec::SmallVec;
 
 use crate::serializers::extra::SerCheck;
+use crate::serializers::DuckTypingSerMode;
 use crate::PydanticSerializationUnexpectedValue;
 
 use super::computed_fields::ComputedFields;
@@ -322,15 +323,30 @@ impl TypeSerializer for GeneralFieldsSerializer {
         // then do not touch it
         // If there is no model, we (a TypedDict) are the model
         let model = extra.model.map_or_else(|| Some(value), Some);
-        let td_extra = Extra { model, ..*extra };
+
+        // If there is no model, use duck typing ser logic for TypedDict
+        // If there is a model, skip this step, as BaseModel and dataclass duck typing
+        // is handled in their respective serializers
+        if extra.model.is_none() {
+            let duck_typing_ser_mode = extra.duck_typing_ser_mode.next_mode();
+            let td_extra = Extra {
+                model,
+                duck_typing_ser_mode,
+                ..*extra
+            };
+            if td_extra.duck_typing_ser_mode == DuckTypingSerMode::Inferred {
+                return infer_to_python(value, include, exclude, &td_extra);
+            }
+        }
         let (main_dict, extra_dict) = if let Some(main_extra_dict) = self.extract_dicts(value) {
             main_extra_dict
         } else {
-            td_extra.warnings.on_fallback_py(self.get_name(), value, &td_extra)?;
-            return infer_to_python(value, include, exclude, &td_extra);
+            extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
+            return infer_to_python(value, include, exclude, extra);
         };
 
-        let output_dict = self.main_to_python(py, dict_items(&main_dict), include, exclude, td_extra)?;
+        let output_dict =
+            self.main_to_python(py, dict_items(&main_dict), include, exclude, Extra { model, ..*extra })?;
 
         // this is used to include `__pydantic_extra__` in serialization on models
         if let Some(extra_dict) = extra_dict {
@@ -376,7 +392,21 @@ impl TypeSerializer for GeneralFieldsSerializer {
         // then do not touch it
         // If there is no model, we (a TypedDict) are the model
         let model = extra.model.map_or_else(|| Some(value), Some);
-        let td_extra = Extra { model, ..*extra };
+
+        // If there is no model, use duck typing ser logic for TypedDict
+        // If there is a model, skip this step, as BaseModel and dataclass duck typing
+        // is handled in their respective serializers
+        if extra.model.is_none() {
+            let duck_typing_ser_mode = extra.duck_typing_ser_mode.next_mode();
+            let td_extra = Extra {
+                model,
+                duck_typing_ser_mode,
+                ..*extra
+            };
+            if td_extra.duck_typing_ser_mode == DuckTypingSerMode::Inferred {
+                return infer_serialize(value, serializer, include, exclude, &td_extra);
+            }
+        }
         let expected_len = match self.mode {
             FieldsMode::TypedDictAllow => main_dict.len() + self.computed_field_count(),
             _ => self.fields.len() + option_length!(extra_dict) + self.computed_field_count(),
@@ -389,7 +419,7 @@ impl TypeSerializer for GeneralFieldsSerializer {
             serializer,
             include,
             exclude,
-            td_extra,
+            Extra { model, ..*extra },
         )?;
 
         // this is used to include `__pydantic_extra__` in serialization on models

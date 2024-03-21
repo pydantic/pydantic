@@ -15,6 +15,7 @@ use crate::build_tools::py_schema_err;
 use crate::build_tools::{py_schema_error_type, ExtraBehavior};
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::errors::PydanticSerializationUnexpectedValue;
+use crate::serializers::extra::DuckTypingSerMode;
 use crate::tools::SchemaDict;
 
 const ROOT_FIELD: &str = "root";
@@ -164,28 +165,38 @@ impl TypeSerializer for ModelSerializer {
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> PyResult<PyObject> {
-        let mut extra = Extra {
-            model: Some(value),
+        let model = Some(value);
+        let duck_typing_ser_mode = extra.duck_typing_ser_mode.next_mode();
+        let model_extra = Extra {
+            model,
             field_name: None,
+            duck_typing_ser_mode,
             ..*extra
         };
+        if model_extra.duck_typing_ser_mode == DuckTypingSerMode::Inferred {
+            return infer_to_python(value, include, exclude, &model_extra);
+        }
         if self.root_model {
-            extra.field_name = Some(ROOT_FIELD);
+            let field_name = Some(ROOT_FIELD);
+            let root_extra = Extra {
+                field_name,
+                ..model_extra
+            };
             let py = value.py();
             let root = value.getattr(intern!(py, ROOT_FIELD)).map_err(|original_err| {
-                if extra.check.enabled() {
+                if root_extra.check.enabled() {
                     PydanticSerializationUnexpectedValue::new_err(None)
                 } else {
                     original_err
                 }
             })?;
-            self.serializer.to_python(&root, include, exclude, &extra)
-        } else if self.allow_value(value, &extra)? {
-            let inner_value = self.get_inner_value(value, &extra)?;
-            self.serializer.to_python(&inner_value, include, exclude, &extra)
+            self.serializer.to_python(&root, include, exclude, &root_extra)
+        } else if self.allow_value(value, &model_extra)? {
+            let inner_value = self.get_inner_value(value, &model_extra)?;
+            self.serializer.to_python(&inner_value, include, exclude, &model_extra)
         } else {
-            extra.warnings.on_fallback_py(self.get_name(), value, &extra)?;
-            infer_to_python(value, include, exclude, &extra)
+            extra.warnings.on_fallback_py(self.get_name(), value, &model_extra)?;
+            infer_to_python(value, include, exclude, &model_extra)
         }
     }
 
@@ -206,24 +217,36 @@ impl TypeSerializer for ModelSerializer {
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
-        let mut extra = Extra {
-            model: Some(value),
+        let model = Some(value);
+        let duck_typing_ser_mode = extra.duck_typing_ser_mode.next_mode();
+        let model_extra = Extra {
+            model,
             field_name: None,
+            duck_typing_ser_mode,
             ..*extra
         };
+        if model_extra.duck_typing_ser_mode == DuckTypingSerMode::Inferred {
+            return infer_serialize(value, serializer, include, exclude, &model_extra);
+        }
         if self.root_model {
-            extra.field_name = Some(ROOT_FIELD);
+            let field_name = Some(ROOT_FIELD);
+            let root_extra = Extra {
+                field_name,
+                ..model_extra
+            };
             let py = value.py();
             let root = value.getattr(intern!(py, ROOT_FIELD)).map_err(py_err_se_err)?;
             self.serializer
-                .serde_serialize(&root, serializer, include, exclude, &extra)
-        } else if self.allow_value(value, &extra).map_err(py_err_se_err)? {
-            let inner_value = self.get_inner_value(value, &extra).map_err(py_err_se_err)?;
+                .serde_serialize(&root, serializer, include, exclude, &root_extra)
+        } else if self.allow_value(value, &model_extra).map_err(py_err_se_err)? {
+            let inner_value = self.get_inner_value(value, &model_extra).map_err(py_err_se_err)?;
             self.serializer
-                .serde_serialize(&inner_value, serializer, include, exclude, &extra)
+                .serde_serialize(&inner_value, serializer, include, exclude, &model_extra)
         } else {
-            extra.warnings.on_fallback_ser::<S>(self.get_name(), value, &extra)?;
-            infer_serialize(value, serializer, include, exclude, &extra)
+            extra
+                .warnings
+                .on_fallback_ser::<S>(self.get_name(), value, &model_extra)?;
+            infer_serialize(value, serializer, include, exclude, &model_extra)
         }
     }
 

@@ -85,7 +85,7 @@ a = A()
             let serialized = SchemaSerializer::py_new(schema, None)
                 .unwrap()
                 .to_json(
-                    py, &a, None, None, None, true, false, false, false, false, true, None, None,
+                    py, &a, None, None, None, true, false, false, false, false, true, None, false, None,
                 )
                 .unwrap();
             let serialized: &[u8] = serialized.extract(py).unwrap();
@@ -188,6 +188,7 @@ dump_json_input_2 = {'a': 'something'}
                     false,
                     false,
                     None,
+                    false,
                     None,
                 )
                 .unwrap();
@@ -208,6 +209,7 @@ dump_json_input_2 = {'a': 'something'}
                     false,
                     false,
                     None,
+                    false,
                     None,
                 )
                 .unwrap();
