@@ -32,6 +32,7 @@ _build/
 /coverage.lcov
 .coverage
 test.py
+run_mypy_on_file.py
 
 # Documentation files
 /docs/changelog.md
