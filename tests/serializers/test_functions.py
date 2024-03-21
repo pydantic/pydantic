@@ -73,6 +73,7 @@ def test_function_args():
         'exclude_defaults': False,
         'exclude_none': False,
         'round_trip': False,
+        'serialize_as_any': False,
     }
     assert s.to_python('x') == 'xx'
 
@@ -85,6 +86,7 @@ def test_function_args():
         'exclude_defaults': False,
         'exclude_none': False,
         'round_trip': False,
+        'serialize_as_any': False,
     }
 
     assert s.to_json(42) == b'84'
@@ -96,6 +98,7 @@ def test_function_args():
         'exclude_defaults': False,
         'exclude_none': False,
         'round_trip': False,
+        'serialize_as_any': False,
     }
 
     assert s.to_python(7, mode='json', by_alias=False, exclude_unset=True) == 14
@@ -107,6 +110,7 @@ def test_function_args():
         'exclude_defaults': False,
         'exclude_none': False,
         'round_trip': False,
+        'serialize_as_any': False,
     }
 
     assert s.to_python(1, include={1, 2, 3}, exclude={'foo': {'bar'}}) == 2
@@ -120,6 +124,7 @@ def test_function_args():
         'exclude_defaults': False,
         'exclude_none': False,
         'round_trip': False,
+        'serialize_as_any': False,
     }
 
     assert s.to_python(1, context='context') == 2
@@ -132,6 +137,7 @@ def test_function_args():
         'exclude_defaults': False,
         'exclude_none': False,
         'round_trip': False,
+        'serialize_as_any': False,
     }
 
 
@@ -225,27 +231,27 @@ def test_function_args_str():
     )
     assert s.to_python(123) == (
         "123 info=SerializationInfo(include=None, exclude=None, context=None, mode='python', by_alias=True, exclude_unset=False, "
-        'exclude_defaults=False, exclude_none=False, round_trip=False)'
+        'exclude_defaults=False, exclude_none=False, round_trip=False, serialize_as_any=False)'
     )
     assert s.to_python(123, mode='other') == (
         "123 info=SerializationInfo(include=None, exclude=None, context=None, mode='other', by_alias=True, exclude_unset=False, "
-        'exclude_defaults=False, exclude_none=False, round_trip=False)'
+        'exclude_defaults=False, exclude_none=False, round_trip=False, serialize_as_any=False)'
     )
     assert s.to_python(123, include={'x'}) == (
         "123 info=SerializationInfo(include={'x'}, exclude=None, context=None, mode='python', by_alias=True, exclude_unset=False, "
-        'exclude_defaults=False, exclude_none=False, round_trip=False)'
+        'exclude_defaults=False, exclude_none=False, round_trip=False, serialize_as_any=False)'
     )
     assert s.to_python(123, context='context') == (
         "123 info=SerializationInfo(include=None, exclude=None, context='context', mode='python', by_alias=True, exclude_unset=False, "
-        'exclude_defaults=False, exclude_none=False, round_trip=False)'
+        'exclude_defaults=False, exclude_none=False, round_trip=False, serialize_as_any=False)'
     )
     assert s.to_python(123, mode='json', exclude={1: {2}}) == (
         "123 info=SerializationInfo(include=None, exclude={1: {2}}, context=None, mode='json', by_alias=True, exclude_unset=False, "
-        'exclude_defaults=False, exclude_none=False, round_trip=False)'
+        'exclude_defaults=False, exclude_none=False, round_trip=False, serialize_as_any=False)'
     )
     assert s.to_json(123) == (
         b"\"123 info=SerializationInfo(include=None, exclude=None, context=None, mode='json', by_alias=True, exclude_unset=False, "
-        b'exclude_defaults=False, exclude_none=False, round_trip=False)"'
+        b'exclude_defaults=False, exclude_none=False, round_trip=False, serialize_as_any=False)"'
     )
 
 
