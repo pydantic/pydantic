@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, Generic, List, TypeVar
+from typing import Any, Generic, List, TypeVar
 
 from typing_extensions import Annotated
 
