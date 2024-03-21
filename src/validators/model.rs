@@ -13,7 +13,7 @@ use super::{
 use crate::build_tools::py_schema_err;
 use crate::build_tools::schema_or_config_same;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
-use crate::input::{py_error_on_minusone, Input};
+use crate::input::{input_as_python_instance, py_error_on_minusone, Input};
 use crate::tools::{py_err, SchemaDict};
 use crate::PydanticUndefinedType;
 
@@ -124,7 +124,7 @@ impl Validator for ModelValidator {
         // if the input is an instance of the class, we "revalidate" it - e.g. we extract and reuse `__pydantic_fields_set__`
         // but use from attributes to create a new instance of the model field type
         let class = self.class.bind(py);
-        if let Some(py_input) = input.input_is_instance(class) {
+        if let Some(py_input) = input_as_python_instance(input, class) {
             if self.revalidate.should_revalidate(py_input, class) {
                 let fields_set = py_input.getattr(intern!(py, DUNDER_FIELDS_SET_KEY))?;
                 if self.root_model {

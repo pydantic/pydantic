@@ -103,11 +103,11 @@ impl<T: EnumValidateValue> Validator for EnumValidator<T> {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let class = self.class.bind(py);
-        if input.input_is_exact_instance(class) {
+        if input.as_python().is_some_and(|any| any.is_exact_instance(class)) {
             return Ok(input.to_object(py));
         }
         let strict = state.strict_or(self.strict);
-        if strict && input.is_python() {
+        if strict && input.as_python().is_some() {
             // TODO what about instances of subclasses?
             return Err(ValError::new(
                 ErrorType::IsInstanceOf {
