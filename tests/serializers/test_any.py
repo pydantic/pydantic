@@ -105,7 +105,7 @@ def test_set_member_db(any_serializer):
         (datetime(2032, 1, 1, 1, 1), b'"2032-01-01T01:01:00"'),
         (date(2022, 12, 3), b'"2022-12-03"'),
         (time(12, 30, 45), b'"12:30:45"'),
-        (timedelta(hours=2), b'"PT7200S"'),
+        (timedelta(hours=2), b'"PT2H"'),
         (MyDataclass(1, 'foo', 2), b'{"a":1,"b":"foo"}'),
         (MyModel(a=1, b='foo'), b'{"a":1,"b":"foo"}'),
         ([MyDataclass(1, 'a', 2), MyModel(a=2, b='b')], b'[{"a":1,"b":"a"},{"a":2,"b":"b"}]'),
@@ -164,8 +164,8 @@ def test_any_with_date_serializer():
 def test_any_with_timedelta_serializer():
     s = SchemaSerializer(core_schema.any_schema(serialization={'type': 'timedelta'}))
     assert s.to_python(timedelta(hours=2)) == timedelta(hours=2)
-    assert s.to_python(timedelta(hours=2), mode='json') == 'PT7200S'
-    assert s.to_json(timedelta(hours=2)) == b'"PT7200S"'
+    assert s.to_python(timedelta(hours=2), mode='json') == 'PT2H'
+    assert s.to_json(timedelta(hours=2)) == b'"PT2H"'
 
     with pytest.warns(UserWarning) as warning_info:
         assert s.to_python(b'bang', mode='json') == 'bang'
