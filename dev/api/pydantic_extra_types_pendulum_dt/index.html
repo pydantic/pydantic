@@ -2299,6 +2299,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.pendulum_dt.Date" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Date
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2927,6 +2938,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.pendulum_dt.Date" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Date
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2997,6 +3019,57 @@ This type exists because Pydantic throws a fit on unknown types.</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">test_model</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="s1">&#39;2021-01-01T00:00:00+00:00&#39;</span><span class="p">))</span>
 
 <span class="c1">#&gt; test_model(dt=DateTime(2021, 1, 1, 0, 0, 0, tzinfo=FixedTimezone(0, name=&quot;+00:00&quot;)))</span>
+</code></pre></div>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_extra_types.pendulum_dt.Date" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">Date</span>
+
+
+<a href="#pydantic_extra_types.pendulum_dt.Date" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pendulum.Date">Date</span></code></p>
+
+  
+      <p>A <code>pendulum.Date</code> object. At runtime, this type decomposes into pendulum.Date automatically.
+This type exists because Pydantic throws a fit on unknown types.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span> <span class="nn">pydantic_extra_types.pendulum_dt</span> <span class="kn">import</span> <span class="n">Date</span>
+
+<span class="k">class</span> <span class="nc">test_model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">dt</span><span class="p">:</span> <span class="n">Date</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">test_model</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="s1">&#39;2021-01-01&#39;</span><span class="p">))</span>
+
+<span class="c1">#&gt; test_model(dt=Date(2021, 1, 1))</span>
 </code></pre></div>
 
 
