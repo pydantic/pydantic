@@ -796,3 +796,26 @@ def test_partial_creation_with_defer_build():
 
     # AssertionError: assert ['a', 'b'] == ['b']
     assert partial.model_json_schema()['required'] == ['b']
+
+
+def test_model_config_as_model_field_raises():
+    with pytest.raises(PydanticUserError) as exc_info:
+
+        class MyModel(BaseModel):
+            model_config: str
+
+    assert exc_info.value.code == 'model-config-invalid-field-name'
+
+
+def test_dataclass_allowes_model_config_as_model_field():
+    config_title = 'from_config'
+    field_title = 'from_field'
+
+    @pydantic_dataclass(config={'title': config_title})
+    class MyDataclass:
+        model_config: dict
+
+    m = MyDataclass(model_config={'title': field_title})
+
+    assert m.model_config['title'] == field_title
+    assert getattr(m, '__pydantic_config__')['title'] == config_title

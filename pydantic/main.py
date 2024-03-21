@@ -1440,7 +1440,8 @@ def create_model(  # noqa: C901
         __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.
         __slots__: Deprecated. Should not be passed to `create_model`.
         **field_definitions: Attributes of the new model. They should be passed in the format:
-            `<name>=(<type>, <default value>)` or `<name>=(<type>, <FieldInfo>)`.
+            `<name>=(<type>, <default value>)`, `<name>=(<type>, <FieldInfo>)`, or `typing.Annotated[<type>, <FieldInfo>]`.
+            Any additional metadata in `typing.Annotated[<type>, <FieldInfo>, ...]` will be ignored.
 
     Returns:
         The new [model][pydantic.BaseModel].
@@ -1480,6 +1481,19 @@ def create_model(  # noqa: C901
                     'Field definitions should be a `(<type>, <default>)`.',
                     code='create-model-field-definitions',
                 ) from e
+
+        elif _typing_extra.is_annotated(f_def):
+            (f_annotation, f_value, *_) = typing_extensions.get_args(
+                f_def
+            )  # first two input are expected from Annotated, refer to https://docs.python.org/3/library/typing.html#typing.Annotated
+            from .fields import FieldInfo
+
+            if not isinstance(f_value, FieldInfo):
+                raise PydanticUserError(
+                    'Field definitions should be a Annotated[<type>, <FieldInfo>]',
+                    code='create-model-field-definitions',
+                )
+
         else:
             f_annotation, f_value = None, f_def
 

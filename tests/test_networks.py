@@ -9,6 +9,7 @@ from pydantic import (
     AmqpDsn,
     AnyUrl,
     BaseModel,
+    ClickHouseDsn,
     CockroachDsn,
     FileUrl,
     HttpUrl,
@@ -415,6 +416,20 @@ def test_mysql_dsns(dsn):
 def test_mariadb_dsns(dsn):
     class Model(BaseModel):
         a: MariaDBDsn
+
+    assert str(Model(a=dsn).a) == dsn
+
+
+@pytest.mark.parametrize(
+    'dsn',
+    [
+        'clickhouse+native://user:pass@localhost:9000/app',
+        'clickhouse+asynch://user:pass@localhost:9000/app',
+    ],
+)
+def test_clickhouse_dsns(dsn):
+    class Model(BaseModel):
+        a: ClickHouseDsn
 
     assert str(Model(a=dsn).a) == dsn
 

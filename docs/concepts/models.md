@@ -1208,8 +1208,6 @@ from pydantic import RootModel
 
 
 class Pets(RootModel[List[str]]):
-    root: List[str]
-
     def describe(self) -> str:
         return f'Pets: {", ".join(self.root)}'
 

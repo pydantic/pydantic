@@ -732,24 +732,22 @@ class GenerateJsonSchema:
         # jsonify the expected values
         expected = [to_jsonable_python(v) for v in expected]
 
+        result: dict[str, Any] = {'enum': expected}
         if len(expected) == 1:
-            return {'const': expected[0]}
+            result['const'] = expected[0]
 
         types = {type(e) for e in expected}
         if types == {str}:
-            return {'enum': expected, 'type': 'string'}
+            result['type'] = 'string'
         elif types == {int}:
-            return {'enum': expected, 'type': 'integer'}
+            result['type'] = 'integer'
         elif types == {float}:
-            return {'enum': expected, 'type': 'number'}
+            result['type'] = 'number'
         elif types == {bool}:
-            return {'enum': expected, 'type': 'boolean'}
+            result['type'] = 'boolean'
         elif types == {list}:
-            return {'enum': expected, 'type': 'array'}
-        # there is not None case because if it's mixed it hits the final `else`
-        # if it's a single Literal[None] then it becomes a `const` schema above
-        else:
-            return {'enum': expected}
+            result['type'] = 'array'
+        return result
 
     def is_instance_schema(self, schema: core_schema.IsInstanceSchema) -> JsonSchemaValue:
         """Handles JSON schema generation for a core schema that checks if a value is an instance of a class.
