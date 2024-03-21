@@ -1654,7 +1654,7 @@ def test_enum_missing_default():
         a = 1
 
     ta = TypeAdapter(MyEnum)
-    missing_value = re.search(r'missing_func: (\w+)', repr(ta.validator)).group(1)
+    missing_value = re.search(r'missing: (\w+)', repr(ta.validator)).group(1)
     assert missing_value == 'None'
 
     assert ta.validate_python(1) is MyEnum.a
@@ -1671,7 +1671,7 @@ def test_enum_missing_custom():
             return MyEnum.a
 
     ta = TypeAdapter(MyEnum)
-    missing_value = re.search(r'missing_func: (\w+)', repr(ta.validator)).group(1)
+    missing_value = re.search(r'missing: (\w+)', repr(ta.validator)).group(1)
     assert missing_value == 'Some'
 
     assert ta.validate_python(1) is MyEnum.a
