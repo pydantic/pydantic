@@ -4,7 +4,7 @@ The [datamodel-code-generator](https://github.com/koxudaxi/datamodel-code-genera
 
 * OpenAPI 3 (YAML/JSON)
 * JSON Schema
-* JSON/YAML/CSV Data (which will converted to JSON Schema)
+* JSON/YAML/CSV Data (which will be converted to JSON Schema)
 * Python dictionary (which will be converted to JSON Schema)
 * GraphQL schema
 

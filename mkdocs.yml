@@ -130,6 +130,7 @@ nav:
   - datamodel-code-generator: integrations/datamodel_code_generator.md
   - devtools: integrations/devtools.md
   - Rich: integrations/rich.md
+  - Linting: integrations/linting.md
 - Blog: https://blog.pydantic.dev/
 - Pydantic People: pydantic_people.md
 
@@ -196,6 +197,7 @@ plugins:
       'usage/model_config.md': 'api/config.md'
       'usage/devtools.md': 'integrations/devtools.md'
       'usage/rich.md': 'integrations/rich.md'
+      'usage/linting.md': 'integrations/linting.md'
       'usage/types.md': 'concepts/types.md'
       'usage/types/secrets.md': 'examples/secrets.md'
       'usage/types/string_types.md': 'api/types.md#pydantic.types.StringConstraints'
