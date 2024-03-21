@@ -274,7 +274,7 @@ class SequenceValidator:
     item_source_type: type[Any]
     min_length: int | None = None
     max_length: int | None = None
-    strict: bool = False
+    strict: bool | None = None
 
     def serialize_sequence_via_list(
         self, v: Any, handler: core_schema.SerializerFunctionWrapHandler, info: core_schema.SerializationInfo
@@ -298,7 +298,6 @@ class SequenceValidator:
             items_schema = None
         else:
             items_schema = handler.generate_schema(self.item_source_type)
-
         metadata = {'min_length': self.min_length, 'max_length': self.max_length, 'strict': self.strict}
 
         if self.mapped_origin in (list, set, frozenset):
@@ -325,8 +324,7 @@ class SequenceValidator:
                 )
             else:
                 coerce_instance_wrap = partial(core_schema.no_info_after_validator_function, self.mapped_origin)
-            # Due that we are using list schema in deque/Counter, strict should be overwritten if it's given
-            metadata['strict'] = False
+
             constrained_schema = core_schema.list_schema(items_schema, **metadata)
 
             check_instance = core_schema.json_or_python_schema(
@@ -397,7 +395,7 @@ def sequence_like_prepare_pydantic_annotations(
     return (
         source_type,
         [
-            SequenceValidator(mapped_origin, item_source_type, **metadata, strict=_config.get('strict', False)),
+            SequenceValidator(mapped_origin, item_source_type, **metadata),
             *remaining_annotations,
         ],
     )
