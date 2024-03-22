@@ -764,7 +764,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 except AttributeError:
                     pydantic_extra = None
 
-                if pydantic_extra is not None:
+                if pydantic_extra:
                     try:
                         return pydantic_extra[item]
                     except KeyError as exc:
