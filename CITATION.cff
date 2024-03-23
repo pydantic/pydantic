@@ -1,41 +1,36 @@
 # YAML 1.2
 ---
+abstract: "Pydantic is the most widely used data validation library for Python."
 authors:
-cff-version: "1.1.0"
-message: |
-    "cff-version: 1.1.0
-    title: Pydantic
-    message: >-
-      If you use this software, please cite it using the
-      metadata from this file.
-    type: software
-    authors:
-      - given-names: Samuel
-        family-names: Colvin
-        email: s@muelcolvin.com
-      - given-names: David
-        family-names: Montague
-      - given-names: Hasan
-        family-names: Ramezani
-        email: hasan.r67@gmail.com
-      - given-names: David
-        family-names: Hewitt
-        email: mail@davidhewitt.dev
-      - given-names: Marcelo
-        family-names: Trylesinski
-        email: marcelotryle@gmail.com
-      - given-names: Sydney
-        family-names: Runkle
-      - given-names: Adrian Garcia
-        family-names: Badaracco
-    identifiers:
-    repository-code: 'https://github.com/pydantic/pydantic'
-    url: 'https://docs.pydantic.dev/latest/'
-    abstract: >-
-      Pydantic is the most widely used data validation library for Python.
-    keywords:
-      - python
-      - validation
-      - jaon-schema
-    license: MIT"
+  - family-names: Colvin
+    given-names: Samuel
+  - family-names: Montague
+    given-names: David
+  - family-names: Ramezani
+    given-names: Hasan
+  - family-names: Hewitt
+    given-names: David
+  - family-names: Trylesinski
+    given-names: Marcelo
+  - family-names: Runkle
+    given-names: Sydney
+  - family-names: Badaracco
+    given-names: Adrian Garcia
+cff-version: "1.2.0"
+date-released: "2024-03-12"
+identifiers:
+  - description: "Pydantic is the most widely used data validation library for Python."
+    type: "url"
+    value: https://docs.pydantic.dev/latest/
+keywords:
+  - "python"
+  - "validation"
+  - "json-schema"
+license: MIT
+message: "If you use this software, please cite it using these metadata."
+repository-code: "https://github.com/pydantic/pydantic"
+title: "Pydantic"
+version: 2.6.4
+
+
 ...
