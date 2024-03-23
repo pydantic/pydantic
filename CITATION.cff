@@ -1,0 +1,41 @@
+# YAML 1.2
+---
+authors:
+cff-version: "1.1.0"
+message: |
+    "cff-version: 1.1.0
+    title: Pydantic
+    message: >-
+      If you use this software, please cite it using the
+      metadata from this file.
+    type: software
+    authors:
+      - given-names: Samuel
+        family-names: Colvin
+        email: s@muelcolvin.com
+      - given-names: David
+        family-names: Montague
+      - given-names: Hasan
+        family-names: Ramezani
+        email: hasan.r67@gmail.com
+      - given-names: David
+        family-names: Hewitt
+        email: mail@davidhewitt.dev
+      - given-names: Marcelo
+        family-names: Trylesinski
+        email: marcelotryle@gmail.com
+      - given-names: Sydney
+        family-names: Runkle
+      - given-names: Adrian Garcia
+        family-names: Badaracco
+    identifiers:
+    repository-code: 'https://github.com/pydantic/pydantic'
+    url: 'https://docs.pydantic.dev/latest/'
+    abstract: >-
+      Pydantic is the most widely used data validation library for Python.
+    keywords:
+      - python
+      - validation
+      - jaon-schema
+    license: MIT"
+...
