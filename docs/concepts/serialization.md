@@ -527,7 +527,8 @@ class OuterModel(BaseModel):
 
 user = UserLogin(name='pydantic', password='password')
 
-print(OuterModel(user1=user, user2=user).model_dump(serialize_as_any=True)) # (1)!
+outer_model = OuterModel(user1=user, user2=user)
+print(outer_model.model_dump(serialize_as_any=True))  # (1)!
 """
 {
     'user1': {'name': 'pydantic', 'password': 'password'},
@@ -535,13 +536,8 @@ print(OuterModel(user1=user, user2=user).model_dump(serialize_as_any=True)) # (1
 }
 """
 
-print(OuterModel(user1=user, user2=user).model_dump(serialize_as_any=False)) # (2)!
-"""
-{
-    'user1': {'name': 'pydantic'},
-    'user2': {'name': 'pydantic'},
-}
-"""
+print(outer_model.model_dump(serialize_as_any=False))  # (2)!
+#> {'user1': {'name': 'pydantic'}, 'user2': {'name': 'pydantic'}}
 ```
 
 1. With `serialize_as_any` set to `True`, the result matches that of V1.
@@ -560,6 +556,7 @@ class User(BaseModel):
     name: str
     friends: List['User']
 
+
 class UserLogin(User):
     password: str
 
@@ -567,38 +564,29 @@ class UserLogin(User):
 class OuterModel(BaseModel):
     user: User
 
-user = UserLogin(name='samuel', password='pydantic-pw', friends=[UserLogin(name='sebastian', password='fastapi-pw', friends=[])])
 
-print(OuterModel(user=user).model_dump(serialize_as_any=True)) # (1)!
+user = UserLogin(
+    name='samuel',
+    password='pydantic-pw',
+    friends=[UserLogin(name='sebastian', password='fastapi-pw', friends=[])],
+)
+
+print(OuterModel(user=user).model_dump(serialize_as_any=True))  # (1)!
 """
 {
     'user': {
         'name': 'samuel',
         'friends': [
-            {
-                'name': 'sebastian',
-                'friends': [],
-                'password': 'fastapi-pw',
-            }
+            {'name': 'sebastian', 'friends': [], 'password': 'fastapi-pw'}
         ],
         'password': 'pydantic-pw',
     }
 }
 """
 
-print(OuterModel(user=user).model_dump(serialize_as_any=False)) # (2)!
+print(OuterModel(user=user).model_dump(serialize_as_any=False))  # (2)!
 """
-{
-    'user': {
-        'name': 'samuel',
-        'friends': [
-            {
-                'name': 'sebastian',
-                'friends': [],
-            }
-        ],
-    }
-}
+{'user': {'name': 'samuel', 'friends': [{'name': 'sebastian', 'friends': []}]}}
 """
 ```
 
@@ -621,8 +609,9 @@ from typing import Any, Dict
 
 from pydantic import BaseModel, SecretStr
 
+
 class MyBaseModel(BaseModel):
-    def model_dump(self, **kwargs) -> Dict[str, Any]::
+    def model_dump(self, **kwargs) -> Dict[str, Any]:
         return super().model_dump(serialize_as_any=True, **kwargs)
 
     def model_dump_json(self, **kwargs) -> str:
@@ -632,15 +621,18 @@ class MyBaseModel(BaseModel):
 class User(MyBaseModel):
     name: str
 
+
 class UserInfo(User):
     password: SecretStr
+
 
 class OuterModel(MyBaseModel):
     user: User
 
+
 u = OuterModel(user=UserInfo(name='John', password='secret_pw'))
-print(u.model_dump_json())
-#> {"user":{"name":"John","password":"**********"}} # (1)!
+print(u.model_dump_json())  # (1)!
+#> {"user":{"name":"John","password":"**********"}}
 ```
 
 1. By default, `model_dump_json` will use duck-typing serialization behavior, which means that the `password` field is included in the output.
