@@ -1,43 +1,19 @@
-# This CITATION.cff file was generated with cffinit.
-# Visit https://bit.ly/cffinit to generate yours today!
-
 cff-version: 1.2.0
 title: Pydantic
 message: 'If you use this software, please cite it as below.'
 type: software
 authors:
-  - given-names: Samuel
-    family-names: Colvin
-    email: s@muelcolvin.com
-  - given-names: Eric
-    family-names: Jolibois
-    email: em.jolibois@gmail.com
-  - given-names: Hasan
-    family-names: Ramezani
-    email: hasan.r67@gmail.com
-  - given-names: Adrian
-    family-names: Garcia Badaracco
-  - given-names: Terrence
-    family-names: Dorsey
-    email: terry@pydantic.dev
-  - given-names: David
-    family-names: Montague
-    email: david@pydantic.dev
-  - given-names: Serge
-    family-names: Matveenko
-    email: lig@countzero.co
-  - given-names: Marcelo
-    family-names: Trylesinski
-    email: marcelotryle@gmail.com
-  - given-names: Sydney
-    family-names: Runkle
-    email: sydneymarierunkle@gmail.com
-  - given-names: David
-    family-names: Hewitt
-    email: mail@davidhewitt.io
-  - given-names: Alex
-    family-names: Hall
-    email: alex.mojaki@gmail.com
+  - Samuel Colvin
+  - Eric Jolibois
+  - Hasan Ramezani
+  - Adrian Garcia Badaracco
+  - Terrence Dorsey
+  - David Montague
+  - Serge Matveenko
+  - Marcelo Trylesinski
+  - Sydney Runkle
+  - David Hewitt
+  - Alex Hall
 repository-code: 'https://github.com/pydantic/pydantic'
 url: 'https://docs.pydantic.dev/latest/'
 abstract: >-
@@ -54,13 +30,7 @@ keywords:
   - parsing
   - json-schema
   - hints
-  - python37
-  - python38
-  - pydantic
-  - python39
-  - python310
-  - python311
-  - python312
+  - typing
 license: MIT
 version: v2.6.4
 date-released: '2024-03-12'
