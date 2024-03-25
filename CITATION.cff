@@ -3,9 +3,7 @@
 
 cff-version: 1.2.0
 title: Pydantic
-message: >-
-  If you use this software, please cite it using these
-  metadata.
+message: 'If you use this software, please cite it as below.'
 type: software
 authors:
   - given-names: Samuel
