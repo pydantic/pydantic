@@ -188,7 +188,11 @@ class ModelMetaclass(ABCMeta):
                 obj.__set_name__(cls, name)
 
             if __pydantic_reset_parent_namespace__:
-                cls.__pydantic_parent_namespace__ = build_lenient_weakvaluedict(parent_frame_namespace())
+                parent_namespace = getattr(cls, '__pydantic_parent_namespace__', None) or {}
+                cls.__pydantic_parent_namespace__ = {
+                    **parent_namespace,
+                    **(build_lenient_weakvaluedict(parent_frame_namespace()) or {}),
+                }
             parent_namespace = getattr(cls, '__pydantic_parent_namespace__', None)
             if isinstance(parent_namespace, dict):
                 parent_namespace = unpack_lenient_weakvaluedict(parent_namespace)
