@@ -62,13 +62,19 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
 
     enum_ref = get_type_ref(enum_type)
     description = None if not enum_type.__doc__ else inspect.cleandoc(enum_type.__doc__)
+    case_descriptions = [
+        (c.value, inspect.cleandoc(c.__doc__))
+        for c in cases
+        if c.__doc__ is not None and inspect.cleandoc(c.__doc__) != description
+    ]
     if description == 'An enumeration.':  # This is the default value provided by enum.EnumMeta.__new__; don't use it
         description = None
     js_updates = {'title': enum_type.__name__, 'description': description}
     js_updates = {k: v for k, v in js_updates.items() if v is not None}
 
     def get_json_schema(_, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-        json_schema = handler(core_schema.literal_schema([x.value for x in cases], ref=enum_ref))
+        metadata = {'enum_case_descriptions': case_descriptions}
+        json_schema = handler(core_schema.literal_schema([x.value for x in cases], ref=enum_ref, metadata=metadata))
         original_schema = handler.resolve_ref_schema(json_schema)
         update_json_schema(original_schema, js_updates)
         return json_schema
