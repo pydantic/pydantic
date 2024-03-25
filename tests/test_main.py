@@ -3163,3 +3163,21 @@ def test_eval_type_backport():
             'input': {'not a str or int'},
         },
     ]
+
+
+def test_inherited_class_vars(create_module):
+    @create_module
+    def module():
+        import typing
+
+        from pydantic import BaseModel
+
+        class Base(BaseModel):
+            CONST1: 'typing.ClassVar[str]' = 'a'
+            CONST2: 'ClassVar[str]' = 'b'
+
+    class Child(module.Base):
+        pass
+
+    assert Child.CONST1 == 'a'
+    assert Child.CONST2 == 'b'
