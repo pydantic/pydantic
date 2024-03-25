@@ -1122,10 +1122,49 @@
   <a href="#serializing-with-duck-typing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Serializing with duck-typing
+        Serializing with duck-typing 🦆
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Serializing with duck-typing 🦆">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#serializeasany-annotation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SerializeAsAny annotation:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#serialize_as_any-runtime-setting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        serialize_as_any runtime setting
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#overriding-the-serialize_as_any-default-false" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overriding the serialize_as_any default (False)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -3165,10 +3204,49 @@
   <a href="#serializing-with-duck-typing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Serializing with duck-typing
+        Serializing with duck-typing 🦆
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Serializing with duck-typing 🦆">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#serializeasany-annotation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SerializeAsAny annotation:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#serialize_as_any-runtime-setting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        serialize_as_any runtime setting
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#overriding-the-serialize_as_any-default-false" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overriding the serialize_as_any default (False)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -3644,8 +3722,24 @@ behavior is that it helps ensure that you know precisely which fields could be i
 even if subclasses get passed when instantiating the object. In particular, this can help prevent surprises
 when adding sensitive information like secrets as fields of subclasses.</p>
 </div>
-<h3 id="serializing-with-duck-typing">Serializing with duck-typing<a class="headerlink" href="#serializing-with-duck-typing" title="Permanent link">&para;</a></h3>
-<p>If you want to preserve the old duck-typing serialization behavior, this can be done using <code>SerializeAsAny</code>:</p>
+<h3 id="serializing-with-duck-typing">Serializing with duck-typing 🦆<a class="headerlink" href="#serializing-with-duck-typing" title="Permanent link">&para;</a></h3>
+<div class="admonition question">
+<p class="admonition-title">What is serialization with duck typing?</p>
+<p>Duck-typing serialization is the behavior of serializing an object based on the fields present in the object itself,
+rather than the fields present in the schema of the object. This means that when an object is serialized, fields present in
+a subclass, but not in the original schema, will be included in the serialized output.</p>
+<p>This behavior was the default in Pydantic V1, but was changed in V2 to help ensure that you know precisely which
+fields would be included when serializing, even if subclasses get passed when instantiating the object. This helps
+prevent security risks when serializing subclasses with sensitive information, for example.</p>
+</div>
+<p>If you want v1-style duck-typing serialization behavior, you can use a runtime setting, or annotate individual types.</p>
+<ul>
+<li>Field / type level: use the <code>SerializeAsAny</code> annotation</li>
+<li>Runtime level: use the <code>serialize_as_any</code> flag when calling <code>model_dump()</code> or <code>model_dump_json()</code></li>
+</ul>
+<p>We discuss these options below in more detail:</p>
+<h4 id="serializeasany-annotation"><code>SerializeAsAny</code> annotation:<a class="headerlink" href="#serializeasany-annotation" title="Permanent link">&para;</a></h4>
+<p>If you want duck-typing serialization behavior, this can be done using the <code>SerializeAsAny</code> annotation on a type:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SerializeAsAny</span>
 
 
@@ -3676,6 +3770,238 @@ when adding sensitive information like secrets as fields of subclasses.</p>
 annotated as <code>&lt;SomeType&gt;</code>, and type-checkers like mypy will treat the attribute as having the appropriate type as well.
 But when serializing, the field will be serialized as though the type hint for the field was <code>Any</code>, which is where the
 name comes from.</p>
+<h4 id="serialize_as_any-runtime-setting"><code>serialize_as_any</code> runtime setting<a class="headerlink" href="#serialize_as_any-runtime-setting" title="Permanent link">&para;</a></h4>
+<p>The <code>serialize_as_any</code> runtime setting can be used to serialize model data with or without duck typed serialization behavior.
+<code>serialize_as_any</code> can be passed as a keyword argument to the <code>model_dump()</code> and <code>model_dump_json</code> methods of <code>BaseModel</code>s and <code>RootModel</code>s. It can also be passed as a keyword argument to the <code>dump_python()</code> and <code>dump_json()</code> methods of <code>TypeAdapter</code>s.</p>
+<p>If <code>serialize_as_any</code> is set to <code>True</code>, the model will be serialized using duck typed serialization behavior,
+which means that the model will ignore the schema and instead ask the object itself how it should be serialized.
+In particular, this means that when model subclasses are serialized, fields present in the subclass but not in
+the original schema will be included.</p>
+<p>If <code>serialize_as_any</code> is set to <code>False</code> (which is the default), the model will be serialized using the schema,
+which means that fields present in a subclass but not in the original schema will be ignored.</p>
+<div class="admonition question">
+<p class="admonition-title">Why is this flag useful?</p>
+<p>Sometimes, you want to make sure that no matter what fields might have been added in subclasses,
+the serialized object will only have the fields listed in the original type definition.
+This can be useful if you add something like a <code>password: str</code> field in a subclass that you don't
+want to accidentally include in the serialized output.</p>
+</div>
+<p>For example:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">UserLogin</span><span class="p">(</span><span class="n">User</span><span class="p">):</span>
+    <span class="n">password</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">OuterModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">user1</span><span class="p">:</span> <span class="n">User</span>
+    <span class="n">user2</span><span class="p">:</span> <span class="n">User</span>
+
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">UserLogin</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;pydantic&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;password&#39;</span><span class="p">)</span>
+
+<span class="n">outer_model</span> <span class="o">=</span> <span class="n">OuterModel</span><span class="p">(</span><span class="n">user1</span><span class="o">=</span><span class="n">user</span><span class="p">,</span> <span class="n">user2</span><span class="o">=</span><span class="n">user</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">outer_model</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">serialize_as_any</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>  <span class="c1"># (1)!</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;user1&#39;: {&#39;name&#39;: &#39;pydantic&#39;, &#39;password&#39;: &#39;password&#39;},</span>
+<span class="sd">    &#39;user2&#39;: {&#39;name&#39;: &#39;pydantic&#39;, &#39;password&#39;: &#39;password&#39;},</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">outer_model</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">serialize_as_any</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>  <span class="c1"># (2)!</span>
+<span class="c1">#&gt; {&#39;user1&#39;: {&#39;name&#39;: &#39;pydantic&#39;}, &#39;user2&#39;: {&#39;name&#39;: &#39;pydantic&#39;}}</span>
+</code></pre></div>
+<ol>
+<li>With <code>serialize_as_any</code> set to <code>True</code>, the result matches that of V1.</li>
+<li>With <code>serialize_as_any</code> set to <code>False</code> (the V2 default), fields present on the subclass,
+but not the base class, are not included in serialization.</li>
+</ol>
+<p>This setting even takes effect with nested and recursive patterns as well. For example:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">friends</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="s1">&#39;User&#39;</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">UserLogin</span><span class="p">(</span><span class="n">User</span><span class="p">):</span>
+    <span class="n">password</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">OuterModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">user</span><span class="p">:</span> <span class="n">User</span>
+
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">UserLogin</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;samuel&#39;</span><span class="p">,</span>
+    <span class="n">password</span><span class="o">=</span><span class="s1">&#39;pydantic-pw&#39;</span><span class="p">,</span>
+    <span class="n">friends</span><span class="o">=</span><span class="p">[</span><span class="n">UserLogin</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;sebastian&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;fastapi-pw&#39;</span><span class="p">,</span> <span class="n">friends</span><span class="o">=</span><span class="p">[])],</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">OuterModel</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">serialize_as_any</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>  <span class="c1"># (1)!</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;user&#39;: {</span>
+<span class="sd">        &#39;name&#39;: &#39;samuel&#39;,</span>
+<span class="sd">        &#39;friends&#39;: [</span>
+<span class="sd">            {&#39;name&#39;: &#39;sebastian&#39;, &#39;friends&#39;: [], &#39;password&#39;: &#39;fastapi-pw&#39;}</span>
+<span class="sd">        ],</span>
+<span class="sd">        &#39;password&#39;: &#39;pydantic-pw&#39;,</span>
+<span class="sd">    }</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">OuterModel</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">serialize_as_any</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>  <span class="c1"># (2)!</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{&#39;user&#39;: {&#39;name&#39;: &#39;samuel&#39;, &#39;friends&#39;: [{&#39;name&#39;: &#39;sebastian&#39;, &#39;friends&#39;: []}]}}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+<ol>
+<li>Even nested <code>User</code> model instances are dumped with fields unique to <code>User</code> subclasses.</li>
+<li>Even nested <code>User</code> model instances are dumped without fields unique to <code>User</code> subclasses.</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">friends</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="s1">&#39;User&#39;</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">UserLogin</span><span class="p">(</span><span class="n">User</span><span class="p">):</span>
+    <span class="n">password</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">OuterModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">user</span><span class="p">:</span> <span class="n">User</span>
+
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">UserLogin</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;samuel&#39;</span><span class="p">,</span>
+    <span class="n">password</span><span class="o">=</span><span class="s1">&#39;pydantic-pw&#39;</span><span class="p">,</span>
+    <span class="n">friends</span><span class="o">=</span><span class="p">[</span><span class="n">UserLogin</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;sebastian&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;fastapi-pw&#39;</span><span class="p">,</span> <span class="n">friends</span><span class="o">=</span><span class="p">[])],</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">OuterModel</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">serialize_as_any</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>  <span class="c1"># (1)!</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;user&#39;: {</span>
+<span class="sd">        &#39;name&#39;: &#39;samuel&#39;,</span>
+<span class="sd">        &#39;friends&#39;: [</span>
+<span class="sd">            {&#39;name&#39;: &#39;sebastian&#39;, &#39;friends&#39;: [], &#39;password&#39;: &#39;fastapi-pw&#39;}</span>
+<span class="sd">        ],</span>
+<span class="sd">        &#39;password&#39;: &#39;pydantic-pw&#39;,</span>
+<span class="sd">    }</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">OuterModel</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">serialize_as_any</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>  <span class="c1"># (2)!</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{&#39;user&#39;: {&#39;name&#39;: &#39;samuel&#39;, &#39;friends&#39;: [{&#39;name&#39;: &#39;sebastian&#39;, &#39;friends&#39;: []}]}}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+<ol>
+<li>Even nested <code>User</code> model instances are dumped with fields unique to <code>User</code> subclasses.</li>
+<li>Even nested <code>User</code> model instances are dumped without fields unique to <code>User</code> subclasses.</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The behavior of the <code>serialize_as_any</code> runtime flag is almost the same as the behavior of the <code>SerializeAsAny</code> annotation.
+There are a few nuanced differences that we're working to resolve, but for the most part, you can expect the same behavior from both.
+See more about the differences in this <a href="https://github.com/pydantic/pydantic/issues/9049">active issue</a></p>
+</div>
+<h4 id="overriding-the-serialize_as_any-default-false">Overriding the <code>serialize_as_any</code> default (False)<a class="headerlink" href="#overriding-the-serialize_as_any-default-false" title="Permanent link">&para;</a></h4>
+<p>You can override the default setting for <code>serialize_as_any</code> by configuring a subclass of <code>BaseModel</code> that overrides the default for the <code>serialize_as_any</code> argument to <code>model_dump()</code> and <code>model_dump_json()</code>, and then use that as the base class (instead of <code>pydantic.BaseModel</code>) for any model you want to have this default behavior.</p>
+<p>For example, you could do the following if you want to use duck-typing serialization by default:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SecretStr</span>
+
+
+<span class="k">class</span> <span class="nc">MyBaseModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">model_dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">serialize_as_any</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">model_dump_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">(</span><span class="n">serialize_as_any</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">MyBaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">UserInfo</span><span class="p">(</span><span class="n">User</span><span class="p">):</span>
+    <span class="n">password</span><span class="p">:</span> <span class="n">SecretStr</span>
+
+
+<span class="k">class</span> <span class="nc">OuterModel</span><span class="p">(</span><span class="n">MyBaseModel</span><span class="p">):</span>
+    <span class="n">user</span><span class="p">:</span> <span class="n">User</span>
+
+
+<span class="n">u</span> <span class="o">=</span> <span class="n">OuterModel</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">UserInfo</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;secret_pw&#39;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>  <span class="c1"># (1)!</span>
+<span class="c1">#&gt; {&quot;user&quot;:{&quot;name&quot;:&quot;John&quot;,&quot;password&quot;:&quot;**********&quot;}}</span>
+</code></pre></div>
+<ol>
+<li>By default, <code>model_dump_json</code> will use duck-typing serialization behavior, which means that the <code>password</code> field is included in the output.</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SecretStr</span>
+
+
+<span class="k">class</span> <span class="nc">MyBaseModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">model_dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">serialize_as_any</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">model_dump_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">(</span><span class="n">serialize_as_any</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">MyBaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">UserInfo</span><span class="p">(</span><span class="n">User</span><span class="p">):</span>
+    <span class="n">password</span><span class="p">:</span> <span class="n">SecretStr</span>
+
+
+<span class="k">class</span> <span class="nc">OuterModel</span><span class="p">(</span><span class="n">MyBaseModel</span><span class="p">):</span>
+    <span class="n">user</span><span class="p">:</span> <span class="n">User</span>
+
+
+<span class="n">u</span> <span class="o">=</span> <span class="n">OuterModel</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">UserInfo</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;secret_pw&#39;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>  <span class="c1"># (1)!</span>
+<span class="c1">#&gt; {&quot;user&quot;:{&quot;name&quot;:&quot;John&quot;,&quot;password&quot;:&quot;**********&quot;}}</span>
+</code></pre></div>
+<ol>
+<li>By default, <code>model_dump_json</code> will use duck-typing serialization behavior, which means that the <code>password</code> field is included in the output.</li>
+</ol>
+</div>
+</div>
+</div>
 <h2 id="pickledumpsmodel"><code>pickle.dumps(model)</code><a class="headerlink" href="#pickledumpsmodel" title="Permanent link">&para;</a></h2>
 <p>Pydantic models support efficient pickling and unpickling.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="c1"># TODO need to get pickling to work</span>
@@ -3868,7 +4194,7 @@ we can also pass the <code>exclude: bool</code> arguments directly to the <code>
 </ol>
 <p>That being said, setting <code>exclude</code> on the field constructor (<code>Field(..., exclude=True)</code>) does not take priority
 over the <code>exclude_unset</code>, <code>exclude_none</code>, and <code>exclude_default</code> parameters on <code>model_dump</code> and <code>model_dump_json</code>:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
