@@ -3443,7 +3443,7 @@ sub-models will not be converted to dictionaries.</p>
     <span class="n">dt</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2032</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">),</span> <span class="n">diff</span><span class="o">=</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>
-<span class="c1">#&gt; {&quot;dt&quot;:1969660800.0,&quot;diff&quot;:&quot;P4DT14400S&quot;}</span>
+<span class="c1">#&gt; {&quot;dt&quot;:1969660800.0,&quot;diff&quot;:&quot;P4DT4H&quot;}</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3966,7 +3966,7 @@ over the <code>exclude_unset</code>, <code>exclude_none</code>, and <code>exclud
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.7.0a1", "pydantic-core==2.16.3"]
+    window.mkdocs_run_deps = ["pydantic==2.7.0a1", "pydantic-core==2.17.0"]
     </script>
 
               </article>
