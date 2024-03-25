@@ -487,3 +487,8 @@ else:
 
     def is_generic_alias(type_: type[Any]) -> bool:
         return isinstance(type_, typing._GenericAlias)  # type: ignore
+
+
+def is_self_type(tp: Any) -> bool:
+    """Check if a given class is a Self type (from `typing` or `typing_extensions`)"""
+    return isinstance(tp, typing_base) and getattr(tp, '_name', None) == 'Self'

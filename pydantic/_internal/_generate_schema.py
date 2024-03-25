@@ -76,10 +76,8 @@ from ._docs_extraction import extract_docstrings_from_cls
 from ._fields import collect_dataclass_fields, get_type_hints_infer_globalns
 from ._forward_ref import PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, has_instance_in_type, recursively_defined_type_refs, replace_types
-from ._schema_generation_shared import (
-    CallbackGetCoreSchemaHandler,
-)
-from ._typing_extra import is_finalvar
+from ._schema_generation_shared import CallbackGetCoreSchemaHandler
+from ._typing_extra import is_finalvar, is_self_type
 from ._utils import lenient_issubclass
 
 if TYPE_CHECKING:
@@ -311,6 +309,7 @@ class GenerateSchema:
         '_types_namespace_stack',
         '_typevars_map',
         'field_name_stack',
+        'model_type_stack',
         'defs',
     )
 
@@ -325,6 +324,7 @@ class GenerateSchema:
         self._types_namespace_stack = TypesNamespaceStack(types_namespace)
         self._typevars_map = typevars_map
         self.field_name_stack = _FieldNameStack()
+        self.model_type_stack = _ModelTypeStack()
         self.defs = _Definitions()
 
     @classmethod
@@ -332,12 +332,14 @@ class GenerateSchema:
         cls,
         config_wrapper_stack: ConfigWrapperStack,
         types_namespace_stack: TypesNamespaceStack,
+        model_type_stack: _ModelTypeStack,
         typevars_map: dict[Any, Any] | None,
         defs: _Definitions,
     ) -> GenerateSchema:
         obj = cls.__new__(cls)
         obj._config_wrapper_stack = config_wrapper_stack
         obj._types_namespace_stack = types_namespace_stack
+        obj.model_type_stack = model_type_stack
         obj._typevars_map = typevars_map
         obj.field_name_stack = _FieldNameStack()
         obj.defs = defs
@@ -357,6 +359,7 @@ class GenerateSchema:
         return cls.__from_parent(
             self._config_wrapper_stack,
             self._types_namespace_stack,
+            self.model_type_stack,
             self._typevars_map,
             self.defs,
         )
@@ -622,6 +625,8 @@ class GenerateSchema:
         decide whether to use a `__pydantic_core_schema__` attribute, or generate a fresh schema.
         """
         # avoid calling `__get_pydantic_core_schema__` if we've already visited this object
+        if is_self_type(obj):
+            obj = self.model_type_stack.get()
         with self.defs.get_schema_or_ref(obj) as (_, maybe_schema):
             if maybe_schema is not None:
                 return maybe_schema
@@ -735,7 +740,8 @@ class GenerateSchema:
         from ..main import BaseModel
 
         if lenient_issubclass(obj, BaseModel):
-            return self._model_schema(obj)
+            with self.model_type_stack.push(obj):
+                return self._model_schema(obj)
 
         if isinstance(obj, PydanticRecursiveRef):
             return core_schema.definition_reference_schema(schema_ref=obj.type_ref)
@@ -815,7 +821,6 @@ class GenerateSchema:
 
         if _typing_extra.is_dataclass(obj):
             return self._dataclass_schema(obj, None)
-
         res = self._get_prepare_pydantic_annotations_for_known_type(obj, ())
         if res is not None:
             source_type, annotations = res
@@ -1199,7 +1204,10 @@ class GenerateSchema:
         """
         from ..fields import FieldInfo
 
-        with self.defs.get_schema_or_ref(typed_dict_cls) as (typed_dict_ref, maybe_schema):
+        with self.model_type_stack.push(typed_dict_cls), self.defs.get_schema_or_ref(typed_dict_cls) as (
+            typed_dict_ref,
+            maybe_schema,
+        ):
             if maybe_schema is not None:
                 return maybe_schema
 
@@ -1286,7 +1294,10 @@ class GenerateSchema:
 
     def _namedtuple_schema(self, namedtuple_cls: Any, origin: Any) -> core_schema.CoreSchema:
         """Generate schema for a NamedTuple."""
-        with self.defs.get_schema_or_ref(namedtuple_cls) as (namedtuple_ref, maybe_schema):
+        with self.model_type_stack.push(namedtuple_cls), self.defs.get_schema_or_ref(namedtuple_cls) as (
+            namedtuple_ref,
+            maybe_schema,
+        ):
             if maybe_schema is not None:
                 return maybe_schema
             typevars_map = get_standard_typevars_map(namedtuple_cls)
@@ -1475,7 +1486,10 @@ class GenerateSchema:
         self, dataclass: type[StandardDataclass], origin: type[StandardDataclass] | None
     ) -> core_schema.CoreSchema:
         """Generate schema for a dataclass."""
-        with self.defs.get_schema_or_ref(dataclass) as (dataclass_ref, maybe_schema):
+        with self.model_type_stack.push(dataclass), self.defs.get_schema_or_ref(dataclass) as (
+            dataclass_ref,
+            maybe_schema,
+        ):
             if maybe_schema is not None:
                 return maybe_schema
 
@@ -2250,6 +2264,25 @@ class _FieldNameStack:
         self._stack.pop()
 
     def get(self) -> str | None:
+        if self._stack:
+            return self._stack[-1]
+        else:
+            return None
+
+
+class _ModelTypeStack:
+    __slots__ = ('_stack',)
+
+    def __init__(self) -> None:
+        self._stack: list[type] = []
+
+    @contextmanager
+    def push(self, type_obj: type) -> Iterator[None]:
+        self._stack.append(type_obj)
+        yield
+        self._stack.pop()
+
+    def get(self) -> type | None:
         if self._stack:
             return self._stack[-1]
         else:
