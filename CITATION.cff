@@ -1,36 +1,54 @@
-# YAML 1.2
----
-abstract: "Pydantic is the most widely used data validation library for Python."
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Pydantic
+message: >-
+  If you use this software, please cite it using these
+  metadata.
+type: software
 authors:
-  - family-names: Colvin
-    given-names: Samuel
-  - family-names: Montague
-    given-names: David
-  - family-names: Ramezani
-    given-names: Hasan
-  - family-names: Hewitt
-    given-names: David
-  - family-names: Trylesinski
-    given-names: Marcelo
-  - family-names: Runkle
-    given-names: Sydney
-  - family-names: Badaracco
-    given-names: Adrian Garcia
-cff-version: "1.2.0"
-date-released: "2024-03-12"
-identifiers:
-  - description: "Pydantic is the most widely used data validation library for Python."
-    type: "url"
-    value: https://docs.pydantic.dev/latest/
+  - given-names: Samuel
+    family-names: Colvin
+    email: s@muelcolvin.com
+  - given-names: David
+    family-names: Montague
+  - given-names: Hasan
+    family-names: Ramezani
+    email: hasan.r67@gmail.com
+  - given-names: David
+    family-names: Hewitt
+    email: mail@davidhewitt.dev
+  - given-names: Marcelo
+    family-names: Trylesinski
+    email: marcelotryle@gmail.com
+  - given-names: Sydney
+    family-names: Runkle
+  - given-names: Adrian
+    family-names: Garcia Badaracco
+repository-code: 'https://github.com/pydantic/pydantic'
+url: 'https://docs.pydantic.dev/latest/'
+abstract: >-
+  Pydantic is the most widely used data validation library
+  for Python.
+
+
+  Fast and extensible, Pydantic plays nicely with your
+  linters/IDE/brain. Define how data should be in pure,
+  canonical Python 3.8+; validate it with Pydantic.
 keywords:
-  - "python"
-  - "validation"
-  - "json-schema"
+  - python
+  - validation
+  - parsing
+  - json-schema
+  - hints
+  - python37
+  - python38
+  - pydantic
+  - python39
+  - python310
+  - python311
+  - python312
 license: MIT
-message: "If you use this software, please cite it using these metadata."
-repository-code: "https://github.com/pydantic/pydantic"
-title: "Pydantic"
-version: 2.6.4
-
-
-...
+version: v2.6.4
+date-released: '2024-03-12'
