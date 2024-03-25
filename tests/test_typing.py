@@ -91,7 +91,11 @@ def test_is_literal_with_typing_literal():
     'ann_type,extepcted',
     (
         (None, False),
+        (ForwardRef('Other[int]'), False),
+        (ForwardRef('Other[ClassVar[int]]'), False),
         (ForwardRef('ClassVar[int]'), True),
+        (ForwardRef('t.ClassVar[int]'), True),
+        (ForwardRef('typing.ClassVar[int]'), True),
         (ClassVar[int], True),
     ),
 )

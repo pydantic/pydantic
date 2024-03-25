@@ -3165,7 +3165,7 @@ def test_eval_type_backport():
     ]
 
 
-def test_inherited_parent_namespace(create_module):
+def test_inherited_class_vars(create_module):
     @create_module
     def module():
         import typing
@@ -3173,9 +3173,11 @@ def test_inherited_parent_namespace(create_module):
         from pydantic import BaseModel
 
         class Base(BaseModel):
-            CONST: 'typing.ClassVar[str]' = 'a'
+            CONST1: 'typing.ClassVar[str]' = 'a'
+            CONST2: 'ClassVar[str]' = 'b'
 
     class Child(module.Base):
         pass
 
-    assert Child.CONST == 'a'
+    assert Child.CONST1 == 'a'
+    assert Child.CONST2 == 'b'
