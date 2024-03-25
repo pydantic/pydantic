@@ -11,21 +11,35 @@ authors:
   - given-names: Samuel
     family-names: Colvin
     email: s@muelcolvin.com
-  - given-names: David
-    family-names: Montague
+  - given-names: Eric
+    family-names: Jolibois
+    email: em.jolibois@gmail.com
   - given-names: Hasan
     family-names: Ramezani
     email: hasan.r67@gmail.com
+  - given-names: Adrian
+    family-names: Garcia Badaracco
+  - given-names: Terrence
+    family-names: Dorsey
+    email: terry@pydantic.dev
   - given-names: David
-    family-names: Hewitt
-    email: mail@davidhewitt.dev
+    family-names: Montague
+    email: david@pydantic.dev
+  - given-names: Serge
+    family-names: Matveenko
+    email: lig@countzero.co
   - given-names: Marcelo
     family-names: Trylesinski
     email: marcelotryle@gmail.com
   - given-names: Sydney
     family-names: Runkle
-  - given-names: Adrian
-    family-names: Garcia Badaracco
+    email: sydneymarierunkle@gmail.com
+  - given-names: David
+    family-names: Hewitt
+    email: mail@davidhewitt.io
+  - given-names: Alex
+    family-names: Hall
+    email: alex.mojaki@gmail.com
 repository-code: 'https://github.com/pydantic/pydantic'
 url: 'https://docs.pydantic.dev/latest/'
 abstract: >-
