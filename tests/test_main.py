@@ -49,6 +49,7 @@ from pydantic import (
     field_validator,
 )
 from pydantic._internal._mock_val_ser import MockCoreSchema
+from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 
 def test_success():
@@ -2987,9 +2988,17 @@ def test_arbitrary_types_not_a_type() -> None:
     assert ta.validate_python(bar) is bar
 
 
-def test_deferred_core_schema() -> None:
-    class Foo(BaseModel):
-        x: 'Bar'
+@pytest.mark.parametrize('is_dataclass', [False, True])
+def test_deferred_core_schema(is_dataclass: bool) -> None:
+    if is_dataclass:
+
+        @pydantic_dataclass
+        class Foo:
+            x: 'Bar'
+    else:
+
+        class Foo(BaseModel):
+            x: 'Bar'
 
     assert isinstance(Foo.__pydantic_core_schema__, MockCoreSchema)
     with pytest.raises(PydanticUserError, match='`Foo` is not fully defined'):
@@ -2998,7 +3007,7 @@ def test_deferred_core_schema() -> None:
     class Bar(BaseModel):
         pass
 
-    assert Foo.__pydantic_core_schema__['type'] == 'model'
+    assert Foo.__pydantic_core_schema__['type'] == ('dataclass' if is_dataclass else 'model')
     assert isinstance(Foo.__pydantic_core_schema__, dict)
 
 
