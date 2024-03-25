@@ -130,6 +130,7 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType], metaclass=_RootMod
             exclude_none: bool = False,
             round_trip: bool = False,
             warnings: bool = True,
+            serialize_as_any: bool = False,
         ) -> Any:
             """This method is included just to get a more accurate return type for type checkers.
             It is included in this `if TYPE_CHECKING:` block since no override is actually necessary.
