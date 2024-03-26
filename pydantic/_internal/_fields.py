@@ -177,7 +177,7 @@ def collect_model_fields(  # noqa: C901
             )
 
         # when building a generic model with `MyModel[int]`, the generic_origin check makes sure we don't get
-        # "... shadows an attribute" errors
+        # "... shadows an attribute" warnings
         generic_origin = getattr(cls, '__pydantic_generic_metadata__', {}).get('origin')
         for base in bases:
             dataclass_fields = {
@@ -185,11 +185,11 @@ def collect_model_fields(  # noqa: C901
             }
             if hasattr(base, ann_name):
                 if base is generic_origin:
-                    # Don't error when "shadowing" of attributes in parametrized generics
+                    # Don't warn when "shadowing" of attributes in parametrized generics
                     continue
 
                 if ann_name in dataclass_fields:
-                    # Don't error when inheriting stdlib dataclasses whose fields are "shadowed" by defaults being set
+                    # Don't warn when inheriting stdlib dataclasses whose fields are "shadowed" by defaults being set
                     # on the class instance.
                     continue
 
