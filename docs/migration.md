@@ -133,6 +133,7 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
   You can see an example + more detail [here](https://docs.pydantic.dev/latest/concepts/models/#attribute-copies).
 * The `.json()` method is deprecated, and attempting to use this deprecated method with arguments such as
 `indent` or `ensure_ascii` may lead to confusing errors. For best results, switch to V2's equivalent, `model_dump_json()`.
+If you'd still like to use said arguments, you can use [this workaround](https://github.com/pydantic/pydantic/issues/8825#issuecomment-1946206415).
 * JSON serialization of non-string key values is generally done with `str(key)`, leading to some changes in behavior such as the following:
 
 ```py
