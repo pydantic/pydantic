@@ -1067,9 +1067,26 @@ class StaticFoobarModel(BaseModel):
 
 Here `StaticFoobarModel` and `DynamicFoobarModel` are identical.
 
-Fields are defined by a tuple of the form `(<type>, <default value>)`. The special keyword
-arguments `__config__` and `__base__` can be used to customise the new model. This includes
-extending a base model with extra fields.
+Fields are defined by one of the following tuple forms:
+
+* `(<type>, <default value>)`
+* `(<type>, Field(...))`
+* `typing.Annotated[<type>, Field(...)]`
+
+Using a `Field(...)` call as the second argument in the tuple (the default value)
+allows for more advanced field configuration. It's analogous to doing the following
+with a standard `BaseModel`:
+
+```py
+from pydantic import BaseModel, Field
+
+
+class Model(BaseModel):
+    foo: str = Field(..., description='foo description', alias='FOO')
+```
+
+The special keyword arguments `__config__` and `__base__` can be used to customize the new model.
+This includes extending a base model with extra fields.
 
 ```py
 from pydantic import BaseModel, create_model
