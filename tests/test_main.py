@@ -2377,6 +2377,28 @@ def test_model_validate_strict() -> None:
     ]
 
 
+@pytest.mark.xfail(
+    reason='strict=True in model_validate_json does not overwrite strict=False given in ConfigDict'
+    'See issue: https://github.com/pydantic/pydantic/issues/8930'
+)
+def test_model_validate_list_strict() -> None:
+    # FIXME: This change must be implemented in pydantic-core. The argument strict=True
+    # in model_validate_json method is not overwriting the one set with ConfigDict(strict=False)
+    # for sequence like types. See: https://github.com/pydantic/pydantic/issues/8930
+
+    class LaxModel(BaseModel):
+        x: List[str]
+        model_config = ConfigDict(strict=False)
+
+    assert LaxModel.model_validate_json(json.dumps({'x': ('a', 'b', 'c')}), strict=None) == LaxModel(x=('a', 'b', 'c'))
+    assert LaxModel.model_validate_json(json.dumps({'x': ('a', 'b', 'c')}), strict=False) == LaxModel(x=('a', 'b', 'c'))
+    with pytest.raises(ValidationError) as exc_info:
+        LaxModel.model_validate_json(json.dumps({'x': ('a', 'b', 'c')}), strict=True)
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'list_type', 'loc': ('x',), 'msg': 'Input should be a valid list', 'input': ('a', 'b', 'c')}
+    ]
+
+
 def test_model_validate_json_strict() -> None:
     class LaxModel(BaseModel):
         x: int
