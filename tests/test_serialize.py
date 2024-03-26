@@ -1194,4 +1194,3 @@ def test_plain_serializer_with_std_type() -> None:
     m = MyModel(x=1)
     assert m.model_dump() == {'x': 1.0}
     assert m.model_dump_json() == '{"x":1.0}'
-
