@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+title: Pydantic
+message: 'If you use this software, please cite it as below.'
+type: software
+authors:
+  - Samuel Colvin
+  - Eric Jolibois
+  - Hasan Ramezani
+  - Adrian Garcia Badaracco
+  - Terrence Dorsey
+  - David Montague
+  - Serge Matveenko
+  - Marcelo Trylesinski
+  - Sydney Runkle
+  - David Hewitt
+  - Alex Hall
+repository-code: 'https://github.com/pydantic/pydantic'
+url: 'https://docs.pydantic.dev/latest/'
+abstract: >-
+  Pydantic is the most widely used data validation library
+  for Python.
+
+
+  Fast and extensible, Pydantic plays nicely with your
+  linters/IDE/brain. Define how data should be in pure,
+  canonical Python 3.8+; validate it with Pydantic.
+keywords:
+  - python
+  - validation
+  - parsing
+  - json-schema
+  - hints
+  - typing
+license: MIT
+version: v2.6.4
+date-released: '2024-03-12'

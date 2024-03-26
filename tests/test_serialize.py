@@ -17,9 +17,7 @@ from pydantic import (
     Field,
     FieldSerializationInfo,
     PydanticUserError,
-    SecretStr,
     SerializationInfo,
-    SerializeAsAny,
     SerializerFunctionWrapHandler,
     TypeAdapter,
     computed_field,
@@ -900,28 +898,6 @@ def test_type_adapter_dump_json():
     ta = TypeAdapter(Model)
 
     assert ta.dump_json(Model({'x': 1, 'y': 2.5})) == b'{"x":2,"y":7.5}'
-
-
-def test_serialize_as_any() -> None:
-    class User(BaseModel):
-        name: str
-
-    class UserLogin(User):
-        password: SecretStr
-
-    class OuterModel(BaseModel):
-        maybe_as_any: Optional[SerializeAsAny[User]] = None
-        as_any: SerializeAsAny[User]
-        without: User
-
-    user = UserLogin(name='pydantic', password='password')
-
-    # insert_assert(json.loads(OuterModel(as_any=user, without=user).model_dump_json()))
-    assert json.loads(OuterModel(maybe_as_any=user, as_any=user, without=user).model_dump_json()) == {
-        'maybe_as_any': {'name': 'pydantic', 'password': '**********'},
-        'as_any': {'name': 'pydantic', 'password': '**********'},
-        'without': {'name': 'pydantic'},
-    }
 
 
 @pytest.mark.parametrize('as_annotation', [True, False])

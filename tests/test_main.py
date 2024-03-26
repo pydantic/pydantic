@@ -1,6 +1,7 @@
 import json
 import platform
 import re
+import warnings
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
@@ -2377,6 +2378,28 @@ def test_model_validate_strict() -> None:
     ]
 
 
+@pytest.mark.xfail(
+    reason='strict=True in model_validate_json does not overwrite strict=False given in ConfigDict'
+    'See issue: https://github.com/pydantic/pydantic/issues/8930'
+)
+def test_model_validate_list_strict() -> None:
+    # FIXME: This change must be implemented in pydantic-core. The argument strict=True
+    # in model_validate_json method is not overwriting the one set with ConfigDict(strict=False)
+    # for sequence like types. See: https://github.com/pydantic/pydantic/issues/8930
+
+    class LaxModel(BaseModel):
+        x: List[str]
+        model_config = ConfigDict(strict=False)
+
+    assert LaxModel.model_validate_json(json.dumps({'x': ('a', 'b', 'c')}), strict=None) == LaxModel(x=('a', 'b', 'c'))
+    assert LaxModel.model_validate_json(json.dumps({'x': ('a', 'b', 'c')}), strict=False) == LaxModel(x=('a', 'b', 'c'))
+    with pytest.raises(ValidationError) as exc_info:
+        LaxModel.model_validate_json(json.dumps({'x': ('a', 'b', 'c')}), strict=True)
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'list_type', 'loc': ('x',), 'msg': 'Input should be a valid list', 'input': ('a', 'b', 'c')}
+    ]
+
+
 def test_model_validate_json_strict() -> None:
     class LaxModel(BaseModel):
         x: int
@@ -3109,12 +3132,12 @@ def test_shadow_attribute() -> None:
     class One(Model):
         foo: str = 'abc'
 
-    with pytest.warns(UserWarning, match=r'"foo" shadows an attribute in parent ".*One"'):
+    with pytest.warns(UserWarning, match=r'"foo" in ".*Two" shadows an attribute in parent ".*One"'):
 
         class Two(One):
             foo: str
 
-    with pytest.warns(UserWarning, match=r'"foo" shadows an attribute in parent ".*One"'):
+    with pytest.warns(UserWarning, match=r'"foo" in ".*Three" shadows an attribute in parent ".*One"'):
 
         class Three(One):
             foo: str = 'xyz'
@@ -3127,6 +3150,37 @@ def test_shadow_attribute() -> None:
     assert getattr(One, 'foo', None) == ' edited!'
     assert getattr(Two, 'foo', None) == ' edited! edited!'
     assert getattr(Three, 'foo', None) == ' edited! edited!'
+
+
+def test_shadow_attribute_warn_for_redefined_fields() -> None:
+    """https://github.com/pydantic/pydantic/issues/9107"""
+
+    # A simple class which defines a field
+    class Parent:
+        foo: bool = False
+
+    # When inheriting from the parent class, as long as the field is not defined at all, there should be no warning
+    # about shadowed fields.
+    with warnings.catch_warnings(record=True) as captured_warnings:
+        # Start capturing all warnings
+        warnings.simplefilter('always')
+
+        class ChildWithoutRedefinedField(BaseModel, Parent):
+            pass
+
+        # Check that no warnings were captured
+        assert len(captured_warnings) == 0
+
+    # But when inheriting from the parent class and a parent field is redefined, a warning should be raised about
+    # shadowed fields irrespective of whether it is defined with a type that is still compatible or narrower, or
+    # with a different default that is still compatible with the type definition.
+    with pytest.warns(
+        UserWarning,
+        match=r'"foo" in ".*ChildWithRedefinedField" shadows an attribute in parent ".*Parent"',
+    ):
+
+        class ChildWithRedefinedField(BaseModel, Parent):
+            foo: bool = True
 
 
 def test_eval_type_backport():
@@ -3163,3 +3217,21 @@ def test_eval_type_backport():
             'input': {'not a str or int'},
         },
     ]
+
+
+def test_inherited_class_vars(create_module):
+    @create_module
+    def module():
+        import typing
+
+        from pydantic import BaseModel
+
+        class Base(BaseModel):
+            CONST1: 'typing.ClassVar[str]' = 'a'
+            CONST2: 'ClassVar[str]' = 'b'
+
+    class Child(module.Base):
+        pass
+
+    assert Child.CONST1 == 'a'
+    assert Child.CONST2 == 'b'

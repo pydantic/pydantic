@@ -2,6 +2,7 @@
 from __future__ import annotations as _annotations
 
 import dataclasses
+import re
 import sys
 import types
 import typing
@@ -146,7 +147,10 @@ def is_classvar(ann_type: type[Any]) -> bool:
 
     # this is an ugly workaround for class vars that contain forward references and are therefore themselves
     # forward references, see #3679
-    if ann_type.__class__ == typing.ForwardRef and ann_type.__forward_arg__.startswith('ClassVar['):  # type: ignore
+    if ann_type.__class__ == typing.ForwardRef and re.match(
+        r'(\w+\.)?ClassVar\[',
+        ann_type.__forward_arg__,  # type: ignore
+    ):
         return True
 
     return False
@@ -483,3 +487,8 @@ else:
 
     def is_generic_alias(type_: type[Any]) -> bool:
         return isinstance(type_, typing._GenericAlias)  # type: ignore
+
+
+def is_self_type(tp: Any) -> bool:
+    """Check if a given class is a Self type (from `typing` or `typing_extensions`)"""
+    return isinstance(tp, typing_base) and getattr(tp, '_name', None) == 'Self'

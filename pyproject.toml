@@ -48,7 +48,7 @@ requires-python = '>=3.8'
 dependencies = [
     'typing-extensions>=4.6.1',
     'annotated-types>=0.4.0',
-    "pydantic-core==2.16.3",
+    "pydantic-core==2.17.0",
 ]
 dynamic = ['version', 'readme']
 
@@ -148,10 +148,6 @@ mypy = [
 memray = [
     "pytest-memray; platform_system != 'Windows'",
 ]
-
-[tool.pdm.resolution.overrides]
-# requires Python > 3.8, we only test with 3.8 in CI but because of it won't lock properly
-pytest-memray = "1.5.0"
 
 [tool.pytest.ini_options]
 testpaths = 'tests'

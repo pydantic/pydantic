@@ -1649,6 +1649,35 @@ def test_enum_type():
     ]
 
 
+def test_enum_missing_default():
+    class MyEnum(Enum):
+        a = 1
+
+    ta = TypeAdapter(MyEnum)
+    missing_value = re.search(r'missing: (\w+)', repr(ta.validator)).group(1)
+    assert missing_value == 'None'
+
+    assert ta.validate_python(1) is MyEnum.a
+    with pytest.raises(ValidationError):
+        ta.validate_python(2)
+
+
+def test_enum_missing_custom():
+    class MyEnum(Enum):
+        a = 1
+
+        @classmethod
+        def _missing_(cls, value):
+            return MyEnum.a
+
+    ta = TypeAdapter(MyEnum)
+    missing_value = re.search(r'missing: (\w+)', repr(ta.validator)).group(1)
+    assert missing_value == 'Some'
+
+    assert ta.validate_python(1) is MyEnum.a
+    assert ta.validate_python(2) is MyEnum.a
+
+
 def test_int_enum_type():
     class Model(BaseModel):
         my_enum: IntEnum
@@ -2393,6 +2422,126 @@ def test_sequence_fails(cls, value, errors):
 
 def test_sequence_strict():
     assert TypeAdapter(Sequence[int]).validate_python((), strict=True) == ()
+
+
+def test_list_strict() -> None:
+    class LaxModel(BaseModel):
+        v: List[int]
+
+        model_config = ConfigDict(strict=False)
+
+    class StrictModel(BaseModel):
+        v: List[int]
+
+        model_config = ConfigDict(strict=True)
+
+    assert LaxModel(v=(1, 2)).v == [1, 2]
+    assert LaxModel(v=('1', 2)).v == [1, 2]
+    # Tuple should be rejected
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel(v=(1, 2))
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list', 'input': (1, 2)}
+    ]
+    # Strict in each list item
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel(v=['1', 2])
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'int_type', 'loc': ('v', 0), 'msg': 'Input should be a valid integer', 'input': '1'}
+    ]
+
+
+def test_set_strict() -> None:
+    class LaxModel(BaseModel):
+        v: Set[int]
+
+        model_config = ConfigDict(strict=False)
+
+    class StrictModel(BaseModel):
+        v: Set[int]
+
+        model_config = ConfigDict(strict=True)
+
+    assert LaxModel(v=(1, 2)).v == {1, 2}
+    assert LaxModel(v=('1', 2)).v == {1, 2}
+    # Tuple should be rejected
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel(v=(1, 2))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'set_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid set',
+            'input': (1, 2),
+        }
+    ]
+    # Strict in each set item
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel(v={'1', 2})
+    err_info = exc_info.value.errors(include_url=False)
+    # Sets are not ordered
+    del err_info[0]['loc']
+    assert err_info == [{'type': 'int_type', 'msg': 'Input should be a valid integer', 'input': '1'}]
+
+
+def test_frozenset_strict() -> None:
+    class LaxModel(BaseModel):
+        v: FrozenSet[int]
+
+        model_config = ConfigDict(strict=False)
+
+    class StrictModel(BaseModel):
+        v: FrozenSet[int]
+
+        model_config = ConfigDict(strict=True)
+
+    assert LaxModel(v=(1, 2)).v == frozenset((1, 2))
+    assert LaxModel(v=('1', 2)).v == frozenset((1, 2))
+    # Tuple should be rejected
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel(v=(1, 2))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'frozen_set_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid frozenset',
+            'input': (1, 2),
+        }
+    ]
+    # Strict in each set item
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel(v=frozenset(('1', 2)))
+    err_info = exc_info.value.errors(include_url=False)
+    # Sets are not ordered
+    del err_info[0]['loc']
+    assert err_info == [{'type': 'int_type', 'msg': 'Input should be a valid integer', 'input': '1'}]
+
+
+def test_tuple_strict() -> None:
+    class LaxModel(BaseModel):
+        v: Tuple[int, int]
+
+        model_config = ConfigDict(strict=False)
+
+    class StrictModel(BaseModel):
+        v: Tuple[int, int]
+
+        model_config = ConfigDict(strict=True)
+
+    assert LaxModel(v=[1, 2]).v == (1, 2)
+    assert LaxModel(v=['1', 2]).v == (1, 2)
+    # List should be rejected
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel(v=[1, 2])
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'tuple_type', 'loc': ('v',), 'msg': 'Input should be a valid tuple', 'input': [1, 2]}
+    ]
+    # Strict in each list item
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel(v=('1', 2))
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'int_type', 'loc': ('v', 0), 'msg': 'Input should be a valid integer', 'input': '1'}
+    ]
 
 
 def test_int_validation():
@@ -3933,6 +4082,59 @@ def test_pattern(pattern_type, pattern_value, matching_value, non_matching_value
         'title': 'Foobar',
         'properties': {'pattern': {'type': 'string', 'format': 'regex', 'title': 'Pattern'}},
         'required': ['pattern'],
+    }
+
+
+@pytest.mark.parametrize(
+    'use_field',
+    [pytest.param(True, id='Field'), pytest.param(False, id='constr')],
+)
+def test_compiled_pattern_in_field(use_field):
+    """
+    https://github.com/pydantic/pydantic/issues/9052
+    https://github.com/pydantic/pydantic/pull/9053
+    """
+    pattern_value = r'^whatev.r\d$'
+    field_pattern = re.compile(pattern_value)
+
+    if use_field:
+
+        class Foobar(BaseModel):
+            str_regex: str = Field(..., pattern=field_pattern)
+    else:
+
+        class Foobar(BaseModel):
+            str_regex: constr(pattern=field_pattern) = ...
+
+    field_general_metadata = Foobar.model_fields['str_regex'].metadata
+    assert len(field_general_metadata) == 1
+    field_metadata_pattern = field_general_metadata[0].pattern
+
+    if use_field:
+        # In Field re.Pattern is converted to str instantly
+        assert field_metadata_pattern == pattern_value
+        assert isinstance(field_metadata_pattern, str)
+
+    else:
+        # In constr re.Pattern is kept as is
+        assert field_metadata_pattern == field_pattern
+        assert isinstance(field_metadata_pattern, re.Pattern)
+
+    matching_value = 'whatever1'
+    f = Foobar(str_regex=matching_value)
+    assert f.str_regex == matching_value
+
+    with pytest.raises(
+        ValidationError,
+        match=re.escape("String should match pattern '" + pattern_value + "'"),
+    ):
+        Foobar(str_regex=' whatever1')
+
+    assert Foobar.model_json_schema() == {
+        'type': 'object',
+        'title': 'Foobar',
+        'properties': {'str_regex': {'pattern': pattern_value, 'title': 'Str Regex', 'type': 'string'}},
+        'required': ['str_regex'],
     }
 
 

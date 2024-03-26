@@ -1728,7 +1728,7 @@ def test_model_default():
     'ser_json_timedelta,properties',
     [
         ('float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
-        ('iso8601', {'duration': {'default': 'PT300S', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
+        ('iso8601', {'duration': {'default': 'PT5M', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
     ],
 )
 def test_model_default_timedelta(ser_json_timedelta: Literal['float', 'iso8601'], properties: typing.Dict[str, Any]):
@@ -1770,7 +1770,7 @@ def test_model_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], properti
     'ser_json_timedelta,properties',
     [
         ('float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
-        ('iso8601', {'duration': {'default': 'PT300S', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
+        ('iso8601', {'duration': {'default': 'PT5M', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
     ],
 )
 def test_dataclass_default_timedelta(
@@ -1812,7 +1812,7 @@ def test_dataclass_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], prop
     'ser_json_timedelta,properties',
     [
         ('float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
-        ('iso8601', {'duration': {'default': 'PT300S', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
+        ('iso8601', {'duration': {'default': 'PT5M', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
     ],
 )
 def test_typeddict_default_timedelta(
@@ -5995,3 +5995,38 @@ def test_required_fields_in_annotated_with_basemodel() -> None:
     assert Model.model_fields['a'].is_required()
     assert Model.model_fields['b'].is_required()
     assert Model.model_fields['c'].is_required()
+
+
+@pytest.mark.parametrize(
+    'field_type,default_value,expected_schema',
+    [
+        (
+            IPvAnyAddress,
+            IPv4Address('127.0.0.1'),
+            {
+                'properties': {
+                    'field': {'default': '127.0.0.1', 'format': 'ipvanyaddress', 'title': 'Field', 'type': 'string'}
+                },
+                'title': 'Model',
+                'type': 'object',
+            },
+        ),
+        (
+            IPvAnyAddress,
+            IPv6Address('::1'),
+            {
+                'properties': {
+                    'field': {'default': '::1', 'format': 'ipvanyaddress', 'title': 'Field', 'type': 'string'}
+                },
+                'title': 'Model',
+                'type': 'object',
+            },
+        ),
+    ],
+)
+def test_default_value_encoding(field_type, default_value, expected_schema):
+    class Model(BaseModel):
+        field: field_type = default_value
+
+    schema = Model.model_json_schema()
+    assert schema == expected_schema

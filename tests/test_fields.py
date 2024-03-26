@@ -3,7 +3,7 @@ from typing import Union
 import pytest
 
 import pydantic.dataclasses
-from pydantic import BaseModel, Field, PydanticUserError, RootModel, ValidationError, fields
+from pydantic import BaseModel, ConfigDict, Field, PydanticUserError, RootModel, ValidationError, computed_field, fields
 
 
 def test_field_info_annotation_keyword_argument():
@@ -122,3 +122,25 @@ def test_model_field_default_info():
         "{'a': FieldInfo(annotation=Union[int, NoneType], required=False, default=None), "
         "'b': FieldInfo(annotation=Union[int, NoneType], required=False, default=None)}"
     )
+
+
+def test_computed_field_raises_correct_attribute_error():
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+        @computed_field
+        def comp_field(self) -> str:
+            raise AttributeError('Computed field attribute error')
+
+        @property
+        def prop_field(self):
+            raise AttributeError('Property attribute error')
+
+    with pytest.raises(AttributeError, match='Computed field attribute error'):
+        Model().comp_field
+
+    with pytest.raises(AttributeError, match='Property attribute error'):
+        Model().prop_field
+
+    with pytest.raises(AttributeError, match=f"'{Model.__name__}' object has no attribute 'invalid_field'"):
+        Model().invalid_field
