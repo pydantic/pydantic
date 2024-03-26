@@ -4207,13 +4207,13 @@ error in the presence of data not corresponding to fields. Rather, said input da
 <h2 id="generic-models">Generic models<a class="headerlink" href="#generic-models" title="Permanent link">&para;</a></h2>
 <p>Pydantic supports the creation of generic models to make it easier to reuse a common model structure.</p>
 <p>In order to declare a generic model, you perform the following steps:</p>
-<ul>
+<ol>
 <li>Declare one or more <code>typing.TypeVar</code> instances to use to parameterize your model.</li>
 <li>Declare a pydantic model that inherits from <code>pydantic.BaseModel</code> and <code>typing.Generic</code>,
   where you pass the <code>TypeVar</code> instances as parameters to <code>typing.Generic</code>.</li>
 <li>Use the <code>TypeVar</code> instances as annotations where you will want to replace them with other types or
   pydantic models.</li>
-</ul>
+</ol>
 <p>Here is an example using a generic <code>BaseModel</code> subclass to create an easily-reused HTTP response payload wrapper:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">TypeVar</span>
 
@@ -4231,14 +4231,14 @@ error in the presence of data not corresponding to fields. Rather, said input da
     <span class="n">data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DataT</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
 
-<span class="n">data</span> <span class="o">=</span> <span class="n">DataModel</span><span class="p">(</span><span class="n">numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">people</span><span class="o">=</span><span class="p">[])</span>
-
 <span class="nb">print</span><span class="p">(</span><span class="n">Response</span><span class="p">[</span><span class="nb">int</span><span class="p">](</span><span class="n">data</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 <span class="c1">#&gt; data=1</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">Response</span><span class="p">[</span><span class="nb">str</span><span class="p">](</span><span class="n">data</span><span class="o">=</span><span class="s1">&#39;value&#39;</span><span class="p">))</span>
 <span class="c1">#&gt; data=&#39;value&#39;</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">Response</span><span class="p">[</span><span class="nb">str</span><span class="p">](</span><span class="n">data</span><span class="o">=</span><span class="s1">&#39;value&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="c1">#&gt; {&#39;data&#39;: &#39;value&#39;}</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">DataModel</span><span class="p">(</span><span class="n">numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">people</span><span class="o">=</span><span class="p">[])</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">Response</span><span class="p">[</span><span class="n">DataModel</span><span class="p">](</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="c1">#&gt; {&#39;data&#39;: {&#39;numbers&#39;: [1, 2, 3], &#39;people&#39;: []}}</span>
 <span class="k">try</span><span class="p">:</span>
@@ -4328,6 +4328,43 @@ superclass:</p>
 <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">Response</span><span class="p">[</span><span class="nb">str</span><span class="p">](</span><span class="n">data</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">)))</span>
 <span class="c1">#&gt; StrResponse(data=&#39;a&#39;)</span>
 </code></pre></div>
+<p>You can use parametrized generic models as types in other models:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">ResponseModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
+    <span class="n">content</span><span class="p">:</span> <span class="n">T</span>
+
+
+<span class="k">class</span> <span class="nc">Product</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">price</span><span class="p">:</span> <span class="nb">float</span>
+
+
+<span class="k">class</span> <span class="nc">Order</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">product</span><span class="p">:</span> <span class="n">ResponseModel</span><span class="p">[</span><span class="n">Product</span><span class="p">]</span>
+
+
+<span class="n">product</span> <span class="o">=</span> <span class="n">Product</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Apple&#39;</span><span class="p">,</span> <span class="n">price</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">response</span> <span class="o">=</span> <span class="n">ResponseModel</span><span class="p">[</span><span class="n">Product</span><span class="p">](</span><span class="n">content</span><span class="o">=</span><span class="n">product</span><span class="p">)</span>
+<span class="n">order</span> <span class="o">=</span> <span class="n">Order</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">product</span><span class="o">=</span><span class="n">response</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">order</span><span class="p">))</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Order(id=1, product=ResponseModel[Product](content=Product(name=&#39;Apple&#39;, price=0.5)))</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>When using a parametrized generic model as a type in another model (like <code>product: ResponseModel[Product]</code>),
+make sure to parametrize said generic model when you initialize the model instance
+(like <code>response = ResponseModel[Product](content=product)</code>). If you don't, a <code>ValidationError</code> will be raised, as
+Pydantic doesn't infer the type of the generic model based on the data passed to it.</p>
+</div>
 <p>Using the same <code>TypeVar</code> in nested models allows you to enforce typing relationships at different points in your model:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span>
 
