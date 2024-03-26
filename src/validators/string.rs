@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
 use regex::Regex;
 
-use crate::build_tools::{is_strict, py_schema_error_type, schema_or_config};
+use crate::build_tools::{is_strict, py_schema_error_type, schema_or_config, schema_or_config_same};
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
 use crate::tools::SchemaDict;
@@ -184,12 +184,8 @@ impl StrConstrainedValidator {
         let to_upper: bool =
             schema_or_config(schema, config, intern!(py, "to_upper"), intern!(py, "str_to_upper"))?.unwrap_or(false);
 
-        let coerce_numbers_to_str = match config {
-            Some(c) => c
-                .get_item("coerce_numbers_to_str")?
-                .map_or(Ok(false), |any| any.is_truthy())?,
-            None => false,
-        };
+        let coerce_numbers_to_str: bool =
+            schema_or_config_same(schema, config, intern!(py, "coerce_numbers_to_str"))?.unwrap_or(false);
 
         Ok(Self {
             strict: is_strict(schema, config)?,
