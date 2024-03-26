@@ -3392,6 +3392,10 @@ should also work well with mypy.</p>
 <div class="language-ini highlight"><pre><span></span><code><span class="k">[mypy]</span>
 <span class="na">plugins</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">pydantic.mypy</span>
 </code></pre></div></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+</div>
+<p>If you're using <code>pydantic.v1</code> models, you'll need to add <code>pydantic.v1.mypy</code> to your list of plugins.</p>
 <p>The plugin is compatible with mypy versions <code>&gt;=0.930</code>.</p>
 <p>See the <a href="#configuring-the-plugin">plugin configuration</a> docs for more details.</p>
 <h3 id="configuring-the-plugin">Configuring the Plugin<a class="headerlink" href="#configuring-the-plugin" title="Permanent link">&para;</a></h3>

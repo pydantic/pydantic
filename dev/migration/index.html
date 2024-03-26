@@ -3808,7 +3808,8 @@ to help ease migration, but calling them will emit <code>DeprecationWarning</cod
 </li>
 <li>We have replaced the use of the <code>__root__</code> field to specify a "custom root model" with a new type called
     <a href="../concepts/models/#rootmodel-and-custom-root-types"><code>RootModel</code></a> which is intended to replace the functionality of
-    using a field called <code>__root__</code> in Pydantic V1.</li>
+    using a field called <code>__root__</code> in Pydantic V1. Note, <code>RootModel</code> types no longer support the <code>arbitrary_types_allowed</code>
+    config setting. See <a href="https://github.com/pydantic/pydantic/issues/6710#issuecomment-1700948167">this issue comment</a> for an explanation.</li>
 <li>We have significantly expanded Pydantic's capabilities related to customizing serialization. In particular, we have
     added the <a href="../api/functional_serializers/#pydantic.functional_serializers.field_serializer"><code>@field_serializer</code></a>,
     <a href="../api/functional_serializers/#pydantic.functional_serializers.model_serializer"><code>@model_serializer</code></a>, and
@@ -3831,7 +3832,8 @@ to help ease migration, but calling them will emit <code>DeprecationWarning</cod
   This is notable in the case of passing mutable objects as arguments to a constructor.
   You can see an example + more detail <a href="https://docs.pydantic.dev/latest/concepts/models/#attribute-copies">here</a>.</li>
 <li>The <code>.json()</code> method is deprecated, and attempting to use this deprecated method with arguments such as
-<code>indent</code> or <code>ensure_ascii</code> may lead to confusing errors. For best results, switch to V2's equivalent, <code>model_dump_json()</code>.</li>
+<code>indent</code> or <code>ensure_ascii</code> may lead to confusing errors. For best results, switch to V2's equivalent, <code>model_dump_json()</code>.
+If you'd still like to use said arguments, you can use <a href="https://github.com/pydantic/pydantic/issues/8825#issuecomment-1946206415">this workaround</a>.</li>
 <li>JSON serialization of non-string key values is generally done with <code>str(key)</code>, leading to some changes in behavior such as the following:</li>
 </ul>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span>
