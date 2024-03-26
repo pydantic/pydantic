@@ -367,3 +367,34 @@ def test_backtracking_regex_python(mode) -> None:
     with pytest.raises(ValidationError):
         # not a valid match for the pattern
         v.validate_python('r#"#')
+
+
+@pytest.mark.parametrize('number', (42, 443, 10242))
+def test_coerce_numbers_to_str_schema(number: int):
+    v = SchemaValidator(core_schema.str_schema(coerce_numbers_to_str=True))
+    assert v.validate_python(number) == str(number)
+    assert v.validate_json(str(number)) == str(number)
+
+
+@pytest.mark.parametrize('number', (42, 443, 10242))
+def test_coerce_numbers_to_str_schema_precedence(number: int):
+    config = core_schema.CoreConfig(coerce_numbers_to_str=False)
+    v = SchemaValidator(core_schema.str_schema(coerce_numbers_to_str=True), config=config)
+    assert v.validate_python(number) == str(number)
+    assert v.validate_json(str(number)) == str(number)
+
+    config = core_schema.CoreConfig(coerce_numbers_to_str=True)
+    v = SchemaValidator(core_schema.str_schema(coerce_numbers_to_str=False), config=config)
+    with pytest.raises(ValidationError):
+        v.validate_python(number)
+    with pytest.raises(ValidationError):
+        v.validate_json(str(number))
+
+
+@pytest.mark.parametrize('number', (42, 443, 10242))
+def test_coerce_numbers_to_str_schema_with_strict_mode(number: int):
+    v = SchemaValidator(core_schema.str_schema(coerce_numbers_to_str=True, strict=True))
+    with pytest.raises(ValidationError):
+        v.validate_python(number)
+    with pytest.raises(ValidationError):
+        v.validate_json(str(number))
