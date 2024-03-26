@@ -111,7 +111,8 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
             for example, instances of `MyGenericModel[Any]` could be equal to instances of `MyGenericModel[int]`.
 * We have replaced the use of the `__root__` field to specify a "custom root model" with a new type called
     [`RootModel`](concepts/models.md#rootmodel-and-custom-root-types) which is intended to replace the functionality of
-    using a field called `__root__` in Pydantic V1.
+    using a field called `__root__` in Pydantic V1. Note, `RootModel` types no longer support the `arbitrary_types_allowed`
+    config setting. See [this issue comment](https://github.com/pydantic/pydantic/issues/6710#issuecomment-1700948167) for an explanation.
 * We have significantly expanded Pydantic's capabilities related to customizing serialization. In particular, we have
     added the [`@field_serializer`](api/functional_serializers.md#pydantic.functional_serializers.field_serializer),
     [`@model_serializer`](api/functional_serializers.md#pydantic.functional_serializers.model_serializer), and
