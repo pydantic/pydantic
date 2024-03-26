@@ -3161,11 +3161,15 @@ def test_shadow_attribute_warn_for_redefined_fields() -> None:
 
     # When inheriting from the parent class, as long as the field is not defined at all, there should be no warning
     # about shadowed fields.
-    with warnings.catch_warnings():
-        warnings.simplefilter('error')
+    with warnings.catch_warnings(record=True) as captured_warnings:
+        # Start capturing all warnings
+        warnings.simplefilter('always')
 
         class ChildWithoutRedefinedField(BaseModel, Parent):
             pass
+
+        # Check that no warnings were captured
+        assert len(captured_warnings) == 0
 
     # But when inheriting from the parent class and a parent field is redefined, a warning should be raised about
     # shadowed fields irrespective of whether it is defined with a type that is still compatible or narrower, or
