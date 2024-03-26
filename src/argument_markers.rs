@@ -30,7 +30,7 @@ impl ArgsKwargs {
 #[pymethods]
 impl ArgsKwargs {
     #[new]
-    fn py_new(py: Python, args: &PyTuple, kwargs: Option<&Bound<'_, PyDict>>) -> Self {
+    fn py_new(py: Python, args: &Bound<'_, PyTuple>, kwargs: Option<&Bound<'_, PyDict>>) -> Self {
         Self {
             args: args.into_py(py),
             kwargs: match kwargs {
