@@ -1213,6 +1213,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#serialization-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serialization Context
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#model_copy" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3295,6 +3306,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#serialization-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serialization Context
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#model_copy" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4252,6 +4274,36 @@ over the <code>exclude_unset</code>, <code>exclude_none</code>, and <code>exclud
 </div>
 </div>
 </div>
+<h2 id="serialization-context">Serialization Context<a class="headerlink" href="#serialization-context" title="Permanent link">&para;</a></h2>
+<p>You can pass a context object to the serialization methods which can be accessed from the <code>info</code>
+argument to decorated serializer functions. This is useful when you need to dynamically update the
+serialization behavior during runtime. For example, if you wanted a field to be dumped depending on
+a dynamically controllable set of allowed values, this could be done by passing the allowed values
+by context:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SerializationInfo</span><span class="p">,</span> <span class="n">field_serializer</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;text&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">remove_stopwords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">SerializationInfo</span><span class="p">):</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">context</span>
+        <span class="k">if</span> <span class="n">context</span><span class="p">:</span>
+            <span class="n">stopwords</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;stopwords&#39;</span><span class="p">,</span> <span class="nb">set</span><span class="p">())</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">v</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> <span class="k">if</span> <span class="n">w</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stopwords</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">v</span>
+
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="o">.</span><span class="n">model_construct</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="s1">&#39;This is an example document&#39;</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>  <span class="c1"># no context</span>
+<span class="c1">#&gt; {&#39;text&#39;: &#39;This is an example document&#39;}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">context</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;stopwords&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;this&#39;</span><span class="p">,</span> <span class="s1">&#39;is&#39;</span><span class="p">,</span> <span class="s1">&#39;an&#39;</span><span class="p">]}))</span>
+<span class="c1">#&gt; {&#39;text&#39;: &#39;example document&#39;}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">context</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;stopwords&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;document&#39;</span><span class="p">]}))</span>
+<span class="c1">#&gt; {&#39;text&#39;: &#39;This is an example&#39;}</span>
+</code></pre></div>
+<p>Similarly, you can <a href="../validators/#validation-context">use a context for validation</a>.</p>
 <h2 id="model_copy"><code>model_copy(...)</code><a class="headerlink" href="#model_copy" title="Permanent link">&para;</a></h2>
 <details class="api">
 <summary>API Documentation</summary>

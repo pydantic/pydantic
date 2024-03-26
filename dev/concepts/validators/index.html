@@ -3898,6 +3898,7 @@ by context, and having a separate mechanism for updating what is allowed:</p>
 <span class="sd">      Value error, choice must be one of [&#39;b&#39;, &#39;c&#39;] [type=value_error, input_value=&#39;a&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+<p>Similarly, you can <a href="../serialization/#serialization-context">use a context for serialization</a>.</p>
 <h3 id="using-validation-context-with-basemodel-initialization">Using validation context with <code>BaseModel</code> initialization<a class="headerlink" href="#using-validation-context-with-basemodel-initialization" title="Permanent link">&para;</a></h3>
 <p>Although there is no way to specify a context in the standard <code>BaseModel</code> initializer, you can work around this through
 the use of <code>contextvars.ContextVar</code> and a custom <code>__init__</code> method:</p>
