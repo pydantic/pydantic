@@ -3131,12 +3131,12 @@ def test_shadow_attribute() -> None:
     class One(Model):
         foo: str = 'abc'
 
-    with pytest.warns(UserWarning, match=r'"foo" shadows an attribute in parent ".*One"'):
+    with pytest.warns(UserWarning, match=r'"foo" in ".*Two" shadows an attribute in parent ".*One"'):
 
         class Two(One):
             foo: str
 
-    with pytest.warns(UserWarning, match=r'"foo" shadows an attribute in parent ".*One"'):
+    with pytest.warns(UserWarning, match=r'"foo" in ".*Three" shadows an attribute in parent ".*One"'):
 
         class Three(One):
             foo: str = 'xyz'
