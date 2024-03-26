@@ -636,17 +636,8 @@ class GenerateSchema:
             ref_mode = 'to-def'
 
         schema: CoreSchema
-        get_schema = getattr(obj, '__get_pydantic_core_schema__', None)
-        if get_schema is None:
-            validators = getattr(obj, '__get_validators__', None)
-            if validators is None:
-                return None
-            warn(
-                '`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
-                PydanticDeprecatedSince20,
-            )
-            schema = core_schema.chain_schema([core_schema.with_info_plain_validator_function(v) for v in validators()])
-        else:
+
+        if (get_schema := getattr(obj, '__get_pydantic_core_schema__', None)) is not None:
             if len(inspect.signature(get_schema).parameters) == 1:
                 # (source) -> CoreSchema
                 schema = get_schema(source)
@@ -654,6 +645,21 @@ class GenerateSchema:
                 schema = get_schema(
                     source, CallbackGetCoreSchemaHandler(self._generate_schema_inner, self, ref_mode=ref_mode)
                 )
+        # fmt: off
+        elif (existing_schema := getattr(obj, '__pydantic_core_schema__', None)) is not None and existing_schema.get(
+            'cls', None
+        ) == obj:
+            schema = existing_schema
+        # fmt: on
+        elif (validators := getattr(obj, '__get_validators__', None)) is not None:
+            warn(
+                '`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
+                PydanticDeprecatedSince20,
+            )
+            schema = core_schema.chain_schema([core_schema.with_info_plain_validator_function(v) for v in validators()])
+        else:
+            # we have no existing schema information on the property, exit early so that we can go generate a schema
+            return None
 
         schema = self._unpack_refs_defs(schema)
 
