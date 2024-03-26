@@ -193,7 +193,8 @@ def collect_model_fields(  # noqa: C901
                     # on the class instance.
                     continue
                 warnings.warn(
-                    f'Field name "{ann_name}" shadows an attribute in parent "{base.__qualname__}"; ',
+                    f'Field name "{ann_name}" in "{cls.__qualname__}" shadows an attribute in parent '
+                    f'"{base.__qualname__}"',
                     UserWarning,
                 )
 
