@@ -773,6 +773,7 @@ You can use parametrized generic models as types in other models:
 
 ```py
 from typing import Generic, TypeVar
+
 from pydantic import BaseModel
 
 
