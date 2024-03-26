@@ -636,10 +636,10 @@ Pydantic supports the creation of generic models to make it easier to reuse a co
 
 In order to declare a generic model, you perform the following steps:
 
-* Declare one or more `typing.TypeVar` instances to use to parameterize your model.
-* Declare a pydantic model that inherits from `pydantic.BaseModel` and `typing.Generic`,
+1. Declare one or more `typing.TypeVar` instances to use to parameterize your model.
+2. Declare a pydantic model that inherits from `pydantic.BaseModel` and `typing.Generic`,
   where you pass the `TypeVar` instances as parameters to `typing.Generic`.
-* Use the `TypeVar` instances as annotations where you will want to replace them with other types or
+3. Use the `TypeVar` instances as annotations where you will want to replace them with other types or
   pydantic models.
 
 Here is an example using a generic `BaseModel` subclass to create an easily-reused HTTP response payload wrapper:
@@ -661,14 +661,14 @@ class Response(BaseModel, Generic[DataT]):
     data: Optional[DataT] = None
 
 
-data = DataModel(numbers=[1, 2, 3], people=[])
-
 print(Response[int](data=1))
 #> data=1
 print(Response[str](data='value'))
 #> data='value'
 print(Response[str](data='value').model_dump())
 #> {'data': 'value'}
+
+data = DataModel(numbers=[1, 2, 3], people=[])
 print(Response[DataModel](data=data).model_dump())
 #> {'data': {'numbers': [1, 2, 3], 'people': []}}
 try:
@@ -768,6 +768,43 @@ print(repr(Response[int](data=1)))
 print(repr(Response[str](data='a')))
 #> StrResponse(data='a')
 ```
+
+You can use parametrized generic models as types in other models:
+
+```py
+from typing import Generic, TypeVar
+from pydantic import BaseModel
+
+
+T = TypeVar('T')
+
+
+class ResponseModel(BaseModel, Generic[T]):
+    content: T
+
+
+class Product(BaseModel):
+    name: str
+    price: float
+
+
+class Order(BaseModel):
+    id: int
+    product: ResponseModel[Product]
+
+
+product = Product(name='Apple', price=0.5)
+response = ResponseModel[Product](content=product)
+order = Order(id=1, product=response)
+print(repr(order))
+#> Order(id=1, product=ResponseModel[Product](content=Product(name='Apple', price=0.5)))
+```
+
+!!! tip
+    When using a parametrized generic model as a type in another model (like `product: ResponseModel[Product]`),
+    make sure to parametrize said generic model when you initialize the model instance
+    (like `response = ResponseModel[Product](content=product)`). If you don't, a `ValidationError` will be raised, as
+    Pydantic doesn't infer the type of the generic model based on the data passed to it.
 
 Using the same `TypeVar` in nested models allows you to enforce typing relationships at different points in your model:
 
