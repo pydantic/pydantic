@@ -33,7 +33,7 @@ from pydantic.fields import FieldInfo
 from pydantic.types import Strict
 
 from ..config import ConfigDict
-from ..json_schema import JsonSchemaValue, update_json_schema
+from ..json_schema import JsonSchemaValue
 from . import _known_annotated_metadata, _typing_extra, _validators
 from ._core_utils import get_type_ref
 from ._internal_dataclass import slots_true
@@ -87,7 +87,7 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
         def get_json_schema(schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
             json_schema = handler(schema)
             original_schema = handler.resolve_ref_schema(json_schema)
-            update_json_schema(original_schema, js_updates)
+            original_schema.update(js_updates)
             return json_schema
 
         # we don't want to add the missing to the schema if it's the default one
@@ -113,7 +113,7 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
         def get_json_schema_no_cases(_, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
             json_schema = handler(core_schema.enum_schema(enum_type, cases, sub_type=sub_type, ref=enum_ref))
             original_schema = handler.resolve_ref_schema(json_schema)
-            update_json_schema(original_schema, js_updates)
+            original_schema.update(js_updates)
             return json_schema
 
         # Use an isinstance check for enums with no cases.
