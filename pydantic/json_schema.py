@@ -95,10 +95,13 @@ _MODE_TITLE_MAPPING: dict[JsonSchemaMode, str] = {'validation': 'Input', 'serial
 )
 def update_json_schema(schema: JsonSchemaValue, updates: dict[str, Any]) -> JsonSchemaValue:
     """Update a JSON schema in-place by providing a dictionary of updates.
+
     This function sets the provided key-value pairs in the schema and returns the updated schema.
+
     Args:
         schema: The JSON schema to update.
         updates: A dictionary of key-value pairs to set in the schema.
+
     Returns:
         The updated JSON schema.
     """
