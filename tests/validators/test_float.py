@@ -183,12 +183,12 @@ def test_float_repr():
     v = SchemaValidator({'type': 'float'})
     assert (
         plain_repr(v)
-        == 'SchemaValidator(title="float",validator=Float(FloatValidator{strict:false,allow_inf_nan:true}),definitions=[])'
+        == 'SchemaValidator(title="float",validator=Float(FloatValidator{strict:false,allow_inf_nan:true}),definitions=[],cache_strings=True)'
     )
     v = SchemaValidator({'type': 'float', 'strict': True})
     assert (
         plain_repr(v)
-        == 'SchemaValidator(title="float",validator=Float(FloatValidator{strict:true,allow_inf_nan:true}),definitions=[])'
+        == 'SchemaValidator(title="float",validator=Float(FloatValidator{strict:true,allow_inf_nan:true}),definitions=[],cache_strings=True)'
     )
     v = SchemaValidator({'type': 'float', 'multiple_of': 7})
     assert plain_repr(v).startswith('SchemaValidator(title="constrained-float",validator=ConstrainedFloat(')

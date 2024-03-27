@@ -55,7 +55,8 @@ impl BuildValidator for ArgumentsValidator {
         for (arg_index, arg) in arguments_schema.iter().enumerate() {
             let arg = arg.downcast::<PyDict>()?;
 
-            let name: String = arg.get_as_req(intern!(py, "name"))?;
+            let py_name: Bound<PyString> = arg.get_as_req(intern!(py, "name"))?;
+            let name = py_name.to_string();
             let mode = arg.get_as::<Bound<'_, PyString>>(intern!(py, "mode"))?;
             let mode = mode
                 .as_ref()
@@ -77,7 +78,7 @@ impl BuildValidator for ArgumentsValidator {
                     }
                     None => Some(LookupKey::from_string(py, &name)),
                 };
-                kwarg_key = Some(PyString::new_bound(py, &name).into());
+                kwarg_key = Some(py_name.into_py(py));
             }
 
             let schema = arg.get_as_req(intern!(py, "schema"))?;
@@ -274,7 +275,9 @@ impl Validator for ArgumentsValidator {
                     if !used_kwargs.contains(either_str.as_cow()?.as_ref()) {
                         match self.var_kwargs_validator {
                             Some(ref validator) => match validator.validate(py, value.borrow_input(), state) {
-                                Ok(value) => output_kwargs.set_item(either_str.as_py_string(py), value)?,
+                                Ok(value) => {
+                                    output_kwargs.set_item(either_str.as_py_string(py, state.cache_str()), value)?;
+                                }
                                 Err(ValError::LineErrors(line_errors)) => {
                                     for err in line_errors {
                                         errors.push(err.with_outer_location(raw_key.clone()));

@@ -366,6 +366,32 @@ def test_list_of_ints_core_json(benchmark):
         v.validate_json(json_data[1])
 
 
+list_of_strs_data = [str(i) for i in range(1000)]
+
+
+@pytest.mark.benchmark(group='list[str]')
+def test_list_of_strs_py_cached(benchmark):
+    v = SchemaValidator(core_schema.list_schema(core_schema.str_schema()))
+
+    benchmark(v.validate_python, list_of_strs_data)
+
+
+@pytest.mark.benchmark(group='list[str]')
+def test_list_of_strs_json_cached(benchmark):
+    v = SchemaValidator(core_schema.list_schema(core_schema.str_schema()))
+
+    json_data = json.dumps(list_of_strs_data)
+    benchmark(v.validate_json, json_data)
+
+
+@pytest.mark.benchmark(group='list[str]')
+def test_list_of_strs_json_uncached(benchmark):
+    v = SchemaValidator(core_schema.list_schema(core_schema.str_schema()), {'cache_strings': False})
+
+    json_data = json.dumps(list_of_strs_data)
+    benchmark(v.validate_json, json_data)
+
+
 @pytest.mark.benchmark(group='List[Any]')
 def test_list_of_any_core_py(benchmark):
     v = SchemaValidator({'type': 'list'})

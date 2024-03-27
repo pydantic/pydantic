@@ -77,9 +77,15 @@ def test_bool_error(pydantic_version):
 
 def test_bool_repr():
     v = SchemaValidator({'type': 'bool'})
-    assert plain_repr(v) == 'SchemaValidator(title="bool",validator=Bool(BoolValidator{strict:false}),definitions=[])'
+    assert (
+        plain_repr(v)
+        == 'SchemaValidator(title="bool",validator=Bool(BoolValidator{strict:false}),definitions=[],cache_strings=True)'
+    )
     v = SchemaValidator({'type': 'bool', 'strict': True})
-    assert plain_repr(v) == 'SchemaValidator(title="bool",validator=Bool(BoolValidator{strict:true}),definitions=[])'
+    assert (
+        plain_repr(v)
+        == 'SchemaValidator(title="bool",validator=Bool(BoolValidator{strict:true}),definitions=[],cache_strings=True)'
+    )
 
 
 def test_bool_key(py_and_json: PyAndJson):
