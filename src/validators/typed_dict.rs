@@ -281,7 +281,7 @@ impl Validator for TypedDictValidator {
                             }
                             ExtraBehavior::Ignore => {}
                             ExtraBehavior::Allow => {
-                                let py_key = either_str.as_py_string(self.py);
+                                let py_key = either_str.as_py_string(self.py, self.state.cache_str());
                                 if let Some(validator) = self.extras_validator {
                                     match validator.validate(self.py, value, self.state) {
                                         Ok(value) => {

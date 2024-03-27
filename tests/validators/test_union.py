@@ -264,7 +264,7 @@ def test_one_choice():
     v = SchemaValidator({'type': 'union', 'choices': [{'type': 'str'}]})
     assert (
         plain_repr(v)
-        == 'SchemaValidator(title="str",validator=Str(StrValidator{strict:false,coerce_numbers_to_str:false}),definitions=[])'
+        == 'SchemaValidator(title="str",validator=Str(StrValidator{strict:false,coerce_numbers_to_str:false}),definitions=[],cache_strings=True)'
     )
     assert v.validate_python('hello') == 'hello'
 

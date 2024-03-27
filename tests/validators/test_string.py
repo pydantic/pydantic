@@ -212,7 +212,7 @@ def test_default_validator():
     v = SchemaValidator(core_schema.str_schema(strict=True, to_lower=False), {'str_strip_whitespace': False})
     assert (
         plain_repr(v)
-        == 'SchemaValidator(title="str",validator=Str(StrValidator{strict:true,coerce_numbers_to_str:false}),definitions=[])'
+        == 'SchemaValidator(title="str",validator=Str(StrValidator{strict:true,coerce_numbers_to_str:false}),definitions=[],cache_strings=True)'
     )
 
 
