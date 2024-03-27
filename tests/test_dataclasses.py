@@ -2906,3 +2906,35 @@ def test_annotation_with_double_override() -> None:
         for field_name in ['a', 'b', 'c', 'd']:
             assert class_.__pydantic_fields__[field_name].annotation is str
             assert getattr(instance, field_name) == field_name
+
+
+def test_schema_valid_for_inner_generic() -> None:
+    T = TypeVar('T')
+
+    @pydantic.dataclasses.dataclass()
+    class Inner(Generic[T]):
+        x: T
+
+    @pydantic.dataclasses.dataclass()
+    class Outer:
+        inner: Inner[int]
+
+    assert Outer(inner={'x': 1}).inner.x == 1
+    # note, this isn't Inner[Int] like it is for the BaseModel case, but the type of x is substituted, which is the important part
+    assert Outer.__pydantic_core_schema__['schema']['fields'][0]['schema']['cls'] == Inner
+    assert (
+        Outer.__pydantic_core_schema__['schema']['fields'][0]['schema']['schema']['fields'][0]['schema']['type']
+        == 'int'
+    )
+
+
+def test_validation_works_for_cyclical_forward_refs() -> None:
+    @pydantic.dataclasses.dataclass()
+    class X:
+        y: Union['Y', None]
+
+    @pydantic.dataclasses.dataclass()
+    class Y:
+        x: Union[X, None]
+
+    assert Y(x={'y': None}).x.y is None

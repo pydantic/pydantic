@@ -3235,3 +3235,31 @@ def test_inherited_class_vars(create_module):
 
     assert Child.CONST1 == 'a'
     assert Child.CONST2 == 'b'
+
+
+def test_schema_valid_for_inner_generic() -> None:
+    T = TypeVar('T')
+
+    class Inner(BaseModel, Generic[T]):
+        x: T
+
+    class Outer(BaseModel):
+        inner: Inner[int]
+
+    assert Outer(inner={'x': 1}).inner.x == 1
+    # confirming that the typevars are substituted in the outer model schema
+    assert Outer.__pydantic_core_schema__['schema']['fields']['inner']['schema']['cls'] == Inner[int]
+    assert (
+        Outer.__pydantic_core_schema__['schema']['fields']['inner']['schema']['schema']['fields']['x']['schema']['type']
+        == 'int'
+    )
+
+
+def test_validation_works_for_cyclical_forward_refs() -> None:
+    class X(BaseModel):
+        y: Union['Y', None]
+
+    class Y(BaseModel):
+        x: Union[X, None]
+
+    assert Y(x={'y': None}).x.y is None
