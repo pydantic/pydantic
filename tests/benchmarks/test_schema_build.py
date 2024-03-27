@@ -1,5 +1,6 @@
 from typing import Literal, Union
 
+import pytest
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, Discriminator
@@ -25,6 +26,7 @@ class NestedModel(BaseModel):
     animal: Annotated[Union[Cat, Dog], Discriminator('type')]
 
 
+@pytest.mark.benchmark
 def test_construct_schema():
     @dataclass(frozen=True, kw_only=True)
     class Root:
