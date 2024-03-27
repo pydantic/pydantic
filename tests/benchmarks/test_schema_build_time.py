@@ -1,4 +1,6 @@
-from typing_extensions import Annotated, Literal
+from typing import Literal, Union
+
+from typing_extensions import Annotated
 
 from pydantic import BaseModel, Discriminator
 from pydantic.dataclasses import dataclass
@@ -16,11 +18,11 @@ class Dog:
 
 @dataclass(frozen=True, kw_only=True)
 class NestedDataClass:
-    animal: Annotated[Cat | Dog, Discriminator('type')]
+    animal: Annotated[Union[Cat, Dog], Discriminator('type')]
 
 
 class NestedModel(BaseModel):
-    animal: Annotated[Cat | Dog, Discriminator('type')]
+    animal: Annotated[Union[Cat, Dog], Discriminator('type')]
 
 
 def test_construct_schema():
