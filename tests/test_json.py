@@ -13,6 +13,7 @@ from pydantic_core import (
     SchemaValidator,
     ValidationError,
     core_schema,
+    from_json,
     to_json,
     to_jsonable_python,
 )
@@ -365,3 +366,13 @@ def test_inf_nan_allow():
     assert v.validate_json('Infinity') == float('inf')
     assert v.validate_json('-Infinity') == float('-inf')
     assert v.validate_json('NaN') == IsFloatNan()
+
+
+def test_partial_parse():
+    with pytest.raises(ValueError, match='EOF while parsing a string at line 1 column 15'):
+        from_json('["aa", "bb", "c')
+    assert from_json('["aa", "bb", "c', allow_partial=True) == ['aa', 'bb']
+
+    with pytest.raises(ValueError, match='EOF while parsing a string at line 1 column 15'):
+        from_json(b'["aa", "bb", "c')
+    assert from_json(b'["aa", "bb", "c', allow_partial=True) == ['aa', 'bb']

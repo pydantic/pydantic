@@ -4,6 +4,7 @@ extern crate core;
 
 use std::sync::OnceLock;
 
+use jiter::StringCacheMode;
 use pyo3::exceptions::PyTypeError;
 use pyo3::{prelude::*, sync::GILOnceCell};
 
@@ -38,19 +39,31 @@ pub use validators::{validate_core_schema, PySome, SchemaValidator};
 
 use crate::input::Input;
 
-#[pyfunction(signature = (data, *, allow_inf_nan=true, cache_strings=true))]
+#[derive(FromPyObject)]
+pub enum CacheStringsArg {
+    Bool(bool),
+    Literal(StringCacheMode),
+}
+
+#[pyfunction(signature = (data, *, allow_inf_nan=true, cache_strings=CacheStringsArg::Bool(true), allow_partial=false))]
 pub fn from_json<'py>(
     py: Python<'py>,
     data: &Bound<'_, PyAny>,
     allow_inf_nan: bool,
-    cache_strings: bool,
+    cache_strings: CacheStringsArg,
+    allow_partial: bool,
 ) -> PyResult<Bound<'py, PyAny>> {
     let v_match = data
         .validate_bytes(false)
         .map_err(|_| PyTypeError::new_err("Expected bytes, bytearray or str"))?;
     let json_either_bytes = v_match.into_inner();
     let json_bytes = json_either_bytes.as_slice();
-    jiter::python_parse(py, json_bytes, allow_inf_nan, cache_strings).map_err(|e| jiter::map_json_error(json_bytes, &e))
+    let cache_mode = match cache_strings {
+        CacheStringsArg::Bool(b) => b.into(),
+        CacheStringsArg::Literal(mode) => mode,
+    };
+    jiter::python_parse(py, json_bytes, allow_inf_nan, cache_mode, allow_partial)
+        .map_err(|e| jiter::map_json_error(json_bytes, &e))
 }
 
 pub fn get_pydantic_core_version() -> &'static str {

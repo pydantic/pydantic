@@ -302,7 +302,10 @@ impl Validator for DataclassArgsValidator {
                                         if let Some(ref validator) = self.extras_validator {
                                             match validator.validate(py, value.borrow_input(), state) {
                                                 Ok(value) => {
-                                                    output_dict.set_item(either_str.as_py_string(py), value)?;
+                                                    output_dict.set_item(
+                                                        either_str.as_py_string(py, state.cache_str()),
+                                                        value,
+                                                    )?;
                                                 }
                                                 Err(ValError::LineErrors(line_errors)) => {
                                                     for err in line_errors {
@@ -312,7 +315,8 @@ impl Validator for DataclassArgsValidator {
                                                 Err(err) => return Err(err),
                                             }
                                         } else {
-                                            output_dict.set_item(either_str.as_py_string(py), value)?;
+                                            output_dict
+                                                .set_item(either_str.as_py_string(py, state.cache_str()), value)?;
                                         }
                                     }
                                 }
@@ -455,7 +459,7 @@ impl BuildValidator for DataclassValidator {
         let validator = build_validator(&sub_schema, config, definitions)?;
 
         let post_init = if schema.get_as::<bool>(intern!(py, "post_init"))?.unwrap_or(false) {
-            Some(PyString::new_bound(py, "__post_init__").into())
+            Some(intern!(py, "__post_init__").into_py(py))
         } else {
             None
         };

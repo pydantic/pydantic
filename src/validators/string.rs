@@ -49,7 +49,7 @@ impl Validator for StrValidator {
     ) -> ValResult<PyObject> {
         input
             .validate_str(state.strict_or(self.strict), self.coerce_numbers_to_str)
-            .map(|val_match| val_match.unpack(state).into_py(py))
+            .map(|val_match| val_match.unpack(state).as_py_string(py, state.cache_str()).into_py(py))
     }
 
     fn get_name(&self) -> &str {
@@ -129,14 +129,14 @@ impl Validator for StrConstrainedValidator {
         }
 
         let py_string = if self.to_lower {
-            PyString::new_bound(py, &str.to_lowercase())
+            state.maybe_cached_str(py, &str.to_lowercase())
         } else if self.to_upper {
-            PyString::new_bound(py, &str.to_uppercase())
+            state.maybe_cached_str(py, &str.to_uppercase())
         } else if self.strip_whitespace {
-            PyString::new_bound(py, str)
+            state.maybe_cached_str(py, str)
         } else {
             // we haven't modified the string, return the original as it might be a PyString
-            either_str.as_py_string(py)
+            either_str.as_py_string(py, state.cache_str())
         };
         Ok(py_string.into_py(py))
     }

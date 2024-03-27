@@ -32,7 +32,7 @@ def test_ignored_def():
 def test_extract_used_refs_ignores_metadata():
     v = SchemaValidator(core_schema.any_schema(metadata={'type': 'definition-ref'}))
     assert v.validate_python([1, 2, 3]) == [1, 2, 3]
-    assert plain_repr(v).endswith('definitions=[])')
+    assert plain_repr(v).endswith('definitions=[],cache_strings=True)')
 
 
 def test_check_ref_used_ignores_metadata():

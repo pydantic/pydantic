@@ -342,9 +342,15 @@ def test_union_int_simple(py_and_json: PyAndJson):
 
 def test_int_repr():
     v = SchemaValidator({'type': 'int'})
-    assert plain_repr(v) == 'SchemaValidator(title="int",validator=Int(IntValidator{strict:false}),definitions=[])'
+    assert (
+        plain_repr(v)
+        == 'SchemaValidator(title="int",validator=Int(IntValidator{strict:false}),definitions=[],cache_strings=True)'
+    )
     v = SchemaValidator({'type': 'int', 'strict': True})
-    assert plain_repr(v) == 'SchemaValidator(title="int",validator=Int(IntValidator{strict:true}),definitions=[])'
+    assert (
+        plain_repr(v)
+        == 'SchemaValidator(title="int",validator=Int(IntValidator{strict:true}),definitions=[],cache_strings=True)'
+    )
     v = SchemaValidator({'type': 'int', 'multiple_of': 7})
     assert plain_repr(v).startswith('SchemaValidator(title="constrained-int",validator=ConstrainedInt(')
 

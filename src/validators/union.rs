@@ -417,7 +417,7 @@ impl Validator for TaggedUnionValidator {
                 }
             }
             Discriminator::SelfSchema => {
-                self.find_call_validator(py, self.self_schema_tag(py, input)?.as_any(), input, state)
+                self.find_call_validator(py, self.self_schema_tag(py, input, state)?.as_any(), input, state)
             }
         }
     }
@@ -432,6 +432,7 @@ impl TaggedUnionValidator {
         &self,
         py: Python<'py>,
         input: &(impl Input<'py> + ?Sized),
+        state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Bound<'py, PyString>> {
         let dict = input.strict_dict()?;
         let dict = dict.as_py_dict().expect("self schema is always a Python dictionary");
@@ -452,7 +453,7 @@ impl TaggedUnionValidator {
             };
             tag
         } else {
-            Ok(PyString::new_bound(py, tag))
+            Ok(state.maybe_cached_str(py, tag))
         }
     }
 

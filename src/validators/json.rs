@@ -64,8 +64,8 @@ impl Validator for JsonValidator {
                 validator.validate(py, &json_value, &mut json_state)
             }
             None => {
-                let obj =
-                    jiter::python_parse(py, json_bytes, true, true).map_err(|e| map_json_err(input, e, json_bytes))?;
+                let obj = jiter::python_parse(py, json_bytes, true, state.cache_str(), false)
+                    .map_err(|e| map_json_err(input, e, json_bytes))?;
                 Ok(obj.unbind())
             }
         }
