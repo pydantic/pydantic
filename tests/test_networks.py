@@ -1,3 +1,4 @@
+import json
 from typing import Union
 
 import pytest
@@ -8,6 +9,7 @@ from pydantic import (
     AmqpDsn,
     AnyUrl,
     BaseModel,
+    ClickHouseDsn,
     CockroachDsn,
     FileUrl,
     HttpUrl,
@@ -414,6 +416,20 @@ def test_mysql_dsns(dsn):
 def test_mariadb_dsns(dsn):
     class Model(BaseModel):
         a: MariaDBDsn
+
+    assert str(Model(a=dsn).a) == dsn
+
+
+@pytest.mark.parametrize(
+    'dsn',
+    [
+        'clickhouse+native://user:pass@localhost:9000/app',
+        'clickhouse+asynch://user:pass@localhost:9000/app',
+    ],
+)
+def test_clickhouse_dsns(dsn):
+    class Model(BaseModel):
+        a: ClickHouseDsn
 
     assert str(Model(a=dsn).a) == dsn
 
@@ -850,11 +866,33 @@ def test_name_email():
 
     assert str(Model(v=NameEmail('foo bar', 'foobaR@example.com')).v) == 'foo bar <foobaR@example.com>'
     assert str(Model(v='foo bar  <foobaR@example.com>').v) == 'foo bar <foobaR@example.com>'
+    assert str(Model(v='foobaR@example.com').v) == 'foobaR <foobaR@example.com>'
     assert NameEmail('foo bar', 'foobaR@example.com') == NameEmail('foo bar', 'foobaR@example.com')
     assert NameEmail('foo bar', 'foobaR@example.com') != NameEmail('foo bar', 'different@example.com')
+
+    assert Model.model_validate_json('{"v":"foo bar <foobaR@example.com>"}').v == NameEmail(
+        'foo bar', 'foobaR@example.com'
+    )
+    assert str(Model.model_validate_json('{"v":"foobaR@example.com"}').v) == 'foobaR <foobaR@example.com>'
+    assert (
+        Model(v=NameEmail('foo bar', 'foobaR@example.com')).model_dump_json() == '{"v":"foo bar <foobaR@example.com>"}'
+    )
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=1)
     assert exc_info.value.errors() == [
         {'input': 1, 'loc': ('v',), 'msg': 'Input is not a valid NameEmail', 'type': 'name_email_type'}
     ]
+
+
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
+def test_name_email_serialization():
+    class Model(BaseModel):
+        email: NameEmail
+
+    m = Model.model_validate({'email': '"name@mailbox.com" <name@mailbox.com>'})
+    assert m.email.name == 'name@mailbox.com'
+    assert str(m.email) == '"name@mailbox.com" <name@mailbox.com>'
+
+    obj = json.loads(m.model_dump_json())
+    Model(email=obj['email'])

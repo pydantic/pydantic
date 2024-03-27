@@ -109,7 +109,9 @@ def _type_has_config(type_: Any) -> bool:
 
 @final
 class TypeAdapter(Generic[T]):
-    """Type adapters provide a flexible way to perform validation and serialization based on a Python type.
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/type_adapter/
+
+    Type adapters provide a flexible way to perform validation and serialization based on a Python type.
 
     A `TypeAdapter` instance exposes some of the functionality from `BaseModel` instance methods
     for types that do not have such methods (such as dataclasses, primitive types, and more).
@@ -124,7 +126,7 @@ class TypeAdapter(Generic[T]):
 
     @overload
     def __init__(
-        self,
+        self: TypeAdapter[T],
         type: type[T],
         *,
         config: ConfigDict | None = ...,
@@ -133,12 +135,13 @@ class TypeAdapter(Generic[T]):
     ) -> None:
         ...
 
-    # This second overload is for unsupported special forms (such as Union). `pyright` handles them fine, but `mypy` does not match
-    # them against `type: type[T]`, so an explicit overload with `type: T` is needed.
+    # This second overload is for unsupported special forms (such as Annotated, Union, etc.)
+    # Currently there is no way to type this correctly
+    # See https://github.com/python/typing/pull/1618
     @overload
-    def __init__(  # pyright: ignore[reportOverlappingOverload]
-        self,
-        type: T,
+    def __init__(
+        self: TypeAdapter[Any],
+        type: Any,
         *,
         config: ConfigDict | None = ...,
         _parent_depth: int = ...,
@@ -148,7 +151,7 @@ class TypeAdapter(Generic[T]):
 
     def __init__(
         self,
-        type: type[T] | T,
+        type: Any,
         *,
         config: ConfigDict | None = None,
         _parent_depth: int = 2,
@@ -232,7 +235,8 @@ class TypeAdapter(Generic[T]):
 
     def validate_python(
         self,
-        __object: Any,
+        object: Any,
+        /,
         *,
         strict: bool | None = None,
         from_attributes: bool | None = None,
@@ -241,7 +245,7 @@ class TypeAdapter(Generic[T]):
         """Validate a Python object against the model.
 
         Args:
-            __object: The Python object to validate against the model.
+            object: The Python object to validate against the model.
             strict: Whether to strictly check types.
             from_attributes: Whether to extract data from object attributes.
             context: Additional context to pass to the validator.
@@ -253,37 +257,37 @@ class TypeAdapter(Generic[T]):
         Returns:
             The validated object.
         """
-        return self.validator.validate_python(__object, strict=strict, from_attributes=from_attributes, context=context)
+        return self.validator.validate_python(object, strict=strict, from_attributes=from_attributes, context=context)
 
     def validate_json(
-        self, __data: str | bytes, *, strict: bool | None = None, context: dict[str, Any] | None = None
+        self, data: str | bytes, /, *, strict: bool | None = None, context: dict[str, Any] | None = None
     ) -> T:
-        """Usage docs: https://docs.pydantic.dev/2.6/concepts/json/#json-parsing
+        """Usage docs: https://docs.pydantic.dev/2.7/concepts/json/#json-parsing
 
         Validate a JSON string or bytes against the model.
 
         Args:
-            __data: The JSON data to validate against the model.
+            data: The JSON data to validate against the model.
             strict: Whether to strictly check types.
             context: Additional context to use during validation.
 
         Returns:
             The validated object.
         """
-        return self.validator.validate_json(__data, strict=strict, context=context)
+        return self.validator.validate_json(data, strict=strict, context=context)
 
-    def validate_strings(self, __obj: Any, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> T:
+    def validate_strings(self, obj: Any, /, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> T:
         """Validate object contains string data against the model.
 
         Args:
-            __obj: The object contains string data to validate.
+            obj: The object contains string data to validate.
             strict: Whether to strictly check types.
             context: Additional context to use during validation.
 
         Returns:
             The validated object.
         """
-        return self.validator.validate_strings(__obj, strict=strict, context=context)
+        return self.validator.validate_strings(obj, strict=strict, context=context)
 
     def get_default_value(self, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> Some[T] | None:
         """Get the default value for the wrapped type.
@@ -299,7 +303,8 @@ class TypeAdapter(Generic[T]):
 
     def dump_python(
         self,
-        __instance: T,
+        instance: T,
+        /,
         *,
         mode: Literal['json', 'python'] = 'python',
         include: IncEx | None = None,
@@ -310,11 +315,12 @@ class TypeAdapter(Generic[T]):
         exclude_none: bool = False,
         round_trip: bool = False,
         warnings: bool = True,
+        serialize_as_any: bool = False,
     ) -> Any:
         """Dump an instance of the adapted type to a Python object.
 
         Args:
-            __instance: The Python object to serialize.
+            instance: The Python object to serialize.
             mode: The output format.
             include: Fields to include in the output.
             exclude: Fields to exclude from the output.
@@ -324,12 +330,13 @@ class TypeAdapter(Generic[T]):
             exclude_none: Whether to exclude fields with None values.
             round_trip: Whether to output the serialized data in a way that is compatible with deserialization.
             warnings: Whether to display serialization warnings.
+            serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
 
         Returns:
             The serialized object.
         """
         return self.serializer.to_python(
-            __instance,
+            instance,
             mode=mode,
             by_alias=by_alias,
             include=include,
@@ -339,11 +346,13 @@ class TypeAdapter(Generic[T]):
             exclude_none=exclude_none,
             round_trip=round_trip,
             warnings=warnings,
+            serialize_as_any=serialize_as_any,
         )
 
     def dump_json(
         self,
-        __instance: T,
+        instance: T,
+        /,
         *,
         indent: int | None = None,
         include: IncEx | None = None,
@@ -354,13 +363,14 @@ class TypeAdapter(Generic[T]):
         exclude_none: bool = False,
         round_trip: bool = False,
         warnings: bool = True,
+        serialize_as_any: bool = False,
     ) -> bytes:
-        """Usage docs: https://docs.pydantic.dev/2.6/concepts/json/#json-serialization
+        """Usage docs: https://docs.pydantic.dev/2.7/concepts/json/#json-serialization
 
         Serialize an instance of the adapted type to JSON.
 
         Args:
-            __instance: The instance to be serialized.
+            instance: The instance to be serialized.
             indent: Number of spaces for JSON indentation.
             include: Fields to include.
             exclude: Fields to exclude.
@@ -370,12 +380,13 @@ class TypeAdapter(Generic[T]):
             exclude_none: Whether to exclude fields with a value of `None`.
             round_trip: Whether to serialize and deserialize the instance to ensure round-tripping.
             warnings: Whether to emit serialization warnings.
+            serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
 
         Returns:
             The JSON representation of the given instance as bytes.
         """
         return self.serializer.to_json(
-            __instance,
+            instance,
             indent=indent,
             include=include,
             exclude=exclude,
@@ -385,6 +396,7 @@ class TypeAdapter(Generic[T]):
             exclude_none=exclude_none,
             round_trip=round_trip,
             warnings=warnings,
+            serialize_as_any=serialize_as_any,
         )
 
     def json_schema(
@@ -411,7 +423,8 @@ class TypeAdapter(Generic[T]):
 
     @staticmethod
     def json_schemas(
-        __inputs: Iterable[tuple[JsonSchemaKeyT, JsonSchemaMode, TypeAdapter[Any]]],
+        inputs: Iterable[tuple[JsonSchemaKeyT, JsonSchemaMode, TypeAdapter[Any]]],
+        /,
         *,
         by_alias: bool = True,
         title: str | None = None,
@@ -422,7 +435,7 @@ class TypeAdapter(Generic[T]):
         """Generate a JSON schema including definitions from multiple type adapters.
 
         Args:
-            __inputs: Inputs to schema generation. The first two items will form the keys of the (first)
+            inputs: Inputs to schema generation. The first two items will form the keys of the (first)
                 output mapping; the type adapters will provide the core schemas that get converted into
                 definitions in the output JSON schema.
             by_alias: Whether to use alias names.
@@ -443,9 +456,9 @@ class TypeAdapter(Generic[T]):
         """
         schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
 
-        inputs = [(key, mode, adapter.core_schema) for key, mode, adapter in __inputs]
+        inputs_ = [(key, mode, adapter.core_schema) for key, mode, adapter in inputs]
 
-        json_schemas_map, definitions = schema_generator_instance.generate_definitions(inputs)
+        json_schemas_map, definitions = schema_generator_instance.generate_definitions(inputs_)
 
         json_schema: dict[str, Any] = {}
         if definitions:

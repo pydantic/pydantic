@@ -7,11 +7,12 @@ import types
 import typing
 import warnings
 from copy import copy, deepcopy
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Dict, Generator, Set, Tuple, TypeVar, Union
 
 import pydantic_core
 import typing_extensions
 from pydantic_core import PydanticUndefined
+from typing_extensions import TypeAlias
 
 from ._internal import (
     _config,
@@ -32,22 +33,25 @@ from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema
 from .warnings import PydanticDeprecatedSince20
 
+# Always define certain types that are needed to resolve method type hints/annotations
+# (even when not type checking) via typing.get_type_hints.
+Model = TypeVar('Model', bound='BaseModel')
+TupleGenerator = Generator[Tuple[str, Any], None, None]
+# should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
+IncEx: TypeAlias = Union[Set[int], Set[str], Dict[int, Any], Dict[str, Any], None]
+
+
 if typing.TYPE_CHECKING:
     from inspect import Signature
     from pathlib import Path
 
     from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
-    from typing_extensions import Literal, Unpack
+    from typing_extensions import Unpack
 
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
     from .deprecated.parse import Protocol as DeprecatedParseProtocol
     from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
     from .fields import Field as _Field
-
-    TupleGenerator = typing.Generator[typing.Tuple[str, Any], None, None]
-    Model = typing.TypeVar('Model', bound='BaseModel')
-    # should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
-    IncEx: typing_extensions.TypeAlias = 'set[int] | set[str] | dict[int, Any] | dict[str, Any] | None'
 else:
     # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
     # and https://youtrack.jetbrains.com/issue/PY-51428
@@ -59,7 +63,7 @@ _object_setattr = _model_construction.object_setattr
 
 
 class BaseModel(metaclass=_model_construction.ModelMetaclass):
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/models/
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/models/
 
     A base class for creating Pydantic models.
 
@@ -107,6 +111,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         This replaces `Model.__fields__` from Pydantic V1.
         """
 
+        model_computed_fields: ClassVar[dict[str, ComputedFieldInfo]]
+        """A dictionary of computed field names and their corresponding `ComputedFieldInfo` objects."""
+
         __class_vars__: ClassVar[set[str]]
         __private_attributes__: ClassVar[dict[str, ModelPrivateAttr]]
         __signature__: ClassVar[Signature]
@@ -117,13 +124,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_decorators__: ClassVar[_decorators.DecoratorInfos]
         __pydantic_generic_metadata__: ClassVar[_generics.PydanticGenericMetadata]
         __pydantic_parent_namespace__: ClassVar[dict[str, Any] | None]
-        __pydantic_post_init__: ClassVar[None | Literal['model_post_init']]
+        __pydantic_post_init__: ClassVar[None | typing_extensions.Literal['model_post_init']]
         __pydantic_root_model__: ClassVar[bool]
         __pydantic_serializer__: ClassVar[SchemaSerializer]
         __pydantic_validator__: ClassVar[SchemaValidator]
-
-        model_computed_fields: ClassVar[dict[str, ComputedFieldInfo]]
-        """A dictionary of computed field names and their corresponding `ComputedFieldInfo` objects."""
 
         # Instance attributes
         # Note: we use the non-existent kwarg `init=False` in pydantic.fields.Field below so that @dataclass_transform
@@ -198,7 +202,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         Creates a new model setting `__dict__` and `__pydantic_fields_set__` from trusted or pre-validated data.
         Default values are respected, but no other validation is performed.
-        Behaves as if `Config.extra = 'allow'` was set since it adds all passed values
+
+        !!! note
+            `model_construct()` generally respects the `model_config.extra` setting on the provided model.
+            That is, if `model_config.extra == 'allow'`, then all extra passed values are added to the model instance's `__dict__`
+            and `__pydantic_extra__` fields. If `model_config.extra == 'ignore'` (the default), then all extra passed values are ignored.
+            Because no validation is performed with a call to `model_construct()`, having `model_config.extra == 'forbid'` does not result in
+            an error if extra values are passed, but they will be ignored.
 
         Args:
             _fields_set: The set of field names accepted for the Model instance.
@@ -228,8 +238,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             _extra = {}
             for k, v in values.items():
                 _extra[k] = v
-        else:
-            fields_values.update(values)
         _object_setattr(m, '__dict__', fields_values)
         _object_setattr(m, '__pydantic_fields_set__', _fields_set)
         if not cls.__pydantic_root_model__:
@@ -251,7 +259,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return m
 
     def model_copy(self: Model, *, update: dict[str, Any] | None = None, deep: bool = False) -> Model:
-        """Usage docs: https://docs.pydantic.dev/2.6/concepts/serialization/#model_copy
+        """Usage docs: https://docs.pydantic.dev/2.7/concepts/serialization/#model_copy
 
         Returns a copy of the model.
 
@@ -281,17 +289,19 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     def model_dump(
         self,
         *,
-        mode: Literal['json', 'python'] | str = 'python',
+        mode: typing_extensions.Literal['json', 'python'] | str = 'python',
         include: IncEx = None,
         exclude: IncEx = None,
+        context: dict[str, Any] | None = None,
         by_alias: bool = False,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
         round_trip: bool = False,
         warnings: bool = True,
+        serialize_as_any: bool = False,
     ) -> dict[str, Any]:
-        """Usage docs: https://docs.pydantic.dev/2.6/concepts/serialization/#modelmodel_dump
+        """Usage docs: https://docs.pydantic.dev/2.7/concepts/serialization/#modelmodel_dump
 
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
 
@@ -299,14 +309,16 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             mode: The mode in which `to_python` should run.
                 If mode is 'json', the output will only contain JSON serializable types.
                 If mode is 'python', the output may contain non-JSON-serializable Python objects.
-            include: A list of fields to include in the output.
-            exclude: A list of fields to exclude from the output.
+            include: A set of fields to include in the output.
+            exclude: A set of fields to exclude from the output.
+            context: Additional context to pass to the serializer.
             by_alias: Whether to use the field's alias in the dictionary key if defined.
             exclude_unset: Whether to exclude fields that have not been explicitly set.
             exclude_defaults: Whether to exclude fields that are set to their default value.
             exclude_none: Whether to exclude fields that have a value of `None`.
             round_trip: If True, dumped values should be valid as input for non-idempotent types such as Json[T].
             warnings: Whether to log warnings when invalid fields are encountered.
+            serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
 
         Returns:
             A dictionary representation of the model.
@@ -317,11 +329,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             by_alias=by_alias,
             include=include,
             exclude=exclude,
+            context=context,
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
             round_trip=round_trip,
             warnings=warnings,
+            serialize_as_any=serialize_as_any,
         )
 
     def model_dump_json(
@@ -330,14 +344,16 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         indent: int | None = None,
         include: IncEx = None,
         exclude: IncEx = None,
+        context: dict[str, Any] | None = None,
         by_alias: bool = False,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
         round_trip: bool = False,
         warnings: bool = True,
+        serialize_as_any: bool = False,
     ) -> str:
-        """Usage docs: https://docs.pydantic.dev/2.6/concepts/serialization/#modelmodel_dump_json
+        """Usage docs: https://docs.pydantic.dev/2.7/concepts/serialization/#modelmodel_dump_json
 
         Generates a JSON representation of the model using Pydantic's `to_json` method.
 
@@ -345,12 +361,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             indent: Indentation to use in the JSON output. If None is passed, the output will be compact.
             include: Field(s) to include in the JSON output.
             exclude: Field(s) to exclude from the JSON output.
+            context: Additional context to pass to the serializer.
             by_alias: Whether to serialize using field aliases.
             exclude_unset: Whether to exclude fields that have not been explicitly set.
             exclude_defaults: Whether to exclude fields that are set to their default value.
             exclude_none: Whether to exclude fields that have a value of `None`.
             round_trip: If True, dumped values should be valid as input for non-idempotent types such as Json[T].
             warnings: Whether to log warnings when invalid fields are encountered.
+            serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
 
         Returns:
             A JSON string representation of the model.
@@ -360,12 +378,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             indent=indent,
             include=include,
             exclude=exclude,
+            context=context,
             by_alias=by_alias,
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
             round_trip=round_trip,
             warnings=warnings,
+            serialize_as_any=serialize_as_any,
         ).decode()
 
     @classmethod
@@ -518,7 +538,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         strict: bool | None = None,
         context: dict[str, Any] | None = None,
     ) -> Model:
-        """Usage docs: https://docs.pydantic.dev/2.6/concepts/json/#json-parsing
+        """Usage docs: https://docs.pydantic.dev/2.7/concepts/json/#json-parsing
 
         Validate the given JSON data against the Pydantic model.
 
@@ -560,13 +580,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return cls.__pydantic_validator__.validate_strings(obj, strict=strict, context=context)
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, __source: type[BaseModel], __handler: GetCoreSchemaHandler) -> CoreSchema:
+    def __get_pydantic_core_schema__(cls, source: type[BaseModel], handler: GetCoreSchemaHandler, /) -> CoreSchema:
         """Hook into generating the model's CoreSchema.
 
         Args:
-            __source: The class we are generating a schema for.
+            source: The class we are generating a schema for.
                 This will generally be the same as the `cls` argument if this is a classmethod.
-            __handler: Call into Pydantic's internal JSON schema generation.
+            handler: Call into Pydantic's internal JSON schema generation.
                 A callable that calls into Pydantic's internal CoreSchema generation logic.
 
         Returns:
@@ -581,22 +601,23 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             if not cls.__pydantic_generic_metadata__['origin']:
                 return cls.__pydantic_core_schema__
 
-        return __handler(__source)
+        return handler(source)
 
     @classmethod
     def __get_pydantic_json_schema__(
         cls,
-        __core_schema: CoreSchema,
-        __handler: GetJsonSchemaHandler,
+        core_schema: CoreSchema,
+        handler: GetJsonSchemaHandler,
+        /,
     ) -> JsonSchemaValue:
         """Hook into generating the model's JSON schema.
 
         Args:
-            __core_schema: A `pydantic-core` CoreSchema.
+            core_schema: A `pydantic-core` CoreSchema.
                 You can ignore this argument and call the handler with a new CoreSchema,
                 wrap this CoreSchema (`{'type': 'nullable', 'schema': current_schema}`),
                 or just call the handler with the original schema.
-            __handler: Call into Pydantic's internal JSON schema generation.
+            handler: Call into Pydantic's internal JSON schema generation.
                 This will raise a `pydantic.errors.PydanticInvalidForJsonSchema` if JSON schema
                 generation fails.
                 Since this gets called by `BaseModel.model_json_schema` you can override the
@@ -606,7 +627,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Returns:
             A JSON schema, as a Python object.
         """
-        return __handler(__core_schema)
+        return handler(core_schema)
 
     @classmethod
     def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
@@ -733,6 +754,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     if not typing.TYPE_CHECKING:
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
+        # The same goes for __setattr__ and __delattr__, see: https://github.com/pydantic/pydantic/issues/8643
 
         def __getattr__(self, item: str) -> Any:
             private_attributes = object.__getattribute__(self, '__private_attributes__')
@@ -754,7 +776,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 except AttributeError:
                     pydantic_extra = None
 
-                if pydantic_extra is not None:
+                if pydantic_extra:
                     try:
                         return pydantic_extra[item]
                     except KeyError as exc:
@@ -766,74 +788,74 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                         # this is the current error
                         raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
 
-    def __setattr__(self, name: str, value: Any) -> None:
-        if name in self.__class_vars__:
-            raise AttributeError(
-                f'{name!r} is a ClassVar of `{self.__class__.__name__}` and cannot be set on an instance. '
-                f'If you want to set a value on the class, use `{self.__class__.__name__}.{name} = value`.'
-            )
-        elif not _fields.is_valid_field_name(name):
-            if self.__pydantic_private__ is None or name not in self.__private_attributes__:
-                _object_setattr(self, name, value)
-            else:
-                attribute = self.__private_attributes__[name]
-                if hasattr(attribute, '__set__'):
-                    attribute.__set__(self, value)  # type: ignore
+        def __setattr__(self, name: str, value: Any) -> None:
+            if name in self.__class_vars__:
+                raise AttributeError(
+                    f'{name!r} is a ClassVar of `{self.__class__.__name__}` and cannot be set on an instance. '
+                    f'If you want to set a value on the class, use `{self.__class__.__name__}.{name} = value`.'
+                )
+            elif not _fields.is_valid_field_name(name):
+                if self.__pydantic_private__ is None or name not in self.__private_attributes__:
+                    _object_setattr(self, name, value)
                 else:
-                    self.__pydantic_private__[name] = value
-            return
+                    attribute = self.__private_attributes__[name]
+                    if hasattr(attribute, '__set__'):
+                        attribute.__set__(self, value)  # type: ignore
+                    else:
+                        self.__pydantic_private__[name] = value
+                return
 
-        self._check_frozen(name, value)
+            self._check_frozen(name, value)
 
-        attr = getattr(self.__class__, name, None)
-        if isinstance(attr, property):
-            attr.__set__(self, value)
-        elif self.model_config.get('validate_assignment', None):
-            self.__pydantic_validator__.validate_assignment(self, name, value)
-        elif self.model_config.get('extra') != 'allow' and name not in self.model_fields:
-            # TODO - matching error
-            raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
-        elif self.model_config.get('extra') == 'allow' and name not in self.model_fields:
-            if self.model_extra and name in self.model_extra:
-                self.__pydantic_extra__[name] = value  # type: ignore
-            else:
-                try:
-                    getattr(self, name)
-                except AttributeError:
-                    # attribute does not already exist on instance, so put it in extra
+            attr = getattr(self.__class__, name, None)
+            if isinstance(attr, property):
+                attr.__set__(self, value)
+            elif self.model_config.get('validate_assignment', None):
+                self.__pydantic_validator__.validate_assignment(self, name, value)
+            elif self.model_config.get('extra') != 'allow' and name not in self.model_fields:
+                # TODO - matching error
+                raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
+            elif self.model_config.get('extra') == 'allow' and name not in self.model_fields:
+                if self.model_extra and name in self.model_extra:
                     self.__pydantic_extra__[name] = value  # type: ignore
                 else:
-                    # attribute _does_ already exist on instance, and was not in extra, so update it
-                    _object_setattr(self, name, value)
-        else:
-            self.__dict__[name] = value
-            self.__pydantic_fields_set__.add(name)
+                    try:
+                        getattr(self, name)
+                    except AttributeError:
+                        # attribute does not already exist on instance, so put it in extra
+                        self.__pydantic_extra__[name] = value  # type: ignore
+                    else:
+                        # attribute _does_ already exist on instance, and was not in extra, so update it
+                        _object_setattr(self, name, value)
+            else:
+                self.__dict__[name] = value
+                self.__pydantic_fields_set__.add(name)
 
-    def __delattr__(self, item: str) -> Any:
-        if item in self.__private_attributes__:
-            attribute = self.__private_attributes__[item]
-            if hasattr(attribute, '__delete__'):
-                attribute.__delete__(self)  # type: ignore
-                return
+        def __delattr__(self, item: str) -> Any:
+            if item in self.__private_attributes__:
+                attribute = self.__private_attributes__[item]
+                if hasattr(attribute, '__delete__'):
+                    attribute.__delete__(self)  # type: ignore
+                    return
 
-            try:
-                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
-                del self.__pydantic_private__[item]  # type: ignore
-                return
-            except KeyError as exc:
-                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+                try:
+                    # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                    del self.__pydantic_private__[item]  # type: ignore
+                    return
+                except KeyError as exc:
+                    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
 
-        self._check_frozen(item, None)
+            self._check_frozen(item, None)
 
-        if item in self.model_fields:
-            object.__delattr__(self, item)
-        elif self.__pydantic_extra__ is not None and item in self.__pydantic_extra__:
-            del self.__pydantic_extra__[item]
-        else:
-            try:
+            if item in self.model_fields:
                 object.__delattr__(self, item)
-            except AttributeError:
-                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+            elif self.__pydantic_extra__ is not None and item in self.__pydantic_extra__:
+                del self.__pydantic_extra__[item]
+            else:
+                try:
+                    object.__delattr__(self, item)
+                except AttributeError:
+                    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
 
     def _check_frozen(self, name: str, value: Any) -> None:
         if self.model_config.get('frozen', None):
@@ -866,60 +888,62 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         _object_setattr(self, '__pydantic_private__', state['__pydantic_private__'])
         _object_setattr(self, '__dict__', state['__dict__'])
 
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, BaseModel):
-            # When comparing instances of generic types for equality, as long as all field values are equal,
-            # only require their generic origin types to be equal, rather than exact type equality.
-            # This prevents headaches like MyGeneric(x=1) != MyGeneric[Any](x=1).
-            self_type = self.__pydantic_generic_metadata__['origin'] or self.__class__
-            other_type = other.__pydantic_generic_metadata__['origin'] or other.__class__
+    if not typing.TYPE_CHECKING:
 
-            # Perform common checks first
-            if not (
-                self_type == other_type
-                and self.__pydantic_private__ == other.__pydantic_private__
-                and self.__pydantic_extra__ == other.__pydantic_extra__
-            ):
-                return False
+        def __eq__(self, other: Any) -> bool:
+            if isinstance(other, BaseModel):
+                # When comparing instances of generic types for equality, as long as all field values are equal,
+                # only require their generic origin types to be equal, rather than exact type equality.
+                # This prevents headaches like MyGeneric(x=1) != MyGeneric[Any](x=1).
+                self_type = self.__pydantic_generic_metadata__['origin'] or self.__class__
+                other_type = other.__pydantic_generic_metadata__['origin'] or other.__class__
 
-            # We only want to compare pydantic fields but ignoring fields is costly.
-            # We'll perform a fast check first, and fallback only when needed
-            # See GH-7444 and GH-7825 for rationale and a performance benchmark
+                # Perform common checks first
+                if not (
+                    self_type == other_type
+                    and self.__pydantic_private__ == other.__pydantic_private__
+                    and self.__pydantic_extra__ == other.__pydantic_extra__
+                ):
+                    return False
 
-            # First, do the fast (and sometimes faulty) __dict__ comparison
-            if self.__dict__ == other.__dict__:
-                # If the check above passes, then pydantic fields are equal, we can return early
-                return True
+                # We only want to compare pydantic fields but ignoring fields is costly.
+                # We'll perform a fast check first, and fallback only when needed
+                # See GH-7444 and GH-7825 for rationale and a performance benchmark
 
-            # We don't want to trigger unnecessary costly filtering of __dict__ on all unequal objects, so we return
-            # early if there are no keys to ignore (we would just return False later on anyway)
-            model_fields = type(self).model_fields.keys()
-            if self.__dict__.keys() <= model_fields and other.__dict__.keys() <= model_fields:
-                return False
+                # First, do the fast (and sometimes faulty) __dict__ comparison
+                if self.__dict__ == other.__dict__:
+                    # If the check above passes, then pydantic fields are equal, we can return early
+                    return True
 
-            # If we reach here, there are non-pydantic-fields keys, mapped to unequal values, that we need to ignore
-            # Resort to costly filtering of the __dict__ objects
-            # We use operator.itemgetter because it is much faster than dict comprehensions
-            # NOTE: Contrary to standard python class and instances, when the Model class has a default value for an
-            # attribute and the model instance doesn't have a corresponding attribute, accessing the missing attribute
-            # raises an error in BaseModel.__getattr__ instead of returning the class attribute
-            # So we can use operator.itemgetter() instead of operator.attrgetter()
-            getter = operator.itemgetter(*model_fields) if model_fields else lambda _: _utils._SENTINEL
-            try:
-                return getter(self.__dict__) == getter(other.__dict__)
-            except KeyError:
-                # In rare cases (such as when using the deprecated BaseModel.copy() method),
-                # the __dict__ may not contain all model fields, which is how we can get here.
-                # getter(self.__dict__) is much faster than any 'safe' method that accounts
-                # for missing keys, and wrapping it in a `try` doesn't slow things down much
-                # in the common case.
-                self_fields_proxy = _utils.SafeGetItemProxy(self.__dict__)
-                other_fields_proxy = _utils.SafeGetItemProxy(other.__dict__)
-                return getter(self_fields_proxy) == getter(other_fields_proxy)
+                # We don't want to trigger unnecessary costly filtering of __dict__ on all unequal objects, so we return
+                # early if there are no keys to ignore (we would just return False later on anyway)
+                model_fields = type(self).model_fields.keys()
+                if self.__dict__.keys() <= model_fields and other.__dict__.keys() <= model_fields:
+                    return False
 
-        # other instance is not a BaseModel
-        else:
-            return NotImplemented  # delegate to the other item in the comparison
+                # If we reach here, there are non-pydantic-fields keys, mapped to unequal values, that we need to ignore
+                # Resort to costly filtering of the __dict__ objects
+                # We use operator.itemgetter because it is much faster than dict comprehensions
+                # NOTE: Contrary to standard python class and instances, when the Model class has a default value for an
+                # attribute and the model instance doesn't have a corresponding attribute, accessing the missing attribute
+                # raises an error in BaseModel.__getattr__ instead of returning the class attribute
+                # So we can use operator.itemgetter() instead of operator.attrgetter()
+                getter = operator.itemgetter(*model_fields) if model_fields else lambda _: _utils._SENTINEL
+                try:
+                    return getter(self.__dict__) == getter(other.__dict__)
+                except KeyError:
+                    # In rare cases (such as when using the deprecated BaseModel.copy() method),
+                    # the __dict__ may not contain all model fields, which is how we can get here.
+                    # getter(self.__dict__) is much faster than any 'safe' method that accounts
+                    # for missing keys, and wrapping it in a `try` doesn't slow things down much
+                    # in the common case.
+                    self_fields_proxy = _utils.SafeGetItemProxy(self.__dict__)
+                    other_fields_proxy = _utils.SafeGetItemProxy(other.__dict__)
+                    return getter(self_fields_proxy) == getter(other_fields_proxy)
+
+            # other instance is not a BaseModel
+            else:
+                return NotImplemented  # delegate to the other item in the comparison
 
     if typing.TYPE_CHECKING:
         # We put `__init_subclass__` in a TYPE_CHECKING block because, even though we want the type-checking benefits
@@ -1406,7 +1430,7 @@ def create_model(  # noqa: C901
     __slots__: tuple[str, ...] | None = None,
     **field_definitions: Any,
 ) -> type[Model]:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/models/#dynamic-model-creation
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/models/#dynamic-model-creation
 
     Dynamically creates and returns a new Pydantic model, in other words, `create_model` dynamically creates a
     subclass of [`BaseModel`][pydantic.BaseModel].
@@ -1422,7 +1446,8 @@ def create_model(  # noqa: C901
         __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.
         __slots__: Deprecated. Should not be passed to `create_model`.
         **field_definitions: Attributes of the new model. They should be passed in the format:
-            `<name>=(<type>, <default value>)` or `<name>=(<type>, <FieldInfo>)`.
+            `<name>=(<type>, <default value>)`, `<name>=(<type>, <FieldInfo>)`, or `typing.Annotated[<type>, <FieldInfo>]`.
+            Any additional metadata in `typing.Annotated[<type>, <FieldInfo>, ...]` will be ignored.
 
     Returns:
         The new [model][pydantic.BaseModel].
@@ -1462,6 +1487,19 @@ def create_model(  # noqa: C901
                     'Field definitions should be a `(<type>, <default>)`.',
                     code='create-model-field-definitions',
                 ) from e
+
+        elif _typing_extra.is_annotated(f_def):
+            (f_annotation, f_value, *_) = typing_extensions.get_args(
+                f_def
+            )  # first two input are expected from Annotated, refer to https://docs.python.org/3/library/typing.html#typing.Annotated
+            from .fields import FieldInfo
+
+            if not isinstance(f_value, FieldInfo):
+                raise PydanticUserError(
+                    'Field definitions should be a Annotated[<type>, <FieldInfo>]',
+                    code='create-model-field-definitions',
+                )
+
         else:
             f_annotation, f_value = None, f_def
 

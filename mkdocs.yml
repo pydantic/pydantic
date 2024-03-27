@@ -113,6 +113,9 @@ nav:
     - Coordinate: api/pydantic_extra_types_coordinate.md
     - Mac Address: api/pydantic_extra_types_mac_address.md
     - ISBN: api/pydantic_extra_types_isbn.md
+    - Pendulum: api/pydantic_extra_types_pendulum_dt.md
+    - Currency: api/pydantic_extra_types_currency_code.md
+    - Language: api/pydantic_extra_types_language_code.md
 - Examples:
   - Secrets: examples/secrets.md
 - Error Messages:
@@ -127,6 +130,7 @@ nav:
   - datamodel-code-generator: integrations/datamodel_code_generator.md
   - devtools: integrations/devtools.md
   - Rich: integrations/rich.md
+  - Linting: integrations/linting.md
 - Blog: https://blog.pydantic.dev/
 - Pydantic People: pydantic_people.md
 
@@ -171,8 +175,12 @@ plugins:
           docstring_options:
             ignore_init_summary: true
           merge_init_into_class: true
+          show_signature_annotations: true
+          signature_crossrefs: true
           extensions:
             - docs/plugins/griffe_doclinks.py
+        import:
+          - https://docs.python.org/3/objects.inv
 - mkdocs-simple-hooks:
     hooks:
       on_pre_build: 'docs.plugins.main:on_pre_build'
@@ -189,6 +197,7 @@ plugins:
       'usage/model_config.md': 'api/config.md'
       'usage/devtools.md': 'integrations/devtools.md'
       'usage/rich.md': 'integrations/rich.md'
+      'usage/linting.md': 'integrations/linting.md'
       'usage/types.md': 'concepts/types.md'
       'usage/types/secrets.md': 'examples/secrets.md'
       'usage/types/string_types.md': 'api/types.md#pydantic.types.StringConstraints'

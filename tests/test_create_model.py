@@ -3,6 +3,7 @@ import re
 from typing import Generic, Optional, Tuple, TypeVar
 
 import pytest
+from typing_extensions import Annotated
 
 from pydantic import (
     BaseModel,
@@ -516,6 +517,34 @@ def test_create_model_non_annotated():
         create_model('FooModel', foo=(str, ...), bar=123)
 
 
+@pytest.mark.parametrize(
+    'annotation_type,field_info',
+    [
+        (bool, Field(alias='foo_bool_alias', description='foo boolean')),
+        (str, Field(alias='foo_str_alis', description='foo string')),
+    ],
+)
+def test_create_model_typing_annotated_field_info(annotation_type, field_info):
+    annotated_foo = Annotated[annotation_type, field_info]
+    model = create_model('FooModel', foo=annotated_foo, bar=(int, 123))
+
+    assert model.model_fields.keys() == {'foo', 'bar'}
+
+    foo = model.model_fields.get('foo')
+
+    assert foo is not None
+    assert foo.annotation == annotation_type
+    assert foo.alias == field_info.alias
+    assert foo.description == field_info.description
+
+
+def test_create_model_expect_field_info_as_metadata_typing():
+    annotated_foo = Annotated[int, 10]
+
+    with pytest.raises(PydanticUserError, match=r'Field definitions should be a Annotated\[<type>, <FieldInfo>\]'):
+        create_model('FooModel', foo=annotated_foo)
+
+
 def test_create_model_tuple():
     model = create_model('FooModel', foo=(Tuple[int, int], (1, 2)))
     assert model().foo == (1, 2)
@@ -601,3 +630,12 @@ class Y:
     )
     Z = create_model('Z', y=(module.Y, ...))
     assert Z(y={'x': {}}).y is not None
+
+
+def test_type_field_in_the_same_module():
+    class A:
+        pass
+
+    B = create_model('B', a_cls=(type, A))
+    b = B()
+    assert b.a_cls == A

@@ -1,7 +1,6 @@
 import asyncio
 import inspect
 import re
-import sys
 from datetime import datetime, timezone
 from functools import partial
 from typing import Any, List, Tuple
@@ -12,8 +11,6 @@ from typing_extensions import Annotated, TypedDict
 
 from pydantic import Field, PydanticInvalidForJsonSchema, TypeAdapter, ValidationError, validate_call
 from pydantic.main import BaseModel
-
-skip_pre_39 = pytest.mark.skipif(sys.version_info < (3, 9), reason='testing >= 3.9 behaviour only')
 
 
 def test_args():
@@ -372,7 +369,6 @@ def test_item_method():
     ]
 
 
-@skip_pre_39
 def test_class_method():
     class X:
         @classmethod
@@ -497,6 +493,20 @@ def test_config_arbitrary_types_allowed():
             'input': 2,
             'ctx': {'class': 'test_config_arbitrary_types_allowed.<locals>.EggBox'},
         }
+    ]
+
+
+def test_config_strict():
+    @validate_call(config=dict(strict=True))
+    def foo(a: int, b: List[str]):
+        return f'{a}, {b[0]}'
+
+    assert foo(1, ['bar', 'foobar']) == '1, bar'
+    with pytest.raises(ValidationError) as exc_info:
+        foo('foo', ('bar', 'foobar'))
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'int_type', 'loc': (0,), 'msg': 'Input should be a valid integer', 'input': 'foo'},
+        {'type': 'list_type', 'loc': (1,), 'msg': 'Input should be a valid list', 'input': ('bar', 'foobar')},
     ]
 
 
@@ -758,3 +768,39 @@ def test_validate_call_with_slots() -> None:
     assert c.some_instance_method == c.some_instance_method
     assert c.some_class_method == c.some_class_method
     assert c.some_static_method == c.some_static_method
+
+
+def test_eval_type_backport():
+    @validate_call
+    def foo(bar: 'list[int | str]') -> 'list[int | str]':
+        return bar
+
+    assert foo([1, '2']) == [1, '2']
+    with pytest.raises(ValidationError) as exc_info:
+        foo('not a list')  # type: ignore
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'list_type',
+            'loc': (0,),
+            'msg': 'Input should be a valid list',
+            'input': 'not a list',
+        }
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        foo([{'not a str or int'}])  # type: ignore
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_type',
+            'loc': (0, 0, 'int'),
+            'msg': 'Input should be a valid integer',
+            'input': {'not a str or int'},
+        },
+        {
+            'type': 'string_type',
+            'loc': (0, 0, 'str'),
+            'msg': 'Input should be a valid string',
+            'input': {'not a str or int'},
+        },
+    ]

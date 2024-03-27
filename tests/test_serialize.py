@@ -17,9 +17,7 @@ from pydantic import (
     Field,
     FieldSerializationInfo,
     PydanticUserError,
-    SecretStr,
     SerializationInfo,
-    SerializeAsAny,
     SerializerFunctionWrapHandler,
     TypeAdapter,
     computed_field,
@@ -560,6 +558,18 @@ def test_field_multiple_serializer_subclass():
     assert MySubModel(x=1234).model_dump() == {'x': '1234'}
 
 
+def test_serialize_all_fields():
+    class MyModel(BaseModel):
+        x: int
+
+        @field_serializer('*')
+        @classmethod
+        def serialize_all(cls, v: Any):
+            return v * 2
+
+    assert MyModel(x=10).model_dump() == {'x': 20}
+
+
 def int_ser_func_without_info1(v: int, expected: int) -> str:
     return f'{v:,}'
 
@@ -890,28 +900,6 @@ def test_type_adapter_dump_json():
     assert ta.dump_json(Model({'x': 1, 'y': 2.5})) == b'{"x":2,"y":7.5}'
 
 
-def test_serialize_as_any() -> None:
-    class User(BaseModel):
-        name: str
-
-    class UserLogin(User):
-        password: SecretStr
-
-    class OuterModel(BaseModel):
-        maybe_as_any: Optional[SerializeAsAny[User]] = None
-        as_any: SerializeAsAny[User]
-        without: User
-
-    user = UserLogin(name='pydantic', password='password')
-
-    # insert_assert(json.loads(OuterModel(as_any=user, without=user).model_dump_json()))
-    assert json.loads(OuterModel(maybe_as_any=user, as_any=user, without=user).model_dump_json()) == {
-        'maybe_as_any': {'name': 'pydantic', 'password': '**********'},
-        'as_any': {'name': 'pydantic', 'password': '**********'},
-        'without': {'name': 'pydantic'},
-    }
-
-
 @pytest.mark.parametrize('as_annotation', [True, False])
 @pytest.mark.parametrize('mode', ['plain', 'wrap'])
 def test_forward_ref_for_serializers(as_annotation, mode):
@@ -1159,3 +1147,50 @@ def test_subclass_support_unions_with_forward_ref() -> None:
 
     foo_recursive = Foo(items=[Foo(items=[Baz(bar_id=42, baz_id=99)])])
     assert foo_recursive.model_dump() == {'items': [{'items': [{'bar_id': 42}]}]}
+
+
+def test_serialize_python_context() -> None:
+    contexts: List[Any] = [None, None, {'foo': 'bar'}]
+
+    class Model(BaseModel):
+        x: int
+
+        @field_serializer('x')
+        def serialize_x(self, v: int, info: SerializationInfo) -> int:
+            assert info.context == contexts.pop(0)
+            return v
+
+    m = Model.model_construct(**{'x': 1})
+    m.model_dump()
+    m.model_dump(context=None)
+    m.model_dump(context={'foo': 'bar'})
+    assert contexts == []
+
+
+def test_serialize_json_context() -> None:
+    contexts: List[Any] = [None, None, {'foo': 'bar'}]
+
+    class Model(BaseModel):
+        x: int
+
+        @field_serializer('x')
+        def serialize_x(self, v: int, info: SerializationInfo) -> int:
+            assert info.context == contexts.pop(0)
+            return v
+
+    m = Model.model_construct(**{'x': 1})
+    m.model_dump_json()
+    m.model_dump_json(context=None)
+    m.model_dump_json(context={'foo': 'bar'})
+    assert contexts == []
+
+
+def test_plain_serializer_with_std_type() -> None:
+    """Ensure that a plain serializer can be used with a standard type constructor, rather than having to use lambda x: std_type(x)."""
+
+    class MyModel(BaseModel):
+        x: Annotated[int, PlainSerializer(float)]
+
+    m = MyModel(x=1)
+    assert m.model_dump() == {'x': 1.0}
+    assert m.model_dump_json() == '{"x":1.0}'

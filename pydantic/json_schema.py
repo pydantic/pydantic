@@ -4,7 +4,7 @@ Usage docs: https://docs.pydantic.dev/2.5/concepts/json_schema/
 The `json_schema` module contains classes and functions to allow the way [JSON Schema](https://json-schema.org/)
 is generated to be customized.
 
-In general you shouldn't need to use this module directly; instead, you can
+In general you shouldn't need to use this module directly; instead, you can use
 [`BaseModel.model_json_schema`][pydantic.BaseModel.model_json_schema] and
 [`TypeAdapter.json_schema`][pydantic.TypeAdapter.json_schema].
 """
@@ -54,7 +54,7 @@ from ._internal import (
 )
 from .annotated_handlers import GetJsonSchemaHandler
 from .config import JsonDict, JsonSchemaExtraCallable, JsonValue
-from .errors import PydanticInvalidForJsonSchema, PydanticUserError
+from .errors import PydanticInvalidForJsonSchema, PydanticSchemaGenerationError, PydanticUserError
 
 if TYPE_CHECKING:
     from . import ConfigDict
@@ -224,7 +224,7 @@ class _DefinitionsRemapping:
 
 
 class GenerateJsonSchema:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/json_schema/#customizing-the-json-schema-generation-process
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/json_schema/#customizing-the-json-schema-generation-process
 
     A class for generating JSON schemas.
 
@@ -732,24 +732,60 @@ class GenerateJsonSchema:
         # jsonify the expected values
         expected = [to_jsonable_python(v) for v in expected]
 
+        result: dict[str, Any] = {'enum': expected}
         if len(expected) == 1:
-            return {'const': expected[0]}
+            result['const'] = expected[0]
 
         types = {type(e) for e in expected}
         if types == {str}:
-            return {'enum': expected, 'type': 'string'}
+            result['type'] = 'string'
         elif types == {int}:
-            return {'enum': expected, 'type': 'integer'}
+            result['type'] = 'integer'
         elif types == {float}:
-            return {'enum': expected, 'type': 'number'}
+            result['type'] = 'numeric'
         elif types == {bool}:
-            return {'enum': expected, 'type': 'boolean'}
+            result['type'] = 'boolean'
         elif types == {list}:
-            return {'enum': expected, 'type': 'array'}
-        # there is not None case because if it's mixed it hits the final `else`
-        # if it's a single Literal[None] then it becomes a `const` schema above
-        else:
-            return {'enum': expected}
+            result['type'] = 'array'
+        return result
+
+    def enum_schema(self, schema: core_schema.EnumSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches an Enum value.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        enum_type = schema['cls']
+        description = None if not enum_type.__doc__ else inspect.cleandoc(enum_type.__doc__)
+        if (
+            description == 'An enumeration.'
+        ):  # This is the default value provided by enum.EnumMeta.__new__; don't use it
+            description = None
+        result: dict[str, Any] = {'title': enum_type.__name__, 'description': description}
+        result = {k: v for k, v in result.items() if v is not None}
+
+        expected = [to_jsonable_python(v.value) for v in schema['members']]
+
+        result['enum'] = expected
+        if len(expected) == 1:
+            result['const'] = expected[0]
+
+        types = {type(e) for e in expected}
+        if isinstance(enum_type, str) or types == {str}:
+            result['type'] = 'string'
+        elif isinstance(enum_type, int) or types == {int}:
+            result['type'] = 'integer'
+        elif isinstance(enum_type, float) or types == {float}:
+            result['type'] = 'numeric'
+        elif types == {bool}:
+            result['type'] = 'boolean'
+        elif types == {list}:
+            result['type'] = 'array'
+
+        return result
 
     def is_instance_schema(self, schema: core_schema.IsInstanceSchema) -> JsonSchemaValue:
         """Handles JSON schema generation for a core schema that checks if a value is an instance of a class.
@@ -1214,18 +1250,24 @@ class GenerateJsonSchema:
         ]
         if self.mode == 'serialization':
             named_required_fields.extend(self._name_required_computed_fields(schema.get('computed_fields', [])))
-
-        config = _get_typed_dict_config(schema)
+        cls = _get_typed_dict_cls(schema)
+        config = _get_typed_dict_config(cls)
         with self._config_wrapper_stack.push(config):
             json_schema = self._named_required_fields_schema(named_required_fields)
 
+        json_schema_extra = config.get('json_schema_extra')
         extra = schema.get('extra_behavior')
         if extra is None:
             extra = config.get('extra', 'ignore')
-        if extra == 'forbid':
-            json_schema['additionalProperties'] = False
-        elif extra == 'allow':
-            json_schema['additionalProperties'] = True
+
+        if cls is not None:
+            title = config.get('title') or cls.__name__
+            json_schema = self._update_class_schema(json_schema, title, extra, cls, json_schema_extra)
+        else:
+            if extra == 'forbid':
+                json_schema['additionalProperties'] = False
+            elif extra == 'allow':
+                json_schema['additionalProperties'] = True
 
         return json_schema
 
@@ -1989,9 +2031,20 @@ class GenerateJsonSchema:
         Returns:
             The encoded default value.
         """
+        from .type_adapter import TypeAdapter
+
         config = self._config
+        try:
+            default = (
+                dft
+                if hasattr(dft, '__pydantic_serializer__')
+                else TypeAdapter(type(dft), config=config.config_dict).dump_python(dft, mode='json')
+            )
+        except PydanticSchemaGenerationError:
+            raise pydantic_core.PydanticSerializationError(f'Unable to encode default value {dft}')
+
         return pydantic_core.to_jsonable_python(
-            dft,
+            default,
             timedelta_mode=config.ser_json_timedelta,
             bytes_mode=config.ser_json_bytes,
         )
@@ -2170,9 +2223,14 @@ def model_json_schema(
     Returns:
         The generated JSON Schema.
     """
+    from .main import BaseModel
+
     schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
     if isinstance(cls.__pydantic_validator__, _mock_val_ser.MockValSer):
         cls.__pydantic_validator__.rebuild()
+
+    if cls is BaseModel:
+        raise AttributeError('model_json_schema() must be called on a subclass of BaseModel, not BaseModel itself.')
     assert '__pydantic_core_schema__' in cls.__dict__, 'this is a bug! please report it'
     return schema_generator_instance.generate(cls.__pydantic_core_schema__, mode=mode)
 
@@ -2264,7 +2322,7 @@ def _sort_json_schema(value: JsonSchemaValue, parent_key: str | None = None) -> 
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
 class WithJsonSchema:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/json_schema/#withjsonschema-annotation
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/json_schema/#withjsonschema-annotation
 
     Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
     This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
@@ -2353,7 +2411,7 @@ else:
 
     @dataclasses.dataclass(**_internal_dataclass.slots_true)
     class SkipJsonSchema:
-        """Usage docs: https://docs.pydantic.dev/2.6/concepts/json_schema/#skipjsonschema-annotation
+        """Usage docs: https://docs.pydantic.dev/2.7/concepts/json_schema/#skipjsonschema-annotation
 
         Add this as an annotation on a field to skip generating a JSON schema for that field.
 
@@ -2414,9 +2472,13 @@ else:
             return hash(type(self))
 
 
-def _get_typed_dict_config(schema: core_schema.TypedDictSchema) -> ConfigDict:
+def _get_typed_dict_cls(schema: core_schema.TypedDictSchema) -> type[Any] | None:
     metadata = _core_metadata.CoreMetadataHandler(schema).metadata
     cls = metadata.get('pydantic_typed_dict_cls')
+    return cls
+
+
+def _get_typed_dict_config(cls: type[Any] | None) -> ConfigDict:
     if cls is not None:
         try:
             return _decorators.get_attribute_from_bases(cls, '__pydantic_config__')

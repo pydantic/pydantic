@@ -64,7 +64,9 @@ def test_forward_ref_auto_update_no_model(create_module):
     assert b.model_dump() == {'b': {'a': {'b': {'a': None}}}}
 
     # model_fields is complete on Foo
-    assert repr(module.Foo.model_fields['a']) == ('FieldInfo(annotation=Union[Bar, NoneType], required=False)')
+    assert repr(module.Foo.model_fields['a']) == (
+        'FieldInfo(annotation=Union[Bar, NoneType], required=False, default=None)'
+    )
 
     assert module.Foo.__pydantic_complete__ is False
     # Foo gets auto-rebuilt during the first attempt at validation
@@ -159,7 +161,7 @@ def test_self_forward_ref_collection(create_module):
     ]
 
     assert repr(module.Foo.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default=123)'
-    assert repr(module.Foo.model_fields['b']) == 'FieldInfo(annotation=Foo, required=False)'
+    assert repr(module.Foo.model_fields['b']) == 'FieldInfo(annotation=Foo, required=False, default=None)'
     if sys.version_info < (3, 10):
         return
     assert repr(module.Foo.model_fields['c']) == ('FieldInfo(annotation=List[Foo], required=False, ' 'default=[])')
@@ -297,12 +299,11 @@ def test_self_reference_json_schema_with_future_annotations(create_module):
         # language=Python
         """
 from __future__ import annotations
-from typing import List
 from pydantic import BaseModel
 
 class Account(BaseModel):
   name: str
-  subaccounts: List[Account] = []
+  subaccounts: list[Account] = []
     """
     )
     Account = module.Account
@@ -376,7 +377,6 @@ def test_circular_reference_json_schema_with_future_annotations(create_module):
         # language=Python
         """
 from __future__ import annotations
-from typing import List
 from pydantic import BaseModel
 
 class Owner(BaseModel):
@@ -385,7 +385,7 @@ class Owner(BaseModel):
 class Account(BaseModel):
   name: str
   owner: Owner
-  subaccounts: List[Account] = []
+  subaccounts: list[Account] = []
 
     """
     )
@@ -440,28 +440,27 @@ def test_forward_ref_optional(create_module):
         # language=Python
         """
 from __future__ import annotations
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Optional
+from pydantic import BaseModel, Field
 
 
 class Spec(BaseModel):
-    spec_fields: List[str] = Field(..., alias="fields")
-    filter: Optional[str] = None
-    sort: Optional[str]
+    spec_fields: list[str] = Field(..., alias="fields")
+    filter: str | None = None
+    sort: str | None
 
 
 class PSpec(Spec):
-    g: Optional[GSpec] = None
+    g: GSpec | None = None
 
 
 class GSpec(Spec):
-    p: Optional[PSpec]
+    p: PSpec | None
 
 # PSpec.model_rebuild()
 
 class Filter(BaseModel):
-    g: Optional[GSpec] = None
-    p: Optional[PSpec]
+    g: GSpec | None = None
+    p: PSpec | None
     """
     )
     Filter = module.Filter
@@ -541,6 +540,7 @@ def test_discriminated_union_forward_ref(create_module):
     # Ensure the rebuild has happened automatically despite validation failure
     assert module.Pet.__pydantic_complete__ is True
 
+    # insert_assert(module.Pet.model_json_schema())
     assert module.Pet.model_json_schema() == {
         'title': 'Pet',
         'required': ['pet'],
@@ -556,13 +556,13 @@ def test_discriminated_union_forward_ref(create_module):
             'Cat': {
                 'title': 'Cat',
                 'type': 'object',
-                'properties': {'type': {'const': 'cat', 'title': 'Type'}},
+                'properties': {'type': {'const': 'cat', 'enum': ['cat'], 'title': 'Type', 'type': 'string'}},
                 'required': ['type'],
             },
             'Dog': {
                 'title': 'Dog',
                 'type': 'object',
-                'properties': {'type': {'const': 'dog', 'title': 'Type'}},
+                'properties': {'type': {'const': 'dog', 'enum': ['dog'], 'title': 'Type', 'type': 'string'}},
                 'required': ['type'],
             },
         },
@@ -676,7 +676,6 @@ def test_pep585_recursive_generics(create_module):
     assert h.model_dump() == {'name': 'Ivan', 'teams': [{'name': 'TheBest', 'heroes': []}]}
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason='needs 3.9 or newer')
 def test_class_var_forward_ref(create_module):
     # see #3679
     create_module(
@@ -713,9 +712,14 @@ class Foobar(BaseModel):
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='needs 3.10 or newer')
 def test_recursive_models_union(create_module):
-    module = create_module(
-        # language=Python
-        """
+    # This test should pass because PydanticRecursiveRef.__or__ is implemented,
+    # not because `eval_type_backport` magically makes `|` work,
+    # since it's installed for tests but otherwise optional.
+    sys.modules['eval_type_backport'] = None  # type: ignore
+    try:
+        module = create_module(
+            # language=Python
+            """
 from __future__ import annotations
 
 from pydantic import BaseModel
@@ -729,10 +733,41 @@ class Foo(BaseModel):
 
 class Bar(BaseModel, Generic[T]):
     foo: Foo
-"""
-    )
+    """
+        )
+    finally:
+        del sys.modules['eval_type_backport']
+
     assert module.Foo.model_fields['bar'].annotation == typing.Optional[module.Bar[str]]
     assert module.Foo.model_fields['bar2'].annotation == typing.Union[int, module.Bar[float]]
+    assert module.Bar.model_fields['foo'].annotation == module.Foo
+
+
+def test_recursive_models_union_backport(create_module):
+    module = create_module(
+        # language=Python
+        """
+from __future__ import annotations
+
+from pydantic import BaseModel
+from typing import TypeVar, Generic
+
+T = TypeVar("T")
+
+class Foo(BaseModel):
+    bar: Bar[str] | None = None
+    # The `int | str` here differs from the previous test and requires the backport.
+    # At the same time, `PydanticRecursiveRef.__or__` means that the second `|` works normally,
+    # which actually triggered a bug in the backport that needed fixing.
+    bar2: int | str | Bar[float]
+
+class Bar(BaseModel, Generic[T]):
+    foo: Foo
+"""
+    )
+
+    assert module.Foo.model_fields['bar'].annotation == typing.Optional[module.Bar[str]]
+    assert module.Foo.model_fields['bar2'].annotation == typing.Union[int, str, module.Bar[float]]
     assert module.Bar.model_fields['foo'].annotation == module.Foo
 
 

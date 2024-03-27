@@ -2,38 +2,21 @@
 requires = ['hatchling', 'hatch-fancy-pypi-readme>=22.5.0']
 build-backend = 'hatchling.build'
 
-[tool.hatch.version]
-path = 'pydantic/version.py'
-
-[tool.hatch.metadata]
-allow-direct-references = true
-
-[tool.hatch.build.targets.sdist]
-# limit which files are included in the sdist (.tar.gz) asset,
-# see https://github.com/pydantic/pydantic/pull/4542
-include = [
-    '/README.md',
-    '/HISTORY.md',
-    '/Makefile',
-    '/pydantic',
-    '/tests',
-    '/requirements',
-]
-
 [project]
 name = 'pydantic'
 description = 'Data validation using Python type hints'
 authors = [
-    { name = 'Samuel Colvin', email = 's@muelcolvin.com' },
-    { name = 'Eric Jolibois', email = 'em.jolibois@gmail.com' },
-    { name = 'Hasan Ramezani', email = 'hasan.r67@gmail.com' },
-    { name = 'Adrian Garcia Badaracco', email = '1755071+adriangb@users.noreply.github.com' },
-    { name = 'Terrence Dorsey', email = 'terry@pydantic.dev' },
-    { name = 'David Montague', email = 'david@pydantic.dev' },
-    { name = 'Serge Matveenko', email = 'lig@countzero.co' },
-    { name = 'Marcelo Trylesinski', email = 'marcelotryle@gmail.com' },
-    { name = 'Sydney Runkle', email = 'sydneymarierunkle@gmail.com' },
-    { name = 'David Hewitt', email = 'mail@davidhewitt.io' },
+    {name = 'Samuel Colvin', email = 's@muelcolvin.com'},
+    {name = 'Eric Jolibois', email = 'em.jolibois@gmail.com'},
+    {name = 'Hasan Ramezani', email = 'hasan.r67@gmail.com'},
+    {name = 'Adrian Garcia Badaracco', email = '1755071+adriangb@users.noreply.github.com'},
+    {name = 'Terrence Dorsey', email = 'terry@pydantic.dev'},
+    {name = 'David Montague', email = 'david@pydantic.dev'},
+    {name = 'Serge Matveenko', email = 'lig@countzero.co'},
+    {name = 'Marcelo Trylesinski', email = 'marcelotryle@gmail.com'},
+    {name = 'Sydney Runkle', email = 'sydneymarierunkle@gmail.com'},
+    {name = 'David Hewitt', email = 'mail@davidhewitt.io'},
+    {name = 'Alex Hall', email='alex.mojaki@gmail.com'},
 ]
 license = 'MIT'
 classifiers = [
@@ -65,7 +48,7 @@ requires-python = '>=3.8'
 dependencies = [
     'typing-extensions>=4.6.1',
     'annotated-types>=0.4.0',
-    "pydantic-core==2.15.0",
+    "pydantic-core==2.17.0",
     "fastapi>=0.109.0",
     "sqlalchemy>=2.0.25",
     "pytest-asyncio>=0.23.3",
@@ -76,6 +59,47 @@ dynamic = ['version', 'readme']
 
 [project.optional-dependencies]
 email = ['email-validator>=2.0.0']
+
+[project.urls]
+Homepage = 'https://github.com/pydantic/pydantic'
+Documentation = 'https://docs.pydantic.dev'
+Funding = 'https://github.com/sponsors/samuelcolvin'
+Source = 'https://github.com/pydantic/pydantic'
+Changelog = 'https://docs.pydantic.dev/latest/changelog/'
+
+[tool.hatch.version]
+path = 'pydantic/version.py'
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.sdist]
+# limit which files are included in the sdist (.tar.gz) asset,
+# see https://github.com/pydantic/pydantic/pull/4542
+include = [
+    '/README.md',
+    '/HISTORY.md',
+    '/Makefile',
+    '/pydantic',
+    '/tests',
+    '/requirements',
+]
+
+[tool.hatch.metadata.hooks.fancy-pypi-readme]
+content-type = 'text/markdown'
+# construct the PyPI readme from README.md and HISTORY.md
+fragments = [
+    {path = "README.md"},
+    {text = "\n## Changelog\n\n"},
+    {path = "HISTORY.md", pattern = "(.+?)<!-- package description limit -->"},
+    {text = "\n... see [here](https://docs.pydantic.dev/changelog/#v0322-2019-08-17) for earlier changes.\n"},
+]
+# convert GitHuB issue/PR numbers and handles to links
+substitutions = [
+    {pattern = '(\s+)#(\d+)', replacement = '\1[#\2](https://github.com/pydantic/pydantic/issues/\2)'},
+    {pattern = '(\s+)@([\w\-]+)', replacement = '\1[@\2](https://github.com/\2)'},
+    {pattern = '@@', replacement = '@'},
+]
 
 [tool.pdm.dev-dependencies]
 docs = [
@@ -93,13 +117,19 @@ docs = [
     "mkdocs-embed-external-markdown>=2.3.0",
     "pytest-examples>=0.0.10",
     "pydantic-settings>=2.0b1",
-    "pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main",
+    "pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main"
+]
+linting = [
+    "eval-type-backport>=0.1.3",
+    "ruff==0.2.1",
+    "mypy~=1.1.1",
 ]
 linting = ["ruff==0.1.3", "mypy~=1.1.1"]
 testing = [
     "cloudpickle",
     "coverage[toml]",
     "dirty-equals",
+    "eval-type-backport",
     "pytest",
     "pytest-mock",
     "pytest-pretty",
@@ -107,6 +137,7 @@ testing = [
     "faker>=18.13.0",
     "pytest-benchmark>=4.0.0",
     "pytest-codspeed~=2.2.0",
+    "packaging>=23.2",
 ]
 testing-extra = [
     # used when generate devtools docs example
@@ -146,6 +177,7 @@ substitutions = [
     { pattern = '@@', replacement = '@' },
 ]
 
+
 [tool.pytest.ini_options]
 testpaths = 'tests'
 xfail_strict = true
@@ -170,30 +202,33 @@ addopts = [
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
 assignees = []
-reviewers = [
-    'samuelcolvin',
-    'adriangb',
-    'dmontagu',
-    'hramezani',
-    'lig',
-    'Kludex',
-    'davidhewitt',
-    'sydney-runkle',
-]
+reviewers = ['samuelcolvin', 'adriangb', 'dmontagu', 'hramezani', 'Kludex', 'davidhewitt', 'sydney-runkle', 'alexmojaki']
 require_change_file = false
 unconfirmed_label = 'pending'
 
 [tool.ruff]
 line-length = 120
+target-version = 'py38'
+extend-exclude = ['pydantic/v1', 'tests/mypy/outputs']
+
+[tool.ruff.lint]
 extend-select = ['Q', 'RUF100', 'C90', 'UP', 'I', 'D', 'T']
 extend-ignore = ['D105', 'D107', 'D205', 'D415']
 flake8-quotes = { inline-quotes = 'single', multiline-quotes = 'double' }
 mccabe = { max-complexity = 14 }
 isort = { known-first-party = ['pydantic', 'tests'] }
-target-version = "py38"
-extend-exclude = ['pydantic/v1', 'tests/mypy/outputs']
+mccabe = { max-complexity = 14 }
+pydocstyle = { convention = 'google' }
 
-[tool.ruff.extend-per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
+'docs/*' = ['D']
+'pydantic/__init__.py' = ['F405', 'F403', 'D']
+'tests/test_forward_ref.py' = ['F821']
+'tests/*' = ['D']
+'pydantic/deprecated/*' = ['D']
+'pydantic/json_schema.py' = ['D']
+
+[tool.ruff.lint.extend-per-file-ignores]
 "docs/**/*.py" = ['T']
 "tests/**/*.py" = ['T', 'E721', 'F811']
 "tests/benchmarks/test_fastapi_startup_generics.py" = ['UP006', 'UP007']
@@ -201,17 +236,6 @@ extend-exclude = ['pydantic/v1', 'tests/mypy/outputs']
 
 [tool.ruff.format]
 quote-style = 'single'
-
-[tool.ruff.pydocstyle]
-convention = "google"
-
-[tool.ruff.per-file-ignores]
-'docs/*' = ['D']
-'pydantic/__init__.py' = ['F405', 'F403', 'D']
-'tests/test_forward_ref.py' = ['F821']
-'tests/*' = ['D']
-'pydantic/deprecated/*' = ['D']
-'pydantic/json_schema.py' = ['D']
 
 [tool.coverage.run]
 source = ['pydantic']
@@ -239,7 +263,6 @@ source = [
     '/Users/runner/work/pydantic/pydantic/pydantic/',
     'D:\a\pydantic\pydantic\pydantic',
 ]
-
 
 [tool.pyright]
 include = ['pydantic']

@@ -144,11 +144,11 @@ class _SafeGetItemProxy(Generic[K, V]):
 
     wrapped: dict[K, V]
 
-    def __getitem__(self, __key: K) -> V | _SentinelType:
-        return self.wrapped.get(__key, _SENTINEL)
+    def __getitem__(self, key: K, /) -> V | _SentinelType:
+        return self.wrapped.get(key, _SENTINEL)
 
-    def __contains__(self, __key: K) -> bool:
-        return self.wrapped.__contains__(__key)
+    def __contains__(self, key: K, /) -> bool:
+        return self.wrapped.__contains__(key)
 
 
 class SafeItemGetterEqModelFastPath(pydantic.BaseModel, frozen=True):

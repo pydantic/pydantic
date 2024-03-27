@@ -75,6 +75,7 @@ from pydantic.types import (
     UUID3,
     UUID4,
     UUID5,
+    ByteSize,
     DirectoryPath,
     FilePath,
     Json,
@@ -1292,6 +1293,50 @@ def test_callable_type_with_fallback(default_value, properties):
     assert model_schema['properties'] == properties
 
 
+def test_byte_size_type():
+    class Model(BaseModel):
+        a: ByteSize
+        b: ByteSize = Field('1MB', validate_default=True)
+
+    model_json_schema_validation = Model.model_json_schema(mode='validation')
+    model_json_schema_serialization = Model.model_json_schema(mode='serialization')
+
+    print(model_json_schema_serialization)
+
+    assert model_json_schema_validation == {
+        'properties': {
+            'a': {
+                'anyOf': [
+                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
+                    {'minimum': 0, 'type': 'integer'},
+                ],
+                'title': 'A',
+            },
+            'b': {
+                'anyOf': [
+                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
+                    {'minimum': 0, 'type': 'integer'},
+                ],
+                'default': '1MB',
+                'title': 'B',
+            },
+        },
+        'required': ['a'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+    assert model_json_schema_serialization == {
+        'properties': {
+            'a': {'minimum': 0, 'title': 'A', 'type': 'integer'},
+            'b': {'default': '1MB', 'minimum': 0, 'title': 'B', 'type': 'integer'},
+        },
+        'required': ['a'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 @pytest.mark.parametrize(
     'type_,default_value,properties',
     (
@@ -1683,7 +1728,7 @@ def test_model_default():
     'ser_json_timedelta,properties',
     [
         ('float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
-        ('iso8601', {'duration': {'default': 'PT300S', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
+        ('iso8601', {'duration': {'default': 'PT5M', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
     ],
 )
 def test_model_default_timedelta(ser_json_timedelta: Literal['float', 'iso8601'], properties: typing.Dict[str, Any]):
@@ -1725,7 +1770,7 @@ def test_model_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], properti
     'ser_json_timedelta,properties',
     [
         ('float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
-        ('iso8601', {'duration': {'default': 'PT300S', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
+        ('iso8601', {'duration': {'default': 'PT5M', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
     ],
 )
 def test_dataclass_default_timedelta(
@@ -1767,7 +1812,7 @@ def test_dataclass_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], prop
     'ser_json_timedelta,properties',
     [
         ('float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
-        ('iso8601', {'duration': {'default': 'PT300S', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
+        ('iso8601', {'duration': {'default': 'PT5M', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
     ],
 )
 def test_typeddict_default_timedelta(
@@ -2211,10 +2256,11 @@ def test_literal_schema():
         c: Literal['a', 1]
         d: Literal['a', Literal['b'], 1, 2]
 
+    # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
         'properties': {
-            'a': {'const': 1, 'title': 'A'},
-            'b': {'const': 'a', 'title': 'B'},
+            'a': {'const': 1, 'enum': [1], 'title': 'A', 'type': 'integer'},
+            'b': {'const': 'a', 'enum': ['a'], 'title': 'B', 'type': 'string'},
             'c': {'enum': ['a', 1], 'title': 'C'},
             'd': {'enum': ['a', 'b', 1, 2], 'title': 'D'},
         },
@@ -2236,7 +2282,7 @@ def test_literal_enum():
     # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
         'properties': {
-            'kind': {'const': 'foo', 'title': 'Kind'},
+            'kind': {'const': 'foo', 'enum': ['foo'], 'title': 'Kind', 'type': 'string'},
             'other': {'enum': ['foo', 'bar'], 'title': 'Other', 'type': 'string'},
         },
         'required': ['kind', 'other'],
@@ -2278,7 +2324,7 @@ def test_literal_types() -> None:
             'int_literal': {'enum': [123, 456], 'title': 'Int Literal', 'type': 'integer'},
             'float_literal': {'$ref': '#/$defs/FloatEnum'},
             'bool_literal': {'enum': [True, False], 'title': 'Bool Literal', 'type': 'boolean'},
-            'none_literal': {'const': None, 'title': 'None Literal'},
+            'none_literal': {'const': None, 'enum': [None], 'title': 'None Literal'},
             'list_literal': {'$ref': '#/$defs/ListEnum'},
             'mixed_literal': {'enum': [123, 'abc'], 'title': 'Mixed Literal'},
         },
@@ -2483,6 +2529,46 @@ def test_typeddict_with_extra_behavior_forbid():
         'required': ['a'],
         'additionalProperties': False,
     }
+
+
+def test_typeddict_with_title():
+    class Model(TypedDict):
+        __pydantic_config__ = ConfigDict(title='Test')  # type: ignore
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {
+        'title': 'Test',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }
+
+
+def test_typeddict_with_json_schema_extra():
+    class Model(TypedDict):
+        __pydantic_config__ = ConfigDict(title='Test', json_schema_extra={'foobar': 'hello'})  # type: ignore
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {
+        'title': 'Test',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'foobar': 'hello',
+    }
+
+
+def test_typeddict_with__callable_json_schema_extra():
+    def json_schema_extra(schema, model_class):
+        schema.pop('properties')
+        schema['type'] = 'override'
+        assert model_class is Model
+
+    class Model(TypedDict):
+        __pydantic_config__ = ConfigDict(title='Test', json_schema_extra=json_schema_extra)  # type: ignore
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {'title': 'Test', 'type': 'override', 'required': ['a']}
 
 
 @pytest.mark.parametrize(
@@ -3556,13 +3642,13 @@ def test_discriminated_union():
     assert Model.model_json_schema() == {
         '$defs': {
             'Cat': {
-                'properties': {'pet_type': {'const': 'cat', 'title': 'Pet Type'}},
+                'properties': {'pet_type': {'const': 'cat', 'enum': ['cat'], 'title': 'Pet Type', 'type': 'string'}},
                 'required': ['pet_type'],
                 'title': 'Cat',
                 'type': 'object',
             },
             'Dog': {
-                'properties': {'pet_type': {'const': 'dog', 'title': 'Pet Type'}},
+                'properties': {'pet_type': {'const': 'dog', 'enum': ['dog'], 'title': 'Pet Type', 'type': 'string'}},
                 'required': ['pet_type'],
                 'title': 'Dog',
                 'type': 'object',
@@ -3612,13 +3698,13 @@ def test_discriminated_annotated_union():
     assert Model.model_json_schema() == {
         '$defs': {
             'Cat': {
-                'properties': {'pet_type': {'const': 'cat', 'title': 'Pet Type'}},
+                'properties': {'pet_type': {'const': 'cat', 'enum': ['cat'], 'title': 'Pet Type', 'type': 'string'}},
                 'required': ['pet_type'],
                 'title': 'Cat',
                 'type': 'object',
             },
             'Dog': {
-                'properties': {'pet_type': {'const': 'dog', 'title': 'Pet Type'}},
+                'properties': {'pet_type': {'const': 'dog', 'enum': ['dog'], 'title': 'Pet Type', 'type': 'string'}},
                 'required': ['pet_type'],
                 'title': 'Dog',
                 'type': 'object',
@@ -3671,13 +3757,14 @@ def test_nested_discriminated_union():
     class Cat(BaseModel):
         pet: Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]
 
+    # insert_assert(Cat.model_json_schema())
     assert Cat.model_json_schema() == {
         '$defs': {
             'BlackCatWithHeight': {
                 'properties': {
-                    'color': {'const': 'black', 'title': 'Color'},
+                    'color': {'const': 'black', 'enum': ['black'], 'title': 'Color', 'type': 'string'},
                     'height': {'title': 'Height', 'type': 'number'},
-                    'info': {'const': 'height', 'title': 'Info'},
+                    'info': {'const': 'height', 'enum': ['height'], 'title': 'Info', 'type': 'string'},
                 },
                 'required': ['color', 'info', 'height'],
                 'title': 'BlackCatWithHeight',
@@ -3685,8 +3772,8 @@ def test_nested_discriminated_union():
             },
             'BlackCatWithWeight': {
                 'properties': {
-                    'color': {'const': 'black', 'title': 'Color'},
-                    'info': {'const': 'weight', 'title': 'Info'},
+                    'color': {'const': 'black', 'enum': ['black'], 'title': 'Color', 'type': 'string'},
+                    'info': {'const': 'weight', 'enum': ['weight'], 'title': 'Info', 'type': 'string'},
                     'weight': {'title': 'Weight', 'type': 'number'},
                 },
                 'required': ['color', 'info', 'weight'],
@@ -3695,7 +3782,7 @@ def test_nested_discriminated_union():
             },
             'WhiteCat': {
                 'properties': {
-                    'color': {'const': 'white', 'title': 'Color'},
+                    'color': {'const': 'white', 'enum': ['white'], 'title': 'Color', 'type': 'string'},
                     'white_cat_info': {'title': 'White Cat Info', 'type': 'string'},
                 },
                 'required': ['color', 'white_cat_info'],
@@ -3778,9 +3865,9 @@ def test_deeper_nested_discriminated_annotated_union():
             'BlackCatWithHeight': {
                 'properties': {
                     'black_infos': {'title': 'Black Infos', 'type': 'string'},
-                    'color': {'const': 'black', 'title': 'Color'},
-                    'info': {'const': 'height', 'title': 'Info'},
-                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'color': {'const': 'black', 'enum': ['black'], 'title': 'Color', 'type': 'string'},
+                    'info': {'const': 'height', 'enum': ['height'], 'title': 'Info', 'type': 'string'},
+                    'pet_type': {'const': 'cat', 'enum': ['cat'], 'title': 'Pet Type', 'type': 'string'},
                 },
                 'required': ['pet_type', 'color', 'info', 'black_infos'],
                 'title': 'BlackCatWithHeight',
@@ -3789,9 +3876,9 @@ def test_deeper_nested_discriminated_annotated_union():
             'BlackCatWithWeight': {
                 'properties': {
                     'black_infos': {'title': 'Black Infos', 'type': 'string'},
-                    'color': {'const': 'black', 'title': 'Color'},
-                    'info': {'const': 'weight', 'title': 'Info'},
-                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'color': {'const': 'black', 'enum': ['black'], 'title': 'Color', 'type': 'string'},
+                    'info': {'const': 'weight', 'enum': ['weight'], 'title': 'Info', 'type': 'string'},
+                    'pet_type': {'const': 'cat', 'enum': ['cat'], 'title': 'Pet Type', 'type': 'string'},
                 },
                 'required': ['pet_type', 'color', 'info', 'black_infos'],
                 'title': 'BlackCatWithWeight',
@@ -3800,7 +3887,7 @@ def test_deeper_nested_discriminated_annotated_union():
             'Dog': {
                 'properties': {
                     'dog_name': {'title': 'Dog Name', 'type': 'string'},
-                    'pet_type': {'const': 'dog', 'title': 'Pet Type'},
+                    'pet_type': {'const': 'dog', 'enum': ['dog'], 'title': 'Pet Type', 'type': 'string'},
                 },
                 'required': ['pet_type', 'dog_name'],
                 'title': 'Dog',
@@ -3808,8 +3895,8 @@ def test_deeper_nested_discriminated_annotated_union():
             },
             'WhiteCat': {
                 'properties': {
-                    'color': {'const': 'white', 'title': 'Color'},
-                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'color': {'const': 'white', 'enum': ['white'], 'title': 'Color', 'type': 'string'},
+                    'pet_type': {'const': 'cat', 'enum': ['cat'], 'title': 'Pet Type', 'type': 'string'},
                     'white_infos': {'title': 'White Infos', 'type': 'string'},
                 },
                 'required': ['pet_type', 'color', 'white_infos'],
@@ -3962,9 +4049,9 @@ def test_discriminated_annotated_union_literal_enum():
             'BlackCatWithHeight': {
                 'properties': {
                     'black_infos': {'title': 'Black Infos', 'type': 'string'},
-                    'color': {'const': 'black', 'title': 'Color'},
-                    'info': {'const': 0, 'title': 'Info'},
-                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'color': {'const': 'black', 'enum': ['black'], 'title': 'Color', 'type': 'string'},
+                    'info': {'const': 0, 'enum': [0], 'title': 'Info', 'type': 'integer'},
+                    'pet_type': {'const': 'cat', 'enum': ['cat'], 'title': 'Pet Type', 'type': 'string'},
                 },
                 'required': ['pet_type', 'color', 'info', 'black_infos'],
                 'title': 'BlackCatWithHeight',
@@ -3973,9 +4060,9 @@ def test_discriminated_annotated_union_literal_enum():
             'BlackCatWithWeight': {
                 'properties': {
                     'black_infos': {'title': 'Black Infos', 'type': 'string'},
-                    'color': {'const': 'black', 'title': 'Color'},
-                    'info': {'const': 1, 'title': 'Info'},
-                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'color': {'const': 'black', 'enum': ['black'], 'title': 'Color', 'type': 'string'},
+                    'info': {'const': 1, 'enum': [1], 'title': 'Info', 'type': 'integer'},
+                    'pet_type': {'const': 'cat', 'enum': ['cat'], 'title': 'Pet Type', 'type': 'string'},
                 },
                 'required': ['pet_type', 'color', 'info', 'black_infos'],
                 'title': 'BlackCatWithWeight',
@@ -3984,7 +4071,7 @@ def test_discriminated_annotated_union_literal_enum():
             'Dog': {
                 'properties': {
                     'dog_name': {'title': 'Dog Name', 'type': 'string'},
-                    'pet_type': {'const': 'dog', 'title': 'Pet Type'},
+                    'pet_type': {'const': 'dog', 'enum': ['dog'], 'title': 'Pet Type', 'type': 'string'},
                 },
                 'required': ['pet_type', 'dog_name'],
                 'title': 'Dog',
@@ -3992,8 +4079,8 @@ def test_discriminated_annotated_union_literal_enum():
             },
             'WhiteCat': {
                 'properties': {
-                    'color': {'const': 'white', 'title': 'Color'},
-                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'color': {'const': 'white', 'enum': ['white'], 'title': 'Color', 'type': 'string'},
+                    'pet_type': {'const': 'cat', 'enum': ['cat'], 'title': 'Pet Type', 'type': 'string'},
                     'white_infos': {'title': 'White Infos', 'type': 'string'},
                 },
                 'required': ['pet_type', 'color', 'white_infos'],
@@ -4112,7 +4199,7 @@ def test_alias_same():
             'Cat': {
                 'properties': {
                     'c': {'title': 'C', 'type': 'string'},
-                    'typeOfPet': {'const': 'cat', 'title': 'Typeofpet'},
+                    'typeOfPet': {'const': 'cat', 'enum': ['cat'], 'title': 'Typeofpet', 'type': 'string'},
                 },
                 'required': ['typeOfPet', 'c'],
                 'title': 'Cat',
@@ -4121,7 +4208,7 @@ def test_alias_same():
             'Dog': {
                 'properties': {
                     'd': {'title': 'D', 'type': 'string'},
-                    'typeOfPet': {'const': 'dog', 'title': 'Typeofpet'},
+                    'typeOfPet': {'const': 'dog', 'enum': ['dog'], 'title': 'Typeofpet', 'type': 'string'},
                 },
                 'required': ['typeOfPet', 'd'],
                 'title': 'Dog',
@@ -4163,6 +4250,7 @@ def test_nested_python_dataclasses():
         # This is the same behavior as in v1
         child: List[ChildModel]
 
+    # insert_assert(model_json_schema(dataclass(NestedModel)))
     assert model_json_schema(dataclass(NestedModel)) == {
         '$defs': {
             'ChildModel': {
@@ -4202,13 +4290,14 @@ def test_discriminated_union_in_list():
         pets: Pet
         n: int
 
+    # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
         '$defs': {
             'BlackCat': {
                 'properties': {
                     'black_name': {'title': 'Black Name', 'type': 'string'},
-                    'color': {'const': 'black', 'title': 'Color'},
-                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'color': {'const': 'black', 'enum': ['black'], 'title': 'Color', 'type': 'string'},
+                    'pet_type': {'const': 'cat', 'enum': ['cat'], 'title': 'Pet Type', 'type': 'string'},
                 },
                 'required': ['pet_type', 'color', 'black_name'],
                 'title': 'BlackCat',
@@ -4217,7 +4306,7 @@ def test_discriminated_union_in_list():
             'Dog': {
                 'properties': {
                     'name': {'title': 'Name', 'type': 'string'},
-                    'pet_type': {'const': 'dog', 'title': 'Pet Type'},
+                    'pet_type': {'const': 'dog', 'enum': ['dog'], 'title': 'Pet Type', 'type': 'string'},
                 },
                 'required': ['pet_type', 'name'],
                 'title': 'Dog',
@@ -4225,8 +4314,8 @@ def test_discriminated_union_in_list():
             },
             'WhiteCat': {
                 'properties': {
-                    'color': {'const': 'white', 'title': 'Color'},
-                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'color': {'const': 'white', 'enum': ['white'], 'title': 'Color', 'type': 'string'},
+                    'pet_type': {'const': 'cat', 'enum': ['cat'], 'title': 'Pet Type', 'type': 'string'},
                     'white_name': {'title': 'White Name', 'type': 'string'},
                 },
                 'required': ['pet_type', 'color', 'white_name'],
@@ -5819,3 +5908,125 @@ def test_description_not_included_for_basemodel() -> None:
         x: BaseModel
 
     assert 'description' not in Model.model_json_schema()['$defs']['BaseModel']
+
+
+def test_recursive_json_schema_build() -> None:
+    """
+    Schema build for this case is a bit complicated due to the recursive nature of the models.
+    This was reported as broken in https://github.com/pydantic/pydantic/issues/8689, which was
+    originally caused by the change made in https://github.com/pydantic/pydantic/pull/8583, which has
+    since been reverted.
+    """
+
+    class AllowedValues(str, Enum):
+        VAL1 = 'Val1'
+        VAL2 = 'Val2'
+
+    class ModelA(BaseModel):
+        modelA_1: AllowedValues = Field(..., max_length=60)
+
+    class ModelB(ModelA):
+        modelB_1: typing.List[ModelA]
+
+    class ModelC(BaseModel):
+        modelC_1: ModelB
+
+    class Model(BaseModel):
+        b: ModelB
+        c: ModelC
+
+    assert Model.model_json_schema()
+
+
+def test_json_schema_annotated_with_field() -> None:
+    """Ensure field specified with Annotated in create_model call is still marked as required."""
+
+    from pydantic import create_model
+
+    Model = create_model(
+        'test_model',
+        bar=(Annotated[int, Field(description='Bar description')], ...),
+    )
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'bar': {'description': 'Bar description', 'title': 'Bar', 'type': 'integer'},
+        },
+        'required': ['bar'],
+        'title': 'test_model',
+        'type': 'object',
+    }
+
+
+def test_required_fields_in_annotated_with_create_model() -> None:
+    """Ensure multiple field specified with Annotated in create_model call is still marked as required."""
+
+    from pydantic import create_model
+
+    Model = create_model(
+        'test_model',
+        foo=(int, ...),
+        bar=(Annotated[int, Field(description='Bar description')], ...),
+        baz=(Annotated[int, Field(..., description='Baz description')], ...),
+    )
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'foo': {'title': 'Foo', 'type': 'integer'},
+            'bar': {'description': 'Bar description', 'title': 'Bar', 'type': 'integer'},
+            'baz': {'description': 'Baz description', 'title': 'Baz', 'type': 'integer'},
+        },
+        'required': ['foo', 'bar', 'baz'],
+        'title': 'test_model',
+        'type': 'object',
+    }
+
+
+def test_required_fields_in_annotated_with_basemodel() -> None:
+    """
+    Ensure multiple field specified with Annotated in BaseModel is marked as required.
+    """
+
+    class Model(BaseModel):
+        a: int = ...
+        b: Annotated[int, 'placeholder'] = ...
+        c: Annotated[int, Field()] = ...
+
+    assert Model.model_fields['a'].is_required()
+    assert Model.model_fields['b'].is_required()
+    assert Model.model_fields['c'].is_required()
+
+
+@pytest.mark.parametrize(
+    'field_type,default_value,expected_schema',
+    [
+        (
+            IPvAnyAddress,
+            IPv4Address('127.0.0.1'),
+            {
+                'properties': {
+                    'field': {'default': '127.0.0.1', 'format': 'ipvanyaddress', 'title': 'Field', 'type': 'string'}
+                },
+                'title': 'Model',
+                'type': 'object',
+            },
+        ),
+        (
+            IPvAnyAddress,
+            IPv6Address('::1'),
+            {
+                'properties': {
+                    'field': {'default': '::1', 'format': 'ipvanyaddress', 'title': 'Field', 'type': 'string'}
+                },
+                'title': 'Model',
+                'type': 'object',
+            },
+        ),
+    ],
+)
+def test_default_value_encoding(field_type, default_value, expected_schema):
+    class Model(BaseModel):
+        field: field_type = default_value
+
+    schema = Model.model_json_schema()
+    assert schema == expected_schema

@@ -1,7 +1,9 @@
+from typing import Union
+
 import pytest
 
 import pydantic.dataclasses
-from pydantic import BaseModel, Field, RootModel, ValidationError, fields
+from pydantic import BaseModel, ConfigDict, Field, PydanticUserError, RootModel, ValidationError, computed_field, fields
 
 
 def test_field_info_annotation_keyword_argument():
@@ -15,6 +17,20 @@ def test_field_info_annotation_keyword_argument():
         fields.FieldInfo.from_field(annotation=())
 
     assert e.value.args == ('"annotation" is not permitted as a Field keyword argument',)
+
+
+def test_field_info_annotated_attribute_name_clashing():
+    """This tests that `FieldInfo.from_annotated_attribute` will raise a `PydanticUserError` if attribute names clashes
+    with a type.
+    """
+
+    with pytest.raises(PydanticUserError):
+
+        class SubModel(BaseModel):
+            a: int = 1
+
+        class Model(BaseModel):
+            SubModel: SubModel = Field()
 
 
 def test_init_var_field():
@@ -93,3 +109,38 @@ def test_frozen_field_repr():
 
     assert repr(Model.model_fields['non_frozen_field']) == 'FieldInfo(annotation=int, required=True)'
     assert repr(Model.model_fields['frozen_field']) == 'FieldInfo(annotation=int, required=True, frozen=True)'
+
+
+def test_model_field_default_info():
+    """Test that __repr_args__ of FieldInfo includes the default value when it's set to None."""
+
+    class Model(BaseModel):
+        a: Union[int, None] = Field(default=None)
+        b: Union[int, None] = None
+
+    assert str(Model.model_fields) == (
+        "{'a': FieldInfo(annotation=Union[int, NoneType], required=False, default=None), "
+        "'b': FieldInfo(annotation=Union[int, NoneType], required=False, default=None)}"
+    )
+
+
+def test_computed_field_raises_correct_attribute_error():
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+        @computed_field
+        def comp_field(self) -> str:
+            raise AttributeError('Computed field attribute error')
+
+        @property
+        def prop_field(self):
+            raise AttributeError('Property attribute error')
+
+    with pytest.raises(AttributeError, match='Computed field attribute error'):
+        Model().comp_field
+
+    with pytest.raises(AttributeError, match='Property attribute error'):
+        Model().prop_field
+
+    with pytest.raises(AttributeError, match=f"'{Model.__name__}' object has no attribute 'invalid_field'"):
+        Model().invalid_field

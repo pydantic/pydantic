@@ -209,7 +209,7 @@ m = WithCustomEncoders(
     dt=datetime(2032, 6, 1, tzinfo=timezone.utc), diff=timedelta(hours=100)
 )
 print(m.model_dump_json())
-#> {"dt":1969660800.0,"diff":"P4DT14400S"}
+#> {"dt":1969660800.0,"diff":"P4DT4H"}
 
 
 class Model(BaseModel):
@@ -223,6 +223,9 @@ class Model(BaseModel):
 print(Model(x='test value').model_dump_json())
 #> {"x":"serialized test value"}
 ```
+
+!!! note
+    A single serializer can also be called on all fields by passing the special value '*' to the [`@field_serializer`][pydantic.functional_serializers.field_serializer] decorator.
 
 In addition, [`PlainSerializer`][pydantic.functional_serializers.PlainSerializer] and
 [`WrapSerializer`][pydantic.functional_serializers.WrapSerializer] enable you to use a function to modify the output of serialization.
@@ -428,9 +431,28 @@ print(m.model_dump())  # note: the password field is not included
     even if subclasses get passed when instantiating the object. In particular, this can help prevent surprises
     when adding sensitive information like secrets as fields of subclasses.
 
-### Serializing with duck-typing
+### Serializing with duck-typing 🦆
 
-If you want to preserve the old duck-typing serialization behavior, this can be done using `SerializeAsAny`:
+!!! question "What is serialization with duck typing?"
+
+    Duck-typing serialization is the behavior of serializing an object based on the fields present in the object itself,
+    rather than the fields present in the schema of the object. This means that when an object is serialized, fields present in
+    a subclass, but not in the original schema, will be included in the serialized output.
+
+    This behavior was the default in Pydantic V1, but was changed in V2 to help ensure that you know precisely which
+    fields would be included when serializing, even if subclasses get passed when instantiating the object. This helps
+    prevent security risks when serializing subclasses with sensitive information, for example.
+
+If you want v1-style duck-typing serialization behavior, you can use a runtime setting, or annotate individual types.
+
+* Field / type level: use the `SerializeAsAny` annotation
+* Runtime level: use the `serialize_as_any` flag when calling `model_dump()` or `model_dump_json()`
+
+We discuss these options below in more detail:
+
+#### `SerializeAsAny` annotation:
+
+If you want duck-typing serialization behavior, this can be done using the `SerializeAsAny` annotation on a type:
 
 ```py
 from pydantic import BaseModel, SerializeAsAny
@@ -464,6 +486,156 @@ When a field is annotated as `SerializeAsAny[<SomeType>]`, the validation behavi
 annotated as `<SomeType>`, and type-checkers like mypy will treat the attribute as having the appropriate type as well.
 But when serializing, the field will be serialized as though the type hint for the field was `Any`, which is where the
 name comes from.
+
+#### `serialize_as_any` runtime setting
+
+The `serialize_as_any` runtime setting can be used to serialize model data with or without duck typed serialization behavior.
+`serialize_as_any` can be passed as a keyword argument to the `model_dump()` and `model_dump_json` methods of `BaseModel`s and `RootModel`s. It can also be passed as a keyword argument to the `dump_python()` and `dump_json()` methods of `TypeAdapter`s.
+
+If `serialize_as_any` is set to `True`, the model will be serialized using duck typed serialization behavior,
+which means that the model will ignore the schema and instead ask the object itself how it should be serialized.
+In particular, this means that when model subclasses are serialized, fields present in the subclass but not in
+the original schema will be included.
+
+If `serialize_as_any` is set to `False` (which is the default), the model will be serialized using the schema,
+which means that fields present in a subclass but not in the original schema will be ignored.
+
+!!! question "Why is this flag useful?"
+    Sometimes, you want to make sure that no matter what fields might have been added in subclasses,
+    the serialized object will only have the fields listed in the original type definition.
+    This can be useful if you add something like a `password: str` field in a subclass that you don't
+    want to accidentally include in the serialized output.
+
+For example:
+
+```py
+from pydantic import BaseModel
+
+
+class User(BaseModel):
+    name: str
+
+
+class UserLogin(User):
+    password: str
+
+
+class OuterModel(BaseModel):
+    user1: User
+    user2: User
+
+
+user = UserLogin(name='pydantic', password='password')
+
+outer_model = OuterModel(user1=user, user2=user)
+print(outer_model.model_dump(serialize_as_any=True))  # (1)!
+"""
+{
+    'user1': {'name': 'pydantic', 'password': 'password'},
+    'user2': {'name': 'pydantic', 'password': 'password'},
+}
+"""
+
+print(outer_model.model_dump(serialize_as_any=False))  # (2)!
+#> {'user1': {'name': 'pydantic'}, 'user2': {'name': 'pydantic'}}
+```
+
+1. With `serialize_as_any` set to `True`, the result matches that of V1.
+2. With `serialize_as_any` set to `False` (the V2 default), fields present on the subclass,
+but not the base class, are not included in serialization.
+
+This setting even takes effect with nested and recursive patterns as well. For example:
+
+```py
+from typing import List
+
+from pydantic import BaseModel
+
+
+class User(BaseModel):
+    name: str
+    friends: List['User']
+
+
+class UserLogin(User):
+    password: str
+
+
+class OuterModel(BaseModel):
+    user: User
+
+
+user = UserLogin(
+    name='samuel',
+    password='pydantic-pw',
+    friends=[UserLogin(name='sebastian', password='fastapi-pw', friends=[])],
+)
+
+print(OuterModel(user=user).model_dump(serialize_as_any=True))  # (1)!
+"""
+{
+    'user': {
+        'name': 'samuel',
+        'friends': [
+            {'name': 'sebastian', 'friends': [], 'password': 'fastapi-pw'}
+        ],
+        'password': 'pydantic-pw',
+    }
+}
+"""
+
+print(OuterModel(user=user).model_dump(serialize_as_any=False))  # (2)!
+"""
+{'user': {'name': 'samuel', 'friends': [{'name': 'sebastian', 'friends': []}]}}
+"""
+```
+
+1. Even nested `User` model instances are dumped with fields unique to `User` subclasses.
+2. Even nested `User` model instances are dumped without fields unique to `User` subclasses.
+
+!!! note
+    The behavior of the `serialize_as_any` runtime flag is almost the same as the behavior of the `SerializeAsAny` annotation.
+    There are a few nuanced differences that we're working to resolve, but for the most part, you can expect the same behavior from both.
+    See more about the differences in this [active issue](https://github.com/pydantic/pydantic/issues/9049)
+
+#### Overriding the `serialize_as_any` default (False)
+
+You can override the default setting for `serialize_as_any` by configuring a subclass of `BaseModel` that overrides the default for the `serialize_as_any` argument to `model_dump()` and `model_dump_json()`, and then use that as the base class (instead of `pydantic.BaseModel`) for any model you want to have this default behavior.
+
+For example, you could do the following if you want to use duck-typing serialization by default:
+
+```py
+from typing import Any, Dict
+
+from pydantic import BaseModel, SecretStr
+
+
+class MyBaseModel(BaseModel):
+    def model_dump(self, **kwargs) -> Dict[str, Any]:
+        return super().model_dump(serialize_as_any=True, **kwargs)
+
+    def model_dump_json(self, **kwargs) -> str:
+        return super().model_dump_json(serialize_as_any=True, **kwargs)
+
+
+class User(MyBaseModel):
+    name: str
+
+
+class UserInfo(User):
+    password: SecretStr
+
+
+class OuterModel(MyBaseModel):
+    user: User
+
+
+u = OuterModel(user=UserInfo(name='John', password='secret_pw'))
+print(u.model_dump_json())  # (1)!
+#> {"user":{"name":"John","password":"**********"}}
+```
+
+1. By default, `model_dump_json` will use duck-typing serialization behavior, which means that the `password` field is included in the output.
 
 ## `pickle.dumps(model)`
 
@@ -702,6 +874,40 @@ print(person.model_dump(exclude_defaults=True))  # (3)!
 2. `age` excluded from the output because `exclude_unset` was set to `True`, and `age` was not set in the Person constructor.
 3. `age` excluded from the output because `exclude_defaults` was set to `True`, and `age` takes the default value of `None`.
 
+## Serialization Context
+
+You can pass a context object to the serialization methods which can be accessed from the `info`
+argument to decorated serializer functions. This is useful when you need to dynamically update the
+serialization behavior during runtime. For example, if you wanted a field to be dumped depending on
+a dynamically controllable set of allowed values, this could be done by passing the allowed values
+by context:
+
+```python
+from pydantic import BaseModel, SerializationInfo, field_serializer
+
+
+class Model(BaseModel):
+    text: str
+
+    @field_serializer('text')
+    def remove_stopwords(self, v: str, info: SerializationInfo):
+        context = info.context
+        if context:
+            stopwords = context.get('stopwords', set())
+            v = ' '.join(w for w in v.split() if w.lower() not in stopwords)
+        return v
+
+
+model = Model.model_construct(**{'text': 'This is an example document'})
+print(model.model_dump())  # no context
+#> {'text': 'This is an example document'}
+print(model.model_dump(context={'stopwords': ['this', 'is', 'an']}))
+#> {'text': 'example document'}
+print(model.model_dump(context={'stopwords': ['document']}))
+#> {'text': 'This is an example'}
+```
+
+Similarly, you can [use a context for validation](../concepts/validators.md#validation-context).
 
 ## `model_copy(...)`
 

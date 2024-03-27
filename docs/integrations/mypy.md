@@ -126,6 +126,9 @@ To get started, all you need to do is create a `mypy.ini` file with following co
 plugins = pydantic.mypy
 ```
 
+!!! note
+  If you're using `pydantic.v1` models, you'll need to add `pydantic.v1.mypy` to your list of plugins.
+
 The plugin is compatible with mypy versions `>=0.930`.
 
 See the [plugin configuration](#configuring-the-plugin) docs for more details.

@@ -22,24 +22,25 @@ def validate_call(
 
 
 @overload
-def validate_call(__func: AnyCallableT) -> AnyCallableT:
+def validate_call(func: AnyCallableT, /) -> AnyCallableT:
     ...
 
 
 def validate_call(
-    __func: AnyCallableT | None = None,
+    func: AnyCallableT | None = None,
+    /,
     *,
     config: ConfigDict | None = None,
     validate_return: bool = False,
 ) -> AnyCallableT | Callable[[AnyCallableT], AnyCallableT]:
-    """Usage docs: https://docs.pydantic.dev/2.6/concepts/validation_decorator/
+    """Usage docs: https://docs.pydantic.dev/2.7/concepts/validation_decorator/
 
     Returns a decorated wrapper around the function that validates the arguments and, optionally, the return value.
 
     Usage may be either as a plain decorator `@validate_call` or with arguments `@validate_call(...)`.
 
     Args:
-        __func: The function to be decorated.
+        func: The function to be decorated.
         config: The configuration dictionary.
         validate_return: Whether to validate the return value.
 
@@ -61,7 +62,7 @@ def validate_call(
 
         return wrapper_function  # type: ignore
 
-    if __func:
-        return validate(__func)
+    if func:
+        return validate(func)
     else:
         return validate

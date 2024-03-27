@@ -3,7 +3,7 @@ from __future__ import annotations as _annotations
 
 __all__ = 'VERSION', 'version_info'
 
-VERSION = '2.6.0a1'
+VERSION = '2.7.0a1'
 """The version of Pydantic."""
 
 
@@ -65,10 +65,7 @@ def version_info() -> str:
 def parse_mypy_version(version: str) -> tuple[int, ...]:
     """Parse mypy string version to tuple of ints.
 
-    This function is included here rather than the mypy plugin file because the mypy plugin file cannot be imported
-    outside a mypy run.
-
-    It parses normal version like `0.930` and dev version
+    It parses normal version like `0.930` and extra info followed by a `+` sign
     like `0.940+dev.04cac4b5d911c4f9529e6ce86a27b44f28846f5d.dirty`.
 
     Args:

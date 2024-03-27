@@ -111,7 +111,8 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
             for example, instances of `MyGenericModel[Any]` could be equal to instances of `MyGenericModel[int]`.
 * We have replaced the use of the `__root__` field to specify a "custom root model" with a new type called
     [`RootModel`](concepts/models.md#rootmodel-and-custom-root-types) which is intended to replace the functionality of
-    using a field called `__root__` in Pydantic V1.
+    using a field called `__root__` in Pydantic V1. Note, `RootModel` types no longer support the `arbitrary_types_allowed`
+    config setting. See [this issue comment](https://github.com/pydantic/pydantic/issues/6710#issuecomment-1700948167) for an explanation.
 * We have significantly expanded Pydantic's capabilities related to customizing serialization. In particular, we have
     added the [`@field_serializer`](api/functional_serializers.md#pydantic.functional_serializers.field_serializer),
     [`@model_serializer`](api/functional_serializers.md#pydantic.functional_serializers.model_serializer), and
@@ -133,6 +134,7 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
   You can see an example + more detail [here](https://docs.pydantic.dev/latest/concepts/models/#attribute-copies).
 * The `.json()` method is deprecated, and attempting to use this deprecated method with arguments such as
 `indent` or `ensure_ascii` may lead to confusing errors. For best results, switch to V2's equivalent, `model_dump_json()`.
+If you'd still like to use said arguments, you can use [this workaround](https://github.com/pydantic/pydantic/issues/8825#issuecomment-1946206415).
 * JSON serialization of non-string key values is generally done with `str(key)`, leading to some changes in behavior such as the following:
 
 ```py
@@ -160,6 +162,45 @@ print(v1_model.json())
 # V2
 print(v2_model.model_dump_json())
 #> {"a":{"None":123}}
+```
+
+* `model_dump_json()` results are compacted in order to save space, and don't always exactly match that of `json.dumps()` output.
+That being said, you can easily modify the separators used in `json.dumps()` results in order to align the two outputs:
+
+```py
+import json
+from typing import List
+
+from pydantic import BaseModel as V2BaseModel
+from pydantic.v1 import BaseModel as V1BaseModel
+
+
+class V1Model(V1BaseModel):
+    a: List[str]
+
+
+class V2Model(V2BaseModel):
+    a: List[str]
+
+
+v1_model = V1Model(a=['fancy', 'sushi'])
+v2_model = V2Model(a=['fancy', 'sushi'])
+
+# V1
+print(v1_model.json())
+#> {"a": ["fancy", "sushi"]}
+
+# V2
+print(v2_model.model_dump_json())
+#> {"a":["fancy","sushi"]}
+
+# Plain json.dumps
+print(json.dumps(v2_model.model_dump()))
+#> {"a": ["fancy", "sushi"]}
+
+# Modified json.dumps
+print(json.dumps(v2_model.model_dump(), separators=(',', ':')))
+#> {"a":["fancy","sushi"]}
 ```
 
 ### Changes to `pydantic.generics.GenericModel`
@@ -198,9 +239,9 @@ The following properties have been removed from or changed in `Field`:
 - `unique_items`
 - `allow_mutation` (use `frozen` instead)
 - `regex` (use `pattern` instead)
-- `final` (use the `typing.Final` type hint instead)
+- `final` (use the [typing.Final][] type hint instead)
 
-Field constraints are no longer automatically pushed down to the parameters of generics.  For example, you can no longer validate every element of a list matches a regex by providing `my_list: list[str] = Field(pattern=".*")`.  Instead, use `typing.Annotated` to provide an annotation on the `str` itself: `my_list: list[Annotated[str, Field(pattern=".*")]]`
+Field constraints are no longer automatically pushed down to the parameters of generics.  For example, you can no longer validate every element of a list matches a regex by providing `my_list: list[str] = Field(pattern=".*")`.  Instead, use [`typing.Annotated`][] to provide an annotation on the `str` itself: `my_list: list[Annotated[str, Field(pattern=".*")]]`
 
 * [TODO: Need to document any other backwards-incompatible changes to `pydantic.Field`]
 
@@ -659,7 +700,7 @@ We have completely overhauled the way custom types are defined in pydantic.
 We have exposed hooks for generating both `pydantic-core` and JSON schemas, allowing you to get all the performance
 benefits of Pydantic V2 even when using your own custom types.
 
-We have also introduced ways to use `typing.Annotated` to add custom validation to your own types.
+We have also introduced ways to use [`typing.Annotated`][] to add custom validation to your own types.
 
 The main changes are:
 
@@ -668,7 +709,7 @@ The main changes are:
 * `__modify_schema__` becomes `__get_pydantic_json_schema__`.
   See [JSON Schema Customization](concepts/json_schema.md#schema-customization) for more information.
 
-Additionally, you can use `typing.Annotated` to modify or provide the `__get_pydantic_core_schema__` and
+Additionally, you can use [`typing.Annotated`][] to modify or provide the `__get_pydantic_core_schema__` and
 `__get_pydantic_json_schema__` functions of a type by annotating it, rather than modifying the type itself.
 This provides a powerful and flexible mechanism for integrating third-party types with Pydantic, and in some cases
 may help you remove hacks from Pydantic V1 introduced to work around the limitations for custom types.

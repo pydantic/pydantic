@@ -442,7 +442,7 @@ print(ModelB.model_json_schema())
 """
 ```
 
-You can specify JSON schema modifications via the [`Field`][pydantic.fields.Field] constructor via `typing.Annotated` as well:
+You can specify JSON schema modifications via the [`Field`][pydantic.fields.Field] constructor via [`typing.Annotated`][] as well:
 
 ```py output="json"
 import json
@@ -635,7 +635,7 @@ print(json.dumps(Model.model_json_schema(), indent=2))
 """
 ```
 
-!!! note:
+!!! note
     As discussed in [this issue](https://github.com/pydantic/pydantic/issues/8208), in the future, it's likely that Pydantic will add
     builtin support for JSON schema generation for types like [`PlainValidator`][pydantic.functional_validators.PlainValidator],
     but the [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema] annotation will still be useful for other custom types.
@@ -958,7 +958,7 @@ Here's an example of modifying the generated JSON schema:
 import json
 from typing import Any
 
-from pydantic_core import core_schema
+from pydantic_core import core_schema as cs
 
 from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler, TypeAdapter
 from pydantic.json_schema import JsonSchemaValue
@@ -975,17 +975,17 @@ class Person:
     @classmethod
     def __get_pydantic_core_schema__(
         cls, source_type: Any, handler: GetCoreSchemaHandler
-    ) -> core_schema.CoreSchema:
-        return core_schema.typed_dict_schema(
+    ) -> cs.CoreSchema:
+        return cs.typed_dict_schema(
             {
-                'name': core_schema.typed_dict_field(core_schema.str_schema()),
-                'age': core_schema.typed_dict_field(core_schema.int_schema()),
+                'name': cs.typed_dict_field(cs.str_schema()),
+                'age': cs.typed_dict_field(cs.int_schema()),
             },
         )
 
     @classmethod
     def __get_pydantic_json_schema__(
-        cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        cls, core_schema: cs.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         json_schema = handler(core_schema)
         json_schema = handler.resolve_ref_schema(json_schema)
@@ -1207,7 +1207,7 @@ print(validation_schema)
 ## Customizing the `$ref`s in JSON Schema
 
 The format of `$ref`s can be altered by calling [`model_json_schema()`][pydantic.main.BaseModel.model_json_schema]
-or `model_dump_json()`][pydantic.main.BaseModel.model_dump_json] with the `ref_template` keyword argument.
+or [`model_dump_json()`][pydantic.main.BaseModel.model_dump_json] with the `ref_template` keyword argument.
 The definitions are always stored under the key `$defs`, but a specified prefix can be used for the references.
 
 This is useful if you need to extend or modify the JSON schema default definitions location. For example, with OpenAPI:

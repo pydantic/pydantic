@@ -57,7 +57,7 @@ from pydantic.dataclasses import dataclass
 config = ConfigDict(str_max_length=10, validate_assignment=True)
 
 
-@dataclass(config=config)  # (1)!
+@dataclass(config=config)
 class User:
     id: int
     name: str = 'John Doe'
@@ -76,26 +76,38 @@ except ValidationError as e:
     """
 ```
 
+## Configuration with `dataclass` from the standard library or `TypedDict`
 
-1. If using the `dataclass` from the standard library or `TypedDict`, you should use `__pydantic_config__` instead.
-   See:
+If using the `dataclass` from the standard library or `TypedDict`, you should use `__pydantic_config__` instead.
 
-    ```py
-    from dataclasses import dataclass
-    from datetime import datetime
+```py
+from dataclasses import dataclass
+from datetime import datetime
 
-    from pydantic import ConfigDict
+from pydantic import ConfigDict
 
 
-    @dataclass
-    class User:
-        __pydantic_config__ = ConfigDict(strict=True)
+@dataclass
+class User:
+    __pydantic_config__ = ConfigDict(strict=True)
 
-        id: int
-        name: str = 'John Doe'
-        signup_ts: datetime = None
-    ```
+    id: int
+    name: str = 'John Doe'
+    signup_ts: datetime = None
+```
 
+Alternatively, the [`with_config`][pydantic.config.with_config] decorator can be used to comply with type checkers.
+
+```py
+from typing_extensions import TypedDict
+
+from pydantic import ConfigDict, with_config
+
+
+@with_config(ConfigDict(str_to_lower=True))
+class Model(TypedDict):
+    x: str
+```
 
 ## Change behaviour globally
 

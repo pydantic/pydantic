@@ -617,12 +617,18 @@ Here are some additional notes on the behavior of [`model_construct()`][pydantic
   [`model_construct()`][pydantic.main.BaseModel.model_construct].
   * In particular, the [`model_construct()`][pydantic.main.BaseModel.model_construct] method does not support recursively constructing models from dicts.
 * If you do not pass keyword arguments for fields with defaults, the default values will still be used.
-* For models with `model_config['extra'] == 'allow'`, data not corresponding to fields will be correctly stored in
-  the `__pydantic_extra__` dict.
 * For models with private attributes, the `__pydantic_private__` dict will be initialized the same as it would be when
   calling `__init__`.
 * When constructing an instance using [`model_construct()`][pydantic.main.BaseModel.model_construct], no `__init__` method from the model or any of its parent
   classes will be called, even when a custom `__init__` method is defined.
+
+!!! note "On `extra` behavior with `model_construct`"
+    * For models with `model_config['extra'] == 'allow'`, data not corresponding to fields will be correctly stored in
+    the `__pydantic_extra__` dict and saved to the model's `__dict__`.
+    * For models with `model_config['extra'] == 'ignore'`, data not corresponding to fields will be ignored - that is,
+    not stored in `__pydantic_extra__` or `__dict__` on the instance.
+    * Unlike a call to `__init__`, a call to `model_construct` with `model_config['extra'] == 'forbid'` doesn't raise an
+    error in the presence of data not corresponding to fields. Rather, said input data is simply ignored.
 
 ## Generic models
 
@@ -630,10 +636,10 @@ Pydantic supports the creation of generic models to make it easier to reuse a co
 
 In order to declare a generic model, you perform the following steps:
 
-* Declare one or more `typing.TypeVar` instances to use to parameterize your model.
-* Declare a pydantic model that inherits from `pydantic.BaseModel` and `typing.Generic`,
+1. Declare one or more `typing.TypeVar` instances to use to parameterize your model.
+2. Declare a pydantic model that inherits from `pydantic.BaseModel` and `typing.Generic`,
   where you pass the `TypeVar` instances as parameters to `typing.Generic`.
-* Use the `TypeVar` instances as annotations where you will want to replace them with other types or
+3. Use the `TypeVar` instances as annotations where you will want to replace them with other types or
   pydantic models.
 
 Here is an example using a generic `BaseModel` subclass to create an easily-reused HTTP response payload wrapper:
@@ -655,14 +661,14 @@ class Response(BaseModel, Generic[DataT]):
     data: Optional[DataT] = None
 
 
-data = DataModel(numbers=[1, 2, 3], people=[])
-
 print(Response[int](data=1))
 #> data=1
 print(Response[str](data='value'))
 #> data='value'
 print(Response[str](data='value').model_dump())
 #> {'data': 'value'}
+
+data = DataModel(numbers=[1, 2, 3], people=[])
 print(Response[DataModel](data=data).model_dump())
 #> {'data': {'numbers': [1, 2, 3], 'people': []}}
 try:
@@ -762,6 +768,45 @@ print(repr(Response[int](data=1)))
 print(repr(Response[str](data='a')))
 #> StrResponse(data='a')
 ```
+
+You can use parametrized generic models as types in other models:
+
+```py
+from typing import Generic, TypeVar
+
+from pydantic import BaseModel
+
+T = TypeVar('T')
+
+
+class ResponseModel(BaseModel, Generic[T]):
+    content: T
+
+
+class Product(BaseModel):
+    name: str
+    price: float
+
+
+class Order(BaseModel):
+    id: int
+    product: ResponseModel[Product]
+
+
+product = Product(name='Apple', price=0.5)
+response = ResponseModel[Product](content=product)
+order = Order(id=1, product=response)
+print(repr(order))
+"""
+Order(id=1, product=ResponseModel[Product](content=Product(name='Apple', price=0.5)))
+"""
+```
+
+!!! tip
+    When using a parametrized generic model as a type in another model (like `product: ResponseModel[Product]`),
+    make sure to parametrize said generic model when you initialize the model instance
+    (like `response = ResponseModel[Product](content=product)`). If you don't, a `ValidationError` will be raised, as
+    Pydantic doesn't infer the type of the generic model based on the data passed to it.
 
 Using the same `TypeVar` in nested models allows you to enforce typing relationships at different points in your model:
 
@@ -1061,9 +1106,26 @@ class StaticFoobarModel(BaseModel):
 
 Here `StaticFoobarModel` and `DynamicFoobarModel` are identical.
 
-Fields are defined by a tuple of the form `(<type>, <default value>)`. The special keyword
-arguments `__config__` and `__base__` can be used to customise the new model. This includes
-extending a base model with extra fields.
+Fields are defined by one of the following tuple forms:
+
+* `(<type>, <default value>)`
+* `(<type>, Field(...))`
+* `typing.Annotated[<type>, Field(...)]`
+
+Using a `Field(...)` call as the second argument in the tuple (the default value)
+allows for more advanced field configuration. It's analogous to doing the following
+with a standard `BaseModel`:
+
+```py
+from pydantic import BaseModel, Field
+
+
+class Model(BaseModel):
+    foo: str = Field(..., description='foo description', alias='FOO')
+```
+
+The special keyword arguments `__config__` and `__base__` can be used to customize the new model.
+This includes extending a base model with extra fields.
 
 ```py
 from pydantic import BaseModel, create_model
@@ -1202,8 +1264,6 @@ from pydantic import RootModel
 
 
 class Pets(RootModel[List[str]]):
-    root: List[str]
-
     def describe(self) -> str:
         return f'Pets: {", ".join(self.root)}'
 
@@ -1319,8 +1379,12 @@ print(error_locations)
 
 ## Required fields
 
-To declare a field as required, you may declare it using just an annotation, or you may use `Ellipsis`/`...`
-as the value:
+To declare a field as required, you may declare it using an annotation, or an annotation in combination with a `Field` specification.
+You may also use `Ellipsis`/`...` to emphasize that a field is required, especially when using the `Field` constructor.
+
+The [`Field`](fields.md) function is primarily used to configure settings like `alias` or `description` for an attribute.
+The constructor supports `Ellipsis`/`...` as the sole positional argument.
+This is used as a way to indicate that said field is mandatory, though it's the type hint that enforces this requirement.
 
 ```py
 from pydantic import BaseModel, Field
@@ -1329,18 +1393,19 @@ from pydantic import BaseModel, Field
 class Model(BaseModel):
     a: int
     b: int = ...
-    c: int = Field(...)
+    c: int = Field(..., alias='C')
 ```
 
-Where `Field` refers to the [field function](json_schema.md#field-customization).
-
-Here `a`, `b` and `c` are all required. However, this use of `b: int = ...` does not work properly
-with [mypy](../integrations/mypy.md), and as of **v1.0** should be avoided in most cases.
+Here `a`, `b` and `c` are all required. However, this use of `b: int = ...` does not work properly with
+[mypy](../integrations/mypy.md), and as of **v1.0** should be avoided in most cases.
 
 !!! note
     In Pydantic V1, fields annotated with `Optional` or `Any` would be given an implicit default of `None` even if no
     default was explicitly specified. This behavior has changed in Pydantic V2, and there are no longer any type
     annotations that will result in a field having an implicit default value.
+
+    See [the migration guide](../migration.md#required-optional-and-nullable-fields) for more details on changes
+    to required and nullable fields.
 
 ## Fields with non-hashable default values
 

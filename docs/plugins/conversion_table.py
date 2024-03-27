@@ -426,8 +426,8 @@ table_rows: list[Row] = [
         str,
         python_input=True,
         json_input=True,
-        condition='Format: `YYYY-MM-DDTHH:MM:SS.f`. See [speedate](https://docs.rs/speedate/latest/speedate/).',
-        valid_examples=['2017-05-05 10:10:10', '2017-05-05T10:10:10.0002', '2017-05-05 10:10:10+00:00'],
+        condition='Format: `YYYY-MM-DDTHH:MM:SS.f` or `YYYY-MM-DD`. See [speedate](https://docs.rs/speedate/latest/speedate/).',
+        valid_examples=['2017-05-05 10:10:10', '2017-05-05T10:10:10.0002', '2017-05-05 10:10:10+00:00', '2017-05-05'],
         invalid_examples=['2017-5-5T10:10:10'],
         core_schemas=[core_schema.DatetimeSchema],
     ),
@@ -436,7 +436,7 @@ table_rows: list[Row] = [
         bytes,
         python_input=True,
         condition=(
-            'Format: `YYYY-MM-DDTHH:MM:SS.f`. See [speedate](https://docs.rs/speedate/latest/speedate/), (UTF-8).'
+            'Format: `YYYY-MM-DDTHH:MM:SS.f` or `YYYY-MM-DD`. See [speedate](https://docs.rs/speedate/latest/speedate/), (UTF-8).'
         ),
         valid_examples=[b'2017-05-05 10:10:10', b'2017-05-05T10:10:10.0002', b'2017-05-05 10:10:10+00:00'],
         invalid_examples=[b'2017-5-5T10:10:10'],

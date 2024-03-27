@@ -323,7 +323,7 @@ except ValidationError as e:
    When `None` is returned, this `union_tag_not_found` error is raised.
 
 !!! note
-    Using the [`typing.Annotated` fields syntax](../concepts/json_schema.md#typingannotated-fields) can be handy to regroup
+    Using the [[`typing.Annotated`][] fields syntax](../concepts/json_schema.md#typingannotated-fields) can be handy to regroup
     the `Union` and `discriminator` information. See the next example for more details.
 
     There are a few ways to set a discriminator for a field, all varying slightly in syntax.
