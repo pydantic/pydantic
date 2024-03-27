@@ -2005,3 +2005,29 @@ def test_discriminated_union_with_nested_typed_dicts() -> None:
 
     ta = TypeAdapter(Root)
     assert ta.core_schema['fields']['data_class']['schema']['fields']['animal']['schema']['type'] == 'tagged-union'
+
+
+def test_discriminated_union_with_unsubstituted_type_var() -> None:
+    T = TypeVar('T')
+
+    class Dog(BaseModel, Generic[T]):
+        type_: Literal['dog']
+        friends: List['GenericPet']
+        id: T
+
+    class Cat(BaseModel, Generic[T]):
+        type_: Literal['cat']
+        friends: List['GenericPet']
+        id: T
+
+    GenericPet = Annotated[Union[Dog[T], Cat[T]], Field(..., discriminator='type_')]
+
+    ta = TypeAdapter(Dog[int])
+    int_dog = {
+        'type_': 'dog',
+        'friends': [{'type_': 'dog', 'friends': [], 'id': 2}, {'type_': 'cat', 'friends': [], 'id': 3}],
+        'id': 1,
+    }
+    assert ta.validate_python(int_dog).id == 1
+    assert ta.validate_python(int_dog).friends[0].id == 2
+    assert ta.validate_python(int_dog).friends[1].id == 3
