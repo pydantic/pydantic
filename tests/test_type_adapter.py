@@ -6,13 +6,13 @@ from typing import Any, Dict, ForwardRef, Generic, List, NamedTuple, Optional, T
 
 import pytest
 from pydantic_core import ValidationError
-from typing_extensions import Annotated, Literal, TypeAlias, TypedDict, get_args
+from typing_extensions import Annotated, TypeAlias, TypedDict
 
 from pydantic import BaseModel, Field, TypeAdapter, ValidationInfo, create_model, field_validator
-from pydantic._internal import _typing_extra
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
+from pydantic.type_adapter import _annotated_type, _type_has_config
 
 ItemType = TypeVar('ItemType')
 
@@ -411,16 +411,15 @@ def test_eval_type_backport():
     ]
 
 
-def defer_build_test_models(
-    defer_build: bool, defer_build_mode: Tuple[Literal['model', 'type_adapter'], ...]
-) -> List[Tuple[type, Optional[ConfigDict]]]:
-    class Model(BaseModel, defer_build=defer_build, _defer_build_mode=defer_build_mode):
+def defer_build_test_models(config: ConfigDict) -> List[Any]:
+    class Model(BaseModel):
+        model_config = config
         x: int
 
     class SubModel(Model):
         y: Optional[int] = None
 
-    @pydantic_dataclass(config=ConfigDict(defer_build=defer_build, _defer_build_mode=defer_build_mode))
+    @pydantic_dataclass(config=config)
     class DataClassModel:
         x: int
 
@@ -429,86 +428,83 @@ def defer_build_test_models(
         y: Optional[int] = None
 
     class TypedDictModel(TypedDict):
-        __pydantic_config__ = ConfigDict(defer_build=defer_build, _defer_build_mode=defer_build_mode)  # type: ignore
+        __pydantic_config__ = config  # type: ignore
         x: int
 
     models = [
-        (Model, None),
-        (SubModel, None),
-        (create_model('DynamicModel', __base__=Model), None),
-        (create_model('DynamicSubModel', __base__=SubModel), None),
-        (DataClassModel, None),
-        (SubDataClassModel, None),
-        (TypedDictModel, None),
-        (Dict[str, int], ConfigDict(defer_build=defer_build, _defer_build_mode=defer_build_mode)),
+        Model,
+        SubModel,
+        create_model('DynamicModel', __base__=Model),
+        create_model('DynamicSubModel', __base__=SubModel),
+        DataClassModel,
+        SubDataClassModel,
+        TypedDictModel,
+        Dict[str, int],
     ]
     return [
         *models,
         # FastAPI heavily uses Annotated so test that as well
-        *[(Annotated[model, Field(title='abc')], config) for model, config in models],
+        *[Annotated[model, Field(title='abc')] for model in models],
     ]
 
 
-@pytest.mark.parametrize('defer_build', [False, True])
-@pytest.mark.parametrize('defer_build_mode', [('model',), DEFER_ENABLE_MODE])
-def test_core_schema_respects_defer_build(
-    defer_build: bool, defer_build_mode: Tuple[Literal['model', 'type_adapter'], ...], generate_schema_calls
-) -> None:
-    for model, config in defer_build_test_models(defer_build, defer_build_mode):
-        generate_schema_calls.reset()
-        built_in_type_adapter = 'Dict' in str(model) or 'Annotated' in str(model)
-
-        type_adapter = TypeAdapter(model, config=config)
-
-        if defer_build and 'type_adapter' in defer_build_mode:
-            assert generate_schema_calls.count == 0, 'Should be built deferred'
-            assert 'core_schema' not in type_adapter.__dict__, 'Should be initialized deferred via cached_property'
-        else:
-            assert generate_schema_calls.count == (1 if built_in_type_adapter else 0), f'Should be built ({model})'
-            assert type_adapter.__dict__.get('core_schema') is not None, 'Should be initialized before usage'
-
-        json_schema = type_adapter.json_schema()  # Use it
-        assert "'type': 'integer'" in str(json_schema)  # Sanity check
-
-        assert type_adapter.__dict__.get('core_schema') is not None, 'Should be initialized after the usage'
+CONFIGS = [
+    ConfigDict(defer_build=False, _defer_build_mode=('model',)),
+    ConfigDict(defer_build=False, _defer_build_mode=DEFER_ENABLE_MODE),
+    ConfigDict(defer_build=True, _defer_build_mode=('model',)),
+    ConfigDict(defer_build=True, _defer_build_mode=DEFER_ENABLE_MODE),
+]
+MODELS_CONFIGS: List[Tuple[Any, ConfigDict]] = [
+    (model, config) for config in CONFIGS for model in defer_build_test_models(config)
+]
 
 
-@pytest.mark.parametrize('defer_build', [False, True])
-@pytest.mark.parametrize('defer_build_mode', [('model',), DEFER_ENABLE_MODE])
-def test_validator_respects_defer_build(
-    defer_build: bool, defer_build_mode: Tuple[Literal['model', 'type_adapter'], ...]
-) -> None:
-    for model, config in defer_build_test_models(defer_build, defer_build_mode):
-        type_adapter = TypeAdapter(model, config=config)
+@pytest.mark.parametrize('model, config', MODELS_CONFIGS)
+def test_core_schema_respects_defer_build(model: Any, config: ConfigDict, generate_schema_calls) -> None:
+    type_adapter = TypeAdapter(model) if _type_has_config(model) else TypeAdapter(model, config=config)
 
-        if defer_build and 'type_adapter' in defer_build_mode:
-            assert 'validator' not in type_adapter.__dict__, 'Should be initialized deferred via cached_property'
-        else:
-            assert type_adapter.__dict__.get('validator') is not None, 'Should be initialized before usage'
+    if config['defer_build'] and 'type_adapter' in config['_defer_build_mode']:
+        assert generate_schema_calls.count == 0, 'Should be built deferred'
+        assert 'core_schema' not in type_adapter.__dict__, 'Should be initialized deferred via cached_property'
+    else:
+        built_inside_type_adapter = 'Dict' in str(model) or 'Annotated' in str(model)
+        assert generate_schema_calls.count == (1 if built_inside_type_adapter else 0), f'Should be built ({model})'
+        assert type_adapter.__dict__.get('core_schema') is not None, 'Should be initialized before usage'
 
-        validated = type_adapter.validate_python({'x': 1})  # Use it
-        assert (validated['x'] if isinstance(validated, dict) else getattr(validated, 'x')) == 1  # Sanity check
+    json_schema = type_adapter.json_schema()  # Use it
+    assert "'type': 'integer'" in str(json_schema)  # Sanity check
 
-        assert type_adapter.__dict__.get('validator') is not None, 'Should be initialized after the usage'
+    assert type_adapter.__dict__.get('core_schema') is not None, 'Should be initialized after the usage'
 
 
-@pytest.mark.parametrize('defer_build', [False, True])
-@pytest.mark.parametrize('defer_build_mode', [('model',), DEFER_ENABLE_MODE])
-def test_serializer_respects_defer_build(
-    defer_build: bool, defer_build_mode: Tuple[Literal['model', 'type_adapter'], ...]
-) -> None:
-    for model, config in defer_build_test_models(defer_build, defer_build_mode):
-        type_ = get_args(model)[0] if _typing_extra.is_annotated(model) else model
-        dumped = dict(x=1) if 'Dict[' in str(type_) else type_(x=1)
+@pytest.mark.parametrize('model, config', MODELS_CONFIGS)
+def test_validator_respects_defer_build(model: Any, config: ConfigDict) -> None:
+    type_adapter = TypeAdapter(model) if _type_has_config(model) else TypeAdapter(model, config=config)
 
-        type_adapter = TypeAdapter(model, config=config)
+    if config['defer_build'] and 'type_adapter' in config['_defer_build_mode']:
+        assert 'validator' not in type_adapter.__dict__, 'Should be initialized deferred via cached_property'
+    else:
+        assert type_adapter.__dict__.get('validator') is not None, 'Should be initialized before usage'
 
-        if defer_build and 'type_adapter' in defer_build_mode:
-            assert 'serializer' not in type_adapter.__dict__, 'Should be initialized deferred via cached_property'
-        else:
-            assert type_adapter.__dict__.get('serializer') is not None, 'Should be initialized before usage'
+    validated = type_adapter.validate_python({'x': 1})  # Use it
+    assert (validated['x'] if isinstance(validated, dict) else getattr(validated, 'x')) == 1  # Sanity check
 
-        raw = type_adapter.dump_json(dumped)  # Use it
-        assert json.loads(raw.decode())['x'] == 1  # Sanity check
+    assert type_adapter.__dict__.get('validator') is not None, 'Should be initialized after the usage'
 
-        assert type_adapter.__dict__.get('serializer') is not None, 'Should be initialized after the usage'
+
+@pytest.mark.parametrize('model, config', MODELS_CONFIGS)
+def test_serializer_respects_defer_build(model: Any, config: ConfigDict) -> None:
+    type_ = _annotated_type(model) or model
+    dumped = dict(x=1) if 'Dict[' in str(type_) else type_(x=1)
+
+    type_adapter = TypeAdapter(model) if _type_has_config(model) else TypeAdapter(model, config=config)
+
+    if config['defer_build'] and 'type_adapter' in config['_defer_build_mode']:
+        assert 'serializer' not in type_adapter.__dict__, 'Should be initialized deferred via cached_property'
+    else:
+        assert type_adapter.__dict__.get('serializer') is not None, 'Should be initialized before usage'
+
+    raw = type_adapter.dump_json(dumped)  # Use it
+    assert json.loads(raw.decode())['x'] == 1  # Sanity check
+
+    assert type_adapter.__dict__.get('serializer') is not None, 'Should be initialized after the usage'

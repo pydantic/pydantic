@@ -44,7 +44,7 @@ from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation,
 from ..json_schema import JsonSchemaValue
 from ..version import version_short
 from ..warnings import PydanticDeprecatedSince20
-from . import _core_utils, _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
+from . import _core_utils, _decorators, _discriminated_union, _known_annotated_metadata, _mock_val_ser, _typing_extra
 from ._config import ConfigWrapper, ConfigWrapperStack
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._core_utils import (
@@ -646,9 +646,11 @@ class GenerateSchema:
                     source, CallbackGetCoreSchemaHandler(self._generate_schema_inner, self, ref_mode=ref_mode)
                 )
         # fmt: off
-        elif (existing_schema := getattr(obj, '__pydantic_core_schema__', None)) is not None and existing_schema.get(
-            'cls', None
-        ) == obj:
+        elif (
+            (existing_schema := getattr(obj, '__pydantic_core_schema__', None)) is not None
+            and not isinstance(existing_schema, _mock_val_ser.MockCoreSchema)
+            and existing_schema.get('cls', None) == obj
+        ):
             schema = existing_schema
         # fmt: on
         elif (validators := getattr(obj, '__get_validators__', None)) is not None:
