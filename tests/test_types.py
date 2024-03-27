@@ -6636,3 +6636,12 @@ def test_diff_enums_diff_configs() -> None:
     obj = Model.model_validate({'my_model': {'my_enum': 'a'}, 'other_model': {'my_enum': 'a'}})
     assert not isinstance(obj.my_model.my_enum, MyEnum)
     assert isinstance(obj.other_model.my_enum, MyEnum)
+
+
+def test_can_serialize_deque_passed_to_sequence() -> None:
+    ta = TypeAdapter(Sequence[int])
+    my_dec = ta.validate_python(deque([1, 2, 3]))
+    assert my_dec == deque([1, 2, 3])
+
+    assert ta.dump_python(my_dec) == my_dec
+    assert ta.dump_json(my_dec) == b'[1,2,3]'
