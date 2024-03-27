@@ -89,6 +89,10 @@ for validation inputs, or that will be matched by serialization outputs.
 _MODE_TITLE_MAPPING: dict[JsonSchemaMode, str] = {'validation': 'Input', 'serialization': 'Output'}
 
 
+@deprecated(
+    '`update_json_schema` is deprecated, use a simple `my_dict.update(update_dict)` call instead.',
+    category=None,
+)
 def update_json_schema(schema: JsonSchemaValue, updates: dict[str, Any]) -> JsonSchemaValue:
     """Update a JSON schema in-place by providing a dictionary of updates.
 
