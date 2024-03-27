@@ -433,9 +433,9 @@ class GenerateSchema:
     def clean_schema(self, schema: CoreSchema) -> CoreSchema:
         schema = self.collect_definitions(schema)
         schema = simplify_schema_references(schema)
-        schema = _discriminated_union.apply_discriminators(schema)
         if collect_invalid_schemas(schema):
             raise self.CollectedInvalid()
+        schema = _discriminated_union.apply_discriminators(schema)
         schema = validate_core_schema(schema)
         return schema
 
