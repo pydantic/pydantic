@@ -292,6 +292,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         mode: typing_extensions.Literal['json', 'python'] | str = 'python',
         include: IncEx = None,
         exclude: IncEx = None,
+        context: dict[str, Any] | None = None,
         by_alias: bool = False,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
@@ -310,6 +311,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 If mode is 'python', the output may contain non-JSON-serializable Python objects.
             include: A set of fields to include in the output.
             exclude: A set of fields to exclude from the output.
+            context: Additional context to pass to the serializer.
             by_alias: Whether to use the field's alias in the dictionary key if defined.
             exclude_unset: Whether to exclude fields that have not been explicitly set.
             exclude_defaults: Whether to exclude fields that are set to their default value.
@@ -327,6 +329,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             by_alias=by_alias,
             include=include,
             exclude=exclude,
+            context=context,
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
@@ -341,6 +344,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         indent: int | None = None,
         include: IncEx = None,
         exclude: IncEx = None,
+        context: dict[str, Any] | None = None,
         by_alias: bool = False,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
@@ -357,6 +361,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             indent: Indentation to use in the JSON output. If None is passed, the output will be compact.
             include: Field(s) to include in the JSON output.
             exclude: Field(s) to exclude from the JSON output.
+            context: Additional context to pass to the serializer.
             by_alias: Whether to serialize using field aliases.
             exclude_unset: Whether to exclude fields that have not been explicitly set.
             exclude_defaults: Whether to exclude fields that are set to their default value.
@@ -373,6 +378,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             indent=indent,
             include=include,
             exclude=exclude,
+            context=context,
             by_alias=by_alias,
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,

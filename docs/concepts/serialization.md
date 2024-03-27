@@ -874,6 +874,40 @@ print(person.model_dump(exclude_defaults=True))  # (3)!
 2. `age` excluded from the output because `exclude_unset` was set to `True`, and `age` was not set in the Person constructor.
 3. `age` excluded from the output because `exclude_defaults` was set to `True`, and `age` takes the default value of `None`.
 
+## Serialization Context
+
+You can pass a context object to the serialization methods which can be accessed from the `info`
+argument to decorated serializer functions. This is useful when you need to dynamically update the
+serialization behavior during runtime. For example, if you wanted a field to be dumped depending on
+a dynamically controllable set of allowed values, this could be done by passing the allowed values
+by context:
+
+```python
+from pydantic import BaseModel, SerializationInfo, field_serializer
+
+
+class Model(BaseModel):
+    text: str
+
+    @field_serializer('text')
+    def remove_stopwords(self, v: str, info: SerializationInfo):
+        context = info.context
+        if context:
+            stopwords = context.get('stopwords', set())
+            v = ' '.join(w for w in v.split() if w.lower() not in stopwords)
+        return v
+
+
+model = Model.model_construct(**{'text': 'This is an example document'})
+print(model.model_dump())  # no context
+#> {'text': 'This is an example document'}
+print(model.model_dump(context={'stopwords': ['this', 'is', 'an']}))
+#> {'text': 'example document'}
+print(model.model_dump(context={'stopwords': ['document']}))
+#> {'text': 'This is an example'}
+```
+
+Similarly, you can [use a context for validation](../concepts/validators.md#validation-context).
 
 ## `model_copy(...)`
 

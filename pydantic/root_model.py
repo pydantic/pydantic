@@ -124,6 +124,7 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType], metaclass=_RootMod
             mode: Literal['json', 'python'] | str = 'python',
             include: Any = None,
             exclude: Any = None,
+            context: dict[str, Any] | None = None,
             by_alias: bool = False,
             exclude_unset: bool = False,
             exclude_defaults: bool = False,

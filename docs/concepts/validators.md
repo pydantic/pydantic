@@ -709,6 +709,8 @@ except ValidationError as exc:
     """
 ```
 
+Similarly, you can [use a context for serialization](../concepts/serialization.md#serialization-context).
+
 ### Using validation context with `BaseModel` initialization
 Although there is no way to specify a context in the standard `BaseModel` initializer, you can work around this through
 the use of `contextvars.ContextVar` and a custom `__init__` method:
