@@ -1,4 +1,4 @@
-from typing import Annotated, Literal
+from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel, Discriminator
 from pydantic.dataclasses import dataclass
