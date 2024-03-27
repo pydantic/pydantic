@@ -89,6 +89,23 @@ for validation inputs, or that will be matched by serialization outputs.
 _MODE_TITLE_MAPPING: dict[JsonSchemaMode, str] = {'validation': 'Input', 'serialization': 'Output'}
 
 
+@deprecated(
+    '`update_json_schema` is deprecated, use a simple `my_dict.update(update_dict)` call instead.',
+    category=None,
+)
+def update_json_schema(schema: JsonSchemaValue, updates: dict[str, Any]) -> JsonSchemaValue:
+    """Update a JSON schema in-place by providing a dictionary of updates.
+    This function sets the provided key-value pairs in the schema and returns the updated schema.
+    Args:
+        schema: The JSON schema to update.
+        updates: A dictionary of key-value pairs to set in the schema.
+    Returns:
+        The updated JSON schema.
+    """
+    schema.update(updates)
+    return schema
+
+
 JsonSchemaWarningKind = Literal['skipped-choice', 'non-serializable-default']
 """
 A type alias representing the kinds of warnings that can be emitted during JSON schema generation.
