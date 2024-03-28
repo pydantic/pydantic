@@ -4,7 +4,6 @@ feedback.hidden = false
 feedback.addEventListener("submit", function(ev) {
   ev.preventDefault()
 
-  var page = document.location.pathname
   var data = ev.submitter.getAttribute("data-md-value")
 
   feedback.firstElementChild.disabled = true
@@ -15,16 +14,17 @@ feedback.addEventListener("submit", function(ev) {
   if (note)
     note.hidden = false
 
-  var feedbackData = {
-    e: 'feedback',
-    feedback: data,
-    page: page,
-    t: (Date.now() - now).toString(),
-    sc: window.pageYOffset,
-    mx,
-    my,
-  };
+  const url = new URL(window.location.href)
+  const feedbackData = {
+    o: url.host,
+    p: url.pathname,
+    a: url.hash,
+    q: url.search,
+    f: data,
+    event_type: 'feedback',
+    dt: Date.now().toString(),
+  }
 
-  // send func available bc of flarelytics client script imported in main.html
+  // send func should be available bc of flarelytics client script imported in main.html
   send(feedbackData);
 })
