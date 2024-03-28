@@ -5,8 +5,6 @@ feedback.addEventListener("submit", function(ev) {
   ev.preventDefault()
 
   var data = ev.submitter.getAttribute("data-md-value")
-  console.log(data)
-
   feedback.firstElementChild.disabled = true
 
   var note = feedback.querySelector(
