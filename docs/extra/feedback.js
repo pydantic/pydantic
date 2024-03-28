@@ -8,7 +8,7 @@ feedback.addEventListener("submit", function(ev) {
   feedback.firstElementChild.disabled = true
 
   var note = feedback.querySelector(
-    ".md-feedback__note [data-md-value='" + data + "']"
+    `.md-feedback__note [data-md-value='${data}']`
   )
   if (note)
     note.hidden = false
