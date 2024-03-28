@@ -5,6 +5,7 @@ feedback.addEventListener("submit", function(ev) {
   ev.preventDefault()
 
   var data = ev.submitter.getAttribute("data-md-value")
+  console.log(data)
 
   feedback.firstElementChild.disabled = true
 
@@ -14,17 +15,9 @@ feedback.addEventListener("submit", function(ev) {
   if (note)
     note.hidden = false
 
-  const url = new URL(window.location.href)
-  const feedbackData = {
-    o: url.host,
-    p: url.pathname,
-    a: url.hash,
-    q: url.search,
-    f: data,
-    event_type: 'feedback',
-    dt: Date.now().toString(),
+  if (data == 1) {
+    window.flarelytics_event('thumbsUp');
+  } else if (data == 0) {
+    window.flarelytics_event('thumbsDown');
   }
-
-  // send func should be available bc of flarelytics client script imported in main.html
-  send(feedbackData);
 })
