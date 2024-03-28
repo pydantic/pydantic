@@ -101,6 +101,7 @@ from pydantic import (
     StringConstraints,
     Tag,
     TypeAdapter,
+    UTCDatetime,
     ValidationError,
     conbytes,
     condate,
@@ -4507,6 +4508,7 @@ def test_secretdate_idempotent():
         PastDatetime,
         FutureDatetime,
         AwareDatetime,
+        UTCDatetime,
         NaiveDatetime,
     ],
 )
@@ -6335,6 +6337,7 @@ def test_annotated_default_value_functional_validator() -> None:
         (PastDate, 'PastDate'),
         (FutureDate, 'FutureDate'),
         (AwareDatetime, 'AwareDatetime'),
+        (UTCDatetime, 'UTCDatetime'),
         (NaiveDatetime, 'NaiveDatetime'),
         (PastDatetime, 'PastDatetime'),
         (FutureDatetime, 'FutureDatetime'),
