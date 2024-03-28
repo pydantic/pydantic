@@ -36,6 +36,20 @@ edit_uri: edit/main/docs/
 extra:
   version:
     provider: mike
+  analytics:
+    feedback:
+      title: Was this page helpful?
+      ratings:
+        - icon: material/thumb-up-outline
+          name: This page was helpful
+          data: 1
+          note: >-
+            Thanks for your feedback!
+        - icon: material/thumb-down-outline
+          name: This page could be improved
+          data: 0
+          note: >-
+            Thanks for your feedback!
 
 # https://www.mkdocs.org/user-guide/configuration/#validation
 validation:
@@ -47,6 +61,7 @@ extra_css:
   - 'extra/terminal.css'
   - 'extra/tweaks.css'
 extra_javascript:
+  - 'extra/feedback.js'
   - 'extra/fluff.js'
   - 'https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js'
 
