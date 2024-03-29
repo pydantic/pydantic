@@ -1357,6 +1357,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Other settings source">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pyprojecttoml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pyproject.toml
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3216,6 +3233,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Other settings source">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pyprojecttoml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pyproject.toml
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3771,9 +3805,10 @@ as the target mount point. If you want to use a different location, change <code
 <h2 id="other-settings-source">Other settings source<a class="headerlink" href="#other-settings-source" title="Permanent link">&para;</a></h2>
 <p>Other settings sources are available for common configuration files:</p>
 <ul>
+<li><code>JsonConfigSettingsSource</code> using <code>json_file</code> and <code>json_file_encoding</code> arguments</li>
+<li><code>PyprojectTomlConfigSettingsSource</code> using <em>(optional)</em> <code>pyproject_toml_depth</code> and <em>(optional)</em> <code>pyproject_toml_table_header</code> arguments</li>
 <li><code>TomlConfigSettingsSource</code> using <code>toml_file</code> argument</li>
 <li><code>YamlConfigSettingsSource</code> using <code>yaml_file</code> and yaml_file_encoding arguments</li>
-<li><code>JsonConfigSettingsSource</code> using <code>json_file</code> and <code>json_file_encoding</code> arguments</li>
 </ul>
 <p>You can also provide multiple files by providing a list of path:
 <div class="language-py highlight"><pre><span></span><code><span class="n">toml_file</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;config.default.toml&#39;</span><span class="p">,</span> <span class="s1">&#39;config.custom.toml&#39;</span><span class="p">]</span>
@@ -3815,6 +3850,117 @@ To use them, you can use the same mechanism described <a href="#customise-settin
 <div class="language-toml highlight"><pre><span></span><code><span class="n">foobar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Hello&quot;</span>
 <span class="k">[nested]</span>
 <span class="n">nested_field</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;world!&quot;</span>
+</code></pre></div>
+<h3 id="pyprojecttoml">pyproject.toml<a class="headerlink" href="#pyprojecttoml" title="Permanent link">&para;</a></h3>
+<p>"pyproject.toml" is a standardized file for providing configuration values in Python projects.
+<a href="https://peps.python.org/pep-0518/#tool-table">PEP 518</a> defines a <code>[tool]</code> table that can be used to provide arbitrary tool configuration.
+While encouraged to use the <code>[tool]</code> table, <code>PyprojectTomlConfigSettingsSource</code> can be used to load variables from any location with in "pyproject.toml" file.</p>
+<p>This is controlled by providing <code>SettingsConfigDict(pyproject_toml_table_header=tuple[str, ...])</code> where the value is a tuple of header parts.
+By default, <code>pyproject_toml_table_header=('tool', 'pydantic-settings')</code> which will load variables from the <code>[tool.pydantic-settings]</code> table.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseSettings</span><span class="p">,</span>
+    <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+    <span class="n">PyprojectTomlConfigSettingsSource</span><span class="p">,</span>
+    <span class="n">SettingsConfigDict</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Example loading values from the table used by default.&quot;&quot;&quot;</span>
+
+    <span class="n">field</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">settings_customise_sources</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">settings_cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseSettings</span><span class="p">],</span>
+        <span class="n">init_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">env_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">dotenv_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">file_secret_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">PydanticBaseSettingsSource</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">PyprojectTomlConfigSettingsSource</span><span class="p">(</span><span class="n">settings_cls</span><span class="p">),)</span>
+
+
+<span class="k">class</span> <span class="nc">SomeTableSettings</span><span class="p">(</span><span class="n">Settings</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Example loading values from a user defined table.&quot;&quot;&quot;</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span>
+        <span class="n">pyproject_toml_table_header</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;tool&#39;</span><span class="p">,</span> <span class="s1">&#39;some-table&#39;</span><span class="p">)</span>
+    <span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">RootSettings</span><span class="p">(</span><span class="n">Settings</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Example loading values from the root of a pyproject.toml file.&quot;&quot;&quot;</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">pyproject_toml_table_header</span><span class="o">=</span><span class="p">())</span>
+</code></pre></div>
+<p>This will be able to read the following "pyproject.toml" file, located in your working directory, resulting in <code>Settings(field='default-table')</code>, <code>SomeTableSettings(field='some-table')</code>, &amp; <code>RootSettings(field='root')</code>:</p>
+<div class="language-toml highlight"><pre><span></span><code><span class="n">field</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;root&quot;</span>
+
+<span class="k">[tool.pydantic-settings]</span>
+<span class="n">field</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;default-table&quot;</span>
+
+<span class="k">[tool.some-table]</span>
+<span class="n">field</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;some-table&quot;</span>
+</code></pre></div>
+<p>By default, <code>PyprojectTomlConfigSettingsSource</code> will only look for a "pyproject.toml" in the your current working directory.
+However, there are two options to change this behavior.</p>
+<ul>
+<li><code>SettingsConfigDict(pyproject_toml_depth=&lt;int&gt;)</code> can be provided to check <code>&lt;int&gt;</code> number of directories <strong>up</strong> in the directory tree for a "pyproject.toml" if one is not found in the current working directory.
+  By default, no parent directories are checked.</li>
+<li>An explicit file path can be provided to the source when it is instantiated (e.g. <code>PyprojectTomlConfigSettingsSource(settings_cls, Path('~/.config').resolve() / 'pyproject.toml')</code>).
+  If a file path is provided this way, it will be treated as absolute (no other locations are checked).</li>
+</ul>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseSettings</span><span class="p">,</span>
+    <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+    <span class="n">PyprojectTomlConfigSettingsSource</span><span class="p">,</span>
+    <span class="n">SettingsConfigDict</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">DiscoverSettings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Example of discovering a pyproject.toml in parent directories in not in `Path.cwd()`.&quot;&quot;&quot;</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">pyproject_toml_depth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">settings_customise_sources</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">settings_cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseSettings</span><span class="p">],</span>
+        <span class="n">init_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">env_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">dotenv_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">file_secret_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">PydanticBaseSettingsSource</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">PyprojectTomlConfigSettingsSource</span><span class="p">(</span><span class="n">settings_cls</span><span class="p">),)</span>
+
+
+<span class="k">class</span> <span class="nc">ExplicitFilePathSettings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Example of explicitly providing the path to the file to load.&quot;&quot;&quot;</span>
+
+    <span class="n">field</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">settings_customise_sources</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">settings_cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseSettings</span><span class="p">],</span>
+        <span class="n">init_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">env_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">dotenv_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+        <span class="n">file_secret_settings</span><span class="p">:</span> <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">PydanticBaseSettingsSource</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">PyprojectTomlConfigSettingsSource</span><span class="p">(</span>
+                <span class="n">settings_cls</span><span class="p">,</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;~/.config&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span> <span class="o">/</span> <span class="s1">&#39;pyproject.toml&#39;</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
 </code></pre></div>
 <h2 id="field-value-priority">Field value priority<a class="headerlink" href="#field-value-priority" title="Permanent link">&para;</a></h2>
 <p>In the case where a value is specified for the same <code>Settings</code> field in multiple ways,
