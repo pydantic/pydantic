@@ -735,7 +735,7 @@ def Field(  # noqa: C901
             (Only applies to dataclasses.)
         kw_only: Whether the field should be a keyword-only argument in the constructor of the dataclass.
             (Only applies to dataclasses.)
-        coerce_numbers_to_str: If `True`, enables automatic coercion of any `Number` type to `str` in "lax" (non-strict) mode. Defaults to `False`.
+        coerce_numbers_to_str: Whether to enable coercion of any `Number` type to `str` (not applicable in `strict` mode).
         strict: If `True`, strict validation is applied to the field.
             See [Strict Mode](../concepts/strict_mode.md) for details.
         gt: Greater than. If set, value must be greater than this. Only applicable to numbers.
