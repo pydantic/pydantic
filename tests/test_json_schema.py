@@ -2324,7 +2324,7 @@ def test_literal_types() -> None:
             'int_literal': {'enum': [123, 456], 'title': 'Int Literal', 'type': 'integer'},
             'float_literal': {'$ref': '#/$defs/FloatEnum'},
             'bool_literal': {'enum': [True, False], 'title': 'Bool Literal', 'type': 'boolean'},
-            'none_literal': {'const': None, 'enum': [None], 'title': 'None Literal',  'type': 'null'},
+            'none_literal': {'const': None, 'enum': [None], 'title': 'None Literal', 'type': 'null'},
             'list_literal': {'$ref': '#/$defs/ListEnum'},
             'mixed_literal': {'enum': [123, 'abc'], 'title': 'Mixed Literal'},
         },

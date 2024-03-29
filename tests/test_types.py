@@ -5182,13 +5182,17 @@ def test_none_literal():
         my_json_none='null',
     )
 
-    #insert_assert(Model.model_json_schema())
+    # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {
             'my_none': {'const': None, 'enum': [None], 'title': 'My None', 'type': 'null'},
-            'my_none_list': {'items': {'const': None, 'enum': [None], 'type': 'null'}, 'title': 'My None List', 'type': 'array'},
+            'my_none_list': {
+                'items': {'const': None, 'enum': [None], 'type': 'null'},
+                'title': 'My None List',
+                'type': 'array',
+            },
             'my_none_dict': {
                 'additionalProperties': {'const': None, 'enum': [None], 'type': 'null'},
                 'title': 'My None Dict',
