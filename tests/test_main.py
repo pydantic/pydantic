@@ -2081,6 +2081,23 @@ def test_model_post_init_subclass_private_attrs():
     assert calls == ['C.model_post_init']
 
 
+def test_model_post_init_supertype_private_attrs():
+    """https://github.com/pydantic/pydantic/issues/9098"""
+
+    class Model(BaseModel):
+        _private: int = 12
+
+    class SubModel(Model):
+        def model_post_init(self, __context: Any) -> None:
+            if self._private == 12:
+                self._private = 13
+            super().model_post_init(__context)
+
+    m = SubModel()
+
+    assert m._private == 13
+
+
 def test_model_post_init_subclass_setting_private_attrs():
     """https://github.com/pydantic/pydantic/issues/7091"""
 
