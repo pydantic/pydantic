@@ -19,7 +19,15 @@ SEQUENCE_CONSTRAINTS = {'min_length', 'max_length'}
 INEQUALITY = {'le', 'ge', 'lt', 'gt'}
 NUMERIC_CONSTRAINTS = {'multiple_of', 'allow_inf_nan', *INEQUALITY}
 
-STR_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT, 'strip_whitespace', 'to_lower', 'to_upper', 'pattern'}
+STR_CONSTRAINTS = {
+    *SEQUENCE_CONSTRAINTS,
+    *STRICT,
+    'strip_whitespace',
+    'to_lower',
+    'to_upper',
+    'pattern',
+    'coerce_numbers_to_str',
+}
 BYTES_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT}
 
 LIST_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT}
@@ -278,6 +286,13 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             return cs.no_info_after_validator_function(
                 partial(_validators.max_length_validator, max_length=annotation.max_length),
                 schema,
+            )
+        elif constraint == 'coerce_numbers_to_str':
+            return cs.chain_schema(
+                [
+                    schema,
+                    cs.str_schema(coerce_numbers_to_str=True),  # type: ignore
+                ]
             )
         else:
             raise RuntimeError(f'Unable to apply constraint {constraint} to schema {schema_type}')

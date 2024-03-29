@@ -144,3 +144,31 @@ def test_computed_field_raises_correct_attribute_error():
 
     with pytest.raises(AttributeError, match=f"'{Model.__name__}' object has no attribute 'invalid_field'"):
         Model().invalid_field
+
+
+@pytest.mark.xfail(reason='Needs support in pydantic-core')
+@pytest.mark.parametrize('number', (1, 42, 443, 11.11, 0.553))
+def test_coerce_numbers_to_str_field_option(number):
+    class Model(BaseModel):
+        field: str = Field(coerce_numbers_to_str=True, max_length=10)
+
+    assert Model(field=number).field == str(number)
+
+
+@pytest.mark.xfail(reason='Needs support in pydantic-core')
+@pytest.mark.parametrize('number', (1, 42, 443, 11.11, 0.553))
+def test_coerce_numbers_to_str_field_precedence(number):
+    class Model(BaseModel):
+        model_config = ConfigDict(coerce_numbers_to_str=True)
+
+        field: str = Field(coerce_numbers_to_str=False)
+
+    with pytest.raises(ValidationError):
+        Model(field=number)
+
+    class Model(BaseModel):
+        model_config = ConfigDict(coerce_numbers_to_str=False)
+
+        field: str = Field(coerce_numbers_to_str=True)
+
+    assert Model(field=number).field == str(number)
