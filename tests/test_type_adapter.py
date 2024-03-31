@@ -70,62 +70,117 @@ OuterDict = Dict[str, 'IntList']
 
 
 @pytest.mark.parametrize('defer_build', [False, True])
-def test_global_namespace_variables(defer_build: bool):
+@pytest.mark.parametrize('method', ['validate', 'serialize', 'json_schema', 'json_schemas'])
+def test_global_namespace_variables(defer_build: bool, method: str, generate_schema_calls):
     config = ConfigDict(defer_build=True, _defer_build_mode=DEFER_ENABLE_MODE) if defer_build else None
+    ta = TypeAdapter(OuterDict, config=config)
 
-    v = TypeAdapter(OuterDict, config=config).validate_python
-    res = v({'foo': [1, '2']})
-    assert res == {'foo': [1, 2]}
+    assert generate_schema_calls.count == (0 if defer_build else 1), 'Should be built deferred'
+
+    if method == 'validate':
+        assert ta.validate_python({'foo': [1, '2']}) == {'foo': [1, 2]}
+    elif method == 'serialize':
+        assert ta.dump_python({'foo': [1, 2]}) == {'foo': [1, 2]}
+    elif method == 'json_schema':
+        assert ta.json_schema()['type'] == 'object'
+    else:
+        assert method == 'json_schemas'
+        schemas, _ = TypeAdapter.json_schemas([(OuterDict, 'validation', ta)])
+        assert schemas[(OuterDict, 'validation')]['type'] == 'object'
 
 
 @pytest.mark.parametrize('defer_build', [False, True])
-def test_model_global_namespace_variables(defer_build: bool):
+@pytest.mark.parametrize('method', ['validate', 'serialize', 'json_schema', 'json_schemas'])
+def test_model_global_namespace_variables(defer_build: bool, method: str, generate_schema_calls):
     class MyModel(BaseModel):
         model_config = ConfigDict(defer_build=True, _defer_build_mode=DEFER_ENABLE_MODE) if defer_build else None
         x: OuterDict
 
-    v = TypeAdapter(MyModel).validate_python
-    res = v({'x': {'foo': [1, '2']}})
-    assert res.model_dump() == {'x': {'foo': [1, 2]}}
+    ta = TypeAdapter(MyModel)
+
+    assert generate_schema_calls.count == (0 if defer_build else 1), 'Should be built deferred'
+
+    if method == 'validate':
+        assert ta.validate_python({'x': {'foo': [1, '2']}}) == MyModel(x={'foo': [1, 2]})
+    elif method == 'serialize':
+        assert ta.dump_python(MyModel(x={'foo': [1, 2]})) == {'x': {'foo': [1, 2]}}
+    elif method == 'json_schema':
+        assert ta.json_schema()['title'] == 'MyModel'
+    else:
+        assert method == 'json_schemas'
+        _, json_schema = TypeAdapter.json_schemas([(MyModel, 'validation', TypeAdapter(MyModel))])
+        assert 'MyModel' in json_schema['$defs']
 
 
 @pytest.mark.parametrize('defer_build', [False, True])
-def test_local_namespace_variables(defer_build: bool):
-    config = ConfigDict(defer_build=True, _defer_build_mode=DEFER_ENABLE_MODE) if defer_build else None
-
+@pytest.mark.parametrize('method', ['validate', 'serialize', 'json_schema', 'json_schemas'])
+def test_local_namespace_variables(defer_build: bool, method: str, generate_schema_calls):
     IntList = List[int]  # noqa: F841
     OuterDict = Dict[str, 'IntList']
 
-    v = TypeAdapter(OuterDict, config=config).validate_python
+    config = ConfigDict(defer_build=True, _defer_build_mode=DEFER_ENABLE_MODE) if defer_build else None
+    ta = TypeAdapter(OuterDict, config=config)
 
-    res = v({'foo': [1, '2']})
-    assert res == {'foo': [1, 2]}
+    assert generate_schema_calls.count == (0 if defer_build else 1), 'Should be built deferred'
+
+    if method == 'validate':
+        assert ta.validate_python({'foo': [1, '2']}) == {'foo': [1, 2]}
+    elif method == 'serialize':
+        assert ta.dump_python({'foo': [1, 2]}) == {'foo': [1, 2]}
+    elif method == 'json_schema':
+        assert ta.json_schema()['type'] == 'object'
+    else:
+        assert method == 'json_schemas'
+        schemas, _ = TypeAdapter.json_schemas([(OuterDict, 'validation', ta)])
+        assert schemas[(OuterDict, 'validation')]['type'] == 'object'
 
 
 @pytest.mark.parametrize('defer_build', [False, True])
-def test_model_local_namespace_variables(defer_build: bool):
+@pytest.mark.parametrize('method', ['validate', 'serialize', 'json_schema', 'json_schemas'])
+def test_model_local_namespace_variables(defer_build: bool, method: str, generate_schema_calls):
     IntList = List[int]  # noqa: F841
 
     class MyModel(BaseModel):
         model_config = ConfigDict(defer_build=True, _defer_build_mode=DEFER_ENABLE_MODE) if defer_build else None
         x: Dict[str, 'IntList']
 
-    v = TypeAdapter(MyModel).validate_python
+    ta = TypeAdapter(MyModel)
 
-    res = v({'x': {'foo': [1, '2']}})
-    assert res.model_dump() == {'x': {'foo': [1, 2]}}
+    assert generate_schema_calls.count == (0 if defer_build else 1), 'Should be built deferred'
+
+    if method == 'validate':
+        assert ta.validate_python({'x': {'foo': [1, '2']}}) == MyModel(x={'foo': [1, 2]})
+    elif method == 'serialize':
+        assert ta.dump_python(MyModel(x={'foo': [1, 2]})) == {'x': {'foo': [1, 2]}}
+    elif method == 'json_schema':
+        assert ta.json_schema()['title'] == 'MyModel'
+    else:
+        assert method == 'json_schemas'
+        _, json_schema = TypeAdapter.json_schemas([(MyModel, 'validation', ta)])
+        assert 'MyModel' in json_schema['$defs']
 
 
 @pytest.mark.parametrize('defer_build', [False, True])
+@pytest.mark.parametrize('method', ['validate', 'serialize', 'json_schema', 'json_schemas'])
 @pytest.mark.skipif(sys.version_info < (3, 9), reason="ForwardRef doesn't accept module as a parameter in Python < 3.9")
-def test_top_level_fwd_ref(defer_build: bool):
+def test_top_level_fwd_ref(defer_build: bool, method: str, generate_schema_calls):
     config = ConfigDict(defer_build=True, _defer_build_mode=DEFER_ENABLE_MODE) if defer_build else None
 
     FwdRef = ForwardRef('OuterDict', module=__name__)
-    v = TypeAdapter(FwdRef, config=config).validate_python
+    ta = TypeAdapter(FwdRef, config=config)
 
-    res = v({'foo': [1, '2']})
-    assert res == {'foo': [1, 2]}
+    assert generate_schema_calls.count == (0 if defer_build else 1), 'Should be built deferred'
+
+    if method == 'validate':
+        assert ta.validate_python({'foo': [1, '2']}) == {'foo': [1, 2]}
+    elif method == 'serialize':
+        assert ta.dump_python({'foo': [1, 2]}) == {'foo': [1, 2]}
+    elif method == 'json_schema':
+        assert ta.json_schema()['type'] == 'object'
+    else:
+        assert method == 'json_schemas'
+        schemas, _ = TypeAdapter.json_schemas([(FwdRef, 'validation', ta)])
+        assert schemas[(FwdRef, 'validation')]['type'] == 'object'
 
 
 MyUnion: TypeAlias = 'Union[str, int]'
@@ -333,13 +388,22 @@ def test_validate_python_from_attributes() -> None:
     ],
     ids=repr,
 )
-def test_validate_strings(field_type, input_value, expected, raises_match, strict):
-    ta = TypeAdapter(field_type)
+@pytest.mark.parametrize('defer_build', [False, True])
+def test_validate_strings(
+    field_type, input_value, expected, raises_match, strict, defer_build: bool, generate_schema_calls
+):
+    config = ConfigDict(defer_build=True, _defer_build_mode=DEFER_ENABLE_MODE) if defer_build else None
+    ta = TypeAdapter(field_type, config=config)
+
+    assert generate_schema_calls.count == (0 if defer_build else 1), 'Should be built deferred'
+
     if raises_match is not None:
         with pytest.raises(expected, match=raises_match):
             ta.validate_strings(input_value, strict=strict)
     else:
         assert ta.validate_strings(input_value, strict=strict) == expected
+
+    assert generate_schema_calls.count == 1, 'Should not build duplicates'
 
 
 @pytest.mark.parametrize('strict', [True, False])
@@ -465,46 +529,52 @@ def test_core_schema_respects_defer_build(model: Any, config: ConfigDict, genera
 
     if config['defer_build'] and 'type_adapter' in config['_defer_build_mode']:
         assert generate_schema_calls.count == 0, 'Should be built deferred'
-        assert 'core_schema' not in type_adapter.__dict__, 'Should be initialized deferred via cached_property'
+        assert type_adapter._core_schema is None, 'Should be initialized deferred'
     else:
         built_inside_type_adapter = 'Dict' in str(model) or 'Annotated' in str(model)
         assert generate_schema_calls.count == (1 if built_inside_type_adapter else 0), f'Should be built ({model})'
-        assert type_adapter.__dict__.get('core_schema') is not None, 'Should be initialized before usage'
+        assert type_adapter._core_schema is not None, 'Should be initialized before usage'
 
     json_schema = type_adapter.json_schema()  # Use it
     assert "'type': 'integer'" in str(json_schema)  # Sanity check
 
-    assert type_adapter.__dict__.get('core_schema') is not None, 'Should be initialized after the usage'
+    assert type_adapter._core_schema is not None, 'Should be initialized after the usage'
 
 
 @pytest.mark.parametrize('model, config', MODELS_CONFIGS)
-def test_validator_respects_defer_build(model: Any, config: ConfigDict) -> None:
+def test_validator_respects_defer_build(model: Any, config: ConfigDict, generate_schema_calls) -> None:
     type_adapter = TypeAdapter(model) if _type_has_config(model) else TypeAdapter(model, config=config)
 
     if config['defer_build'] and 'type_adapter' in config['_defer_build_mode']:
-        assert 'validator' not in type_adapter.__dict__, 'Should be initialized deferred via cached_property'
+        assert generate_schema_calls.count == 0, 'Should be built deferred'
+        assert type_adapter._validator is None, 'Should be initialized deferred'
     else:
-        assert type_adapter.__dict__.get('validator') is not None, 'Should be initialized before usage'
+        built_inside_type_adapter = 'Dict' in str(model) or 'Annotated' in str(model)
+        assert generate_schema_calls.count == (1 if built_inside_type_adapter else 0), f'Should be built ({model})'
+        assert type_adapter._validator is not None, 'Should be initialized before usage'
 
     validated = type_adapter.validate_python({'x': 1})  # Use it
     assert (validated['x'] if isinstance(validated, dict) else getattr(validated, 'x')) == 1  # Sanity check
 
-    assert type_adapter.__dict__.get('validator') is not None, 'Should be initialized after the usage'
+    assert type_adapter._validator is not None, 'Should be initialized after the usage'
 
 
 @pytest.mark.parametrize('model, config', MODELS_CONFIGS)
-def test_serializer_respects_defer_build(model: Any, config: ConfigDict) -> None:
+def test_serializer_respects_defer_build(model: Any, config: ConfigDict, generate_schema_calls) -> None:
     type_ = _annotated_type(model) or model
     dumped = dict(x=1) if 'Dict[' in str(type_) else type_(x=1)
 
     type_adapter = TypeAdapter(model) if _type_has_config(model) else TypeAdapter(model, config=config)
 
     if config['defer_build'] and 'type_adapter' in config['_defer_build_mode']:
-        assert 'serializer' not in type_adapter.__dict__, 'Should be initialized deferred via cached_property'
+        assert generate_schema_calls.count == 0, 'Should be built deferred'
+        assert type_adapter._serializer is None, 'Should be initialized deferred'
     else:
-        assert type_adapter.__dict__.get('serializer') is not None, 'Should be initialized before usage'
+        built_inside_type_adapter = 'Dict' in str(model) or 'Annotated' in str(model)
+        assert generate_schema_calls.count == (1 if built_inside_type_adapter else 0), f'Should be built ({model})'
+        assert type_adapter._serializer is not None, 'Should be initialized before usage'
 
     raw = type_adapter.dump_json(dumped)  # Use it
     assert json.loads(raw.decode())['x'] == 1  # Sanity check
 
-    assert type_adapter.__dict__.get('serializer') is not None, 'Should be initialized after the usage'
+    assert type_adapter._serializer is not None, 'Should be initialized after the usage'

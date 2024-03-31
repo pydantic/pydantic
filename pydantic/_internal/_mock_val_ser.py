@@ -73,7 +73,7 @@ class MockValSer(Generic[ValSer]):
     rebuild the thing it's mocking when one of its methods is accessed and raises an error if that fails.
     """
 
-    __slots__ = '_error_message', '_code', '_val_or_ser', '_attempt_rebuild', '_built_memo'
+    __slots__ = '_error_message', '_code', '_val_or_ser', '_attempt_rebuild'
 
     def __init__(
         self,
@@ -87,30 +87,19 @@ class MockValSer(Generic[ValSer]):
         self._val_or_ser = SchemaValidator if val_or_ser == 'validator' else SchemaSerializer
         self._code: PydanticErrorCodes = code
         self._attempt_rebuild = attempt_rebuild
-        self._built_memo: ValSer | None = None
 
     def __getattr__(self, item: str) -> None:
         __tracebackhide__ = True
-        try:
-            val_ser = self._get_built()
-        except PydanticUserError:
-            getattr(self._val_or_ser, item)  # raise an AttributeError if `item` doesn't exist
-            raise
-        return getattr(val_ser, item)
-
-    def _get_built(self) -> ValSer:
-        if self._built_memo is not None:
-            return self._built_memo
-
         if self._attempt_rebuild:
             val_ser = self._attempt_rebuild()
             if val_ser is not None:
-                self._built_memo = val_ser
-                return val_ser
+                return getattr(val_ser, item)
+
+        # raise an AttributeError if `item` doesn't exist
+        getattr(self._val_or_ser, item)
         raise PydanticUserError(self._error_message, code=self._code)
 
     def rebuild(self) -> ValSer | None:
-        self._built_memo = None
         if self._attempt_rebuild:
             val_ser = self._attempt_rebuild()
             if val_ser is not None:
@@ -146,7 +135,7 @@ def set_model_mocks(cls: type[BaseModel], cls_name: str, undefined_name: str = '
     )
 
     def attempt_rebuild_validator() -> SchemaValidator | None:
-        if cls.model_rebuild(raise_errors=False, _parent_namespace_depth=6) is not False:
+        if cls.model_rebuild(raise_errors=False, _parent_namespace_depth=5) is not False:
             return cls.__pydantic_validator__
         else:
             return None
@@ -159,7 +148,7 @@ def set_model_mocks(cls: type[BaseModel], cls_name: str, undefined_name: str = '
     )
 
     def attempt_rebuild_serializer() -> SchemaSerializer | None:
-        if cls.model_rebuild(raise_errors=False, _parent_namespace_depth=6) is not False:
+        if cls.model_rebuild(raise_errors=False, _parent_namespace_depth=5) is not False:
             return cls.__pydantic_serializer__
         else:
             return None
@@ -202,7 +191,7 @@ def set_dataclass_mocks(
     )
 
     def attempt_rebuild_validator() -> SchemaValidator | None:
-        if rebuild_dataclass(cls, raise_errors=False, _parent_namespace_depth=6) is not False:
+        if rebuild_dataclass(cls, raise_errors=False, _parent_namespace_depth=5) is not False:
             return cls.__pydantic_validator__
         else:
             return None
@@ -215,7 +204,7 @@ def set_dataclass_mocks(
     )
 
     def attempt_rebuild_serializer() -> SchemaSerializer | None:
-        if rebuild_dataclass(cls, raise_errors=False, _parent_namespace_depth=6) is not False:
+        if rebuild_dataclass(cls, raise_errors=False, _parent_namespace_depth=5) is not False:
             return cls.__pydantic_serializer__
         else:
             return None

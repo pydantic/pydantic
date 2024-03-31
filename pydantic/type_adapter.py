@@ -2,17 +2,32 @@
 from __future__ import annotations as _annotations
 
 import sys
+from contextlib import contextmanager
 from dataclasses import is_dataclass
 from functools import cached_property, wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, Iterable, Set, TypeVar, Union, cast, final, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    Iterable,
+    Iterator,
+    Set,
+    TypeVar,
+    Union,
+    cast,
+    final,
+    overload,
+)
 
-from pydantic_core import CoreConfig, CoreSchema, SchemaSerializer, SchemaValidator, Some
+from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
 from typing_extensions import Literal, get_args, is_typeddict
 
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel
 
-from ._internal import _config, _generate_schema, _typing_extra, _utils
+from ._internal import _config, _generate_schema, _mock_val_ser, _typing_extra, _utils
 from .config import ConfigDict
 from .json_schema import (
     DEFAULT_REF_TEMPLATE,
@@ -119,7 +134,8 @@ def _frame_depth(depth: int) -> Callable[[Callable[..., R]], Callable[..., R]]:
         @wraps(func)
         def wrapped(self: TypeAdapter, *args: Any, **kwargs: Any) -> R:
             # depth + 1 for the wrapper function
-            return self._frame_depth_fn(depth + 1, lambda s: func(s, *args, **kwargs))
+            with self._with_frame_depth(depth + 1):
+                return func(self, *args, **kwargs)
 
         return wrapped
 
@@ -234,53 +250,80 @@ class TypeAdapter(Generic[T]):
         else:
             self._module_name = module
 
+        self._core_schema: CoreSchema | None = None
+        self._validator: SchemaValidator | None = None
+        self._serializer: SchemaSerializer | None = None
+
         if not self._defer_build():
             # Immediately initialize the core schema, validator and serializer
-            # +1 frame depth for this __init__
-            _, _, _ = (self._frame_depth_fn(1, lambda s: s.core_schema), self.validator, self.serializer)
+            with self._with_frame_depth(1):  # +1 frame depth for this __init__
+                # Model itself may be using deferred building. For backward compatibility we don't rebuild model mocks
+                # here as part of __init__ even though TypeAdapter itself is not using deferred building.
+                self._init_core_attrs(rebuild_mocks=False)
 
-    def _frame_depth_fn(self, depth: int, func: Callable[[TypeAdapter], R]) -> R:
-        depth += 2  # +2 for _frame_depth_fn and func(self)
+    @contextmanager
+    def _with_frame_depth(self, depth: int) -> Iterator[None]:
         self._parent_depth += depth
         try:
-            return func(self)
+            yield
         finally:
             self._parent_depth -= depth
+
+    @_frame_depth(1)
+    def _init_core_attrs(self, rebuild_mocks: bool) -> None:
+        try:
+            self._core_schema = _getattr_no_parents(self._type, '__pydantic_core_schema__')
+            self._validator = _getattr_no_parents(self._type, '__pydantic_validator__')
+            self._serializer = _getattr_no_parents(self._type, '__pydantic_serializer__')
+        except AttributeError:
+            config_wrapper = _config.ConfigWrapper(self._config)
+            core_config = config_wrapper.core_config(None)
+
+            self._core_schema = _get_schema(self._type, config_wrapper, parent_depth=self._parent_depth)
+            self._validator = create_schema_validator(
+                schema=self._core_schema,
+                schema_type=self._type,
+                schema_type_module=self._module_name,
+                schema_type_name=str(self._type),
+                schema_kind='TypeAdapter',
+                config=core_config,
+                plugin_settings=config_wrapper.plugin_settings,
+            )
+            self._serializer = SchemaSerializer(self._core_schema, core_config)
+
+        if rebuild_mocks and isinstance(self._core_schema, _mock_val_ser.MockCoreSchema):
+            self._core_schema.rebuild()
+            self._init_core_attrs(rebuild_mocks=False)
+            assert not isinstance(self._core_schema, _mock_val_ser.MockCoreSchema)
+            assert not isinstance(self._validator, _mock_val_ser.MockValSer)
+            assert not isinstance(self._serializer, _mock_val_ser.MockValSer)
 
     @cached_property
     @_frame_depth(2)  # +2 for @cached_property and core_schema(self)
     def core_schema(self) -> CoreSchema:
         """The pydantic-core schema used to build the SchemaValidator and SchemaSerializer."""
-        try:
-            return _getattr_no_parents(self._type, '__pydantic_core_schema__')
-        except AttributeError:
-            return _get_schema(self._type, self._config_wrapper, parent_depth=self._parent_depth)
+        if self._core_schema is None or isinstance(self._core_schema, _mock_val_ser.MockCoreSchema):
+            self._init_core_attrs(rebuild_mocks=True)  # Do not expose MockCoreSchema
+        assert self._core_schema is not None and not isinstance(self._core_schema, _mock_val_ser.MockCoreSchema)
+        return self._core_schema
 
     @cached_property
     @_frame_depth(2)  # +2 for @cached_property + validator(self)
     def validator(self) -> SchemaValidator:
         """The pydantic-core SchemaValidator used to validate instances of the model."""
-        try:
-            return _getattr_no_parents(self._type, '__pydantic_validator__')
-        except AttributeError:
-            return create_schema_validator(
-                schema=self.core_schema,
-                schema_type=self._type,
-                schema_type_module=self._module_name,
-                schema_type_name=str(self._type),
-                schema_kind='TypeAdapter',
-                config=self._core_config,
-                plugin_settings=self._config_wrapper.plugin_settings,
-            )
+        if not isinstance(self._validator, SchemaValidator):
+            self._init_core_attrs(rebuild_mocks=True)  # Do not expose MockValSer
+        assert isinstance(self._validator, SchemaValidator)
+        return self._validator
 
     @cached_property
     @_frame_depth(2)  # +2 for @cached_property + serializer(self)
     def serializer(self) -> SchemaSerializer:
         """The pydantic-core SchemaSerializer used to dump instances of the model."""
-        try:
-            return _getattr_no_parents(self._type, '__pydantic_serializer__')
-        except AttributeError:
-            return SchemaSerializer(self.core_schema, self._core_config)
+        if not isinstance(self._serializer, SchemaSerializer):
+            self._init_core_attrs(rebuild_mocks=True)  # Do not expose MockValSer
+        assert isinstance(self._serializer, SchemaSerializer)
+        return self._serializer
 
     def _defer_build(self) -> bool:
         config = self._config if self._config is not None else self._model_config()
@@ -295,14 +338,6 @@ class TypeAdapter(Generic[T]):
     @staticmethod
     def _is_defer_build_config(config: ConfigDict) -> bool:
         return config.get('defer_build', False) is True and 'type_adapter' in config.get('_defer_build_mode', tuple())
-
-    @cached_property
-    def _core_config(self) -> CoreConfig:
-        return self._config_wrapper.core_config(None)
-
-    @cached_property
-    def _config_wrapper(self) -> _config.ConfigWrapper:
-        return _config.ConfigWrapper(self._config)
 
     @_frame_depth(1)
     def validate_python(
@@ -534,8 +569,10 @@ class TypeAdapter(Generic[T]):
         """
         schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
 
-        # +1 _dive_parent for TypeAdapter.json_schemas
-        inputs_ = [(key, mode, adapter._frame_depth_fn(1, lambda s: s.core_schema)) for key, mode, adapter in inputs]
+        inputs_ = []
+        for key, mode, adapter in inputs:
+            with adapter._with_frame_depth(1):  # +1 for json_schemas staticmethod
+                inputs_.append((key, mode, adapter.core_schema))
 
         json_schemas_map, definitions = schema_generator_instance.generate_definitions(inputs_)
 
