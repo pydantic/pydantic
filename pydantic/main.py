@@ -7,7 +7,7 @@ import types
 import typing
 import warnings
 from copy import copy, deepcopy
-from typing import Any, ClassVar, Dict, Generator, Set, Tuple, TypeVar, Union
+from typing import Any, ClassVar, Dict, Generator, Literal, Set, Tuple, TypeVar, Union
 
 import pydantic_core
 import typing_extensions
@@ -298,7 +298,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_defaults: bool = False,
         exclude_none: bool = False,
         round_trip: bool = False,
-        warnings: bool = True,
+        warnings: bool | Literal['none', 'warn', 'error'] = True,
         serialize_as_any: bool = False,
     ) -> dict[str, Any]:
         """Usage docs: https://docs.pydantic.dev/2.7/concepts/serialization/#modelmodel_dump
@@ -317,7 +317,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             exclude_defaults: Whether to exclude fields that are set to their default value.
             exclude_none: Whether to exclude fields that have a value of `None`.
             round_trip: If True, dumped values should be valid as input for non-idempotent types such as Json[T].
-            warnings: Whether to log warnings when invalid fields are encountered.
+            warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
+                "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
 
         Returns:
@@ -350,7 +351,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_defaults: bool = False,
         exclude_none: bool = False,
         round_trip: bool = False,
-        warnings: bool = True,
+        warnings: bool | Literal['none', 'warn', 'error'] = True,
         serialize_as_any: bool = False,
     ) -> str:
         """Usage docs: https://docs.pydantic.dev/2.7/concepts/serialization/#modelmodel_dump_json
@@ -367,7 +368,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             exclude_defaults: Whether to exclude fields that are set to their default value.
             exclude_none: Whether to exclude fields that have a value of `None`.
             round_trip: If True, dumped values should be valid as input for non-idempotent types such as Json[T].
-            warnings: Whether to log warnings when invalid fields are encountered.
+            warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
+                "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
 
         Returns:

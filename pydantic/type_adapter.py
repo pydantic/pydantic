@@ -314,7 +314,7 @@ class TypeAdapter(Generic[T]):
         exclude_defaults: bool = False,
         exclude_none: bool = False,
         round_trip: bool = False,
-        warnings: bool = True,
+        warnings: bool | Literal['none', 'warn', 'error'] = True,
         serialize_as_any: bool = False,
     ) -> Any:
         """Dump an instance of the adapted type to a Python object.
@@ -329,7 +329,8 @@ class TypeAdapter(Generic[T]):
             exclude_defaults: Whether to exclude fields with default values.
             exclude_none: Whether to exclude fields with None values.
             round_trip: Whether to output the serialized data in a way that is compatible with deserialization.
-            warnings: Whether to display serialization warnings.
+            warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
+                "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
 
         Returns:
@@ -362,7 +363,7 @@ class TypeAdapter(Generic[T]):
         exclude_defaults: bool = False,
         exclude_none: bool = False,
         round_trip: bool = False,
-        warnings: bool = True,
+        warnings: bool | Literal['none', 'warn', 'error'] = True,
         serialize_as_any: bool = False,
     ) -> bytes:
         """Usage docs: https://docs.pydantic.dev/2.7/concepts/json/#json-serialization
@@ -379,7 +380,8 @@ class TypeAdapter(Generic[T]):
             exclude_defaults: Whether to exclude fields with default values.
             exclude_none: Whether to exclude fields with a value of `None`.
             round_trip: Whether to serialize and deserialize the instance to ensure round-tripping.
-            warnings: Whether to emit serialization warnings.
+            warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
+                "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
 
         Returns:
