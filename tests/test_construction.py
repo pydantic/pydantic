@@ -74,6 +74,26 @@ def test_construct_keep_order():
     assert instance.model_dump_json() == instance_construct.model_dump_json()
 
 
+def test_construct_with_aliases():
+    class MyModel(BaseModel):
+        x: int = Field(alias='x_alias')
+
+    my_model = MyModel.model_construct(x_alias=1)
+    assert my_model.x == 1
+    assert my_model.model_fields_set == {'x'}
+    assert my_model.model_dump() == {'x': 1}
+
+
+def test_construct_with_validation_aliases():
+    class MyModel(BaseModel):
+        x: int = Field(validation_alias='x_alias')
+
+    my_model = MyModel.model_construct(x_alias=1)
+    assert my_model.x == 1
+    assert my_model.model_fields_set == {'x'}
+    assert my_model.model_dump() == {'x': 1}
+
+
 def test_large_any_str():
     class Model(BaseModel):
         a: bytes
