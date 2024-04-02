@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
 
       - name: Cherry pick into 1.10.X-fixes
-        uses: carloscastrojumo/github-cherry-pick-action@v1.0.9
+        uses: carloscastrojumo/github-cherry-pick-action@v1.0.10
         with:
           branch: 1.10.X-fixes
           labels: from-cherry-pick
