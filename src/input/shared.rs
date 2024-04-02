@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use pyo3::sync::GILOnceCell;
 use pyo3::{intern, Py, PyAny, Python};
 
-use num_bigint::BigInt;
+use jiter::{JsonErrorType, NumberInt};
 
 use crate::errors::{ErrorTypeDefaults, ValError, ValResult};
 
@@ -68,29 +68,24 @@ fn strip_underscores(s: &str) -> Option<String> {
 }
 
 /// parse a string as an int
-///
-/// max length of the input is 4300, see
-/// https://docs.python.org/3/whatsnew/3.11.html#other-cpython-implementation-changes and
-/// https://github.com/python/cpython/issues/95778 for more info in that length bound
 pub fn str_as_int<'py>(input: &(impl Input<'py> + ?Sized), str: &str) -> ValResult<EitherInt<'py>> {
     let str = str.trim();
-    let len = str.len();
-    if len > 4300 {
-        Err(ValError::new(ErrorTypeDefaults::IntParsingSize, input))
-    } else if let Some(int) = _parse_str(input, str, len) {
-        Ok(int)
-    } else if let Some(str_stripped) = strip_decimal_zeros(str) {
-        if let Some(int) = _parse_str(input, str_stripped, len) {
-            Ok(int)
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::IntParsing, input))
+
+    // we have to call `NumberInt::try_from` directly first so we fail fast if the string is too long
+    match NumberInt::try_from(str.as_bytes()) {
+        Ok(NumberInt::Int(i)) => return Ok(EitherInt::I64(i)),
+        Ok(NumberInt::BigInt(i)) => return Ok(EitherInt::BigInt(i)),
+        Err(e) => {
+            if e.error_type == JsonErrorType::NumberOutOfRange {
+                return Err(ValError::new(ErrorTypeDefaults::IntParsingSize, input));
+            }
         }
+    }
+
+    if let Some(str_stripped) = strip_decimal_zeros(str) {
+        _parse_str(input, str_stripped)
     } else if let Some(str_stripped) = strip_underscores(str) {
-        if let Some(int) = _parse_str(input, &str_stripped, len) {
-            Ok(int)
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::IntParsing, input))
-        }
+        _parse_str(input, &str_stripped)
     } else {
         Err(ValError::new(ErrorTypeDefaults::IntParsing, input))
     }
@@ -108,16 +103,18 @@ pub fn str_as_float<'py>(input: &(impl Input<'py> + ?Sized), str: &str) -> ValRe
 }
 
 /// parse a string as an int, `input` is required here to get lifetimes to match up
-///
-fn _parse_str<'py>(_input: &(impl Input<'py> + ?Sized), str: &str, len: usize) -> Option<EitherInt<'py>> {
-    if len < 19 {
-        if let Ok(i) = str.parse::<i64>() {
-            return Some(EitherInt::I64(i));
-        }
-    } else if let Ok(i) = str.parse::<BigInt>() {
-        return Some(EitherInt::BigInt(i));
+/// max length of the input is 4300 which is checked by jiter, see
+/// https://docs.python.org/3/whatsnew/3.11.html#other-cpython-implementation-changes and
+/// https://github.com/python/cpython/issues/95778 for more info in that length bound
+fn _parse_str<'py>(input: &(impl Input<'py> + ?Sized), str: &str) -> ValResult<EitherInt<'py>> {
+    match NumberInt::try_from(str.as_bytes()) {
+        Ok(jiter::NumberInt::Int(i)) => Ok(EitherInt::I64(i)),
+        Ok(jiter::NumberInt::BigInt(i)) => Ok(EitherInt::BigInt(i)),
+        Err(e) => match e.error_type {
+            JsonErrorType::NumberOutOfRange => Err(ValError::new(ErrorTypeDefaults::IntParsingSize, input)),
+            _ => Err(ValError::new(ErrorTypeDefaults::IntParsing, input)),
+        },
     }
-    None
 }
 
 /// we don't want to parse as f64 then call `float_as_int` as it can loose precision for large ints, therefore
