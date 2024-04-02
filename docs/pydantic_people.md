@@ -5,7 +5,7 @@ Here, we celebrate those people and their contributions.
 
 ## Maintainers
 
-These are the current maintainers of the Pydantic repo. Feel free to tag us if you have questions, review requests, or feature requests for which you'd like feedback!
+These are the current maintainers of the Pydantic repository. Feel free to tag us if you have questions, review requests, or feature requests for which you'd like feedback!
 
 {{ maintainers }}
 
