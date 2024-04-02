@@ -145,7 +145,7 @@ impl ValidationError {
                     use pyo3::exceptions::PyUserWarning;
 
                     let wrapped = PyUserWarning::new_err((note,));
-                    wrapped.set_cause(py, Some(PyErr::from_value(err.as_ref(py))));
+                    wrapped.set_cause(py, Some(PyErr::from_value_bound(err.clone_ref(py).into_bound(py))));
                     user_py_errs.push(wrapped);
                 }
             }
@@ -167,16 +167,16 @@ impl ValidationError {
             #[cfg(not(Py_3_11))]
             let cause = {
                 use pyo3::exceptions::PyImportError;
-                match py.import("exceptiongroup") {
-                Ok(py_mod) => match py_mod.getattr("ExceptionGroup") {
-                    Ok(group_cls) => match group_cls.call1((title, user_py_errs)) {
-                        Ok(group_instance) => Some(group_instance.into_py(py)),
+                match py.import_bound("exceptiongroup") {
+                    Ok(py_mod) => match py_mod.getattr("ExceptionGroup") {
+                        Ok(group_cls) => match group_cls.call1((title, user_py_errs)) {
+                            Ok(group_instance) => Some(group_instance.into_py(py)),
+                            Err(_) => None,
+                        },
                         Err(_) => None,
                     },
-                    Err(_) => None,
-                },
-                Err(_) => return Some(PyImportError::new_err("validation_error_cause flag requires the exceptiongroup module backport to be installed when used on Python <3.11.")),
-            }
+                    Err(_) => return Some(PyImportError::new_err("validation_error_cause flag requires the exceptiongroup module backport to be installed when used on Python <3.11.")),
+                }
             };
 
             // Set the cause to the ValidationError:
