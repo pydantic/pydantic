@@ -138,15 +138,16 @@ checksum = "62b02a5381cc465bd3041d84623d0fa3b66738b52b8e2fc3bab8ad63ab032f4a"
 
 [[package]]
 name = "jiter"
-version = "0.1.1"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c0b7c896d2b1da897be13affb0bbf7bff95437e9c50823ede962addadae58d8"
+checksum = "8e1177860adcf80c1ae7d7c1d41561f008c7530664caebbfa5ddd8a7f7316b98"
 dependencies = [
  "ahash",
  "lexical-parse-float",
  "num-bigint",
  "num-traits",
  "pyo3",
+ "pyo3-build-config",
  "smallvec",
 ]
 
