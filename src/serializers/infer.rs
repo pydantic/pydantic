@@ -401,7 +401,14 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
         ObType::None => serializer.serialize_none(),
         ObType::Int | ObType::IntSubclass => serialize!(Int),
         ObType::Bool => serialize!(bool),
-        ObType::Float | ObType::FloatSubclass => serialize!(f64),
+        ObType::Float | ObType::FloatSubclass => {
+            let v = value.extract::<f64>().map_err(py_err_se_err)?;
+            if (v.is_nan() || v.is_infinite()) && extra.config.inf_nan_mode == InfNanMode::Null {
+                serializer.serialize_none()
+            } else {
+                serializer.serialize_f64(v)
+            }
+        }
         ObType::Decimal => value.to_string().serialize(serializer),
         ObType::Str | ObType::StrSubclass => {
             let py_str = value.downcast::<PyString>().map_err(py_err_se_err)?;
@@ -575,8 +582,14 @@ pub(crate) fn infer_json_key_known<'a>(
 ) -> PyResult<Cow<'a, str>> {
     match ob_type {
         ObType::None => super::type_serializers::simple::none_json_key(),
-        ObType::Int | ObType::IntSubclass | ObType::Float | ObType::FloatSubclass => {
-            super::type_serializers::simple::to_str_json_key(key)
+        ObType::Int | ObType::IntSubclass => super::type_serializers::simple::to_str_json_key(key),
+        ObType::Float | ObType::FloatSubclass => {
+            let v = key.extract::<f64>()?;
+            if (v.is_nan() || v.is_infinite()) && extra.config.inf_nan_mode == InfNanMode::Null {
+                super::type_serializers::simple::none_json_key()
+            } else {
+                super::type_serializers::simple::to_str_json_key(key)
+            }
         }
         ObType::Decimal => Ok(Cow::Owned(key.to_string())),
         ObType::Bool => super::type_serializers::simple::bool_json_key(key),
