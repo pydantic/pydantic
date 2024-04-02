@@ -9098,14 +9098,16 @@ if <code>None</code> a <a class="autorefs autorefs-internal" href="#pydantic_cor
     <span class="n">data</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytearray">bytearray</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">allow_inf_nan</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">cache_strings</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">cache_strings</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
+    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="s2">&quot;keys&quot;</span><span class="p">,</span> <span class="s2">&quot;none&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">allow_partial</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Deserialize JSON data to a Python object.</p>
-<p>This is effectively a faster version of <code>json.loads()</code>.</p>
+<p>This is effectively a faster version of <code>json.loads()</code>, with some extra functionality.</p>
 
 
 
@@ -9151,16 +9153,32 @@ if <code>None</code> a <a class="autorefs autorefs-internal" href="#pydantic_cor
         <tr>
           <td><code>cache_strings</code></td>
           <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | <a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;all&#39;, &#39;keys&#39;, &#39;none&#39;]</code>
           </td>
           <td>
             <div class="doc-md-description">
               <p>Whether to cache strings to avoid constructing new Python objects,
-this should have a significant impact on performance while increasing memory usage slightly.</p>
+this should have a significant impact on performance while increasing memory usage slightly,
+<code>all/True</code> means cache all strings, <code>keys</code> means cache only dict keys, <code>none/False</code> means no caching.</p>
             </div>
           </td>
           <td>
                 <code>True</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>allow_partial</code></td>
+          <td>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Whether to allow partial deserialization, if <code>True</code> JSON data is returned if the end of the
+input is reached before the full object is deserialized, e.g. <code>["aa", "bb", "c</code> would return <code>['aa', 'bb']</code>.</p>
+            </div>
+          </td>
+          <td>
+                <code>False</code>
           </td>
         </tr>
     </tbody>
@@ -9565,7 +9583,7 @@ if <code>None</code> a <a class="autorefs autorefs-internal" href="#pydantic_cor
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.7.0a1", "pydantic-core==2.17.0"]
+    window.mkdocs_run_deps = ["pydantic==2.7.0a1", "pydantic-core==2.18.0"]
     </script>
 
               </article>
