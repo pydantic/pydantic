@@ -203,7 +203,13 @@ class TypeAdapter(Generic[T]):
                 code='type-adapter-config-unused',
             )
 
-        config_wrapper = _config.ConfigWrapper(config)
+        config_dict = config
+        if config_dict is None:
+            # if not explicitly provided, try reading from the type
+            type_config = getattr(type, '__pydantic_config__', None)
+            if type_config is not None:
+                config_dict = type_config
+        config_wrapper = _config.ConfigWrapper(config_dict)
 
         core_schema: CoreSchema
         try:

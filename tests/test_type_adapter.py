@@ -2,6 +2,7 @@ import json
 import sys
 from dataclasses import dataclass
 from datetime import date, datetime
+from math import isinf, isnan
 from typing import Any, Dict, ForwardRef, Generic, List, NamedTuple, Tuple, TypeVar, Union
 
 import pytest
@@ -371,3 +372,18 @@ def test_eval_type_backport():
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'list_type', 'loc': (), 'msg': 'Input should be a valid list', 'input': 'not a list'}
     ]
+
+
+def test_type_adapter_with_dataclass_and_config() -> None:
+    """Test for https://github.com/pydantic/pydantic/issues/8693."""
+
+    @dataclass
+    class Model:
+        x: Any
+
+        __pydantic_config__ = ConfigDict(ser_json_inf_nan='constants')
+
+    assert isnan(TypeAdapter(Model).dump_python(Model(x=float('nan')), mode='json')['x'])
+    assert TypeAdapter(Model).dump_json(Model(x=float('nan'))) == b'{"x":NaN}'
+    assert isinf(TypeAdapter(Model).dump_python(Model(x=float('inf')), mode='json')['x'])
+    assert TypeAdapter(Model).dump_json(Model(x=float('inf'))) == b'{"x":Infinity}'
