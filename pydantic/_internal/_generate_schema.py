@@ -44,7 +44,7 @@ from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation,
 from ..json_schema import JsonSchemaValue
 from ..version import version_short
 from ..warnings import PydanticDeprecatedSince20
-from . import _core_utils, _decorators, _discriminated_union, _known_annotated_metadata, _mock_val_ser, _typing_extra
+from . import _core_utils, _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
 from ._config import ConfigWrapper, ConfigWrapperStack
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._core_utils import (
@@ -76,6 +76,7 @@ from ._docs_extraction import extract_docstrings_from_cls
 from ._fields import collect_dataclass_fields, get_type_hints_infer_globalns
 from ._forward_ref import PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, has_instance_in_type, recursively_defined_type_refs, replace_types
+from ._mock_val_ser import MockCoreSchema
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._typing_extra import is_finalvar, is_self_type
 from ._utils import lenient_issubclass
@@ -648,7 +649,7 @@ class GenerateSchema:
         # fmt: off
         elif (
             (existing_schema := getattr(obj, '__pydantic_core_schema__', None)) is not None
-            and not isinstance(existing_schema, _mock_val_ser.MockCoreSchema)
+            and not isinstance(existing_schema, MockCoreSchema)
             and existing_schema.get('cls', None) == obj
         ):
             schema = existing_schema

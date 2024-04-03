@@ -22,7 +22,7 @@ from typing import (
 )
 
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
-from typing_extensions import Literal, get_args, is_typeddict
+from typing_extensions import Literal, is_typeddict
 
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel
@@ -115,13 +115,9 @@ def _getattr_no_parents(obj: Any, attribute: str) -> Any:
         raise AttributeError(attribute)
 
 
-def _annotated_type(type_: Any) -> Any | None:
-    return get_args(type_)[0] if _typing_extra.is_annotated(type_) else None
-
-
 def _type_has_config(type_: Any) -> bool:
     """Returns whether the type has config."""
-    type_ = _annotated_type(type_) or type_
+    type_ = _typing_extra.annotated_type(type_) or type_
     try:
         return issubclass(type_, BaseModel) or is_dataclass(type_) or is_typeddict(type_)
     except TypeError:
@@ -129,6 +125,9 @@ def _type_has_config(type_: Any) -> bool:
         return False
 
 
+# This is keep track of the frame depth for the TypeAdapter functions. This is required for _parent_depth used for
+# ForwardRef resolution. We may enter the TypeAdapter schema building via different TypeAdapter functions. Hence, we
+# need to keep track of the frame depth relative to the originally provided _parent_depth.
 def _frame_depth(depth: int) -> Callable[[Callable[..., R]], Callable[..., R]]:
     def wrapper(func: Callable[..., R]) -> Callable[..., R]:
         @wraps(func)
@@ -330,7 +329,7 @@ class TypeAdapter(Generic[T]):
         return self._is_defer_build_config(config) if config is not None else False
 
     def _model_config(self) -> ConfigDict | None:
-        type_: Any = _annotated_type(self._type) or self._type  # FastAPI heavily uses Annotated
+        type_: Any = _typing_extra.annotated_type(self._type) or self._type  # FastAPI heavily uses Annotated
         if _utils.lenient_issubclass(type_, BaseModel):
             return type_.model_config
         return getattr(type_, '__pydantic_config__', None)

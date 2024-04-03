@@ -9,10 +9,11 @@ from pydantic_core import ValidationError
 from typing_extensions import Annotated, TypeAlias, TypedDict
 
 from pydantic import BaseModel, Field, TypeAdapter, ValidationInfo, create_model, field_validator
+from pydantic._internal._typing_extra import annotated_type
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
-from pydantic.type_adapter import _annotated_type, _type_has_config
+from pydantic.type_adapter import _type_has_config
 
 ItemType = TypeVar('ItemType')
 
@@ -524,57 +525,41 @@ MODELS_CONFIGS: List[Tuple[Any, ConfigDict]] = [
 
 
 @pytest.mark.parametrize('model, config', MODELS_CONFIGS)
-def test_core_schema_respects_defer_build(model: Any, config: ConfigDict, generate_schema_calls) -> None:
+@pytest.mark.parametrize('method', ['schema', 'validate', 'dump'])
+def test_core_schema_respects_defer_build(model: Any, config: ConfigDict, method: str, generate_schema_calls) -> None:
+    type_ = annotated_type(model) or model
+    dumped = dict(x=1) if 'Dict[' in str(type_) else type_(x=1)
+    generate_schema_calls.reset()
+
     type_adapter = TypeAdapter(model) if _type_has_config(model) else TypeAdapter(model, config=config)
 
     if config['defer_build'] and 'type_adapter' in config['_defer_build_mode']:
         assert generate_schema_calls.count == 0, 'Should be built deferred'
         assert type_adapter._core_schema is None, 'Should be initialized deferred'
-    else:
-        built_inside_type_adapter = 'Dict' in str(model) or 'Annotated' in str(model)
-        assert generate_schema_calls.count == (1 if built_inside_type_adapter else 0), f'Should be built ({model})'
-        assert type_adapter._core_schema is not None, 'Should be initialized before usage'
-
-    json_schema = type_adapter.json_schema()  # Use it
-    assert "'type': 'integer'" in str(json_schema)  # Sanity check
-
-    assert type_adapter._core_schema is not None, 'Should be initialized after the usage'
-
-
-@pytest.mark.parametrize('model, config', MODELS_CONFIGS)
-def test_validator_respects_defer_build(model: Any, config: ConfigDict, generate_schema_calls) -> None:
-    type_adapter = TypeAdapter(model) if _type_has_config(model) else TypeAdapter(model, config=config)
-
-    if config['defer_build'] and 'type_adapter' in config['_defer_build_mode']:
-        assert generate_schema_calls.count == 0, 'Should be built deferred'
         assert type_adapter._validator is None, 'Should be initialized deferred'
-    else:
-        built_inside_type_adapter = 'Dict' in str(model) or 'Annotated' in str(model)
-        assert generate_schema_calls.count == (1 if built_inside_type_adapter else 0), f'Should be built ({model})'
-        assert type_adapter._validator is not None, 'Should be initialized before usage'
-
-    validated = type_adapter.validate_python({'x': 1})  # Use it
-    assert (validated['x'] if isinstance(validated, dict) else getattr(validated, 'x')) == 1  # Sanity check
-
-    assert type_adapter._validator is not None, 'Should be initialized after the usage'
-
-
-@pytest.mark.parametrize('model, config', MODELS_CONFIGS)
-def test_serializer_respects_defer_build(model: Any, config: ConfigDict, generate_schema_calls) -> None:
-    type_ = _annotated_type(model) or model
-    dumped = dict(x=1) if 'Dict[' in str(type_) else type_(x=1)
-
-    type_adapter = TypeAdapter(model) if _type_has_config(model) else TypeAdapter(model, config=config)
-
-    if config['defer_build'] and 'type_adapter' in config['_defer_build_mode']:
-        assert generate_schema_calls.count == 0, 'Should be built deferred'
         assert type_adapter._serializer is None, 'Should be initialized deferred'
     else:
         built_inside_type_adapter = 'Dict' in str(model) or 'Annotated' in str(model)
         assert generate_schema_calls.count == (1 if built_inside_type_adapter else 0), f'Should be built ({model})'
+        assert type_adapter._core_schema is not None, 'Should be initialized before usage'
+        assert type_adapter._validator is not None, 'Should be initialized before usage'
         assert type_adapter._serializer is not None, 'Should be initialized before usage'
 
-    raw = type_adapter.dump_json(dumped)  # Use it
-    assert json.loads(raw.decode())['x'] == 1  # Sanity check
+    if method == 'schema':
+        json_schema = type_adapter.json_schema()  # Use it
+        assert "'type': 'integer'" in str(json_schema)  # Sanity check
+        # Do not check generate_schema_calls count here as the json_schema generation uses generate schema internally
+        # assert generate_schema_calls.count < 2, 'Should not build duplicates'
+    elif method == 'validate':
+        validated = type_adapter.validate_python({'x': 1})  # Use it
+        assert (validated['x'] if isinstance(validated, dict) else getattr(validated, 'x')) == 1  # Sanity check
+        assert generate_schema_calls.count < 2, 'Should not build duplicates'
+    else:
+        assert method == 'dump'
+        raw = type_adapter.dump_json(dumped)  # Use it
+        assert json.loads(raw.decode())['x'] == 1  # Sanity check
+        assert generate_schema_calls.count < 2, 'Should not build duplicates'
 
+    assert type_adapter._core_schema is not None, 'Should be initialized after the usage'
+    assert type_adapter._validator is not None, 'Should be initialized after the usage'
     assert type_adapter._serializer is not None, 'Should be initialized after the usage'

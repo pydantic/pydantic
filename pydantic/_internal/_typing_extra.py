@@ -114,6 +114,10 @@ def is_annotated(ann_type: Any) -> bool:
     return origin is not None and lenient_issubclass(origin, Annotated)
 
 
+def annotated_type(type_: Any) -> Any | None:
+    return get_args(type_)[0] if is_annotated(type_) else None
+
+
 def is_namedtuple(type_: type[Any]) -> bool:
     """Check if a given class is a named tuple.
     It can be either a `typing.NamedTuple` or `collections.namedtuple`.
