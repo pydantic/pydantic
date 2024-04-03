@@ -8,6 +8,7 @@
 
 * Reorganize `pyproject.toml` sections by @Viicos in [#8899](https://github.com/pydantic/pydantic/pull/8899)
 * Bump `pydantic-core` to `v2.18.0` by @sydney-runkle in [#9153](https://github.com/pydantic/pydantic/pull/9153)
+* Adopt `jiter` `v0.2.0` by @samuelcolvin in [pydantic/pydantic-core#1250](https://github.com/pydantic/pydantic-core/pull/1250)
 
 #### New Features
 
@@ -25,7 +26,7 @@
 * Add support for `re.Pattern[str]` to `pattern` field by @jag-k in [#9053](https://github.com/pydantic/pydantic/pull/9053)
 * Support for `serialize_as_any` runtime setting by @sydney-runkle in [#8830](https://github.com/pydantic/pydantic/pull/8830)
 * Add support for `typing.Self` by @Youssefares in [#9023](https://github.com/pydantic/pydantic/pull/9023)
-* Ability to pass context to serialization by @ornariece in [#8965](https://github.com/pydantic/pydantic/pull/8965)
+* Ability to pass `context` to serialization by @ornariece in [#8965](https://github.com/pydantic/pydantic/pull/8965)
 * Add feedback widget to docs with flarelytics integration by @sydney-runkle in [#9129](https://github.com/pydantic/pydantic/pull/9129)
 
 #### Changes
@@ -35,12 +36,19 @@
 * Use `PEP570` syntax by @Viicos in [#8940](https://github.com/pydantic/pydantic/pull/8940)
 * Add `enum` and `type` to the JSON schema for single item literals by @dmontagu in [#8944](https://github.com/pydantic/pydantic/pull/8944)
 * Deprecate `update_json_schema` internal function by @sydney-runkle in [#9125](https://github.com/pydantic/pydantic/pull/9125)
+* Serialize duration to hour minute second, instead of just seconds by @kakilangit in [pydantic/speedate#50](https://github.com/pydantic/speedate/pull/50)
+* Trimming str before parsing to int and float by @hungtsetse in [pydantic/pydantic-core#1203](https://github.com/pydantic/pydantic-core/pull/1203)
 
 #### Performance
 
 * `enum` validator improvements by @samuelcolvin in [#9045](https://github.com/pydantic/pydantic/pull/9045)
 * Move `enum` validation and serialization to Rust by @samuelcolvin in [#9064](https://github.com/pydantic/pydantic/pull/9064)
 * Improve schema generation for nested dataclasses by @sydney-runkle in [#9114](https://github.com/pydantic/pydantic/pull/9114)
+* Fast path for ASCII python strings by @samuelcolvin in in [pydantic/jiter#72](https://github.com/pydantic/jiter/pull/72)
+* simd int and string parsing on `aarch64` by @samuelcolvin in in [pydantic/jiter#65](https://github.com/pydantic/jiter/pull/65)
+* Support json cow of `jiter` by @davidhewitt in [pydantic/pydantic-core#1231](https://github.com/pydantic/pydantic-core/pull/1231)
+* MAJOR performance improvement: update to PyO3 0.21 final by @davidhewitt in [pydantic/pydantic-core#1248](https://github.com/pydantic/pydantic-core/pull/1248)
+* caching strings from JSON by @samuelcolvin in [pydantic/pydantic-core#1240](https://github.com/pydantic/pydantic-core/pull/1240)
 
 #### Fixes
 
