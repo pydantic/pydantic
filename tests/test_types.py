@@ -5187,16 +5187,20 @@ def test_none_literal():
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'my_none': {'const': None, 'enum': [None], 'title': 'My None'},
-            'my_none_list': {'items': {'const': None, 'enum': [None]}, 'title': 'My None List', 'type': 'array'},
+            'my_none': {'const': None, 'enum': [None], 'title': 'My None', 'type': 'null'},
+            'my_none_list': {
+                'items': {'const': None, 'enum': [None], 'type': 'null'},
+                'title': 'My None List',
+                'type': 'array',
+            },
             'my_none_dict': {
-                'additionalProperties': {'const': None, 'enum': [None]},
+                'additionalProperties': {'const': None, 'enum': [None], 'type': 'null'},
                 'title': 'My None Dict',
                 'type': 'object',
             },
             'my_json_none': {
                 'contentMediaType': 'application/json',
-                'contentSchema': {'const': None, 'enum': [None]},
+                'contentSchema': {'const': None, 'enum': [None], 'type': 'null'},
                 'title': 'My Json None',
                 'type': 'string',
             },
