@@ -44,11 +44,11 @@
 * `enum` validator improvements by @samuelcolvin in [#9045](https://github.com/pydantic/pydantic/pull/9045)
 * Move `enum` validation and serialization to Rust by @samuelcolvin in [#9064](https://github.com/pydantic/pydantic/pull/9064)
 * Improve schema generation for nested dataclasses by @sydney-runkle in [#9114](https://github.com/pydantic/pydantic/pull/9114)
-* Fast path for ASCII python strings by @samuelcolvin in in [pydantic/jiter#72](https://github.com/pydantic/jiter/pull/72)
-* simd int and string parsing on `aarch64` by @samuelcolvin in in [pydantic/jiter#65](https://github.com/pydantic/jiter/pull/65)
-* Support json cow of `jiter` by @davidhewitt in [pydantic/pydantic-core#1231](https://github.com/pydantic/pydantic-core/pull/1231)
+* Fast path for ASCII python string creation in JSON by @samuelcolvin in in [pydantic/jiter#72](https://github.com/pydantic/jiter/pull/72)
+* SIMD integer and string JSON parsing on `aarch64`(**Note:** SIMD on x86 will be implemented in a future release) by @samuelcolvin in in [pydantic/jiter#65](https://github.com/pydantic/jiter/pull/65)
+* Support JSON `Cow<str>` from `jiter` by @davidhewitt in [pydantic/pydantic-core#1231](https://github.com/pydantic/pydantic-core/pull/1231)
 * MAJOR performance improvement: update to PyO3 0.21 final by @davidhewitt in [pydantic/pydantic-core#1248](https://github.com/pydantic/pydantic-core/pull/1248)
-* caching strings from JSON by @samuelcolvin in [pydantic/pydantic-core#1240](https://github.com/pydantic/pydantic-core/pull/1240)
+* cache Python strings by @samuelcolvin in [pydantic/pydantic-core#1240](https://github.com/pydantic/pydantic-core/pull/1240)
 
 #### Fixes
 
