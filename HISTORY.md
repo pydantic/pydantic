@@ -1,3 +1,9 @@
+## v1.10.15 (2024-04-03)
+
+* Add pydantic.v1 namespace to Pydantic v1 by @exs-dmiketa in https://github.com/pydantic/pydantic/pull/9042
+* Relax version of typing-extensions for V1 by @SonOfLilit in https://github.com/pydantic/pydantic/pull/8819
+* patch fix for mypy by @sydney-runkle in https://github.com/pydantic/pydantic/pull/8765
+
 ## v1.10.14 (2024-01-19)
 
 * Update install.md by @dmontagu in https://github.com/pydantic/pydantic/pull/7690
