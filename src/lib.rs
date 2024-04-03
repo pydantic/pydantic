@@ -34,6 +34,7 @@ pub use errors::{
 };
 pub use serializers::{
     to_json, to_jsonable_python, PydanticSerializationError, PydanticSerializationUnexpectedValue, SchemaSerializer,
+    WarningsArg,
 };
 pub use validators::{validate_core_schema, PySome, SchemaValidator};
 

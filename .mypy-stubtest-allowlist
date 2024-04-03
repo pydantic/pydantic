@@ -2,3 +2,6 @@
 pydantic_core._pydantic_core.PydanticUndefinedType.new
 # As per #1240, from_json has custom logic to coverage the `cache_strings` kwarg
 pydantic_core._pydantic_core.from_json
+# the `warnings` kwarg for SchemaSerializer functions has custom logic
+pydantic_core._pydantic_core.SchemaSerializer.to_python
+pydantic_core._pydantic_core.SchemaSerializer.to_json

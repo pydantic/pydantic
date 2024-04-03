@@ -1,9 +1,10 @@
 use std::cell::RefCell;
 use std::fmt;
 
-use pyo3::exceptions::PyValueError;
+use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::intern;
 use pyo3::prelude::*;
+use pyo3::types::PyBool;
 
 use serde::ser::Error;
 
@@ -14,6 +15,7 @@ use crate::recursion_guard::ContainsRecursionState;
 use crate::recursion_guard::RecursionError;
 use crate::recursion_guard::RecursionGuard;
 use crate::recursion_guard::RecursionState;
+use crate::PydanticSerializationError;
 
 /// this is ugly, would be much better if extra could be stored in `SerializationState`
 /// then `SerializationState` got a `serialize_infer` method, but I couldn't get it to work
@@ -64,7 +66,7 @@ impl DuckTypingSerMode {
 
 impl SerializationState {
     pub fn new(timedelta_mode: &str, bytes_mode: &str, inf_nan_mode: &str) -> PyResult<Self> {
-        let warnings = CollectWarnings::new(false);
+        let warnings = CollectWarnings::new(WarningsMode::None);
         let rec_guard = SerRecursionState::default();
         let config = SerializationConfig::from_args(timedelta_mode, bytes_mode, inf_nan_mode)?;
         Ok(Self {
@@ -325,23 +327,61 @@ impl ToPyObject for SerMode {
     }
 }
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum WarningsMode {
+    None,
+    Warn,
+    Error,
+}
+
+impl<'py> FromPyObject<'py> for WarningsMode {
+    fn extract_bound(ob: &Bound<'py, PyAny>) -> PyResult<WarningsMode> {
+        if let Ok(bool_mode) = ob.downcast::<PyBool>() {
+            Ok(bool_mode.is_true().into())
+        } else if let Ok(str_mode) = ob.extract::<&str>() {
+            match str_mode {
+                "none" => Ok(Self::None),
+                "warn" => Ok(Self::Warn),
+                "error" => Ok(Self::Error),
+                _ => Err(PyValueError::new_err(
+                    "Invalid warnings parameter, should be `'none'`, `'warn'`, `'error'` or a `bool`",
+                )),
+            }
+        } else {
+            Err(PyTypeError::new_err(
+                "Invalid warnings parameter, should be `'none'`, `'warn'`, `'error'` or a `bool`",
+            ))
+        }
+    }
+}
+
+impl From<bool> for WarningsMode {
+    fn from(mode: bool) -> Self {
+        if mode {
+            Self::Warn
+        } else {
+            Self::None
+        }
+    }
+}
+
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub(crate) struct CollectWarnings {
-    active: bool,
+    mode: WarningsMode,
     warnings: RefCell<Option<Vec<String>>>,
 }
 
 impl CollectWarnings {
-    pub(crate) fn new(active: bool) -> Self {
+    pub(crate) fn new(mode: WarningsMode) -> Self {
         Self {
-            active,
+            mode,
             warnings: RefCell::new(None),
         }
     }
 
     pub fn custom_warning(&self, warning: String) {
-        if self.active {
+        if self.mode != WarningsMode::None {
             self.add_warning(warning);
         }
     }
@@ -379,7 +419,7 @@ impl CollectWarnings {
     }
 
     fn fallback_warning(&self, field_type: &str, value: &Bound<'_, PyAny>) {
-        if self.active {
+        if self.mode != WarningsMode::None {
             let type_name = value
                 .get_type()
                 .qualname()
@@ -400,17 +440,20 @@ impl CollectWarnings {
     }
 
     pub fn final_check(&self, py: Python) -> PyResult<()> {
-        if self.active {
-            match *self.warnings.borrow() {
-                Some(ref warnings) => {
-                    let message = format!("Pydantic serializer warnings:\n  {}", warnings.join("\n  "));
+        if self.mode == WarningsMode::None {
+            return Ok(());
+        }
+        match *self.warnings.borrow() {
+            Some(ref warnings) => {
+                let message = format!("Pydantic serializer warnings:\n  {}", warnings.join("\n  "));
+                if self.mode == WarningsMode::Warn {
                     let user_warning_type = py.import_bound("builtins")?.getattr("UserWarning")?;
                     PyErr::warn_bound(py, &user_warning_type, &message, 0)
+                } else {
+                    Err(PydanticSerializationError::new_err(message))
                 }
-                _ => Ok(()),
             }
-        } else {
-            Ok(())
+            _ => Ok(()),
         }
     }
 }

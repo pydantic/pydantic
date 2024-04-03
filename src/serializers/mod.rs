@@ -10,7 +10,7 @@ use crate::py_gc::PyGcTraverse;
 
 use config::SerializationConfig;
 pub use errors::{PydanticSerializationError, PydanticSerializationUnexpectedValue};
-use extra::{CollectWarnings, SerRecursionState};
+use extra::{CollectWarnings, SerRecursionState, WarningsMode};
 pub(crate) use extra::{DuckTypingSerMode, Extra, SerMode, SerializationState};
 pub use shared::CombinedSerializer;
 use shared::{to_json_bytes, BuildSerializer, TypeSerializer};
@@ -26,6 +26,12 @@ mod ob_type;
 pub mod ser;
 mod shared;
 mod type_serializers;
+
+#[derive(FromPyObject)]
+pub enum WarningsArg {
+    Bool(bool),
+    Literal(WarningsMode),
+}
 
 #[pyclass(module = "pydantic_core._pydantic_core", frozen)]
 #[derive(Debug)]
@@ -98,7 +104,7 @@ impl SchemaSerializer {
 
     #[allow(clippy::too_many_arguments)]
     #[pyo3(signature = (value, *, mode = None, include = None, exclude = None, by_alias = true,
-        exclude_unset = false, exclude_defaults = false, exclude_none = false, round_trip = false, warnings = true,
+        exclude_unset = false, exclude_defaults = false, exclude_none = false, round_trip = false, warnings = WarningsArg::Bool(true),
         fallback = None, serialize_as_any = false, context = None))]
     pub fn to_python(
         &self,
@@ -112,13 +118,17 @@ impl SchemaSerializer {
         exclude_defaults: bool,
         exclude_none: bool,
         round_trip: bool,
-        warnings: bool,
+        warnings: WarningsArg,
         fallback: Option<&Bound<'_, PyAny>>,
         serialize_as_any: bool,
         context: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<PyObject> {
         let mode: SerMode = mode.into();
-        let warnings = CollectWarnings::new(warnings);
+        let warnings_mode = match warnings {
+            WarningsArg::Bool(b) => b.into(),
+            WarningsArg::Literal(mode) => mode,
+        };
+        let warnings = CollectWarnings::new(warnings_mode);
         let rec_guard = SerRecursionState::default();
         let duck_typing_ser_mode = DuckTypingSerMode::from_bool(serialize_as_any);
         let extra = self.build_extra(
@@ -143,7 +153,7 @@ impl SchemaSerializer {
 
     #[allow(clippy::too_many_arguments)]
     #[pyo3(signature = (value, *, indent = None, include = None, exclude = None, by_alias = true,
-        exclude_unset = false, exclude_defaults = false, exclude_none = false, round_trip = false, warnings = true,
+        exclude_unset = false, exclude_defaults = false, exclude_none = false, round_trip = false, warnings = WarningsArg::Bool(true),
         fallback = None, serialize_as_any = false, context = None))]
     pub fn to_json(
         &self,
@@ -157,12 +167,16 @@ impl SchemaSerializer {
         exclude_defaults: bool,
         exclude_none: bool,
         round_trip: bool,
-        warnings: bool,
+        warnings: WarningsArg,
         fallback: Option<&Bound<'_, PyAny>>,
         serialize_as_any: bool,
         context: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<PyObject> {
-        let warnings = CollectWarnings::new(warnings);
+        let warnings_mode = match warnings {
+            WarningsArg::Bool(b) => b.into(),
+            WarningsArg::Literal(mode) => mode,
+        };
+        let warnings = CollectWarnings::new(warnings_mode);
         let rec_guard = SerRecursionState::default();
         let duck_typing_ser_mode = DuckTypingSerMode::from_bool(serialize_as_any);
         let extra = self.build_extra(

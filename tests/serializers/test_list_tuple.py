@@ -4,7 +4,7 @@ from functools import partial
 
 import pytest
 
-from pydantic_core import SchemaError, SchemaSerializer, core_schema, validate_core_schema
+from pydantic_core import PydanticSerializationError, SchemaError, SchemaSerializer, core_schema, validate_core_schema
 
 
 def test_list_any():
@@ -52,6 +52,16 @@ def test_list_str_fallback():
         '  Expected `str` but got `int` - serialized value may not be as expected\n'
         '  Expected `str` but got `int` - serialized value may not be as expected'
     ]
+    with pytest.raises(PydanticSerializationError) as warning_ex:
+        v.to_json([1, 2, 3], warnings='error')
+    assert str(warning_ex.value) == ''.join(
+        [
+            'Pydantic serializer warnings:\n'
+            '  Expected `str` but got `int` - serialized value may not be as expected\n'
+            '  Expected `str` but got `int` - serialized value may not be as expected\n'
+            '  Expected `str` but got `int` - serialized value may not be as expected'
+        ]
+    )
 
 
 def test_tuple_any():
