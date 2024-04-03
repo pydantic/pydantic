@@ -146,7 +146,6 @@ def test_computed_field_raises_correct_attribute_error():
         Model().invalid_field
 
 
-@pytest.mark.xfail(reason='Needs support in pydantic-core')
 @pytest.mark.parametrize('number', (1, 42, 443, 11.11, 0.553))
 def test_coerce_numbers_to_str_field_option(number):
     class Model(BaseModel):
@@ -155,7 +154,6 @@ def test_coerce_numbers_to_str_field_option(number):
     assert Model(field=number).field == str(number)
 
 
-@pytest.mark.xfail(reason='Needs support in pydantic-core')
 @pytest.mark.parametrize('number', (1, 42, 443, 11.11, 0.553))
 def test_coerce_numbers_to_str_field_precedence(number):
     class Model(BaseModel):
