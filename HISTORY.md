@@ -28,6 +28,7 @@
 * Add support for `typing.Self` by @Youssefares in [#9023](https://github.com/pydantic/pydantic/pull/9023)
 * Ability to pass `context` to serialization by @ornariece in [#8965](https://github.com/pydantic/pydantic/pull/8965)
 * Add feedback widget to docs with flarelytics integration by @sydney-runkle in [#9129](https://github.com/pydantic/pydantic/pull/9129)
+* Support for parsing partial JSON strings in Python by @samuelcolvin in [pydantic/jiter#66](https://github.com/pydantic/jiter/pull/66)
 
 #### Changes
 
