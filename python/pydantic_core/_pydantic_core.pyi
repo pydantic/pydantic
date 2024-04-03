@@ -264,7 +264,7 @@ class SchemaSerializer:
         exclude_defaults: bool = False,
         exclude_none: bool = False,
         round_trip: bool = False,
-        warnings: bool = True,
+        warnings: bool | Literal['none', 'warn', 'error'] = True,
         fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
         context: dict[str, Any] | None = None,
@@ -284,7 +284,8 @@ class SchemaSerializer:
             exclude_defaults: Whether to exclude fields that are equal to their default value.
             exclude_none: Whether to exclude fields that have a value of `None`.
             round_trip: Whether to enable serialization and validation round-trip support.
-            warnings: Whether to log warnings when invalid fields are encountered.
+            warnings: How to handle invalid fields. False/"none" ignores them, True/"warn" logs errors,
+                "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
             fallback: A function to call when an unknown value is encountered,
                 if `None` a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
@@ -309,7 +310,7 @@ class SchemaSerializer:
         exclude_defaults: bool = False,
         exclude_none: bool = False,
         round_trip: bool = False,
-        warnings: bool = True,
+        warnings: bool | Literal['none', 'warn', 'error'] = True,
         fallback: Callable[[Any], Any] | None = None,
         serialize_as_any: bool = False,
         context: dict[str, Any] | None = None,
@@ -328,7 +329,8 @@ class SchemaSerializer:
             exclude_defaults: Whether to exclude fields that are equal to their default value.
             exclude_none: Whether to exclude fields that have a value of `None`.
             round_trip: Whether to enable serialization and validation round-trip support.
-            warnings: Whether to log warnings when invalid fields are encountered.
+            warnings: How to handle invalid fields. False/"none" ignores them, True/"warn" logs errors,
+                "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
             fallback: A function to call when an unknown value is encountered,
                 if `None` a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError] error is raised.
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
