@@ -1293,10 +1293,10 @@ returned, so sub-models will not be converted to dictionaries.</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;banana&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}))</span>
 <span class="c1">#&gt; banana=0 foo=&#39;hello&#39; bar=BarModel(whatever=123)</span>
 <span class="nb">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">bar</span><span class="p">),</span> <span class="nb">id</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span><span class="n">bar</span><span class="p">))</span>
-<span class="c1">#&gt; 139757689260784 139757689260784</span>
+<span class="c1">#&gt; 140122777294864 140122777294864</span>
 <span class="c1"># normal copy gives the same object reference for `bar`</span>
 <span class="nb">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">bar</span><span class="p">),</span> <span class="nb">id</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">bar</span><span class="p">))</span>
-<span class="c1">#&gt; 139757689260784 139757689264432</span>
+<span class="c1">#&gt; 140122777294864 140122777298512</span>
 <span class="c1"># deep copy gives a new object reference for `bar`</span>
 </code></pre></div>
 </div>
