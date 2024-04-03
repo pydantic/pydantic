@@ -53,6 +53,8 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     validation_alias: str | AliasPath | AliasChoices | None
     serialization_alias: str | None
     title: str | None
+    title_priority: int | None
+    field_title_generator: typing_extensions.Callable[[str], str] | None
     description: str | None
     examples: list[Any] | None
     exclude: bool | None
@@ -129,6 +131,7 @@ class FieldInfo(_repr.Representation):
     validation_alias: str | AliasPath | AliasChoices | None
     serialization_alias: str | None
     title: str | None
+    title_priority: int | None
     description: str | None
     examples: list[Any] | None
     exclude: bool | None
@@ -152,6 +155,7 @@ class FieldInfo(_repr.Representation):
         'validation_alias',
         'serialization_alias',
         'title',
+        'title_priority',
         'description',
         'examples',
         'exclude',
@@ -213,6 +217,7 @@ class FieldInfo(_repr.Representation):
         self.serialization_alias = kwargs.pop('serialization_alias', None)
         alias_is_set = any(alias is not None for alias in (self.alias, self.validation_alias, self.serialization_alias))
         self.alias_priority = kwargs.pop('alias_priority', None) or 2 if alias_is_set else None
+        self.title_priority = kwargs.pop('title_priority', None) or 2 if self.title else None
         self.description = kwargs.pop('description', None)
         self.examples = kwargs.pop('examples', None)
         self.exclude = kwargs.pop('exclude', None)
@@ -633,6 +638,7 @@ _DefaultValues = dict(
     validation_alias=None,
     serialization_alias=None,
     title=None,
+    title_priority=None,
     description=None,
     examples=None,
     exclude=None,
@@ -668,6 +674,8 @@ def Field(  # noqa: C901
     validation_alias: str | AliasPath | AliasChoices | None = _Unset,
     serialization_alias: str | None = _Unset,
     title: str | None = _Unset,
+    title_priority: int | None = _Unset,
+    field_title_generator: typing_extensions.Callable[[str], str] | None = _Unset,
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
@@ -714,6 +722,8 @@ def Field(  # noqa: C901
         validation_alias: Like `alias`, but only affects validation, not serialization.
         serialization_alias: Like `alias`, but only affects serialization, not validation.
         title: Human-readable title.
+        title_priority: Priority of the title. This affects whether a title generator is used.
+        field_title_generator: A callable that takes a field name and returns title for it
         description: Human-readable description.
         examples: Example values for this field.
         exclude: Whether to exclude the field from the model serialization.
@@ -830,6 +840,8 @@ def Field(  # noqa: C901
         validation_alias=validation_alias,
         serialization_alias=serialization_alias,
         title=title,
+        title_priority=title_priority,
+        field_title_generator=field_title_generator,
         description=description,
         examples=examples,
         exclude=exclude,
@@ -969,6 +981,7 @@ class ComputedFieldInfo:
         alias: The alias of the property to be used during serialization.
         alias_priority: The priority of the alias. This affects whether an alias generator is used.
         title: Title of the computed field to include in the serialization JSON schema.
+        title_priority: Priority of the title. This affects whether a title generator is used.
         description: Description of the computed field to include in the serialization JSON schema.
         deprecated: A deprecation message, an instance of `warnings.deprecated` or the `typing_extensions.deprecated` backport,
             or a boolean. If `True`, a default deprecation message will be emitted when accessing the field.
@@ -983,6 +996,7 @@ class ComputedFieldInfo:
     alias: str | None
     alias_priority: int | None
     title: str | None
+    title_priority: int | None
     description: str | None
     deprecated: Deprecated | str | bool | None
     examples: list[Any] | None
@@ -1022,6 +1036,7 @@ def computed_field(
     alias: str | None = None,
     alias_priority: int | None = None,
     title: str | None = None,
+    title_priority: int | None = None,
     description: str | None = None,
     deprecated: Deprecated | str | bool | None = None,
     examples: list[Any] | None = None,
@@ -1044,6 +1059,7 @@ def computed_field(
     alias: str | None = None,
     alias_priority: int | None = None,
     title: str | None = None,
+    title_priority: int | None = None,
     description: str | None = None,
     deprecated: Deprecated | str | bool | None = None,
     examples: list[Any] | None = None,
@@ -1174,6 +1190,7 @@ def computed_field(
         alias: alias to use when serializing this computed field, only used when `by_alias=True`
         alias_priority: priority of the alias. This affects whether an alias generator is used
         title: Title to use when including this computed field in JSON Schema
+        title_priority: Priority of the title. This affects whether a title generator is used.
         description: Description to use when including this computed field in JSON Schema, defaults to the function's
             docstring
         deprecated: A deprecation message (or an instance of `warnings.deprecated` or the `typing_extensions.deprecated` backport).
@@ -1217,6 +1234,7 @@ def computed_field(
             alias,
             alias_priority,
             title,
+            title_priority,
             description,
             deprecated,
             examples,
