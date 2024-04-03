@@ -3,7 +3,7 @@ from enum import Enum
 
 import pytest
 
-from pydantic_core import SchemaSerializer, core_schema
+from pydantic_core import PydanticSerializationError, SchemaSerializer, core_schema
 
 
 def test_str():
@@ -34,13 +34,44 @@ def test_str_fallback():
         assert s.to_python(123, mode='json') == 123
     with pytest.warns(UserWarning, match='Expected `str` but got `int` - serialized value may not be as expected'):
         assert s.to_json(123) == b'123'
+    with pytest.warns(UserWarning, match='Expected `str` but got `int` - serialized value may not be as expected'):
+        assert s.to_python(123, warnings='warn') == 123
+    with pytest.warns(UserWarning, match='Expected `str` but got `int` - serialized value may not be as expected'):
+        assert s.to_python(123, mode='json', warnings='warn') == 123
+    with pytest.warns(UserWarning, match='Expected `str` but got `int` - serialized value may not be as expected'):
+        assert s.to_json(123, warnings='warn') == b'123'
+    with pytest.warns(UserWarning, match='Expected `str` but got `int` - serialized value may not be as expected'):
+        assert s.to_python(123, warnings=True) == 123
+    with pytest.warns(UserWarning, match='Expected `str` but got `int` - serialized value may not be as expected'):
+        assert s.to_python(123, mode='json', warnings=True) == 123
+    with pytest.warns(UserWarning, match='Expected `str` but got `int` - serialized value may not be as expected'):
+        assert s.to_json(123, warnings=True) == b'123'
 
 
 def test_str_no_warnings():
     s = SchemaSerializer(core_schema.str_schema())
     assert s.to_python(123, warnings=False) == 123
+    assert s.to_python(123, warnings='none') == 123
     assert s.to_python(123, mode='json', warnings=False) == 123
+    assert s.to_python(123, mode='json', warnings='none') == 123
     assert s.to_json(123, warnings=False) == b'123'
+    assert s.to_json(123, warnings='none') == b'123'
+
+
+def test_str_errors():
+    s = SchemaSerializer(core_schema.str_schema())
+    with pytest.raises(
+        PydanticSerializationError, match='Expected `str` but got `int` - serialized value may not be as expected'
+    ):
+        assert s.to_python(123, warnings='error') == 123
+    with pytest.raises(
+        PydanticSerializationError, match='Expected `str` but got `int` - serialized value may not be as expected'
+    ):
+        assert s.to_python(123, mode='json', warnings='error') == 123
+    with pytest.raises(
+        PydanticSerializationError, match='Expected `str` but got `int` - serialized value may not be as expected'
+    ):
+        assert s.to_json(123, warnings='error') == b'123'
 
 
 class StrSubclass(str):

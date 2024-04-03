@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use _pydantic_core::{SchemaSerializer, SchemaValidator};
+    use _pydantic_core::{SchemaSerializer, SchemaValidator, WarningsArg};
     use pyo3::prelude::*;
     use pyo3::types::PyDict;
 
@@ -85,7 +85,20 @@ a = A()
             let serialized = SchemaSerializer::py_new(schema, None)
                 .unwrap()
                 .to_json(
-                    py, &a, None, None, None, true, false, false, false, false, true, None, false, None,
+                    py,
+                    &a,
+                    None,
+                    None,
+                    None,
+                    true,
+                    false,
+                    false,
+                    false,
+                    false,
+                    WarningsArg::Bool(true),
+                    None,
+                    false,
+                    None,
                 )
                 .unwrap();
             let serialized: &[u8] = serialized.extract(py).unwrap();
@@ -186,7 +199,7 @@ dump_json_input_2 = {'a': 'something'}
                     false,
                     false,
                     false,
-                    false,
+                    WarningsArg::Bool(false),
                     None,
                     false,
                     None,
@@ -207,7 +220,7 @@ dump_json_input_2 = {'a': 'something'}
                     false,
                     false,
                     false,
-                    false,
+                    WarningsArg::Bool(false),
                     None,
                     false,
                     None,
