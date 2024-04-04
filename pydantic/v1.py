@@ -2,6 +2,13 @@
 # flake8: noqa
 from pydantic import *
 
+
+import os
+
+# allows importing of objects from modules directly
+# i.e. from pydantic.v1.fields import ModelField
+__path__ = [os.path.dirname(os.path.abspath(__file__))]
+
 # WARNING __all__ from .errors is not included here, it will be removed as an export here in v2
 # please use "from pydantic.errors import ..." instead
 __all__ = [
