@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -5,9 +7,16 @@ from pydantic.dataclasses import dataclass
 from pydantic.json_schema import model_json_schema
 
 
+def make_title(name: str):
+    def _capitalize(v: str):
+        return v[0].upper() + v[1:]
+
+    return re.sub(r'(?<=[a-z])([A-Z])', r' \1', _capitalize(name))
+
+
 @pytest.mark.parametrize(
     'class_title_generator',
-    (lambda m: m.lower(), lambda m: m * 2, lambda m: 'My Title'),
+    (lambda m: m.lower(), lambda m: m * 2, lambda m: 'My Title', make_title),
 )
 def test_class_title_generator(class_title_generator):
     class Model(BaseModel):
@@ -20,7 +29,9 @@ def test_class_title_generator(class_title_generator):
     }
 
 
-@pytest.mark.parametrize('class_title_generator', (lambda m: m.lower(), lambda m: m * 2, lambda m: 'My Title'))
+@pytest.mark.parametrize(
+    'class_title_generator', (lambda m: m.lower(), lambda m: m * 2, lambda m: 'My Title', make_title)
+)
 def test_class_title_generator_in_submodel(class_title_generator):
     class SubModel(BaseModel):
         model_config = ConfigDict(class_title_generator=class_title_generator)
@@ -45,7 +56,7 @@ def test_class_title_generator_returns_invalid_type(invalid_return_value):
             model_config = ConfigDict(class_title_generator=lambda m: invalid_return_value)
 
 
-@pytest.mark.parametrize('class_title_generator', (lambda m: m.lower(), lambda m: 'dc'))
+@pytest.mark.parametrize('class_title_generator', (lambda m: m.lower(), lambda m: 'dc', make_title))
 def test_dataclass_class_title_generator(class_title_generator):
     @dataclass(config=ConfigDict(class_title_generator=class_title_generator))
     class MyDataclass:
@@ -59,7 +70,7 @@ def test_dataclass_class_title_generator(class_title_generator):
     }
 
 
-@pytest.mark.parametrize('field_title_generator', (lambda f: f.upper(), lambda f: f.replace('_', '')))
+@pytest.mark.parametrize('field_title_generator', (lambda f: f.upper(), lambda f: f.replace('_', ''), make_title))
 def test_dataclass_field_title_generator(field_title_generator):
     @dataclass(config=ConfigDict(field_title_generator=field_title_generator))
     class MyDataclass:
@@ -79,7 +90,7 @@ def test_dataclass_field_title_generator(field_title_generator):
     }
 
 
-@pytest.mark.parametrize('field_title_generator', (lambda f: f.upper(), lambda f: f.replace('_', '')))
+@pytest.mark.parametrize('field_title_generator', (lambda f: f.upper(), lambda f: f.replace('_', ''), make_title))
 def test_model_field_title_generator(field_title_generator):
     class Model(BaseModel):
         model_config = ConfigDict(field_title_generator=field_title_generator)
