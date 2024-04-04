@@ -208,6 +208,7 @@ impl StrConstrainedValidator {
             || self.strip_whitespace
             || self.to_lower
             || self.to_upper
+            || self.coerce_numbers_to_str
     }
 }
 
