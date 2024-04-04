@@ -21,7 +21,7 @@ def test_model_title_generator(model_title_generator):
 
 
 @pytest.mark.parametrize('model_title_generator', (lambda m: m.lower(), lambda m: m * 2, lambda m: 'My Title'))
-def test_submodel_title_generator(model_title_generator):
+def test_model_title_generator_in_submodel(model_title_generator):
     class SubModel(BaseModel):
         model_config = ConfigDict(model_title_generator=model_title_generator)
 
@@ -45,18 +45,44 @@ def test_model_title_generator_returns_invalid_type(invalid_return_value):
             model_config = ConfigDict(model_title_generator=lambda m: invalid_return_value)
 
 
-@pytest.mark.parametrize('model_title_generator', (lambda m: m.lower(),))
+@pytest.mark.parametrize('model_title_generator', (lambda m: m.lower(), lambda m: 'dc'))
 def test_dataclass_model_title_generator(model_title_generator):
     @dataclass(config=ConfigDict(model_title_generator=model_title_generator))
     class MyDataclass:
         field_a: int
 
-    assert model_json_schema(MyDataclass) == {}
+    assert model_json_schema(MyDataclass) == {
+        'properties': {'field_a': {'title': 'Field A', 'type': 'integer'}},
+        'required': ['field_a'],
+        'title': model_title_generator(MyDataclass.__name__),
+        'type': 'object',
+    }
 
 
-def test_field_title_generator():
+@pytest.mark.parametrize('field_title_generator', (lambda f: f.upper(), lambda f: f.replace('_', '')))
+def test_dataclass_field_title_generator(field_title_generator):
+    @dataclass(config=ConfigDict(field_title_generator=field_title_generator))
+    class MyDataclass:
+        field_a: str
+        field_b: int
+        field___c: bool
+
+    assert model_json_schema(MyDataclass) == {
+        'properties': {
+            'field_a': {'title': field_title_generator('field_a'), 'type': 'string'},
+            'field_b': {'title': field_title_generator('field_b'), 'type': 'integer'},
+            'field___c': {'title': field_title_generator('field___c'), 'type': 'boolean'},
+        },
+        'required': ['field_a', 'field_b', 'field___c'],
+        'title': 'MyDataclass',
+        'type': 'object',
+    }
+
+
+@pytest.mark.parametrize('field_title_generator', (lambda f: f.upper(), lambda f: f.replace('_', '')))
+def test_model_field_title_generator(field_title_generator):
     class Model(BaseModel):
-        model_config = ConfigDict(field_title_generator=lambda f: f.replace('_', ''))
+        model_config = ConfigDict(field_title_generator=field_title_generator)
 
         field_a: str
         field_b: int
@@ -64,9 +90,9 @@ def test_field_title_generator():
 
     assert Model.model_json_schema() == {
         'properties': {
-            'field_a': {'title': 'fielda', 'type': 'string'},
-            'field_b': {'title': 'fieldb', 'type': 'integer'},
-            'field___c': {'title': 'fieldc', 'type': 'boolean'},
+            'field_a': {'title': field_title_generator('field_a'), 'type': 'string'},
+            'field_b': {'title': field_title_generator('field_b'), 'type': 'integer'},
+            'field___c': {'title': field_title_generator('field___c'), 'type': 'boolean'},
         },
         'required': ['field_a', 'field_b', 'field___c'],
         'title': 'Model',
@@ -74,7 +100,7 @@ def test_field_title_generator():
     }
 
 
-def test_field_title_overrides_field_title_generator():
+def test_field_title_overrides_field_title_generator_model():
     class Model(BaseModel):
         model_config = ConfigDict(field_title_generator=lambda f: f.replace('_', ''))
 
@@ -90,5 +116,24 @@ def test_field_title_overrides_field_title_generator():
         },
         'required': ['field_a', 'field_b', 'field___c'],
         'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_field_title_overrides_field_title_generator_dataclass():
+    @dataclass(config=ConfigDict(field_title_generator=lambda f: f.replace('_', '')))
+    class MyDataclass:
+        field_a: str = Field(title='MyFieldA', title_priority=2)
+        field_b: int = Field(title='MyFieldB', title_priority=1)
+        field___c: bool = Field(title='MyFieldC', title_priority=10)
+
+    assert model_json_schema(MyDataclass) == {
+        'properties': {
+            'field_a': {'title': 'MyFieldA', 'type': 'string'},
+            'field_b': {'title': 'fieldb', 'type': 'integer'},
+            'field___c': {'title': 'MyFieldC', 'type': 'boolean'},
+        },
+        'required': ['field_a', 'field_b', 'field___c'],
+        'title': 'MyDataclass',
         'type': 'object',
     }

@@ -227,8 +227,10 @@ def modify_model_json_schema(
         ref = original_schema['$ref']
         original_schema.clear()
         original_schema['allOf'] = [{'$ref': ref}]
-    if 'title' not in original_schema:
-        original_schema['title'] = title or cls.__name__
+    if title is not None:
+        original_schema['title'] = title
+    elif 'title' not in original_schema:
+        original_schema['title'] = cls.__name__
     # BaseModel; don't use cls.__doc__ as it will contain the verbose class signature by default
     docstring = None if cls is BaseModel else cls.__doc__
     if docstring and 'description' not in original_schema:
@@ -610,7 +612,9 @@ class GenerateSchema:
                 return core_schema.definition_reference_schema(model_ref)
 
     @staticmethod
-    def _get_model_title(md: type[BaseModel], config_wrapper: ConfigWrapper | None = None) -> str | None:
+    def _get_model_title(
+        md: type[BaseModel | StandardDataclass], config_wrapper: ConfigWrapper | None = None
+    ) -> str | None:
         """Get the title of a model if `model_title_generator` is set in the config, else return None"""
         if config_wrapper is None:
             return None
@@ -1618,6 +1622,11 @@ class GenerateSchema:
                 model_validators = decorators.model_validators.values()
                 inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
 
+                title = self._get_model_title(dataclass, self._config_wrapper)
+                metadata = build_metadata_dict(
+                    js_functions=[partial(modify_model_json_schema, cls=dataclass, title=title)]
+                )
+
                 dc_schema = core_schema.dataclass_schema(
                     dataclass,
                     inner_schema,
@@ -1626,6 +1635,7 @@ class GenerateSchema:
                     fields=[field.name for field in dataclasses.fields(dataclass)],
                     slots=has_slots,
                     config=core_config,
+                    metadata=metadata,
                 )
                 schema = self._apply_model_serializers(dc_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, model_validators, 'outer')
