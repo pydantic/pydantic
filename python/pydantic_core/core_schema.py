@@ -752,6 +752,7 @@ class StringSchema(TypedDict, total=False):
     to_upper: bool
     regex_engine: Literal['rust-regex', 'python-re']  # default: 'rust-regex'
     strict: bool
+    coerce_numbers_to_str: bool
     ref: str
     metadata: Any
     serialization: SerSchema
