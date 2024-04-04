@@ -6,30 +6,30 @@ from pydantic.json_schema import model_json_schema
 
 
 @pytest.mark.parametrize(
-    'model_title_generator',
+    'class_title_generator',
     (lambda m: m.lower(), lambda m: m * 2, lambda m: 'My Title'),
 )
-def test_model_title_generator(model_title_generator):
+def test_class_title_generator(class_title_generator):
     class Model(BaseModel):
-        model_config = ConfigDict(model_title_generator=model_title_generator)
+        model_config = ConfigDict(class_title_generator=class_title_generator)
 
     assert Model.model_json_schema() == {
         'properties': {},
-        'title': model_title_generator(Model.__name__),
+        'title': class_title_generator(Model.__name__),
         'type': 'object',
     }
 
 
-@pytest.mark.parametrize('model_title_generator', (lambda m: m.lower(), lambda m: m * 2, lambda m: 'My Title'))
-def test_model_title_generator_in_submodel(model_title_generator):
+@pytest.mark.parametrize('class_title_generator', (lambda m: m.lower(), lambda m: m * 2, lambda m: 'My Title'))
+def test_class_title_generator_in_submodel(class_title_generator):
     class SubModel(BaseModel):
-        model_config = ConfigDict(model_title_generator=model_title_generator)
+        model_config = ConfigDict(class_title_generator=class_title_generator)
 
     class Model(BaseModel):
         sub: SubModel
 
     assert Model.model_json_schema() == {
-        '$defs': {'SubModel': {'properties': {}, 'title': model_title_generator(SubModel.__name__), 'type': 'object'}},
+        '$defs': {'SubModel': {'properties': {}, 'title': class_title_generator(SubModel.__name__), 'type': 'object'}},
         'properties': {'sub': {'$ref': '#/$defs/SubModel'}},
         'required': ['sub'],
         'title': 'Model',
@@ -38,23 +38,23 @@ def test_model_title_generator_in_submodel(model_title_generator):
 
 
 @pytest.mark.parametrize('invalid_return_value', (1, 2, 3, tuple(), list(), object()))
-def test_model_title_generator_returns_invalid_type(invalid_return_value):
-    with pytest.raises(TypeError, match='model_title_generator .* must return str, not .*'):
+def test_class_title_generator_returns_invalid_type(invalid_return_value):
+    with pytest.raises(TypeError, match='class_title_generator .* must return str, not .*'):
 
         class Model(BaseModel):
-            model_config = ConfigDict(model_title_generator=lambda m: invalid_return_value)
+            model_config = ConfigDict(class_title_generator=lambda m: invalid_return_value)
 
 
-@pytest.mark.parametrize('model_title_generator', (lambda m: m.lower(), lambda m: 'dc'))
-def test_dataclass_model_title_generator(model_title_generator):
-    @dataclass(config=ConfigDict(model_title_generator=model_title_generator))
+@pytest.mark.parametrize('class_title_generator', (lambda m: m.lower(), lambda m: 'dc'))
+def test_dataclass_class_title_generator(class_title_generator):
+    @dataclass(config=ConfigDict(class_title_generator=class_title_generator))
     class MyDataclass:
         field_a: int
 
     assert model_json_schema(MyDataclass) == {
         'properties': {'field_a': {'title': 'Field A', 'type': 'integer'}},
         'required': ['field_a'],
-        'title': model_title_generator(MyDataclass.__name__),
+        'title': class_title_generator(MyDataclass.__name__),
         'type': 'object',
     }
 

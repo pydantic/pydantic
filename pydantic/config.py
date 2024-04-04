@@ -33,8 +33,8 @@ class ConfigDict(TypedDict, total=False):
     title: str | None
     """The title for the generated JSON schema, defaults to the model's name"""
 
-    model_title_generator: Callable[[str], str] | None
-    """A callable that takes a the model's name and returns the title for it"""
+    class_title_generator: Callable[[str], str] | None
+    """A callable that takes a the class' name and returns the title for it"""
 
     field_title_generator: Callable[[str], str] | None
     """A callable that takes a field name and returns title for it"""
