@@ -751,6 +751,8 @@ class GenerateJsonSchema:
             result['type'] = 'boolean'
         elif types == {list}:
             result['type'] = 'array'
+        elif types == {type(None)}:
+            result['type'] = 'null'
         return result
 
     def enum_schema(self, schema: core_schema.EnumSchema) -> JsonSchemaValue:

@@ -222,8 +222,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         fields_set = set()
 
         for name, field in cls.model_fields.items():
-            if field.alias and field.alias in values:
+            if field.alias is not None and field.alias in values:
                 fields_values[name] = values.pop(field.alias)
+                fields_set.add(name)
+            elif field.validation_alias is not None and field.validation_alias in values:
+                fields_values[name] = values.pop(field.validation_alias)
                 fields_set.add(name)
             elif name in values:
                 fields_values[name] = values.pop(name)
@@ -233,11 +236,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         if _fields_set is None:
             _fields_set = fields_set
 
-        _extra: dict[str, Any] | None = None
-        if cls.model_config.get('extra') == 'allow':
-            _extra = {}
-            for k, v in values.items():
-                _extra[k] = v
+        _extra: dict[str, Any] | None = (
+            {k: v for k, v in values.items()} if cls.model_config.get('extra') == 'allow' else None
+        )
         _object_setattr(m, '__dict__', fields_values)
         _object_setattr(m, '__pydantic_fields_set__', _fields_set)
         if not cls.__pydantic_root_model__:
