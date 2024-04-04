@@ -125,15 +125,14 @@ def _type_has_config(type_: Any) -> bool:
         return False
 
 
-# This is keep track of the frame depth for the TypeAdapter functions. This is required for _parent_depth used for
+# This is keeping track of the frame depth for the TypeAdapter functions. This is required for _parent_depth used for
 # ForwardRef resolution. We may enter the TypeAdapter schema building via different TypeAdapter functions. Hence, we
 # need to keep track of the frame depth relative to the originally provided _parent_depth.
 def _frame_depth(depth: int) -> Callable[[Callable[..., R]], Callable[..., R]]:
     def wrapper(func: Callable[..., R]) -> Callable[..., R]:
         @wraps(func)
         def wrapped(self: TypeAdapter, *args: Any, **kwargs: Any) -> R:
-            # depth + 1 for the wrapper function
-            with self._with_frame_depth(depth + 1):
+            with self._with_frame_depth(depth + 1):  # depth + 1 for the wrapper function
                 return func(self, *args, **kwargs)
 
         return wrapped
@@ -302,7 +301,7 @@ class TypeAdapter(Generic[T]):
     def core_schema(self) -> CoreSchema:
         """The pydantic-core schema used to build the SchemaValidator and SchemaSerializer."""
         if self._core_schema is None or isinstance(self._core_schema, _mock_val_ser.MockCoreSchema):
-            self._init_core_attrs(rebuild_mocks=True)  # Do not expose MockCoreSchema
+            self._init_core_attrs(rebuild_mocks=True)  # Do not expose MockCoreSchema from public function
         assert self._core_schema is not None and not isinstance(self._core_schema, _mock_val_ser.MockCoreSchema)
         return self._core_schema
 
@@ -311,7 +310,7 @@ class TypeAdapter(Generic[T]):
     def validator(self) -> SchemaValidator:
         """The pydantic-core SchemaValidator used to validate instances of the model."""
         if not isinstance(self._validator, SchemaValidator):
-            self._init_core_attrs(rebuild_mocks=True)  # Do not expose MockValSer
+            self._init_core_attrs(rebuild_mocks=True)  # Do not expose MockValSer from public function
         assert isinstance(self._validator, SchemaValidator)
         return self._validator
 
@@ -320,7 +319,7 @@ class TypeAdapter(Generic[T]):
     def serializer(self) -> SchemaSerializer:
         """The pydantic-core SchemaSerializer used to dump instances of the model."""
         if not isinstance(self._serializer, SchemaSerializer):
-            self._init_core_attrs(rebuild_mocks=True)  # Do not expose MockValSer
+            self._init_core_attrs(rebuild_mocks=True)  # Do not expose MockValSer from public function
         assert isinstance(self._serializer, SchemaSerializer)
         return self._serializer
 
@@ -329,13 +328,15 @@ class TypeAdapter(Generic[T]):
         return self._is_defer_build_config(config) if config is not None else False
 
     def _model_config(self) -> ConfigDict | None:
-        type_: Any = _typing_extra.annotated_type(self._type) or self._type  # FastAPI heavily uses Annotated
+        type_: Any = _typing_extra.annotated_type(self._type) or self._type  # Eg FastAPI heavily uses Annotated
         if _utils.lenient_issubclass(type_, BaseModel):
             return type_.model_config
         return getattr(type_, '__pydantic_config__', None)
 
     @staticmethod
     def _is_defer_build_config(config: ConfigDict) -> bool:
+        # TODO reevaluate this logic when we have a better understanding of how defer_build should work with TypeAdapter
+        # Should we drop the special _defer_build_mode check?
         return config.get('defer_build', False) is True and 'type_adapter' in config.get('_defer_build_mode', tuple())
 
     @_frame_depth(1)
