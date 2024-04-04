@@ -721,7 +721,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         _object_setattr(m, '__pydantic_extra__', copy(self.__pydantic_extra__))
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
 
-        if self.__pydantic_private__ is None:
+        if not hasattr(self, '__pydantic_private__') or self.__pydantic_private__ is None:
             _object_setattr(m, '__pydantic_private__', None)
         else:
             _object_setattr(
@@ -742,7 +742,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # and attempting a deepcopy would be marginally slower.
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
 
-        if self.__pydantic_private__ is None:
+        if not hasattr(self, '__pydantic_private__') or self.__pydantic_private__ is None:
             _object_setattr(m, '__pydantic_private__', None)
         else:
             _object_setattr(
@@ -902,7 +902,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 # Perform common checks first
                 if not (
                     self_type == other_type
-                    and self.__pydantic_private__ == other.__pydantic_private__
+                    and getattr(self, '__pydantic_private__', None) == getattr(other, '__pydantic_private__', None)
                     and self.__pydantic_extra__ == other.__pydantic_extra__
                 ):
                     return False
