@@ -1,5 +1,5 @@
 import sys
-from typing import Any, Generic, Iterator, List, Set, TypeVar
+from typing import Any, Generic, Iterator, List, Optional, Set, TypeVar
 
 import pytest
 from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt, Predicate
@@ -230,6 +230,17 @@ def test_modify_get_schema_annotated() -> None:
     ]
 
     calls.clear()
+
+
+def test_annotated_alias_at_low_level() -> None:
+    with pytest.warns(
+        UserWarning, match=r'Field "low_level_alias_field" have `alias` should be set at higher level to have affect'
+    ):
+
+        class Model(BaseModel):
+            low_level_alias_field: Optional[Annotated[int, Field(alias='field_alias')]] = None
+
+    assert Model(field_alias=1).low_level_alias_field is None
 
 
 def test_get_pydantic_core_schema_source_type() -> None:

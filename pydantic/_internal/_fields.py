@@ -226,6 +226,17 @@ def collect_model_fields(  # noqa: C901
                     # Nothing stops us from just creating a new FieldInfo for this type hint, so we do this.
                     field_info = FieldInfo.from_annotation(ann_type)
         else:
+            if hasattr(ann_type, '__args__'):
+                for anno_arg in ann_type.__args__:
+                    if _typing_extra.is_annotated(anno_arg):
+                        for anno_type_arg in _typing_extra.get_args(anno_arg):
+                            if isinstance(anno_type_arg, FieldInfo) and anno_type_arg.alias is not None:
+                                warnings.warn(
+                                    f'Field "{ann_name}" has `alias` should be set at higher level to have affect',
+                                    UserWarning,
+                                )
+                                break
+                        break
             field_info = FieldInfo.from_annotated_attribute(ann_type, default)
             # attributes which are fields are removed from the class namespace:
             # 1. To match the behaviour of annotation-only fields
