@@ -944,6 +944,21 @@ class ConfigDict(TypedDict, total=False):
         can be different depending on the Python version used.
     '''
 
+    cache_strings: bool | Literal['all', 'keys', 'none']
+    """
+    Whether to cache strings to avoid constructing new Python objects. Defaults to True.
+
+    Enabling this setting should significantly improve validation performance while increasing memory usage slightly.
+
+    - `True` or `'all'` (the default): cache all strings
+    - `keys`: cache only dictionary keys
+    - `False` or `none`: no caching
+
+    !!! note
+        `True` or `'all'` is required to cache strings during general validation because
+        validators don't know if they're in a key or a value.
+    """
+
 
 _TypeT = TypeVar('_TypeT', bound=type)
 
