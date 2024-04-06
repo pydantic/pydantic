@@ -112,9 +112,9 @@ The `cache_strings` setting is exposed via both [model config][pydantic.config.C
 
 The `cache_strings` setting can take any of the following values:
 
-* `True` or `'all'`: cache all strings
+* `True` or `'all'` (the default): cache all strings
 * `keys`: cache only dictionary keys
-* `False` or `none` (the default): no caching
+* `False` or `none`: no caching
 
 Using the string caching feature results in performance improvements, but increases memory usage slightly.
 
