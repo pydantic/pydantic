@@ -67,18 +67,17 @@ Starting in v2.7.0 and above, Pydantic's [JSON parser](https://docs.rs/jiter/lat
 ```py
 from pydantic_core import from_json
 
-
-partial_json_data = '["aa", "bb", "c' # (1)!
+partial_json_data = '["aa", "bb", "c'  # (1)!
 
 try:
     result = from_json(partial_json_data, allow_partial=False)
 except ValueError as ve:
-    print(ve)
-    # > EOF while parsing a string at line 1 column 15 # (2)
+    print(ve)  # (2)!
+    #> EOF while parsing a string at line 1 column 15
 
 result = from_json(partial_json_data, allow_partial=True)
-print(result)
-# > ['aa', 'bb'] # (3)
+print(result)  # (3)!
+#> ['aa', 'bb']
 ```
 
 1. The JSON list is incomplete - it's missing a closing `"]`
@@ -89,7 +88,6 @@ This also works for deserializing partial dictionaries. For example:
 
 ```py
 from pydantic_core import from_json
-
 
 partial_dog_json = '{"breed": "lab", "name": "fluffy", "friends": ["buddy", "spot", "rufus"], "age}'
 dog_dict = from_json(partial_dog_json, allow_partial=True)
