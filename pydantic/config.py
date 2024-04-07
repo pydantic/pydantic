@@ -34,10 +34,10 @@ class ConfigDict(TypedDict, total=False):
     """The title for the generated JSON schema, defaults to the model's name"""
 
     class_title_generator: Callable[[str], str] | None
-    """A callable that takes a class name and returns the title for it"""
+    """A callable that takes a class name and returns the title for it. Defaults to `None`."""
 
     field_title_generator: Callable[[str], str] | None
-    """A callable that takes a field name and returns title for it"""
+    """A callable that takes a field name and returns title for it. Defaults to `None`."""
 
     str_to_lower: bool
     """Whether to convert all characters to lowercase for str types. Defaults to `False`."""
