@@ -97,7 +97,7 @@ def test_model_config_field_title_generator(field_title_generator):
     }
 
 
-def test_field_title_precedence_over_config_field_title_generator():
+def test_field_title_priority_over_config_field_title_generator():
     class Model(BaseModel):
         model_config = ConfigDict(field_title_generator=lambda f: f.replace('_', ''))
 
