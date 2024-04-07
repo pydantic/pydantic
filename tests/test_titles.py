@@ -334,18 +334,24 @@ def test_class_title_precedence_over_generator():
 
 @pytest.mark.parametrize('invalid_return_value', (1, 2, 3, tuple(), list(), object()))
 def test_class_title_generator_returns_invalid_type(invalid_return_value):
-    with pytest.raises(TypeError, match='class_title_generator .* must return str, not .*'):
+    with pytest.raises(
+        TypeError, match=f'class_title_generator .* must return str, not {invalid_return_value.__class__}'
+    ):
 
         class Model(BaseModel):
             model_config = ConfigDict(class_title_generator=lambda m: invalid_return_value)
 
-    with pytest.raises(TypeError, match='class_title_generator .* must return str, not .*'):
+    with pytest.raises(
+        TypeError, match=f'class_title_generator .* must return str, not {invalid_return_value.__class__}'
+    ):
 
         @pydantic.dataclasses.dataclass(config=ConfigDict(class_title_generator=lambda m: invalid_return_value))
         class MyDataclass:
             pass
 
-    with pytest.raises(TypeError, match='class_title_generator .* must return str, not .*'):
+    with pytest.raises(
+        TypeError, match=f'class_title_generator .* must return str, not {invalid_return_value.__class__}'
+    ):
 
         class MyTypedDict(TypedDict):
             __pydantic_config__ = ConfigDict(class_title_generator=lambda m: invalid_return_value)
@@ -356,20 +362,26 @@ def test_class_title_generator_returns_invalid_type(invalid_return_value):
 
 @pytest.mark.parametrize('invalid_return_value', (1, 2, 3, tuple(), list(), object()))
 def test_config_field_title_generator_returns_invalid_type(invalid_return_value):
-    with pytest.raises(TypeError, match='field_title_generator .* must return str, not .*'):
+    with pytest.raises(
+        TypeError, match=f'field_title_generator .* must return str, not {invalid_return_value.__class__}'
+    ):
 
         class Model(BaseModel):
             model_config = ConfigDict(field_title_generator=lambda f: invalid_return_value)
 
             field_a: str
 
-    with pytest.raises(TypeError, match='field_title_generator .* must return str, not .*'):
+    with pytest.raises(
+        TypeError, match=f'field_title_generator .* must return str, not {invalid_return_value.__class__}'
+    ):
 
         @pydantic.dataclasses.dataclass(config=ConfigDict(field_title_generator=lambda f: invalid_return_value))
         class MyDataclass:
             field_a: str
 
-    with pytest.raises(TypeError, match='field_title_generator .* must return str, not .*'):
+    with pytest.raises(
+        TypeError, match=f'field_title_generator .* must return str, not {invalid_return_value.__class__}'
+    ):
 
         class MyTypedDict(TypedDict):
             __pydantic_config__ = ConfigDict(field_title_generator=lambda f: invalid_return_value)
@@ -380,14 +392,18 @@ def test_config_field_title_generator_returns_invalid_type(invalid_return_value)
 
 @pytest.mark.parametrize('invalid_return_value', (1, 2, 3, tuple(), list(), object()))
 def test_field_title_generator_returns_invalid_type(invalid_return_value):
-    with pytest.raises(TypeError, match='field_title_generator .* must return str, not .*'):
+    with pytest.raises(
+        TypeError, match=f'field_title_generator .* must return str, not {invalid_return_value.__class__}'
+    ):
 
         class Model(BaseModel):
             field_a: Any = Field(field_title_generator=lambda f: invalid_return_value)
 
         Model(field_a=invalid_return_value).model_json_schema()
 
-    with pytest.raises(TypeError, match='field_title_generator .* must return str, not .*'):
+    with pytest.raises(
+        TypeError, match=f'field_title_generator .* must return str, not {invalid_return_value.__class__}'
+    ):
 
         @pydantic.dataclasses.dataclass
         class MyDataclass:
@@ -395,7 +411,9 @@ def test_field_title_generator_returns_invalid_type(invalid_return_value):
 
         model_json_schema(MyDataclass)
 
-    with pytest.raises(TypeError, match='field_title_generator .* must return str, not .*'):
+    with pytest.raises(
+        TypeError, match=f'field_title_generator .* must return str, not {invalid_return_value.__class__}'
+    ):
 
         class MyTypedDict(TypedDict):
             field_a: Annotated[str, Field(field_title_generator=lambda f: invalid_return_value)]
