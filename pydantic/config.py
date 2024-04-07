@@ -44,6 +44,7 @@ class ConfigDict(TypedDict, total=False):
 
     str_to_upper: bool
     """Whether to convert all characters to uppercase for str types. Defaults to `False`."""
+
     str_strip_whitespace: bool
     """Whether to strip leading and trailing whitespace for str types."""
 
