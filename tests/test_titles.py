@@ -163,7 +163,7 @@ def test_dataclass_class_title_generator(class_title_generator):
 
 @pytest.mark.parametrize('field_title_generator', (lambda f: f.upper(), lambda f: f.replace('_', ''), make_title))
 def test_field_title_generator_in_dataclass_fields(field_title_generator):
-    @pydantic.dataclasses.dataclass(config=ConfigDict(field_title_generator=field_title_generator))
+    @pydantic.dataclasses.dataclass
     class MyDataclass:
         field_a: str = Field(field_title_generator=field_title_generator)
         field_b: int = Field(field_title_generator=field_title_generator)
