@@ -222,11 +222,7 @@ class FieldInfo(_repr.Representation):
         alias_is_set = any(alias is not None for alias in (self.alias, self.validation_alias, self.serialization_alias))
         self.alias_priority = kwargs.pop('alias_priority', None) or 2 if alias_is_set else None
         self.field_title_generator = kwargs.pop('field_title_generator', None)
-        self.title_priority = (
-            kwargs.pop('title_priority', None) or 2
-            if self.title is not None or self.field_title_generator is not None
-            else None
-        )
+        self.title_priority = kwargs.pop('title_priority', None) or 2 if self.title is not None else None
         self.description = kwargs.pop('description', None)
         self.examples = kwargs.pop('examples', None)
         self.exclude = kwargs.pop('exclude', None)
@@ -1202,7 +1198,7 @@ def computed_field(
         alias: alias to use when serializing this computed field, only used when `by_alias=True`
         alias_priority: priority of the alias. This affects whether an alias generator is used
         title: Title to use when including this computed field in JSON Schema
-        title_priority: Priority of the title. This affects whether a class-level title generator is used.
+        title_priority: Priority of the title. This affects whether a title generator is used.
         field_title_generator: A callable that takes a field name and returns title for it.
         description: Description to use when including this computed field in JSON Schema, defaults to the function's
             docstring
@@ -1235,7 +1231,7 @@ def computed_field(
         # if the function isn't already decorated with `@property` (or another descriptor), then we wrap it now
         f = _decorators.ensure_property(f)
         alias_priority = (alias_priority or 2) if alias is not None else None
-        title_priority = (title_priority or 2) if title is not None or field_title_generator is not None else None
+        title_priority = (title_priority or 2) if title is not None else None
 
         if repr is None:
             repr_: bool = not _wrapped_property_is_private(property_=f)

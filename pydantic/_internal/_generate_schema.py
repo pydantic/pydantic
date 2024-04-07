@@ -1067,7 +1067,7 @@ class GenerateSchema:
     def _apply_field_title_generator_to_field_info(
         field_title_generator: Callable[[str], str], field_info: FieldInfo | ComputedFieldInfo, field_name: str
     ) -> None:
-        """Apply a title_generator on a FieldInfo or ComputedFieldInfo instance if appropriate
+        """Apply a field_title_generator on a FieldInfo or ComputedFieldInfo instance if appropriate
         Args:
             field_title_generator: A callable that takes a string and returns a string.
             field_info: The FieldInfo or ComputedField instance to which the title_generator is (maybe) applied.
@@ -1151,13 +1151,7 @@ class GenerateSchema:
         schema = self._apply_field_serializers(
             schema, filter_field_decorator_info_by_field(decorators.field_serializers.values(), name)
         )
-        field_title_generator = (
-            field_info.field_title_generator
-            if field_info.field_title_generator
-            and field_info.title_priority is not None
-            and field_info.title_priority > 1
-            else self._config_wrapper.field_title_generator
-        )
+        field_title_generator = field_info.field_title_generator or self._config_wrapper.field_title_generator
         if field_title_generator is not None:
             self._apply_field_title_generator_to_field_info(field_title_generator, field_info, name)
 
@@ -1331,11 +1325,7 @@ class GenerateSchema:
                     ):
                         field_info.description = field_docstrings[field_name]
                     field_title_generator = (
-                        field_info.field_title_generator
-                        if field_info.field_title_generator
-                        and field_info.title_priority is not None
-                        and field_info.title_priority > 1
-                        else self._config_wrapper.field_title_generator
+                        field_info.field_title_generator or self._config_wrapper.field_title_generator
                     )
                     if field_title_generator is not None:
                         self._apply_field_title_generator_to_field_info(field_title_generator, field_info, field_name)
@@ -1778,11 +1768,7 @@ class GenerateSchema:
             self._apply_alias_generator_to_computed_field_info(
                 alias_generator=alias_generator, computed_field_info=d.info, computed_field_name=d.cls_var_name
             )
-        field_title_generator = (
-            d.info.field_title_generator
-            if d.info.field_title_generator and d.info.title_priority is not None and d.info.title_priority > 1
-            else self._config_wrapper.field_title_generator
-        )
+        field_title_generator = d.info.field_title_generator or self._config_wrapper.field_title_generator
         if field_title_generator is not None:
             self._apply_field_title_generator_to_field_info(field_title_generator, d.info, d.cls_var_name)
 
