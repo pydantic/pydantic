@@ -615,7 +615,7 @@ class GenerateSchema:
 
     @staticmethod
     def _get_class_title_from_config(
-        md: type[BaseModel | StandardDataclass], config_wrapper: ConfigWrapper | None = None
+        cls: type[BaseModel | StandardDataclass], config_wrapper: ConfigWrapper | None = None
     ) -> str | None:
         """Get the title of a class if `class_title_generator` or `title` are set in the config, else return None"""
         if config_wrapper is None:
@@ -626,7 +626,7 @@ class GenerateSchema:
 
         class_title_generator = config_wrapper.class_title_generator
         if class_title_generator:
-            title = class_title_generator(md.__name__)
+            title = class_title_generator(cls.__name__)
             if not isinstance(title, str):
                 raise TypeError(f'class_title_generator {class_title_generator} must return str, not {title.__class__}')
             return title
