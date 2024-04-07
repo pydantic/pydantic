@@ -1,10 +1,11 @@
 import re
-from typing import Annotated, Any, TypedDict
+from typing import Annotated, Any, Callable, List, TypedDict
 
 import pytest
 
 import pydantic
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, computed_field
+from pydantic.alias_generators import to_camel, to_pascal, to_snake
 from pydantic.json_schema import model_json_schema
 
 
@@ -15,10 +16,18 @@ def make_title(name: str):
     return re.sub(r'(?<=[a-z])([A-Z])', r' \1', _capitalize(name))
 
 
-@pytest.mark.parametrize(
-    'class_title_generator',
-    (lambda m: m.lower(), lambda m: m * 2, lambda m: 'My Title', make_title),
-)
+TITLE_GENERATORS: List[Callable[[str], str]] = [
+    lambda t: t.lower(),
+    lambda t: t * 2,
+    lambda t: 'My Title',
+    make_title,
+    to_camel,
+    to_snake,
+    to_pascal,
+]
+
+
+@pytest.mark.parametrize('class_title_generator', TITLE_GENERATORS)
 def test_model_class_title_generator(class_title_generator):
     class Model(BaseModel):
         model_config = ConfigDict(class_title_generator=class_title_generator)
@@ -30,9 +39,7 @@ def test_model_class_title_generator(class_title_generator):
     }
 
 
-@pytest.mark.parametrize(
-    'class_title_generator', (lambda m: m.lower(), lambda m: m * 2, lambda m: 'My Title', make_title)
-)
+@pytest.mark.parametrize('class_title_generator', TITLE_GENERATORS)
 def test_class_title_generator_in_submodel(class_title_generator):
     class SubModel(BaseModel):
         model_config = ConfigDict(class_title_generator=class_title_generator)
@@ -49,7 +56,7 @@ def test_class_title_generator_in_submodel(class_title_generator):
     }
 
 
-@pytest.mark.parametrize('field_title_generator', (lambda f: f.upper(), lambda f: f.replace('_', ''), make_title))
+@pytest.mark.parametrize('field_title_generator', TITLE_GENERATORS)
 def test_field_title_generator_in_model_fields(field_title_generator):
     class Model(BaseModel):
         field_a: str = Field(field_title_generator=field_title_generator)
@@ -71,7 +78,7 @@ def test_field_title_generator_in_model_fields(field_title_generator):
     }
 
 
-@pytest.mark.parametrize('field_title_generator', (lambda f: f.upper(), lambda f: f.replace('_', ''), make_title))
+@pytest.mark.parametrize('field_title_generator', TITLE_GENERATORS)
 def test_model_config_field_title_generator(field_title_generator):
     class Model(BaseModel):
         model_config = ConfigDict(field_title_generator=field_title_generator)
@@ -147,7 +154,7 @@ def test_field_title_priority_over_field_title_generator():
     }
 
 
-@pytest.mark.parametrize('class_title_generator', (lambda m: m.lower(), lambda m: 'dc', make_title))
+@pytest.mark.parametrize('class_title_generator', TITLE_GENERATORS)
 def test_dataclass_class_title_generator(class_title_generator):
     @pydantic.dataclasses.dataclass(config=ConfigDict(class_title_generator=class_title_generator))
     class MyDataclass:
@@ -161,7 +168,7 @@ def test_dataclass_class_title_generator(class_title_generator):
     }
 
 
-@pytest.mark.parametrize('field_title_generator', (lambda f: f.upper(), lambda f: f.replace('_', ''), make_title))
+@pytest.mark.parametrize('field_title_generator', TITLE_GENERATORS)
 def test_field_title_generator_in_dataclass_fields(field_title_generator):
     @pydantic.dataclasses.dataclass
     class MyDataclass:
@@ -179,7 +186,7 @@ def test_field_title_generator_in_dataclass_fields(field_title_generator):
     }
 
 
-@pytest.mark.parametrize('field_title_generator', (lambda f: f.upper(), lambda f: f.replace('_', ''), make_title))
+@pytest.mark.parametrize('field_title_generator', TITLE_GENERATORS)
 def test_dataclass_config_field_title_generator(field_title_generator):
     @pydantic.dataclasses.dataclass(config=ConfigDict(field_title_generator=field_title_generator))
     class MyDataclass:
@@ -199,10 +206,7 @@ def test_dataclass_config_field_title_generator(field_title_generator):
     }
 
 
-@pytest.mark.parametrize(
-    'class_title_generator',
-    (lambda m: m.lower(), lambda m: m * 2, lambda m: 'My Title', make_title),
-)
+@pytest.mark.parametrize('class_title_generator', TITLE_GENERATORS)
 def test_typeddict_class_title_generator(class_title_generator):
     class MyTypedDict(TypedDict):
         __pydantic_config__ = ConfigDict(class_title_generator=class_title_generator)
@@ -215,7 +219,7 @@ def test_typeddict_class_title_generator(class_title_generator):
     }
 
 
-@pytest.mark.parametrize('field_title_generator', (lambda f: f.upper(), lambda f: f.replace('_', ''), make_title))
+@pytest.mark.parametrize('field_title_generator', TITLE_GENERATORS)
 def test_field_title_generator_in_typeddict_fields(field_title_generator):
     class MyTypedDict(TypedDict):
         field_a: Annotated[str, Field(field_title_generator=field_title_generator)]
@@ -232,7 +236,7 @@ def test_field_title_generator_in_typeddict_fields(field_title_generator):
     }
 
 
-@pytest.mark.parametrize('field_title_generator', (lambda f: f.upper(), lambda f: f.replace('_', ''), make_title))
+@pytest.mark.parametrize('field_title_generator', TITLE_GENERATORS)
 def test_typeddict_config_field_title_generator(field_title_generator):
     class MyTypedDict(TypedDict):
         __pydantic_config__ = ConfigDict(field_title_generator=field_title_generator)
