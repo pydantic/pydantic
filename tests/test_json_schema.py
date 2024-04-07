@@ -232,8 +232,10 @@ def test_schema_class():
 
 def test_schema_repr():
     s = Field(4, title='Foo is Great')
-    assert str(s) == "annotation=NoneType required=False default=4 title='Foo is Great'"
-    assert repr(s) == "FieldInfo(annotation=NoneType, required=False, default=4, title='Foo is Great')"
+    assert str(s) == "annotation=NoneType required=False default=4 title='Foo is Great' title_priority=2"
+    assert (
+        repr(s) == "FieldInfo(annotation=NoneType, required=False, default=4, title='Foo is Great', title_priority=2)"
+    )
 
 
 def test_schema_class_by_alias():
