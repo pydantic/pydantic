@@ -1066,7 +1066,7 @@ class GenerateSchema:
     @staticmethod
     def _apply_field_title_generator_to_field_info(
         field_title_generator: Callable[[str], str], field_info: FieldInfo | ComputedFieldInfo, field_name: str
-    ):
+    ) -> None:
         """Apply a title_generator on a FieldInfo or ComputedFieldInfo instance if appropriate
         Args:
             field_title_generator: A callable that takes a string and returns a string.
@@ -1330,8 +1330,14 @@ class GenerateSchema:
                         and field_name in field_docstrings
                     ):
                         field_info.description = field_docstrings[field_name]
-                    field_title_generator = self._config_wrapper.field_title_generator
-                    if field_title_generator:
+                    field_title_generator = (
+                        field_info.field_title_generator
+                        if field_info.field_title_generator
+                        and field_info.title_priority is not None
+                        and field_info.title_priority > 1
+                        else self._config_wrapper.field_title_generator
+                    )
+                    if field_title_generator is not None:
                         self._apply_field_title_generator_to_field_info(field_title_generator, field_info, field_name)
                     fields[field_name] = self._generate_td_field_schema(
                         field_name, field_info, decorators, required=required
@@ -1772,6 +1778,13 @@ class GenerateSchema:
             self._apply_alias_generator_to_computed_field_info(
                 alias_generator=alias_generator, computed_field_info=d.info, computed_field_name=d.cls_var_name
             )
+        field_title_generator = (
+            d.info.field_title_generator
+            if d.info.field_title_generator and d.info.title_priority is not None and d.info.title_priority > 1
+            else self._config_wrapper.field_title_generator
+        )
+        if field_title_generator is not None:
+            self._apply_field_title_generator_to_field_info(field_title_generator, d.info, d.cls_var_name)
 
         def set_computed_field_metadata(schema: CoreSchemaOrField, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
             json_schema = handler(schema)

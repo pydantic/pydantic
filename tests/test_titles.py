@@ -4,7 +4,7 @@ from typing import Annotated, Any, TypedDict
 import pytest
 
 import pydantic
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, computed_field
 from pydantic.json_schema import model_json_schema
 
 
@@ -55,12 +55,17 @@ def test_field_title_generator_in_model_fields(field_title_generator):
         field_a: str = Field(field_title_generator=field_title_generator)
         field_b: int = Field(field_title_generator=field_title_generator)
 
-    assert Model.model_json_schema() == {
+        @computed_field(field_title_generator=field_title_generator)
+        def field_c(self) -> str:
+            return self.field_a
+
+    assert Model.model_json_schema(mode='serialization') == {
         'properties': {
             'field_a': {'title': field_title_generator('field_a'), 'type': 'string'},
             'field_b': {'title': field_title_generator('field_b'), 'type': 'integer'},
+            'field_c': {'readOnly': True, 'title': field_title_generator('field_c'), 'type': 'string'},
         },
-        'required': ['field_a', 'field_b'],
+        'required': ['field_a', 'field_b', 'field_c'],
         'title': 'Model',
         'type': 'object',
     }
@@ -75,19 +80,24 @@ def test_model_config_field_title_generator(field_title_generator):
         field_b: int
         field___c: bool
 
-    assert Model.model_json_schema() == {
+        @computed_field
+        def field_d(self) -> str:
+            return self.field_a
+
+    assert Model.model_json_schema(mode='serialization') == {
         'properties': {
             'field_a': {'title': field_title_generator('field_a'), 'type': 'string'},
             'field_b': {'title': field_title_generator('field_b'), 'type': 'integer'},
             'field___c': {'title': field_title_generator('field___c'), 'type': 'boolean'},
+            'field_d': {'readOnly': True, 'title': field_title_generator('field_d'), 'type': 'string'},
         },
-        'required': ['field_a', 'field_b', 'field___c'],
+        'required': ['field_a', 'field_b', 'field___c', 'field_d'],
         'title': 'Model',
         'type': 'object',
     }
 
 
-def test_field_title_overrides_config_field_title_generator_model():
+def test_field_title_precedence_over_config_field_title_generator():
     class Model(BaseModel):
         model_config = ConfigDict(field_title_generator=lambda f: f.replace('_', ''))
 
@@ -95,13 +105,18 @@ def test_field_title_overrides_config_field_title_generator_model():
         field_b: int = Field(title='Field B', title_priority=1)
         field___c: bool = Field(title='Field C', title_priority=10)
 
-    assert Model.model_json_schema() == {
+        @computed_field(title='Field D', title_priority=2)
+        def field_d(self) -> str:
+            return self.field_a
+
+    assert Model.model_json_schema(mode='serialization') == {
         'properties': {
             'field_a': {'title': 'Field A', 'type': 'string'},
             'field_b': {'title': 'fieldb', 'type': 'integer'},
             'field___c': {'title': 'Field C', 'type': 'boolean'},
+            'field_d': {'readOnly': True, 'title': 'Field D', 'type': 'string'},
         },
-        'required': ['field_a', 'field_b', 'field___c'],
+        'required': ['field_a', 'field_b', 'field___c', 'field_d'],
         'title': 'Model',
         'type': 'object',
     }
@@ -257,11 +272,18 @@ def test_field_title_precedence_over_generators():
     class Model(BaseModel):
         model_config = ConfigDict(field_title_generator=lambda f: f.upper())
 
-        field_a: str = Field(title='MyTitle', field_title_generator=lambda f: f.upper())
+        field_a: str = Field(title='MyFieldA', field_title_generator=lambda f: f.upper())
 
-    assert Model.model_json_schema() == {
-        'properties': {'field_a': {'title': 'MyTitle', 'type': 'string'}},
-        'required': ['field_a'],
+        @computed_field(title='MyFieldB', field_title_generator=lambda f: f.upper())
+        def field_b(self) -> str:
+            return self.field_a
+
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': {
+            'field_a': {'title': 'MyFieldA', 'type': 'string'},
+            'field_b': {'readOnly': True, 'title': 'MyFieldB', 'type': 'string'},
+        },
+        'required': ['field_a', 'field_b'],
         'title': 'Model',
         'type': 'object',
     }
