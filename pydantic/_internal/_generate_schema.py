@@ -535,7 +535,7 @@ class GenerateSchema:
             )
             config_wrapper = ConfigWrapper(cls.model_config, check=False)
             core_config = config_wrapper.core_config(cls)
-            title = self._get_class_title(cls, config_wrapper)
+            title = self._get_class_title_from_config(cls, config_wrapper)
             metadata = build_metadata_dict(js_functions=[partial(modify_model_json_schema, cls=cls, title=title)])
 
             model_validators = decorators.model_validators.values()
@@ -614,7 +614,7 @@ class GenerateSchema:
                 return core_schema.definition_reference_schema(model_ref)
 
     @staticmethod
-    def _get_class_title(
+    def _get_class_title_from_config(
         md: type[BaseModel | StandardDataclass], config_wrapper: ConfigWrapper | None = None
     ) -> str | None:
         """Get the title of a class if `class_title_generator` or `title` are set in the config, else return None"""
@@ -1330,14 +1330,18 @@ class GenerateSchema:
                         and field_name in field_docstrings
                     ):
                         field_info.description = field_docstrings[field_name]
+                    field_title_generator = self._config_wrapper.field_title_generator
+                    if field_title_generator:
+                        self._apply_field_title_generator_to_field_info(field_title_generator, field_info, field_name)
                     fields[field_name] = self._generate_td_field_schema(
                         field_name, field_info, decorators, required=required
                     )
 
+                title = self._get_class_title_from_config(typed_dict_cls, self._config_wrapper)
                 metadata = build_metadata_dict(
-                    js_functions=[partial(modify_model_json_schema, cls=typed_dict_cls)], typed_dict_cls=typed_dict_cls
+                    js_functions=[partial(modify_model_json_schema, cls=typed_dict_cls, title=title)],
+                    typed_dict_cls=typed_dict_cls,
                 )
-
                 td_schema = core_schema.typed_dict_schema(
                     fields,
                     computed_fields=[
@@ -1633,7 +1637,7 @@ class GenerateSchema:
                 model_validators = decorators.model_validators.values()
                 inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
 
-                title = self._get_class_title(dataclass, self._config_wrapper)
+                title = self._get_class_title_from_config(dataclass, self._config_wrapper)
                 metadata = build_metadata_dict(
                     js_functions=[partial(modify_model_json_schema, cls=dataclass, title=title)]
                 )
