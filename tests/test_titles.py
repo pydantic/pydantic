@@ -1,14 +1,30 @@
 import re
-from typing import Annotated, Any, Callable, List
+import typing
+from typing import Any, Callable, List
 
 import pytest
+import typing_extensions
 
 import pydantic
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, computed_field
 from pydantic.alias_generators import to_camel, to_pascal, to_snake
 from pydantic.json_schema import model_json_schema
 
-from .test_types_typeddict import fixture_typed_dict_all  # noqa
+from .test_types_typeddict import fixture_typed_dict, fixture_typed_dict_all  # noqa
+
+
+@pytest.fixture(
+    name='Annotated',
+    params=[
+        pytest.param(typing, id='typing.Annotated'),
+        pytest.param(typing_extensions, id='t_e.Annotated'),
+    ],
+)
+def fixture_annotated(request):
+    try:
+        return request.param.Annotated
+    except AttributeError:
+        pytest.skip(f'Annotated is not available from {request.param}')
 
 
 def make_title(name: str):
@@ -209,8 +225,8 @@ def test_dataclass_config_field_title_generator(field_title_generator):
 
 
 @pytest.mark.parametrize('class_title_generator', TITLE_GENERATORS)
-def test_typeddict_class_title_generator(class_title_generator, TypedDictAll):
-    class MyTypedDict(TypedDictAll):
+def test_typeddict_class_title_generator(class_title_generator, TypedDict):
+    class MyTypedDict(TypedDict):
         __pydantic_config__ = ConfigDict(class_title_generator=class_title_generator)
         pass
 
@@ -222,8 +238,8 @@ def test_typeddict_class_title_generator(class_title_generator, TypedDictAll):
 
 
 @pytest.mark.parametrize('field_title_generator', TITLE_GENERATORS)
-def test_field_title_generator_in_typeddict_fields(field_title_generator, TypedDictAll):
-    class MyTypedDict(TypedDictAll):
+def test_field_title_generator_in_typeddict_fields(field_title_generator, TypedDict, Annotated):
+    class MyTypedDict(TypedDict):
         field_a: Annotated[str, Field(field_title_generator=field_title_generator)]
         field_b: Annotated[int, Field(field_title_generator=field_title_generator)]
 
@@ -239,8 +255,8 @@ def test_field_title_generator_in_typeddict_fields(field_title_generator, TypedD
 
 
 @pytest.mark.parametrize('field_title_generator', TITLE_GENERATORS)
-def test_typeddict_config_field_title_generator(field_title_generator, TypedDictAll):
-    class MyTypedDict(TypedDictAll):
+def test_typeddict_config_field_title_generator(field_title_generator, TypedDict):
+    class MyTypedDict(TypedDict):
         __pydantic_config__ = ConfigDict(field_title_generator=field_title_generator)
         field_a: str
         field_b: int
@@ -263,7 +279,7 @@ def test_typeddict_config_field_title_generator(field_title_generator, TypedDict
     ((lambda f: f.lower(), lambda f: f.upper()), (lambda f: f, make_title)),
 )
 def test_field_level_field_title_generator_precedence_over_config_level(
-    field_level_title_generator, config_level_title_generator, TypedDictAll
+    field_level_title_generator, config_level_title_generator, TypedDict, Annotated
 ):
     class MyModel(BaseModel):
         model_config = ConfigDict(field_title_generator=field_level_title_generator)
@@ -287,7 +303,7 @@ def test_field_level_field_title_generator_precedence_over_config_level(
         'type': 'object',
     }
 
-    class MyTypedDict(TypedDictAll):
+    class MyTypedDict(TypedDict):
         __pydantic_config__ = ConfigDict(field_title_generator=field_level_title_generator)
         field_a: Annotated[str, Field(field_title_generator=field_level_title_generator)]
 
@@ -299,7 +315,7 @@ def test_field_level_field_title_generator_precedence_over_config_level(
     }
 
 
-def test_field_title_precedence_over_generators(TypedDictAll):
+def test_field_title_precedence_over_generators(TypedDict, Annotated):
     class Model(BaseModel):
         model_config = ConfigDict(field_title_generator=lambda f: f.upper())
 
@@ -330,7 +346,7 @@ def test_field_title_precedence_over_generators(TypedDictAll):
         'type': 'object',
     }
 
-    class MyTypedDict(TypedDictAll):
+    class MyTypedDict(TypedDict):
         __pydantic_config__ = ConfigDict(field_title_generator=lambda f: f.upper())
         field_a: Annotated[str, Field(title='MyTitle', field_title_generator=lambda f: f.upper())]
 
@@ -364,7 +380,7 @@ def test_class_title_precedence_over_generator():
 
 
 @pytest.mark.parametrize('invalid_return_value', (1, 2, 3, tuple(), list(), object()))
-def test_class_title_generator_returns_invalid_type(invalid_return_value, TypedDictAll):
+def test_class_title_generator_returns_invalid_type(invalid_return_value, TypedDict):
     with pytest.raises(
         TypeError, match=f'class_title_generator .* must return str, not {invalid_return_value.__class__}'
     ):
@@ -384,7 +400,7 @@ def test_class_title_generator_returns_invalid_type(invalid_return_value, TypedD
         TypeError, match=f'class_title_generator .* must return str, not {invalid_return_value.__class__}'
     ):
 
-        class MyTypedDict(TypedDictAll):
+        class MyTypedDict(TypedDict):
             __pydantic_config__ = ConfigDict(class_title_generator=lambda m: invalid_return_value)
             pass
 
@@ -392,7 +408,7 @@ def test_class_title_generator_returns_invalid_type(invalid_return_value, TypedD
 
 
 @pytest.mark.parametrize('invalid_return_value', (1, 2, 3, tuple(), list(), object()))
-def test_config_field_title_generator_returns_invalid_type(invalid_return_value, TypedDictAll):
+def test_config_field_title_generator_returns_invalid_type(invalid_return_value, TypedDict):
     with pytest.raises(
         TypeError, match=f'field_title_generator .* must return str, not {invalid_return_value.__class__}'
     ):
@@ -414,7 +430,7 @@ def test_config_field_title_generator_returns_invalid_type(invalid_return_value,
         TypeError, match=f'field_title_generator .* must return str, not {invalid_return_value.__class__}'
     ):
 
-        class MyTypedDict(TypedDictAll):
+        class MyTypedDict(TypedDict):
             __pydantic_config__ = ConfigDict(field_title_generator=lambda f: invalid_return_value)
             field_a: str
 
@@ -422,7 +438,7 @@ def test_config_field_title_generator_returns_invalid_type(invalid_return_value,
 
 
 @pytest.mark.parametrize('invalid_return_value', (1, 2, 3, tuple(), list(), object()))
-def test_field_title_generator_returns_invalid_type(invalid_return_value, TypedDictAll):
+def test_field_title_generator_returns_invalid_type(invalid_return_value, TypedDict, Annotated):
     with pytest.raises(
         TypeError, match=f'field_title_generator .* must return str, not {invalid_return_value.__class__}'
     ):
@@ -446,7 +462,7 @@ def test_field_title_generator_returns_invalid_type(invalid_return_value, TypedD
         TypeError, match=f'field_title_generator .* must return str, not {invalid_return_value.__class__}'
     ):
 
-        class MyTypedDict(TypedDictAll):
+        class MyTypedDict(TypedDict):
             field_a: Annotated[str, Field(field_title_generator=lambda f: invalid_return_value)]
 
         TypeAdapter(MyTypedDict)
