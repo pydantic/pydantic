@@ -218,7 +218,9 @@ def modify_model_json_schema(
     Returns:
         JsonSchemaValue: The updated JSON schema.
     """
+    from ..dataclasses import is_pydantic_dataclass
     from ..main import BaseModel
+    from ._dataclasses import is_builtin_dataclass
 
     json_schema = handler(schema_or_field)
     original_schema = handler.resolve_ref_schema(json_schema)
@@ -231,8 +233,8 @@ def modify_model_json_schema(
         original_schema['title'] = title
     elif 'title' not in original_schema:
         original_schema['title'] = cls.__name__
-    # BaseModel; don't use cls.__doc__ as it will contain the verbose class signature by default
-    docstring = None if cls is BaseModel else cls.__doc__
+    # BaseModel + Dataclass; don't use cls.__doc__ as it will contain the verbose class signature by default
+    docstring = None if cls is BaseModel or is_builtin_dataclass(cls) or is_pydantic_dataclass(cls) else cls.__doc__
     if docstring and 'description' not in original_schema:
         original_schema['description'] = inspect.cleandoc(docstring)
     return json_schema
@@ -615,9 +617,12 @@ class GenerateSchema:
     def _get_class_title(
         md: type[BaseModel | StandardDataclass], config_wrapper: ConfigWrapper | None = None
     ) -> str | None:
-        """Get the title of a class if `class_title_generator` is set in the config, else return None"""
+        """Get the title of a class if `class_title_generator` or `title` are set in the config, else return None"""
         if config_wrapper is None:
             return None
+
+        if config_wrapper.title:
+            return config_wrapper.title
 
         class_title_generator = config_wrapper.class_title_generator
         if class_title_generator:
@@ -1059,19 +1064,19 @@ class GenerateSchema:
                 computed_field_info.alias = _get_first_non_null(serialization_alias, alias)
 
     @staticmethod
-    def _apply_title_generator_to_field_info(
-        title_generator: Callable[[str], str], field_info: FieldInfo | ComputedFieldInfo, field_name: str
+    def _apply_field_title_generator_to_field_info(
+        field_title_generator: Callable[[str], str], field_info: FieldInfo | ComputedFieldInfo, field_name: str
     ):
         """Apply a title_generator on a FieldInfo or ComputedFieldInfo instance if appropriate
         Args:
-            title_generator: A callable that takes a string and returns a string.
+            field_title_generator: A callable that takes a string and returns a string.
             field_info: The FieldInfo or ComputedField instance to which the title_generator is (maybe) applied.
             field_name: The name of the field from which to generate the title.
         """
         if field_info.title_priority is None or field_info.title_priority <= 1 or field_info.title is None:
-            title = title_generator(field_name)
+            title = field_title_generator(field_name)
             if not isinstance(title, str):
-                raise TypeError(f'title_generator {title_generator} must return str, not {title.__class__}')
+                raise TypeError(f'field_title_generator {field_title_generator} must return str, not {title.__class__}')
 
             field_info.title = title
 
@@ -1146,9 +1151,15 @@ class GenerateSchema:
         schema = self._apply_field_serializers(
             schema, filter_field_decorator_info_by_field(decorators.field_serializers.values(), name)
         )
-        field_title_generator = self._config_wrapper.field_title_generator
+        field_title_generator = (
+            field_info.field_title_generator
+            if field_info.field_title_generator
+            and field_info.title_priority is not None
+            and field_info.title_priority > 1
+            else self._config_wrapper.field_title_generator
+        )
         if field_title_generator is not None:
-            self._apply_title_generator_to_field_info(field_title_generator, field_info, name)
+            self._apply_field_title_generator_to_field_info(field_title_generator, field_info, name)
 
         json_schema_updates = {
             'title': field_info.title,
