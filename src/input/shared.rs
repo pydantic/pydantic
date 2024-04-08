@@ -120,7 +120,8 @@ fn clean_int_str(mut s: &str) -> Option<Cow<str>> {
     // we don't want to parse as f64 then call `float_as_int` as it can lose precision for large ints, therefore
     // we strip `.0+` manually instead
     if let Some(i) = s.find('.') {
-        if s[i + 1..].chars().all(|c| c == '0') {
+        let decimal_part = &s[i + 1..];
+        if !decimal_part.is_empty() && decimal_part.chars().all(|c| c == '0') {
             s = &s[..i];
         }
     }
