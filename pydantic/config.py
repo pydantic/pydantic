@@ -951,12 +951,16 @@ class ConfigDict(TypedDict, total=False):
     Enabling this setting should significantly improve validation performance while increasing memory usage slightly.
 
     - `True` or `'all'` (the default): cache all strings
-    - `keys`: cache only dictionary keys
-    - `False` or `none`: no caching
+    - `'keys'`: cache only dictionary keys
+    - `False` or `'none'`: no caching
 
     !!! note
         `True` or `'all'` is required to cache strings during general validation because
         validators don't know if they're in a key or a value.
+
+    !!! tip
+        If repeated strings are rare, it's recommended to use `'keys'` or `'none'` to reduce memory usage,
+        as the performance difference is minimal if repeated strings are rare.
     """
 
 

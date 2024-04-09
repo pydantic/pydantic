@@ -62,7 +62,7 @@ in the original JSON input which contained the invalid value.
 
 ### Partial JSON Parsing
 
-Starting in v2.7.0 and above, Pydantic's [JSON parser](https://docs.rs/jiter/latest/jiter/) offers support for partial JSON parsing, which is exposed via [`pydantic_core.from_json`][pydantic_core.from_json]. Here's an example of this feature in action:
+**Starting in v2.7.0**, Pydantic's [JSON parser](https://docs.rs/jiter/latest/jiter/) offers support for partial JSON parsing, which is exposed via [`pydantic_core.from_json`][pydantic_core.from_json]. Here's an example of this feature in action:
 
 ```py
 from pydantic_core import from_json
@@ -105,14 +105,14 @@ In future versions of Pydantic, we expect to expand support for this feature thr
 
 ### Caching Strings
 
-Starting in v2.7.0 and above, Pydantic's [JSON parser](https://docs.rs/jiter/latest/jiter/) offers support for string caching.
+**Starting in v2.7.0**, Pydantic's [JSON parser](https://docs.rs/jiter/latest/jiter/) offers support for configuring how Python strings are cached during JSON parsing and validation (when Python strings are constructed from Rust strings during Python validation, e.g. after `strip_whitespace=True`).
 The `cache_strings` setting is exposed via both [model config][pydantic.config.ConfigDict] and [`pydantic_core.from_json`][pydantic_core.from_json].
 
 The `cache_strings` setting can take any of the following values:
 
 * `True` or `'all'` (the default): cache all strings
-* `keys`: cache only dictionary keys
-* `False` or `none`: no caching
+* `'keys'`: cache only dictionary keys, this **only** applies when used with [`pydantic_core.from_json`][pydantic_core.from_json] or when parsing JSON using [`Json`][pydantic.types.Json]
+* `False` or `'none'`: no caching
 
 Using the string caching feature results in performance improvements, but increases memory usage slightly.
 
