@@ -103,6 +103,32 @@ In future versions of Pydantic, we expect to expand support for this feature thr
 ([`pydantic.main.BaseModel.model_validate_json`][pydantic.main.BaseModel.model_validate_json] and
 [`pydantic.type_adapter.TypeAdapter.validate_json`][pydantic.type_adapter.TypeAdapter.validate_json]) or model configuration. Stay tuned 🚀!
 
+For now, you can use [`pydantic_core.from_json`][pydantic_core.from_json] in combination with [`pydantic.main.BaseModel.model_validate`][pydantic.main.BaseModel.model_validate] to achieve the same result. Here's an example:
+
+```py
+from pydantic_core import from_json
+
+from pydantic import BaseModel
+
+
+class Dog(BaseModel):
+    breed: str
+    name: str
+    friends: list
+
+
+partial_dog_json = '{"breed": "lab", "name": "fluffy", "friends": ["buddy", "spot", "rufus"], "age}'
+dog = Dog.model_validate(from_json(partial_dog_json, allow_partial=True))
+print(repr(dog))
+#> Dog(breed='lab', name='fluffy', friends=['buddy', 'spot', 'rufus'])
+```
+
+!!! tip
+    We recommend the following settings to ensure reliable parsing of partial JSON data:
+
+    1. For this to work reliably, fields on the model should have default values or be optional.
+    2. Set `on_error='omit'` in the core schema for types that can fail.
+
 ### Caching Strings
 
 **Starting in v2.7.0**, Pydantic's [JSON parser](https://docs.rs/jiter/latest/jiter/) offers support for configuring how Python strings are cached during JSON parsing and validation (when Python strings are constructed from Rust strings during Python validation, e.g. after `strip_whitespace=True`).
