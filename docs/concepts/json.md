@@ -116,6 +116,15 @@ The `cache_strings` setting can take any of the following values:
 
 Using the string caching feature results in performance improvements, but increases memory usage slightly.
 
+!!! note "String Caching Details"
+
+    1. Strings are cached using a fully associative cache with a size of
+    [16,384](https://github.com/pydantic/jiter/blob/5bbdcfd22882b7b286416b22f74abd549c7b2fd7/src/py_string_cache.rs#L113).
+    2. Only strings where `len(string) < 64` are cached.
+    3. There is some overhead to looking up the cache, which is normally worth it to avoid constructing strings.
+    However, if you know there will be very few repeated strings in your data, you might get a performance boost by disabling this setting with `cache_strings=False`.
+
+
 ## JSON Serialization
 
 ??? api "API Documentation"
