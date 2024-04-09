@@ -71,8 +71,8 @@ partial_json_data = '["aa", "bb", "c'  # (1)!
 
 try:
     result = from_json(partial_json_data, allow_partial=False)
-except ValueError as ve:
-    print(ve)  # (2)!
+except ValueError as e:
+    print(e)  # (2)!
     #> EOF while parsing a string at line 1 column 15
 
 result = from_json(partial_json_data, allow_partial=True)
@@ -81,7 +81,7 @@ print(result)  # (3)!
 ```
 
 1. The JSON list is incomplete - it's missing a closing `"]`
-2. When `allow_partial` is set to `False`, a parsing error occurs.
+2. When `allow_partial` is set to `False` (the default), a parsing error occurs.
 3. When `allow_partial` is set to `True`, part of the input is deserialized successfully.
 
 This also works for deserializing partial dictionaries. For example:
