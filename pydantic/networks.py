@@ -28,9 +28,10 @@ __all__ = [
     'AnyUrl',
     'AnyHttpUrl',
     'FileUrl',
+    'FtpUrl',
     'HttpUrl',
-    'AnyWebsocketUrl',
     'WebsocketUrl',
+    'AnyWebsocketUrl',
     'UrlConstraints',
     'EmailStr',
     'NameEmail',
@@ -198,61 +199,6 @@ WebsocketUrl = Annotated[Url, UrlConstraints(max_length=2083, allowed_schemes=['
 * TLD required
 * Host required
 * Max length 2083
-
-```py
-from pydantic import BaseModel, WebsocketUrl, ValidationError
-
-class MyModel(BaseModel):
-    url: WebsocketUrl
-
-m = MyModel(url='wss://example.com')  # (1)!
-print(m.url)
-#> wss://www.example.com/
-
-try:
-    MyModel(url='ftp://invalid.url')
-except ValidationError as e:
-    print(e)
-    '''
-    1 validation error for MyModel
-    url
-      URL scheme should be 'ws' or 'wss' [type=url_scheme, input_value='ftp://invalid.url', input_type=str]
-    '''
-
-try:
-    MyModel(url='not a url')
-except ValidationError as e:
-    print(e)
-    '''
-    1 validation error for MyModel
-    url
-      Input should be a valid URL, relative URL without a base [type=url_parsing, input_value='not a url', input_type=str]
-    '''
-```
-
-1. Note: mypy would prefer `m = MyModel(url=WebsocketUrl('wss://example.com'))`,
- but Pydantic will convert the string to an WebsocketUrl instance anyway.
-
-"International domains" (e.g. a URL where the host or TLD includes non-ascii characters) will be encoded via
-[punycode](https://en.wikipedia.org/wiki/Punycode) (see
-[this article](https://www.xudongz.com/blog/2017/idn-phishing/) for a good description of why this is important):
-
-```py
-from pydantic import BaseModel, WebsocketUrl
-
-class MyModel(BaseModel):
-    url: WebsocketUrl
-
-m1 = MyModel(url='wss://puny£code.com')
-print(m1.url)
-#> wss://xn--punycode-eja.com/
-m2 = MyModel(url='wss://аррӏе.com/')
-print(m2.url)
-#> wss://xn--80ak6aa92e.com/
-m3 = MyModel(url='wss://example.珠宝/')
-print(m3.url)
-#> wss://example.xn--pbt977c/
-```
 """
 FileUrl = Annotated[Url, UrlConstraints(allowed_schemes=['file'])]
 """A type that will accept any file URL.

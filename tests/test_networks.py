@@ -24,6 +24,7 @@ from pydantic import (
     Strict,
     UrlConstraints,
     ValidationError,
+    WebsocketUrl,
 )
 from pydantic.networks import validate_email
 
@@ -366,6 +367,19 @@ def test_http_urls_default_port(url, expected_port, expected_str):
     m = Model(v=url)
     assert m.v.port == expected_port
     assert str(m.v) == expected_str
+
+
+@pytest.mark.parametrize(
+    'value,expected',
+    [
+        ('ws://example.com', 'ws://example.com/'),
+        ('wss://example.com', 'wss://example.com/'),
+        ('wss://ws.example.com/', 'wss://ws.example.com/'),
+        ('ws://ws.example.com/', 'ws://ws.example.com/'),
+    ],
+)
+def test_websocket_url_success(value, expected):
+    assert WebsocketUrl(value).unicode_string() == expected
 
 
 @pytest.mark.parametrize(
