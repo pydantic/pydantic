@@ -12,6 +12,7 @@ from pydantic import (
     ClickHouseDsn,
     CockroachDsn,
     FileUrl,
+    FtpUrl,
     HttpUrl,
     KafkaDsn,
     MariaDBDsn,
@@ -376,10 +377,95 @@ def test_http_urls_default_port(url, expected_port, expected_str):
         ('wss://example.com', 'wss://example.com/'),
         ('wss://ws.example.com/', 'wss://ws.example.com/'),
         ('ws://ws.example.com/', 'ws://ws.example.com/'),
+        ('ws://example.com:8080', 'ws://example.com:8080/'),
+        ('ws://example.com/path', 'ws://example.com/path'),
+        ('wss://example.com:4433', 'wss://example.com:4433/'),
+        ('wss://example.com/path', 'wss://example.com/path'),
     ],
 )
 def test_websocket_url_success(value, expected):
-    assert WebsocketUrl(value).unicode_string() == expected
+    class Schema(BaseModel):
+        ws: WebsocketUrl
+
+    assert Schema(ws=value).ws.unicode_string() == expected
+
+
+@pytest.mark.parametrize(
+    'value,expected',
+    [
+        ('ws://example.com', 80),
+        ('wss://example.com', 443),
+        ('wss://ws.example.com/', 443),
+        ('ws://ws.example.com/', 80),
+        ('ws://example.com:8080', 8080),
+        ('ws://example.com:9999/path', 9999),
+        ('wss://example.com:4433', 4433),
+        ('wss://example.com/path', 443),
+    ],
+)
+def test_websocket_url_port_success(value, expected):
+    class Schema(BaseModel):
+        ws: WebsocketUrl
+
+    assert Schema(ws=value).ws.port == expected
+
+
+@pytest.mark.parametrize(
+    'value,expected',
+    [
+        ('ws://example.com', '/'),
+        ('wss://example.com', '/'),
+        ('wss://ws.example.com/', '/'),
+        ('ws://ws.example.com/', '/'),
+        ('ws://example.com:8080', '/'),
+        ('ws://example.com:9999/path', '/path'),
+        ('wss://example.com:4433', '/'),
+        ('wss://example.com/path/to/ws', '/path/to/ws'),
+    ],
+)
+def test_websocket_url_path_success(value, expected):
+    class Schema(BaseModel):
+        ws: WebsocketUrl
+
+    assert Schema(ws=value).ws.path == expected
+
+
+@pytest.mark.parametrize(
+    'value,expected',
+    [
+        ('ftp://example.com', 'ftp://example.com/'),
+        ('ftp://example.com/path/to/ftp', 'ftp://example.com/path/to/ftp'),
+        ('ftp://example.com:21', 'ftp://example.com/'),
+        ('ftp://example.com:21/path/to/ftp', 'ftp://example.com/path/to/ftp'),
+        ('ftp://example.com', 'ftp://example.com/'),
+        ('ftp://example.com/path/to/ftp', 'ftp://example.com/path/to/ftp'),
+        ('ftp://example.com:990', 'ftp://example.com:990/'),
+        ('ftp://example.com:990/path/to/ftp', 'ftp://example.com:990/path/to/ftp'),
+    ],
+)
+def test_ftp_url_success(value, expected):
+    class Schema(BaseModel):
+        ftp: FtpUrl
+
+    assert Schema(ftp=value).ftp.unicode_string() == expected
+
+
+@pytest.mark.parametrize(
+    'value,expected',
+    [
+        ('ftp://example.com', 21),
+        ('ftp://example.com/path/to/ftp', 21),
+        ('ftp://example.com:21', 21),
+        ('ftp://exaMplФ.com:221/path/to/ftp', 221),
+        ('ftp://example.com:144', 144),
+        ('ftp://example.com:990/path/to/ftp', 990),
+    ],
+)
+def test_ftp_url_port_success(value, expected):
+    class Schema(BaseModel):
+        ftp: FtpUrl
+
+    assert Schema(ftp=value).ftp.port == expected
 
 
 @pytest.mark.parametrize(
