@@ -206,7 +206,7 @@ FileUrl = Annotated[Url, UrlConstraints(allowed_schemes=['file'])]
 * Host not required
 """
 FtpUrl = Annotated[Url, UrlConstraints(allowed_schemes=['ftp'])]
-"""A type that will accept any ws or wss URL.
+"""A type that will accept ftp URL.
 
 * TLD not required
 * Host required
