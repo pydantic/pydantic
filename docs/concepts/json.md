@@ -131,7 +131,8 @@ print(repr(dog))
 
 
     ```py
-    from typing import Annotated, Any
+    from typing import Any
+    from typing_extensions import Annotated
 
     import pydantic_core
 
