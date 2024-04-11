@@ -9,7 +9,7 @@ The code released in v2.7.0 is practically identical to that of v2.7.0b1.
 #### Packaging
 
 * Reorganize `pyproject.toml` sections by @Viicos in [#8899](https://github.com/pydantic/pydantic/pull/8899)
-* * Bump `pydantic-core` to `v2.18.1` by @sydney-runkle in [#9211](https://github.com/pydantic/pydantic/pull/9211)
+* Bump `pydantic-core` to `v2.18.1` by @sydney-runkle in [#9211](https://github.com/pydantic/pydantic/pull/9211)
 * Adopt `jiter` `v0.2.0` by @samuelcolvin in [pydantic/pydantic-core#1250](https://github.com/pydantic/pydantic-core/pull/1250)
 
 #### New Features
