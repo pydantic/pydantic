@@ -123,12 +123,12 @@ print(repr(dog))
 #> Dog(breed='lab', name='fluffy', friends=['buddy', 'spot', 'rufus'])
 ```
 
-!!! example
-    We recommend the following settings to ensure reliable parsing of partial JSON data:
+!!! tip
+    For partial JSON parsing to work reliably, all fields on the model should have default values.
 
-    1. For this to work reliably, fields on the model should have default values or be optional.
-    2. Set `on_error='omit'` in the core schema for types that can fail. This is the default behavior for Pydantic fields.
+Check out the following example for a more in-depth look at how to use default values with partial JSON parsing:
 
+!!! example "Using default values with partial JSON parsing"
 
     ```py
     from typing import Any
