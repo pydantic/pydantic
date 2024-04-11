@@ -27,6 +27,15 @@ theme:
     - content.code.copy
     - announce.dismiss
     - navigation.tabs
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.preview
+    - navigation.instant.progress
+    - navigation.path
+    - navigation.top
+    - navigation.tracking
+    - search.suggest
+    - toc.follow
   logo: 'logo-white.svg'
   favicon: 'favicon.png'
 
