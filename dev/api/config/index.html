@@ -2068,6 +2068,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.cache_strings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cache_strings
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3920,6 +3931,17 @@
     <span class="md-ellipsis">
       
         use_attribute_docstrings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.cache_strings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cache_strings
       
     </span>
   </a>
@@ -5863,6 +5885,50 @@ can be different depending on the Python version used.</p>
 
 
 
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic.config.ConfigDict.cache_strings" class="doc doc-heading">
+          <span class="doc doc-object-name doc-attribute-name">cache_strings</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#pydantic.config.ConfigDict.cache_strings" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">cache_strings</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="s1">&#39;keys&#39;</span><span class="p">,</span> <span class="s1">&#39;none&#39;</span><span class="p">]</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Whether to cache strings to avoid constructing new Python objects. Defaults to True.</p>
+<p>Enabling this setting should significantly improve validation performance while increasing memory usage slightly.</p>
+<ul>
+<li><code>True</code> or <code>'all'</code> (the default): cache all strings</li>
+<li><code>'keys'</code>: cache only dictionary keys</li>
+<li><code>False</code> or <code>'none'</code>: no caching</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code>True</code> or <code>'all'</code> is required to cache strings during general validation because
+validators don't know if they're in a key or a value.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>If repeated strings are rare, it's recommended to use <code>'keys'</code> or <code>'none'</code> to reduce memory usage,
+as the performance difference is minimal if repeated strings are rare.</p>
+</div>
+  </div>
+
+</div>
+
+
+
+
   </div>
 
   </div>
@@ -5918,37 +5984,37 @@ especially with <code>TypedDict</code>.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/config.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">951</span>
-<span class="normal">952</span>
-<span class="normal">953</span>
-<span class="normal">954</span>
-<span class="normal">955</span>
-<span class="normal">956</span>
-<span class="normal">957</span>
-<span class="normal">958</span>
-<span class="normal">959</span>
-<span class="normal">960</span>
-<span class="normal">961</span>
-<span class="normal">962</span>
-<span class="normal">963</span>
-<span class="normal">964</span>
-<span class="normal">965</span>
-<span class="normal">966</span>
-<span class="normal">967</span>
-<span class="normal">968</span>
-<span class="normal">969</span>
-<span class="normal">970</span>
-<span class="normal">971</span>
-<span class="normal">972</span>
-<span class="normal">973</span>
-<span class="normal">974</span>
-<span class="normal">975</span>
-<span class="normal">976</span>
-<span class="normal">977</span>
-<span class="normal">978</span>
-<span class="normal">979</span>
-<span class="normal">980</span>
-<span class="normal">981</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 970</span>
+<span class="normal"> 971</span>
+<span class="normal"> 972</span>
+<span class="normal"> 973</span>
+<span class="normal"> 974</span>
+<span class="normal"> 975</span>
+<span class="normal"> 976</span>
+<span class="normal"> 977</span>
+<span class="normal"> 978</span>
+<span class="normal"> 979</span>
+<span class="normal"> 980</span>
+<span class="normal"> 981</span>
+<span class="normal"> 982</span>
+<span class="normal"> 983</span>
+<span class="normal"> 984</span>
+<span class="normal"> 985</span>
+<span class="normal"> 986</span>
+<span class="normal"> 987</span>
+<span class="normal"> 988</span>
+<span class="normal"> 989</span>
+<span class="normal"> 990</span>
+<span class="normal"> 991</span>
+<span class="normal"> 992</span>
+<span class="normal"> 993</span>
+<span class="normal"> 994</span>
+<span class="normal"> 995</span>
+<span class="normal"> 996</span>
+<span class="normal"> 997</span>
+<span class="normal"> 998</span>
+<span class="normal"> 999</span>
+<span class="normal">1000</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.7/concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict</span>
 
 <span class="sd">    A convenience decorator to set a [Pydantic configuration](config.md) on a `TypedDict` or a `dataclass` from the standard library.</span>
