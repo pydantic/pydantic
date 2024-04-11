@@ -1,13 +1,15 @@
-## v2.7.0b1 (2024-04-03)
+## v2.7.0 (2024-04-11)
 
-[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.7.0b1)
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.7.0)
+
+The code released in v2.7.0 is practically identical to that of v2.7.0b1.
 
 ### What's Changed
 
 #### Packaging
 
 * Reorganize `pyproject.toml` sections by @Viicos in [#8899](https://github.com/pydantic/pydantic/pull/8899)
-* Bump `pydantic-core` to `v2.18.0` by @sydney-runkle in [#9153](https://github.com/pydantic/pydantic/pull/9153)
+* Bump `pydantic-core` to `v2.18.1` by @sydney-runkle in [#9211](https://github.com/pydantic/pydantic/pull/9211)
 * Adopt `jiter` `v0.2.0` by @samuelcolvin in [pydantic/pydantic-core#1250](https://github.com/pydantic/pydantic-core/pull/1250)
 
 #### New Features
@@ -29,6 +31,10 @@
 * Ability to pass `context` to serialization by @ornariece in [#8965](https://github.com/pydantic/pydantic/pull/8965)
 * Add feedback widget to docs with flarelytics integration by @sydney-runkle in [#9129](https://github.com/pydantic/pydantic/pull/9129)
 * Support for parsing partial JSON strings in Python by @samuelcolvin in [pydantic/jiter#66](https://github.com/pydantic/jiter/pull/66)
+
+**Finalized in v2.7.0, rather than v2.7.0b1:**
+* Add support for field level number to str coercion option by @NeevCohen in [#9137](https://github.com/pydantic/pydantic/pull/9137)
+* Update `warnings` parameter for serialization utilities to allow raising a warning by @Lance-Drane in [#9166](https://github.com/pydantic/pydantic/pull/9166)
 
 #### Changes
 
@@ -98,6 +104,7 @@
 * Init private attributes from super-types in `model_post_init` by @Viicos in [#9134](https://github.com/pydantic/pydantic/pull/9134)
 * fix `model_construct` with `validation_alias` by @ornariece in [#9144](https://github.com/pydantic/pydantic/pull/9144)
 * Ensure json-schema generator handles `Literal` `null` types by @bruno-f-cruz in [#9135](https://github.com/pydantic/pydantic/pull/9135)
+* **Fixed in v2.7.0**: Fix allow extra generic by @dmontagu in [#9193](https://github.com/pydantic/pydantic/pull/9193)
 
 ### New Contributors
 
@@ -128,6 +135,11 @@
 * @Youssefares made their first contribution in [#9023](https://github.com/pydantic/pydantic/pull/9023)
 * @chan-vince made their first contribution in [#9105](https://github.com/pydantic/pydantic/pull/9105)
 * @bruno-f-cruz made their first contribution in [#9135](https://github.com/pydantic/pydantic/pull/9135)
+* @Lance-Drane made their first contribution in [#9166](https://github.com/pydantic/pydantic/pull/9166)
+
+## v2.7.0b1 (2024-04-03)
+
+Pre-release, see [the GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.7.0b1) for details.
 
 ## v2.6.4 (2024-03-12)
 
