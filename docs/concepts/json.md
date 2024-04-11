@@ -132,9 +132,9 @@ print(repr(dog))
 
     ```py
     from typing import Any
-    from typing_extensions import Annotated
 
     import pydantic_core
+    from typing_extensions import Annotated
 
     from pydantic import BaseModel, ValidationError, WrapValidator
 
