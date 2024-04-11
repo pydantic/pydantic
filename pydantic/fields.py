@@ -78,6 +78,7 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     init: bool | None
     init_var: bool | None
     kw_only: bool | None
+    coerce_numbers_to_str: bool | None
 
 
 class _FieldInfoInputs(_FromFieldInfoInputs, total=False):
@@ -184,6 +185,7 @@ class FieldInfo(_repr.Representation):
         'max_digits': None,
         'decimal_places': None,
         'union_mode': None,
+        'coerce_numbers_to_str': None,
     }
 
     def __init__(self, **kwargs: Unpack[_FieldInfoInputs]) -> None:
@@ -656,6 +658,7 @@ _DefaultValues = dict(
     decimal_places=None,
     min_length=None,
     max_length=None,
+    coerce_numbers_to_str=None,
 )
 
 
@@ -682,6 +685,7 @@ def Field(  # noqa: C901
     kw_only: bool | None = _Unset,
     pattern: str | typing.Pattern[str] | None = _Unset,
     strict: bool | None = _Unset,
+    coerce_numbers_to_str: bool | None = _Unset,
     gt: float | None = _Unset,
     ge: float | None = _Unset,
     lt: float | None = _Unset,
@@ -731,6 +735,7 @@ def Field(  # noqa: C901
             (Only applies to dataclasses.)
         kw_only: Whether the field should be a keyword-only argument in the constructor of the dataclass.
             (Only applies to dataclasses.)
+        coerce_numbers_to_str: Whether to enable coercion of any `Number` type to `str` (not applicable in `strict` mode).
         strict: If `True`, strict validation is applied to the field.
             See [Strict Mode](../concepts/strict_mode.md) for details.
         gt: Greater than. If set, value must be greater than this. Only applicable to numbers.
@@ -843,6 +848,7 @@ def Field(  # noqa: C901
         init=init,
         init_var=init_var,
         kw_only=kw_only,
+        coerce_numbers_to_str=coerce_numbers_to_str,
         strict=strict,
         gt=gt,
         ge=ge,
