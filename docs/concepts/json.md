@@ -89,7 +89,7 @@ This also works for deserializing partial dictionaries. For example:
 ```py
 from pydantic_core import from_json
 
-partial_dog_json = '{"breed": "lab", "name": "fluffy", "friends": ["buddy", "spot", "rufus"], "age}'
+partial_dog_json = '{"breed": "lab", "name": "fluffy", "friends": ["buddy", "spot", "rufus"], "age'
 dog_dict = from_json(partial_dog_json, allow_partial=True)
 print(dog_dict)
 #> {'breed': 'lab', 'name': 'fluffy', 'friends': ['buddy', 'spot', 'rufus']}
@@ -117,7 +117,7 @@ class Dog(BaseModel):
     friends: list
 
 
-partial_dog_json = '{"breed": "lab", "name": "fluffy", "friends": ["buddy", "spot", "rufus"], "age}'
+partial_dog_json = '{"breed": "lab", "name": "fluffy", "friends": ["buddy", "spot", "rufus"], "age'
 dog = Dog.model_validate(from_json(partial_dog_json, allow_partial=True))
 print(repr(dog))
 #> Dog(breed='lab', name='fluffy', friends=['buddy', 'spot', 'rufus'])
