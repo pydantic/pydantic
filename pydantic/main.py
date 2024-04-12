@@ -27,6 +27,7 @@ from ._internal import (
     _utils,
 )
 from ._migration import getattr_migration
+from .aliases import AliasChoices, AliasPath
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .config import ConfigDict
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
@@ -197,7 +198,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return self.__pydantic_fields_set__
 
     @classmethod
-    def model_construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:
+    def model_construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:  # noqa: C901
         """Creates a new instance of the `Model` class with validated data.
 
         Creates a new model setting `__dict__` and `__pydantic_fields_set__` from trusted or pre-validated data.
@@ -225,14 +226,32 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             if field.alias is not None and field.alias in values:
                 fields_values[name] = values.pop(field.alias)
                 fields_set.add(name)
-            elif field.validation_alias is not None and field.validation_alias in values:
-                fields_values[name] = values.pop(field.validation_alias)
-                fields_set.add(name)
-            elif name in values:
-                fields_values[name] = values.pop(name)
-                fields_set.add(name)
-            elif not field.is_required():
-                fields_values[name] = field.get_default(call_default_factory=True)
+
+            if (name not in fields_set) and (field.validation_alias is not None):
+                validation_aliases: list[str | AliasPath] = (
+                    field.validation_alias.choices
+                    if isinstance(field.validation_alias, AliasChoices)
+                    else [field.validation_alias]
+                )
+
+                for alias in validation_aliases:
+                    if isinstance(alias, str) and alias in values:
+                        fields_values[name] = values.pop(alias)
+                        fields_set.add(name)
+                        break
+                    elif isinstance(alias, AliasPath):
+                        value = alias.search_dict_for_path(values)
+                        if value is not PydanticUndefined:
+                            fields_values[name] = value
+                            fields_set.add(name)
+                            break
+
+            if name not in fields_set:
+                if name in values:
+                    fields_values[name] = values.pop(name)
+                    fields_set.add(name)
+                elif not field.is_required():
+                    fields_values[name] = field.get_default(call_default_factory=True)
         if _fields_set is None:
             _fields_set = fields_set
 

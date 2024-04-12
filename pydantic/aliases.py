@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Callable, Literal
+from typing import Any, Callable, Literal
+
+from pydantic_core import PydanticUndefined
 
 from ._internal import _internal_dataclass
 
@@ -31,6 +33,23 @@ class AliasPath:
             The list of aliases.
         """
         return self.path
+
+    def search_dict_for_path(self, d: dict) -> Any:
+        """Searches a dictionary for the path specified by the alias.
+
+        Returns:
+            The value at the specified path, or `PydanticUndefined` if the path is not found.
+        """
+        v = d
+        for k in self.path:
+            if isinstance(v, str):
+                # disallow indexing into a str, like for AliasPath('x', 0) and x='abc'
+                return PydanticUndefined
+            try:
+                v = v[k]
+            except (KeyError, IndexError, TypeError):
+                return PydanticUndefined
+        return v
 
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
