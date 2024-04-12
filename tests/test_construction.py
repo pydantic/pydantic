@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 import pytest
 from pydantic_core import PydanticUndefined, ValidationError
 
-from pydantic import AliasChoices, AliasPath, BaseModel, ConfigDict, Field, PrivateAttr, PydanticDeprecatedSince20
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, PrivateAttr, PydanticDeprecatedSince20
 
 
 class Model(BaseModel):
