@@ -27,7 +27,7 @@ from ._internal import (
     _utils,
 )
 from ._migration import getattr_migration
-from aliases import AliasChoices, AliasPath
+from .aliases import AliasChoices, AliasPath
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .config import ConfigDict
 from .errors import PydanticUndefinedAnnotation, PydanticUserError

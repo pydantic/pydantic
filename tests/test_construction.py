@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 import pytest
 from pydantic_core import PydanticUndefined, ValidationError
 
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, PydanticDeprecatedSince20
+from pydantic import AliasChoices, AliasPath, BaseModel, ConfigDict, Field, PrivateAttr, PydanticDeprecatedSince20
 
 
 class Model(BaseModel):
@@ -561,3 +561,12 @@ def test_initialize_with_private_attr():
 
     assert m._a == 'a'
     assert '_a' in m.__pydantic_private__
+
+
+def test_model_construct_with_alias_choices() -> None:
+    class MyModel(BaseModel):
+        a: str = Field(validation_alias=AliasChoices('aaa', 'AAA'))
+
+    assert MyModel.model_construct(a='a_value').a == 'a_value'
+    assert MyModel.model_construct(aaa='a_value').a == 'a_value'
+    assert MyModel.model_construct(AAA='a_value').a == 'a_value'
