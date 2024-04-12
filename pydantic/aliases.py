@@ -42,16 +42,10 @@ class AliasPath:
         """
         v = d
         for k in self.path:
-            if isinstance(k, str):
-                if k not in v:
-                    return PydanticUndefined
+            try:
                 v = v[k]
-            elif isinstance(k, int):
-                try:
-                    v = v[k]
-                except (IndexError, TypeError):
-                    return PydanticUndefined
-
+            except (KeyError, IndexError, TypeError):
+                return PydanticUndefined
         return v
 
 
