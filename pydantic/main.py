@@ -198,7 +198,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return self.__pydantic_fields_set__
 
     @classmethod
-    def model_construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:
+    def model_construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:  # noqa: C901
         """Creates a new instance of the `Model` class with validated data.
 
         Creates a new model setting `__dict__` and `__pydantic_fields_set__` from trusted or pre-validated data.
@@ -223,11 +223,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         fields_set = set()
 
         for name, field in cls.model_fields.items():
-
             if field.alias is not None and field.alias in values:
                 fields_values[name] = values.pop(field.alias)
                 fields_set.add(name)
-            
+
             if (name not in fields_set) and (field.validation_alias is not None):
                 validation_aliases: list[str | AliasPath] = (
                     field.validation_alias.choices

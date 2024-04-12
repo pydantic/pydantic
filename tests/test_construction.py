@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 import pytest
 from pydantic_core import PydanticUndefined, ValidationError
 
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field, PrivateAttr, PydanticDeprecatedSince20
+from pydantic import AliasChoices, AliasPath, BaseModel, ConfigDict, Field, PrivateAttr, PydanticDeprecatedSince20
 
 
 class Model(BaseModel):
@@ -570,3 +570,20 @@ def test_model_construct_with_alias_choices() -> None:
     assert MyModel.model_construct(a='a_value').a == 'a_value'
     assert MyModel.model_construct(aaa='a_value').a == 'a_value'
     assert MyModel.model_construct(AAA='a_value').a == 'a_value'
+
+
+def test_model_construct_with_alias_path() -> None:
+    class MyModel(BaseModel):
+        a: str = Field(validation_alias=AliasPath('aaa', 'AAA'))
+
+    assert MyModel.model_construct(a='a_value').a == 'a_value'
+    assert MyModel.model_construct(aaa={'AAA': 'a_value'}).a == 'a_value'
+
+
+def test_model_construct_with_alias_choices_and_path() -> None:
+    class MyModel(BaseModel):
+        a: str = Field(validation_alias=AliasChoices('aaa', AliasPath('AAA', 'aaa')))
+
+    assert MyModel.model_construct(a='a_value').a == 'a_value'
+    assert MyModel.model_construct(aaa='a_value').a == 'a_value'
+    assert MyModel.model_construct(AAA={'aaa': 'a_value'}).a == 'a_value'

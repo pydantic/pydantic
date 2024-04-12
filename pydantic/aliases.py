@@ -40,18 +40,19 @@ class AliasPath:
         Returns:
             The value at the specified path, or `PydanticUndefined` if the path is not found.
         """
-        v = PydanticUndefined
+        v = d
         for k in self.path:
             if isinstance(k, str):
-                v = d.get(k, PydanticUndefined)
-            if isinstance(k, int):
+                if k not in v:
+                    return PydanticUndefined
+                v = v[k]
+            elif isinstance(k, int):
                 try:
-                    v = d[k]
-                except IndexError:
-                    v = PydanticUndefined
+                    v = v[k]
+                except (IndexError, TypeError):
+                    return PydanticUndefined
 
         return v
-
 
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
