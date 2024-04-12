@@ -223,10 +223,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         fields_set = set()
 
         for name, field in cls.model_fields.items():
+
             if field.alias is not None and field.alias in values:
                 fields_values[name] = values.pop(field.alias)
                 fields_set.add(name)
-            elif field.validation_alias is not None:
+            
+            if (name not in fields_set) and (field.validation_alias is not None):
                 validation_aliases: list[str | AliasPath] = (
                     field.validation_alias.choices
                     if isinstance(field.validation_alias, AliasChoices)
@@ -245,10 +247,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                             fields_set.add(name)
                             break
 
-            elif name in values:
+            if (name not in fields_set) and name in values:
                 fields_values[name] = values.pop(name)
                 fields_set.add(name)
-            elif not field.is_required():
+
+            if (name not in fields_set) and not field.is_required():
                 fields_values[name] = field.get_default(call_default_factory=True)
         if _fields_set is None:
             _fields_set = fields_set
