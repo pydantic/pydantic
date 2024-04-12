@@ -27,6 +27,7 @@ from ._internal import (
     _utils,
 )
 from ._migration import getattr_migration
+from aliases import AliasChoices, AliasPath
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .config import ConfigDict
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
@@ -225,9 +226,25 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             if field.alias is not None and field.alias in values:
                 fields_values[name] = values.pop(field.alias)
                 fields_set.add(name)
-            elif field.validation_alias is not None and field.validation_alias in values:
-                fields_values[name] = values.pop(field.validation_alias)
-                fields_set.add(name)
+            elif field.validation_alias is not None:
+                validation_aliases: list[str | AliasPath] = (
+                    field.validation_alias.choices
+                    if isinstance(field.validation_alias, AliasChoices)
+                    else [field.validation_alias]
+                )
+
+                for alias in validation_aliases:
+                    if isinstance(alias, str) and alias in values:
+                        fields_values[name] = values.pop(alias)
+                        fields_set.add(name)
+                        break
+                    elif isinstance(alias, AliasPath):
+                        value = alias.search_dict_for_path(values)
+                        if value is not PydanticUndefined:
+                            fields_values[name] = value
+                            fields_set.add(name)
+                            break
+
             elif name in values:
                 fields_values[name] = values.pop(name)
                 fields_set.add(name)
