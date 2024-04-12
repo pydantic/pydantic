@@ -42,6 +42,9 @@ class AliasPath:
         """
         v = d
         for k in self.path:
+            if isinstance(v, str):
+                # disallow indexing into a str, like for AliasPath('x', 0) and x='abc'
+                return PydanticUndefined
             try:
                 v = v[k]
             except (KeyError, IndexError, TypeError):
