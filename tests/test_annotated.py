@@ -470,3 +470,10 @@ def test_min_length_field_info_not_lost():
             'type': 'string_too_short',
         }
     ]
+
+
+def test_combine_annonated_fields():
+    class Foo(BaseModel):
+        v: Annotated[str, Field(json_schema_extra={'key1': 'value1'}), Field(json_schema_extra={'key2': 'value2'})]
+
+    assert {'key1': 'value1', 'key2': 'value2'}.items() <= Foo.model_json_schema()['properties']['v'].items()

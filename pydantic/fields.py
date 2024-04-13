@@ -439,7 +439,16 @@ class FieldInfo(_repr.Representation):
         new_kwargs: dict[str, Any] = {}
         metadata = {}
         for field_info in field_infos:
-            new_kwargs.update(field_info._attributes_set)
+            for key in field_info._attributes_set:
+                if (
+                    key in new_kwargs.keys()
+                    and key == 'json_schema_extra'
+                    and not callable(field_info._attributes_set[key])
+                ):
+                    # Merge the fields if not callable, making the schema for BaseModel consistent with TypeAdapter
+                    new_kwargs[key].update(field_info._attributes_set[key])
+                else:
+                    new_kwargs[key] = field_info._attributes_set[key]
             for x in field_info.metadata:
                 if not isinstance(x, FieldInfo):
                     metadata[type(x)] = x
