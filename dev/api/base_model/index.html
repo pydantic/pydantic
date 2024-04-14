@@ -3635,7 +3635,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
         <tr>
           <td><code><span title="pydantic.BaseModel.__pydantic_post_init__">__pydantic_post_init__</span></code></td>
           <td>
-                <code>None | <span title="typing_extensions.Literal">Literal</span>[&#39;model_post_init&#39;]</code>
+                <code>None | <a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;model_post_init&#39;]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5121,7 +5121,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
         <span class="n">__pydantic_decorators__</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">_decorators</span><span class="o">.</span><span class="n">DecoratorInfos</span><span class="p">]</span>
         <span class="n">__pydantic_generic_metadata__</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">_generics</span><span class="o">.</span><span class="n">PydanticGenericMetadata</span><span class="p">]</span>
         <span class="n">__pydantic_parent_namespace__</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span>
-        <span class="n">__pydantic_post_init__</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="kc">None</span> <span class="o">|</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;model_post_init&#39;</span><span class="p">]]</span>
+        <span class="n">__pydantic_post_init__</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="kc">None</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;model_post_init&#39;</span><span class="p">]]</span>
         <span class="n">__pydantic_root_model__</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span>
         <span class="n">__pydantic_serializer__</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">SchemaSerializer</span><span class="p">]</span>
         <span class="n">__pydantic_validator__</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">SchemaValidator</span><span class="p">]</span>
@@ -5305,7 +5305,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
     <span class="k">def</span> <span class="nf">model_dump</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
-        <span class="n">mode</span><span class="p">:</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="s1">&#39;python&#39;</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;python&#39;</span><span class="p">,</span>
+        <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="s1">&#39;python&#39;</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;python&#39;</span><span class="p">,</span>
         <span class="n">include</span><span class="p">:</span> <span class="n">IncEx</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">exclude</span><span class="p">:</span> <span class="n">IncEx</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -7107,7 +7107,7 @@ before creating the new model. You should trust this data.</p>
 <a href="#pydantic.BaseModel.model_dump" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">model_dump</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">mode</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span><span class="s2">&quot;json&quot;</span><span class="p">,</span> <span class="s2">&quot;python&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;python&quot;</span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;json&quot;</span><span class="p">,</span> <span class="s2">&quot;python&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;python&quot;</span><span class="p">,</span>
     <span class="n">include</span><span class="p">:</span> <span class="n"><span title="pydantic.main.IncEx">IncEx</span></span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">exclude</span><span class="p">:</span> <span class="n"><span title="pydantic.main.IncEx">IncEx</span></span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">context</span><span class="p">:</span> <span class="n"><span title="pydantic.main.BaseModel.dict">dict</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -7146,7 +7146,7 @@ before creating the new model. You should trust this data.</p>
         <tr>
           <td><code>mode</code></td>
           <td>
-                <code><span title="typing_extensions.Literal">Literal</span>[&#39;json&#39;, &#39;python&#39;] | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                <code><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;json&#39;, &#39;python&#39;] | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -7383,7 +7383,7 @@ If mode is 'python', the output may contain non-JSON-serializable Python objects
 <span class="normal">360</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_dump</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">mode</span><span class="p">:</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="s1">&#39;python&#39;</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;python&#39;</span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="s1">&#39;python&#39;</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;python&#39;</span><span class="p">,</span>
     <span class="n">include</span><span class="p">:</span> <span class="n">IncEx</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">exclude</span><span class="p">:</span> <span class="n">IncEx</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>

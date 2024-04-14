@@ -1872,10 +1872,43 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.networks.AnyWebsocketUrl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AnyWebsocketUrl
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.networks.WebsocketUrl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WebsocketUrl
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.networks.FileUrl" class="md-nav__link">
     <span class="md-ellipsis">
       
         FileUrl
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.networks.FtpUrl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FtpUrl
       
     </span>
   </a>
@@ -3287,10 +3320,43 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.networks.AnyWebsocketUrl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AnyWebsocketUrl
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.networks.WebsocketUrl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WebsocketUrl
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.networks.FileUrl" class="md-nav__link">
     <span class="md-ellipsis">
       
         FileUrl
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.networks.FtpUrl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FtpUrl
       
     </span>
   </a>
@@ -3761,6 +3827,68 @@ underscores are allowed, but you can always do further validation in a validator
 
 
 
+<h2 id="pydantic.networks.AnyWebsocketUrl" class="doc doc-heading">
+          <span class="doc doc-object-name doc-attribute-name">AnyWebsocketUrl</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#pydantic.networks.AnyWebsocketUrl" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">AnyWebsocketUrl</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span><span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ws&quot;</span><span class="p">,</span> <span class="s2">&quot;wss&quot;</span><span class="p">])</span>
+<span class="p">]</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>A type that will accept any ws or wss URL.</p>
+<ul>
+<li>TLD not required</li>
+<li>Host required</li>
+</ul>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="pydantic.networks.WebsocketUrl" class="doc doc-heading">
+          <span class="doc doc-object-name doc-attribute-name">WebsocketUrl</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#pydantic.networks.WebsocketUrl" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">WebsocketUrl</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span>
+        <span class="n">max_length</span><span class="o">=</span><span class="mi">2083</span><span class="p">,</span> <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ws&quot;</span><span class="p">,</span> <span class="s2">&quot;wss&quot;</span><span class="p">]</span>
+    <span class="p">),</span>
+<span class="p">]</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>A type that will accept any ws or wss URL.</p>
+<ul>
+<li>TLD required</li>
+<li>Host required</li>
+<li>Max length 2083</li>
+</ul>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
 <h2 id="pydantic.networks.FileUrl" class="doc doc-heading">
           <span class="doc doc-object-name doc-attribute-name">FileUrl</span>
 
@@ -3780,6 +3908,35 @@ underscores are allowed, but you can always do further validation in a validator
       <p>A type that will accept any file URL.</p>
 <ul>
 <li>Host not required</li>
+</ul>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="pydantic.networks.FtpUrl" class="doc doc-heading">
+          <span class="doc doc-object-name doc-attribute-name">FtpUrl</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#pydantic.networks.FtpUrl" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">FtpUrl</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+    <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span><span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ftp&quot;</span><span class="p">])</span>
+<span class="p">]</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>A type that will accept ftp URL.</p>
+<ul>
+<li>TLD not required</li>
+<li>Host required</li>
 </ul>
   </div>
 
@@ -4456,9 +4613,9 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 
                 <details class="quote">
                   <summary>Source code in <code>pydantic/networks.py</code></summary>
-                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">475</span>
-<span class="normal">476</span>
-<span class="normal">477</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">email</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">497</span>
+<span class="normal">498</span>
+<span class="normal">499</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">email</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">email</span> <span class="o">=</span> <span class="n">email</span>
 </code></pre></div></td></tr></table></div>
@@ -4652,29 +4809,7 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 </details>
           <details class="quote">
             <summary>Source code in <code>pydantic/networks.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">691</span>
-<span class="normal">692</span>
-<span class="normal">693</span>
-<span class="normal">694</span>
-<span class="normal">695</span>
-<span class="normal">696</span>
-<span class="normal">697</span>
-<span class="normal">698</span>
-<span class="normal">699</span>
-<span class="normal">700</span>
-<span class="normal">701</span>
-<span class="normal">702</span>
-<span class="normal">703</span>
-<span class="normal">704</span>
-<span class="normal">705</span>
-<span class="normal">706</span>
-<span class="normal">707</span>
-<span class="normal">708</span>
-<span class="normal">709</span>
-<span class="normal">710</span>
-<span class="normal">711</span>
-<span class="normal">712</span>
-<span class="normal">713</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">713</span>
 <span class="normal">714</span>
 <span class="normal">715</span>
 <span class="normal">716</span>
@@ -4690,7 +4825,29 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 <span class="normal">726</span>
 <span class="normal">727</span>
 <span class="normal">728</span>
-<span class="normal">729</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_email</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="normal">729</span>
+<span class="normal">730</span>
+<span class="normal">731</span>
+<span class="normal">732</span>
+<span class="normal">733</span>
+<span class="normal">734</span>
+<span class="normal">735</span>
+<span class="normal">736</span>
+<span class="normal">737</span>
+<span class="normal">738</span>
+<span class="normal">739</span>
+<span class="normal">740</span>
+<span class="normal">741</span>
+<span class="normal">742</span>
+<span class="normal">743</span>
+<span class="normal">744</span>
+<span class="normal">745</span>
+<span class="normal">746</span>
+<span class="normal">747</span>
+<span class="normal">748</span>
+<span class="normal">749</span>
+<span class="normal">750</span>
+<span class="normal">751</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_email</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Email address validation using [email-validator](https://pypi.org/project/email-validator/).</span>
 
 <span class="sd">    Note:</span>
