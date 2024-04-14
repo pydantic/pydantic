@@ -4463,6 +4463,15 @@ def test_secretdate_idempotent():
     assert m.value.get_secret_value() == date(2017, 1, 1)
 
 
+def test_secret_union_serializable() -> None:
+    class Base(BaseModel):
+        x: Secret[int] | Secret[str]
+
+    model = Base(x=1)
+    assert model.model_dump() == {'x': Secret[int](1)}
+    assert model.model_dump_json() == '{"x":"**********"}'
+
+
 @pytest.mark.parametrize(
     'pydantic_type',
     [
