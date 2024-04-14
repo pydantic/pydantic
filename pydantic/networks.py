@@ -28,7 +28,10 @@ __all__ = [
     'AnyUrl',
     'AnyHttpUrl',
     'FileUrl',
+    'FtpUrl',
     'HttpUrl',
+    'WebsocketUrl',
+    'AnyWebsocketUrl',
     'UrlConstraints',
     'EmailStr',
     'NameEmail',
@@ -184,10 +187,29 @@ print(m3.url)
     Also, Chrome, Firefox, and Safari all currently accept `http://exam_ple.com` as a URL, so we're in good
     (or at least big) company.
 """
+AnyWebsocketUrl = Annotated[Url, UrlConstraints(allowed_schemes=['ws', 'wss'])]
+"""A type that will accept any ws or wss URL.
+
+* TLD not required
+* Host required
+"""
+WebsocketUrl = Annotated[Url, UrlConstraints(max_length=2083, allowed_schemes=['ws', 'wss'])]
+"""A type that will accept any ws or wss URL.
+
+* TLD required
+* Host required
+* Max length 2083
+"""
 FileUrl = Annotated[Url, UrlConstraints(allowed_schemes=['file'])]
 """A type that will accept any file URL.
 
 * Host not required
+"""
+FtpUrl = Annotated[Url, UrlConstraints(allowed_schemes=['ftp'])]
+"""A type that will accept ftp URL.
+
+* TLD not required
+* Host required
 """
 PostgresDsn = Annotated[
     MultiHostUrl,
