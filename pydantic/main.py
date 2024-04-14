@@ -125,7 +125,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_decorators__: ClassVar[_decorators.DecoratorInfos]
         __pydantic_generic_metadata__: ClassVar[_generics.PydanticGenericMetadata]
         __pydantic_parent_namespace__: ClassVar[dict[str, Any] | None]
-        __pydantic_post_init__: ClassVar[None | typing_extensions.Literal['model_post_init']]
+        __pydantic_post_init__: ClassVar[None | Literal['model_post_init']]
         __pydantic_root_model__: ClassVar[bool]
         __pydantic_serializer__: ClassVar[SchemaSerializer]
         __pydantic_validator__: ClassVar[SchemaValidator]
@@ -309,7 +309,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     def model_dump(
         self,
         *,
-        mode: typing_extensions.Literal['json', 'python'] | str = 'python',
+        mode: Literal['json', 'python'] | str = 'python',
         include: IncEx = None,
         exclude: IncEx = None,
         context: dict[str, Any] | None = None,
