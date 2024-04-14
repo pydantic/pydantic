@@ -4465,7 +4465,7 @@ def test_secretdate_idempotent():
 
 def test_secret_union_serializable() -> None:
     class Base(BaseModel):
-        x: Secret[int] | Secret[str]
+        x: Union[Secret[int], Secret[str]]
 
     model = Base(x=1)
     assert model.model_dump() == {'x': Secret[int](1)}
