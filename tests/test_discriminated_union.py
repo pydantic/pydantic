@@ -9,15 +9,7 @@ from dirty_equals import HasRepr, IsStr
 from pydantic_core import SchemaValidator, core_schema
 from typing_extensions import Annotated, Literal, TypedDict
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Discriminator,
-    Field,
-    TypeAdapter,
-    ValidationError,
-    field_validator,
-)
+from pydantic import BaseModel, ConfigDict, Discriminator, Field, TypeAdapter, ValidationError, field_validator
 from pydantic._internal._discriminated_union import apply_discriminator
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
@@ -28,8 +20,7 @@ from pydantic.types import Tag
 
 def test_discriminated_union_type():
     with pytest.raises(
-        TypeError,
-        match="'str' is not a valid discriminated union variant; should be a `BaseModel` or `dataclass`",
+        TypeError, match="'str' is not a valid discriminated union variant; should be a `BaseModel` or `dataclass`"
     ):
 
         class Model(BaseModel):
@@ -74,8 +65,7 @@ def test_discriminated_union_single_variant():
 
 def test_discriminated_union_invalid_type():
     with pytest.raises(
-        TypeError,
-        match="'str' is not a valid discriminated union variant; should be a `BaseModel` or `dataclass`",
+        TypeError, match="'str' is not a valid discriminated union variant; should be a `BaseModel` or `dataclass`"
     ):
 
         class Model(BaseModel):
@@ -90,10 +80,7 @@ def test_discriminated_union_defined_discriminator():
         pet_type: Literal['dog']
         d: str
 
-    with pytest.raises(
-        PydanticUserError,
-        match="Model 'Cat' needs a discriminator field for key 'pet_type'",
-    ):
+    with pytest.raises(PydanticUserError, match="Model 'Cat' needs a discriminator field for key 'pet_type'"):
 
         class Model(BaseModel):
             pet: Union[Cat, Dog] = Field(..., discriminator='pet_type')
@@ -109,10 +96,7 @@ def test_discriminated_union_literal_discriminator():
         pet_type: Literal['dog']
         d: str
 
-    with pytest.raises(
-        PydanticUserError,
-        match="Model 'Cat' needs field 'pet_type' to be of type `Literal`",
-    ):
+    with pytest.raises(PydanticUserError, match="Model 'Cat' needs field 'pet_type' to be of type `Literal`"):
 
         class Model(BaseModel):
             pet: Union[Cat, Dog] = Field(..., discriminator='pet_type')
@@ -139,11 +123,7 @@ def test_discriminated_union_root_same_discriminator():
         CatDog({'pet_type': 'llama'})
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {
-                'discriminator': "'pet_type'",
-                'expected_tags': "'blackcat', 'whitecat', 'dog'",
-                'tag': 'llama',
-            },
+            'ctx': {'discriminator': "'pet_type'", 'expected_tags': "'blackcat', 'whitecat', 'dog'", 'tag': 'llama'},
             'input': {'pet_type': 'llama'},
             'loc': (),
             'msg': "Input tag 'llama' found using 'pet_type' does not match any of the "
@@ -226,11 +206,7 @@ def test_discriminated_union_validation(color_discriminator_kind, pet_discrimina
         Model.model_validate({'pet': {'pet_type': 'fish'}, 'number': 2})
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {
-                'discriminator': "'pet_type'",
-                'expected_tags': "'cat', 'dog', 'reptile', 'lizard'",
-                'tag': 'fish',
-            },
+            'ctx': {'discriminator': "'pet_type'", 'expected_tags': "'cat', 'dog', 'reptile', 'lizard'", 'tag': 'fish'},
             'input': {'pet_type': 'fish'},
             'loc': ('pet',),
             'msg': "Input tag 'fish' found using 'pet_type' does not match any of the "
@@ -242,12 +218,7 @@ def test_discriminated_union_validation(color_discriminator_kind, pet_discrimina
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate({'pet': {'pet_type': 'lizard'}, 'number': 2})
     assert exc_info.value.errors(include_url=False) == [
-        {
-            'input': {'pet_type': 'lizard'},
-            'loc': ('pet', 'lizard', 'm'),
-            'msg': 'Field required',
-            'type': 'missing',
-        }
+        {'input': {'pet_type': 'lizard'}, 'loc': ('pet', 'lizard', 'm'), 'msg': 'Field required', 'type': 'missing'}
     ]
 
     m = Model.model_validate({'pet': {'pet_type': 'lizard', 'm': 'pika'}, 'number': 2})
@@ -264,12 +235,7 @@ def test_discriminated_union_validation(color_discriminator_kind, pet_discrimina
             'type': 'missing',
         }
     ]
-    m = Model.model_validate(
-        {
-            'pet': {'pet_type': 'cat', 'color': 'white', 'white_infos': 'pika'},
-            'number': 2,
-        }
-    )
+    m = Model.model_validate({'pet': {'pet_type': 'cat', 'color': 'white', 'white_infos': 'pika'}, 'number': 2})
     assert isinstance(m.pet, WhiteCat)
 
 
@@ -318,11 +284,7 @@ def test_discriminated_annotated_union():
         Model.model_validate({'pet': {'pet_type': 'fish'}, 'number': 2})
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {
-                'discriminator': "'pet_type'",
-                'expected_tags': "'cat', 'dog'",
-                'tag': 'fish',
-            },
+            'ctx': {'discriminator': "'pet_type'", 'expected_tags': "'cat', 'dog'", 'tag': 'fish'},
             'input': {'pet_type': 'fish'},
             'loc': ('pet',),
             'msg': "Input tag 'fish' found using 'pet_type' does not match any of the " "expected tags: 'cat', 'dog'",
@@ -333,12 +295,7 @@ def test_discriminated_annotated_union():
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate({'pet': {'pet_type': 'dog'}, 'number': 2})
     assert exc_info.value.errors(include_url=False) == [
-        {
-            'input': {'pet_type': 'dog'},
-            'loc': ('pet', 'dog', 'dog_name'),
-            'msg': 'Field required',
-            'type': 'missing',
-        }
+        {'input': {'pet_type': 'dog'}, 'loc': ('pet', 'dog', 'dog_name'), 'msg': 'Field required', 'type': 'missing'}
     ]
     m = Model.model_validate({'pet': {'pet_type': 'dog', 'dog_name': 'milou'}, 'number': 2})
     assert isinstance(m.pet, Dog)
@@ -347,11 +304,7 @@ def test_discriminated_annotated_union():
         Model.model_validate({'pet': {'pet_type': 'cat', 'color': 'red'}, 'number': 2})
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {
-                'discriminator': "'color'",
-                'expected_tags': "'black', 'white'",
-                'tag': 'red',
-            },
+            'ctx': {'discriminator': "'color'", 'expected_tags': "'black', 'white'", 'tag': 'red'},
             'input': {'color': 'red', 'pet_type': 'cat'},
             'loc': ('pet', 'cat'),
             'msg': "Input tag 'red' found using 'color' does not match any of the " "expected tags: 'black', 'white'",
@@ -369,12 +322,7 @@ def test_discriminated_annotated_union():
             'type': 'missing',
         }
     ]
-    m = Model.model_validate(
-        {
-            'pet': {'pet_type': 'cat', 'color': 'white', 'white_infos': 'pika'},
-            'number': 2,
-        }
-    )
+    m = Model.model_validate({'pet': {'pet_type': 'cat', 'color': 'white', 'white_infos': 'pika'}, 'number': 2})
     assert isinstance(m.pet, WhiteCat)
 
 
@@ -407,12 +355,7 @@ def test_discriminated_union_basemodel_instance_value_with_alias():
         Top(sub=A(literal='a'))
 
     assert exc_info.value.errors(include_url=False) == [
-        {
-            'input': {'literal': 'a'},
-            'loc': ('lit',),
-            'msg': 'Field required',
-            'type': 'missing',
-        }
+        {'input': {'literal': 'a'}, 'loc': ('lit',), 'msg': 'Field required', 'type': 'missing'}
     ]
     assert Top(sub=A(lit='a')).sub.literal == 'a'
     assert Top(sub=B(lit='b')).sub.literal == 'b'
@@ -464,10 +407,7 @@ if sys.version_info >= (3, 11):
     ENUM_TEST_CASES.append((StrEnum, {'a': 'v_a', 'b': 'v_b'}))
 
 
-@pytest.mark.skipif(
-    sys.version_info[:2] == (3, 8),
-    reason='https://github.com/python/cpython/issues/103592',
-)
+@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592')
 @pytest.mark.parametrize('base_class,choices', ENUM_TEST_CASES)
 def test_discriminated_union_enum(base_class, choices):
     EnumValue = base_class('EnumValue', choices)
@@ -509,10 +449,7 @@ def test_alias_different():
         pet_type: Literal['dog'] = Field(alias='T')
         d: str
 
-    with pytest.raises(
-        TypeError,
-        match=re.escape("Aliases for discriminator 'pet_type' must be the same (got T, U)"),
-    ):
+    with pytest.raises(TypeError, match=re.escape("Aliases for discriminator 'pet_type' must be the same (got T, U)")):
 
         class Model(BaseModel):
             pet: Union[Cat, Dog] = Field(discriminator='pet_type')
@@ -583,12 +520,7 @@ def test_generic():
     with pytest.raises(ValidationError, match=r'Container\[str\]\nresult\.Success\.data') as exc_info:
         Container[str].model_validate({'result': {'type': 'Success'}})
     assert exc_info.value.errors(include_url=False) == [
-        {
-            'input': {'type': 'Success'},
-            'loc': ('result', 'Success', 'data'),
-            'msg': 'Field required',
-            'type': 'missing',
-        }
+        {'input': {'type': 'Success'}, 'loc': ('result', 'Success', 'data'), 'msg': 'Field required', 'type': 'missing'}
     ]
 
     # invalid types error
@@ -644,11 +576,7 @@ def test_optional_union():
         Pet(pet={'pet_type': 'lizard'})
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {
-                'discriminator': "'pet_type'",
-                'expected_tags': "'cat', 'dog'",
-                'tag': 'lizard',
-            },
+            'ctx': {'discriminator': "'pet_type'", 'expected_tags': "'cat', 'dog'", 'tag': 'lizard'},
             'input': {'pet_type': 'lizard'},
             'loc': ('pet',),
             'msg': "Input tag 'lizard' found using 'pet_type' does not match any of the " "expected tags: 'cat', 'dog'",
@@ -690,11 +618,7 @@ def test_optional_union_with_defaults():
         Pet(pet={'pet_type': 'lizard'})
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {
-                'discriminator': "'pet_type'",
-                'expected_tags': "'cat', 'dog'",
-                'tag': 'lizard',
-            },
+            'ctx': {'discriminator': "'pet_type'", 'expected_tags': "'cat', 'dog'", 'tag': 'lizard'},
             'input': {'pet_type': 'lizard'},
             'loc': ('pet',),
             'msg': "Input tag 'lizard' found using 'pet_type' does not match any of the " "expected tags: 'cat', 'dog'",
@@ -710,10 +634,7 @@ def test_aliases_matching_is_not_sufficient() -> None:
     class Case2(BaseModel):
         kind_two: Literal['2'] = Field(alias='kind')
 
-    with pytest.raises(
-        PydanticUserError,
-        match="Model 'Case1' needs a discriminator field for key 'kind'",
-    ):
+    with pytest.raises(PydanticUserError, match="Model 'Case1' needs a discriminator field for key 'kind'"):
 
         class TaggedParent(BaseModel):
             tagged: Union[Case1, Case2] = Field(discriminator='kind')
@@ -750,11 +671,7 @@ def test_nested_optional_unions() -> None:
             'loc': ('pet',),
             'msg': "Input tag 'None' found using 'pet_type' does not match any of the expected tags: 'cat', 'dog', 'lizard', 'reptile'",
             'input': {'pet_type': None},
-            'ctx': {
-                'discriminator': "'pet_type'",
-                'tag': 'None',
-                'expected_tags': "'cat', 'dog', 'lizard', 'reptile'",
-            },
+            'ctx': {'discriminator': "'pet_type'", 'tag': 'None', 'expected_tags': "'cat', 'dog', 'lizard', 'reptile'"},
         }
     ]
 
@@ -767,11 +684,7 @@ def test_nested_optional_unions() -> None:
             'loc': ('pet',),
             'msg': "Input tag 'fox' found using 'pet_type' does not match any of the expected tags: 'cat', 'dog', 'lizard', 'reptile'",
             'input': {'pet_type': 'fox'},
-            'ctx': {
-                'discriminator': "'pet_type'",
-                'tag': 'fox',
-                'expected_tags': "'cat', 'dog', 'lizard', 'reptile'",
-            },
+            'ctx': {'discriminator': "'pet_type'", 'tag': 'fox', 'expected_tags': "'cat', 'dog', 'lizard', 'reptile'"},
         }
     ]
 
@@ -859,11 +772,7 @@ def test_union_discriminator_literals() -> None:
             'loc': ('pet',),
             'msg': "Input tag 'Cat' found using 'pet_type' | 'typeOfPet' does not match any of the expected tags: 'cat', 'CAT', 'dog'",
             'input': {'typeOfPet': 'Cat'},
-            'ctx': {
-                'discriminator': "'pet_type' | 'typeOfPet'",
-                'tag': 'Cat',
-                'expected_tags': "'cat', 'CAT', 'dog'",
-            },
+            'ctx': {'discriminator': "'pet_type' | 'typeOfPet'", 'tag': 'Cat', 'expected_tags': "'cat', 'CAT', 'dog'"},
         }
     ]
 
@@ -883,11 +792,7 @@ def test_none_schema() -> None:
         validator.validate_python({'kind': 'lizard'})
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {
-                'discriminator': "'kind'",
-                'expected_tags': "'cat', 'dog'",
-                'tag': 'lizard',
-            },
+            'ctx': {'discriminator': "'kind'", 'expected_tags': "'cat', 'dog'", 'tag': 'lizard'},
             'input': {'kind': 'lizard'},
             'loc': (),
             'msg': "Input tag 'lizard' found using 'kind' does not match any of the " "expected tags: 'cat', 'dog'",
@@ -918,11 +823,7 @@ def test_nested_unwrapping() -> None:
         validator.validate_python({'kind': 'lizard'})
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {
-                'discriminator': "'kind'",
-                'expected_tags': "'cat', 'dog'",
-                'tag': 'lizard',
-            },
+            'ctx': {'discriminator': "'kind'", 'expected_tags': "'cat', 'dog'", 'tag': 'lizard'},
             'input': {'kind': 'lizard'},
             'loc': (),
             'msg': "Input tag 'lizard' found using 'kind' does not match any of the " "expected tags: 'cat', 'dog'",
@@ -938,10 +839,7 @@ def test_distinct_choices() -> None:
     class Dog(BaseModel):
         pet_type: Literal['dog'] = Field(alias='typeOfPet')
 
-    with pytest.raises(
-        TypeError,
-        match="Value 'dog' for discriminator 'pet_type' mapped to multiple choices",
-    ):
+    with pytest.raises(TypeError, match="Value 'dog' for discriminator 'pet_type' mapped to multiple choices"):
 
         class Model(BaseModel):
             pet: Union[Cat, Dog] = Field(discriminator='pet_type')
@@ -955,8 +853,7 @@ def test_invalid_discriminated_union_type() -> None:
         pet_type: Literal['dog'] = Field(alias='typeOfPet')
 
     with pytest.raises(
-        TypeError,
-        match="'str' is not a valid discriminated union variant; should be a `BaseModel` or `dataclass`",
+        TypeError, match="'str' is not a valid discriminated union variant; should be a `BaseModel` or `dataclass`"
     ):
 
         class Model(BaseModel):
@@ -972,10 +869,7 @@ def test_invalid_alias() -> None:
     dog = core_schema.typed_dict_schema(dog_fields)
     schema = core_schema.union_schema([cat, dog])
 
-    with pytest.raises(
-        TypeError,
-        match=re.escape("Alias ['cat', 'CAT'] is not supported in a discriminated union"),
-    ):
+    with pytest.raises(TypeError, match=re.escape("Alias ['cat', 'CAT'] is not supported in a discriminated union")):
         apply_discriminator(schema, 'kind')
 
 
@@ -985,10 +879,7 @@ def test_invalid_discriminator_type() -> None:
     cat = core_schema.typed_dict_schema(cat_fields)
     dog = core_schema.typed_dict_schema(dog_fields)
 
-    with pytest.raises(
-        TypeError,
-        match=re.escape("TypedDict needs field 'kind' to be of type `Literal`"),
-    ):
+    with pytest.raises(TypeError, match=re.escape("TypedDict needs field 'kind' to be of type `Literal`")):
         apply_discriminator(core_schema.union_schema([cat, dog]), 'kind')
 
 
@@ -998,10 +889,7 @@ def test_missing_discriminator_field() -> None:
     cat = core_schema.typed_dict_schema(cat_fields)
     dog = core_schema.typed_dict_schema(dog_fields)
 
-    with pytest.raises(
-        TypeError,
-        match=re.escape("TypedDict needs a discriminator field for key 'kind'"),
-    ):
+    with pytest.raises(TypeError, match=re.escape("TypedDict needs a discriminator field for key 'kind'")):
         apply_discriminator(core_schema.union_schema([dog, cat]), 'kind')
 
 
@@ -1021,22 +909,14 @@ def test_wrap_function_schema() -> None:
                 },
                 'schema': {
                     'fields': {
-                        'kind': {
-                            'schema': {'expected': ['cat'], 'type': 'literal'},
-                            'type': 'typed-dict-field',
-                        }
+                        'kind': {'schema': {'expected': ['cat'], 'type': 'literal'}, 'type': 'typed-dict-field'}
                     },
                     'type': 'typed-dict',
                 },
                 'type': 'function-wrap',
             },
             'dog': {
-                'fields': {
-                    'kind': {
-                        'schema': {'expected': ['dog'], 'type': 'literal'},
-                        'type': 'typed-dict-field',
-                    }
-                },
+                'fields': {'kind': {'schema': {'expected': ['dog'], 'type': 'literal'}, 'type': 'typed-dict-field'}},
                 'type': 'typed-dict',
             },
         },
@@ -1054,10 +934,7 @@ def test_plain_function_schema_is_invalid() -> None:
     ):
         apply_discriminator(
             core_schema.union_schema(
-                [
-                    core_schema.with_info_plain_validator_function(lambda x, y: None),
-                    core_schema.int_schema(),
-                ]
+                [core_schema.with_info_plain_validator_function(lambda x, y: None), core_schema.int_schema()]
             ),
             'kind',
         )
@@ -1078,8 +955,7 @@ def test_invalid_str_choice_discriminator_values() -> None:
     )
 
     with pytest.raises(
-        TypeError,
-        match="'str' is not a valid discriminated union variant; should be a `BaseModel` or `dataclass`",
+        TypeError, match="'str' is not a valid discriminated union variant; should be a `BaseModel` or `dataclass`"
     ):
         apply_discriminator(schema, 'kind')
 
@@ -1102,22 +978,14 @@ def test_lax_or_strict_definitions() -> None:
         'choices': {
             'cat': {
                 'type': 'typed-dict',
-                'fields': {
-                    'kind': {
-                        'type': 'typed-dict-field',
-                        'schema': {'type': 'literal', 'expected': ['cat']},
-                    }
-                },
+                'fields': {'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['cat']}}},
             },
             'DOG': {
                 'type': 'lax-or-strict',
                 'lax_schema': {
                     'type': 'typed-dict',
                     'fields': {
-                        'kind': {
-                            'type': 'typed-dict-field',
-                            'schema': {'type': 'literal', 'expected': ['DOG']},
-                        }
+                        'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['DOG']}}
                     },
                 },
                 'strict_schema': {
@@ -1125,10 +993,7 @@ def test_lax_or_strict_definitions() -> None:
                     'schema': {
                         'type': 'typed-dict',
                         'fields': {
-                            'kind': {
-                                'type': 'typed-dict-field',
-                                'schema': {'type': 'literal', 'expected': ['dog']},
-                            }
+                            'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['dog']}}
                         },
                     },
                     'definitions': [{'type': 'int', 'ref': 'my-int-definition'}],
@@ -1139,10 +1004,7 @@ def test_lax_or_strict_definitions() -> None:
                 'lax_schema': {
                     'type': 'typed-dict',
                     'fields': {
-                        'kind': {
-                            'type': 'typed-dict-field',
-                            'schema': {'type': 'literal', 'expected': ['DOG']},
-                        }
+                        'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['DOG']}}
                     },
                 },
                 'strict_schema': {
@@ -1150,10 +1012,7 @@ def test_lax_or_strict_definitions() -> None:
                     'schema': {
                         'type': 'typed-dict',
                         'fields': {
-                            'kind': {
-                                'type': 'typed-dict-field',
-                                'schema': {'type': 'literal', 'expected': ['dog']},
-                            }
+                            'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['dog']}}
                         },
                     },
                     'definitions': [{'type': 'int', 'ref': 'my-int-definition'}],
@@ -1178,8 +1037,7 @@ def test_wrapped_nullable_union() -> None:
             # union. I think this would be difficult to avoid in the general case, and I would suggest that we not
             # attempt to do more than this until presented with scenarios where it is helpful/necessary.
             core_schema.with_info_wrap_validator_function(
-                lambda x, y, z: x,
-                core_schema.nullable_schema(core_schema.union_schema([cat, dog])),
+                lambda x, y, z: x, core_schema.nullable_schema(core_schema.union_schema([cat, dog]))
             ),
         ]
     )
@@ -1192,11 +1050,7 @@ def test_wrapped_nullable_union() -> None:
         validator.validate_python({'kind': 'armadillo'})
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {
-                'discriminator': "'kind'",
-                'expected_tags': "'ant', 'cat', 'dog'",
-                'tag': 'armadillo',
-            },
+            'ctx': {'discriminator': "'kind'", 'expected_tags': "'ant', 'cat', 'dog'", 'tag': 'armadillo'},
             'input': {'kind': 'armadillo'},
             'loc': (),
             'msg': "Input tag 'armadillo' found using 'kind' does not match any of the "
@@ -1214,10 +1068,7 @@ def test_wrapped_nullable_union() -> None:
                 'ant': {
                     'type': 'typed-dict',
                     'fields': {
-                        'kind': {
-                            'type': 'typed-dict-field',
-                            'schema': {'type': 'literal', 'expected': ['ant']},
-                        }
+                        'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['ant']}}
                     },
                 },
                 'cat': {
@@ -1236,10 +1087,7 @@ def test_wrapped_nullable_union() -> None:
                                     'fields': {
                                         'kind': {
                                             'type': 'typed-dict-field',
-                                            'schema': {
-                                                'type': 'literal',
-                                                'expected': ['cat'],
-                                            },
+                                            'schema': {'type': 'literal', 'expected': ['cat']},
                                         }
                                     },
                                 },
@@ -1248,10 +1096,7 @@ def test_wrapped_nullable_union() -> None:
                                     'fields': {
                                         'kind': {
                                             'type': 'typed-dict-field',
-                                            'schema': {
-                                                'type': 'literal',
-                                                'expected': ['dog'],
-                                            },
+                                            'schema': {'type': 'literal', 'expected': ['dog']},
                                         }
                                     },
                                 },
@@ -1275,10 +1120,7 @@ def test_wrapped_nullable_union() -> None:
                                     'fields': {
                                         'kind': {
                                             'type': 'typed-dict-field',
-                                            'schema': {
-                                                'type': 'literal',
-                                                'expected': ['cat'],
-                                            },
+                                            'schema': {'type': 'literal', 'expected': ['cat']},
                                         }
                                     },
                                 },
@@ -1287,10 +1129,7 @@ def test_wrapped_nullable_union() -> None:
                                     'fields': {
                                         'kind': {
                                             'type': 'typed-dict-field',
-                                            'schema': {
-                                                'type': 'literal',
-                                                'expected': ['dog'],
-                                            },
+                                            'schema': {'type': 'literal', 'expected': ['dog']},
                                         }
                                     },
                                 },
@@ -1362,16 +1201,10 @@ def test_union_in_submodel() -> None:
                 'properties': {
                     'union_model': {
                         'discriminator': {
-                            'mapping': {
-                                '1': '#/$defs/UnionModel1',
-                                '2': '#/$defs/UnionModel2',
-                            },
+                            'mapping': {'1': '#/$defs/UnionModel1', '2': '#/$defs/UnionModel2'},
                             'propertyName': 'type',
                         },
-                        'oneOf': [
-                            {'$ref': '#/$defs/UnionModel1'},
-                            {'$ref': '#/$defs/UnionModel2'},
-                        ],
+                        'oneOf': [{'$ref': '#/$defs/UnionModel1'}, {'$ref': '#/$defs/UnionModel2'}],
                         'title': 'Union Model',
                     }
                 },
@@ -1383,16 +1216,10 @@ def test_union_in_submodel() -> None:
                 'properties': {
                     'union_model': {
                         'discriminator': {
-                            'mapping': {
-                                '1': '#/$defs/UnionModel1',
-                                '2': '#/$defs/UnionModel2',
-                            },
+                            'mapping': {'1': '#/$defs/UnionModel1', '2': '#/$defs/UnionModel2'},
                             'propertyName': 'type',
                         },
-                        'oneOf': [
-                            {'$ref': '#/$defs/UnionModel1'},
-                            {'$ref': '#/$defs/UnionModel2'},
-                        ],
+                        'oneOf': [{'$ref': '#/$defs/UnionModel1'}, {'$ref': '#/$defs/UnionModel2'}],
                         'title': 'Union Model',
                     }
                 },
@@ -1402,13 +1229,7 @@ def test_union_in_submodel() -> None:
             },
             'UnionModel1': {
                 'properties': {
-                    'type': {
-                        'const': 1,
-                        'default': 1,
-                        'enum': [1],
-                        'title': 'Type',
-                        'type': 'integer',
-                    },
+                    'type': {'const': 1, 'default': 1, 'enum': [1], 'title': 'Type', 'type': 'integer'},
                     'other': {
                         'const': 'UnionModel1',
                         'default': 'UnionModel1',
@@ -1422,13 +1243,7 @@ def test_union_in_submodel() -> None:
             },
             'UnionModel2': {
                 'properties': {
-                    'type': {
-                        'const': 2,
-                        'default': 2,
-                        'enum': [2],
-                        'title': 'Type',
-                        'type': 'integer',
-                    },
+                    'type': {'const': 2, 'default': 2, 'enum': [2], 'title': 'Type', 'type': 'integer'},
                     'other': {
                         'const': 'UnionModel2',
                         'default': 'UnionModel2',
@@ -1442,10 +1257,7 @@ def test_union_in_submodel() -> None:
             },
         },
         'properties': {
-            'submodel': {
-                'anyOf': [{'$ref': '#/$defs/SubModel1'}, {'$ref': '#/$defs/SubModel2'}],
-                'title': 'Submodel',
-            }
+            'submodel': {'anyOf': [{'$ref': '#/$defs/SubModel1'}, {'$ref': '#/$defs/SubModel2'}], 'title': 'Submodel'}
         },
         'required': ['submodel'],
         'title': 'TestModel',
@@ -1482,11 +1294,7 @@ def test_function_after_discriminator():
         Model(x={'name': 'invalid'})
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {
-                'discriminator': "'name'",
-                'expected_tags': "'kitty', 'cat', 'puppy', 'dog'",
-                'tag': 'invalid',
-            },
+            'ctx': {'discriminator': "'name'", 'expected_tags': "'kitty', 'cat', 'puppy', 'dog'", 'tag': 'invalid'},
             'input': {'name': 'invalid'},
             'loc': ('x',),
             'msg': "Input tag 'invalid' found using 'name' does not match any of the "
@@ -1520,12 +1328,7 @@ def test_sequence_discriminated_union():
         '$defs': {
             'Cat': {
                 'properties': {
-                    'pet_type': {
-                        'const': 'cat',
-                        'enum': ['cat'],
-                        'title': 'Pet Type',
-                        'type': 'string',
-                    },
+                    'pet_type': {'const': 'cat', 'enum': ['cat'], 'title': 'Pet Type', 'type': 'string'},
                     'meows': {'title': 'Meows', 'type': 'integer'},
                 },
                 'required': ['pet_type', 'meows'],
@@ -1534,12 +1337,7 @@ def test_sequence_discriminated_union():
             },
             'Dog': {
                 'properties': {
-                    'pet_type': {
-                        'const': 'dog',
-                        'enum': ['dog'],
-                        'title': 'Pet Type',
-                        'type': 'string',
-                    },
+                    'pet_type': {'const': 'dog', 'enum': ['dog'], 'title': 'Pet Type', 'type': 'string'},
                     'barks': {'title': 'Barks', 'type': 'number'},
                 },
                 'required': ['pet_type', 'barks'],
@@ -1548,11 +1346,7 @@ def test_sequence_discriminated_union():
             },
             'Lizard': {
                 'properties': {
-                    'pet_type': {
-                        'enum': ['reptile', 'lizard'],
-                        'title': 'Pet Type',
-                        'type': 'string',
-                    },
+                    'pet_type': {'enum': ['reptile', 'lizard'], 'title': 'Pet Type', 'type': 'string'},
                     'scales': {'title': 'Scales', 'type': 'boolean'},
                 },
                 'required': ['pet_type', 'scales'],
@@ -1572,11 +1366,7 @@ def test_sequence_discriminated_union():
                         },
                         'propertyName': 'pet_type',
                     },
-                    'oneOf': [
-                        {'$ref': '#/$defs/Cat'},
-                        {'$ref': '#/$defs/Dog'},
-                        {'$ref': '#/$defs/Lizard'},
-                    ],
+                    'oneOf': [{'$ref': '#/$defs/Cat'}, {'$ref': '#/$defs/Dog'}, {'$ref': '#/$defs/Lizard'}],
                 },
                 'title': 'Pet',
                 'type': 'array',
@@ -1639,11 +1429,7 @@ def test_callable_discriminated_union_with_type_adapter(
         pet_adapter.validate_python({'pet_kind': 'fish'})
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {
-                'discriminator': 'get_discriminator_value()',
-                'expected_tags': "'cat', 'dog'",
-                'tag': 'fish',
-            },
+            'ctx': {'discriminator': 'get_discriminator_value()', 'expected_tags': "'cat', 'dog'", 'tag': 'fish'},
             'input': {'pet_kind': 'fish'},
             'loc': (),
             'msg': "Input tag 'fish' found using get_discriminator_value() does not "
@@ -1670,11 +1456,7 @@ def test_callable_discriminated_union_with_type_adapter(
         pet_adapter.validate_python(animals.fish())
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {
-                'discriminator': 'get_discriminator_value()',
-                'expected_tags': "'cat', 'dog'",
-                'tag': 'fish',
-            },
+            'ctx': {'discriminator': 'get_discriminator_value()', 'expected_tags': "'cat', 'dog'", 'tag': 'fish'},
             'input': animals.fish(pet_kind='fish'),
             'loc': (),
             'msg': "Input tag 'fish' found using get_discriminator_value() does not "
@@ -1732,11 +1514,7 @@ def test_various_syntax_options_for_callable_union(
             model.model_validate({'pet': {'pet_kind': 'fish'}})
         assert exc_info.value.errors(include_url=False) == [
             {
-                'ctx': {
-                    'discriminator': 'get_discriminator_value()',
-                    'expected_tags': "'cat', 'dog'",
-                    'tag': 'fish',
-                },
+                'ctx': {'discriminator': 'get_discriminator_value()', 'expected_tags': "'cat', 'dog'", 'tag': 'fish'},
                 'input': {'pet_kind': 'fish'},
                 'loc': ('pet',),
                 'msg': "Input tag 'fish' found using get_discriminator_value() does not "
@@ -1763,11 +1541,7 @@ def test_various_syntax_options_for_callable_union(
             model(pet=animals.fish())
         assert exc_info.value.errors(include_url=False) == [
             {
-                'ctx': {
-                    'discriminator': 'get_discriminator_value()',
-                    'expected_tags': "'cat', 'dog'",
-                    'tag': 'fish',
-                },
+                'ctx': {'discriminator': 'get_discriminator_value()', 'expected_tags': "'cat', 'dog'", 'tag': 'fish'},
                 'input': animals.fish(pet_kind='fish'),
                 'loc': ('pet',),
                 'msg': "Input tag 'fish' found using get_discriminator_value() does not "
@@ -1798,12 +1572,7 @@ def test_callable_discriminated_union_recursive():
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate({'x': {'x': {'x': 1}}})
     assert exc_info.value.errors(include_url=False) == [
-        {
-            'input': {'x': {'x': 1}},
-            'loc': ('x', 'str'),
-            'msg': 'Input should be a valid string',
-            'type': 'string_type',
-        },
+        {'input': {'x': {'x': 1}}, 'loc': ('x', 'str'), 'msg': 'Input should be a valid string', 'type': 'string_type'},
         {
             'input': {'x': 1},
             'loc': ('x', 'Model', 'x', 'str'),
@@ -1863,10 +1632,7 @@ def test_callable_discriminated_union_recursive():
 
     class DiscriminatedModel(BaseModel):
         x: Annotated[
-            Union[
-                Annotated[str, Tag('str')],
-                Annotated['DiscriminatedModel', Tag('model')],
-            ],
+            Union[Annotated[str, Tag('str')], Annotated['DiscriminatedModel', Tag('model')]],
             Discriminator(
                 model_x_discriminator,
                 custom_error_type='invalid_union_member',
@@ -1918,7 +1684,6 @@ def test_callable_discriminated_union_with_missing_tag() -> None:
                 Union[str, 'DiscriminatedModel'],
                 Discriminator(model_x_discriminator),
             ]
-
     except PydanticUserError as exc_info:
         assert exc_info.code == 'callable-discriminator-no-tag'
 
@@ -1929,7 +1694,6 @@ def test_callable_discriminated_union_with_missing_tag() -> None:
                 Union[Annotated[str, Tag('str')], 'DiscriminatedModel'],
                 Discriminator(model_x_discriminator),
             ]
-
     except PydanticUserError as exc_info:
         assert exc_info.code == 'callable-discriminator-no-tag'
 
@@ -1940,7 +1704,6 @@ def test_callable_discriminated_union_with_missing_tag() -> None:
                 Union[str, Annotated['DiscriminatedModel', Tag('model')]],
                 Discriminator(model_x_discriminator),
             ]
-
     except PydanticUserError as exc_info:
         assert exc_info.code == 'callable-discriminator-no-tag'
 
@@ -1972,28 +1735,19 @@ def test_presence_of_discriminator_when_generating_type_adaptor_json_schema_defi
         ]
 
     adaptor = TypeAdapter(
-        Annotated[
-            CreateObjectDto,
-            FieldInfo(examples=[{'id': 1, 'items': [{'id': 3, 'type': 'ITEM1'}]}]),
-        ]
+        Annotated[CreateObjectDto, FieldInfo(examples=[{'id': 1, 'items': [{'id': 3, 'type': 'ITEM1'}]}])]
     )
 
     schema_map, definitions = GenerateJsonSchema().generate_definitions([(adaptor, 'validation', adaptor.core_schema)])
     assert definitions == {
         'CreateItem1': {
-            'properties': {
-                'id': {'title': 'Id', 'type': 'integer'},
-                'type': {'const': 'item1', 'title': 'Type'},
-            },
+            'properties': {'id': {'title': 'Id', 'type': 'integer'}, 'type': {'const': 'item1', 'title': 'Type'}},
             'required': ['type', 'id'],
             'title': 'CreateItem1',
             'type': 'object',
         },
         'CreateItem2': {
-            'properties': {
-                'id': {'title': 'Id', 'type': 'integer'},
-                'type': {'const': 'item2', 'title': 'Type'},
-            },
+            'properties': {'id': {'title': 'Id', 'type': 'integer'}, 'type': {'const': 'item2', 'title': 'Type'}},
             'required': ['type', 'id'],
             'title': 'CreateItem2',
             'type': 'object',
@@ -2004,16 +1758,10 @@ def test_presence_of_discriminator_when_generating_type_adaptor_json_schema_defi
                 'items': {
                     'items': {
                         'discriminator': {
-                            'mapping': {
-                                'item1': '#/$defs/CreateItem1',
-                                'item2': '#/$defs/CreateItem2',
-                            },
+                            'mapping': {'item1': '#/$defs/CreateItem1', 'item2': '#/$defs/CreateItem2'},
                             'propertyName': 'type',
                         },
-                        'oneOf': [
-                            {'$ref': '#/$defs/CreateItem1'},
-                            {'$ref': '#/$defs/CreateItem2'},
-                        ],
+                        'oneOf': [{'$ref': '#/$defs/CreateItem1'}, {'$ref': '#/$defs/CreateItem2'}],
                     },
                     'title': 'Items',
                     'type': 'array',
@@ -2061,12 +1809,7 @@ def test_nested_discriminator() -> None:
             'Step_A': {
                 'properties': {
                     'count': {'title': 'Count', 'type': 'integer'},
-                    'type': {
-                        'const': 'stepA',
-                        'enum': ['stepA'],
-                        'title': 'Type',
-                        'type': 'string',
-                    },
+                    'type': {'const': 'stepA', 'enum': ['stepA'], 'title': 'Type', 'type': 'string'},
                 },
                 'required': ['type', 'count'],
                 'title': 'Step_A',
@@ -2074,12 +1817,7 @@ def test_nested_discriminator() -> None:
             },
             'Step_B': {
                 'properties': {
-                    'type': {
-                        'const': 'stepB',
-                        'enum': ['stepB'],
-                        'title': 'Type',
-                        'type': 'string',
-                    },
+                    'type': {'const': 'stepB', 'enum': ['stepB'], 'title': 'Type', 'type': 'string'},
                     'value': {'title': 'Value', 'type': 'number'},
                 },
                 'required': ['type', 'value'],
@@ -2092,29 +1830,14 @@ def test_nested_discriminator() -> None:
                     'steps': {
                         'default': None,
                         'discriminator': {
-                            'mapping': {
-                                'stepA': '#/$defs/Step_A',
-                                'stepB': '#/$defs/Step_B',
-                            },
+                            'mapping': {'stepA': '#/$defs/Step_A', 'stepB': '#/$defs/Step_B'},
                             'propertyName': 'type',
                         },
-                        'oneOf': [
-                            {'$ref': '#/$defs/Step_A'},
-                            {'$ref': '#/$defs/Step_B'},
-                        ],
+                        'oneOf': [{'$ref': '#/$defs/Step_A'}, {'$ref': '#/$defs/Step_B'}],
                         'title': 'Steps',
                     },
-                    'sub_models': {
-                        'items': {'$ref': '#/$defs/SubModel'},
-                        'title': 'Sub Models',
-                        'type': 'array',
-                    },
-                    'type': {
-                        'const': 'mixed',
-                        'enum': ['mixed'],
-                        'title': 'Type',
-                        'type': 'string',
-                    },
+                    'sub_models': {'items': {'$ref': '#/$defs/SubModel'}, 'title': 'Sub Models', 'type': 'array'},
+                    'type': {'const': 'mixed', 'enum': ['mixed'], 'title': 'Type', 'type': 'string'},
                 },
                 'required': ['type', 'sub_models', 'blending'],
                 'title': 'SubModel',
@@ -2131,17 +1854,8 @@ def test_nested_discriminator() -> None:
                 'oneOf': [{'$ref': '#/$defs/Step_A'}, {'$ref': '#/$defs/Step_B'}],
                 'title': 'Steps',
             },
-            'sub_models': {
-                'items': {'$ref': '#/$defs/SubModel'},
-                'title': 'Sub Models',
-                'type': 'array',
-            },
-            'type': {
-                'const': 'mixed',
-                'enum': ['mixed'],
-                'title': 'Type',
-                'type': 'string',
-            },
+            'sub_models': {'items': {'$ref': '#/$defs/SubModel'}, 'title': 'Sub Models', 'type': 'array'},
+            'type': {'const': 'mixed', 'enum': ['mixed'], 'title': 'Type', 'type': 'string'},
         },
         'required': ['type', 'sub_models'],
         'title': 'MyModel',
@@ -2311,35 +2025,9 @@ def test_discriminated_union_with_unsubstituted_type_var() -> None:
     ta = TypeAdapter(Dog[int])
     int_dog = {
         'type_': 'dog',
-        'friends': [
-            {'type_': 'dog', 'friends': [], 'id': 2},
-            {'type_': 'cat', 'friends': [], 'id': 3},
-        ],
+        'friends': [{'type_': 'dog', 'friends': [], 'id': 2}, {'type_': 'cat', 'friends': [], 'id': 3}],
         'id': 1,
     }
     assert ta.validate_python(int_dog).id == 1
     assert ta.validate_python(int_dog).friends[0].id == 2
     assert ta.validate_python(int_dog).friends[1].id == 3
-
-
-def test_discriminated_union_model_dump_with_nested_class():
-    class SomeEnum(str, Enum):
-        CAT = 'cat'
-        DOG = 'dog'
-
-    class Dog(BaseModel):
-        type: Literal[SomeEnum.DOG] = SomeEnum.DOG
-        name: str
-
-    class Cat(BaseModel):
-        type: Literal[SomeEnum.CAT] = SomeEnum.CAT
-        toy: str
-
-    class Yard(BaseModel):
-        pet: Union[Dog, Cat] = Field(discriminator='type')
-
-    yard = Yard(pet=Dog(name='Rex'))
-    yard_dict = yard.model_dump(mode='json')
-    assert isinstance(yard_dict['pet']['type'], str)
-    assert not isinstance(yard_dict['pet']['type'], SomeEnum)
-    assert str(yard_dict['pet']['type']) == 'dog'
