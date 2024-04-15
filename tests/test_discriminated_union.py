@@ -2031,3 +2031,26 @@ def test_discriminated_union_with_unsubstituted_type_var() -> None:
     assert ta.validate_python(int_dog).id == 1
     assert ta.validate_python(int_dog).friends[0].id == 2
     assert ta.validate_python(int_dog).friends[1].id == 3
+
+
+def test_discriminated_union_model_dump_with_nested_class():
+    class SomeEnum(str, Enum):
+        CAT = 'cat'
+        DOG = 'dog'
+
+    class Dog(BaseModel):
+        type: Literal[SomeEnum.DOG] = SomeEnum.DOG
+        name: str
+
+    class Cat(BaseModel):
+        type: Literal[SomeEnum.CAT] = SomeEnum.CAT
+        name: str
+
+    class Yard(BaseModel):
+        pet: Union[Dog, Cat] = Field(discriminator='type')
+
+    yard = Yard(pet=Dog(name='Rex'))
+    yard_dict = yard.model_dump(mode='json')
+    assert isinstance(yard_dict['pet']['type'], str)
+    assert not isinstance(yard_dict['pet']['type'], SomeEnum)
+    assert str(yard_dict['pet']['type']) == 'dog'
