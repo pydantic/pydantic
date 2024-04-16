@@ -140,35 +140,6 @@ class Html(BaseModel):
 
 See [Discriminated Unions] for more details.
 
-## Use `Literal` not `Enum`
-
-Instead of using `Enum`, use `Literal` to define the structure of the data.
-
-??? info "Performance comparison"
-    With a simple benchmark, `Literal` is about ~3x faster than `Enum`:
-
-    ```py test="skip"
-    import enum
-    from timeit import timeit
-
-    from typing_extensions import Literal
-
-    from pydantic import TypeAdapter
-
-    ta = TypeAdapter(Literal['a', 'b'])
-    result1 = timeit(lambda: ta.validate_python('a'), number=10000)
-
-
-    class AB(str, enum.Enum):
-        a = 'a'
-        b = 'b'
-
-
-    ta = TypeAdapter(AB)
-    result2 = timeit(lambda: ta.validate_python('a'), number=10000)
-    print(result2 / result1)
-    ```
-
 ## Use `TypedDict` over nested models
 
 Instead of using nested models, use `TypedDict` to define the structure of the data.
