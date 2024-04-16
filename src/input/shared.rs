@@ -115,7 +115,7 @@ fn clean_int_str(mut s: &str) -> Option<Cow<str>> {
     s = s.trim();
 
     // strip loading zeros
-    s = s.trim_start_matches('0');
+    s = strip_leading_zeros(s)?;
 
     // we don't want to parse as f64 then call `float_as_int` as it can lose precision for large ints, therefore
     // we strip `.0+` manually instead
@@ -135,6 +135,37 @@ fn clean_int_str(mut s: &str) -> Option<Cow<str>> {
             false => Some(s.into()),
         }
     }
+}
+
+/// strip leading zeros from a string, we can't simple use `s.trim_start_matches('0')`, because:
+/// - we need to keep one zero if the string is only zeros e.g. `000` -> `0`
+/// - we need to keep one zero if the string is a float which is an exact int e.g. `00.0` -> `0.0`
+/// - underscores within leading zeros should also be stripped e.g. `0_000` -> `0`, but not `_000`
+fn strip_leading_zeros(s: &str) -> Option<&str> {
+    let mut char_iter = s.char_indices();
+    match char_iter.next() {
+        // if we get a leading zero we continue
+        Some((_, '0')) => (),
+        // if we get another digit we return the whole string
+        Some((_, c)) if ('1'..='9').contains(&c) => return Some(s),
+        // anything else is invalid, we return None
+        _ => return None,
+    };
+    for (i, c) in char_iter {
+        match c {
+            // continue on more leading zeros or if we get an underscore we continue - we're "within the number"
+            '0' | '_' => (),
+            // any other digit we return the rest of the string
+            '1'..='9' => return Some(&s[i..]),
+            // if we get a dot we return the rest of the string but include the last zero
+            '.' => return Some(&s[(i - 1)..]),
+            // anything else is invalid, we return None
+            _ => return None,
+        }
+    }
+    // if the string is all zeros (or underscores), we return the last character
+    // generally this will be zero, but could be an underscore, which will fail
+    Some(&s[s.len() - 1..])
 }
 
 pub fn float_as_int<'py>(input: &(impl Input<'py> + ?Sized), float: f64) -> ValResult<EitherInt<'py>> {
