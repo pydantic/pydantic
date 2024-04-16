@@ -2344,9 +2344,11 @@ class EncodedBytes:
         return field_schema
 
     def __get_pydantic_core_schema__(self, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        base_schema: Any = handler(source)
+        del base_schema['type']
         return core_schema.with_info_after_validator_function(
             function=self.decode,
-            schema=core_schema.bytes_schema(),
+            schema=core_schema.bytes_schema(**base_schema),
             serialization=core_schema.plain_serializer_function_ser_schema(function=self.encode),
         )
 

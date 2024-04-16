@@ -5508,6 +5508,42 @@ def test_base64(field_type, input_data, expected_value, serialized_data):
     }
 
 
+def test_base64_with_valid_min_length() -> None:
+    class Model(BaseModel):
+        base64_value: Base64Bytes = Field(min_length=3)
+
+    value = b'Zm9v'
+    m = Model.model_construct(base64_value=value)
+    assert m.base64_value == value
+    assert Model.model_json_schema() == {
+        'properties': {
+            'base64_value': {
+                'format': 'base64',
+                'minLength': 3,
+                'title': 'Base64 Value',
+                'type': 'string',
+            }
+        },
+        'required': ['base64_value'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_base64_with_invalid_min_length() -> None:
+    """Check that an error is raised when the length of the base64
+    value is less or more than the min_length and max_length"""
+
+    class Model(BaseModel):
+        base64_value: Base64Bytes = Field(min_length=3, max_length=5)
+
+    with pytest.raises(ValidationError):
+        Model(**{'base64_value': b''})
+
+    with pytest.raises(ValidationError):
+        Model(**{'base64_value': b'123456'})
+
+
 @pytest.mark.parametrize(
     ('field_type', 'input_data'),
     [
