@@ -3060,12 +3060,12 @@ which can be used for type validation, serialization, and JSON schema generation
     <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
 
 
-<span class="n">UserListAdapter</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="n">User</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">UserListAdapter</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Fred&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;3&#39;</span><span class="p">}])))</span>
+<span class="n">user_list_adapter</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="n">User</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">user_list_adapter</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Fred&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;3&#39;</span><span class="p">}])))</span>
 <span class="c1">#&gt; [{&#39;name&#39;: &#39;Fred&#39;, &#39;id&#39;: 3}]</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">UserListAdapter</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+    <span class="n">user_list_adapter</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
         <span class="p">[{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Fred&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;wrong&#39;</span><span class="p">,</span> <span class="s1">&#39;other&#39;</span><span class="p">:</span> <span class="s1">&#39;no&#39;</span><span class="p">}]</span>
     <span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
