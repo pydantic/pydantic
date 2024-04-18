@@ -2037,13 +2037,13 @@ class GenerateJsonSchema:
         Returns:
             The encoded default value.
         """
-        from .type_adapter import TypeAdapter
+        from .type_adapter import TypeAdapter, _type_has_config
 
         config = self._config
         try:
             default = (
                 dft
-                if hasattr(dft, '__pydantic_serializer__')
+                if _type_has_config(type(dft))
                 else TypeAdapter(type(dft), config=config.config_dict).dump_python(dft, mode='json')
             )
         except PydanticSchemaGenerationError:
