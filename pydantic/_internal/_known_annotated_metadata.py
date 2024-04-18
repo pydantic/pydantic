@@ -197,6 +197,7 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
 
         if schema_type == 'function-after' and constraint == 'strict':
             schema['schema']['strict'] = value  # type: ignore  # schema is function-after schema, 'schema' key is present
+            return schema
 
         if schema_type in allowed_schemas:
             if constraint == 'union_mode' and schema_type == 'union':
