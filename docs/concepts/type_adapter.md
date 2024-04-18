@@ -25,12 +25,12 @@ class User(TypedDict):
     id: int
 
 
-UserListAdapter = TypeAdapter(List[User])
-print(repr(UserListAdapter.validate_python([{'name': 'Fred', 'id': '3'}])))
+user_list_adapter = TypeAdapter(List[User])
+print(repr(user_list_adapter.validate_python([{'name': 'Fred', 'id': '3'}])))
 #> [{'name': 'Fred', 'id': 3}]
 
 try:
-    UserListAdapter.validate_python(
+    user_list_adapter.validate_python(
         [{'name': 'Fred', 'id': 'wrong', 'other': 'no'}]
     )
 except ValidationError as e:
