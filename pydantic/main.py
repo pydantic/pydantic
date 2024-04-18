@@ -250,7 +250,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             private: dict[str, Any] | None = getattr(m, '__pydantic_private__', None)
             if private is not None:
                 for k, v in values.items():
-                    if k in private:
+                    if k in m.__private_attributes__:
                         private[k] = v
 
         elif not cls.__pydantic_root_model__:
