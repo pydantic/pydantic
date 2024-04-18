@@ -197,7 +197,7 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
 
         # if it becomes necessary to handle more than one constraint
         # in this recursive case with function-after or function-wrap, we should refactor
-        if schema_type in ['function-before', 'function-wrap', 'function-after'] and constraint == 'strict':
+        if schema_type in {'function-before', 'function-wrap', 'function-after'} and constraint == 'strict':
             schema['schema'] = apply_known_metadata(annotation, schema['schema'])  # type: ignore  # schema is function-after schema
             return schema
 
