@@ -247,10 +247,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         if cls.__pydantic_post_init__:
             m.model_post_init(None)
             # update private attributes with values set
-            if hasattr(m, '__pydantic_private__') and m.__pydantic_private__ is not None:
+            private: dict[str, Any] | None = getattr(m, '__pydantic_private__', None)
+            if private is not None:
                 for k, v in values.items():
-                    if k in m.__private_attributes__:
-                        m.__pydantic_private__[k] = v
+                    if k in private:
+                        private[k] = v
 
         elif not cls.__pydantic_root_model__:
             # Note: if there are any private attributes, cls.__pydantic_post_init__ would exist
@@ -721,13 +722,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         _object_setattr(m, '__pydantic_extra__', copy(self.__pydantic_extra__))
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
 
-        if not hasattr(self, '__pydantic_private__') or self.__pydantic_private__ is None:
+        private: dict[str, Any] | None = getattr(self, '__pydantic_private__', None)
+        if private is None:
             _object_setattr(m, '__pydantic_private__', None)
         else:
             _object_setattr(
                 m,
                 '__pydantic_private__',
-                {k: v for k, v in self.__pydantic_private__.items() if v is not PydanticUndefined},
+                {k: v for k, v in private.items() if v is not PydanticUndefined},
             )
 
         return m
@@ -742,13 +744,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # and attempting a deepcopy would be marginally slower.
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
 
-        if not hasattr(self, '__pydantic_private__') or self.__pydantic_private__ is None:
+        private: dict[str, Any] | None = getattr(self, '__pydantic_private__', None)
+        if private is None:
             _object_setattr(m, '__pydantic_private__', None)
         else:
             _object_setattr(
                 m,
                 '__pydantic_private__',
-                deepcopy({k: v for k, v in self.__pydantic_private__.items() if v is not PydanticUndefined}, memo=memo),
+                deepcopy({k: v for k, v in private.items() if v is not PydanticUndefined}, memo=memo),
             )
 
         return m
