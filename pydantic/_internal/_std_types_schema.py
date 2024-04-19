@@ -192,6 +192,7 @@ class DecimalValidator:
                 # but if it's not make it a string
                 # we don't use JSON -> float because parsing to any float will cause
                 # loss of precision
+                core_schema.float_schema(),
                 core_schema.int_schema(strict=True),
                 core_schema.str_schema(strict=True, strip_whitespace=True),
                 core_schema.no_info_plain_validator_function(str),
