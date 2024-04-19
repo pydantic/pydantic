@@ -2033,6 +2033,9 @@ def test_discriminated_union_with_unsubstituted_type_var() -> None:
     assert ta.validate_python(int_dog).friends[1].id == 3
 
 
+@pytest.mark.xfail(
+    reason='model_dump does not properly serialize the discriminator field to string if it is using an Enum. Issue: https://github.com/pydantic/pydantic/issues/9235'
+)
 def test_discriminated_union_model_dump_with_nested_class():
     class SomeEnum(str, Enum):
         CAT = 'cat'
