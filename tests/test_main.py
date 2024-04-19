@@ -3280,3 +3280,17 @@ def test_validation_works_for_cyclical_forward_refs() -> None:
         x: Union[X, None]
 
     assert Y(x={'y': None}).x.y is None
+
+
+def test_model_construct_with_model_post_init_and_model_copy() -> None:
+    class Model(BaseModel):
+        id: int
+
+        def model_post_init(self, context: Any) -> None:
+            super().model_post_init(context)
+
+    m = Model.model_construct(id=1)
+    copy = m.model_copy(deep=True)
+
+    assert m == copy
+    assert id(m) != id(copy)
