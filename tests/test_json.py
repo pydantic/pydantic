@@ -248,6 +248,45 @@ def test_con_decimal_encode() -> None:
     assert Obj.model_validate_json(json_data) == Obj(id=1)
 
 
+@pytest.mark.parametrize(
+    ('json_data', 'expected'),
+    [
+        pytest.param(
+            '{"value": 1.234567890123456789012345678901234567890}',
+            Decimal(1.234567890123456789012345678901234567890),
+            id='many decimal places',
+        ),
+        pytest.param(
+            '{"value": 12345678901234567890123456789012345678.9}',
+            Decimal(12345678901234567890123456789012345678.9),
+            id='large number with a single decimal place',
+        ),
+        pytest.param(
+            '{"value": 12345678901234567890123456789012345678}',
+            12345678901234567890123456789012345678,
+            id='large number, no decimal places',
+        ),
+    ],
+)
+def test_long_decimal_decoding(json_data: str, expected: Decimal) -> None:
+    """
+    Really large decimal values should lose their precision when encoding or decoding
+    from json.
+    Note: Test case data is supplied as a raw string since python can be lossy with large floats
+    ToDo: Possible use flag `check_digits`?
+    """
+
+    class Obj(BaseModel):
+        value: Decimal
+
+    # parse from json
+    m = Obj.model_validate_json(json_data)
+    m_json_data = m.model_dump_json()
+
+    # test encoding and decoding in 1 go
+    assert (m.value, m_json_data) == (expected, json_data)
+
+
 def test_json_encoder_simple_inheritance():
     class Parent(BaseModel):
         dt: datetime = datetime.now()
