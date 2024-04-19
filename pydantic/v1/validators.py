@@ -174,6 +174,11 @@ def float_finite_validator(v: 'Number', field: 'ModelField', config: 'BaseConfig
         raise errors.NumberNotFiniteError()
     return v
 
+def round_to(v: 'Number', config: 'BaseConfig')-> float:
+    round_to = config.round_to
+
+    if round_to is not None:
+        return round(v, round_to)
 
 def number_multiple_validator(v: 'Number', field: 'ModelField') -> 'Number':
     field_type: ConstrainedNumber = field.type_
@@ -671,7 +676,9 @@ _VALIDATORS: List[Tuple[Type[Any], List[Any]]] = [
     ),
     (bool, [bool_validator]),
     (int, [int_validator]),
-    (float, [float_validator, IfConfig(float_finite_validator, 'allow_inf_nan', ignored_value=True)]),
+    (float, [float_validator,
+            IfConfig(float_finite_validator, 'allow_inf_nan', ignored_value=True),
+            IfConfig(round_to, 'round_to')]),
     (Path, [path_validator]),
     (datetime, [parse_datetime]),
     (date, [parse_date]),
