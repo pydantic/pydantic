@@ -6658,3 +6658,19 @@ def test_can_serialize_deque_passed_to_sequence() -> None:
 
     assert ta.dump_python(my_dec) == my_dec
     assert ta.dump_json(my_dec) == b'[1,2,3]'
+
+
+def test_strict_enum_with_use_enum_values() -> None:
+    class SomeEnum(int, Enum):
+        SOME_KEY = 1
+
+    class Foo(BaseModel):
+        model_config = ConfigDict(strict=False, use_enum_values=True)
+        foo: Annotated[SomeEnum, Strict(strict=True)]
+
+    f = Foo(foo=SomeEnum.SOME_KEY)
+    assert f.foo == 1
+
+    # validation error raised bc foo field uses strict mode
+    with pytest.raises(ValidationError):
+        Foo(foo='1')
