@@ -131,8 +131,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_validator__: ClassVar[SchemaValidator]
 
         # Instance attributes
-        # Note: we use the non-existent kwarg `init=False` in pydantic.fields.Field below so that @dataclass_transform
-        # doesn't think these are valid as keyword arguments to the class initializer.
         __pydantic_extra__: dict[str, Any] | None = _Field(init=False)  # type: ignore
         __pydantic_fields_set__: set[str] = _Field(init=False)  # type: ignore
         __pydantic_private__: dict[str, Any] | None = _Field(init=False)  # type: ignore
