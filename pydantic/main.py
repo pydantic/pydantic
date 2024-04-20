@@ -52,7 +52,7 @@ if typing.TYPE_CHECKING:
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
     from .deprecated.parse import Protocol as DeprecatedParseProtocol
     from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
-    from .fields import Field as _Field
+    from .fields import PrivateAttr as _PrivateAttr
 else:
     # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
     # and https://youtrack.jetbrains.com/issue/PY-51428
@@ -131,9 +131,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_validator__: ClassVar[SchemaValidator]
 
         # Instance attributes
-        __pydantic_extra__: dict[str, Any] | None = _Field(init=False)  # type: ignore
-        __pydantic_fields_set__: set[str] = _Field(init=False)  # type: ignore
-        __pydantic_private__: dict[str, Any] | None = _Field(init=False)  # type: ignore
+        __pydantic_extra__: dict[str, Any] | None = _PrivateAttr()
+        __pydantic_fields_set__: set[str] = _PrivateAttr()
+        __pydantic_private__: dict[str, Any] | None = _PrivateAttr()
 
     else:
         # `model_fields` and `__pydantic_decorators__` must be set for
