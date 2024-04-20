@@ -40,6 +40,7 @@ else:
     # and https://youtrack.jetbrains.com/issue/PY-51428
     DeprecationWarning = PydanticDeprecatedSince20
     PydanticModelField = object()
+    PydanticModelPrivateAttr = object()
 
 object_setattr = object.__setattr__
 
