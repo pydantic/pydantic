@@ -1445,6 +1445,9 @@ class GenerateJsonSchema:
                 f"model_config['json_schema_extra']={json_schema_extra} should be a dict, callable, or None"
             )
 
+        if hasattr(cls, '__deprecated__'):
+            json_schema['deprecated'] = True
+
         return json_schema
 
     def resolve_schema_to_update(self, json_schema: JsonSchemaValue) -> JsonSchemaValue:
