@@ -19,6 +19,7 @@ use serde::{ser::Error, Serialize, Serializer};
 use crate::errors::{
     py_err_string, ErrorType, ErrorTypeDefaults, InputValue, ToErrorValue, ValError, ValLineError, ValResult,
 };
+use crate::py_gc::PyGcTraverse;
 use crate::tools::{extract_i64, new_py_string, py_err};
 use crate::validators::{CombinedValidator, Exactness, ValidationState, Validator};
 
@@ -327,6 +328,15 @@ pub enum GenericIterator<'data> {
     JsonArray(GenericJsonIterator<'data>),
 }
 
+impl PyGcTraverse for GenericIterator<'_> {
+    fn py_gc_traverse(&self, visit: &pyo3::PyVisit<'_>) -> Result<(), pyo3::PyTraverseError> {
+        if let Self::PyIterator(iter) = self {
+            iter.py_gc_traverse(visit)?;
+        }
+        Ok(())
+    }
+}
+
 impl GenericIterator<'_> {
     pub(crate) fn into_static(self) -> GenericIterator<'static> {
         match self {
@@ -384,6 +394,8 @@ impl GenericPyIterator {
         self.index
     }
 }
+
+impl_py_gc_traverse!(GenericPyIterator { obj, iter });
 
 #[derive(Debug, Clone)]
 pub struct GenericJsonIterator<'data> {
