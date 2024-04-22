@@ -1,11 +1,12 @@
 use std::fmt;
 use std::sync::Arc;
 
-use pyo3::prelude::*;
 use pyo3::types::PyDict;
+use pyo3::{prelude::*, PyTraverseError, PyVisit};
 
 use crate::errors::{ErrorType, LocItem, ValError, ValResult};
 use crate::input::{BorrowInput, GenericIterator, Input};
+use crate::py_gc::PyGcTraverse;
 use crate::recursion_guard::RecursionState;
 use crate::tools::SchemaDict;
 use crate::ValidationError;
@@ -200,6 +201,12 @@ impl ValidatorIterator {
 
     fn __str__(&self) -> String {
         self.__repr__()
+    }
+
+    fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
+        self.iterator.py_gc_traverse(&visit)?;
+        self.validator.py_gc_traverse(&visit)?;
+        Ok(())
     }
 }
 

@@ -1,6 +1,6 @@
 import gc
 import platform
-from typing import Any
+from typing import Any, Iterable
 from weakref import WeakValueDictionary
 
 import pytest
@@ -73,6 +73,45 @@ def test_gc_schema_validator() -> None:
         cache[id(MyModel)] = MyModel
 
         del MyModel
+
+    gc.collect(0)
+    gc.collect(1)
+    gc.collect(2)
+
+    assert len(cache) == 0
+
+
+@pytest.mark.xfail(
+    condition=platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
+)
+def test_gc_validator_iterator() -> None:
+    # test for https://github.com/pydantic/pydantic/issues/9243
+    class MyModel:
+        iter: Iterable[int]
+
+    v = SchemaValidator(
+        core_schema.model_schema(
+            MyModel,
+            core_schema.model_fields_schema(
+                {'iter': core_schema.model_field(core_schema.generator_schema(core_schema.int_schema()))}
+            ),
+        ),
+    )
+
+    class MyIterable:
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            raise StopIteration()
+
+    cache: 'WeakValueDictionary[int, Any]' = WeakValueDictionary()
+
+    for _ in range(10_000):
+        iterable = MyIterable()
+        cache[id(iterable)] = iterable
+        v.validate_python({'iter': iterable})
+        del iterable
 
     gc.collect(0)
     gc.collect(1)
