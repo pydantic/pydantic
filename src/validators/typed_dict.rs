@@ -156,10 +156,12 @@ impl Validator for TypedDictValidator {
 
         // we only care about which keys have been used if we're iterating over the object for extra after
         // the first pass
-        let mut used_keys: Option<AHashSet<&str>> = match self.extra_behavior {
-            ExtraBehavior::Allow | ExtraBehavior::Forbid => Some(AHashSet::with_capacity(self.fields.len())),
-            ExtraBehavior::Ignore => None,
-        };
+        let mut used_keys: Option<AHashSet<&str>> =
+            if self.extra_behavior == ExtraBehavior::Ignore || dict.is_py_get_attr() {
+                None
+            } else {
+                Some(AHashSet::with_capacity(self.fields.len()))
+            };
 
         {
             let state = &mut state.rebind_extra(|extra| extra.data = Some(output_dict.clone()));

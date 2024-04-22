@@ -622,7 +622,7 @@ fn from_attributes_applicable(obj: &Bound<'_, PyAny>) -> bool {
     // I don't think it's a very good list at all! But it doesn't have to be at perfect, it just needs to avoid
     // the most egregious foot guns, it's mostly just to catch "builtins"
     // still happy to add more or do something completely different if anyone has a better idea???
-    // dbg!(obj, module_name);
+    // dbg!(obj, &module_name);
     !matches!(module_name.to_str(), Ok("builtins" | "datetime" | "collections"))
 }
 
@@ -806,6 +806,10 @@ impl<'py> ValidatedDict<'py> for GenericPyMapping<'_, 'py> {
             Self::Mapping(mapping) => key.py_get_mapping_item(mapping),
             Self::GetAttr(obj, dict) => key.py_get_attr(obj, dict.as_ref()),
         }
+    }
+
+    fn is_py_get_attr(&self) -> bool {
+        matches!(self, Self::GetAttr(..))
     }
 
     fn as_py_dict(&self) -> Option<&Bound<'py, PyDict>> {
