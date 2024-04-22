@@ -72,6 +72,99 @@ def test_model_class_extra():
     assert m.__dict__ == {'field_a': 'test', 'field_b': 12}
 
 
+def test_model_class_extra_forbid():
+    class MyModel:
+        class Meta:
+            pass
+
+        # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        field_a: str
+        field_b: int
+
+    class Wrapper:
+        def __init__(self, inner):
+            self._inner = inner
+
+        def __dir__(self):
+            return dir(self._inner)
+
+        def __getattr__(self, key):
+            return getattr(self._inner, key)
+
+    v = SchemaValidator(
+        core_schema.model_schema(
+            MyModel,
+            core_schema.model_fields_schema(
+                {
+                    'field_a': core_schema.model_field(core_schema.str_schema()),
+                    'field_b': core_schema.model_field(core_schema.int_schema()),
+                },
+                extra_behavior='forbid',
+            ),
+        )
+    )
+    m = v.validate_python({'field_a': 'test', 'field_b': 12})
+    assert isinstance(m, MyModel)
+    assert m.field_a == 'test'
+    assert m.field_b == 12
+
+    # try revalidating from the model's attributes
+    m = v.validate_python(Wrapper(m), from_attributes=True)
+
+    with pytest.raises(ValidationError) as exc_info:
+        m = v.validate_python({'field_a': 'test', 'field_b': 12, 'field_c': 'extra'})
+
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'extra_forbidden', 'loc': ('field_c',), 'msg': 'Extra inputs are not permitted', 'input': 'extra'}
+    ]
+
+
+@pytest.mark.parametrize('extra_behavior', ['allow', 'ignore', 'forbid'])
+def test_model_class_extra_forbid_from_attributes(extra_behavior: str):
+    # iterating attributes includes much more than just __dict__, so need
+    # careful interaction with __extra__
+
+    class MyModel:
+        # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        field_a: str
+        field_b: int
+
+    class Data:
+        # https://github.com/pydantic/pydantic/issues/9242
+        class Meta:
+            pass
+
+        def __init__(self, **values):
+            self.__dict__.update(values)
+
+    v = SchemaValidator(
+        core_schema.model_schema(
+            MyModel,
+            core_schema.model_fields_schema(
+                {
+                    'field_a': core_schema.model_field(core_schema.str_schema()),
+                    'field_b': core_schema.model_field(core_schema.int_schema()),
+                },
+                extra_behavior=extra_behavior,
+                from_attributes=True,
+            ),
+        )
+    )
+    m = v.validate_python(Data(field_a='test', field_b=12))
+    assert isinstance(m, MyModel)
+    assert m.field_a == 'test'
+    assert m.field_b == 12
+
+    # with from_attributes, extra is basically ignored
+    m = v.validate_python(Data(field_a='test', field_b=12, field_c='extra'))
+    assert isinstance(m, MyModel)
+    assert m.field_a == 'test'
+    assert m.field_b == 12
+    assert not hasattr(m, 'field_c')
+
+
 def test_model_class_setattr():
     setattr_calls = []
 
