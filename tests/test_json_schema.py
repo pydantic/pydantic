@@ -6100,3 +6100,107 @@ def test_deprecated_class_usage_warns(cls):
         pytest.skip('TypedDict does not generate a DeprecationWarning on usage')
     with pytest.warns(DeprecationWarning, match=f'{cls.__name__} is deprecated'):
         cls()
+=======
+@dataclasses.dataclass
+class BuiltinDataclassParent:
+    name: str
+
+
+@pydantic.dataclasses.dataclass
+class PydanticDataclassParent:
+    name: str
+
+
+class TypedDictParent(TypedDict):
+    name: str
+
+
+class ModelParent(BaseModel):
+    name: str
+
+
+@pytest.mark.parametrize(
+    'pydantic_type,expected_json_schema',
+    [
+        pytest.param(
+            BuiltinDataclassParent,
+            {
+                '$defs': {
+                    'BuiltinDataclassParent': {
+                        'properties': {'name': {'title': 'Name', 'type': 'string'}},
+                        'required': ['name'],
+                        'title': 'BuiltinDataclassParent',
+                        'type': 'object',
+                    }
+                },
+                'properties': {
+                    'parent': {'allOf': [{'$ref': '#/$defs/BuiltinDataclassParent'}], 'default': {'name': 'Jon Doe'}}
+                },
+                'title': 'child',
+                'type': 'object',
+            },
+            id='builtin-dataclass',
+        ),
+        pytest.param(
+            PydanticDataclassParent,
+            {
+                '$defs': {
+                    'PydanticDataclassParent': {
+                        'properties': {'name': {'title': 'Name', 'type': 'string'}},
+                        'required': ['name'],
+                        'title': 'PydanticDataclassParent',
+                        'type': 'object',
+                    }
+                },
+                'properties': {
+                    'parent': {'allOf': [{'$ref': '#/$defs/PydanticDataclassParent'}], 'default': {'name': 'Jon Doe'}}
+                },
+                'title': 'child',
+                'type': 'object',
+            },
+            id='pydantic-dataclass',
+        ),
+        pytest.param(
+            TypedDictParent,
+            {
+                '$defs': {
+                    'TypedDictParent': {
+                        'properties': {'name': {'title': 'Name', 'type': 'string'}},
+                        'required': ['name'],
+                        'title': 'TypedDictParent',
+                        'type': 'object',
+                    }
+                },
+                'properties': {
+                    'parent': {'allOf': [{'$ref': '#/$defs/TypedDictParent'}], 'default': {'name': 'Jon Doe'}}
+                },
+                'title': 'child',
+                'type': 'object',
+            },
+            id='typeddict',
+        ),
+        pytest.param(
+            ModelParent,
+            {
+                '$defs': {
+                    'ModelParent': {
+                        'properties': {'name': {'title': 'Name', 'type': 'string'}},
+                        'required': ['name'],
+                        'title': 'ModelParent',
+                        'type': 'object',
+                    }
+                },
+                'properties': {'parent': {'allOf': [{'$ref': '#/$defs/ModelParent'}], 'default': {'name': 'Jon Doe'}}},
+                'title': 'child',
+                'type': 'object',
+            },
+            id='model',
+        ),
+    ],
+)
+def test_pydantic_types_as_default_values(pydantic_type, expected_json_schema):
+    class Child(BaseModel):
+        model_config = ConfigDict(title='child')
+        parent: pydantic_type = pydantic_type(name='Jon Doe')
+
+    assert Child.model_json_schema() == expected_json_schema
