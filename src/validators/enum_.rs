@@ -121,7 +121,15 @@ impl<T: EnumValidateValue> Validator for EnumValidator<T> {
             return Ok(v);
         } else if let Some(ref missing) = self.missing {
             state.floor_exactness(Exactness::Lax);
-            let enum_value = missing.bind(py).call1((input.to_object(py),))?;
+            let enum_value = missing.bind(py).call1((input.to_object(py),)).map_err(|_| {
+                ValError::new(
+                    ErrorType::Enum {
+                        expected: self.expected_repr.clone(),
+                        context: None,
+                    },
+                    input,
+                )
+            })?;
             // check enum_value is an instance of the class like
             // https://github.com/python/cpython/blob/v3.12.2/Lib/enum.py#L1148
             if enum_value.is_instance(class)? {

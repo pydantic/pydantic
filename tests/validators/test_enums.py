@@ -1,6 +1,6 @@
 import re
 import sys
-from enum import Enum
+from enum import Enum, IntFlag
 
 import pytest
 
@@ -267,3 +267,21 @@ def test_plain_enum_empty():
 
     with pytest.raises(SchemaError, match='`members` should have length > 0'):
         SchemaValidator(core_schema.enum_schema(MyEnum, []))
+
+
+def test_missing_error_converted_to_val_error() -> None:
+    class MyFlags(IntFlag):
+        OFF = 0
+        ON = 1
+
+    v = SchemaValidator(
+        core_schema.with_default_schema(
+            schema=core_schema.enum_schema(MyFlags, list(MyFlags.__members__.values())), default=MyFlags.OFF
+        )
+    )
+
+    assert v.validate_python(MyFlags.OFF) is MyFlags.OFF
+    assert v.validate_python(0) is MyFlags.OFF
+
+    with pytest.raises(ValidationError):
+        v.validate_python(None)
