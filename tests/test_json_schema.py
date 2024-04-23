@@ -4943,6 +4943,36 @@ def test_sequence_schema(sequence_type):
 
 
 @pytest.mark.parametrize(('sequence_type',), [pytest.param(List), pytest.param(Sequence)])
+def test_sequence_schema_with_max_length(sequence_type):
+    class Model(BaseModel):
+        field: sequence_type[int] = Field(max_length=5)
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'field': {'items': {'type': 'integer'}, 'maxItems': 5, 'title': 'Field', 'type': 'array'},
+        },
+        'required': ['field'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+@pytest.mark.parametrize(('sequence_type',), [pytest.param(List), pytest.param(Sequence)])
+def test_sequence_schema_with_min_length(sequence_type):
+    class Model(BaseModel):
+        field: sequence_type[int] = Field(min_length=1)
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'field': {'items': {'type': 'integer'}, 'minItems': 1, 'title': 'Field', 'type': 'array'},
+        },
+        'required': ['field'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+@pytest.mark.parametrize(('sequence_type',), [pytest.param(List), pytest.param(Sequence)])
 def test_sequences_int_json_schema(sequence_type):
     class Model(BaseModel):
         int_seq: sequence_type[int]
