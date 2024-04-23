@@ -14248,13 +14248,13 @@ any remain, we transform the schema from a top-level '$ref' to use allOf to move
 <span class="sd">    Returns:</span>
 <span class="sd">        The encoded default value.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">from</span> <span class="nn">.type_adapter</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
+    <span class="kn">from</span> <span class="nn">.type_adapter</span> <span class="kn">import</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">_type_has_config</span>
 
     <span class="n">config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">default</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">dft</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dft</span><span class="p">,</span> <span class="s1">&#39;__pydantic_serializer__&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">_type_has_config</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">dft</span><span class="p">))</span>
             <span class="k">else</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">dft</span><span class="p">),</span> <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">config_dict</span><span class="p">)</span><span class="o">.</span><span class="n">dump_python</span><span class="p">(</span><span class="n">dft</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">)</span>
         <span class="p">)</span>
     <span class="k">except</span> <span class="n">PydanticSchemaGenerationError</span><span class="p">:</span>
@@ -15516,7 +15516,7 @@ If <code>False</code>, fields will be serialized according to their attribute na
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.7.0", "pydantic-core==2.18.1"]
+    window.mkdocs_run_deps = ["pydantic==2.7.1", "pydantic-core==2.18.2"]
     </script>
 
               </article>

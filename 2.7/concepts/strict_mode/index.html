@@ -3291,13 +3291,15 @@ and will instead error if the data is not of the correct type.</p>
 <span class="sd">      Input should be a valid integer [type=int_type, input_value=&#39;123&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-<p>There are various ways to get strict-mode validation while using Pydantic, which will be discussed in more detail below:
-* <a href="#strict-mode-in-method-calls">Passing <code>strict=True</code> to the validation methods</a>, such as <code>BaseModel.model_validate</code>,
-  <code>TypeAdapter.validate_python</code>, and similar for JSON
-* <a href="#strict-mode-with-field">Using <code>Field(strict=True)</code></a> with fields of a <code>BaseModel</code>, <code>dataclass</code>, or <code>TypedDict</code>
-* <a href="#strict-mode-with-annotated-strict">Using <code>pydantic.types.Strict</code> as a type annotation</a> on a field
-  * Pydantic provides some type aliases that are already annotated with <code>Strict</code>, such as <code>pydantic.types.StrictInt</code>
-* <a href="#strict-mode-with-configdict">Using <code>ConfigDict(strict=True)</code></a></p>
+<p>There are various ways to get strict-mode validation while using Pydantic, which will be discussed in more detail below:</p>
+<ul>
+<li><a href="#strict-mode-in-method-calls">Passing <code>strict=True</code> to the validation methods</a>, such as <code>BaseModel.model_validate</code>,
+  <code>TypeAdapter.validate_python</code>, and similar for JSON</li>
+<li><a href="#strict-mode-with-field">Using <code>Field(strict=True)</code></a> with fields of a <code>BaseModel</code>, <code>dataclass</code>, or <code>TypedDict</code></li>
+<li><a href="#strict-mode-with-annotated-strict">Using <code>pydantic.types.Strict</code> as a type annotation</a> on a field</li>
+<li>Pydantic provides some type aliases that are already annotated with <code>Strict</code>, such as <code>pydantic.types.StrictInt</code></li>
+<li><a href="#strict-mode-with-configdict">Using <code>ConfigDict(strict=True)</code></a></li>
+</ul>
 <h2 id="type-coercions-in-strict-mode">Type coercions in strict mode<a class="headerlink" href="#type-coercions-in-strict-mode" title="Permanent link">&para;</a></h2>
 <p>For most types, when validating data from python in strict mode, only the instances of the exact types are accepted.
 For example, when validating an <code>int</code> field, only instances of <code>int</code> are accepted; passing instances of <code>float</code> or <code>str</code>
@@ -3771,7 +3773,7 @@ decorator by passing the <code>config</code> keyword argument:</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.7.0", "pydantic-core==2.18.1"]
+    window.mkdocs_run_deps = ["pydantic==2.7.1", "pydantic-core==2.18.2"]
     </script>
 
               </article>

@@ -1359,17 +1359,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#use-literal-not-enum" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Use Literal not Enum
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#use-typeddict-over-nested-models" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3157,17 +3146,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#use-literal-not-enum" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Use Literal not Enum
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#use-typeddict-over-nested-models" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3337,32 +3315,6 @@ If you know the value is a <code>dict</code>, use <code>dict</code> instead of <
     <span class="p">)</span>
 </code></pre></div>
 <p>See <a href="../unions/#discriminated-unions">Discriminated Unions</a> for more details.</p>
-<h2 id="use-literal-not-enum">Use <code>Literal</code> not <code>Enum</code><a class="headerlink" href="#use-literal-not-enum" title="Permanent link">&para;</a></h2>
-<p>Instead of using <code>Enum</code>, use <code>Literal</code> to define the structure of the data.</p>
-<details class="info">
-<summary>Performance comparison</summary>
-<p>With a simple benchmark, <code>Literal</code> is about ~3x faster than <code>Enum</code>:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">enum</span>
-<span class="kn">from</span> <span class="nn">timeit</span> <span class="kn">import</span> <span class="n">timeit</span>
-
-<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Literal</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
-
-<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">])</span>
-<span class="n">result1</span> <span class="o">=</span> <span class="n">timeit</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">),</span> <span class="n">number</span><span class="o">=</span><span class="mi">10000</span><span class="p">)</span>
-
-
-<span class="k">class</span> <span class="nc">AB</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
-    <span class="n">a</span> <span class="o">=</span> <span class="s1">&#39;a&#39;</span>
-    <span class="n">b</span> <span class="o">=</span> <span class="s1">&#39;b&#39;</span>
-
-
-<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">AB</span><span class="p">)</span>
-<span class="n">result2</span> <span class="o">=</span> <span class="n">timeit</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">),</span> <span class="n">number</span><span class="o">=</span><span class="mi">10000</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">result2</span> <span class="o">/</span> <span class="n">result1</span><span class="p">)</span>
-</code></pre></div>
-</details>
 <h2 id="use-typeddict-over-nested-models">Use <code>TypedDict</code> over nested models<a class="headerlink" href="#use-typeddict-over-nested-models" title="Permanent link">&para;</a></h2>
 <p>Instead of using nested models, use <code>TypedDict</code> to define the structure of the data.</p>
 <details class="info">
@@ -3462,7 +3414,7 @@ If you know the value is a <code>dict</code>, use <code>dict</code> instead of <
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.7.0", "pydantic-core==2.18.1"]
+    window.mkdocs_run_deps = ["pydantic==2.7.1", "pydantic-core==2.18.2"]
     </script>
 
               </article>
