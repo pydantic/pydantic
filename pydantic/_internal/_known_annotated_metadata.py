@@ -103,7 +103,7 @@ for constraint in ENUM_CONSTRAINTS:
 
 
 def _is_sequence_metadata(schema: CoreSchema) -> bool:
-    """Checks if the schema is a sequence schema.
+    """Checks if the schema is a sequence schema according to the assigned metadata during schema generation
 
     Args:
         schema: The core schema.
@@ -111,11 +111,9 @@ def _is_sequence_metadata(schema: CoreSchema) -> bool:
     Returns:
         True if the schema is a sequence schema, False otherwise.
     """
-    python_schema = schema.get('python_schema', {})
-    steps = python_schema.get('steps', [{}])
-    first_step = steps[0]
-    cls_type = first_step.get('cls')
-    return cls_type == Sequence
+    metadata = schema.get('metadata', {})
+    handle_as = metadata.get('known_metadata_as', {})
+    return handle_as == Sequence
 
 
 def add_js_update_schema(s: cs.CoreSchema, f: Callable[[], dict[str, Any]]) -> None:
