@@ -1,3 +1,47 @@
+## v2.7.1 (2024-04-23)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.7.1)
+
+### What's Changed
+
+#### Packaging
+
+* Bump `pydantic-core` to `v2.18.2` by @sydney-runkle in [#9307](https://github.com/pydantic/pydantic/pull/9307)
+
+#### New Features
+
+* Ftp and Websocket connection strings support by @CherrySuryp in [#9205](https://github.com/pydantic/pydantic/pull/9205)
+
+#### Changes
+
+* Use field description for RootModel schema description when there is `…` by @LouisGobert in [#9214](https://github.com/pydantic/pydantic/pull/9214)
+
+#### Fixes
+
+* Fix `validation_alias` behavior with `model_construct` for `AliasChoices` and `AliasPath` by @sydney-runkle in [#9223](https://github.com/pydantic/pydantic/pull/9223)
+* Revert `typing.Literal` and import it outside the TYPE_CHECKING block by @frost-nzcr4 in [#9232](https://github.com/pydantic/pydantic/pull/9232)
+* Fix `Secret` serialization schema, applicable for unions by @sydney-runkle in [#9240](https://github.com/pydantic/pydantic/pull/9240)
+* Fix `strict` application to `function-after` with `use_enum_values` by @sydney-runkle in [#9279](https://github.com/pydantic/pydantic/pull/9279)
+* Address case where `model_construct` on a class which defines `model_post_init` fails with `AttributeError` by @babygrimes in [#9168](https://github.com/pydantic/pydantic/pull/9168)
+* Fix `model_json_schema` with config types by @NeevCohen in [#9287](https://github.com/pydantic/pydantic/pull/9287)
+* Support multiple zeros as an `int` by @samuelcolvin in [pydantic/pydantic-core#1269](https://github.com/pydantic/pydantic-core/pull/1269)
+* Fix validation of `int`s with leading unary plus by @cknv in [pydantic/pydantic-core#1272](https://github.com/pydantic/pydantic-core/pull/1272)
+* Fix interaction between `extra != 'ignore'` and `from_attributes=True` by @davidhewitt in [pydantic/pydantic-core#1276](https://github.com/pydantic/pydantic-core/pull/1276)
+* Handle error from `Enum`'s `missing` function as `ValidationError` by @sydney-runkle in [pydantic/pydantic-core#1274](https://github.com/pydantic/pydantic-core/pull/1754)
+* Fix memory leak with `Iterable` validation by @davidhewitt in [pydantic/pydantic-core#1271](https://github.com/pydantic/pydantic-core/pull/1751)
+
+### New Contributors
+
+* @zzstoatzz made their first contribution in [#9219](https://github.com/pydantic/pydantic/pull/9219)
+* @frost-nzcr4 made their first contribution in [#9232](https://github.com/pydantic/pydantic/pull/9232)
+* @CherrySuryp made their first contribution in [#9205](https://github.com/pydantic/pydantic/pull/9205)
+* @vagenas made their first contribution in [#9268](https://github.com/pydantic/pydantic/pull/9268)
+* @ollz272 made their first contribution in [#9262](https://github.com/pydantic/pydantic/pull/9262)
+* @babygrimes made their first contribution in [#9168](https://github.com/pydantic/pydantic/pull/9168)
+* @swelborn made their first contribution in [#9296](https://github.com/pydantic/pydantic/pull/9296)
+* @kf-novi made their first contribution in [#9236](https://github.com/pydantic/pydantic/pull/9236)
+* @lgeiger made their first contribution in [#9288](https://github.com/pydantic/pydantic/pull/9288)
+
 ## v2.7.0 (2024-04-11)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.7.0)
