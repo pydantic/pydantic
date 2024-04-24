@@ -9,7 +9,7 @@
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 [![Pydantic v2](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json)](https://docs.pydantic.dev/latest/contributing/#badges)
 
-Data validation using Python type hints.
+Data validation using Python type hints. 🚀
 
 Fast and extensible, Pydantic plays nicely with your linters/IDE/brain.
 Define how data should be in pure, canonical Python 3.8+; validate it with Pydantic.
