@@ -6101,6 +6101,7 @@ def test_deprecated_class_usage_warns(cls):
     with pytest.warns(DeprecationWarning, match=f'{cls.__name__} is deprecated'):
         cls()
 
+
 @dataclasses.dataclass
 class BuiltinDataclassParent:
     name: str
