@@ -578,8 +578,9 @@ if __name__ == "__main__":
             "url": "https://github.com/ybressler"
         },
     ]
+    expert_logins = {e["login"] for e in experts}
     for expert in extra_experts:
-        if expert["login"] not in {e["login"] for e in experts}:
+        if expert["login"] not in expert_logins:
             experts.append(expert)
 
     people = {
