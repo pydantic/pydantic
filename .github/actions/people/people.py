@@ -570,6 +570,18 @@ if __name__ == "__main__":
         skip_users=skip_users,
     )
 
+    extra_experts = [
+        {
+            "login": "ybressler",
+            "count": None,
+            "avatarUrl": "https://avatars.githubusercontent.com/u/40807730?v=4",
+            "url": "https://github.com/ybressler"
+        },
+    ]
+    for expert in extra_experts:
+        if expert["login"] not in {e["login"] for e in experts}:
+            experts.append(expert)
+
     people = {
         "maintainers": maintainers,
         "experts": experts,
