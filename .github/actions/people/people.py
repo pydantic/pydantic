@@ -579,9 +579,7 @@ if __name__ == "__main__":
         },
     ]
     expert_logins = {e["login"] for e in experts}
-    for expert in extra_experts:
-        if expert["login"] not in expert_logins:
-            experts.append(expert)
+    experts.extend([expert for expert in extra_experts if expert["login"] not in expert_logins])
 
     people = {
         "maintainers": maintainers,
