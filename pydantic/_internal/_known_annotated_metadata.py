@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from copy import copy
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Iterable
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Sequence
 
 from pydantic_core import CoreSchema, PydanticCustomError, to_jsonable_python
 from pydantic_core import core_schema as cs
@@ -100,6 +100,20 @@ for constraint in LAX_OR_STRICT_CONSTRAINTS:
     CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('lax-or-strict',))
 for constraint in ENUM_CONSTRAINTS:
     CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('enum',))
+
+
+def _is_sequence_metadata(schema: CoreSchema) -> bool:
+    """Checks if the schema is a sequence schema according to the assigned metadata during schema generation
+
+    Args:
+        schema: The core schema.
+
+    Returns:
+        True if the schema is a sequence schema, False otherwise.
+    """
+    metadata = schema.get('metadata', {})
+    handle_as = metadata.get('known_metadata_as', {})
+    return handle_as == Sequence
 
 
 def add_js_update_schema(s: cs.CoreSchema, f: Callable[[], dict[str, Any]]) -> None:
@@ -253,6 +267,9 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                 partial(_validators.min_length_validator, min_length=value),
                 schema,
             )
+            if _is_sequence_metadata(schema):
+                add_js_update_schema(s, lambda: {'minItems': (as_jsonable_value(value))})
+                return s
             add_js_update_schema(s, lambda: {'minLength': (as_jsonable_value(value))})
             return s
         elif constraint == 'max_length':
@@ -260,6 +277,9 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                 partial(_validators.max_length_validator, max_length=value),
                 schema,
             )
+            if _is_sequence_metadata(schema):
+                add_js_update_schema(s, lambda: {'maxItems': (as_jsonable_value(value))})
+                return s
             add_js_update_schema(s, lambda: {'maxLength': (as_jsonable_value(value))})
             return s
         elif constraint == 'strip_whitespace':
