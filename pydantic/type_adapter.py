@@ -2,16 +2,32 @@
 from __future__ import annotations as _annotations
 
 import sys
+from contextlib import contextmanager
 from dataclasses import is_dataclass
-from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, cast, final, overload
+from functools import cached_property, wraps
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    Iterable,
+    Iterator,
+    Set,
+    TypeVar,
+    Union,
+    cast,
+    final,
+    overload,
+)
 
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
-from typing_extensions import Literal, get_args, is_typeddict
+from typing_extensions import Literal, is_typeddict
 
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel
 
-from ._internal import _config, _generate_schema, _typing_extra
+from ._internal import _config, _generate_schema, _mock_val_ser, _typing_extra, _utils
 from .config import ConfigDict
 from .json_schema import (
     DEFAULT_REF_TEMPLATE,
@@ -23,6 +39,7 @@ from .json_schema import (
 from .plugin._schema_validator import create_schema_validator
 
 T = TypeVar('T')
+R = TypeVar('R')
 
 
 if TYPE_CHECKING:
@@ -100,11 +117,27 @@ def _getattr_no_parents(obj: Any, attribute: str) -> Any:
 
 def _type_has_config(type_: Any) -> bool:
     """Returns whether the type has config."""
+    type_ = _typing_extra.annotated_type(type_) or type_
     try:
         return issubclass(type_, BaseModel) or is_dataclass(type_) or is_typeddict(type_)
     except TypeError:
         # type is not a class
         return False
+
+
+# This is keeping track of the frame depth for the TypeAdapter functions. This is required for _parent_depth used for
+# ForwardRef resolution. We may enter the TypeAdapter schema building via different TypeAdapter functions. Hence, we
+# need to keep track of the frame depth relative to the originally provided _parent_depth.
+def _frame_depth(depth: int) -> Callable[[Callable[..., R]], Callable[..., R]]:
+    def wrapper(func: Callable[..., R]) -> Callable[..., R]:
+        @wraps(func)
+        def wrapped(self: TypeAdapter, *args: Any, **kwargs: Any) -> R:
+            with self._with_frame_depth(depth + 1):  # depth + 1 for the wrapper function
+                return func(self, *args, **kwargs)
+
+        return wrapped
+
+    return wrapper
 
 
 @final
@@ -117,6 +150,13 @@ class TypeAdapter(Generic[T]):
     for types that do not have such methods (such as dataclasses, primitive types, and more).
 
     **Note:** `TypeAdapter` instances are not types, and cannot be used as type annotations for fields.
+
+    **Note:** By default, `TypeAdapter` does not respect the
+    [`defer_build=True`][pydantic.config.ConfigDict.defer_build] setting in the
+    [`model_config`][pydantic.BaseModel.model_config] or in the `TypeAdapter` constructor `config`. You need to also
+    explicitly set [`_defer_build_mode=('model', 'type_adapter')`][pydantic.config.ConfigDict._defer_build_mode] of the
+    config to defer the model validator and serializer construction. Thus, this feature is opt-in to ensure backwards
+    compatibility.
 
     Attributes:
         core_schema: The core schema for the type.
@@ -190,11 +230,7 @@ class TypeAdapter(Generic[T]):
         Returns:
             A type adapter configured for the specified `type`.
         """
-        type_is_annotated: bool = _typing_extra.is_annotated(type)
-        annotated_type: Any = get_args(type)[0] if type_is_annotated else None
-        type_has_config: bool = _type_has_config(annotated_type if type_is_annotated else type)
-
-        if type_has_config and config is not None:
+        if _type_has_config(type) and config is not None:
             raise PydanticUserError(
                 'Cannot use `config` when the type is a BaseModel, dataclass or TypedDict.'
                 ' These types can have their own config and setting the config via the `config`'
@@ -203,36 +239,107 @@ class TypeAdapter(Generic[T]):
                 code='type-adapter-config-unused',
             )
 
-        config_wrapper = _config.ConfigWrapper(config)
+        self._type = type
+        self._config = config
+        self._parent_depth = _parent_depth
+        if module is None:
+            f = sys._getframe(1)
+            self._module_name = cast(str, f.f_globals.get('__name__', ''))
+        else:
+            self._module_name = module
 
-        core_schema: CoreSchema
+        self._core_schema: CoreSchema | None = None
+        self._validator: SchemaValidator | None = None
+        self._serializer: SchemaSerializer | None = None
+
+        if not self._defer_build():
+            # Immediately initialize the core schema, validator and serializer
+            with self._with_frame_depth(1):  # +1 frame depth for this __init__
+                # Model itself may be using deferred building. For backward compatibility we don't rebuild model mocks
+                # here as part of __init__ even though TypeAdapter itself is not using deferred building.
+                self._init_core_attrs(rebuild_mocks=False)
+
+    @contextmanager
+    def _with_frame_depth(self, depth: int) -> Iterator[None]:
+        self._parent_depth += depth
         try:
-            core_schema = _getattr_no_parents(type, '__pydantic_core_schema__')
-        except AttributeError:
-            core_schema = _get_schema(type, config_wrapper, parent_depth=_parent_depth + 1)
+            yield
+        finally:
+            self._parent_depth -= depth
 
-        core_config = config_wrapper.core_config(None)
-        validator: SchemaValidator
+    @_frame_depth(1)
+    def _init_core_attrs(self, rebuild_mocks: bool) -> None:
         try:
-            validator = _getattr_no_parents(type, '__pydantic_validator__')
+            self._core_schema = _getattr_no_parents(self._type, '__pydantic_core_schema__')
+            self._validator = _getattr_no_parents(self._type, '__pydantic_validator__')
+            self._serializer = _getattr_no_parents(self._type, '__pydantic_serializer__')
         except AttributeError:
-            if module is None:
-                f = sys._getframe(1)
-                module = cast(str, f.f_globals.get('__name__', ''))
-            validator = create_schema_validator(
-                core_schema, type, module, str(type), 'TypeAdapter', core_config, config_wrapper.plugin_settings
-            )  # type: ignore
+            config_wrapper = _config.ConfigWrapper(self._config)
+            core_config = config_wrapper.core_config(None)
 
-        serializer: SchemaSerializer
-        try:
-            serializer = _getattr_no_parents(type, '__pydantic_serializer__')
-        except AttributeError:
-            serializer = SchemaSerializer(core_schema, core_config)
+            self._core_schema = _get_schema(self._type, config_wrapper, parent_depth=self._parent_depth)
+            self._validator = create_schema_validator(
+                schema=self._core_schema,
+                schema_type=self._type,
+                schema_type_module=self._module_name,
+                schema_type_name=str(self._type),
+                schema_kind='TypeAdapter',
+                config=core_config,
+                plugin_settings=config_wrapper.plugin_settings,
+            )
+            self._serializer = SchemaSerializer(self._core_schema, core_config)
 
-        self.core_schema = core_schema
-        self.validator = validator
-        self.serializer = serializer
+        if rebuild_mocks and isinstance(self._core_schema, _mock_val_ser.MockCoreSchema):
+            self._core_schema.rebuild()
+            self._init_core_attrs(rebuild_mocks=False)
+            assert not isinstance(self._core_schema, _mock_val_ser.MockCoreSchema)
+            assert not isinstance(self._validator, _mock_val_ser.MockValSer)
+            assert not isinstance(self._serializer, _mock_val_ser.MockValSer)
 
+    @cached_property
+    @_frame_depth(2)  # +2 for @cached_property and core_schema(self)
+    def core_schema(self) -> CoreSchema:
+        """The pydantic-core schema used to build the SchemaValidator and SchemaSerializer."""
+        if self._core_schema is None or isinstance(self._core_schema, _mock_val_ser.MockCoreSchema):
+            self._init_core_attrs(rebuild_mocks=True)  # Do not expose MockCoreSchema from public function
+        assert self._core_schema is not None and not isinstance(self._core_schema, _mock_val_ser.MockCoreSchema)
+        return self._core_schema
+
+    @cached_property
+    @_frame_depth(2)  # +2 for @cached_property + validator(self)
+    def validator(self) -> SchemaValidator:
+        """The pydantic-core SchemaValidator used to validate instances of the model."""
+        if not isinstance(self._validator, SchemaValidator):
+            self._init_core_attrs(rebuild_mocks=True)  # Do not expose MockValSer from public function
+        assert isinstance(self._validator, SchemaValidator)
+        return self._validator
+
+    @cached_property
+    @_frame_depth(2)  # +2 for @cached_property + serializer(self)
+    def serializer(self) -> SchemaSerializer:
+        """The pydantic-core SchemaSerializer used to dump instances of the model."""
+        if not isinstance(self._serializer, SchemaSerializer):
+            self._init_core_attrs(rebuild_mocks=True)  # Do not expose MockValSer from public function
+        assert isinstance(self._serializer, SchemaSerializer)
+        return self._serializer
+
+    def _defer_build(self) -> bool:
+        config = self._config if self._config is not None else self._model_config()
+        return self._is_defer_build_config(config) if config is not None else False
+
+    def _model_config(self) -> ConfigDict | None:
+        type_: Any = _typing_extra.annotated_type(self._type) or self._type  # Eg FastAPI heavily uses Annotated
+        if _utils.lenient_issubclass(type_, BaseModel):
+            return type_.model_config
+        return getattr(type_, '__pydantic_config__', None)
+
+    @staticmethod
+    def _is_defer_build_config(config: ConfigDict) -> bool:
+        # TODO reevaluate this logic when we have a better understanding of how defer_build should work with TypeAdapter
+        # Should we drop the special _defer_build_mode check?
+        return config.get('defer_build', False) is True and 'type_adapter' in config.get('_defer_build_mode', tuple())
+
+    @_frame_depth(1)
     def validate_python(
         self,
         object: Any,
@@ -259,6 +366,7 @@ class TypeAdapter(Generic[T]):
         """
         return self.validator.validate_python(object, strict=strict, from_attributes=from_attributes, context=context)
 
+    @_frame_depth(1)
     def validate_json(
         self, data: str | bytes, /, *, strict: bool | None = None, context: dict[str, Any] | None = None
     ) -> T:
@@ -276,6 +384,7 @@ class TypeAdapter(Generic[T]):
         """
         return self.validator.validate_json(data, strict=strict, context=context)
 
+    @_frame_depth(1)
     def validate_strings(self, obj: Any, /, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> T:
         """Validate object contains string data against the model.
 
@@ -289,6 +398,7 @@ class TypeAdapter(Generic[T]):
         """
         return self.validator.validate_strings(obj, strict=strict, context=context)
 
+    @_frame_depth(1)
     def get_default_value(self, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> Some[T] | None:
         """Get the default value for the wrapped type.
 
@@ -301,6 +411,7 @@ class TypeAdapter(Generic[T]):
         """
         return self.validator.get_default_value(strict=strict, context=context)
 
+    @_frame_depth(1)
     def dump_python(
         self,
         instance: T,
@@ -350,6 +461,7 @@ class TypeAdapter(Generic[T]):
             serialize_as_any=serialize_as_any,
         )
 
+    @_frame_depth(1)
     def dump_json(
         self,
         instance: T,
@@ -401,6 +513,7 @@ class TypeAdapter(Generic[T]):
             serialize_as_any=serialize_as_any,
         )
 
+    @_frame_depth(1)
     def json_schema(
         self,
         *,
@@ -458,7 +571,10 @@ class TypeAdapter(Generic[T]):
         """
         schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
 
-        inputs_ = [(key, mode, adapter.core_schema) for key, mode, adapter in inputs]
+        inputs_ = []
+        for key, mode, adapter in inputs:
+            with adapter._with_frame_depth(1):  # +1 for json_schemas staticmethod
+                inputs_.append((key, mode, adapter.core_schema))
 
         json_schemas_map, definitions = schema_generator_instance.generate_definitions(inputs_)
 

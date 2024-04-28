@@ -146,6 +146,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_decorators__ = _decorators.DecoratorInfos()
         __pydantic_parent_namespace__ = None
         # Prevent `BaseModel` from being instantiated directly:
+        __pydantic_core_schema__ = _mock_val_ser.MockCoreSchema(
+            'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly',
+            code='base-model-instantiated',
+        )
         __pydantic_validator__ = _mock_val_ser.MockValSer(
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly',
             val_or_ser='validator',
@@ -616,7 +620,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
         # Only use the cached value from this _exact_ class; we don't want one from a parent class
         # This is why we check `cls.__dict__` and don't use `cls.__pydantic_core_schema__` or similar.
-        if '__pydantic_core_schema__' in cls.__dict__:
+        schema = cls.__dict__.get('__pydantic_core_schema__')
+        if schema is not None and not isinstance(schema, _mock_val_ser.MockCoreSchema):
             # Due to the way generic classes are built, it's possible that an invalid schema may be temporarily
             # set on generic classes. I think we could resolve this to ensure that we get proper schema caching
             # for generics, but for simplicity for now, we just always rebuild if the class has a generic origin.

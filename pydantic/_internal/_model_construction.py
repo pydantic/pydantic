@@ -23,7 +23,7 @@ from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
 from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
-from ._mock_val_ser import MockValSer, set_model_mocks
+from ._mock_val_ser import set_model_mocks
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._signature import generate_pydantic_signature
 from ._typing_extra import get_cls_types_namespace, is_annotated, is_classvar, parent_frame_namespace
@@ -231,14 +231,6 @@ class ModelMetaclass(ABCMeta):
             private_attributes = self.__dict__.get('__private_attributes__')
             if private_attributes and item in private_attributes:
                 return private_attributes[item]
-            if item == '__pydantic_core_schema__':
-                # This means the class didn't get a schema generated for it, likely because there was an undefined reference
-                maybe_mock_validator = getattr(self, '__pydantic_validator__', None)
-                if isinstance(maybe_mock_validator, MockValSer):
-                    rebuilt_validator = maybe_mock_validator.rebuild()
-                    if rebuilt_validator is not None:
-                        # In this case, a validator was built, and so `__pydantic_core_schema__` should now be set
-                        return getattr(self, '__pydantic_core_schema__')
             raise AttributeError(item)
 
     @classmethod
@@ -531,7 +523,7 @@ def complete_model_class(
         ref_mode='unpack',
     )
 
-    if config_wrapper.defer_build:
+    if config_wrapper.defer_build and 'model' in config_wrapper._defer_build_mode:
         set_model_mocks(cls, cls_name)
         return False
 
