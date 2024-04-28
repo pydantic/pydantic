@@ -1418,7 +1418,7 @@ def create_model(
     __doc__: str | None = None,
     __base__: None = None,
     __module__: str = __name__,
-    __validators__: dict[str, classmethod] | None = None,
+    __validators__: dict[str, classmethod[Any, ..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     **field_definitions: Any,
 ) -> type[BaseModel]:
@@ -1433,7 +1433,7 @@ def create_model(
     __doc__: str | None = None,
     __base__: type[Model] | tuple[type[Model], ...],
     __module__: str = __name__,
-    __validators__: dict[str, classmethod] | None = None,
+    __validators__: dict[str, classmethod[Any, ..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     **field_definitions: Any,
 ) -> type[Model]:
@@ -1447,7 +1447,7 @@ def create_model(  # noqa: C901
     __doc__: str | None = None,
     __base__: type[Model] | tuple[type[Model], ...] | None = None,
     __module__: str | None = None,
-    __validators__: dict[str, classmethod] | None = None,
+    __validators__: dict[str, classmethod[Any, ..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __slots__: tuple[str, ...] | None = None,
     **field_definitions: Any,
