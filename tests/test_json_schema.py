@@ -1392,12 +1392,16 @@ def test_callable_fallback_with_non_serializable_default(warning_match):
     }
 
 
-def test_error_non_supported_types():
+def test_importstring_json_schema():
     class Model(BaseModel):
         a: ImportString
 
-    with pytest.raises(PydanticInvalidForJsonSchema):
-        Model.model_json_schema()
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }
 
 
 def test_schema_overrides():

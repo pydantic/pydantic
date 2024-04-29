@@ -990,6 +990,10 @@ else:
                     function=_validators.import_string, schema=handler(source), serialization=serializer
                 )
 
+        @classmethod
+        def __get_pydantic_json_schema__(cls, cs: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+            return handler(core_schema.str_schema())
+
         @staticmethod
         def _serialize(v: Any) -> str:
             if isinstance(v, ModuleType):
