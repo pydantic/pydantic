@@ -194,7 +194,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-13, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-13, macos-latest, windows]
         python-version: ['3.7', '3.8', '3.9', '3.10']
         exclude:
           # Python 3.7, 3.8, and 3.9 are not available on macOS 14
