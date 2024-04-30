@@ -20,11 +20,7 @@ def test_can_import_modules_from_v1() -> None:
     """That imports from any module in pydantic can be imported through
     ``pydantic.v1.<module>``"""
     for module_fname in os.listdir(pydantic.__path__[0]):
-        if (
-            module_fname.startswith('_')
-            or not module_fname.endswith('.py')
-            or module_fname == 'v1.py'
-        ):
+        if module_fname.startswith('_') or not module_fname.endswith('.py') or module_fname == 'v1.py':
             continue
         module_name = module_fname[:-3]
 
