@@ -1,9 +1,8 @@
 # NOTE This file aliases the pydantic namespace as pydantic.v1 for smoother v1 -> v2 transition
 # flake8: noqa
-from pydantic import *
-
-
 import os
+
+from pydantic import *
 
 # allows importing of objects from modules directly
 # i.e. from pydantic.v1.fields import ModelField
