@@ -13,6 +13,7 @@ from typing import (
     Generic,
     Iterable,
     Iterator,
+    Literal,
     Set,
     TypeVar,
     Union,
@@ -22,7 +23,7 @@ from typing import (
 )
 
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
-from typing_extensions import Literal, is_typeddict
+from typing_extensions import Concatenate, ParamSpec, is_typeddict
 
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel
@@ -40,6 +41,8 @@ from .plugin._schema_validator import create_schema_validator
 
 T = TypeVar('T')
 R = TypeVar('R')
+P = ParamSpec('P')
+TypeAdapterT = TypeVar('TypeAdapterT', bound='TypeAdapter')
 
 
 if TYPE_CHECKING:
@@ -128,10 +131,12 @@ def _type_has_config(type_: Any) -> bool:
 # This is keeping track of the frame depth for the TypeAdapter functions. This is required for _parent_depth used for
 # ForwardRef resolution. We may enter the TypeAdapter schema building via different TypeAdapter functions. Hence, we
 # need to keep track of the frame depth relative to the originally provided _parent_depth.
-def _frame_depth(depth: int) -> Callable[[Callable[..., R]], Callable[..., R]]:
-    def wrapper(func: Callable[..., R]) -> Callable[..., R]:
+def _frame_depth(
+    depth: int,
+) -> Callable[[Callable[Concatenate[TypeAdapterT, P], R]], Callable[Concatenate[TypeAdapterT, P], R]]:
+    def wrapper(func: Callable[Concatenate[TypeAdapterT, P], R]) -> Callable[Concatenate[TypeAdapterT, P], R]:
         @wraps(func)
-        def wrapped(self: TypeAdapter, *args: Any, **kwargs: Any) -> R:
+        def wrapped(self: TypeAdapterT, *args: P.args, **kwargs: P.kwargs) -> R:
             with self._with_frame_depth(depth + 1):  # depth + 1 for the wrapper function
                 return func(self, *args, **kwargs)
 
