@@ -21,11 +21,11 @@ def test_can_import_modules_from_v1() -> None:
     ``pydantic.v1.<module>``"""
     for module_fname in os.listdir(pydantic.__path__[0]):
         if (
-            module_fname.startswith("_")
-            or not module_fname.endswith(".py")
-            or module_fname == "v1.py"
+            module_fname.startswith('_')
+            or not module_fname.endswith('.py')
+            or module_fname == 'v1.py'
         ):
             continue
         module_name = module_fname[:-3]
 
-        _ = importlib.import_module(f"pydantic.v1.{module_name}")
+        _ = importlib.import_module(f'pydantic.v1.{module_name}')
