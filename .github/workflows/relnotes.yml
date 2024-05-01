@@ -11,6 +11,7 @@ jobs:
       contents: read
       pull-requests: write
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'opened'
     steps:
     - uses: actions/labeler@v5
   check:
