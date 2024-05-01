@@ -5,7 +5,16 @@ on:
     types: [opened, synchronize, labeled, unlabeled]
 
 jobs:
+  auto-labeler:
+    name: auto-labeler
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/labeler@v5
   check:
+    needs: auto-labeler
     name: has one relnotes label
     runs-on: ubuntu-latest
     steps:
