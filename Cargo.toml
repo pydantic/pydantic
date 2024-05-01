@@ -27,7 +27,7 @@ include = [
 rust-version = "1.76"
 
 [dependencies]
-pyo3 = { version = "0.21.1", features = ["generate-import-lib", "num-bigint"] }
+pyo3 = { version = "0.21.2", features = ["generate-import-lib", "num-bigint"] }
 regex = "1.10.4"
 strum = { version = "0.25.0", features = ["derive"] }
 strum_macros = "0.26.1"
@@ -71,7 +71,7 @@ debug = true
 strip = false
 
 [dev-dependencies]
-pyo3 = { version = "0.21.0", features = ["auto-initialize"] }
+pyo3 = { version = "0.21.2", features = ["auto-initialize"] }
 
 [build-dependencies]
 version_check = "0.9.4"
