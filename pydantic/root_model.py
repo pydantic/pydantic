@@ -17,11 +17,12 @@ if typing.TYPE_CHECKING:
     from typing_extensions import Literal, dataclass_transform
 
     from .fields import Field as PydanticModelField
+    from .fields import PrivateAttr as PydanticModelPrivateAttr
 
     # dataclass_transform could be applied to RootModel directly, but `ModelMetaclass`'s dataclass_transform
     # takes priority (at least with pyright). We trick type checkers into thinking we apply dataclass_transform
     # on a new metaclass.
-    @dataclass_transform(kw_only_default=False, field_specifiers=(PydanticModelField,))
+    @dataclass_transform(kw_only_default=False, field_specifiers=(PydanticModelField, PydanticModelPrivateAttr))
     class _RootModelMetaclass(_model_construction.ModelMetaclass):
         ...
 else:

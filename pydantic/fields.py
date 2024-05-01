@@ -934,6 +934,7 @@ def PrivateAttr(
     default: Any = PydanticUndefined,
     *,
     default_factory: typing.Callable[[], Any] | None = None,
+    init: Literal[False] = False,
 ) -> Any:
     """Usage docs: https://docs.pydantic.dev/2.7/concepts/models/#private-model-attributes
 
@@ -948,6 +949,7 @@ def PrivateAttr(
         default_factory: Callable that will be
             called when a default value is needed for this attribute.
             If both `default` and `default_factory` are set, an error will be raised.
+        init: Whether the attribute should be included in the constructor of the dataclass. Always `False`.
 
     Returns:
         An instance of [`ModelPrivateAttr`][pydantic.fields.ModelPrivateAttr] class.

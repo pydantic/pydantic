@@ -33,12 +33,14 @@ from ._validate_call import ValidateCallWrapper
 if typing.TYPE_CHECKING:
     from ..fields import Field as PydanticModelField
     from ..fields import FieldInfo, ModelPrivateAttr
+    from ..fields import PrivateAttr as PydanticModelPrivateAttr
     from ..main import BaseModel
 else:
     # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
     # and https://youtrack.jetbrains.com/issue/PY-51428
     DeprecationWarning = PydanticDeprecatedSince20
     PydanticModelField = object()
+    PydanticModelPrivateAttr = object()
 
 object_setattr = object.__setattr__
 
@@ -56,7 +58,7 @@ class _ModelNamespaceDict(dict):
         return super().__setitem__(k, v)
 
 
-@dataclass_transform(kw_only_default=True, field_specifiers=(PydanticModelField,))
+@dataclass_transform(kw_only_default=True, field_specifiers=(PydanticModelField, PydanticModelPrivateAttr))
 class ModelMetaclass(ABCMeta):
     def __new__(
         mcs,

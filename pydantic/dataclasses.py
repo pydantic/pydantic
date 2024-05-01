@@ -12,7 +12,7 @@ from ._internal import _config, _decorators, _typing_extra
 from ._internal import _dataclasses as _pydantic_dataclasses
 from ._migration import getattr_migration
 from .config import ConfigDict
-from .fields import Field, FieldInfo
+from .fields import Field, FieldInfo, PrivateAttr
 
 if TYPE_CHECKING:
     from ._internal._dataclasses import PydanticDataclass
@@ -23,7 +23,7 @@ _T = TypeVar('_T')
 
 if sys.version_info >= (3, 10):
 
-    @dataclass_transform(field_specifiers=(dataclasses.field, Field))
+    @dataclass_transform(field_specifiers=(dataclasses.field, Field, PrivateAttr))
     @overload
     def dataclass(
         *,
@@ -40,7 +40,7 @@ if sys.version_info >= (3, 10):
     ) -> Callable[[type[_T]], type[PydanticDataclass]]:  # type: ignore
         ...
 
-    @dataclass_transform(field_specifiers=(dataclasses.field, Field))
+    @dataclass_transform(field_specifiers=(dataclasses.field, Field, PrivateAttr))
     @overload
     def dataclass(
         _cls: type[_T],  # type: ignore
@@ -60,7 +60,7 @@ if sys.version_info >= (3, 10):
 
 else:
 
-    @dataclass_transform(field_specifiers=(dataclasses.field, Field))
+    @dataclass_transform(field_specifiers=(dataclasses.field, Field, PrivateAttr))
     @overload
     def dataclass(
         *,
@@ -75,7 +75,7 @@ else:
     ) -> Callable[[type[_T]], type[PydanticDataclass]]:  # type: ignore
         ...
 
-    @dataclass_transform(field_specifiers=(dataclasses.field, Field))
+    @dataclass_transform(field_specifiers=(dataclasses.field, Field, PrivateAttr))
     @overload
     def dataclass(
         _cls: type[_T],  # type: ignore
@@ -92,7 +92,7 @@ else:
         ...
 
 
-@dataclass_transform(field_specifiers=(dataclasses.field, Field))
+@dataclass_transform(field_specifiers=(dataclasses.field, Field, PrivateAttr))
 def dataclass(  # noqa: C901
     _cls: type[_T] | None = None,
     *,
