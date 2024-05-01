@@ -1,0 +1,9 @@
+# Add 'relnotes-fix' label by default
+relnotes-fix:
+- changed-files:
+  - any-glob-to-any-file: '**'
+
+# Add 'relnotes-feature' label to any PR where the head branch name starts with
+# `feature` or has a `feature` section in the name
+relnotes-feature:
+ - head-branch: ['^feature', 'feature']
