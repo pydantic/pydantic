@@ -640,7 +640,7 @@ jobs:
           merge-multiple: true
           path: dist
 
-      - uses: uraimo/run-on-arch-action@v2.7.1
+      - uses: uraimo/run-on-arch-action@v2.7.2
         name: install & test
         with:
           arch: ${{ matrix.target }}
