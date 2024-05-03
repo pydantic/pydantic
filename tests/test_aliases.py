@@ -613,7 +613,7 @@ def test_validation_alias_parse_data():
     ]
 
 
-def test_alias_generator() -> None:
+def test_alias_generator_class() -> None:
     class Model(BaseModel):
         a: str
 
