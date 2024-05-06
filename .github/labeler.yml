@@ -3,10 +3,6 @@ relnotes-fix:
 - changed-files:
   - any-glob-to-any-file: '**'
 
-# Add 'relnotes-fix' label to any PR where the head branch name starts with `fix` or has a `fix` section in the name
-relnotes-fix:
- - head-branch: ['^fix', 'fix']
-
 relnotes-feature:
  - head-branch: ['^feature', 'feature']
 
