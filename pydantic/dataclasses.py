@@ -315,13 +315,13 @@ def rebuild_dataclass(
         )
 
 
-def is_pydantic_dataclass(__cls: type[Any]) -> TypeGuard[type[PydanticDataclass]]:
+def is_pydantic_dataclass(class_: type[Any], /) -> TypeGuard[type[PydanticDataclass]]:
     """Whether a class is a pydantic dataclass.
 
     Args:
-        __cls: The class.
+        class_: The class.
 
     Returns:
         `True` if the class is a pydantic dataclass, `False` otherwise.
     """
-    return dataclasses.is_dataclass(__cls) and '__pydantic_validator__' in __cls.__dict__
+    return dataclasses.is_dataclass(class_) and '__pydantic_validator__' in class_.__dict__

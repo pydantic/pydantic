@@ -5,8 +5,10 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, TypeVar, Unio
 
 from typing_extensions import Literal, TypeAlias, TypedDict
 
+from ._internal._utils import is_model_class
 from ._migration import getattr_migration
 from .aliases import AliasGenerator
+from .errors import PydanticUserError
 
 if TYPE_CHECKING:
     from ._internal._generate_schema import GenerateSchema as _GenerateSchema
@@ -1017,9 +1019,17 @@ def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
         ```
     """
 
-    def inner(TypedDictClass: _TypeT, /) -> _TypeT:
-        TypedDictClass.__pydantic_config__ = config
-        return TypedDictClass
+    def inner(class_: _TypeT, /) -> _TypeT:
+        # Ideally, we would check for `class_` to either be a `TypedDict` or a stdlib dataclass.
+        # However, the `@with_config` decorator can be applied *after* `@dataclass`. To avoid
+        # common mistakes, we at least check for `class_` to not be a Pydantic model.
+        if is_model_class(class_):
+            raise PydanticUserError(
+                f'Cannot use `with_config` on {class_.__name__} as it is a Pydantic model',
+                code=None,
+            )
+        class_.__pydantic_config__ = config
+        return class_
 
     return inner
 

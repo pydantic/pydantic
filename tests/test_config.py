@@ -21,6 +21,7 @@ from pydantic import (
     create_model,
     field_validator,
     validate_call,
+    with_config,
 )
 from pydantic._internal._config import ConfigWrapper, config_defaults
 from pydantic._internal._mock_val_ser import MockValSer
@@ -899,3 +900,13 @@ def test_dataclass_allowes_model_config_as_model_field():
 
     assert m.model_config['title'] == field_title
     assert getattr(m, '__pydantic_config__')['title'] == config_title
+
+
+def test_with_config_disallowed_with_model():
+    msg = 'Cannot use `with_config` on Model as it is a Pydantic model'
+
+    with pytest.raises(PydanticUserError, match=msg):
+
+        @with_config({'coerce_numbers_to_str': True})
+        class Model(BaseModel):
+            pass
