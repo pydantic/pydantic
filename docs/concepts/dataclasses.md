@@ -412,6 +412,7 @@ class User:
     birth: Birth
 
     @model_validator(mode='before')
+    @classmethod
     def pre_root(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         print(f'First: {values}')
         """
