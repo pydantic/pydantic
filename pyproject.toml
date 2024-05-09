@@ -53,6 +53,7 @@ dependencies = [
 dynamic = ['version', 'readme']
 
 [project.optional-dependencies]
+settings = ['pydantic-settings>=2.0.0']
 email = ['email-validator>=2.0.0']
 
 [project.urls]
