@@ -2,10 +2,10 @@
 # It is not intended for manual editing.
 
 [metadata]
-groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "testing-extra"]
+groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "testing-extra", "settings"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:1f3f711d35fa13627c92e663011e3ca007476b79f4bc440570cccbf517fd3521"
+content_hash = "sha256:6f8cf7444b8cfc9e87cc49918d2ddff02cddcab97c0142769855ad6b5c284921"
 
 [[package]]
 name = "annotated-types"
