@@ -1836,6 +1836,7 @@ def test_model_validator_before():
         b: float
 
         @model_validator(mode='before')
+        @classmethod
         def double_b(cls, v: ArgsKwargs):
             v.kwargs['b'] *= 2
             return v

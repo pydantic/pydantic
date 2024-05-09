@@ -1786,6 +1786,7 @@ def test_overridden_root_validators():
         x: str
 
         @model_validator(mode='before')
+        @classmethod
         def pre_root(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             validate_stub('A', 'pre')
             return values
@@ -1797,6 +1798,7 @@ def test_overridden_root_validators():
 
     class B(A):
         @model_validator(mode='before')
+        @classmethod
         def pre_root(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             validate_stub('B', 'pre')
             return values
@@ -1851,6 +1853,7 @@ def test_validating_assignment_model_validator_before_fail():
         model_config = ConfigDict(validate_assignment=True)
 
         @model_validator(mode='before')
+        @classmethod
         def values_are_not_string(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             assert isinstance(values, dict)
             if any(isinstance(x, str) for x in values.values()):

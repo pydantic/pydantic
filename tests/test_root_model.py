@@ -213,6 +213,7 @@ def test_assignment():
 def test_model_validator_before():
     class Model(RootModel[int]):
         @model_validator(mode='before')
+        @classmethod
         def words(cls, v):
             if v == 'one':
                 return 1
