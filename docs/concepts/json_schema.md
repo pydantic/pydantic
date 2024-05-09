@@ -316,8 +316,8 @@ For custom types, Pydantic offers other tools for customizing JSON schema genera
 
 1. [`WithJsonSchema` annotation](#withjsonschema-annotation)
 2. [`SkipJsonSchema` annotation](#skipjsonschema-annotation)
-3. [Implementing `__get_pydantic_core_schema__`](#implementing-getpydanticcoreschema)
-4. [Implementing `__get_pydantic_json_schema__`](#implementing-getpydanticjsonschema)
+3. [Implementing `__get_pydantic_core_schema__`](#implementing-__get_pydantic_core_schema__)
+4. [Implementing `__get_pydantic_json_schema__`](#implementing-__get_pydantic_json_schema__)
 
 ### Field-Level Customization
 
