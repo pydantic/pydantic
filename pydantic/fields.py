@@ -217,14 +217,14 @@ class FieldInfo(_repr.Representation):
         if self.default is not PydanticUndefined and self.default_factory is not None:
             raise TypeError('cannot specify both default and default_factory')
 
-        self.title = kwargs.pop('title', None)
         self.alias = kwargs.pop('alias', None)
         self.validation_alias = kwargs.pop('validation_alias', None)
         self.serialization_alias = kwargs.pop('serialization_alias', None)
         alias_is_set = any(alias is not None for alias in (self.alias, self.validation_alias, self.serialization_alias))
         self.alias_priority = kwargs.pop('alias_priority', None) or 2 if alias_is_set else None
-        self.field_title_generator = kwargs.pop('field_title_generator', None)
+        self.title = kwargs.pop('title', None)
         self.title_priority = kwargs.pop('title_priority', None) or 2 if self.title is not None else None
+        self.field_title_generator = kwargs.pop('field_title_generator', None)
         self.description = kwargs.pop('description', None)
         self.examples = kwargs.pop('examples', None)
         self.exclude = kwargs.pop('exclude', None)
