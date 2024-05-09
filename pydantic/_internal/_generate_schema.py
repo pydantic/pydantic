@@ -214,7 +214,7 @@ def modify_model_json_schema(
         schema_or_field: The schema data to generate a JSON schema from.
         handler: The `GetCoreSchemaHandler` instance.
         cls: The model-like class.
-        title: The title to set for the model's schema, defaults to the models name
+        title: The title to set for the model's schema, defaults to the model's name
 
     Returns:
         JsonSchemaValue: The updated JSON schema.
