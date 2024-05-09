@@ -1,8 +1,7 @@
 name: release notes
 
 on:
-  pull_request:
-    types: [opened]
+  pull_request_target:
 
 jobs:
   auto-labeler:
