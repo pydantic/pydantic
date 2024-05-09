@@ -1071,14 +1071,18 @@ class GenerateSchema:
 
     @staticmethod
     def _apply_field_title_generator_to_field_info(
-        field_title_generator: Callable[[str], str], field_info: FieldInfo | ComputedFieldInfo, field_name: str
+        config_wrapper: ConfigWrapper, field_info: FieldInfo | ComputedFieldInfo, field_name: str
     ) -> None:
         """Apply a field_title_generator on a FieldInfo or ComputedFieldInfo instance if appropriate
         Args:
-            field_title_generator: A callable that takes a string and returns a string.
+            config_wrapper: The config of the model
             field_info: The FieldInfo or ComputedField instance to which the title_generator is (maybe) applied.
             field_name: The name of the field from which to generate the title.
         """
+        field_title_generator = field_info.field_title_generator or config_wrapper.field_title_generator
+        if field_title_generator is None:
+            return
+
         if field_info.title_priority is None or field_info.title_priority <= 1 or field_info.title is None:
             title = field_title_generator(field_name)
             if not isinstance(title, str):
@@ -1157,9 +1161,7 @@ class GenerateSchema:
         schema = self._apply_field_serializers(
             schema, filter_field_decorator_info_by_field(decorators.field_serializers.values(), name)
         )
-        field_title_generator = field_info.field_title_generator or self._config_wrapper.field_title_generator
-        if field_title_generator is not None:
-            self._apply_field_title_generator_to_field_info(field_title_generator, field_info, name)
+        self._apply_field_title_generator_to_field_info(self._config_wrapper, field_info, name)
 
         json_schema_updates = {
             'title': field_info.title,
@@ -1330,11 +1332,7 @@ class GenerateSchema:
                         and field_name in field_docstrings
                     ):
                         field_info.description = field_docstrings[field_name]
-                    field_title_generator = (
-                        field_info.field_title_generator or self._config_wrapper.field_title_generator
-                    )
-                    if field_title_generator is not None:
-                        self._apply_field_title_generator_to_field_info(field_title_generator, field_info, field_name)
+                    self._apply_field_title_generator_to_field_info(self._config_wrapper, field_info, field_name)
                     fields[field_name] = self._generate_td_field_schema(
                         field_name, field_info, decorators, required=required
                     )
@@ -1776,9 +1774,7 @@ class GenerateSchema:
             self._apply_alias_generator_to_computed_field_info(
                 alias_generator=alias_generator, computed_field_info=d.info, computed_field_name=d.cls_var_name
             )
-        field_title_generator = d.info.field_title_generator or self._config_wrapper.field_title_generator
-        if field_title_generator is not None:
-            self._apply_field_title_generator_to_field_info(field_title_generator, d.info, d.cls_var_name)
+        self._apply_field_title_generator_to_field_info(self._config_wrapper, d.info, d.cls_var_name)
 
         def set_computed_field_metadata(schema: CoreSchemaOrField, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
             json_schema = handler(schema)
