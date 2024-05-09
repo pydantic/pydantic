@@ -2037,13 +2037,13 @@ class GenerateJsonSchema:
         Returns:
             The encoded default value.
         """
-        from .type_adapter import TypeAdapter
+        from .type_adapter import TypeAdapter, _type_has_config
 
         config = self._config
         try:
             default = (
                 dft
-                if hasattr(dft, '__pydantic_serializer__')
+                if _type_has_config(type(dft))
                 else TypeAdapter(type(dft), config=config.config_dict).dump_python(dft, mode='json')
             )
         except PydanticSchemaGenerationError:
@@ -2232,12 +2232,14 @@ def model_json_schema(
     from .main import BaseModel
 
     schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
-    if isinstance(cls.__pydantic_validator__, _mock_val_ser.MockValSer):
-        cls.__pydantic_validator__.rebuild()
+
+    if isinstance(cls.__pydantic_core_schema__, _mock_val_ser.MockCoreSchema):
+        cls.__pydantic_core_schema__.rebuild()
 
     if cls is BaseModel:
         raise AttributeError('model_json_schema() must be called on a subclass of BaseModel, not BaseModel itself.')
-    assert '__pydantic_core_schema__' in cls.__dict__, 'this is a bug! please report it'
+
+    assert not isinstance(cls.__pydantic_core_schema__, _mock_val_ser.MockCoreSchema), 'this is a bug! please report it'
     return schema_generator_instance.generate(cls.__pydantic_core_schema__, mode=mode)
 
 
@@ -2269,8 +2271,8 @@ def models_json_schema(
                     element, along with the optional title and description keys.
     """
     for cls, _ in models:
-        if isinstance(cls.__pydantic_validator__, _mock_val_ser.MockValSer):
-            cls.__pydantic_validator__.rebuild()
+        if isinstance(cls.__pydantic_core_schema__, _mock_val_ser.MockCoreSchema):
+            cls.__pydantic_core_schema__.rebuild()
 
     instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
     inputs = [(m, mode, m.__pydantic_core_schema__) for m, mode in models]

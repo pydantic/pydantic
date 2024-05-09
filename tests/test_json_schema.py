@@ -1,3 +1,4 @@
+import dataclasses
 import json
 import math
 import re
@@ -1393,12 +1394,16 @@ def test_callable_fallback_with_non_serializable_default(warning_match):
     }
 
 
-def test_error_non_supported_types():
+def test_importstring_json_schema():
     class Model(BaseModel):
         a: ImportString
 
-    with pytest.raises(PydanticInvalidForJsonSchema):
-        Model.model_json_schema()
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }
 
 
 def test_schema_overrides():
@@ -4944,6 +4949,36 @@ def test_sequence_schema(sequence_type):
 
 
 @pytest.mark.parametrize(('sequence_type',), [pytest.param(List), pytest.param(Sequence)])
+def test_sequence_schema_with_max_length(sequence_type):
+    class Model(BaseModel):
+        field: sequence_type[int] = Field(max_length=5)
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'field': {'items': {'type': 'integer'}, 'maxItems': 5, 'title': 'Field', 'type': 'array'},
+        },
+        'required': ['field'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+@pytest.mark.parametrize(('sequence_type',), [pytest.param(List), pytest.param(Sequence)])
+def test_sequence_schema_with_min_length(sequence_type):
+    class Model(BaseModel):
+        field: sequence_type[int] = Field(min_length=1)
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'field': {'items': {'type': 'integer'}, 'minItems': 1, 'title': 'Field', 'type': 'array'},
+        },
+        'required': ['field'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+@pytest.mark.parametrize(('sequence_type',), [pytest.param(List), pytest.param(Sequence)])
 def test_sequences_int_json_schema(sequence_type):
     class Model(BaseModel):
         int_seq: sequence_type[int]
@@ -6032,3 +6067,108 @@ def test_default_value_encoding(field_type, default_value, expected_schema):
 
     schema = Model.model_json_schema()
     assert schema == expected_schema
+
+
+@dataclasses.dataclass
+class BuiltinDataclassParent:
+    name: str
+
+
+@pydantic.dataclasses.dataclass
+class PydanticDataclassParent:
+    name: str
+
+
+class TypedDictParent(TypedDict):
+    name: str
+
+
+class ModelParent(BaseModel):
+    name: str
+
+
+@pytest.mark.parametrize(
+    'pydantic_type,expected_json_schema',
+    [
+        pytest.param(
+            BuiltinDataclassParent,
+            {
+                '$defs': {
+                    'BuiltinDataclassParent': {
+                        'properties': {'name': {'title': 'Name', 'type': 'string'}},
+                        'required': ['name'],
+                        'title': 'BuiltinDataclassParent',
+                        'type': 'object',
+                    }
+                },
+                'properties': {
+                    'parent': {'allOf': [{'$ref': '#/$defs/BuiltinDataclassParent'}], 'default': {'name': 'Jon Doe'}}
+                },
+                'title': 'child',
+                'type': 'object',
+            },
+            id='builtin-dataclass',
+        ),
+        pytest.param(
+            PydanticDataclassParent,
+            {
+                '$defs': {
+                    'PydanticDataclassParent': {
+                        'properties': {'name': {'title': 'Name', 'type': 'string'}},
+                        'required': ['name'],
+                        'title': 'PydanticDataclassParent',
+                        'type': 'object',
+                    }
+                },
+                'properties': {
+                    'parent': {'allOf': [{'$ref': '#/$defs/PydanticDataclassParent'}], 'default': {'name': 'Jon Doe'}}
+                },
+                'title': 'child',
+                'type': 'object',
+            },
+            id='pydantic-dataclass',
+        ),
+        pytest.param(
+            TypedDictParent,
+            {
+                '$defs': {
+                    'TypedDictParent': {
+                        'properties': {'name': {'title': 'Name', 'type': 'string'}},
+                        'required': ['name'],
+                        'title': 'TypedDictParent',
+                        'type': 'object',
+                    }
+                },
+                'properties': {
+                    'parent': {'allOf': [{'$ref': '#/$defs/TypedDictParent'}], 'default': {'name': 'Jon Doe'}}
+                },
+                'title': 'child',
+                'type': 'object',
+            },
+            id='typeddict',
+        ),
+        pytest.param(
+            ModelParent,
+            {
+                '$defs': {
+                    'ModelParent': {
+                        'properties': {'name': {'title': 'Name', 'type': 'string'}},
+                        'required': ['name'],
+                        'title': 'ModelParent',
+                        'type': 'object',
+                    }
+                },
+                'properties': {'parent': {'allOf': [{'$ref': '#/$defs/ModelParent'}], 'default': {'name': 'Jon Doe'}}},
+                'title': 'child',
+                'type': 'object',
+            },
+            id='model',
+        ),
+    ],
+)
+def test_pydantic_types_as_default_values(pydantic_type, expected_json_schema):
+    class Child(BaseModel):
+        model_config = ConfigDict(title='child')
+        parent: pydantic_type = pydantic_type(name='Jon Doe')
+
+    assert Child.model_json_schema() == expected_json_schema

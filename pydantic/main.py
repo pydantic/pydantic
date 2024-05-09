@@ -7,7 +7,7 @@ import types
 import typing
 import warnings
 from copy import copy, deepcopy
-from typing import Any, ClassVar, Dict, Generator, Set, Tuple, TypeVar, Union
+from typing import Any, ClassVar, Dict, Generator, Literal, Set, Tuple, TypeVar, Union
 
 import pydantic_core
 import typing_extensions
@@ -27,6 +27,7 @@ from ._internal import (
     _utils,
 )
 from ._migration import getattr_migration
+from .aliases import AliasChoices, AliasPath
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .config import ConfigDict
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
@@ -51,7 +52,7 @@ if typing.TYPE_CHECKING:
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
     from .deprecated.parse import Protocol as DeprecatedParseProtocol
     from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
-    from .fields import Field as _Field
+    from .fields import PrivateAttr as _PrivateAttr
 else:
     # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
     # and https://youtrack.jetbrains.com/issue/PY-51428
@@ -124,17 +125,15 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_decorators__: ClassVar[_decorators.DecoratorInfos]
         __pydantic_generic_metadata__: ClassVar[_generics.PydanticGenericMetadata]
         __pydantic_parent_namespace__: ClassVar[dict[str, Any] | None]
-        __pydantic_post_init__: ClassVar[None | typing_extensions.Literal['model_post_init']]
+        __pydantic_post_init__: ClassVar[None | Literal['model_post_init']]
         __pydantic_root_model__: ClassVar[bool]
         __pydantic_serializer__: ClassVar[SchemaSerializer]
         __pydantic_validator__: ClassVar[SchemaValidator]
 
         # Instance attributes
-        # Note: we use the non-existent kwarg `init=False` in pydantic.fields.Field below so that @dataclass_transform
-        # doesn't think these are valid as keyword arguments to the class initializer.
-        __pydantic_extra__: dict[str, Any] | None = _Field(init=False)  # type: ignore
-        __pydantic_fields_set__: set[str] = _Field(init=False)  # type: ignore
-        __pydantic_private__: dict[str, Any] | None = _Field(init=False)  # type: ignore
+        __pydantic_extra__: dict[str, Any] | None = _PrivateAttr()
+        __pydantic_fields_set__: set[str] = _PrivateAttr()
+        __pydantic_private__: dict[str, Any] | None = _PrivateAttr()
 
     else:
         # `model_fields` and `__pydantic_decorators__` must be set for
@@ -145,6 +144,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_decorators__ = _decorators.DecoratorInfos()
         __pydantic_parent_namespace__ = None
         # Prevent `BaseModel` from being instantiated directly:
+        __pydantic_core_schema__ = _mock_val_ser.MockCoreSchema(
+            'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly',
+            code='base-model-instantiated',
+        )
         __pydantic_validator__ = _mock_val_ser.MockValSer(
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly',
             val_or_ser='validator',
@@ -197,7 +200,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return self.__pydantic_fields_set__
 
     @classmethod
-    def model_construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:
+    def model_construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:  # noqa: C901
         """Creates a new instance of the `Model` class with validated data.
 
         Creates a new model setting `__dict__` and `__pydantic_fields_set__` from trusted or pre-validated data.
@@ -225,14 +228,32 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             if field.alias is not None and field.alias in values:
                 fields_values[name] = values.pop(field.alias)
                 fields_set.add(name)
-            elif field.validation_alias is not None and field.validation_alias in values:
-                fields_values[name] = values.pop(field.validation_alias)
-                fields_set.add(name)
-            elif name in values:
-                fields_values[name] = values.pop(name)
-                fields_set.add(name)
-            elif not field.is_required():
-                fields_values[name] = field.get_default(call_default_factory=True)
+
+            if (name not in fields_set) and (field.validation_alias is not None):
+                validation_aliases: list[str | AliasPath] = (
+                    field.validation_alias.choices
+                    if isinstance(field.validation_alias, AliasChoices)
+                    else [field.validation_alias]
+                )
+
+                for alias in validation_aliases:
+                    if isinstance(alias, str) and alias in values:
+                        fields_values[name] = values.pop(alias)
+                        fields_set.add(name)
+                        break
+                    elif isinstance(alias, AliasPath):
+                        value = alias.search_dict_for_path(values)
+                        if value is not PydanticUndefined:
+                            fields_values[name] = value
+                            fields_set.add(name)
+                            break
+
+            if name not in fields_set:
+                if name in values:
+                    fields_values[name] = values.pop(name)
+                    fields_set.add(name)
+                elif not field.is_required():
+                    fields_values[name] = field.get_default(call_default_factory=True)
         if _fields_set is None:
             _fields_set = fields_set
 
@@ -290,7 +311,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     def model_dump(
         self,
         *,
-        mode: typing_extensions.Literal['json', 'python'] | str = 'python',
+        mode: Literal['json', 'python'] | str = 'python',
         include: IncEx = None,
         exclude: IncEx = None,
         context: dict[str, Any] | None = None,
@@ -299,7 +320,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_defaults: bool = False,
         exclude_none: bool = False,
         round_trip: bool = False,
-        warnings: bool = True,
+        warnings: bool | Literal['none', 'warn', 'error'] = True,
         serialize_as_any: bool = False,
     ) -> dict[str, Any]:
         """Usage docs: https://docs.pydantic.dev/2.7/concepts/serialization/#modelmodel_dump
@@ -318,7 +339,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             exclude_defaults: Whether to exclude fields that are set to their default value.
             exclude_none: Whether to exclude fields that have a value of `None`.
             round_trip: If True, dumped values should be valid as input for non-idempotent types such as Json[T].
-            warnings: Whether to log warnings when invalid fields are encountered.
+            warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
+                "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
 
         Returns:
@@ -351,7 +373,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_defaults: bool = False,
         exclude_none: bool = False,
         round_trip: bool = False,
-        warnings: bool = True,
+        warnings: bool | Literal['none', 'warn', 'error'] = True,
         serialize_as_any: bool = False,
     ) -> str:
         """Usage docs: https://docs.pydantic.dev/2.7/concepts/serialization/#modelmodel_dump_json
@@ -368,7 +390,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             exclude_defaults: Whether to exclude fields that are set to their default value.
             exclude_none: Whether to exclude fields that have a value of `None`.
             round_trip: If True, dumped values should be valid as input for non-idempotent types such as Json[T].
-            warnings: Whether to log warnings when invalid fields are encountered.
+            warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
+                "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
 
         Returns:
@@ -595,7 +618,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
         # Only use the cached value from this _exact_ class; we don't want one from a parent class
         # This is why we check `cls.__dict__` and don't use `cls.__pydantic_core_schema__` or similar.
-        if '__pydantic_core_schema__' in cls.__dict__:
+        schema = cls.__dict__.get('__pydantic_core_schema__')
+        if schema is not None and not isinstance(schema, _mock_val_ser.MockCoreSchema):
             # Due to the way generic classes are built, it's possible that an invalid schema may be temporarily
             # set on generic classes. I think we could resolve this to ensure that we get proper schema caching
             # for generics, but for simplicity for now, we just always rebuild if the class has a generic origin.
@@ -721,7 +745,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         _object_setattr(m, '__pydantic_extra__', copy(self.__pydantic_extra__))
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
 
-        if self.__pydantic_private__ is None:
+        if not hasattr(self, '__pydantic_private__') or self.__pydantic_private__ is None:
             _object_setattr(m, '__pydantic_private__', None)
         else:
             _object_setattr(
@@ -742,7 +766,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # and attempting a deepcopy would be marginally slower.
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
 
-        if self.__pydantic_private__ is None:
+        if not hasattr(self, '__pydantic_private__') or self.__pydantic_private__ is None:
             _object_setattr(m, '__pydantic_private__', None)
         else:
             _object_setattr(
@@ -902,7 +926,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 # Perform common checks first
                 if not (
                     self_type == other_type
-                    and self.__pydantic_private__ == other.__pydantic_private__
+                    and getattr(self, '__pydantic_private__', None) == getattr(other, '__pydantic_private__', None)
                     and self.__pydantic_extra__ == other.__pydantic_extra__
                 ):
                     return False
@@ -1397,7 +1421,7 @@ def create_model(
     __doc__: str | None = None,
     __base__: None = None,
     __module__: str = __name__,
-    __validators__: dict[str, classmethod] | None = None,
+    __validators__: dict[str, classmethod[Any, ..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     **field_definitions: Any,
 ) -> type[BaseModel]:
@@ -1412,7 +1436,7 @@ def create_model(
     __doc__: str | None = None,
     __base__: type[Model] | tuple[type[Model], ...],
     __module__: str = __name__,
-    __validators__: dict[str, classmethod] | None = None,
+    __validators__: dict[str, classmethod[Any, ..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     **field_definitions: Any,
 ) -> type[Model]:
@@ -1426,7 +1450,7 @@ def create_model(  # noqa: C901
     __doc__: str | None = None,
     __base__: type[Model] | tuple[type[Model], ...] | None = None,
     __module__: str | None = None,
-    __validators__: dict[str, classmethod] | None = None,
+    __validators__: dict[str, classmethod[Any, ..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __slots__: tuple[str, ...] | None = None,
     **field_definitions: Any,

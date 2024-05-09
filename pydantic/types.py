@@ -990,6 +990,10 @@ else:
                     function=_validators.import_string, schema=handler(source), serialization=serializer
                 )
 
+        @classmethod
+        def __get_pydantic_json_schema__(cls, cs: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+            return handler(core_schema.str_schema())
+
         @staticmethod
         def _serialize(v: Any) -> str:
             if isinstance(v, ModuleType):
@@ -1561,14 +1565,22 @@ class Secret(_SecretBase[SecretType]):
             validated_inner = handler(value)
             return cls(validated_inner)
 
+        def serialize(value: Secret[SecretType], info: core_schema.SerializationInfo) -> str | Secret[SecretType]:
+            if info.mode == 'json':
+                return str(value)
+            else:
+                return value
+
         return core_schema.json_or_python_schema(
             python_schema=core_schema.no_info_wrap_validator_function(
                 validate_secret_value,
                 inner_schema,
-                serialization=core_schema.plain_serializer_function_ser_schema(lambda x: x),
             ),
-            json_schema=core_schema.no_info_after_validator_function(
-                lambda x: cls(x), inner_schema, serialization=core_schema.to_string_ser_schema(when_used='json')
+            json_schema=core_schema.no_info_after_validator_function(lambda x: cls(x), inner_schema),
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                serialize,
+                info_arg=True,
+                when_used='always',
             ),
         )
 

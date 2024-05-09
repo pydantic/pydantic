@@ -15,7 +15,7 @@ from enum import Enum
 from functools import partial
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from operator import attrgetter
-from typing import Any, Callable, Iterable, TypeVar
+from typing import Any, Callable, Iterable, Literal, TypeVar
 
 import typing_extensions
 from pydantic_core import (
@@ -67,7 +67,7 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
     js_updates = {'title': enum_type.__name__, 'description': description}
     js_updates = {k: v for k, v in js_updates.items() if v is not None}
 
-    sub_type: typing_extensions.Literal['str', 'int', 'float'] | None = None
+    sub_type: Literal['str', 'int', 'float'] | None = None
     if issubclass(enum_type, int):
         sub_type = 'int'
         value_ser_type: core_schema.SerSchema = core_schema.simple_ser_schema('int')

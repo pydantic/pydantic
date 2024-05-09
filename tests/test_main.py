@@ -48,6 +48,8 @@ from pydantic import (
     constr,
     field_validator,
 )
+from pydantic._internal._mock_val_ser import MockCoreSchema
+from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 
 def test_success():
@@ -3003,17 +3005,27 @@ def test_arbitrary_types_not_a_type() -> None:
     assert ta.validate_python(bar) is bar
 
 
-def test_deferred_core_schema() -> None:
-    class Foo(BaseModel):
-        x: 'Bar'
+@pytest.mark.parametrize('is_dataclass', [False, True])
+def test_deferred_core_schema(is_dataclass: bool) -> None:
+    if is_dataclass:
 
+        @pydantic_dataclass
+        class Foo:
+            x: 'Bar'
+    else:
+
+        class Foo(BaseModel):
+            x: 'Bar'
+
+    assert isinstance(Foo.__pydantic_core_schema__, MockCoreSchema)
     with pytest.raises(PydanticUserError, match='`Foo` is not fully defined'):
-        Foo.__pydantic_core_schema__
+        Foo.__pydantic_core_schema__['type']
 
     class Bar(BaseModel):
         pass
 
-    assert Foo.__pydantic_core_schema__
+    assert Foo.__pydantic_core_schema__['type'] == ('dataclass' if is_dataclass else 'model')
+    assert isinstance(Foo.__pydantic_core_schema__, dict)
 
 
 def test_help(create_module):
@@ -3280,3 +3292,17 @@ def test_validation_works_for_cyclical_forward_refs() -> None:
         x: Union[X, None]
 
     assert Y(x={'y': None}).x.y is None
+
+
+def test_model_construct_with_model_post_init_and_model_copy() -> None:
+    class Model(BaseModel):
+        id: int
+
+        def model_post_init(self, context: Any) -> None:
+            super().model_post_init(context)
+
+    m = Model.model_construct(id=1)
+    copy = m.model_copy(deep=True)
+
+    assert m == copy
+    assert id(m) != id(copy)

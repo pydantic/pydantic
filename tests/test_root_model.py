@@ -657,3 +657,25 @@ def test_model_construction_with_invalid_generic_specification() -> None:
 
         class GenericRootModel(RootModel, Generic[T_]):
             root: Union[T_, int]
+
+
+def test_model_with_field_description() -> None:
+    class AModel(RootModel):
+        root: int = Field(description='abc')
+
+    assert AModel.model_json_schema() == {'title': 'AModel', 'type': 'integer', 'description': 'abc'}
+
+
+def test_model_with_both_docstring_and_field_description() -> None:
+    """Check if the docstring is used as the description when both are present."""
+
+    class AModel(RootModel):
+        """More detailed description"""
+
+        root: int = Field(description='abc')
+
+    assert AModel.model_json_schema() == {
+        'title': 'AModel',
+        'type': 'integer',
+        'description': 'More detailed description',
+    }

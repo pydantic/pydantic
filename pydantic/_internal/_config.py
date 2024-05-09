@@ -77,6 +77,7 @@ class ConfigWrapper:
     protected_namespaces: tuple[str, ...]
     hide_input_in_errors: bool
     defer_build: bool
+    _defer_build_mode: tuple[Literal['model', 'type_adapter'], ...]
     plugin_settings: dict[str, object] | None
     schema_generator: type[GenerateSchema] | None
     json_schema_serialization_defaults_required: bool
@@ -85,6 +86,7 @@ class ConfigWrapper:
     regex_engine: Literal['rust-regex', 'python-re']
     validation_error_cause: bool
     use_attribute_docstrings: bool
+    cache_strings: bool | Literal['all', 'keys', 'none']
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
         if check:
@@ -190,6 +192,7 @@ class ConfigWrapper:
                 coerce_numbers_to_str=self.config_dict.get('coerce_numbers_to_str'),
                 regex_engine=self.config_dict.get('regex_engine'),
                 validation_error_cause=self.config_dict.get('validation_error_cause'),
+                cache_strings=self.config_dict.get('cache_strings'),
             )
         )
         return core_config
@@ -258,6 +261,7 @@ config_defaults = ConfigDict(
     hide_input_in_errors=False,
     json_encoders=None,
     defer_build=False,
+    _defer_build_mode=('model',),
     plugin_settings=None,
     schema_generator=None,
     json_schema_serialization_defaults_required=False,
@@ -266,6 +270,7 @@ config_defaults = ConfigDict(
     regex_engine='rust-regex',
     validation_error_cause=False,
     use_attribute_docstrings=False,
+    cache_strings=True,
 )
 
 

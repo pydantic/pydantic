@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from copy import copy
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Iterable
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Sequence
 
 from pydantic_core import CoreSchema, PydanticCustomError, to_jsonable_python
 from pydantic_core import core_schema as cs
@@ -19,7 +19,15 @@ SEQUENCE_CONSTRAINTS = {'min_length', 'max_length'}
 INEQUALITY = {'le', 'ge', 'lt', 'gt'}
 NUMERIC_CONSTRAINTS = {'multiple_of', 'allow_inf_nan', *INEQUALITY}
 
-STR_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT, 'strip_whitespace', 'to_lower', 'to_upper', 'pattern'}
+STR_CONSTRAINTS = {
+    *SEQUENCE_CONSTRAINTS,
+    *STRICT,
+    'strip_whitespace',
+    'to_lower',
+    'to_upper',
+    'pattern',
+    'coerce_numbers_to_str',
+}
 BYTES_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT}
 
 LIST_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT}
@@ -92,6 +100,20 @@ for constraint in LAX_OR_STRICT_CONSTRAINTS:
     CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('lax-or-strict',))
 for constraint in ENUM_CONSTRAINTS:
     CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('enum',))
+
+
+def _is_sequence_metadata(schema: CoreSchema) -> bool:
+    """Checks if the schema is a sequence schema according to the assigned metadata during schema generation
+
+    Args:
+        schema: The core schema.
+
+    Returns:
+        True if the schema is a sequence schema, False otherwise.
+    """
+    metadata = schema.get('metadata', {})
+    handle_as = metadata.get('known_metadata_as', {})
+    return handle_as == Sequence
 
 
 def add_js_update_schema(s: cs.CoreSchema, f: Callable[[], dict[str, Any]]) -> None:
@@ -187,6 +209,12 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             raise ValueError(f'Unknown constraint {constraint}')
         allowed_schemas = CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint]
 
+        # if it becomes necessary to handle more than one constraint
+        # in this recursive case with function-after or function-wrap, we should refactor
+        if schema_type in {'function-before', 'function-wrap', 'function-after'} and constraint == 'strict':
+            schema['schema'] = apply_known_metadata(annotation, schema['schema'])  # type: ignore  # schema is function-after schema
+            return schema
+
         if schema_type in allowed_schemas:
             if constraint == 'union_mode' and schema_type == 'union':
                 schema['mode'] = value  # type: ignore  # schema is UnionSchema
@@ -239,6 +267,9 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                 partial(_validators.min_length_validator, min_length=value),
                 schema,
             )
+            if _is_sequence_metadata(schema):
+                add_js_update_schema(s, lambda: {'minItems': (as_jsonable_value(value))})
+                return s
             add_js_update_schema(s, lambda: {'minLength': (as_jsonable_value(value))})
             return s
         elif constraint == 'max_length':
@@ -246,6 +277,9 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                 partial(_validators.max_length_validator, max_length=value),
                 schema,
             )
+            if _is_sequence_metadata(schema):
+                add_js_update_schema(s, lambda: {'maxItems': (as_jsonable_value(value))})
+                return s
             add_js_update_schema(s, lambda: {'maxLength': (as_jsonable_value(value))})
             return s
         elif constraint == 'strip_whitespace':
@@ -278,6 +312,13 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             return cs.no_info_after_validator_function(
                 partial(_validators.max_length_validator, max_length=annotation.max_length),
                 schema,
+            )
+        elif constraint == 'coerce_numbers_to_str':
+            return cs.chain_schema(
+                [
+                    schema,
+                    cs.str_schema(coerce_numbers_to_str=True),  # type: ignore
+                ]
             )
         else:
             raise RuntimeError(f'Unable to apply constraint {constraint} to schema {schema_type}')

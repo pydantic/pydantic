@@ -76,6 +76,7 @@ from ._docs_extraction import extract_docstrings_from_cls
 from ._fields import collect_dataclass_fields, get_type_hints_infer_globalns
 from ._forward_ref import PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, has_instance_in_type, recursively_defined_type_refs, replace_types
+from ._mock_val_ser import MockCoreSchema
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._typing_extra import is_finalvar, is_self_type
 from ._utils import lenient_issubclass
@@ -220,6 +221,7 @@ def modify_model_json_schema(
     """
     from ..dataclasses import is_pydantic_dataclass
     from ..main import BaseModel
+    from ..root_model import RootModel
     from ._dataclasses import is_builtin_dataclass
 
     json_schema = handler(schema_or_field)
@@ -237,6 +239,8 @@ def modify_model_json_schema(
     docstring = None if cls is BaseModel or is_builtin_dataclass(cls) or is_pydantic_dataclass(cls) else cls.__doc__
     if docstring and 'description' not in original_schema:
         original_schema['description'] = inspect.cleandoc(docstring)
+    elif issubclass(cls, RootModel) and cls.model_fields['root'].description:
+        original_schema['description'] = cls.model_fields['root'].description
     return json_schema
 
 
@@ -545,7 +549,7 @@ class GenerateSchema:
                 assert cls.__mro__[0] is cls
                 assert cls.__mro__[-1] is object
                 for candidate_cls in cls.__mro__[:-1]:
-                    extras_annotation = candidate_cls.__annotations__.get('__pydantic_extra__', None)
+                    extras_annotation = getattr(candidate_cls, '__annotations__', {}).get('__pydantic_extra__', None)
                     if extras_annotation is not None:
                         if isinstance(extras_annotation, str):
                             extras_annotation = _typing_extra.eval_type_backport(
@@ -675,9 +679,11 @@ class GenerateSchema:
                     source, CallbackGetCoreSchemaHandler(self._generate_schema_inner, self, ref_mode=ref_mode)
                 )
         # fmt: off
-        elif (existing_schema := getattr(obj, '__pydantic_core_schema__', None)) is not None and existing_schema.get(
-            'cls', None
-        ) == obj:
+        elif (
+            (existing_schema := getattr(obj, '__pydantic_core_schema__', None)) is not None
+            and not isinstance(existing_schema, MockCoreSchema)
+            and existing_schema.get('cls', None) == obj
+        ):
             schema = existing_schema
         # fmt: on
         elif (validators := getattr(obj, '__get_validators__', None)) is not None:
@@ -1333,7 +1339,7 @@ class GenerateSchema:
                         field_name, field_info, decorators, required=required
                     )
 
-                title = self._get_class_title_from_config(typed_dict_cls, self._config_wrapper)
+                title = self._get_class_title_from_config(typed_dict_cls, ConfigWrapper(config))
                 metadata = build_metadata_dict(
                     js_functions=[partial(modify_model_json_schema, cls=typed_dict_cls, title=title)],
                     typed_dict_cls=typed_dict_cls,
@@ -1495,6 +1501,7 @@ class GenerateSchema:
         item_type = self._get_first_arg_or_any(sequence_type)
         item_type_schema = self.generate_schema(item_type)
         list_schema = core_schema.list_schema(item_type_schema)
+        metadata = build_metadata_dict(initial_metadata={'known_metadata_as': typing.Sequence})
 
         python_schema = core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence')
         if item_type != Any:
@@ -1508,7 +1515,7 @@ class GenerateSchema:
             serialize_sequence_via_list, schema=item_type_schema, info_arg=True
         )
         return core_schema.json_or_python_schema(
-            json_schema=list_schema, python_schema=python_schema, serialization=serialization
+            json_schema=list_schema, python_schema=python_schema, serialization=serialization, metadata=metadata
         )
 
     def _iterable_schema(self, type_: Any) -> core_schema.GeneratorSchema:
@@ -1574,6 +1581,7 @@ class GenerateSchema:
                         dataclass_bases_stack.enter_context(self._types_namespace_stack.push(dataclass_base))
 
                 # Pushing a config overwrites the previous config, so iterate though the MRO backwards
+                config = None
                 for dataclass_base in reversed(dataclass.__mro__):
                     if dataclasses.is_dataclass(dataclass_base):
                         config = getattr(dataclass_base, '__pydantic_config__', None)
@@ -1633,7 +1641,7 @@ class GenerateSchema:
                 model_validators = decorators.model_validators.values()
                 inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
 
-                title = self._get_class_title_from_config(dataclass, self._config_wrapper)
+                title = self._get_class_title_from_config(dataclass, ConfigWrapper(config))
                 metadata = build_metadata_dict(
                     js_functions=[partial(modify_model_json_schema, cls=dataclass, title=title)]
                 )

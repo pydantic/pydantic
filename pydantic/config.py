@@ -716,11 +716,35 @@ class ConfigDict(TypedDict, total=False):
 
     defer_build: bool
     """
-    Whether to defer model validator and serializer construction until the first model validation.
+    Whether to defer model validator and serializer construction until the first model validation. Defaults to False.
 
     This can be useful to avoid the overhead of building models which are only
     used nested within other models, or when you want to manually define type namespace via
-    [`Model.model_rebuild(_types_namespace=...)`][pydantic.BaseModel.model_rebuild]. Defaults to False.
+    [`Model.model_rebuild(_types_namespace=...)`][pydantic.BaseModel.model_rebuild].
+
+    See also [`_defer_build_mode`][pydantic.config.ConfigDict._defer_build_mode].
+
+    !!! note
+        `defer_build` does not work by default with FastAPI Pydantic models. By default, the validator and serializer
+        for said models is constructed immediately for FastAPI routes. You also need to define
+        [`_defer_build_mode=('model', 'type_adapter')`][pydantic.config.ConfigDict._defer_build_mode] with FastAPI
+        models in order for `defer_build=True` to take effect. This additional (experimental) parameter is required for
+        the deferred building due to FastAPI relying on `TypeAdapter`s.
+    """
+
+    _defer_build_mode: tuple[Literal['model', 'type_adapter'], ...]
+    """
+    Controls when [`defer_build`][pydantic.config.ConfigDict.defer_build] is applicable. Defaults to `('model',)`.
+
+    Due to backwards compatibility reasons [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] does not by default
+    respect `defer_build`. Meaning when `defer_build` is `True` and `_defer_build_mode` is the default `('model',)`
+    then `TypeAdapter` immediately constructs its validator and serializer instead of postponing said construction until
+    the first model validation. Set this to `('model', 'type_adapter')` to make `TypeAdapter` respect the `defer_build`
+    so it postpones validator and serializer construction until the first validation or serialization.
+
+    !!! note
+        The `_defer_build_mode` parameter is named with an underscore to suggest this is an experimental feature. It may
+        be removed or changed in the future in a minor release.
     """
 
     plugin_settings: dict[str, object] | None
@@ -950,6 +974,25 @@ class ConfigDict(TypedDict, total=False):
         (in particular when multiple `TypedDict` classes have the same name in the same source file). The behavior
         can be different depending on the Python version used.
     '''
+
+    cache_strings: bool | Literal['all', 'keys', 'none']
+    """
+    Whether to cache strings to avoid constructing new Python objects. Defaults to True.
+
+    Enabling this setting should significantly improve validation performance while increasing memory usage slightly.
+
+    - `True` or `'all'` (the default): cache all strings
+    - `'keys'`: cache only dictionary keys
+    - `False` or `'none'`: no caching
+
+    !!! note
+        `True` or `'all'` is required to cache strings during general validation because
+        validators don't know if they're in a key or a value.
+
+    !!! tip
+        If repeated strings are rare, it's recommended to use `'keys'` or `'none'` to reduce memory usage,
+        as the performance difference is minimal if repeated strings are rare.
+    """
 
 
 _TypeT = TypeVar('_TypeT', bound=type)

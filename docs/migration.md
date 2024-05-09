@@ -691,7 +691,7 @@ adapter: TypeAdapter[str | int] = TypeAdapter(str | int)
 ...
 ```
 
-[TODO: Add link to TypeAdapter documentation. For now, you can find example usage in `tests/test_type_adapter.py`.]
+See [Type Adapter](concepts/type_adapter.md) for more information.
 
 ### Defining custom types
 

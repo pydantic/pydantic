@@ -14,6 +14,8 @@ from typing import Any, Optional
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
 
+from pydantic import GenerateSchema
+
 
 def pytest_addoption(parser: pytest.Parser):
     parser.addoption('--test-mypy', action='store_true', help='run mypy tests')
@@ -114,3 +116,30 @@ class Err:
 
     def message_escaped(self):
         return re.escape(self.message)
+
+
+@dataclass
+class CallCounter:
+    count: int = 0
+
+    def reset(self) -> None:
+        self.count = 0
+
+
+@pytest.fixture
+def generate_schema_calls(monkeypatch) -> CallCounter:
+    orig_generate_schema = GenerateSchema.generate_schema
+    counter = CallCounter()
+    depth = 0  # generate_schema can be called recursively
+
+    def generate_schema_call_counter(*args: Any, **kwargs: Any) -> Any:
+        nonlocal depth
+        counter.count += 1 if depth == 0 else 0
+        depth += 1
+        try:
+            return orig_generate_schema(*args, **kwargs)
+        finally:
+            depth -= 1
+
+    monkeypatch.setattr(GenerateSchema, 'generate_schema', generate_schema_call_counter)
+    return counter
