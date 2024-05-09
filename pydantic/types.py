@@ -28,10 +28,10 @@ from typing import (
 from uuid import UUID
 from weakref import WeakSet
 
-from . import errors
-from .datetime_parse import parse_date
-from .utils import import_string, update_not_none
-from .validators import (
+from pydantic import errors
+from pydantic.datetime_parse import parse_date
+from pydantic.utils import import_string, update_not_none
+from pydantic.validators import (
     bytes_validator,
     constr_length_validator,
     constr_lower,
@@ -123,9 +123,9 @@ StrIntFloat = Union[str, int, float]
 if TYPE_CHECKING:
     from typing_extensions import Annotated
 
-    from .dataclasses import Dataclass
-    from .main import BaseModel
-    from .typing import CallableGenerator
+    from pydantic.dataclasses import Dataclass
+    from pydantic.main import BaseModel
+    from pydantic.typing import CallableGenerator
 
     ModelOrDc = Type[Union[BaseModel, Dataclass]]
 

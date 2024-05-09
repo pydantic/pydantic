@@ -16,7 +16,7 @@ def __getattr__(name: str) -> Any:
     return getattr(pydantic, name)
 
 
-# WARNING __all__ from .errors is not included here, it will be removed as an export here in v2
+# WARNING __all__ from pydantic.errors is not included here, it will be removed as an export here in v2
 # please use "from pydantic.errors import ..." instead
 __all__ = [
     # annotated types utils

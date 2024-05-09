@@ -1,23 +1,23 @@
 # flake8: noqa
-from . import dataclasses
-from .annotated_types import create_model_from_namedtuple, create_model_from_typeddict
-from .class_validators import root_validator, validator
-from .config import BaseConfig, ConfigDict, Extra
-from .decorator import validate_arguments
-from .env_settings import BaseSettings
-from .error_wrappers import ValidationError
-from .errors import *
-from .fields import Field, PrivateAttr, Required
-from .main import *
-from .networks import *
-from .parse import Protocol
-from .tools import *
-from .types import *
-from .version import VERSION, compiled
+from pydantic import dataclasses
+from pydantic.annotated_types import create_model_from_namedtuple, create_model_from_typeddict
+from pydantic.class_validators import root_validator, validator
+from pydantic.config import BaseConfig, ConfigDict, Extra
+from pydantic.decorator import validate_arguments
+from pydantic.env_settings import BaseSettings
+from pydantic.error_wrappers import ValidationError
+from pydantic.errors import *
+from pydantic.fields import Field, PrivateAttr, Required
+from pydantic.main import *
+from pydantic.networks import *
+from pydantic.parse import Protocol
+from pydantic.tools import *
+from pydantic.types import *
+from pydantic.version import VERSION, compiled
 
 __version__ = VERSION
 
-# WARNING __all__ from .errors is not included here, it will be removed as an export here in v2
+# WARNING __all__ from pydantic.errors is not included here, it will be removed as an export here in v2
 # please use "from pydantic.errors import ..." instead
 __all__ = [
     # annotated types utils
