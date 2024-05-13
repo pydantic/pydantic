@@ -195,7 +195,7 @@ def dataclass(  # noqa: C901
         if is_model_class(cls):
             raise PydanticUserError(
                 f'Cannot create a Pydantic dataclass from {cls.__name__} as it is already a Pydantic model',
-                code=None,
+                code='dataclass-on-model',
             )
 
         original_cls = cls
