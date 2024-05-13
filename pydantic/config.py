@@ -1026,7 +1026,7 @@ def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
         if is_model_class(class_):
             raise PydanticUserError(
                 f'Cannot use `with_config` on {class_.__name__} as it is a Pydantic model',
-                code=None,
+                code='with-config-on-model',
             )
         class_.__pydantic_config__ = config
         return class_

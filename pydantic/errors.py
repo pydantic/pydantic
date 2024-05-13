@@ -62,6 +62,7 @@ PydanticErrorCodes = Literal[
     'dataclass-init-false-extra-allow',
     'clashing-init-and-init-var',
     'model-config-invalid-field-name',
+    'with-config-on-model',
 ]
 
 
