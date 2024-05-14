@@ -56,15 +56,12 @@ fn field_from_context<'py, T: FromPyObject<'py>>(
         .map_err(|_| py_error_type!(PyTypeError; "{}: '{}' context value must be a {}", enum_name, field_name, type_name_fn()))
 }
 
-fn cow_field_from_context<'py, T: FromPyObject<'py>, B: ?Sized + 'static>(
+fn cow_field_from_context<'py, T: FromPyObject<'py>, B: ToOwned<Owned = T> + ?Sized + 'static>(
     context: Option<&Bound<'py, PyDict>>,
     field_name: &str,
     enum_name: &str,
     _type_name_fn: fn() -> &'static str,
-) -> PyResult<Cow<'static, B>>
-where
-    B: ToOwned<Owned = T>,
-{
+) -> PyResult<Cow<'static, B>> {
     let res: T = field_from_context(context, field_name, enum_name, || {
         type_name::<T>().split("::").last().unwrap()
     })?;
