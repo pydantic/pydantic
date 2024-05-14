@@ -76,14 +76,23 @@ def add_changelog() -> None:
 
 
 def add_mkdocs_run_deps() -> None:
-    # set the pydantic and pydantic-core versions to configure for running examples in the browser
+    # set the pydantic, pydantic-core, and pydantic-extra-types versions to configure for running examples in the browser
     pyproject_toml = (PROJECT_ROOT / 'pyproject.toml').read_text()
     pydantic_core_version = re.search(r'pydantic-core==(.+?)["\']', pyproject_toml).group(1)
 
     version_py = (PROJECT_ROOT / 'pydantic' / 'version.py').read_text()
     pydantic_version = re.search(r'^VERSION ?= (["\'])(.+)\1', version_py, flags=re.M).group(2)
 
-    mkdocs_run_deps = json.dumps([f'pydantic=={pydantic_version}', f'pydantic-core=={pydantic_core_version}'])
+    pdm_lock = (PROJECT_ROOT / 'pdm.lock').read_text()
+    pydantic_extra_types_version = re.search(r'name = "pydantic-extra-types"\nversion = "(.+?)"', pdm_lock).group(1)
+
+    mkdocs_run_deps = json.dumps(
+        [
+            f'pydantic=={pydantic_version}',
+            f'pydantic-core=={pydantic_core_version}',
+            f'pydantic-extra-types=={pydantic_extra_types_version}',
+        ]
+    )
     logger.info('Setting mkdocs_run_deps=%s', mkdocs_run_deps)
 
     html = f"""\
