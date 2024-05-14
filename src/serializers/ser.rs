@@ -236,23 +236,17 @@ where
         self.serialize_str(variant)
     }
 
-    fn serialize_newtype_struct<T: ?Sized>(self, _name: &'static str, value: &T) -> Result<Self::Ok>
-    where
-        T: Serialize,
-    {
+    fn serialize_newtype_struct<T: Serialize + ?Sized>(self, _name: &'static str, value: &T) -> Result<Self::Ok> {
         value.serialize(self)
     }
 
-    fn serialize_newtype_variant<T: ?Sized>(
+    fn serialize_newtype_variant<T: Serialize + ?Sized>(
         self,
         _name: &'static str,
         _variant_index: u32,
         variant: &'static str,
         value: &T,
-    ) -> Result<Self::Ok>
-    where
-        T: Serialize,
-    {
+    ) -> Result<Self::Ok> {
         tri!(self
             .formatter
             .begin_object(&mut self.writer)
