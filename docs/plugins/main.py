@@ -76,7 +76,7 @@ def add_changelog() -> None:
 
 
 def add_mkdocs_run_deps() -> None:
-    # set the pydantic, pydantic-core, and pydantic-extra-types versions to configure for running examples in the browser
+    # set the pydantic, pydantic-core, pydantic-extra-types versions to configure for running examples in the browser
     pyproject_toml = (PROJECT_ROOT / 'pyproject.toml').read_text()
     pydantic_core_version = re.search(r'pydantic-core==(.+?)["\']', pyproject_toml).group(1)
 
