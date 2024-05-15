@@ -10,7 +10,6 @@ from typing_extensions import Literal, TypeGuard, dataclass_transform
 
 from ._internal import _config, _decorators, _typing_extra
 from ._internal import _dataclasses as _pydantic_dataclasses
-from ._internal._utils import is_model_class
 from ._migration import getattr_migration
 from .config import ConfigDict
 from .errors import PydanticUserError
@@ -192,6 +191,8 @@ def dataclass(  # noqa: C901
         Returns:
             A Pydantic dataclass.
         """
+        from ._internal._utils import is_model_class
+
         if is_model_class(cls):
             raise PydanticUserError(
                 f'Cannot create a Pydantic dataclass from {cls.__name__} as it is already a Pydantic model',
