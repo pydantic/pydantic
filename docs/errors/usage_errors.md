@@ -1117,4 +1117,22 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'model-config-invalid-field-name'
 ```
 
+## `dataclass` is used on a `BaseModel` subclass {#dataclass-on-model}
+
+This error is raised when the Pydantic `dataclass` decorator is used on a class which is already
+a Pydantic model.
+
+```py
+from pydantic import BaseModel, PydanticUserError
+from pydantic.dataclasses import dataclass
+
+try:
+
+    @dataclass
+    class Model(BaseModel):
+        bar: str
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'dataclass-on-model'
+
 {% endraw %}

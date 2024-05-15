@@ -12,6 +12,7 @@ from ._internal import _config, _decorators, _typing_extra
 from ._internal import _dataclasses as _pydantic_dataclasses
 from ._migration import getattr_migration
 from .config import ConfigDict
+from .errors import PydanticUserError
 from .fields import Field, FieldInfo, PrivateAttr
 
 if TYPE_CHECKING:
@@ -190,6 +191,14 @@ def dataclass(  # noqa: C901
         Returns:
             A Pydantic dataclass.
         """
+        from ._internal._utils import is_model_class
+
+        if is_model_class(cls):
+            raise PydanticUserError(
+                f'Cannot create a Pydantic dataclass from {cls.__name__} as it is already a Pydantic model',
+                code='dataclass-on-model',
+            )
+
         original_cls = cls
 
         config_dict = config
