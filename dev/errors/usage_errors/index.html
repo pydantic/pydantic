@@ -3062,6 +3062,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#dataclass-on-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dataclass is used on a BaseModel subclass
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3861,6 +3872,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
     <span class="md-ellipsis">
       
         model_config is used as a model field
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dataclass-on-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dataclass is used on a BaseModel subclass
       
     </span>
   </a>
@@ -4807,6 +4829,19 @@ This combination is not allowed.
 <span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;model-config-invalid-field-name&#39;</span>
 </code></pre></div></p>
+<h2 id="dataclass-on-model"><code>dataclass</code> is used on a <code>BaseModel</code> subclass<a class="headerlink" href="#dataclass-on-model" title="Permanent link">&para;</a></h2>
+<p>This error is raised when the Pydantic <code>dataclass</code> decorator is used on a class which is already
+a Pydantic model.</p>
+<p>```py
+from pydantic import BaseModel, PydanticUserError
+from pydantic.dataclasses import dataclass</p>
+<p>try:</p>
+<div class="language-text highlight"><pre><span></span><code>@dataclass
+class Model(BaseModel):
+    bar: str
+</code></pre></div>
+<p>except PydanticUserError as exc_info:
+    assert exc_info.code == 'dataclass-on-model'</p>
 
 
 
