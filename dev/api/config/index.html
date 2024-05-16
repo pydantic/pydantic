@@ -6057,8 +6057,7 @@ especially with <code>TypedDict</code>.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/config.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 994</span>
-<span class="normal"> 995</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 995</span>
 <span class="normal"> 996</span>
 <span class="normal"> 997</span>
 <span class="normal"> 998</span>
@@ -6087,7 +6086,18 @@ especially with <code>TypedDict</code>.</p>
 <span class="normal">1021</span>
 <span class="normal">1022</span>
 <span class="normal">1023</span>
-<span class="normal">1024</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
+<span class="normal">1024</span>
+<span class="normal">1025</span>
+<span class="normal">1026</span>
+<span class="normal">1027</span>
+<span class="normal">1028</span>
+<span class="normal">1029</span>
+<span class="normal">1030</span>
+<span class="normal">1031</span>
+<span class="normal">1032</span>
+<span class="normal">1033</span>
+<span class="normal">1034</span>
+<span class="normal">1035</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.7/concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict</span>
 
 <span class="sd">    A convenience decorator to set a [Pydantic configuration](config.md) on a `TypedDict` or a `dataclass` from the standard library.</span>
@@ -6113,9 +6123,19 @@ especially with <code>TypedDict</code>.</p>
 <span class="sd">        ```</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">inner</span><span class="p">(</span><span class="n">TypedDictClass</span><span class="p">:</span> <span class="n">_TypeT</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_TypeT</span><span class="p">:</span>
-        <span class="n">TypedDictClass</span><span class="o">.</span><span class="n">__pydantic_config__</span> <span class="o">=</span> <span class="n">config</span>
-        <span class="k">return</span> <span class="n">TypedDictClass</span>
+    <span class="k">def</span> <span class="nf">inner</span><span class="p">(</span><span class="n">class_</span><span class="p">:</span> <span class="n">_TypeT</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_TypeT</span><span class="p">:</span>
+        <span class="c1"># Ideally, we would check for `class_` to either be a `TypedDict` or a stdlib dataclass.</span>
+        <span class="c1"># However, the `@with_config` decorator can be applied *after* `@dataclass`. To avoid</span>
+        <span class="c1"># common mistakes, we at least check for `class_` to not be a Pydantic model.</span>
+        <span class="kn">from</span> <span class="nn">._internal._utils</span> <span class="kn">import</span> <span class="n">is_model_class</span>
+
+        <span class="k">if</span> <span class="n">is_model_class</span><span class="p">(</span><span class="n">class_</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Cannot use `with_config` on </span><span class="si">{</span><span class="n">class_</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1"> as it is a Pydantic model&#39;</span><span class="p">,</span>
+                <span class="n">code</span><span class="o">=</span><span class="s1">&#39;with-config-on-model&#39;</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">class_</span><span class="o">.</span><span class="n">__pydantic_config__</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="k">return</span> <span class="n">class_</span>
 
     <span class="k">return</span> <span class="n">inner</span>
 </code></pre></div></td></tr></table></div>

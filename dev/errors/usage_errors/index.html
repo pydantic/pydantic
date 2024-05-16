@@ -3063,6 +3063,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </li>
       
         <li class="md-nav__item">
+  <a href="#with-config-on-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        with_config is used on a BaseModel subclass
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dataclass-on-model" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3872,6 +3883,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
     <span class="md-ellipsis">
       
         model_config is used as a model field
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#with-config-on-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        with_config is used on a BaseModel subclass
       
     </span>
   </a>
@@ -4829,19 +4851,34 @@ This combination is not allowed.
 <span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;model-config-invalid-field-name&#39;</span>
 </code></pre></div></p>
+<h2 id="with-config-on-model"><a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.with_config"><code>with_config</code></a> is used on a <code>BaseModel</code> subclass<a class="headerlink" href="#with-config-on-model" title="Permanent link">&para;</a></h2>
+<p>This error is raised when the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.with_config"><code>with_config</code></a>  decorator is used on a class which is already a Pydantic model (use the <code>model_config</code> attribute instead).</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">with_config</span>
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="nd">@with_config</span><span class="p">({</span><span class="s1">&#39;allow_inf_nan&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">bar</span><span class="p">:</span> <span class="nb">str</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;with-config-on-model&#39;</span>
+</code></pre></div>
 <h2 id="dataclass-on-model"><code>dataclass</code> is used on a <code>BaseModel</code> subclass<a class="headerlink" href="#dataclass-on-model" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the Pydantic <code>dataclass</code> decorator is used on a class which is already
 a Pydantic model.</p>
-<p>```py
-from pydantic import BaseModel, PydanticUserError
-from pydantic.dataclasses import dataclass</p>
-<p>try:</p>
-<div class="language-text highlight"><pre><span></span><code>@dataclass
-class Model(BaseModel):
-    bar: str
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span>
+<span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="nd">@dataclass</span>
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">bar</span><span class="p">:</span> <span class="nb">str</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;dataclass-on-model&#39;</span>
 </code></pre></div>
-<p>except PydanticUserError as exc_info:
-    assert exc_info.code == 'dataclass-on-model'</p>
 
 
 

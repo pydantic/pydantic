@@ -4033,7 +4033,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 
 <a href="#pydantic.dataclasses.is_pydantic_dataclass" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="doc-signature highlight"><pre><span></span><code><span class="n">is_pydantic_dataclass</span><span class="p">(</span>
-    <span class="n">__cls</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">],</span>
+    <span class="n">class_</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing_extensions.TypeGuard">TypeGuard</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span></span><span class="p">]]</span>
 </code></pre></div>
 
@@ -4055,7 +4055,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
     </thead>
     <tbody>
         <tr>
-          <td><code>__cls</code></td>
+          <td><code>class_</code></td>
           <td>
                 <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]</code>
           </td>
@@ -4106,16 +4106,16 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <span class="normal">333</span>
 <span class="normal">334</span>
 <span class="normal">335</span>
-<span class="normal">336</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">is_pydantic_dataclass</span><span class="p">(</span><span class="n">__cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">TypeGuard</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">PydanticDataclass</span><span class="p">]]:</span>
+<span class="normal">336</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">is_pydantic_dataclass</span><span class="p">(</span><span class="n">class_</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TypeGuard</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">PydanticDataclass</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Whether a class is a pydantic dataclass.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        __cls: The class.</span>
+<span class="sd">        class_: The class.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        `True` if the class is a pydantic dataclass, `False` otherwise.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">is_dataclass</span><span class="p">(</span><span class="n">__cls</span><span class="p">)</span> <span class="ow">and</span> <span class="s1">&#39;__pydantic_validator__&#39;</span> <span class="ow">in</span> <span class="n">__cls</span><span class="o">.</span><span class="vm">__dict__</span>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">is_dataclass</span><span class="p">(</span><span class="n">class_</span><span class="p">)</span> <span class="ow">and</span> <span class="s1">&#39;__pydantic_validator__&#39;</span> <span class="ow">in</span> <span class="n">class_</span><span class="o">.</span><span class="vm">__dict__</span>
 </code></pre></div></td></tr></table></div>
           </details>
   </div>
