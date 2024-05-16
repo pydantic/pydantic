@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use pyo3::exceptions::PyKeyError;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
-use pyo3::{ffi, intern, FromPyObject};
+use pyo3::{intern, FromPyObject};
 
 use jiter::{cached_py_string, pystring_fast_new, StringCacheMode};
 
@@ -124,26 +124,17 @@ pub fn safe_repr<'py>(v: &Bound<'py, PyAny>) -> ReprOutput<'py> {
     }
 }
 
-/// Extract an i64 from a python object more quickly, see
-/// https://github.com/PyO3/pyo3/pull/3742#discussion_r1451763928
-#[cfg(not(any(target_pointer_width = "32", windows, PyPy)))]
-pub fn extract_i64(obj: &Bound<'_, PyAny>) -> Option<i64> {
-    let val = unsafe { ffi::PyLong_AsLong(obj.as_ptr()) };
-    if val == -1 && PyErr::occurred(obj.py()) {
-        unsafe { ffi::PyErr_Clear() };
-        None
-    } else {
-        Some(val)
-    }
-}
-
-#[cfg(any(target_pointer_width = "32", windows, PyPy))]
 pub fn extract_i64(v: &Bound<'_, PyAny>) -> Option<i64> {
-    if v.is_instance_of::<pyo3::types::PyInt>() {
-        v.extract().ok()
-    } else {
-        None
+    #[cfg(PyPy)]
+    if !v.is_instance_of::<pyo3::types::PyInt>() {
+        // PyPy used __int__ to cast floats to ints after CPython removed it,
+        // see https://github.com/pypy/pypy/issues/4949
+        //
+        // Can remove this after PyPy 7.3.17 is released
+        return None;
     }
+
+    v.extract().ok()
 }
 
 pub(crate) fn new_py_string<'py>(py: Python<'py>, s: &str, cache_str: StringCacheMode) -> Bound<'py, PyString> {
