@@ -40,6 +40,16 @@ from pydantic.fields import Field, FieldInfo
 from pydantic.json_schema import model_json_schema
 
 
+def test_cannot_create_dataclass_from_basemodel_subclass():
+    msg = 'Cannot create a Pydantic dataclass from SubModel as it is already a Pydantic model'
+
+    with pytest.raises(PydanticUserError, match=msg):
+
+        @pydantic.dataclasses.dataclass
+        class SubModel(BaseModel):
+            pass
+
+
 def test_simple():
     @pydantic.dataclasses.dataclass
     class MyDataclass:
