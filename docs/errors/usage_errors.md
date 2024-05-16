@@ -1117,6 +1117,25 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'model-config-invalid-field-name'
 ```
 
+
+## [`with_config`][pydantic.config.with_config] is used on a `BaseModel` subclass {#with-config-on-model}
+
+This error is raised when the [`with_config`][pydantic.config.with_config]  decorator is used on a class which is already a Pydantic model (use the `model_config` attribute instead).
+
+```py
+from pydantic import BaseModel, PydanticUserError, with_config
+
+try:
+
+    @with_config({'allow_inf_nan': True})
+    class Model(BaseModel):
+        bar: str
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'with-config-on-model'
+```
+
+
 ## `dataclass` is used on a `BaseModel` subclass {#dataclass-on-model}
 
 This error is raised when the Pydantic `dataclass` decorator is used on a class which is already
@@ -1134,5 +1153,6 @@ try:
 
 except PydanticUserError as exc_info:
     assert exc_info.code == 'dataclass-on-model'
+```
 
 {% endraw %}
