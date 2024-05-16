@@ -114,8 +114,13 @@ fn clean_int_str(mut s: &str) -> Option<Cow<str>> {
     // strip leading and trailing whitespace
     s = s.trim();
 
-    // strip leading unary plus
-    s = s.strip_prefix('+').unwrap_or(s);
+    // Check for and remove a leading unary plus and ensure the next character is not a unary minus. e.g.: '+-1'.
+    if let Some(suffix) = s.strip_prefix('+') {
+        if suffix.starts_with('-') {
+            return None;
+        }
+        s = suffix;
+    }
 
     // strip loading zeros
     s = strip_leading_zeros(s)?;
@@ -149,8 +154,8 @@ fn strip_leading_zeros(s: &str) -> Option<&str> {
     match char_iter.next() {
         // if we get a leading zero we continue
         Some((_, '0')) => (),
-        // if we get another digit we return the whole string
-        Some((_, c)) if ('1'..='9').contains(&c) => return Some(s),
+        // if we get another digit or unary minus we return the whole string
+        Some((_, c)) if ('1'..='9').contains(&c) || c == '-' => return Some(s),
         // anything else is invalid, we return None
         _ => return None,
     };
@@ -158,8 +163,8 @@ fn strip_leading_zeros(s: &str) -> Option<&str> {
         match c {
             // continue on more leading zeros or if we get an underscore we continue - we're "within the number"
             '0' | '_' => (),
-            // any other digit we return the rest of the string
-            '1'..='9' => return Some(&s[i..]),
+            // any other digit or unary minus we return the rest of the string
+            '1'..='9' | '-' => return Some(&s[i..]),
             // if we get a dot we return the rest of the string but include the last zero
             '.' => return Some(&s[(i - 1)..]),
             // anything else is invalid, we return None
