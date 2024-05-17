@@ -610,8 +610,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Args:
             source: The class we are generating a schema for.
                 This will generally be the same as the `cls` argument if this is a classmethod.
-            handler: Call into Pydantic's internal JSON schema generation.
-                A callable that calls into Pydantic's internal CoreSchema generation logic.
+            handler: A callable that calls into Pydantic's internal CoreSchema generation logic.
 
         Returns:
             A `pydantic-core` `CoreSchema`.
