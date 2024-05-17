@@ -293,7 +293,7 @@ def get_function_type_hints(
     except AttributeError:
         type_hints = get_type_hints(function)
         if isinstance(function, type):
-            type_hints.setdefault('return', type)
+            type_hints.setdefault('return', function)
         return type_hints
 
     globalns = add_module_globals(function)
