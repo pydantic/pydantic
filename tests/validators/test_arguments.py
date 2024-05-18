@@ -371,6 +371,83 @@ def test_positional_or_keyword(py_and_json: PyAndJson, input_value, expected):
         assert v.validate_test(input_value) == expected
 
 
+@pytest.mark.parametrize(
+    'input_value,expected,arguments_schema',
+    [
+        (
+            {'a': 1, 'b': 2, 'e': 3.14},
+            ((), {'a': 1, 'b': 2, 'c': 5, 'd': 'default', 'e': 3.14}),
+            [
+                {'name': 'a', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}},
+                {'name': 'b', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}},
+                {
+                    'name': 'c',
+                    'mode': 'keyword_only',
+                    'schema': {'type': 'default', 'schema': {'type': 'int'}, 'default': 5},
+                },
+                {
+                    'name': 'd',
+                    'mode': 'keyword_only',
+                    'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default': 'default'},
+                },
+                {'name': 'e', 'mode': 'keyword_only', 'schema': {'type': 'float'}},
+            ],
+        ),
+        (
+            {'y': 'test'},
+            ((), {'x': 1, 'y': 'test'}),
+            [
+                {
+                    'name': 'x',
+                    'mode': 'keyword_only',
+                    'schema': {'type': 'default', 'schema': {'type': 'int'}, 'default': 1},
+                },
+                {'name': 'y', 'mode': 'keyword_only', 'schema': {'type': 'str'}},
+            ],
+        ),
+        (
+            {'a': 1, 'd': 3.14},
+            ((), {'a': 1, 'b': 10, 'c': 'hello', 'd': 3.14}),
+            [
+                {'name': 'a', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}},
+                {
+                    'name': 'b',
+                    'mode': 'positional_or_keyword',
+                    'schema': {'type': 'default', 'schema': {'type': 'int'}, 'default': 10},
+                },
+                {
+                    'name': 'c',
+                    'mode': 'keyword_only',
+                    'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default': 'hello'},
+                },
+                {'name': 'd', 'mode': 'keyword_only', 'schema': {'type': 'float'}},
+            ],
+        ),
+        (
+            {'x': 3, 'y': 'custom', 'z': 4},
+            ((), {'x': 3, 'y': 'custom', 'z': 4}),
+            [
+                {'name': 'x', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}},
+                {
+                    'name': 'y',
+                    'mode': 'keyword_only',
+                    'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default': 'default'},
+                },
+                {'name': 'z', 'mode': 'keyword_only', 'schema': {'type': 'int'}},
+            ],
+        ),
+    ],
+)
+def test_keyword_only_non_default(py_and_json: PyAndJson, input_value, expected, arguments_schema):
+    v = py_and_json(
+        {
+            'type': 'arguments',
+            'arguments_schema': arguments_schema,
+        }
+    )
+    assert v.validate_test(input_value) == expected
+
+
 @pytest.mark.parametrize('input_value,expected', [[(1,), ((1,), {})], [(), ((42,), {})]], ids=repr)
 def test_positional_optional(py_and_json: PyAndJson, input_value, expected):
     v = py_and_json(
