@@ -293,6 +293,9 @@ def get_function_type_hints(
     except AttributeError:
         type_hints = get_type_hints(function)
         if isinstance(function, type):
+            # `type[...]` is a callable, which returns an instance of itself.
+            # At some point, we might even look into the return type of `__new__`
+            # if it returns something else.
             type_hints.setdefault('return', function)
         return type_hints
 

@@ -1194,3 +1194,10 @@ def test_plain_serializer_with_std_type() -> None:
     m = MyModel(x=1)
     assert m.model_dump() == {'x': 1.0}
     assert m.model_dump_json() == '{"x":1.0}'
+
+    assert m.model_json_schema(mode='serialization') == {
+        'properties': {'x': {'title': 'X', 'type': 'number'}},
+        'required': ['x'],
+        'title': 'MyModel',
+        'type': 'object',
+    }
