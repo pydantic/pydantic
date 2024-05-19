@@ -226,7 +226,7 @@ def collect_model_fields(  # noqa: C901
                     # Nothing stops us from just creating a new FieldInfo for this type hint, so we do this.
                     field_info = FieldInfo.from_annotation(ann_type)
         else:
-            _warning_if_annotate_have_low_level_alias(ann_type, ann_name)
+            _warn_on_nested_alias_in_annotation(ann_type, ann_name)
             field_info = FieldInfo.from_annotated_attribute(ann_type, default)
             # attributes which are fields are removed from the class namespace:
             # 1. To match the behaviour of annotation-only fields
@@ -252,7 +252,7 @@ def collect_model_fields(  # noqa: C901
     return fields, class_vars
 
 
-def _warning_if_annotate_have_low_level_alias(ann_type: type[Any], ann_name: str):
+def _warn_on_nested_alias_in_annotation(ann_type: type[Any], ann_name: str):
     from ..fields import FieldInfo
 
     if hasattr(ann_type, '__args__'):
@@ -261,7 +261,7 @@ def _warning_if_annotate_have_low_level_alias(ann_type: type[Any], ann_name: str
                 for anno_type_arg in _typing_extra.get_args(anno_arg):
                     if isinstance(anno_type_arg, FieldInfo) and anno_type_arg.alias is not None:
                         warnings.warn(
-                            f'Field "{ann_name}" has `alias` should be set at higher level to have affect',
+                            f'`alias` specification on field "{ann_name}" must be set on outermost annotation to take effect.',
                             UserWarning,
                         )
                         break

@@ -234,7 +234,7 @@ def test_modify_get_schema_annotated() -> None:
 
 def test_annotated_alias_at_low_level() -> None:
     with pytest.warns(
-        UserWarning, match=r'Field "low_level_alias_field" has `alias` should be set at higher level to have affect'
+        UserWarning, match=r'`alias` specification on field "low_level_alias_field" must be set on outermost annotation to take effect.
     ):
 
         class Model(BaseModel):
