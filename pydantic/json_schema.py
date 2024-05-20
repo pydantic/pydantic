@@ -503,11 +503,8 @@ class GenerateJsonSchema:
                 ser_schema = schema_or_field['serialization']  # type: ignore
                 json_schema = self.ser_schema(ser_schema)
             if json_schema is None:
-                if _core_utils.is_core_schema(schema_or_field) or _core_utils.is_core_schema_field(schema_or_field):
-                    generate_for_schema_type = self._schema_type_to_method[schema_or_field['type']]
-                    json_schema = generate_for_schema_type(schema_or_field)
-                else:
-                    raise TypeError(f'Unexpected schema type: schema={schema_or_field}')
+                generate_for_schema_type = self._schema_type_to_method[schema_or_field['type']]
+                json_schema = generate_for_schema_type(schema_or_field)
             if _core_utils.is_core_schema(schema_or_field):
                 json_schema = populate_defs(schema_or_field, json_schema)
                 json_schema = convert_to_all_of(json_schema)
