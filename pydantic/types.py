@@ -1334,7 +1334,7 @@ except ValidationError as e:
 ```
 """
 NewPath = Annotated[Path, PathType('new')]
-"""A path for a new file or directory that must not already exist."""
+"""A path for a new file or directory that must not already exist. The parent directory must already exist."""
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ JSON TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
