@@ -6,7 +6,7 @@ from collections import deque
 from dataclasses import dataclass
 from decimal import Decimal
 from functools import cached_property
-from typing import TYPE_CHECKING, Annotated, Any, Callable, Protocol, TypeVar, overload
+from typing import TYPE_CHECKING, Annotated, Any, Callable, Generic, Protocol, TypeVar, overload
 
 import annotated_types
 
@@ -76,7 +76,7 @@ _NewOutT = TypeVar('_NewOutT')
 
 
 @dataclass(slots=True)
-class Validate[_InT, _OutT]:
+class Validate(Generic[_InT, _OutT]):
     """Abstract representation of a chain of validation, transformation, and parsing steps."""
 
     _steps: list[_Step]
