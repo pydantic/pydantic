@@ -1,3 +1,5 @@
+import platform
+
 import pytest
 
 from pydantic import PydanticUserError
@@ -49,6 +51,10 @@ def _accepts_info_arg_wrap(a, b, c):
     pass
 
 
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy',
+    reason='`inspect.signature works differently on PyPy`.',
+)
 @pytest.mark.parametrize(
     [
         'obj',
