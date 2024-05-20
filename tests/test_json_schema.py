@@ -2260,6 +2260,8 @@ def test_literal_schema():
         b: Literal['a']
         c: Literal['a', 1]
         d: Literal['a', Literal['b'], 1, 2]
+        e: Literal[1.0]
+        f: Literal[['a', 1]]
 
     # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
@@ -2268,8 +2270,10 @@ def test_literal_schema():
             'b': {'const': 'a', 'enum': ['a'], 'title': 'B', 'type': 'string'},
             'c': {'enum': ['a', 1], 'title': 'C'},
             'd': {'enum': ['a', 'b', 1, 2], 'title': 'D'},
+            'e': {'const': 1.0, 'enum': [1.0], 'title': 'E', 'type': 'numeric'},
+            'f': {'const': ['a', 1], 'enum': [['a', 1]], 'title': 'F', 'type': 'array'},
         },
-        'required': ['a', 'b', 'c', 'd'],
+        'required': ['a', 'b', 'c', 'd', 'e', 'f'],
         'title': 'Model',
         'type': 'object',
     }
