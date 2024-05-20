@@ -15,14 +15,16 @@ if TYPE_CHECKING:
 
     from pydantic import GetCoreSchemaHandler
 
+from pydantic._internal._internal_dataclass import dataclass_kwargs
 
-@dataclass(slots=True)
+
+@dataclass(**dataclass_kwargs)
 class _Parse:
     tp: type[Any]
     strict: bool = False
 
 
-@dataclass(slots=True)
+@dataclass(**dataclass_kwargs)
 class _ParseDefer:
     func: Callable[[], type[Any]]
 
@@ -31,18 +33,18 @@ class _ParseDefer:
         return self.func()
 
 
-@dataclass(slots=True)
+@dataclass(**dataclass_kwargs)
 class _Transform:
     func: Callable[[Any], Any]
 
 
-@dataclass(slots=True)
+@dataclass(**dataclass_kwargs)
 class _ValidateOr:
     left: Validate[Any, Any]
     right: Validate[Any, Any]
 
 
-@dataclass
+@dataclass(**dataclass_kwargs)
 class _ValidateAnd:
     left: Validate[Any, Any]
     right: Validate[Any, Any]
@@ -62,7 +64,7 @@ _ConstraintAnnotation = (
 )
 
 
-@dataclass(slots=True)
+@dataclass(**dataclass_kwargs)
 class _Constraint:
     constraint: _ConstraintAnnotation
 
@@ -75,7 +77,7 @@ _OutT = TypeVar('_OutT')
 _NewOutT = TypeVar('_NewOutT')
 
 
-@dataclass(slots=True)
+@dataclass(**dataclass_kwargs)
 class Validate(Generic[_InT, _OutT]):
     """Abstract representation of a chain of validation, transformation, and parsing steps."""
 
