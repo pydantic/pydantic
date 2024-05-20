@@ -1,3 +1,5 @@
+import platform
+
 import pytest
 
 from pydantic import PydanticUserError
@@ -41,8 +43,40 @@ def test_inspect_validator_error(mode):
     assert e.value.code == 'validator-signature'
 
 
+def _accepts_info_arg_plain(a, b):
+    pass
+
+
+def _accepts_info_arg_wrap(a, b, c):
+    pass
+
+
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy',
+    reason='`inspect.signature works differently on PyPy`.',
+)
+@pytest.mark.parametrize(
+    [
+        'obj',
+        'mode',
+        'expected',
+    ],
+    [
+        (str, 'plain', False),
+        (float, 'plain', False),
+        (int, 'plain', False),
+        (lambda a: str(a), 'plain', False),
+        (_accepts_info_arg_plain, 'plain', True),
+        (_accepts_info_arg_plain, 'wrap', False),
+        (_accepts_info_arg_wrap, 'wrap', True),
+    ],
+)
+def test_inspect_annotated_serializer(obj, mode, expected):
+    assert inspect_annotated_serializer(obj, mode=mode) == expected
+
+
 @pytest.mark.parametrize('mode', ['plain', 'wrap'])
-def test_inspect_annotated_serializer(mode):
+def test_inspect_annotated_serializer_invalid_number_of_arguments(mode):
     # TODO: add more erroneous cases
     def serializer():
         pass

@@ -593,7 +593,12 @@ def inspect_annotated_serializer(serializer: Callable[..., Any], mode: Literal['
     Returns:
         info_arg
     """
-    sig = signature(serializer)
+    try:
+        sig = signature(serializer)
+    except (ValueError, TypeError):
+        # `inspect.signature` might not be able to infer a signature, e.g. with C objects.
+        # In this case, we assume no info argument is present:
+        return False
     info_arg = _serializer_info_arg(mode, count_positional_params(sig))
     if info_arg is None:
         raise PydanticUserError(
