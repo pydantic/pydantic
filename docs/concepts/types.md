@@ -122,6 +122,38 @@ except ValidationError as exc:
     """
 ```
 
+#### Experimental pipeline API
+
+Pydantic v2.8.0 introduced an experimental pipeline API that allows composing parsing, constraints and transformations in a more type-safe manner than existing APIs. This API is subject to change or removal, we are looking for feedback and suggestions before making it a permanent part of Pydantic.
+
+```python
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Annotated
+
+from pydantic import BaseModel
+from pydantic.experimental import parse, parse_defer
+
+
+class User(BaseModel):
+    # start by parsing to a string then pipe into str.lower
+    name: Annotated[str, parse(str).transform(str.lower)]
+    # some methods for common transformations or constraints are included directly
+    username: Annotated[str, parse(str).lower().pattern(r'[a-z]+')]
+    # but if they're not you can use the lower level constrain or predicate
+    password: Annotated[str, parse(str).predicate(lambda x: x != 'password123')]
+    # accept an int with whitespace, and constrain it to be larger than zero
+    age: Annotated[int, (parse(int) | parse(str).transform(str.strip).parse(int)).gt(0)]
+    # calling `parse()` with no arguments implies parse(<field type>)
+    friends: Annotated[list[User], parse().len(0, 100)]
+    # however there is no typing information, you may want to pass the type explicitly
+    # for recursive types you can use parse_defer
+    family: Annotated[list[User], parse_defer(lambda: list[User]).transform(lambda x: x[1:])]
+    # you can compose and order steps to implement things before, after or wrapping validation
+    bio: Annotated[datetime, (parse() | parse(str).strip().parse()).tz_aware()]
+```
+
 #### Adding validation and serialization
 
 You can add or override validation, serialization, and JSON schemas to an arbitrary type using the markers that

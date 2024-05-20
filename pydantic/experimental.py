@@ -2,7 +2,7 @@
 
 from warnings import warn
 
-from pydantic._internal._parse import constrain, parse, parse_defer, transform
+from pydantic._internal._transform import constrain, parse, parse_defer, transform
 
 warn('This functionality is experimental and may be changed or break even in a minor release')
 
