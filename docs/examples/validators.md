@@ -59,5 +59,7 @@ class MyDatetimeValidator:
 # We can then use the validator like so
 LA = 'America/Los_Angeles'
 ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(LA)])
-ta.validate_python(dt.datetime.now(pytz.timezone(LA)))
+ta.validate_python(
+    dt.datetime(2023, 1, 2, 3, 4, 5, 6, tzinfo=pytz.timezone(LA))
+)
 ```
