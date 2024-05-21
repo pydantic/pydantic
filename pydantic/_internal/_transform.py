@@ -6,7 +6,7 @@ from collections import deque
 from dataclasses import dataclass
 from decimal import Decimal
 from functools import cached_property
-from typing import TYPE_CHECKING, Annotated, Any, Callable, Generic, Protocol, TypeVar, overload
+from typing import TYPE_CHECKING, Annotated, Any, Callable, Generic, Protocol, TypeVar, Union, overload
 
 import annotated_types
 
@@ -50,18 +50,18 @@ class _ValidateAnd:
     right: Validate[Any, Any]
 
 
-_ConstraintAnnotation = (
-    annotated_types.Le
-    | annotated_types.Ge
-    | annotated_types.Lt
-    | annotated_types.Gt
-    | annotated_types.Len
-    | annotated_types.MultipleOf
-    | annotated_types.Timezone
-    | annotated_types.Interval
-    | annotated_types.Predicate
-    | re.Pattern[str]
-)
+_ConstraintAnnotation = Union[
+    annotated_types.Le,
+    annotated_types.Ge,
+    annotated_types.Lt,
+    annotated_types.Gt,
+    annotated_types.Len,
+    annotated_types.MultipleOf,
+    annotated_types.Timezone,
+    annotated_types.Interval,
+    annotated_types.Predicate,
+    re.Pattern[str],
+]
 
 
 @dataclass(**slots_true)
