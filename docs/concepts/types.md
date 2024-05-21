@@ -130,7 +130,7 @@ Pydantic v2.8.0 introduced an experimental pipeline API that allows composing pa
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated
+from typing_extensions import Annotated
 
 from pydantic import BaseModel
 from pydantic.experimental import parse, parse_defer
