@@ -549,6 +549,7 @@ impl<'a> EitherInt<'a> {
             Ok(Self::BigInt(big_int))
         }
     }
+
     pub fn into_i64(self, py: Python<'a>) -> ValResult<i64> {
         match self {
             EitherInt::I64(i) => Ok(i),

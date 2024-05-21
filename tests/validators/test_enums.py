@@ -1,6 +1,6 @@
 import re
 import sys
-from enum import Enum, IntFlag
+from enum import Enum, IntEnum, IntFlag
 
 import pytest
 
@@ -331,3 +331,16 @@ def test_missing_error_converted_to_val_error() -> None:
 
     with pytest.raises(ValidationError):
         v.validate_python(None)
+
+
+def test_big_int():
+    class ColorEnum(IntEnum):
+        GREEN = 1 << 63
+        BLUE = 1 << 64
+
+    v = SchemaValidator(
+        core_schema.with_default_schema(schema=core_schema.enum_schema(ColorEnum, list(ColorEnum.__members__.values())))
+    )
+
+    assert v.validate_python(ColorEnum.GREEN) is ColorEnum.GREEN
+    assert v.validate_python(1 << 63) is ColorEnum.GREEN

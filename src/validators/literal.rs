@@ -4,7 +4,7 @@ use core::fmt::Debug;
 use std::cmp::Ordering;
 
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList};
+use pyo3::types::{PyDict, PyInt, PyList};
 use pyo3::{intern, PyTraverseError, PyVisit};
 
 use ahash::AHashMap;
@@ -58,11 +58,13 @@ impl<T: Debug> LiteralLookup<T> {
                     expected_bool.false_id = Some(id);
                 }
             }
-            if let Ok(either_int) = k.exact_int() {
-                let int = either_int
-                    .into_i64(py)
-                    .map_err(|_| py_schema_error_type!("error extracting int {:?}", k))?;
-                expected_int.insert(int, id);
+            if k.is_exact_instance_of::<PyInt>() {
+                if let Ok(int_64) = k.extract::<i64>() {
+                    expected_int.insert(int_64, id);
+                } else {
+                    // cover the case of an int that's > i64::MAX etc.
+                    expected_py_dict.set_item(k, id)?;
+                }
             } else if let Ok(either_str) = k.exact_str() {
                 let str = either_str
                     .as_cow()
