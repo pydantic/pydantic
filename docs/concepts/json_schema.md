@@ -1087,11 +1087,10 @@ See the following example:
 import json
 
 from pydantic import BaseModel, ConfigDict
-from pydantic.alias_generators import to_pascal
 
 
 class Person(BaseModel):
-    model_config = ConfigDict(field_title_generator=to_pascal)
+    model_config = ConfigDict(field_title_generator=lambda m: m.upper())
     name: str
     age: int
 
@@ -1101,11 +1100,11 @@ print(json.dumps(Person.model_json_schema(), indent=2))
 {
   "properties": {
     "name": {
-      "title": "Name",
+      "title": "NAME",
       "type": "string"
     },
     "age": {
-      "title": "Age",
+      "title": "AGE",
       "type": "integer"
     }
   },
