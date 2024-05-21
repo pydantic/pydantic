@@ -7,6 +7,8 @@ class Pets1(RootModel[List[str]]):
     pass
 
 
+pets_construct = Pets1.model_construct(['dog'])
+
 Pets2 = RootModel[List[str]]
 
 
