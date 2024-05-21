@@ -142,6 +142,7 @@ nav:
     - Language: api/pydantic_extra_types_language_code.md
 - Examples:
   - Secrets: examples/secrets.md
+  - Validators: examples/validators.md
 - Error Messages:
   - Error Handling: errors/errors.md
   - Validation Errors: errors/validation_errors.md
