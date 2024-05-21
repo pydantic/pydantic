@@ -1,22 +1,19 @@
-import annotated_types as at
 import datetime as dt
 import pytest
 import pytz
-from pydantic import GetCoreSchemaHandler, TypeAdapter, ValidationError
-from typing_extensions import Annotated
 from dataclasses import dataclass
-from typing import Any, Callable, Optional
-from pydantic_core import CoreSchema, core_schema
 from functools import partial
+from pydantic import GetCoreSchemaHandler, TypeAdapter
+from pydantic_core import CoreSchema, core_schema
+from typing_extensions import Annotated
+from typing import Any, Callable, Optional
 
 
 def test_tzinfo_validator_example_pattern() -> None:
     """test that tzinfo custom validator pattern works as explained"""
 
     def my_validator_function(tz_constraint: str | None, value: dt.datetime, handler: Callable):
-        """strip and validate tzinfo"""
-
-        print(tz_constraint, value)
+        """validate tz_constraint and tz_info"""
 
         if tz_constraint == None:
             assert value.tzinfo == None
