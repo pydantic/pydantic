@@ -6421,6 +6421,15 @@ def test_string_constraints() -> None:
     assert ta.validate_python(' ABC ') == 'abcabc'
 
 
+def test_string_constraints_strict() -> None:
+    ta = TypeAdapter(Annotated[str, StringConstraints(strict=False)])
+    assert ta.validate_python(b'123') == '123'
+
+    ta = TypeAdapter(Annotated[str, StringConstraints(strict=True)])
+    with pytest.raises(ValidationError):
+        ta.validate_python(b'123')
+
+
 def test_decimal_float_precision() -> None:
     """https://github.com/pydantic/pydantic/issues/6807"""
     ta = TypeAdapter(Decimal)
