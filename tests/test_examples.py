@@ -1,8 +1,11 @@
-from pydantic import TypeAdapter, GetCoreSchemaHandler
+import annotated_types as at
+import datetime as dt
+import pytest
+import pytz
+from pydantic import GetCoreSchemaHandler, TypeAdapter, ValidationError
 from typing_extensions import Annotated
-from datetime import datetime
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable, Optional
 from pydantic_core import CoreSchema, core_schema
 from functools import partial
 
@@ -10,20 +13,23 @@ from functools import partial
 def test_tzinfo_validator_example_pattern() -> None:
     """test that tzinfo custom validator pattern works as explained"""
 
-    def my_validator_function(tz_constraint: str, value: datetime, handler):
+    def my_validator_function(tz_constraint: str | None, value: dt.datetime, handler: Callable):
         """strip and validate tzinfo"""
 
-        # pre logic
+        print(tz_constraint, value)
 
-        validated_dt = handler(value)
+        if tz_constraint == None:
+            assert value.tzinfo == None
+            return handler(value)
 
-        # post logic
+        assert tz_constraint in pytz.all_timezones
+        assert tz_constraint == str(value.tzinfo)
 
-        return validated_dt
+        return handler(value)
 
     @dataclass(frozen=True)
     class MyDatetimeValidator:
-        tz_constraint: str
+        tz_constraint: Optional[str] = None
 
         def __get_pydantic_core_schema__(
             self, source_type: Any, handler: GetCoreSchemaHandler,
@@ -32,27 +38,27 @@ def test_tzinfo_validator_example_pattern() -> None:
                 partial(my_validator_function, self.tz_constraint), handler(source_type)
             )
 
-    ta = TypeAdapter(Annotated[datetime, MyDatetimeValidator('UTC')])
+    LA = "America/Los_Angeles"
 
-    # print(pretty_print_core_schema(ta.core_schema))
-    # """
-    # {
-    #     'type': 'function-wrap',
-    #     'function': {
-    #         'type': 'no-info',
-    #         'function': functools.partial(<function my_validator_function at 0x104a73d90>, 'UTC')
-    #     },
-    #     'schema': {'type': 'datetime', 'microseconds_precision': 'truncate'}
-    # }
-    # """
+    # passing naive test
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator()])
+    ta.validate_python(dt.datetime.now())
 
-    assert "'schema': {'type': 'datetime', 'microseconds_precision': 'truncate'}" in str(ta.core_schema)
-    assert "tzinfo" not in str(ta.core_schema)
+    # failing naive test
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator()])
+    with pytest.raises(Exception):
+        ta.validate_python(dt.datetime.now(pytz.timezone(LA)))
 
-    my_dt = ta.validate_python(datetime.now())
+    # passing tz-aware test
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(LA)])
+    ta.validate_python(dt.datetime.now(pytz.timezone(LA)))
 
-    # print(my_dt)
-    # > 2024-05-20 14:42:15.066963
+    # failing bad tz
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator("foo")])
+    with pytest.raises(Exception):
+        ta.validate_python(dt.datetime.now())
 
-    assert isinstance(my_dt, datetime)
-    assert my_dt.tzinfo == datetime.timezone.utc
+    # failing tz-aware test
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(LA)])
+    with pytest.raises(Exception):
+        ta.validate_python(dt.datetime.now())
