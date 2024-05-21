@@ -36,7 +36,7 @@ from .warnings import PydanticDeprecatedSince20
 
 # Always define certain types that are needed to resolve method type hints/annotations
 # (even when not type checking) via typing.get_type_hints.
-Model = TypeVar('Model', bound='BaseModel')
+ModelT = TypeVar('ModelT', bound='BaseModel')
 TupleGenerator = Generator[Tuple[str, Any], None, None]
 # should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
 IncEx: TypeAlias = Union[Set[int], Set[str], Dict[int, Any], Dict[str, Any], None]
@@ -1433,12 +1433,12 @@ def create_model(
     *,
     __config__: ConfigDict | None = None,
     __doc__: str | None = None,
-    __base__: type[Model] | tuple[type[Model], ...],
+    __base__: type[ModelT] | tuple[type[ModelT], ...],
     __module__: str = __name__,
     __validators__: dict[str, classmethod[Any, ..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     **field_definitions: Any,
-) -> type[Model]:
+) -> type[ModelT]:
     ...
 
 
@@ -1447,13 +1447,13 @@ def create_model(  # noqa: C901
     *,
     __config__: ConfigDict | None = None,
     __doc__: str | None = None,
-    __base__: type[Model] | tuple[type[Model], ...] | None = None,
+    __base__: type[ModelT] | tuple[type[ModelT], ...] | None = None,
     __module__: str | None = None,
     __validators__: dict[str, classmethod[Any, ..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __slots__: tuple[str, ...] | None = None,
     **field_definitions: Any,
-) -> type[Model]:
+) -> type[ModelT]:
     """Usage docs: https://docs.pydantic.dev/2.7/concepts/models/#dynamic-model-creation
 
     Dynamically creates and returns a new Pydantic model, in other words, `create_model` dynamically creates a
@@ -1492,7 +1492,7 @@ def create_model(  # noqa: C901
         if not isinstance(__base__, tuple):
             __base__ = (__base__,)
     else:
-        __base__ = (typing.cast(typing.Type['Model'], BaseModel),)
+        __base__ = (typing.cast(typing.Type['ModelT'], BaseModel),)
 
     __cls_kwargs__ = __cls_kwargs__ or {}
 
