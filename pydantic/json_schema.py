@@ -1445,14 +1445,10 @@ class GenerateJsonSchema:
                 f"model_config['json_schema_extra']={json_schema_extra} should be a dict, callable, or None"
             )
 
-        if self._should_mark_class_as_deprecated(cls):
+        if hasattr(cls, '__deprecated__'):
             json_schema['deprecated'] = True
 
         return json_schema
-
-    @staticmethod
-    def _should_mark_class_as_deprecated(cls) -> bool:
-        return hasattr(cls, '__deprecated__') and getattr(cls, '__deprecated__')
 
     def resolve_schema_to_update(self, json_schema: JsonSchemaValue) -> JsonSchemaValue:
         """Resolve a JsonSchemaValue to the non-ref schema if it is a $ref schema.
