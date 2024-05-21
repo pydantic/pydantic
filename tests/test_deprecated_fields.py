@@ -174,11 +174,23 @@ def test_computed_field_deprecated_deprecated_class():
         def p1(self) -> int:
             return 1
 
+        @computed_field(deprecated=True)
+        @property
+        def p2(self) -> int:
+            return 2
+
+        @computed_field(deprecated='This is a deprecated string')
+        @property
+        def p3(self) -> int:
+            return 3
+
     assert Model.model_json_schema(mode='serialization') == {
         'properties': {
             'p1': {'deprecated': True, 'readOnly': True, 'title': 'P1', 'type': 'integer'},
+            'p2': {'deprecated': True, 'readOnly': True, 'title': 'P2', 'type': 'integer'},
+            'p3': {'deprecated': True, 'readOnly': True, 'title': 'P3', 'type': 'integer'},
         },
-        'required': ['p1'],
+        'required': ['p1', 'p2', 'p3'],
         'title': 'Model',
         'type': 'object',
     }
@@ -188,7 +200,15 @@ def test_computed_field_deprecated_deprecated_class():
     with pytest.warns(DeprecationWarning, match='^This is deprecated$'):
         p1 = instance.p1
 
+    with pytest.warns(DeprecationWarning, match='^deprecated$'):
+        p2 = instance.p2
+
+    with pytest.warns(DeprecationWarning, match='^This is a deprecated string$'):
+        p3 = instance.p3
+
     assert p1 == 1
+    assert p2 == 2
+    assert p3 == 3
 
 
 def test_deprecated_with_boolean() -> None:
