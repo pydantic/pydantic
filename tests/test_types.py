@@ -1278,6 +1278,8 @@ class BoolCastable:
         ('bool_check', BoolCastable(), ValidationError),
         ('str_check', 's', 's'),
         ('str_check', '  s  ', 's'),
+        ('str_check', ' leading', 'leading'),
+        ('str_check', 'trailing ', 'trailing'),
         ('str_check', b's', 's'),
         ('str_check', b'  s  ', 's'),
         ('str_check', bytearray(b's' * 5), 'sssss'),

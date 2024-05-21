@@ -682,7 +682,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
     Apply constraints to `str` types.
 
     Attributes:
-        strip_whitespace: Whether to strip whitespace from the string.
+        strip_whitespace: Whether to remove leading and trailing whitespace.
         to_upper: Whether to convert the string to uppercase.
         to_lower: Whether to convert the string to lowercase.
         strict: Whether to validate the string in strict mode.
