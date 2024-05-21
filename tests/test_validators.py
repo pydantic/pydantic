@@ -1,6 +1,5 @@
 import contextlib
 import re
-import sys
 from collections import deque
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -64,7 +63,6 @@ def test_annotated_validator_before() -> None:
     assert Model(x='1.0').x == 1.0
 
 
-@pytest.mark.xfail(sys.version_info >= (3, 9) and sys.implementation.name == 'pypy', reason='PyPy 3.9+ bug')
 def test_annotated_validator_builtin() -> None:
     """https://github.com/pydantic/pydantic/issues/6752"""
     TruncatedFloat = Annotated[float, BeforeValidator(int)]
