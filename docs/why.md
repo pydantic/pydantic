@@ -56,7 +56,7 @@ Pydantic's core validation logic is implemented in separate package [`pydantic-c
 As a result Pydantic is among the fastest data validation libraries for Python.
 
 ??? example "Performance Example - Pydantic vs. dedicated code"
-    In general, dedicated code should be much faster that a general-purpose validator, but in this example
+    In general, dedicated code should be much faster than a general-purpose validator, but in this example
     Pydantic is >300% faster than dedicated code when parsing JSON and validating URLs.
 
     ```py title="Performance Example" test="skip"
