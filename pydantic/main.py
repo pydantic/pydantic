@@ -1427,7 +1427,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
 @overload
 def create_model(
-    __model_name: str,
+    model_name: str,
+    /,
     *,
     __config__: ConfigDict | None = None,
     __doc__: str | None = None,
@@ -1442,7 +1443,8 @@ def create_model(
 
 @overload
 def create_model(
-    __model_name: str,
+    model_name: str,
+    /,
     *,
     __config__: ConfigDict | None = None,
     __doc__: str | None = None,
@@ -1456,7 +1458,8 @@ def create_model(
 
 
 def create_model(  # noqa: C901
-    __model_name: str,
+    model_name: str,
+    /,
     *,
     __config__: ConfigDict | None = None,
     __doc__: str | None = None,
@@ -1473,7 +1476,7 @@ def create_model(  # noqa: C901
     subclass of [`BaseModel`][pydantic.BaseModel].
 
     Args:
-        __model_name: The name of the newly created model.
+        model_name: The name of the newly created model.
         __config__: The configuration of the new model.
         __doc__: The docstring of the new model.
         __base__: The base class or classes for the new model.
@@ -1557,13 +1560,13 @@ def create_model(  # noqa: C901
     if __config__:
         namespace['model_config'] = _config.ConfigWrapper(__config__).config_dict
     resolved_bases = types.resolve_bases(__base__)
-    meta, ns, kwds = types.prepare_class(__model_name, resolved_bases, kwds=__cls_kwargs__)
+    meta, ns, kwds = types.prepare_class(model_name, resolved_bases, kwds=__cls_kwargs__)
     if resolved_bases is not __base__:
         ns['__orig_bases__'] = __base__
     namespace.update(ns)
 
     return meta(
-        __model_name,
+        model_name,
         resolved_bases,
         namespace,
         __pydantic_reset_parent_namespace__=False,
