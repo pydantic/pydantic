@@ -12,7 +12,7 @@ from typing import Any, ClassVar, Dict, Generator, Literal, Set, Tuple, TypeVar,
 import pydantic_core
 import typing_extensions
 from pydantic_core import PydanticUndefined
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 from ._internal import (
     _config,
@@ -200,7 +200,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return self.__pydantic_fields_set__
 
     @classmethod
-    def model_construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:  # noqa: C901
+    def model_construct(cls, _fields_set: set[str] | None = None, **values: Any) -> Self:  # noqa: C901
         """Creates a new instance of the `Model` class with validated data.
 
         Creates a new model setting `__dict__` and `__pydantic_fields_set__` from trusted or pre-validated data.
@@ -280,7 +280,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         return m
 
-    def model_copy(self: Model, *, update: dict[str, Any] | None = None, deep: bool = False) -> Model:
+    def model_copy(self, *, update: dict[str, Any] | None = None, deep: bool = False) -> Self:
         """Usage docs: https://docs.pydantic.dev/2.7/concepts/serialization/#model_copy
 
         Returns a copy of the model.
@@ -527,13 +527,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     def model_validate(
-        cls: type[Model],
+        cls,
         obj: Any,
         *,
         strict: bool | None = None,
         from_attributes: bool | None = None,
         context: dict[str, Any] | None = None,
-    ) -> Model:
+    ) -> Self:
         """Validate a pydantic model instance.
 
         Args:
@@ -556,12 +556,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     def model_validate_json(
-        cls: type[Model],
+        cls,
         json_data: str | bytes | bytearray,
         *,
         strict: bool | None = None,
         context: dict[str, Any] | None = None,
-    ) -> Model:
+    ) -> Self:
         """Usage docs: https://docs.pydantic.dev/2.7/concepts/json/#json-parsing
 
         Validate the given JSON data against the Pydantic model.
@@ -583,12 +583,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     def model_validate_strings(
-        cls: type[Model],
+        cls,
         obj: Any,
         *,
         strict: bool | None = None,
         context: dict[str, Any] | None = None,
-    ) -> Model:
+    ) -> Self:
         """Validate the given object contains string data against the Pydantic model.
 
         Args:
@@ -736,7 +736,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         return submodel
 
-    def __copy__(self: Model) -> Model:
+    def __copy__(self) -> Self:
         """Returns a shallow copy of the model."""
         cls = type(self)
         m = cls.__new__(cls)
@@ -755,7 +755,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         return m
 
-    def __deepcopy__(self: Model, memo: dict[int, Any] | None = None) -> Model:
+    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> Self:
         """Returns a deep copy of the model."""
         cls = type(self)
         m = cls.__new__(cls)
@@ -1113,7 +1113,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     @typing_extensions.deprecated('The `parse_obj` method is deprecated; use `model_validate` instead.', category=None)
-    def parse_obj(cls: type[Model], obj: Any) -> Model:  # noqa: D102
+    def parse_obj(cls, obj: Any) -> Self:  # noqa: D102
         warnings.warn(
             'The `parse_obj` method is deprecated; use `model_validate` instead.', category=PydanticDeprecatedSince20
         )
@@ -1126,14 +1126,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         category=None,
     )
     def parse_raw(  # noqa: D102
-        cls: type[Model],
+        cls,
         b: str | bytes,
         *,
         content_type: str | None = None,
         encoding: str = 'utf8',
         proto: DeprecatedParseProtocol | None = None,
         allow_pickle: bool = False,
-    ) -> Model:  # pragma: no cover
+    ) -> Self:  # pragma: no cover
         warnings.warn(
             'The `parse_raw` method is deprecated; if your data is JSON use `model_validate_json`, '
             'otherwise load the data then use `model_validate` instead.',
@@ -1179,14 +1179,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         category=None,
     )
     def parse_file(  # noqa: D102
-        cls: type[Model],
+        cls,
         path: str | Path,
         *,
         content_type: str | None = None,
         encoding: str = 'utf8',
         proto: DeprecatedParseProtocol | None = None,
         allow_pickle: bool = False,
-    ) -> Model:
+    ) -> Self:
         warnings.warn(
             'The `parse_file` method is deprecated; load the data from file, then if your data is JSON '
             'use `model_validate_json`, otherwise `model_validate` instead.',
@@ -1209,7 +1209,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         "`model_config['from_attributes']=True` and use `model_validate` instead.",
         category=None,
     )
-    def from_orm(cls: type[Model], obj: Any) -> Model:  # noqa: D102
+    def from_orm(cls, obj: Any) -> Self:  # noqa: D102
         warnings.warn(
             'The `from_orm` method is deprecated; set '
             "`model_config['from_attributes']=True` and use `model_validate` instead.",
@@ -1223,7 +1223,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     @typing_extensions.deprecated('The `construct` method is deprecated; use `model_construct` instead.', category=None)
-    def construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:  # noqa: D102
+    def construct(cls, _fields_set: set[str] | None = None, **values: Any) -> Self:  # noqa: D102
         warnings.warn(
             'The `construct` method is deprecated; use `model_construct` instead.', category=PydanticDeprecatedSince20
         )
@@ -1235,13 +1235,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         category=None,
     )
     def copy(
-        self: Model,
+        self,
         *,
         include: AbstractSetIntStr | MappingIntStrAny | None = None,
         exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
         update: typing.Dict[str, Any] | None = None,  # noqa UP006
         deep: bool = False,
-    ) -> Model:  # pragma: no cover
+    ) -> Self:  # pragma: no cover
         """Returns a copy of the model.
 
         !!! warning "Deprecated"
@@ -1339,7 +1339,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     @typing_extensions.deprecated('The `validate` method is deprecated; use `model_validate` instead.', category=None)
-    def validate(cls: type[Model], value: Any) -> Model:  # noqa: D102
+    def validate(cls, value: Any) -> Self:  # noqa: D102
         warnings.warn(
             'The `validate` method is deprecated; use `model_validate` instead.', category=PydanticDeprecatedSince20
         )
