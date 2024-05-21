@@ -705,7 +705,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
         if self.max_length is not None:
             yield MaxLen(self.max_length)
         if self.strict is not None:
-            yield Strict()
+            yield Strict(self.strict)
         if (
             self.strip_whitespace is not None
             or self.pattern is not None
