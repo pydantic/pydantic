@@ -76,6 +76,23 @@ items = TypeAdapter(List[Item]).validate_python(item_data)
 print(items)
 #> [Item(id=1, name='My Item')]
 ```
+```py
+from typing import List
+
+from pydantic import BaseModel, TypeAdapter
+
+
+class Item(BaseModel):
+    id: int
+    name: str
+
+
+item_list = [Item(id=1, name="My Item")]
+items = TypeAdapter(List[Item]).dump_json(item_list)
+print(items)
+#> b'[{"id":1,"name":"item1"}]'
+```
+
 
 [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] is capable of parsing data into any of the types Pydantic can
 handle as fields of a [`BaseModel`][pydantic.main.BaseModel].
@@ -84,3 +101,7 @@ handle as fields of a [`BaseModel`][pydantic.main.BaseModel].
     When creating an instance of `TypeAdapter`, the provided type must be analyzed and converted into a pydantic-core
     schema. This comes with some non-trivial overhead, so it is recommended to create a `TypeAdapter` for a given type
     just once and reuse it in loops or other performance-critical code.
+
+!!! info "About bytes vs string discrepancy"
+    In V1, model dumping returned a str type, whereas the newly added TypeAdapter in V2 returns bytes. Returning bytes is more performant, but we've retained the str return for BaseModel for backwards compatibility reasons.
+    In the BaseModel case, we're basically coercing bytes to strings, but bytes is most often the desired end type, hence leaving this as the return type for the TypeAdapter case.
