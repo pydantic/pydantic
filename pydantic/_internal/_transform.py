@@ -69,8 +69,7 @@ class _Constraint:
     constraint: _ConstraintAnnotation
 
 
-_Step = _Parse | _Transform | _ValidateOr | _Constraint | _ValidateAnd | _ParseDefer
-
+_Step = Union[_Parse, _ParseDefer, _Transform, _ValidateOr, _ValidateAnd, _Constraint]
 
 _InT = TypeVar('_InT')
 _OutT = TypeVar('_OutT')
