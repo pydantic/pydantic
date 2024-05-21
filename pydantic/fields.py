@@ -995,6 +995,7 @@ class ComputedFieldInfo:
         alias_priority: The priority of the alias. This affects whether an alias generator is used.
         title: Title of the computed field to include in the serialization JSON schema.
         title_priority: Priority of the title. This affects whether a title generator is used.
+        field_title_generator: A callable that takes a field name and returns title for it.
         description: Description of the computed field to include in the serialization JSON schema.
         deprecated: A deprecation message, an instance of `warnings.deprecated` or the `typing_extensions.deprecated` backport,
             or a boolean. If `True`, a default deprecation message will be emitted when accessing the field.
