@@ -134,7 +134,7 @@ from datetime import datetime
 from typing_extensions import Annotated
 
 from pydantic import BaseModel
-from pydantic.experimental import parse, parse_defer
+from pydantic.transform_experimental import parse, parse_defer
 
 
 class User(BaseModel):
