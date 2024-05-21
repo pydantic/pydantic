@@ -12,6 +12,7 @@ use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
 use crate::input::input_as_python_instance;
 use crate::input::Input;
 use crate::input::InputType;
+use crate::input::ValidationMatch;
 use crate::tools::SchemaDict;
 
 use super::model::create_class;
@@ -152,7 +153,7 @@ impl Validator for UuidValidator {
 
 impl UuidValidator {
     fn get_uuid<'py>(&self, input: &(impl Input<'py> + ?Sized)) -> ValResult<Uuid> {
-        let uuid = match input.exact_str().ok() {
+        let uuid = match input.validate_str(true, false).ok().map(ValidationMatch::into_inner) {
             Some(either_string) => {
                 let cow = either_string.as_cow()?;
                 let uuid_str = cow.as_ref();
