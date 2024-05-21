@@ -36,9 +36,10 @@ def my_validator_function(
 
     # validate tz_constraint and tz-aware tzinfo
     assert tz_constraint in pytz.all_timezones
-    assert tz_constraint == str(value.tzinfo)
+    result = handler(value)
+    assert tz_constraint == str(result.tzinfo)
 
-    return handler(value)
+    return result
 
 
 @dataclass(frozen=True)
