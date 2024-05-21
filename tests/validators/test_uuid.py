@@ -9,6 +9,9 @@ from pydantic_core import SchemaValidator, ValidationError, core_schema
 from ..conftest import Err, PyAndJson
 
 
+class MyStr(str): ...
+
+
 @pytest.mark.parametrize(
     'input_value,expected',
     [
@@ -25,6 +28,7 @@ from ..conftest import Err, PyAndJson
         ('c0a8f9a8-aa5e-482b-a067-9cb3a51f5c11', UUID('c0a8f9a8-aa5e-482b-a067-9cb3a51f5c11')),
         ('00000000-8000-4000-8000-000000000000', UUID('00000000-8000-4000-8000-000000000000')),
         ('00000000-0000-4000-0000-000000000000', UUID('00000000-0000-4000-0000-000000000000')),
+        (MyStr('00000000-0000-4000-0000-000000000000'), UUID('00000000-0000-4000-0000-000000000000')),
         (b'\x12\x34\x56\x78' * 4, UUID('12345678-1234-5678-1234-567812345678')),
         (b'\x00\x00\x00\x00' * 4, UUID('00000000-0000-0000-0000-000000000000')),
         (b'ebcdab58-6eb8-46fb-a190-d07a33e9eac8', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
