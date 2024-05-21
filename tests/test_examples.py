@@ -1,7 +1,7 @@
 import datetime as dt
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union
 
 import pytest
 import pytz
@@ -14,7 +14,11 @@ from pydantic import GetCoreSchemaHandler, TypeAdapter
 def test_tzinfo_validator_example_pattern() -> None:
     """test that tzinfo custom validator pattern works as explained"""
 
-    def my_validator_function(tz_constraint: str | None, value: dt.datetime, handler: Callable):
+    def my_validator_function(
+        tz_constraint: Union[str, None],
+        value: dt.datetime,
+        handler: Callable,
+    ):
         """validate tz_constraint and tz_info"""
 
         # handle naive datetimes

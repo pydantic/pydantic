@@ -13,7 +13,7 @@ We will use a customized validation with `__get_pydantic_core_schema__`:
 import datetime as dt
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union
 
 import pytz
 from pydantic_core import CoreSchema, core_schema
@@ -23,7 +23,7 @@ from pydantic import GetCoreSchemaHandler, TypeAdapter
 
 
 def my_validator_function(
-    tz_constraint: str | None,
+    tz_constraint: Union[str, None],
     value: dt.datetime,
     handler: Callable,
 ):
@@ -59,7 +59,5 @@ class MyDatetimeValidator:
 # We can then use the validator like so
 LA = 'America/Los_Angeles'
 ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(LA)])
-ta.validate_python(
-    dt.datetime(2023, 1, 2, 3, 4, 5, 6, tzinfo=pytz.timezone(LA))
-)
+ta.validate_python(dt.datetime(2023, 1, 1, 0, 0, tzinfo=pytz.timezone(LA)))
 ```
