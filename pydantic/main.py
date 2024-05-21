@@ -7,12 +7,26 @@ import types
 import typing
 import warnings
 from copy import copy, deepcopy
-from typing import Any, ClassVar, Dict, Generator, Literal, Set, Tuple, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Generator,
+    Literal,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 import pydantic_core
 import typing_extensions
 from pydantic_core import PydanticUndefined
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self, TypeAlias, Unpack
 
 from ._internal import (
     _config,
@@ -42,12 +56,11 @@ TupleGenerator = Generator[Tuple[str, Any], None, None]
 IncEx: TypeAlias = Union[Set[int], Set[str], Dict[int, Any], Dict[str, Any], None]
 
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from inspect import Signature
     from pathlib import Path
 
     from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
-    from typing_extensions import Unpack
 
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
     from .deprecated.parse import Protocol as DeprecatedParseProtocol
@@ -92,7 +105,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_private__: Instance attribute with the values of private attributes set on the model instance.
     """
 
-    if typing.TYPE_CHECKING:
+    if TYPE_CHECKING:
         # Here we provide annotations for the attributes of BaseModel.
         # Many of these are populated by the metaclass, which is why this section is in a `TYPE_CHECKING` block.
         # However, for the sake of easy review, we have included type annotations of all class and instance attributes
@@ -776,7 +789,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         return m
 
-    if not typing.TYPE_CHECKING:
+    if not TYPE_CHECKING:
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
         # The same goes for __setattr__ and __delattr__, see: https://github.com/pydantic/pydantic/issues/8643
 
@@ -912,7 +925,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         _object_setattr(self, '__pydantic_private__', state['__pydantic_private__'])
         _object_setattr(self, '__dict__', state['__dict__'])
 
-    if not typing.TYPE_CHECKING:
+    if not TYPE_CHECKING:
 
         def __eq__(self, other: Any) -> bool:
             if isinstance(other, BaseModel):
@@ -969,7 +982,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             else:
                 return NotImplemented  # delegate to the other item in the comparison
 
-    if typing.TYPE_CHECKING:
+    if TYPE_CHECKING:
         # We put `__init_subclass__` in a TYPE_CHECKING block because, even though we want the type-checking benefits
         # described in the signature of `__init_subclass__` below, we don't want to modify the default behavior of
         # subclass initialization.
@@ -1068,7 +1081,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-    ) -> typing.Dict[str, Any]:  # noqa UP006
+    ) -> Dict[str, Any]:  # noqa UP006
         warnings.warn('The `dict` method is deprecated; use `model_dump` instead.', category=PydanticDeprecatedSince20)
         return self.model_dump(
             include=include,
@@ -1089,7 +1102,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-        encoder: typing.Callable[[Any], Any] | None = PydanticUndefined,  # type: ignore[assignment]
+        encoder: Callable[[Any], Any] | None = PydanticUndefined,  # type: ignore[assignment]
         models_as_dict: bool = PydanticUndefined,  # type: ignore[assignment]
         **dumps_kwargs: Any,
     ) -> str:
@@ -1239,7 +1252,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         *,
         include: AbstractSetIntStr | MappingIntStrAny | None = None,
         exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
-        update: typing.Dict[str, Any] | None = None,  # noqa UP006
+        update: Dict[str, Any] | None = None,  # noqa UP006
         deep: bool = False,
     ) -> Self:  # pragma: no cover
         """Returns a copy of the model.
@@ -1309,7 +1322,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     @typing_extensions.deprecated('The `schema` method is deprecated; use `model_json_schema` instead.', category=None)
     def schema(  # noqa: D102
         cls, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE
-    ) -> typing.Dict[str, Any]:  # noqa UP006
+    ) -> Dict[str, Any]:  # noqa UP006
         warnings.warn(
             'The `schema` method is deprecated; use `model_json_schema` instead.', category=PydanticDeprecatedSince20
         )
@@ -1412,7 +1425,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return copy_internals._calculate_keys(self, *args, **kwargs)
 
 
-@typing.overload
+@overload
 def create_model(
     __model_name: str,
     *,
@@ -1427,7 +1440,7 @@ def create_model(
     ...
 
 
-@typing.overload
+@overload
 def create_model(
     __model_name: str,
     *,
@@ -1492,7 +1505,7 @@ def create_model(  # noqa: C901
         if not isinstance(__base__, tuple):
             __base__ = (__base__,)
     else:
-        __base__ = (typing.cast(typing.Type['ModelT'], BaseModel),)
+        __base__ = (cast('type[ModelT]', BaseModel),)
 
     __cls_kwargs__ = __cls_kwargs__ or {}
 
@@ -1503,7 +1516,7 @@ def create_model(  # noqa: C901
         if not _fields.is_valid_field_name(f_name):
             warnings.warn(f'fields may not start with an underscore, ignoring "{f_name}"', RuntimeWarning)
         if isinstance(f_def, tuple):
-            f_def = typing.cast('tuple[str, Any]', f_def)
+            f_def = cast('tuple[str, Any]', f_def)
             try:
                 f_annotation, f_value = f_def
             except ValueError as e:
