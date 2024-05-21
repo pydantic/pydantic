@@ -1651,6 +1651,7 @@ class GenerateJsonSchema:
                 json_schema['additionalProperties'] = additional_properties_schema
         else:
             json_schema['additionalProperties'] = False
+
         return json_schema
 
     def p_arguments_schema(

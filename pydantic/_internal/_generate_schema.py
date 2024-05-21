@@ -1355,14 +1355,32 @@ class GenerateSchema:
         else:
             field = FieldInfo.from_annotated_attribute(annotation, default)
         assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
+
+        json_schema_updates = {
+            'title': field.title,
+            'description': field.description,
+            'deprecated': bool(field.deprecated) or field.deprecated == '' or None,
+            'examples': to_jsonable_python(field.examples),
+        }
+        json_schema_updates = {k: v for k, v in json_schema_updates.items() if v is not None}
+        json_schema_extra = field.json_schema_extra
+
+        metadata = build_metadata_dict(
+            js_annotation_functions=[get_json_schema_update_func(json_schema_updates, json_schema_extra)]
+        )
+
+        def apply_json_metadata(schema: CoreSchema) -> CoreSchema:
+            schema['metadata'] = metadata
+            return schema
+
         source_type, annotations = field.annotation, field.metadata
         with self.field_name_stack.push(name):
-            schema = self._apply_annotations(source_type, annotations)
+            schema = self._apply_annotations(source_type, annotations, apply_json_metadata)
 
         if not field.is_required():
             schema = wrap_default(field, schema)
 
-        parameter_schema = core_schema.arguments_parameter(name, schema)
+        parameter_schema = core_schema.arguments_parameter(name, schema, metadata=metadata)
         if mode is not None:
             parameter_schema['mode'] = mode
         if field.alias is not None:
