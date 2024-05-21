@@ -2,6 +2,7 @@ import collections.abc
 import os
 import pickle
 import sys
+import json
 from copy import copy, deepcopy
 from typing import Callable, Dict, Generic, List, NewType, Tuple, TypeVar, Union
 
@@ -12,7 +13,7 @@ from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel
 from pydantic._internal import _repr
-from pydantic._internal._core_utils import _WalkCoreSchema
+from pydantic._internal._core_utils import _WalkCoreSchema, pretty_print_core_schema
 from pydantic._internal._typing_extra import all_literal_values, get_origin, is_new_type
 from pydantic._internal._utils import (
     BUILTIN_COLLECTIONS,
@@ -23,7 +24,9 @@ from pydantic._internal._utils import (
     lenient_issubclass,
     smart_deepcopy,
     unique_list,
+    
 )
+
 from pydantic._internal._validators import import_string
 from pydantic.alias_generators import to_camel, to_pascal, to_snake
 from pydantic.color import Color
@@ -666,3 +669,40 @@ def test_handle_call_schema():
 
     schema = _WalkCoreSchema().handle_call_schema(schema, walk)
     assert schema['return_schema'] == {'type': 'int'}
+
+
+def test_pretty_print(capfd):
+    # Included metadata
+    schema = core_schema.AnySchema(type = "any", ref = "meta_schema", metadata= {"schema_type" : "any", "test_id": "42"}, serialization=core_schema.simple_ser_schema('bool'))
+    expected_meta_info = "{\n    'type': 'any',\n    'ref': 'meta_schema',\n    'metadata': {'schema_type': 'any', 'test_id': '42'},\n    'serialization': {'type': 'bool'}\n}\n"
+    
+    pretty_print_core_schema(schema = schema, include_metadata=True)
+    content = capfd.readouterr()
+    assert content.out == expected_meta_info
+   
+    # Excluded metadata (Model Schema)
+    class TestModel:
+            __slots__ = (
+                '__dict__',
+                '__pydantic_fields_set__',
+                '__pydantic_extra__',
+                '__pydantic_private__',
+            )
+
+    schema = core_schema.model_schema(ref = "meta_schema", metadata= {"schema_type" : "model", "test_id": "43"}, custom_init= False, root_model= False, cls = TestModel, config=core_schema.CoreConfig(str_max_length=5), schema=core_schema.model_fields_schema(
+            fields={'a': core_schema.model_field(core_schema.str_schema())},
+        ),)
+    expected_stripped_info = "{\n    'type': 'model',\n    'cls': <class 'tests.test_utils.test_pretty_print.<locals>.TestModel'>,\n    'schema': {\n        'type': 'model-fields',\n        'fields': {'a': {'type': 'model-field', 'schema': {'type': 'str'}}}\n    },\n    'config': {'str_max_length': 5},\n    'ref': 'meta_schema'\n}\n"
+    
+    pretty_print_core_schema(schema = schema, include_metadata=False)
+    content = capfd.readouterr()
+    assert content.out == expected_stripped_info
+
+    # Strip meta_data (ModelFields Schema)
+    schema = core_schema.model_fields_schema(ref = "meta_schema", metadata= {"schema_type" : "model", "test_id": "43"}, computed_fields= [core_schema.computed_field(property_name = "TestModel", return_schema=core_schema.model_fields_schema(fields={'a': core_schema.model_field(core_schema.str_schema())},), alias="comp_field_1", metadata={"comp_field_key":"comp_field_data"})], fields = {'a': core_schema.model_field(core_schema.str_schema())})
+    expected_stripped_fields_info = "{\n    'type': 'model-fields',\n    'fields': {'a': {'type': 'model-field', 'schema': {'type': 'str'}}},\n    'computed_fields': [\n        {\n            'type': 'computed-field',\n            'property_name': 'TestModel',\n            'return_schema': {\n                'type': 'model-fields',\n                'fields': {\n                    'a': {'type': 'model-field', 'schema': {'type': 'str'}}\n                }\n            },\n            'alias': 'comp_field_1',\n            'metadata': {'comp_field_key': 'comp_field_data'}\n        }\n    ],\n    'ref': 'meta_schema'\n}\n" 
+    
+    pretty_print_core_schema(schema = schema, include_metadata=False)
+    content = capfd.readouterr()
+    assert content.out == expected_stripped_fields_info
+
