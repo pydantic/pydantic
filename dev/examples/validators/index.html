@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://docs.pydantic.dev/latest/concepts/json/">
+        <link rel="canonical" href="https://docs.pydantic.dev/latest/examples/validators/">
       
       
-        <link rel="prev" href="../json_schema/">
+        <link rel="prev" href="../secrets/">
       
       
-        <link rel="next" href="../types/">
+        <link rel="next" href="../../errors/errors/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>JSON - Pydantic</title>
+        <title>Validators - Pydantic</title>
       
     
     
@@ -86,7 +86,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#json" class="md-skip">
+        <a href="#validate-tzinfo-passed-to-an-annotated-datetime-type" class="md-skip">
           Skip to content
         </a>
       
@@ -144,7 +144,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              JSON
+              Validators
             
           </span>
         </div>
@@ -269,13 +269,11 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
         
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../models/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../concepts/models/" class="md-tabs__link">
           
   
   Concepts
@@ -316,11 +314,13 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
         
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../examples/secrets/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../secrets/" class="md-tabs__link">
           
   
   Examples
@@ -720,28 +720,23 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
       
   
   
-    
   
   
-  
     
     
     
       
-        
-        
-      
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
         
           
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -758,7 +753,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -776,7 +771,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../models/" class="md-nav__link">
+      <a href="../../concepts/models/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -803,7 +798,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../fields/" class="md-nav__link">
+      <a href="../../concepts/fields/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -830,7 +825,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../json_schema/" class="md-nav__link">
+      <a href="../../concepts/json_schema/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -854,36 +849,10 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    
-  
-    JSON
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../concepts/json/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -898,78 +867,6 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="Page contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#json-parsing" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Json Parsing
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Json Parsing">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#partial-json-parsing" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Partial JSON Parsing
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#caching-strings" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Caching Strings
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#json-serialization" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        JSON Serialization
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -982,7 +879,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../types/" class="md-nav__link">
+      <a href="../../concepts/types/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1009,7 +906,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../unions/" class="md-nav__link">
+      <a href="../../concepts/unions/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1036,7 +933,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../alias/" class="md-nav__link">
+      <a href="../../concepts/alias/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1063,7 +960,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../config/" class="md-nav__link">
+      <a href="../../concepts/config/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1090,7 +987,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../serialization/" class="md-nav__link">
+      <a href="../../concepts/serialization/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1117,7 +1014,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../validators/" class="md-nav__link">
+      <a href="../../concepts/validators/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1144,7 +1041,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../dataclasses/" class="md-nav__link">
+      <a href="../../concepts/dataclasses/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1171,7 +1068,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../postponed_annotations/" class="md-nav__link">
+      <a href="../../concepts/postponed_annotations/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1198,7 +1095,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../strict_mode/" class="md-nav__link">
+      <a href="../../concepts/strict_mode/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1225,7 +1122,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../type_adapter/" class="md-nav__link">
+      <a href="../../concepts/type_adapter/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1252,7 +1149,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../validation_decorator/" class="md-nav__link">
+      <a href="../../concepts/validation_decorator/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1279,7 +1176,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../conversion_table/" class="md-nav__link">
+      <a href="../../concepts/conversion_table/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1306,7 +1203,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_settings/" class="md-nav__link">
+      <a href="../../concepts/pydantic_settings/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1333,7 +1230,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../performance/" class="md-nav__link">
+      <a href="../../concepts/performance/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1360,7 +1257,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../plugins/" class="md-nav__link">
+      <a href="../../concepts/plugins/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2478,23 +2375,28 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
       
   
   
+    
   
   
+  
     
     
     
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -2511,7 +2413,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2529,7 +2431,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../../examples/secrets/" class="md-nav__link">
+      <a href="../secrets/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2553,10 +2455,34 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../examples/validators/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    
+  
+    Validators
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -2571,6 +2497,37 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#validate-tzinfo-passed-to-an-annotated-datetime-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validate tzinfo passed to an Annotated datetime type
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -3061,8 +3018,6 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -3071,49 +3026,10 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#json-parsing" class="md-nav__link">
+  <a href="#validate-tzinfo-passed-to-an-annotated-datetime-type" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Json Parsing
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Json Parsing">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#partial-json-parsing" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Partial JSON Parsing
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#caching-strings" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Caching Strings
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#json-serialization" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        JSON Serialization
+        Validate tzinfo passed to an Annotated datetime type
       
     </span>
   </a>
@@ -3147,250 +3063,66 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 
 
-<div class="admonition warning">
-<p class="admonition-title">🚧 Work in Progress</p>
-<p>This page is a work in progress.</p>
-</div>
-<h1 id="json">JSON<a class="headerlink" href="#json" title="Permanent link">&para;</a></h1>
-<h2 id="json-parsing">Json Parsing<a class="headerlink" href="#json-parsing" title="Permanent link">&para;</a></h2>
-<details class="api">
-<summary>API Documentation</summary>
-<p><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate_json"><code>pydantic.main.BaseModel.model_validate_json</code></a>
-<a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter.validate_json"><code>pydantic.type_adapter.TypeAdapter.validate_json</code></a>
-<a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.from_json"><code>pydantic_core.from_json</code></a></p>
-</details>
-<p>Pydantic provides builtin JSON parsing, which helps achieve:</p>
-<ul>
-<li>Significant performance improvements without the cost of using a 3rd party library</li>
-<li>Support for custom errors</li>
-<li>Support for <code>strict</code> specifications</li>
-</ul>
-<p>Here's an example of Pydantic's builtin JSON parsing via the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate_json"><code>model_validate_json</code></a> method, showcasing the support for <code>strict</code> specifications while parsing JSON data that doesn't match the model's type annotations:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+  <h1>Validators</h1>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
+<p>!!! warning '🚧 Work in Progress'
+    This page is a work in progress.</p>
+<h2 id="validate-tzinfo-passed-to-an-annotated-datetime-type">Validate <code>tzinfo</code> passed to an Annotated <code>datetime</code> type<a class="headerlink" href="#validate-tzinfo-passed-to-an-annotated-datetime-type" title="Permanent link">&para;</a></h2>
+<p>A use case often arises where a user will want to add a timezone constraint in an annotated <code>datetime</code> type validation.</p>
+<p>In this example, we want to use a string to specify the <code>tzinfo</code> of the <code>datetime</code> object.</p>
+<p>We will use a customized validation with <code>__get_pydantic_core_schema__</code>:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">datetime</span> <span class="k">as</span> <span class="nn">dt</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
-
-<span class="k">class</span> <span class="nc">Event</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-    <span class="n">when</span><span class="p">:</span> <span class="n">date</span>
-    <span class="n">where</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
-
-
-<span class="n">json_data</span> <span class="o">=</span> <span class="s1">&#39;{&quot;when&quot;: &quot;1987-01-28&quot;, &quot;where&quot;: [51, -1]}&#39;</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">Event</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">json_data</span><span class="p">))</span>  <span class="c1"># (1)!</span>
-<span class="c1">#&gt; when=datetime.date(1987, 1, 28) where=(51, -1)</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Event</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;when&#39;</span><span class="p">:</span> <span class="s1">&#39;1987-01-28&#39;</span><span class="p">,</span> <span class="s1">&#39;where&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">51</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]})</span>  <span class="c1"># (2)!</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    2 validation errors for Event</span>
-<span class="sd">    when</span>
-<span class="sd">      Input should be a valid date [type=date_type, input_value=&#39;1987-01-28&#39;, input_type=str]</span>
-<span class="sd">    where</span>
-<span class="sd">      Input should be a valid tuple [type=tuple_type, input_value=[51, -1], input_type=list]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
-<ol>
-<li>JSON has no <code>date</code> or tuple types, but Pydantic knows that so allows strings and arrays as inputs respectively when parsing JSON directly.</li>
-<li>If you pass the same values to the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate</code></a> method, Pydantic will raise a validation error because the <code>strict</code> configuration is enabled.</li>
-</ol>
-</div>
-<div class="tabbed-block">
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-
-<span class="k">class</span> <span class="nc">Event</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-    <span class="n">when</span><span class="p">:</span> <span class="n">date</span>
-    <span class="n">where</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
-
-
-<span class="n">json_data</span> <span class="o">=</span> <span class="s1">&#39;{&quot;when&quot;: &quot;1987-01-28&quot;, &quot;where&quot;: [51, -1]}&#39;</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">Event</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">json_data</span><span class="p">))</span>  <span class="c1"># (1)!</span>
-<span class="c1">#&gt; when=datetime.date(1987, 1, 28) where=(51, -1)</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Event</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;when&#39;</span><span class="p">:</span> <span class="s1">&#39;1987-01-28&#39;</span><span class="p">,</span> <span class="s1">&#39;where&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">51</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]})</span>  <span class="c1"># (2)!</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    2 validation errors for Event</span>
-<span class="sd">    when</span>
-<span class="sd">      Input should be a valid date [type=date_type, input_value=&#39;1987-01-28&#39;, input_type=str]</span>
-<span class="sd">    where</span>
-<span class="sd">      Input should be a valid tuple [type=tuple_type, input_value=[51, -1], input_type=list]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
-<ol>
-<li>JSON has no <code>date</code> or tuple types, but Pydantic knows that so allows strings and arrays as inputs respectively when parsing JSON directly.</li>
-<li>If you pass the same values to the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate</code></a> method, Pydantic will raise a validation error because the <code>strict</code> configuration is enabled.</li>
-</ol>
-</div>
-</div>
-</div>
-<p>In v2.5.0 and above, Pydantic uses <a href="https://docs.rs/jiter/latest/jiter/"><code>jiter</code></a>, a fast and iterable JSON parser, to parse JSON data.
-Using <code>jiter</code> compared to <code>serde</code> results in modest performance improvements that will get even better in the future.</p>
-<p>The <code>jiter</code> JSON parser is almost entirely compatible with the <code>serde</code> JSON parser,
-with one noticeable enhancement being that <code>jiter</code> supports deserialization of <code>inf</code> and <code>NaN</code> values.
-In the future, <code>jiter</code> is intended to enable support validation errors to include the location
-in the original JSON input which contained the invalid value.</p>
-<h3 id="partial-json-parsing">Partial JSON Parsing<a class="headerlink" href="#partial-json-parsing" title="Permanent link">&para;</a></h3>
-<p><strong>Starting in v2.7.0</strong>, Pydantic's <a href="https://docs.rs/jiter/latest/jiter/">JSON parser</a> offers support for partial JSON parsing, which is exposed via <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.from_json"><code>pydantic_core.from_json</code></a>. Here's an example of this feature in action:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">from_json</span>
-
-<span class="n">partial_json_data</span> <span class="o">=</span> <span class="s1">&#39;[&quot;aa&quot;, &quot;bb&quot;, &quot;c&#39;</span>  <span class="c1"># (1)!</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="n">from_json</span><span class="p">(</span><span class="n">partial_json_data</span><span class="p">,</span> <span class="n">allow_partial</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>  <span class="c1"># (2)!</span>
-    <span class="c1">#&gt; EOF while parsing a string at line 1 column 15</span>
-
-<span class="n">result</span> <span class="o">=</span> <span class="n">from_json</span><span class="p">(</span><span class="n">partial_json_data</span><span class="p">,</span> <span class="n">allow_partial</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>  <span class="c1"># (3)!</span>
-<span class="c1">#&gt; [&#39;aa&#39;, &#39;bb&#39;]</span>
-</code></pre></div>
-<ol>
-<li>The JSON list is incomplete - it's missing a closing <code>"]</code></li>
-<li>When <code>allow_partial</code> is set to <code>False</code> (the default), a parsing error occurs.</li>
-<li>When <code>allow_partial</code> is set to <code>True</code>, part of the input is deserialized successfully.</li>
-</ol>
-<p>This also works for deserializing partial dictionaries. For example:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">from_json</span>
-
-<span class="n">partial_dog_json</span> <span class="o">=</span> <span class="s1">&#39;{&quot;breed&quot;: &quot;lab&quot;, &quot;name&quot;: &quot;fluffy&quot;, &quot;friends&quot;: [&quot;buddy&quot;, &quot;spot&quot;, &quot;rufus&quot;], &quot;age&#39;</span>
-<span class="n">dog_dict</span> <span class="o">=</span> <span class="n">from_json</span><span class="p">(</span><span class="n">partial_dog_json</span><span class="p">,</span> <span class="n">allow_partial</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">dog_dict</span><span class="p">)</span>
-<span class="c1">#&gt; {&#39;breed&#39;: &#39;lab&#39;, &#39;name&#39;: &#39;fluffy&#39;, &#39;friends&#39;: [&#39;buddy&#39;, &#39;spot&#39;, &#39;rufus&#39;]}</span>
-</code></pre></div>
-<div class="admonition tip">
-<p class="admonition-title">Validating LLM Output</p>
-<p>This feature is particularly beneficial for validating LLM outputs.
-We've written some blog posts about this topic, which you can find <a href="https://blog.pydantic.dev/blog/category/llms/">here</a>.</p>
-</div>
-<p>In future versions of Pydantic, we expect to expand support for this feature through either Pydantic's other JSON validation functions
-(<a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate_json"><code>pydantic.main.BaseModel.model_validate_json</code></a> and
-<a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter.validate_json"><code>pydantic.type_adapter.TypeAdapter.validate_json</code></a>) or model configuration. Stay tuned 🚀!</p>
-<p>For now, you can use <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.from_json"><code>pydantic_core.from_json</code></a> in combination with <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>pydantic.main.BaseModel.model_validate</code></a> to achieve the same result. Here's an example:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">from_json</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span> <span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">breed</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">friends</span><span class="p">:</span> <span class="nb">list</span>
-
-
-<span class="n">partial_dog_json</span> <span class="o">=</span> <span class="s1">&#39;{&quot;breed&quot;: &quot;lab&quot;, &quot;name&quot;: &quot;fluffy&quot;, &quot;friends&quot;: [&quot;buddy&quot;, &quot;spot&quot;, &quot;rufus&quot;], &quot;age&#39;</span>
-<span class="n">dog</span> <span class="o">=</span> <span class="n">Dog</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">from_json</span><span class="p">(</span><span class="n">partial_dog_json</span><span class="p">,</span> <span class="n">allow_partial</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">dog</span><span class="p">))</span>
-<span class="c1">#&gt; Dog(breed=&#39;lab&#39;, name=&#39;fluffy&#39;, friends=[&#39;buddy&#39;, &#39;spot&#39;, &#39;rufus&#39;])</span>
-</code></pre></div>
-<div class="admonition tip">
-<p class="admonition-title">Tip</p>
-<p>For partial JSON parsing to work reliably, all fields on the model should have default values.</p>
-</div>
-<p>Check out the following example for a more in-depth look at how to use default values with partial JSON parsing:</p>
-<div class="admonition example">
-<p class="admonition-title">Using default values with partial JSON parsing</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
-
-<span class="kn">import</span> <span class="nn">pydantic_core</span>
+<span class="kn">import</span> <span class="nn">pytz</span>
+<span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">CoreSchema</span><span class="p">,</span> <span class="n">core_schema</span>
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">WrapValidator</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">GetCoreSchemaHandler</span><span class="p">,</span> <span class="n">TypeAdapter</span>
 
 
-<span class="k">def</span> <span class="nf">default_on_error</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">handler</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Raise a PydanticUseDefault exception if the value is missing.</span>
+<span class="k">def</span> <span class="nf">my_validator_function</span><span class="p">(</span>
+    <span class="n">tz_constraint</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">,</span>
+    <span class="n">handler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;validate tz_constraint and tz_info&quot;&quot;&quot;</span>
 
-<span class="sd">    This is useful for avoiding errors from partial</span>
-<span class="sd">    JSON preventing successful validation.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-    <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-        <span class="c1"># there might be other types of errors resulting from partial JSON parsing</span>
-        <span class="c1"># that you allow here, feel free to customize as needed</span>
-        <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;missing&#39;</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()):</span>
-            <span class="k">raise</span> <span class="n">pydantic_core</span><span class="o">.</span><span class="n">PydanticUseDefault</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span>
+    <span class="c1"># handle naive datetimes</span>
+    <span class="k">if</span> <span class="n">tz_constraint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">value</span><span class="o">.</span><span class="n">tzinfo</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
+    <span class="c1"># validate tz_constraint and tz-aware tzinfo</span>
+    <span class="k">assert</span> <span class="n">tz_constraint</span> <span class="ow">in</span> <span class="n">pytz</span><span class="o">.</span><span class="n">all_timezones</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">tz_constraint</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">tzinfo</span><span class="p">)</span>
 
-<span class="k">class</span> <span class="nc">NestedModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">y</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="k">return</span> <span class="n">result</span>
 
 
-<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">foo</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">bar</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
-        <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span> <span class="n">WrapValidator</span><span class="p">(</span><span class="n">default_on_error</span><span class="p">)</span>
-    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">nested</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
-        <span class="n">Optional</span><span class="p">[</span><span class="n">NestedModel</span><span class="p">],</span> <span class="n">WrapValidator</span><span class="p">(</span><span class="n">default_on_error</span><span class="p">)</span>
-    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MyDatetimeValidator</span><span class="p">:</span>
+    <span class="n">tz_constraint</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CoreSchema</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_wrap_validator_function</span><span class="p">(</span>
+            <span class="n">partial</span><span class="p">(</span><span class="n">my_validator_function</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tz_constraint</span><span class="p">),</span>
+            <span class="n">handler</span><span class="p">(</span><span class="n">source_type</span><span class="p">),</span>
+        <span class="p">)</span>
 
 
-<span class="n">m</span> <span class="o">=</span> <span class="n">MyModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span>
-    <span class="n">pydantic_core</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="s1">&#39;{&quot;foo&quot;: &quot;x&quot;, &quot;bar&quot;: [&quot;world&quot;,&#39;</span><span class="p">,</span> <span class="n">allow_partial</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
-<span class="c1">#&gt; MyModel(foo=&#39;x&#39;, bar=None, nested=None)</span>
-
-
-<span class="n">m</span> <span class="o">=</span> <span class="n">MyModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span>
-    <span class="n">pydantic_core</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span>
-        <span class="s1">&#39;{&quot;foo&quot;: &quot;x&quot;, &quot;bar&quot;: [&quot;world&quot;, 1], &quot;nested&quot;: {&quot;x&quot;:&#39;</span><span class="p">,</span> <span class="n">allow_partial</span><span class="o">=</span><span class="kc">True</span>
-    <span class="p">)</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
-<span class="c1">#&gt; MyModel(foo=&#39;x&#39;, bar=(&#39;world&#39;, 1), nested=None)</span>
+<span class="c1"># We can then use the validator like so</span>
+<span class="n">LA</span> <span class="o">=</span> <span class="s1">&#39;America/Los_Angeles&#39;</span>
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Annotated</span><span class="p">[</span><span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">,</span> <span class="n">MyDatetimeValidator</span><span class="p">(</span><span class="n">LA</span><span class="p">)])</span>
+<span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2023</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="n">LA</span><span class="p">)))</span>
 </code></pre></div>
-</div>
-<h3 id="caching-strings">Caching Strings<a class="headerlink" href="#caching-strings" title="Permanent link">&para;</a></h3>
-<p><strong>Starting in v2.7.0</strong>, Pydantic's <a href="https://docs.rs/jiter/latest/jiter/">JSON parser</a> offers support for configuring how Python strings are cached during JSON parsing and validation (when Python strings are constructed from Rust strings during Python validation, e.g. after <code>strip_whitespace=True</code>).
-The <code>cache_strings</code> setting is exposed via both <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict">model config</a> and <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.from_json"><code>pydantic_core.from_json</code></a>.</p>
-<p>The <code>cache_strings</code> setting can take any of the following values:</p>
-<ul>
-<li><code>True</code> or <code>'all'</code> (the default): cache all strings</li>
-<li><code>'keys'</code>: cache only dictionary keys, this <strong>only</strong> applies when used with <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.from_json"><code>pydantic_core.from_json</code></a> or when parsing JSON using <a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.Json"><code>Json</code></a></li>
-<li><code>False</code> or <code>'none'</code>: no caching</li>
-</ul>
-<p>Using the string caching feature results in performance improvements, but increases memory usage slightly.</p>
-<div class="admonition note">
-<p class="admonition-title">String Caching Details</p>
-<ol>
-<li>Strings are cached using a fully associative cache with a size of
-<a href="https://github.com/pydantic/jiter/blob/5bbdcfd22882b7b286416b22f74abd549c7b2fd7/src/py_string_cache.rs#L113">16,384</a>.</li>
-<li>Only strings where <code>len(string) &lt; 64</code> are cached.</li>
-<li>There is some overhead to looking up the cache, which is normally worth it to avoid constructing strings.
-However, if you know there will be very few repeated strings in your data, you might get a performance boost by disabling this setting with <code>cache_strings=False</code>.</li>
-</ol>
-</div>
-<h2 id="json-serialization">JSON Serialization<a class="headerlink" href="#json-serialization" title="Permanent link">&para;</a></h2>
-<details class="api">
-<summary>API Documentation</summary>
-<p><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump_json"><code>pydantic.main.BaseModel.model_dump_json</code></a><br>
-<a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter.dump_json"><code>pydantic.type_adapter.TypeAdapter.dump_json</code></a><br>
-<a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.to_json"><code>pydantic_core.to_json</code></a><br></p>
-</details>
-<p>For more information on JSON serialization, see the <a href="../serialization/#modelmodel_dump_json">Serialization Concepts</a> page.</p>
 
 
 
