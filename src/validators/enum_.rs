@@ -4,7 +4,7 @@ use std::marker::PhantomData;
 use pyo3::exceptions::PyTypeError;
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList, PyType};
+use pyo3::types::{PyDict, PyFloat, PyInt, PyList, PyString, PyType};
 
 use crate::build_tools::{is_strict, py_schema_err};
 use crate::errors::{ErrorType, ValError, ValResult};
@@ -167,9 +167,27 @@ impl EnumValidateValue for PlainEnumValidator {
         py: Python<'py>,
         input: &I,
         lookup: &LiteralLookup<PyObject>,
-        _strict: bool,
+        strict: bool,
     ) -> ValResult<Option<PyObject>> {
-        Ok(lookup.validate(py, input)?.map(|(_, v)| v.clone_ref(py)))
+        match lookup.validate(py, input)? {
+            Some((_, v)) => Ok(Some(v.clone_ref(py))),
+            None => {
+                if !strict {
+                    if let Some(py_input) = input.as_python() {
+                        // necessary for compatibility with 2.6, where str and int subclasses are allowed
+                        if py_input.is_instance_of::<PyString>() {
+                            return Ok(lookup.validate_str(input, false)?.map(|v| v.clone_ref(py)));
+                        } else if py_input.is_instance_of::<PyInt>() {
+                            return Ok(lookup.validate_int(py, input, false)?.map(|v| v.clone_ref(py)));
+                        // necessary for compatibility with 2.6, where float values are allowed for int enums in lax mode
+                        } else if py_input.is_instance_of::<PyFloat>() {
+                            return Ok(lookup.validate_int(py, input, false)?.map(|v| v.clone_ref(py)));
+                        }
+                    }
+                }
+                Ok(None)
+            }
+        }
     }
 }
 
