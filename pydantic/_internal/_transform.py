@@ -285,21 +285,19 @@ def _check_func(
 def _apply_step(step: _Step, s: cs.CoreSchema | None, handler: GetCoreSchemaHandler, source_type: Any) -> cs.CoreSchema:
     from pydantic_core import core_schema as cs
 
-    match step:
-        case _Parse():
-            s = _apply_parse(s, step.tp, step.strict, handler, source_type)
-        case _ParseDefer():
-            s = _apply_parse(s, step.tp, False, handler, source_type)
-        case _Transform():
-            s = _apply_transform(s, step.func)
-        case _Constraint():
-            s = _apply_constraint(s, step.constraint)
-        case _ValidateOr():
-            assert isinstance(step, _ValidateOr)
-            s = cs.union_schema([handler(step.left), handler(step.right)])
-        case _ValidateAnd():
-            assert isinstance(step, _ValidateAnd)
-            s = cs.chain_schema([handler(step.left), handler(step.right)])
+    if isinstance(step, _Parse):
+        s = _apply_parse(s, step.tp, step.strict, handler, source_type)
+    elif isinstance(step, _ParseDefer):
+        s = _apply_parse(s, step.tp, False, handler, source_type)
+    elif isinstance(step, _Transform):
+        s = _apply_transform(s, step.func)
+    elif isinstance(step, _Constraint):
+        s = _apply_constraint(s, step.constraint)
+    elif isinstance(step, _ValidateOr):
+        s = cs.union_schema([handler(step.left), handler(step.right)])
+    else:
+        assert isinstance(step, _ValidateAnd)
+        s = cs.chain_schema([handler(step.left), handler(step.right)])
     return s
 
 
@@ -351,120 +349,135 @@ def _apply_transform(s: cs.CoreSchema | None, func: Callable[[Any], Any]) -> cs.
 def _apply_constraint(  # noqa: C901
     s: cs.CoreSchema | None, constraint: _ConstraintAnnotation
 ) -> cs.CoreSchema:
-    match constraint:
-        case annotated_types.Gt(gt):
-            if s and s['type'] in ('int', 'float', 'decimal'):
+    if isinstance(constraint, annotated_types.Gt):
+        gt = constraint.gt
+        if s and s['type'] in ('int', 'float', 'decimal'):
+            s = s.copy()
+            if s['type'] == 'int' and isinstance(gt, int):
+                s['gt'] = gt
+            elif s['type'] == 'float' and isinstance(gt, float):
+                s['gt'] = gt
+            elif s['type'] == 'decimal' and isinstance(gt, Decimal):
+                s['gt'] = gt
+            return s
+
+        def check_gt(v: Any) -> bool:
+            return v > gt
+
+        s = _check_func(check_gt, f'> {gt}', s)
+    if isinstance(constraint, annotated_types.Ge):
+        ge = constraint.ge
+
+        def check_ge(v: Any) -> bool:
+            return v >= ge
+
+        s = _check_func(check_ge, f'>= {ge}', s)
+    if isinstance(constraint, annotated_types.Lt):
+        lt = constraint.lt
+
+        def check_lt(v: Any) -> bool:
+            return v < lt
+
+        s = _check_func(check_lt, f'< {lt}', s)
+    if isinstance(constraint, annotated_types.Le):
+        le = constraint.le
+
+        def check_le(v: Any) -> bool:
+            return v <= le
+
+        s = _check_func(check_le, f'<= {le}', s)
+    if isinstance(constraint, annotated_types.Len):
+        min_len = constraint.min_length
+        max_len = constraint.max_length
+
+        def check_len(v: Any) -> bool:
+            if max_len is not None:
+                return (min_len <= len(v)) and (len(v) <= max_len)
+            return min_len <= len(v)
+
+        s = _check_func(check_len, f'length >= {min_len} and length <= {max_len}', s)
+    if isinstance(constraint, annotated_types.MultipleOf):
+        multiple_of = constraint.multiple_of
+
+        def check_multiple_of(v: Any) -> bool:
+            return v % multiple_of == 0
+
+        s = _check_func(check_multiple_of, f'% {multiple_of} == 0', s)
+    if isinstance(constraint, annotated_types.Timezone):
+        tz = constraint.tz
+
+        if tz is ...:
+            if s and s['type'] == 'datetime':
                 s = s.copy()
-                if s['type'] == 'int' and isinstance(gt, int):
-                    s['gt'] = gt
-                elif s['type'] == 'float' and isinstance(gt, float):
-                    s['gt'] = gt
-                elif s['type'] == 'decimal' and isinstance(gt, Decimal):
-                    s['gt'] = gt
-                return s
-
-            def check_gt(v: Any) -> bool:
-                return v > gt
-
-            s = _check_func(check_gt, f'> {gt}', s)
-        case annotated_types.Ge(ge):
-
-            def check_ge(v: Any) -> bool:
-                return v >= ge
-
-            s = _check_func(check_ge, f'>= {ge}', s)
-        case annotated_types.Lt(lt):
-
-            def check_lt(v: Any) -> bool:
-                return v < lt
-
-            s = _check_func(check_lt, f'< {lt}', s)
-        case annotated_types.Le(le):
-
-            def check_le(v: Any) -> bool:
-                return v <= le
-
-            s = _check_func(check_le, f'<= {le}', s)
-        case annotated_types.Len(min_len, max_len):
-
-            def check_len(v: Any) -> bool:
-                if max_len is not None:
-                    return (min_len <= len(v)) and (len(v) <= max_len)
-                return min_len <= len(v)
-
-            s = _check_func(check_len, f'length >= {min_len} and length <= {max_len}', s)
-        case annotated_types.MultipleOf(multiple_of):
-
-            def check_multiple_of(v: Any) -> bool:
-                return v % multiple_of == 0
-
-            s = _check_func(check_multiple_of, f'% {multiple_of} == 0', s)
-        case annotated_types.Timezone(tz):
-            if tz is ...:
-                if s and s['type'] == 'datetime':
-                    s = s.copy()
-                    s['tz_constraint'] = 'aware'
-                else:
-
-                    def check_tz_aware(v: object) -> bool:
-                        assert isinstance(v, datetime.datetime)
-                        return v.tzinfo is not None
-
-                    s = _check_func(check_tz_aware, 'timezone aware', s)
-            elif tz is None:
-                if s and s['type'] == 'datetime':
-                    s = s.copy()
-                    s['tz_constraint'] = 'naive'
-                else:
-
-                    def check_tz_naive(v: object) -> bool:
-                        assert isinstance(v, datetime.datetime)
-                        return v.tzinfo is None
-
-                    s = _check_func(check_tz_naive, 'timezone naive', s)
+                s['tz_constraint'] = 'aware'
             else:
-                raise NotImplementedError('Constraining to a specific timezone is not yet supported')
-        case annotated_types.Interval(min_val, max_val):
 
-            def check_interval(v: Any) -> bool:
-                return min_val <= v <= max_val
+                def check_tz_aware(v: object) -> bool:
+                    assert isinstance(v, datetime.datetime)
+                    return v.tzinfo is not None
 
-            s = _check_func(check_interval, f'>= {min_val} and <= {max_val}', s)
-        case annotated_types.Predicate(func):
-            if func.__name__ == '<lambda>':
-
-                def on_lambda_err() -> str:
-                    # TODO: is there a better way?
-                    import inspect
-
-                    try:
-                        return (
-                            '`'
-                            + ''.join(
-                                ''.join(inspect.getsource(func).strip().removesuffix(')').split('lambda ')[1:]).split(
-                                    ':'
-                                )[1:]
-                            ).strip()
-                            + '`'
-                        )
-                    except OSError:
-                        # stringified annotations
-                        return 'lambda'
-
-                s = _check_func(func, on_lambda_err, s)
-            else:
-                s = _check_func(func, func.__name__, s)
-        case re.Pattern():
-            if s and s['type'] == 'str':
+                s = _check_func(check_tz_aware, 'timezone aware', s)
+        elif tz is None:
+            if s and s['type'] == 'datetime':
                 s = s.copy()
-                s['pattern'] = constraint.pattern
+                s['tz_constraint'] = 'naive'
             else:
 
-                def check_pattern(v: object) -> bool:
-                    assert isinstance(v, str)
-                    return constraint.match(v) is not None
+                def check_tz_naive(v: object) -> bool:
+                    assert isinstance(v, datetime.datetime)
+                    return v.tzinfo is None
 
-                s = _check_func(check_pattern, f'~ {constraint.pattern}', s)
+                s = _check_func(check_tz_naive, 'timezone naive', s)
+        else:
+            raise NotImplementedError('Constraining to a specific timezone is not yet supported')
+    if isinstance(constraint, annotated_types.Interval):
+        if constraint.ge:
+            s = _apply_constraint(s, annotated_types.Ge(constraint.ge))
+        if constraint.gt:
+            s = _apply_constraint(s, annotated_types.Gt(constraint.gt))
+        if constraint.le:
+            s = _apply_constraint(s, annotated_types.Le(constraint.le))
+        if constraint.lt:
+            s = _apply_constraint(s, annotated_types.Lt(constraint.lt))
+    if isinstance(constraint, annotated_types.Predicate):
+        func = constraint.func
+
+        if func.__name__ == '<lambda>':
+
+            def on_lambda_err() -> str:
+                # TODO: is there a better way?
+                import inspect
+
+                try:
+                    return (
+                        '`'
+                        + ''.join(
+                            ''.join(inspect.getsource(func).strip().removesuffix(')').split('lambda ')[1:]).split(':')[
+                                1:
+                            ]
+                        ).strip()
+                        + '`'
+                    )
+                except OSError:
+                    # stringified annotations
+                    return 'lambda'
+
+            s = _check_func(func, on_lambda_err, s)
+        else:
+            s = _check_func(func, func.__name__, s)
+    if isinstance(constraint, re.Pattern):
+        if s and s['type'] == 'str':
+            s = s.copy()
+            s['pattern'] = constraint.pattern
+        else:
+
+            def check_pattern(v: object) -> bool:
+                assert isinstance(v, str)
+                return constraint.match(v) is not None
+
+            s = _check_func(check_pattern, f'~ {constraint.pattern}', s)
+    else:
+        raise NotImplementedError(f'Constraint {constraint} is not yet supported')
     return s
 
 
