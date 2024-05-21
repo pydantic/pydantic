@@ -144,12 +144,18 @@ class User(BaseModel):
     # but if they're not you can use the lower level constrain or predicate
     password: Annotated[str, parse(str).predicate(lambda x: x != 'password123')]
     # accept an int with whitespace, and constrain it to be larger than zero
-    age: Annotated[int, (parse(int) | parse(str).transform(str.strip).parse(int)).gt(0)]
+    age: Annotated[
+        int,
+        (parse(int) | parse(str).transform(str.strip).parse(int)).gt(0),
+    ]
     # calling `parse()` with no arguments implies parse(<field type>)
     friends: Annotated[list[User], parse().len(0, 100)]
     # however there is no typing information, you may want to pass the type explicitly
     # for recursive types you can use parse_defer
-    family: Annotated[list[User], parse_defer(lambda: list[User]).transform(lambda x: x[1:])]
+    family: Annotated[
+        list[User],
+        parse_defer(lambda: list[User]).transform(lambda x: x[1:]),
+    ]
     # you can compose and order steps to implement things before, after or wrapping validation
     bio: Annotated[datetime, (parse() | parse(str).strip().parse()).tz_aware()]
 ```

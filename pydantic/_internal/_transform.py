@@ -15,16 +15,16 @@ if TYPE_CHECKING:
 
     from pydantic import GetCoreSchemaHandler
 
-from pydantic._internal._internal_dataclass import dataclass_kwargs
+from pydantic._internal._internal_dataclass import slots_true
 
 
-@dataclass(**dataclass_kwargs)
+@dataclass(**slots_true)
 class _Parse:
     tp: type[Any]
     strict: bool = False
 
 
-@dataclass(**dataclass_kwargs)
+@dataclass
 class _ParseDefer:
     func: Callable[[], type[Any]]
 
@@ -33,18 +33,18 @@ class _ParseDefer:
         return self.func()
 
 
-@dataclass(**dataclass_kwargs)
+@dataclass(**slots_true)
 class _Transform:
     func: Callable[[Any], Any]
 
 
-@dataclass(**dataclass_kwargs)
+@dataclass(**slots_true)
 class _ValidateOr:
     left: Validate[Any, Any]
     right: Validate[Any, Any]
 
 
-@dataclass(**dataclass_kwargs)
+@dataclass(**slots_true)
 class _ValidateAnd:
     left: Validate[Any, Any]
     right: Validate[Any, Any]
@@ -64,7 +64,7 @@ _ConstraintAnnotation = (
 )
 
 
-@dataclass(**dataclass_kwargs)
+@dataclass(**slots_true)
 class _Constraint:
     constraint: _ConstraintAnnotation
 
@@ -77,7 +77,7 @@ _OutT = TypeVar('_OutT')
 _NewOutT = TypeVar('_NewOutT')
 
 
-@dataclass(**dataclass_kwargs)
+@dataclass(**slots_true)
 class Validate(Generic[_InT, _OutT]):
     """Abstract representation of a chain of validation, transformation, and parsing steps."""
 
@@ -359,34 +359,34 @@ def _apply_constraint(  # noqa: C901
                 s['gt'] = gt
             elif s['type'] == 'decimal' and isinstance(gt, Decimal):
                 s['gt'] = gt
-            return s
+        else:
 
-        def check_gt(v: Any) -> bool:
-            return v > gt
+            def check_gt(v: Any) -> bool:
+                return v > gt
 
-        s = _check_func(check_gt, f'> {gt}', s)
-    if isinstance(constraint, annotated_types.Ge):
+            s = _check_func(check_gt, f'> {gt}', s)
+    elif isinstance(constraint, annotated_types.Ge):
         ge = constraint.ge
 
         def check_ge(v: Any) -> bool:
             return v >= ge
 
         s = _check_func(check_ge, f'>= {ge}', s)
-    if isinstance(constraint, annotated_types.Lt):
+    elif isinstance(constraint, annotated_types.Lt):
         lt = constraint.lt
 
         def check_lt(v: Any) -> bool:
             return v < lt
 
         s = _check_func(check_lt, f'< {lt}', s)
-    if isinstance(constraint, annotated_types.Le):
+    elif isinstance(constraint, annotated_types.Le):
         le = constraint.le
 
         def check_le(v: Any) -> bool:
             return v <= le
 
         s = _check_func(check_le, f'<= {le}', s)
-    if isinstance(constraint, annotated_types.Len):
+    elif isinstance(constraint, annotated_types.Len):
         min_len = constraint.min_length
         max_len = constraint.max_length
 
@@ -396,14 +396,14 @@ def _apply_constraint(  # noqa: C901
             return min_len <= len(v)
 
         s = _check_func(check_len, f'length >= {min_len} and length <= {max_len}', s)
-    if isinstance(constraint, annotated_types.MultipleOf):
+    elif isinstance(constraint, annotated_types.MultipleOf):
         multiple_of = constraint.multiple_of
 
         def check_multiple_of(v: Any) -> bool:
             return v % multiple_of == 0
 
         s = _check_func(check_multiple_of, f'% {multiple_of} == 0', s)
-    if isinstance(constraint, annotated_types.Timezone):
+    elif isinstance(constraint, annotated_types.Timezone):
         tz = constraint.tz
 
         if tz is ...:
@@ -430,7 +430,7 @@ def _apply_constraint(  # noqa: C901
                 s = _check_func(check_tz_naive, 'timezone naive', s)
         else:
             raise NotImplementedError('Constraining to a specific timezone is not yet supported')
-    if isinstance(constraint, annotated_types.Interval):
+    elif isinstance(constraint, annotated_types.Interval):
         if constraint.ge:
             s = _apply_constraint(s, annotated_types.Ge(constraint.ge))
         if constraint.gt:
@@ -439,7 +439,8 @@ def _apply_constraint(  # noqa: C901
             s = _apply_constraint(s, annotated_types.Le(constraint.le))
         if constraint.lt:
             s = _apply_constraint(s, annotated_types.Lt(constraint.lt))
-    if isinstance(constraint, annotated_types.Predicate):
+        assert s is not None
+    elif isinstance(constraint, annotated_types.Predicate):
         func = constraint.func
 
         if func.__name__ == '<lambda>':
@@ -465,7 +466,8 @@ def _apply_constraint(  # noqa: C901
             s = _check_func(func, on_lambda_err, s)
         else:
             s = _check_func(func, func.__name__, s)
-    if isinstance(constraint, re.Pattern):
+    else:
+        assert isinstance(constraint, re.Pattern)
         if s and s['type'] == 'str':
             s = s.copy()
             s['pattern'] = constraint.pattern
@@ -476,8 +478,6 @@ def _apply_constraint(  # noqa: C901
                 return constraint.match(v) is not None
 
             s = _check_func(check_pattern, f'~ {constraint.pattern}', s)
-    else:
-        raise NotImplementedError(f'Constraint {constraint} is not yet supported')
     return s
 
 
