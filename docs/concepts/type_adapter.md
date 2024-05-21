@@ -103,5 +103,4 @@ handle as fields of a [`BaseModel`][pydantic.main.BaseModel].
     just once and reuse it in loops or other performance-critical code.
 
 !!! info "About bytes vs string discrepancy"
-    In V1, model dumping returned a str type, whereas the newly added TypeAdapter in V2 returns bytes. Returning bytes is more performant, but we've retained the str return for BaseModel for backwards compatibility reasons.
-    In the BaseModel case, we're basically coercing bytes to strings, but bytes is most often the desired end type, hence leaving this as the return type for the TypeAdapter case.
+    In V1, model dumping returned a str type, whereas the newly added TypeAdapter in V2 returns bytes. Returning bytes is more performant, but str return has been retained for BaseModel due to backwards compatibility reasons. For BaseModel, bytes are coerced to strings, but bytes are most often the desired end type. Hence, the return type remains bytes for the TypeAdapter case.
