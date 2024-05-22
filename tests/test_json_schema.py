@@ -1,4 +1,5 @@
 import dataclasses
+import importlib.metadata
 import json
 import math
 import re
@@ -33,8 +34,9 @@ from uuid import UUID
 
 import pytest
 from dirty_equals import HasRepr
+from packaging.version import Version
 from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_json
-from typing_extensions import Annotated, Literal, Self, TypedDict
+from typing_extensions import Annotated, Literal, Self, TypedDict, deprecated
 
 import pydantic
 from pydantic import (
@@ -6069,6 +6071,73 @@ def test_default_value_encoding(field_type, default_value, expected_schema):
 
     schema = Model.model_json_schema()
     assert schema == expected_schema
+
+
+def _generate_deprecated_classes():
+    @deprecated('MyModel is deprecated')
+    class MyModel(BaseModel):
+        pass
+
+    @deprecated('MyPydanticDataclass is deprecated')
+    @pydantic.dataclasses.dataclass
+    class MyPydanticDataclass:
+        pass
+
+    @deprecated('MyBuiltinDataclass is deprecated')
+    @dataclasses.dataclass
+    class MyBuiltinDataclass:
+        pass
+
+    @deprecated('MyTypedDict is deprecated')
+    class MyTypedDict(TypedDict):
+        pass
+
+    return [
+        pytest.param(MyModel, id='BaseModel'),
+        pytest.param(MyPydanticDataclass, id='pydantic-dataclass'),
+        pytest.param(MyBuiltinDataclass, id='builtin-dataclass'),
+        pytest.param(MyTypedDict, id='TypedDict'),
+    ]
+
+
+@pytest.mark.skipif(
+    Version(importlib.metadata.version('typing_extensions')) < Version('4.9'),
+    reason='`deprecated` type annotation requires typing_extensions>=4.9',
+)
+@pytest.mark.parametrize('cls', _generate_deprecated_classes())
+def test_deprecated_classes_json_schema(cls):
+    assert hasattr(cls, '__deprecated__')
+    assert TypeAdapter(cls).json_schema()['deprecated']
+
+
+@pytest.mark.skipif(
+    Version(importlib.metadata.version('typing_extensions')) < Version('4.9'),
+    reason='`deprecated` type annotation requires typing_extensions>=4.9',
+)
+@pytest.mark.parametrize('cls', _generate_deprecated_classes())
+def test_deprecated_subclasses_json_schema(cls):
+    class Model(BaseModel):
+        subclass: cls
+
+    assert Model.model_json_schema() == {
+        '$defs': {cls.__name__: {'deprecated': True, 'properties': {}, 'title': f'{cls.__name__}', 'type': 'object'}},
+        'properties': {'subclass': {'$ref': f'#/$defs/{cls.__name__}'}},
+        'required': ['subclass'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+@pytest.mark.skipif(
+    Version(importlib.metadata.version('typing_extensions')) < Version('4.9'),
+    reason='`deprecated` type annotation requires typing_extensions>=4.9',
+)
+@pytest.mark.parametrize('cls', _generate_deprecated_classes())
+def test_deprecated_class_usage_warns(cls):
+    if issubclass(cls, dict):
+        pytest.skip('TypedDict does not generate a DeprecationWarning on usage')
+    with pytest.warns(DeprecationWarning, match=f'{cls.__name__} is deprecated'):
+        cls()
 
 
 @dataclasses.dataclass
