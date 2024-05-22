@@ -6685,3 +6685,29 @@ def test_strict_enum_with_use_enum_values() -> None:
     # validation error raised bc foo field uses strict mode
     with pytest.raises(ValidationError):
         Foo(foo='1')
+
+
+def test_sequence_serializer() -> None:
+    """Test for https://github.com/pydantic/pydantic/issues/9328."""
+
+    exclude = {'releases': {'__all__': {'build': True}}}
+
+    class Release(BaseModel):
+        version: str
+        name: str
+        desc: str
+
+    class BundleSeq(BaseModel):
+        releases: Sequence[Release]
+
+    class BundleList(BaseModel):
+        releases: list[Release]
+
+    r1 = Release(name='Foo', version='1.0', desc='Foo v1.0')
+    r2 = Release(name='Bar', version='2.0', desc='Bar v2.0')
+    b1 = BundleSeq(releases=[r1, r2])
+    b2 = BundleList(releases=[r1, r2])
+
+    expected = '{"releases":[{"version":"1.0","name":"Foo","desc":"Foo v1.0"},{"version":"2.0","name":"Bar","desc":"Bar v2.0"}]}'
+    assert b1.model_dump_json(exclude=exclude) == expected
+    assert b2.model_dump_json(exclude=exclude) == expected
