@@ -120,15 +120,15 @@ def test_utcoffset_validator_example_pattern() -> None:
     LA = 'America/Los_Angeles'
 
     # test valid bound passing
-    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(-10,10)])
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(-10, 10)])
     ta.validate_python(dt.datetime.now(pytz.timezone(LA)))
 
     # test valid bound failing - missing TZ
-    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(-12,12)])
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(-12, 12)])
     with pytest.raises(Exception):
         ta.validate_python(dt.datetime.now())
 
     # test invalid bound
-    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(0,4)])
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(0, 4)])
     with pytest.raises(Exception):
         ta.validate_python(dt.datetime.now(pytz.timezone(LA)))
