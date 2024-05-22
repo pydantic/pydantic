@@ -190,7 +190,12 @@ def all_literal_values(type_: type[core_schema.Literal]) -> list[any]:
 
 def eval_forward_ref(type_: Any) -> Any:
     try:
-        return type_._evaluate(core_schema.__dict__, None, set())
+        try:
+            # Python 3.12+
+            return type_._evaluate(core_schema.__dict__, None, type_params=set(), recursive_guard=set())
+        except TypeError:
+            # Python 3.9+
+            return type_._evaluate(core_schema.__dict__, None, set())
     except TypeError:
         # for Python 3.8
         return type_._evaluate(core_schema.__dict__, None)
