@@ -48,8 +48,8 @@ print(repr(user_list_adapter.dump_json(user_list)))
 
 !!! info "`dump_json` returns `bytes`"
     `TypeAdapter`'s `dump_json` methods returns a `bytes` object, unlike the corresponding method for `BaseModel`, `model_dump_json`, which returns a `str`.
-    The reason for this discrepancy is that in V1, model dumping returned a str type, so this behavior is retained in V2 for backwards compatibility. 
-    For the `BaseModel` case, `bytes` are coerced to `str` types, but `bytes` are often the desired end type. 
+    The reason for this discrepancy is that in V1, model dumping returned a str type, so this behavior is retained in V2 for backwards compatibility.
+    For the `BaseModel` case, `bytes` are coerced to `str` types, but `bytes` are often the desired end type.
     Hence, for the new `TypeAdapter` class in V2, the return type is simply `bytes`, which can easily be coerced to a `str` type if desired.
 
 !!! note
