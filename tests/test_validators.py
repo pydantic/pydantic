@@ -2884,3 +2884,17 @@ def test_plain_validator_with_unsupported_type() -> None:
     model = type_adapter.validate_python('abcdefg')
     assert isinstance(model, UnsupportedClass)
     assert isinstance(type_adapter.dump_python(model), UnsupportedClass)
+
+
+def test_validator_with_default_values() -> None:
+    def validate_x(v: int, unrelated_arg: int = 1, other_unrelated_arg: int = 2) -> int:
+        assert v != -1
+        return v
+
+    class Model(BaseModel):
+        x: int
+
+        val_x = field_validator('x')(validate_x)
+
+    with pytest.raises(ValidationError):
+        Model(x=-1)
