@@ -56,14 +56,14 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     description: str | None
     examples: list[Any] | None
     exclude: bool | None
-    gt: float | None
-    ge: float | None
-    lt: float | None
-    le: float | None
-    multiple_of: float | None
+    gt: annotated_types.SupportsGt | None
+    ge: annotated_types.SupportsGe | None
+    lt: annotated_types.SupportsLt | None
+    le: annotated_types.SupportsLe | None
+    multiple_of: annotated_types.MultipleOf | None
     strict: bool | None
-    min_length: int | None
-    max_length: int | None
+    min_length: annotated_types.MinLen | None
+    max_length: annotated_types.MaxLen | None
     pattern: str | typing.Pattern[str] | None
     allow_inf_nan: bool | None
     max_digits: int | None
@@ -686,16 +686,16 @@ def Field(  # noqa: C901
     pattern: str | typing.Pattern[str] | None = _Unset,
     strict: bool | None = _Unset,
     coerce_numbers_to_str: bool | None = _Unset,
-    gt: float | None = _Unset,
-    ge: float | None = _Unset,
-    lt: float | None = _Unset,
-    le: float | None = _Unset,
-    multiple_of: float | None = _Unset,
+    gt: annotated_types.SupportsGt | None = _Unset,
+    ge: annotated_types.SupportsGe | None = _Unset,
+    lt: annotated_types.SupportsLt | None = _Unset,
+    le: annotated_types.SupportsLe | None = _Unset,
+    multiple_of: annotated_types.MultipleOf | None = _Unset,
     allow_inf_nan: bool | None = _Unset,
     max_digits: int | None = _Unset,
     decimal_places: int | None = _Unset,
-    min_length: int | None = _Unset,
-    max_length: int | None = _Unset,
+    min_length: annotated_types.MinLen | None = _Unset,
+    max_length: annotated_types.MaxLen | None = _Unset,
     union_mode: Literal['smart', 'left_to_right'] = _Unset,
     **extra: Unpack[_EmptyKwargs],
 ) -> Any:
