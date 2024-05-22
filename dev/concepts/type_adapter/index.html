@@ -3090,7 +3090,8 @@ which can be used for type validation, serialization, and JSON schema generation
 
 
 <span class="n">user_list_adapter</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="n">User</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">user_list_adapter</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Fred&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;3&#39;</span><span class="p">}])))</span>
+<span class="n">user_list</span> <span class="o">=</span> <span class="n">user_list_adapter</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Fred&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;3&#39;</span><span class="p">}])</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">user_list</span><span class="p">))</span>
 <span class="c1">#&gt; [{&#39;name&#39;: &#39;Fred&#39;, &#39;id&#39;: 3}]</span>
 
 <span class="k">try</span><span class="p">:</span>
@@ -3104,7 +3105,17 @@ which can be used for type validation, serialization, and JSON schema generation
 <span class="sd">    0.id</span>
 <span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;wrong&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">user_list_adapter</span><span class="o">.</span><span class="n">dump_json</span><span class="p">(</span><span class="n">user_list</span><span class="p">)))</span>
+<span class="c1">#&gt; b&#39;[{&quot;name&quot;:&quot;Fred&quot;,&quot;id&quot;:3}]&#39;</span>
 </code></pre></div>
+<div class="admonition info">
+<p class="admonition-title"><code>dump_json</code> returns <code>bytes</code></p>
+<p><code>TypeAdapter</code>'s <code>dump_json</code> methods returns a <code>bytes</code> object, unlike the corresponding method for <code>BaseModel</code>, <code>model_dump_json</code>, which returns a <code>str</code>.
+The reason for this discrepancy is that in V1, model dumping returned a str type, so this behavior is retained in V2 for backwards compatibility.
+For the <code>BaseModel</code> case, <code>bytes</code> are coerced to <code>str</code> types, but <code>bytes</code> are often the desired end type.
+Hence, for the new <code>TypeAdapter</code> class in V2, the return type is simply <code>bytes</code>, which can easily be coerced to a <code>str</code> type if desired.</p>
+</div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Despite some overlap in use cases with <a class="autorefs autorefs-internal" href="../../api/root_model/#pydantic.root_model.RootModel"><code>RootModel</code></a>,
