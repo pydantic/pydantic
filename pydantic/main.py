@@ -7,12 +7,26 @@ import types
 import typing
 import warnings
 from copy import copy, deepcopy
-from typing import Any, ClassVar, Dict, Generator, Literal, Set, Tuple, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Generator,
+    Literal,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 import pydantic_core
 import typing_extensions
 from pydantic_core import PydanticUndefined
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias, Unpack
 
 from ._internal import (
     _config,
@@ -36,18 +50,17 @@ from .warnings import PydanticDeprecatedSince20
 
 # Always define certain types that are needed to resolve method type hints/annotations
 # (even when not type checking) via typing.get_type_hints.
-Model = TypeVar('Model', bound='BaseModel')
+ModelT = TypeVar('ModelT', bound='BaseModel')
 TupleGenerator = Generator[Tuple[str, Any], None, None]
 # should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
 IncEx: TypeAlias = Union[Set[int], Set[str], Dict[int, Any], Dict[str, Any], None]
 
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from inspect import Signature
     from pathlib import Path
 
     from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
-    from typing_extensions import Unpack
 
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
     from .deprecated.parse import Protocol as DeprecatedParseProtocol
@@ -92,7 +105,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_private__: Instance attribute with the values of private attributes set on the model instance.
     """
 
-    if typing.TYPE_CHECKING:
+    if TYPE_CHECKING:
         # Here we provide annotations for the attributes of BaseModel.
         # Many of these are populated by the metaclass, which is why this section is in a `TYPE_CHECKING` block.
         # However, for the sake of easy review, we have included type annotations of all class and instance attributes
@@ -200,7 +213,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return self.__pydantic_fields_set__
 
     @classmethod
-    def model_construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:  # noqa: C901
+    def model_construct(cls, _fields_set: set[str] | None = None, **values: Any) -> Self:  # noqa: C901
         """Creates a new instance of the `Model` class with validated data.
 
         Creates a new model setting `__dict__` and `__pydantic_fields_set__` from trusted or pre-validated data.
@@ -280,7 +293,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         return m
 
-    def model_copy(self: Model, *, update: dict[str, Any] | None = None, deep: bool = False) -> Model:
+    def model_copy(self, *, update: dict[str, Any] | None = None, deep: bool = False) -> Self:
         """Usage docs: https://docs.pydantic.dev/2.7/concepts/serialization/#model_copy
 
         Returns a copy of the model.
@@ -527,13 +540,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     def model_validate(
-        cls: type[Model],
+        cls,
         obj: Any,
         *,
         strict: bool | None = None,
         from_attributes: bool | None = None,
         context: dict[str, Any] | None = None,
-    ) -> Model:
+    ) -> Self:
         """Validate a pydantic model instance.
 
         Args:
@@ -556,12 +569,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     def model_validate_json(
-        cls: type[Model],
+        cls,
         json_data: str | bytes | bytearray,
         *,
         strict: bool | None = None,
         context: dict[str, Any] | None = None,
-    ) -> Model:
+    ) -> Self:
         """Usage docs: https://docs.pydantic.dev/2.7/concepts/json/#json-parsing
 
         Validate the given JSON data against the Pydantic model.
@@ -583,12 +596,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     def model_validate_strings(
-        cls: type[Model],
+        cls,
         obj: Any,
         *,
         strict: bool | None = None,
         context: dict[str, Any] | None = None,
-    ) -> Model:
+    ) -> Self:
         """Validate the given object contains string data against the Pydantic model.
 
         Args:
@@ -736,7 +749,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         return submodel
 
-    def __copy__(self: Model) -> Model:
+    def __copy__(self) -> Self:
         """Returns a shallow copy of the model."""
         cls = type(self)
         m = cls.__new__(cls)
@@ -755,7 +768,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         return m
 
-    def __deepcopy__(self: Model, memo: dict[int, Any] | None = None) -> Model:
+    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> Self:
         """Returns a deep copy of the model."""
         cls = type(self)
         m = cls.__new__(cls)
@@ -776,7 +789,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         return m
 
-    if not typing.TYPE_CHECKING:
+    if not TYPE_CHECKING:
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
         # The same goes for __setattr__ and __delattr__, see: https://github.com/pydantic/pydantic/issues/8643
 
@@ -912,7 +925,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         _object_setattr(self, '__pydantic_private__', state['__pydantic_private__'])
         _object_setattr(self, '__dict__', state['__dict__'])
 
-    if not typing.TYPE_CHECKING:
+    if not TYPE_CHECKING:
 
         def __eq__(self, other: Any) -> bool:
             if isinstance(other, BaseModel):
@@ -969,7 +982,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             else:
                 return NotImplemented  # delegate to the other item in the comparison
 
-    if typing.TYPE_CHECKING:
+    if TYPE_CHECKING:
         # We put `__init_subclass__` in a TYPE_CHECKING block because, even though we want the type-checking benefits
         # described in the signature of `__init_subclass__` below, we don't want to modify the default behavior of
         # subclass initialization.
@@ -1068,7 +1081,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-    ) -> typing.Dict[str, Any]:  # noqa UP006
+    ) -> Dict[str, Any]:  # noqa UP006
         warnings.warn('The `dict` method is deprecated; use `model_dump` instead.', category=PydanticDeprecatedSince20)
         return self.model_dump(
             include=include,
@@ -1089,7 +1102,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-        encoder: typing.Callable[[Any], Any] | None = PydanticUndefined,  # type: ignore[assignment]
+        encoder: Callable[[Any], Any] | None = PydanticUndefined,  # type: ignore[assignment]
         models_as_dict: bool = PydanticUndefined,  # type: ignore[assignment]
         **dumps_kwargs: Any,
     ) -> str:
@@ -1113,7 +1126,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     @typing_extensions.deprecated('The `parse_obj` method is deprecated; use `model_validate` instead.', category=None)
-    def parse_obj(cls: type[Model], obj: Any) -> Model:  # noqa: D102
+    def parse_obj(cls, obj: Any) -> Self:  # noqa: D102
         warnings.warn(
             'The `parse_obj` method is deprecated; use `model_validate` instead.', category=PydanticDeprecatedSince20
         )
@@ -1126,14 +1139,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         category=None,
     )
     def parse_raw(  # noqa: D102
-        cls: type[Model],
+        cls,
         b: str | bytes,
         *,
         content_type: str | None = None,
         encoding: str = 'utf8',
         proto: DeprecatedParseProtocol | None = None,
         allow_pickle: bool = False,
-    ) -> Model:  # pragma: no cover
+    ) -> Self:  # pragma: no cover
         warnings.warn(
             'The `parse_raw` method is deprecated; if your data is JSON use `model_validate_json`, '
             'otherwise load the data then use `model_validate` instead.',
@@ -1179,14 +1192,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         category=None,
     )
     def parse_file(  # noqa: D102
-        cls: type[Model],
+        cls,
         path: str | Path,
         *,
         content_type: str | None = None,
         encoding: str = 'utf8',
         proto: DeprecatedParseProtocol | None = None,
         allow_pickle: bool = False,
-    ) -> Model:
+    ) -> Self:
         warnings.warn(
             'The `parse_file` method is deprecated; load the data from file, then if your data is JSON '
             'use `model_validate_json`, otherwise `model_validate` instead.',
@@ -1209,7 +1222,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         "`model_config['from_attributes']=True` and use `model_validate` instead.",
         category=None,
     )
-    def from_orm(cls: type[Model], obj: Any) -> Model:  # noqa: D102
+    def from_orm(cls, obj: Any) -> Self:  # noqa: D102
         warnings.warn(
             'The `from_orm` method is deprecated; set '
             "`model_config['from_attributes']=True` and use `model_validate` instead.",
@@ -1223,7 +1236,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     @typing_extensions.deprecated('The `construct` method is deprecated; use `model_construct` instead.', category=None)
-    def construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:  # noqa: D102
+    def construct(cls, _fields_set: set[str] | None = None, **values: Any) -> Self:  # noqa: D102
         warnings.warn(
             'The `construct` method is deprecated; use `model_construct` instead.', category=PydanticDeprecatedSince20
         )
@@ -1235,13 +1248,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         category=None,
     )
     def copy(
-        self: Model,
+        self,
         *,
         include: AbstractSetIntStr | MappingIntStrAny | None = None,
         exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
-        update: typing.Dict[str, Any] | None = None,  # noqa UP006
+        update: Dict[str, Any] | None = None,  # noqa UP006
         deep: bool = False,
-    ) -> Model:  # pragma: no cover
+    ) -> Self:  # pragma: no cover
         """Returns a copy of the model.
 
         !!! warning "Deprecated"
@@ -1309,7 +1322,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     @typing_extensions.deprecated('The `schema` method is deprecated; use `model_json_schema` instead.', category=None)
     def schema(  # noqa: D102
         cls, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE
-    ) -> typing.Dict[str, Any]:  # noqa UP006
+    ) -> Dict[str, Any]:  # noqa UP006
         warnings.warn(
             'The `schema` method is deprecated; use `model_json_schema` instead.', category=PydanticDeprecatedSince20
         )
@@ -1339,7 +1352,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     @typing_extensions.deprecated('The `validate` method is deprecated; use `model_validate` instead.', category=None)
-    def validate(cls: type[Model], value: Any) -> Model:  # noqa: D102
+    def validate(cls, value: Any) -> Self:  # noqa: D102
         warnings.warn(
             'The `validate` method is deprecated; use `model_validate` instead.', category=PydanticDeprecatedSince20
         )
@@ -1412,9 +1425,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return copy_internals._calculate_keys(self, *args, **kwargs)
 
 
-@typing.overload
+@overload
 def create_model(
-    __model_name: str,
+    model_name: str,
+    /,
     *,
     __config__: ConfigDict | None = None,
     __doc__: str | None = None,
@@ -1427,40 +1441,42 @@ def create_model(
     ...
 
 
-@typing.overload
+@overload
 def create_model(
-    __model_name: str,
+    model_name: str,
+    /,
     *,
     __config__: ConfigDict | None = None,
     __doc__: str | None = None,
-    __base__: type[Model] | tuple[type[Model], ...],
+    __base__: type[ModelT] | tuple[type[ModelT], ...],
     __module__: str = __name__,
     __validators__: dict[str, classmethod[Any, ..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     **field_definitions: Any,
-) -> type[Model]:
+) -> type[ModelT]:
     ...
 
 
 def create_model(  # noqa: C901
-    __model_name: str,
+    model_name: str,
+    /,
     *,
     __config__: ConfigDict | None = None,
     __doc__: str | None = None,
-    __base__: type[Model] | tuple[type[Model], ...] | None = None,
+    __base__: type[ModelT] | tuple[type[ModelT], ...] | None = None,
     __module__: str | None = None,
     __validators__: dict[str, classmethod[Any, ..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __slots__: tuple[str, ...] | None = None,
     **field_definitions: Any,
-) -> type[Model]:
+) -> type[ModelT]:
     """Usage docs: https://docs.pydantic.dev/2.7/concepts/models/#dynamic-model-creation
 
     Dynamically creates and returns a new Pydantic model, in other words, `create_model` dynamically creates a
     subclass of [`BaseModel`][pydantic.BaseModel].
 
     Args:
-        __model_name: The name of the newly created model.
+        model_name: The name of the newly created model.
         __config__: The configuration of the new model.
         __doc__: The docstring of the new model.
         __base__: The base class or classes for the new model.
@@ -1492,7 +1508,7 @@ def create_model(  # noqa: C901
         if not isinstance(__base__, tuple):
             __base__ = (__base__,)
     else:
-        __base__ = (typing.cast(typing.Type['Model'], BaseModel),)
+        __base__ = (cast('type[ModelT]', BaseModel),)
 
     __cls_kwargs__ = __cls_kwargs__ or {}
 
@@ -1503,7 +1519,7 @@ def create_model(  # noqa: C901
         if not _fields.is_valid_field_name(f_name):
             warnings.warn(f'fields may not start with an underscore, ignoring "{f_name}"', RuntimeWarning)
         if isinstance(f_def, tuple):
-            f_def = typing.cast('tuple[str, Any]', f_def)
+            f_def = cast('tuple[str, Any]', f_def)
             try:
                 f_annotation, f_value = f_def
             except ValueError as e:
@@ -1544,13 +1560,13 @@ def create_model(  # noqa: C901
     if __config__:
         namespace['model_config'] = _config.ConfigWrapper(__config__).config_dict
     resolved_bases = types.resolve_bases(__base__)
-    meta, ns, kwds = types.prepare_class(__model_name, resolved_bases, kwds=__cls_kwargs__)
+    meta, ns, kwds = types.prepare_class(model_name, resolved_bases, kwds=__cls_kwargs__)
     if resolved_bases is not __base__:
         ns['__orig_bases__'] = __base__
     namespace.update(ns)
 
     return meta(
-        __model_name,
+        model_name,
         resolved_bases,
         namespace,
         __pydantic_reset_parent_namespace__=False,

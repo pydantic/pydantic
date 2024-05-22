@@ -14,7 +14,7 @@ from .main import BaseModel, _object_setattr
 if typing.TYPE_CHECKING:
     from typing import Any
 
-    from typing_extensions import Literal, dataclass_transform
+    from typing_extensions import Literal, Self, dataclass_transform
 
     from .fields import Field as PydanticModelField
     from .fields import PrivateAttr as PydanticModelPrivateAttr
@@ -30,7 +30,6 @@ else:
 
 __all__ = ('RootModel',)
 
-Model = typing.TypeVar('Model', bound='BaseModel')
 RootModelRootType = typing.TypeVar('RootModelRootType')
 
 
@@ -74,7 +73,7 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType], metaclass=_RootMod
     __init__.__pydantic_base_init__ = True  # pyright: ignore[reportFunctionMemberAccess]
 
     @classmethod
-    def model_construct(cls: type[Model], root: RootModelRootType, _fields_set: set[str] | None = None) -> Model:  # type: ignore
+    def model_construct(cls, root: RootModelRootType, _fields_set: set[str] | None = None) -> Self:  # type: ignore
         """Create a new model using the provided root object and update fields set.
 
         Args:
@@ -99,7 +98,7 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType], metaclass=_RootMod
         _object_setattr(self, '__pydantic_fields_set__', state['__pydantic_fields_set__'])
         _object_setattr(self, '__dict__', state['__dict__'])
 
-    def __copy__(self: Model) -> Model:
+    def __copy__(self) -> Self:
         """Returns a shallow copy of the model."""
         cls = type(self)
         m = cls.__new__(cls)
@@ -107,7 +106,7 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType], metaclass=_RootMod
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
         return m
 
-    def __deepcopy__(self: Model, memo: dict[int, Any] | None = None) -> Model:
+    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> Self:
         """Returns a deep copy of the model."""
         cls = type(self)
         m = cls.__new__(cls)
