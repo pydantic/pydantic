@@ -480,7 +480,8 @@ class PydanticModelTransformer:
 
         is_settings = any(base.fullname == BASESETTINGS_FULLNAME for base in info.mro[:-1])
         self.add_initializer(fields, config, is_settings, is_root_model)
-        self.add_model_construct_method(fields, config, is_settings)
+        if not is_root_model:
+            self.add_model_construct_method(fields, config, is_settings)
         self.set_frozen(fields, self._api, frozen=config.frozen is True)
 
         self.adjust_decorator_signatures()
