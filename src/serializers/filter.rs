@@ -23,8 +23,7 @@ fn map_negative_index<'py>(value: &Bound<'py, PyAny>, len: Option<usize>) -> PyR
             .unwrap_or_else(|_| value.clone())),
         None => {
             // check that it's not negative
-            let negative = value.call_method1(intern!(py, "__lt__"), (0,))?.is_truthy()?;
-            if negative {
+            if value.lt(0).unwrap_or(false) {
                 Err(PyValueError::new_err(
                     "Negative indices cannot be used to exclude items on unsized iterables",
                 ))
