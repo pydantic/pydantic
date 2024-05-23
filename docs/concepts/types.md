@@ -138,28 +138,32 @@ from pydantic.transform_experimental import parse, parse_defer
 
 
 class User(BaseModel):
-    # start by parsing to a string then pipe into str.lower
-    name: Annotated[str, parse(str).transform(str.lower)]
-    # some methods for common transformations or constraints are included directly
-    username: Annotated[str, parse(str).lower().pattern(r'[a-z]+')]
-    # but if they're not you can use the lower level constrain or predicate
-    password: Annotated[str, parse(str).predicate(lambda x: x != 'password123')]
-    # accept an int with whitespace, and constrain it to be larger than zero
-    age: Annotated[
+    name: Annotated[str, parse(str).str.lower()]  # (1)!
+    age: Annotated[int, parse(int).gt(0)]  # (2)!
+    username: Annotated[str, parse(str).str.pattern(r'[a-z]+')]  # (3)!
+    password: Annotated[
+        str,
+        parse(str).transform(str.lower).predicate(lambda x: x != 'password')]  # (4)!
+    favorite_number: Annotated[  # (5)!
         int,
-        (parse(int) | parse(str).transform(str.strip).parse(int)).gt(0),
+        (parse(int) | parse(str).str.strip().parse(int)).gt(0),
     ]
-    # calling `parse()` with no arguments implies parse(<field type>)
-    friends: Annotated[list[User], parse().len(0, 100)]
-    # however there is no typing information, you may want to pass the type explicitly
-    # for recursive types you can use parse_defer
-    family: Annotated[
+    friends: Annotated[list[User], parse().len(0, 100)]  # (6)!
+    family: Annotated[  # (7)!
         list[User],
         parse_defer(lambda: list[User]).transform(lambda x: x[1:]),
     ]
-    # you can compose and order steps to implement things before, after or wrapping validation
-    bio: Annotated[datetime, (parse() | parse(str).strip().parse()).tz_aware()]
+    bio: Annotated[datetime, parse(int).transform(lambda x: x / 1_000_000).parse()]  # (8)!
 ```
+
+1. Lowercase a string.
+2. Constrain an integer to be greater than zero.
+3. Constrain a string to match a regex pattern.
+4. You can also use the lower level transform, constrain and predicate methods.
+5. Use the `|` or `&` operators to combine steps (like a logical OR or AND).
+6. Calling `parse()` with no arguments implies `parse(<field type>)`. Use `parse(Any)` to accept any type.
+7. For recursive types you can use `parse_defer` to reference the type itself before it's defined.
+8. You can call `parse()` before or after other steps to do pre or post processing.
 
 #### Adding validation and serialization
 

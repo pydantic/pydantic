@@ -7,7 +7,7 @@ import re
 from collections import deque
 from dataclasses import dataclass
 from decimal import Decimal
-from functools import cached_property
+from functools import cached_property, partial
 from typing import TYPE_CHECKING, Annotated, Any, Callable, Generic, Protocol, TypeVar, Union, overload
 
 import annotated_types
@@ -167,10 +167,6 @@ class Validate(Generic[_InT, _OutT]):
         """Constrain a value to meet a certain condition."""
         return Validate[_InT, _OutT](self._steps + [_Constraint(constraint)])
 
-    def pattern(self: Validate[_InT, str], pattern: str) -> Validate[_InT, str]:
-        """Constrain a string to match a regular expression pattern."""
-        return self.constrain(re.compile(pattern))
-
     def gt(self: Validate[_InT, _NewOutGt], gt: _NewOutGt) -> Validate[_InT, _NewOutGt]:
         """Constrain a value to be greater than a certain value."""
         return self.constrain(annotated_types.Gt(gt))
@@ -200,38 +196,14 @@ class Validate(Generic[_InT, _OutT]):
         return self.constrain(annotated_types.Predicate(func))
 
     # timezone methods
-    def tz_naive(
-        self: Validate[_InT, _NewOutDatetime],
-    ) -> Validate[_InT, _NewOutDatetime]:
-        """Constrain a datetime to be timezone naive."""
-        return self.constrain(annotated_types.Timezone(None))
-
-    def tz_aware(
-        self: Validate[_InT, _NewOutDatetime],
-    ) -> Validate[_InT, _NewOutDatetime]:
-        """Constrain a datetime to be timezone aware."""
-        return self.constrain(annotated_types.Timezone(...))
-
-    def tz(self: Validate[_InT, _NewOutDatetime], tz: datetime.tzinfo) -> Validate[_InT, _NewOutDatetime]:
-        """Constrain a datetime to have a certain timezone."""
-        return self.constrain(annotated_types.Timezone(tz))  # type: ignore  # TODO: what's wrong with the typing here?
+    @property
+    def dt(self: Validate[_InT, _NewOutDatetime]) -> _DateTimeValidator:
+        return _DateTimeValidator(self._steps)
 
     # string methods
-    def lower(self: Validate[_InT, _NewOutStr]) -> Validate[_InT, str]:
-        """Transform a string to lowercase."""
-        return self.transform(str.lower)
-
-    def upper(self: Validate[_InT, _NewOutStr]) -> Validate[_InT, str]:
-        """Transform a string to uppercase."""
-        return self.transform(str.upper)
-
-    def title(self: Validate[_InT, _NewOutStr]) -> Validate[_InT, str]:
-        """Transform a string to title case."""
-        return self.transform(str.title)
-
-    def strip(self: Validate[_InT, _NewOutStr]) -> Validate[_InT, str]:
-        """Strip whitespace from a string."""
-        return self.transform(str.strip)
+    @property
+    def str(self: Validate[_InT, _NewOutStr]) -> _StringValidator:
+        return _StringValidator(self._steps)
 
     # operators
     def otherwise(self, other: Validate[_OtherIn, _OtherOut]) -> Validate[_InT | _OtherIn, _OutT | _OtherOut]:
@@ -265,6 +237,46 @@ parse = Validate[Any, Any]([]).parse
 parse_defer = Validate[Any, Any]([]).parse_defer
 transform = Validate[Any, Any]([]).transform
 constrain = Validate[Any, Any]([]).constrain
+
+
+class _StringValidator(Validate[str, str]):
+    def lower(self) -> Validate[str, str]:
+        return self.transform(str.lower)
+
+    def upper(self) -> Validate[str, str]:
+        return self.transform(str.upper)
+
+    def title(self) -> Validate[str, str]:
+        return self.transform(str.title)
+
+    def strip(self) -> Validate[str, str]:
+        return self.transform(str.strip)
+
+    def pattern(self, pattern: str) -> Validate[str, str]:
+        return self.constrain(re.compile(pattern))
+
+    def contains(self, substring: str) -> Validate[str, str]:
+        return self.predicate(lambda v: substring in v)
+
+    def starts_with(self, prefix: str) -> Validate[str, str]:
+        return self.predicate(lambda v: v.startswith(prefix))
+
+    def ends_with(self, suffix: str) -> Validate[str, str]:
+        return self.predicate(lambda v: v.endswith(suffix))
+
+
+class _DateTimeValidator(Validate[datetime.datetime, datetime.datetime]):
+    def tz_naive(self) -> Validate[datetime.datetime, datetime.datetime]:
+        return self.constrain(annotated_types.Timezone(None))
+
+    def tz_aware(self) -> Validate[datetime.datetime, datetime.datetime]:
+        return self.constrain(annotated_types.Timezone(...))
+
+    def tz(self, tz: datetime.tzinfo) -> Validate[datetime.datetime, datetime.datetime]:
+        return self.constrain(annotated_types.Timezone(tz))  # type: ignore
+
+    def with_tz(self, tz: datetime.tzinfo | None) -> Validate[datetime.datetime, datetime.datetime]:
+        return self.transform(partial(datetime.datetime.replace, tzinfo=tz))
 
 
 def _check_func(
