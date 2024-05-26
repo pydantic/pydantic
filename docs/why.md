@@ -51,9 +51,9 @@ Using type hints also means that Pydantic integrates well with static typing too
 
 ## Performance
 
-Pydantic's core validation logic is implemented in separate package [`pydantic-core`](https://github.com/pydantic/pydantic-core), where validation for most types is implemented in Rust.
+Pydantic's core validation logic is implemented in a separate package [`pydantic-core`](https://github.com/pydantic/pydantic-core), where validation for most types is implemented in Rust.
 
-As a result Pydantic is among the fastest data validation libraries for Python.
+As a result, Pydantic is among the fastest data validation libraries for Python.
 
 ??? example "Performance Example - Pydantic vs. dedicated code"
     In general, dedicated code should be much faster than a general-purpose validator, but in this example
