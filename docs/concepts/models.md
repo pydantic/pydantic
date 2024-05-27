@@ -184,7 +184,7 @@ print(m.model_dump())
 For self-referencing models, see [postponed annotations](postponed_annotations.md#self-referencing-or-recursive-models).
 
 !!! note
-    **When defining your models, watch out for naming collisions between your field name and its type, a previously defined model, or an imported library.** Such naming collisions can often lead to errors being thrown when the default value of the field is ```None```.
+    **When defining your models, watch out for naming collisions between your field name and its type, a previously defined model, or an imported library.** 
 
     For example, the following would yield a validation error:
     ```

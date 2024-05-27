@@ -1475,6 +1475,17 @@ except ValidationError as exc:
     #> 'none_required'
 ```
 
+!!! note
+    You may encounter this error when there is a naming collision in your model between a field name and its type. More specifically, this error is likely to be thrown when the default value of that field is ```None```.
+
+    For example, the following would yield the ```none_required``` validation error since the field  ```int``` is set to a default value of ```None``` and has the exact same name as its type, so both are interpreted to be ```None```:
+    ```
+    class M1(BaseModel):
+        int: Optional[int] = None
+
+    m = M1(int=123) # error
+    ```
+
 ## `recursion_loop`
 
 This error is raised when a cyclic reference is detected:
