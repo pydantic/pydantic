@@ -545,7 +545,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         *,
         strict: bool | None = None,
         from_attributes: bool | None = None,
-        context: dict[str, Any] | None = None,
+        context: Any | None = None,
     ) -> Self:
         """Validate a pydantic model instance.
 
@@ -573,7 +573,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         json_data: str | bytes | bytearray,
         *,
         strict: bool | None = None,
-        context: dict[str, Any] | None = None,
+        context: Any | None = None,
     ) -> Self:
         """Usage docs: https://docs.pydantic.dev/2.7/concepts/json/#json-parsing
 
