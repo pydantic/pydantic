@@ -183,6 +183,18 @@ print(m.model_dump())
 
 For self-referencing models, see [postponed annotations](postponed_annotations.md#self-referencing-or-recursive-models).
 
+!!! note
+    **When defining your models, watch out for naming collisions between your field name and its type, a previously defined model, or an imported library.** Such naming collisions can often lead to errors being thrown when the default value of the field is ```None```.
+
+    For example, the following would yield a validation error:
+    ```
+    class Boo(BaseModel):
+        int: Optional[int] = None
+
+    m = Boo(int=123)
+    ```
+    An error occurs since the field  ```int``` is set to a default value of ```None``` and has the exact same name as its type, so both are interpreted to be ```None```. As such, ```123``` is not considered to be a valid value for the field ```int```.  
+
 ## Rebuild model schema
 
 The model schema can be rebuilt using [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild]. This is useful for building recursive generic models.
