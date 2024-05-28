@@ -60,10 +60,10 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     ge: annotated_types.SupportsGe | None
     lt: annotated_types.SupportsLt | None
     le: annotated_types.SupportsLe | None
-    multiple_of: annotated_types.MultipleOf | None
+    multiple_of: float | None
     strict: bool | None
-    min_length: annotated_types.MinLen | None
-    max_length: annotated_types.MaxLen | None
+    min_length: int | None
+    max_length: int | None
     pattern: str | typing.Pattern[str] | None
     allow_inf_nan: bool | None
     max_digits: int | None
@@ -690,12 +690,12 @@ def Field(  # noqa: C901
     ge: annotated_types.SupportsGe | None = _Unset,
     lt: annotated_types.SupportsLt | None = _Unset,
     le: annotated_types.SupportsLe | None = _Unset,
-    multiple_of: annotated_types.MultipleOf | None = _Unset,
+    multiple_of: float | None = _Unset,
     allow_inf_nan: bool | None = _Unset,
     max_digits: int | None = _Unset,
     decimal_places: int | None = _Unset,
-    min_length: annotated_types.MinLen | None = _Unset,
-    max_length: annotated_types.MaxLen | None = _Unset,
+    min_length: int | None = _Unset,
+    max_length: int | None = _Unset,
     union_mode: Literal['smart', 'left_to_right'] = _Unset,
     **extra: Unpack[_EmptyKwargs],
 ) -> Any:
