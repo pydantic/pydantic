@@ -316,6 +316,7 @@ class TypeAdapter(Generic[T]):
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         serialize_as_any: bool = False,
+        context: dict[str, Any] | None = None,
     ) -> Any:
         """Dump an instance of the adapted type to a Python object.
 
@@ -332,6 +333,7 @@ class TypeAdapter(Generic[T]):
             warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
                 "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
+            context: Additional context to pass to the serializer.
 
         Returns:
             The serialized object.
@@ -348,6 +350,7 @@ class TypeAdapter(Generic[T]):
             round_trip=round_trip,
             warnings=warnings,
             serialize_as_any=serialize_as_any,
+            context=context,
         )
 
     def dump_json(
@@ -365,6 +368,7 @@ class TypeAdapter(Generic[T]):
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         serialize_as_any: bool = False,
+        context: dict[str, Any] | None = None,
     ) -> bytes:
         """Usage docs: https://docs.pydantic.dev/2.7/concepts/json/#json-serialization
 
@@ -383,6 +387,7 @@ class TypeAdapter(Generic[T]):
             warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
                 "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
+            context: Additional context to pass to the serializer.
 
         Returns:
             The JSON representation of the given instance as bytes.
@@ -399,6 +404,7 @@ class TypeAdapter(Generic[T]):
             round_trip=round_trip,
             warnings=warnings,
             serialize_as_any=serialize_as_any,
+            context=context,
         )
 
     def json_schema(

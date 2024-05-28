@@ -900,6 +900,23 @@ def test_type_adapter_dump_json():
     assert ta.dump_json(Model({'x': 1, 'y': 2.5})) == b'{"x":2,"y":7.5}'
 
 
+def test_type_adapter_dump_with_context():
+    class Model(TypedDict):
+        x: int
+        y: float
+
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info: Optional[SerializationInfo] = None):
+            data = handler(self)
+            if info.context and info.context.get('mode') == 'x-only':
+                data.pop('y')
+            return data
+
+    ta = TypeAdapter(Model)
+
+    assert ta.dump_json(Model({'x': 1, 'y': 2.5}), context={'mode': 'x-only'}) == b'{"x":1}'
+
+
 @pytest.mark.parametrize('as_annotation', [True, False])
 @pytest.mark.parametrize('mode', ['plain', 'wrap'])
 def test_forward_ref_for_serializers(as_annotation, mode):
