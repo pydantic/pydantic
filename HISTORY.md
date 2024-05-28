@@ -6,7 +6,7 @@
 
 #### Packaging
 
-* Bump `pydantic-core` to `v2.18.2` by @sydney-runkle in [#9515](https://github.com/pydantic/pydantic/pull/9515)
+* Bump `pydantic-core` to `v2.18.3` by @sydney-runkle in [#9515](https://github.com/pydantic/pydantic/pull/9515)
 
 #### Fixes
 
