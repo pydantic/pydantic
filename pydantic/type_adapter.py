@@ -147,7 +147,7 @@ def _frame_depth(
 
 @final
 class TypeAdapter(Generic[T]):
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/type_adapter/
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/type_adapter/
 
     Type adapters provide a flexible way to perform validation and serialization based on a Python type.
 
@@ -375,7 +375,7 @@ class TypeAdapter(Generic[T]):
     def validate_json(
         self, data: str | bytes, /, *, strict: bool | None = None, context: dict[str, Any] | None = None
     ) -> T:
-        """Usage docs: https://docs.pydantic.dev/2.7/concepts/json/#json-parsing
+        """Usage docs: https://docs.pydantic.dev/2.8/concepts/json/#json-parsing
 
         Validate a JSON string or bytes against the model.
 
@@ -483,7 +483,7 @@ class TypeAdapter(Generic[T]):
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         serialize_as_any: bool = False,
     ) -> bytes:
-        """Usage docs: https://docs.pydantic.dev/2.7/concepts/json/#json-serialization
+        """Usage docs: https://docs.pydantic.dev/2.8/concepts/json/#json-serialization
 
         Serialize an instance of the adapted type to JSON.
 
