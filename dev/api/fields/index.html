@@ -4383,7 +4383,7 @@ type-annotated fields without causing a type error.</p>
     <span class="n">union_mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;smart&#39;</span><span class="p">,</span> <span class="s1">&#39;left_to_right&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_Unset</span><span class="p">,</span>
     <span class="o">**</span><span class="n">extra</span><span class="p">:</span> <span class="n">Unpack</span><span class="p">[</span><span class="n">_EmptyKwargs</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.7/concepts/fields</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.8/concepts/fields</span>
 
 <span class="sd">    Create a field for objects that can be configured.</span>
 
@@ -6388,7 +6388,7 @@ If both <code>default</code> and <code>default_factory</code> are set, an error 
     <span class="n">default_factory</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">init</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.7/concepts/models/#private-model-attributes</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.8/concepts/models/#private-model-attributes</span>
 
 <span class="sd">    Indicates that an attribute is intended for private use and not handled during normal validation/serialization.</span>
 
@@ -7136,7 +7136,7 @@ objects.</p>
     <span class="nb">repr</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">return_type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PropertyT</span> <span class="o">|</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">[[</span><span class="n">PropertyT</span><span class="p">],</span> <span class="n">PropertyT</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.7/concepts/fields#the-computed_field-decorator</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.8/concepts/fields#the-computed_field-decorator</span>
 
 <span class="sd">    Decorator to include `property` and `cached_property` when serializing models or dataclasses.</span>
 
@@ -7591,7 +7591,7 @@ or a boolean. If <code>True</code>, a default deprecation message will be emitte
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.7.1", "pydantic-core==2.18.2", "pydantic-extra-types==2.6.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.18.3", "pydantic-extra-types==2.6.0"]
     </script>
 
               </article>

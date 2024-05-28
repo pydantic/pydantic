@@ -6342,7 +6342,7 @@ any invalid items are discarded and the valid ones are returned.</p>
 <span class="normal">139</span>
 <span class="normal">140</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
 <span class="k">class</span> <span class="nc">Strict</span><span class="p">(</span><span class="n">_fields</span><span class="o">.</span><span class="n">PydanticMetadata</span><span class="p">,</span> <span class="n">BaseMetadata</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.7/concepts/strict_mode/#strict-mode-with-annotated-strict</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.8/concepts/strict_mode/#strict-mode-with-annotated-strict</span>
 
 <span class="sd">    A field metadata class to indicate that a field should be validated in strict mode.</span>
 
@@ -6614,7 +6614,7 @@ any invalid items are discarded and the valid ones are returned.</p>
 <span class="normal">719</span>
 <span class="normal">720</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">StringConstraints</span><span class="p">(</span><span class="n">annotated_types</span><span class="o">.</span><span class="n">GroupedMetadata</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.7/concepts/fields/#string-constraints</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.8/concepts/fields/#string-constraints</span>
 
 <span class="sd">    Apply constraints to `str` types.</span>
 
@@ -11883,7 +11883,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2639</span>
 <span class="normal">2640</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">GetPydanticSchema</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.7/concepts/types/#using-getpydanticschema-to-reduce-boilerplate</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.8/concepts/types/#using-getpydanticschema-to-reduce-boilerplate</span>
 
 <span class="sd">    A convenience class for creating an annotation that provides pydantic custom type hooks.</span>
 
@@ -12473,7 +12473,7 @@ than it would be as a normal <code>Union</code>.</p>
 <span class="normal">2881</span>
 <span class="normal">2882</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">Discriminator</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.7/concepts/unions/#discriminated-unions-with-callable-discriminator</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.8/concepts/unions/#discriminated-unions-with-callable-discriminator</span>
 
 <span class="sd">    Provides a way to use a custom callable as the way to extract the value of a union discriminator.</span>
 
@@ -15186,7 +15186,7 @@ See <a href="https://github.com/pydantic/pydantic-core/issues/296">this issue</a
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.7.1", "pydantic-core==2.18.2", "pydantic-extra-types==2.6.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.18.3", "pydantic-extra-types==2.6.0"]
     </script>
 
               </article>
