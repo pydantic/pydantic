@@ -86,7 +86,7 @@ async function main() {
     FS.mkdir('/test_dir');
     FS.mount(FS.filesystems.NODEFS, {root: path.join(root_dir, 'tests')}, '/test_dir');
     FS.chdir('/test_dir');
-    await pyodide.loadPackage(['micropip', 'pytest', 'pytz']);
+    await pyodide.loadPackage(['micropip', 'pytest']);
     // language=python
     errcode = await pyodide.runPythonAsync(`
 import micropip
@@ -101,6 +101,7 @@ await micropip.install([
     'hypothesis',
     'pytest-speed',
     'pytest-mock',
+    'tzdata',
     'file:${wheel_path}',
     'typing-extensions',
 ])

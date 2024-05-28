@@ -1,3 +1,4 @@
+backports.zoneinfo==0.2.1;python_version<"3.9"
 coverage==7.5.0
 dirty-equals==0.7.1.post0
 hypothesis==6.100.2
@@ -16,7 +17,7 @@ pytest-speed==0.3.5
 pytest-mock==3.14.0
 pytest-pretty==1.2.0
 pytest-timeout==2.3.1
-pytz==2024.1
 # numpy doesn't offer prebuilt wheels for all versions and platforms we test in CI e.g. aarch64 musllinux
 numpy==1.26.2; python_version >= "3.9" and python_version < "3.13" and implementation_name == "cpython" and platform_machine == 'x86_64'
 exceptiongroup==1.1; python_version < "3.11"
+tzdata==2024.1
