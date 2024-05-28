@@ -327,7 +327,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         mode: Literal['json', 'python'] | str = 'python',
         include: IncEx = None,
         exclude: IncEx = None,
-        context: dict[str, Any] | None = None,
+        context: Any | None = None,
         by_alias: bool = False,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
@@ -380,7 +380,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         indent: int | None = None,
         include: IncEx = None,
         exclude: IncEx = None,
-        context: dict[str, Any] | None = None,
+        context: Any | None = None,
         by_alias: bool = False,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
@@ -545,7 +545,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         *,
         strict: bool | None = None,
         from_attributes: bool | None = None,
-        context: dict[str, Any] | None = None,
+        context: Any | None = None,
     ) -> Self:
         """Validate a pydantic model instance.
 
@@ -573,7 +573,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         json_data: str | bytes | bytearray,
         *,
         strict: bool | None = None,
-        context: dict[str, Any] | None = None,
+        context: Any | None = None,
     ) -> Self:
         """Usage docs: https://docs.pydantic.dev/2.7/concepts/json/#json-parsing
 
@@ -600,7 +600,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         obj: Any,
         *,
         strict: bool | None = None,
-        context: dict[str, Any] | None = None,
+        context: Any | None = None,
     ) -> Self:
         """Validate the given object contains string data against the Pydantic model.
 
