@@ -1476,10 +1476,10 @@ except ValidationError as exc:
 ```
 
 !!! note
-    You may encounter this error when there is a naming collision in your model between a field name and its type. More specifically, this error is likely to be thrown when the default value of that field is ```None```.
+    You may encounter this error when there is a naming collision in your model between a field name and its type. More specifically, this error is likely to be thrown when the default value of that field is `None`.
 
-    For example, the following would yield the ```none_required``` validation error since the field  ```int``` is set to a default value of ```None``` and has the exact same name as its type, so both are interpreted to be ```None```:
-    ```
+    For example, the following would yield the `none_required` validation error since the field  `int` is set to a default value of `None` and has the exact same name as its type, so both are interpreted to be `None`:
+    ```py
     class M1(BaseModel):
         int: Optional[int] = None
 
