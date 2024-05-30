@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import datetime
+import operator
 import re
 from collections import deque
+from collections.abc import Container
 from dataclasses import dataclass
 from decimal import Decimal
 from functools import cached_property, partial
@@ -194,6 +196,22 @@ class Validate(Generic[_InT, _OutT]):
     def predicate(self: Validate[_InT, _NewOutT], func: Callable[[_NewOutT], bool]) -> Validate[_InT, _NewOutT]:
         """Constrain a value to meet a certain predicate."""
         return self.constrain(annotated_types.Predicate(func))
+
+    def not_in(self: Validate[_InT, _OutT], values: Container[_OutT]) -> Validate[_InT, _OutT]:
+        """Constrain a value to not be in a certain set."""
+        return self.predicate(partial(operator.__contains__, values))
+
+    def in_(self: Validate[_InT, _OutT], values: Container[_OutT]) -> Validate[_InT, _OutT]:
+        """Constrain a value to be in a certain set."""
+        return self.predicate(partial(operator.__contains__, values))
+
+    def not_eq(self: Validate[_InT, _OutT], value: _OutT) -> Validate[_InT, _OutT]:
+        """Constrain a value to not be equal to a certain value."""
+        return self.predicate(partial(operator.__ne__, value))
+
+    def eq(self: Validate[_InT, _OutT], value: _OutT) -> Validate[_InT, _OutT]:
+        """Constrain a value to be equal to a certain value."""
+        return self.predicate(partial(operator.__eq__, value))
 
     # timezone methods
     @property
