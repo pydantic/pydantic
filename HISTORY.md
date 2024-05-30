@@ -12,9 +12,9 @@
 
 * Replace `__spec__.parent` with `__package__` by @hramezani in [#9331](https://github.com/pydantic/pydantic/pull/9331)
 * Fix validation of `int`s with leading unary minus by @RajatRajdeep in [pydantic/pydantic-core#1291](https://github.com/pydantic/pydantic-core/pull/1291)
-* Fix `str` subclass validation for enums by @sydney-runkle in [pydantic/pydantic-core#1273]https://github.com/pydantic/pydantic-core/pull/1273
-* Support `BigInt`s in `Literal`s and `Enum`s by @samuelcolvin in [pydantic/pydantic-core#1297]https://github.com/pydantic/pydantic-core/pull/1297
-* Fix: uuid - allow `str` subclass as input by @davidhewitt in [pydantic/pydantic-core#1296]https://github.com/pydantic/pydantic-core/pull/1296
+* Fix `str` subclass validation for enums by @sydney-runkle in [pydantic/pydantic-core#1273](https://github.com/pydantic/pydantic-core/pull/1273)
+* Support `BigInt`s in `Literal`s and `Enum`s by @samuelcolvin in [pydantic/pydantic-core#1297](https://github.com/pydantic/pydantic-core/pull/1297)
+* Fix: uuid - allow `str` subclass as input by @davidhewitt in [pydantic/pydantic-core#1296](https://github.com/pydantic/pydantic-core/pull/1296)
 
 ## v2.7.1 (2024-04-23)
 
