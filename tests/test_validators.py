@@ -2554,6 +2554,7 @@ def test_validator_allow_reuse_different_field_4():
     assert Model(x=1, y=2).model_dump() == {'x': 2, 'y': 3}
 
 
+@pytest.mark.filterwarnings('ignore:Pydantic V1 style `@root_validator` validators are deprecated.*:pydantic.warnings.PydanticDeprecatedSince20')
 def test_root_validator_allow_reuse_same_field():
     with pytest.warns(UserWarning, match='`root_val` overrides an existing Pydantic `@root_validator` decorator'):
 
