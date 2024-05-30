@@ -63,7 +63,7 @@ ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(LA)])
 ta.validate_python(dt.datetime(2023, 1, 1, 0, 0, tzinfo=pytz.timezone(LA)))
 ```
 
-We can also create UTC offset constraints in a similar way.  Assuming we have a `lower_bound` and an `upper_bound`, we can cretae a custom validator to ensure our `datetime` has a UTC offset that is inclusive within the boundary we define:
+We can also create UTC offset constraints in a similar way.  Assuming we have a `lower_bound` and an `upper_bound`, we can create a custom validator to ensure our `datetime` has a UTC offset that is inclusive within the boundary we define:
 
 ```py
 import datetime as dt
@@ -71,7 +71,6 @@ from dataclasses import dataclass
 from functools import partial
 from typing import Any, Callable
 
-import pytest
 import pytz
 from pydantic_core import CoreSchema, core_schema
 from typing_extensions import Annotated
@@ -128,7 +127,6 @@ def test_utcoffset_validator_example_pattern() -> None:
     LA = 'America/Los_Angeles'
 
     # LA has a utcoffset of -7, which falls in the bounds of -10,10
-    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(-10,10)])
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(-10, 10)])
     ta.validate_python(dt.datetime.now(pytz.timezone(LA)))
-
 ```
