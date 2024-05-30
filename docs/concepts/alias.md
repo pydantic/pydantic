@@ -92,15 +92,16 @@ print(user)
 
 You can use the `alias_generator` parameter of [`Config`][pydantic.config.ConfigDict.alias_generator] to specify
 a callable (or group of callables, via `AliasGenerator`) that will generate aliases for all fields in a model.
-This is useful if you want to use a consistent naming convention for all fields in a model, but doin't
+This is useful if you want to use a consistent naming convention for all fields in a model, but do not
 want to specify the alias for each field individually.
 
-Note:
+!!! note
     Pydantic offers three built-in alias generators that you can use out of the box:
 
-    * [`to_pascal`][pydantic.alias_generators.to_pascal]
-    * [`to_camel`][pydantic.alias_generators.to_camel]
-    * [`to_snake`][pydantic.alias_generators.to_snake]
+    [`to_pascal`][pydantic.alias_generators.to_pascal]<br>
+    [`to_camel`][pydantic.alias_generators.to_camel]<br>
+    [`to_snake`][pydantic.alias_generators.to_snake]<br>
+
 
 ### Using a callable
 
