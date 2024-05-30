@@ -95,14 +95,13 @@ a callable (or group of callables, via `AliasGenerator`) that will generate alia
 This is useful if you want to use a consistent naming convention for all fields in a model, but do not
 want to specify the alias for each field individually.
 
-??? api "API Documentation"
-   
-   Note:
-       Pydantic offers three built-in alias generators that you can use out of the box:
+!!! note
+    Pydantic offers three built-in alias generators that you can use out of the box:
 
     [`to_pascal`][pydantic.alias_generators.to_pascal]<br>
     [`to_camel`][pydantic.alias_generators.to_camel]<br>
     [`to_snake`][pydantic.alias_generators.to_snake]<br>
+
 
 ### Using a callable
 
