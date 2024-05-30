@@ -3289,14 +3289,15 @@ In the <code>'last_name'</code> field, we are using the alias <code>'names'</cod
 <h2 id="using-alias-generators">Using alias generators<a class="headerlink" href="#using-alias-generators" title="Permanent link">&para;</a></h2>
 <p>You can use the <code>alias_generator</code> parameter of <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.alias_generator"><code>Config</code></a> to specify
 a callable (or group of callables, via <code>AliasGenerator</code>) that will generate aliases for all fields in a model.
-This is useful if you want to use a consistent naming convention for all fields in a model, but doin't
+This is useful if you want to use a consistent naming convention for all fields in a model, but do not
 want to specify the alias for each field individually.</p>
-<p>Note:
-    Pydantic offers three built-in alias generators that you can use out of the box:</p>
-<div class="language-text highlight"><pre><span></span><code>* [`to_pascal`][pydantic.alias_generators.to_pascal]
-* [`to_camel`][pydantic.alias_generators.to_camel]
-* [`to_snake`][pydantic.alias_generators.to_snake]
-</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Pydantic offers three built-in alias generators that you can use out of the box:</p>
+<p><a class="autorefs autorefs-internal" href="../../api/config/#pydantic.alias_generators.to_pascal"><code>to_pascal</code></a><br>
+<a class="autorefs autorefs-internal" href="../../api/config/#pydantic.alias_generators.to_camel"><code>to_camel</code></a><br>
+<a class="autorefs autorefs-internal" href="../../api/config/#pydantic.alias_generators.to_snake"><code>to_snake</code></a><br></p>
+</div>
 <h3 id="using-a-callable">Using a callable<a class="headerlink" href="#using-a-callable" title="Permanent link">&para;</a></h3>
 <p>Here's a basic example using a callable:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
