@@ -3123,6 +3123,71 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 <span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Annotated</span><span class="p">[</span><span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">,</span> <span class="n">MyDatetimeValidator</span><span class="p">(</span><span class="n">LA</span><span class="p">)])</span>
 <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2023</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="n">LA</span><span class="p">)))</span>
 </code></pre></div>
+<p>We can also create UTC offset constraints in a similar way.  Assuming we have a <code>lower_bound</code> and an <code>upper_bound</code>, we can create a custom validator to ensure our <code>datetime</code> has a UTC offset that is inclusive within the boundary we define:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">datetime</span> <span class="k">as</span> <span class="nn">dt</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span>
+
+<span class="kn">import</span> <span class="nn">pytz</span>
+<span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">CoreSchema</span><span class="p">,</span> <span class="n">core_schema</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">GetCoreSchemaHandler</span><span class="p">,</span> <span class="n">TypeAdapter</span>
+
+
+<span class="k">def</span> <span class="nf">test_utcoffset_validator_example_pattern</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;test that utcoffset custom validator pattern works as explained&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">my_validator_function</span><span class="p">(</span>
+        <span class="n">lower_bound</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">upper_bound</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">value</span><span class="p">:</span> <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">,</span>
+        <span class="n">handler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;validate and test bounds&quot;&quot;&quot;</span>
+        <span class="c1"># validate utcoffset exists</span>
+        <span class="k">assert</span> <span class="n">value</span><span class="o">.</span><span class="n">utcoffset</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+        <span class="c1"># validate bound range</span>
+        <span class="k">assert</span> <span class="n">lower_bound</span> <span class="o">&lt;=</span> <span class="n">upper_bound</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="c1"># validate value is in range</span>
+        <span class="n">hours_offset</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">utcoffset</span><span class="p">()</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="o">/</span> <span class="mi">3600</span>
+
+        <span class="k">assert</span> <span class="n">hours_offset</span> <span class="o">&gt;=</span> <span class="n">lower_bound</span>
+        <span class="k">assert</span> <span class="n">hours_offset</span> <span class="o">&lt;=</span> <span class="n">upper_bound</span>
+
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">class</span> <span class="nc">MyDatetimeValidator</span><span class="p">:</span>
+        <span class="n">lower_bound</span><span class="p">:</span> <span class="nb">int</span>
+        <span class="n">upper_bound</span><span class="p">:</span> <span class="nb">int</span>
+
+        <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+            <span class="n">handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CoreSchema</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_wrap_validator_function</span><span class="p">(</span>
+                <span class="n">partial</span><span class="p">(</span>
+                    <span class="n">my_validator_function</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">lower_bound</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">upper_bound</span><span class="p">,</span>
+                <span class="p">),</span>
+                <span class="n">handler</span><span class="p">(</span><span class="n">source_type</span><span class="p">),</span>
+            <span class="p">)</span>
+
+    <span class="c1"># We can then use the validator like so</span>
+    <span class="n">LA</span> <span class="o">=</span> <span class="s1">&#39;America/Los_Angeles&#39;</span>
+
+    <span class="c1"># LA has a utcoffset of -7, which falls in the bounds of -10,10</span>
+    <span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Annotated</span><span class="p">[</span><span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">,</span> <span class="n">MyDatetimeValidator</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">)])</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="n">LA</span><span class="p">)))</span>
+</code></pre></div>
 
 
 
