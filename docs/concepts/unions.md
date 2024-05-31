@@ -412,11 +412,10 @@ except ValidationError as e:
 ```
 
 !!! tip
-    If you want to validate data against a union, and solely a union, you can use pydantic's [`TypeAdapter`](../concepts/type_adapter.md#required-fields) construct 
-    instead of inheriting from the standard `BaseModel`.
+    If you want to validate data against a union, and solely a union, you can use pydantic's [`TypeAdapter`](../concepts/type_adapter.md#required-fields) construct instead of inheriting from the standard `BaseModel`.
 
     In the context of the previous example, we have the following:
-    
+
     ```python test="skip"
     type_adapter = TypeAdapter(Pet)
 
