@@ -1,4 +1,5 @@
 import collections.abc
+import json
 import os
 import pickle
 import sys
@@ -676,11 +677,18 @@ def test_pretty_print(capfd):
         metadata={'schema_type': 'any', 'test_id': '42'},
         serialization=core_schema.simple_ser_schema('bool'),
     )
-    expected_meta_info = "{\n    'type': 'any',\n    'ref': 'meta_schema',\n    'metadata': {'schema_type': 'any', 'test_id': '42'},\n    'serialization': {'type': 'bool'}\n}\n"
+
+    expected_meta_info = {
+        'type': 'any',
+        'ref': 'meta_schema',
+        'metadata': {'schema_type': 'any', 'test_id': '42'},
+        'serialization': {'type': 'bool'},
+    }
 
     pretty_print_core_schema(schema=schema, include_metadata=True)
     content = capfd.readouterr()
-    assert content.out == expected_meta_info
+    content_as_json = json.loads(content.out.replace("'", '"'))
+    assert content_as_json == expected_meta_info
 
     # Excluded metadata (Model Schema)
     class TestModel:
