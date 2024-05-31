@@ -529,15 +529,11 @@ def _apply_constraint(  # noqa: C901
                 import inspect
 
                 try:
-                    return (
-                        '`'
-                        + ''.join(
-                            ''.join(inspect.getsource(func).strip().removesuffix(')').split('lambda ')[1:]).split(':')[
-                                1:
-                            ]
-                        ).strip()
-                        + '`'
-                    )
+                    # remove ')' suffix, can use removesuffix once we drop 3.8
+                    source = inspect.getsource(func).strip()
+                    if source.endswith(')'):
+                        source = source[:-1]
+                    return '`' + ''.join(''.join(source.split('lambda ')[1:]).split(':')[1:]).strip() + '`'
                 except OSError:
                     # stringified annotations
                     return 'lambda'
