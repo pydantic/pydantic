@@ -411,6 +411,18 @@ except ValidationError as e:
     """
 ```
 
+!!! tip
+    If you want to run nested discriminated unions outside of a base model (e.g. without using the `Model` base model in the above example), you can use [TypeAdapter](../concepts/type_adapter.md#required-fields).
+
+    taking on the previous example, we have the following:
+    ```python
+    type_adapter = TypeAdapter(Pet)
+
+    m = type_adapter(**{'pet_type': 'cat', 'color': 'black', 'black_name': 'felix'})
+    print(m)
+    #> BlackCat(pet_type='cat', color='black', black_name='felix')
+    ```
+
 ## Union Validation Errors
 
 When `Union` validation fails, error messages can be quite verbose, as they will produce validation errors for
