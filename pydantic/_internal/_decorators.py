@@ -518,7 +518,7 @@ def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) 
         # `inspect.signature` might not be able to infer a signature, e.g. with C objects.
         # In this case, we assume no info argument is present:
         return False
-    n_positional = count_positional_params(sig)
+    n_positional = count_positional_required_params(sig)
     if mode == 'wrap':
         if n_positional == 3:
             return True
@@ -564,7 +564,7 @@ def inspect_field_serializer(
     first = next(iter(sig.parameters.values()), None)
     is_field_serializer = first is not None and first.name == 'self'
 
-    n_positional = count_positional_params(sig)
+    n_positional = count_positional_required_params(sig)
     if is_field_serializer:
         # -1 to correct for self parameter
         info_arg = _serializer_info_arg(mode, n_positional - 1)
@@ -603,7 +603,7 @@ def inspect_annotated_serializer(serializer: Callable[..., Any], mode: Literal['
         # `inspect.signature` might not be able to infer a signature, e.g. with C objects.
         # In this case, we assume no info argument is present:
         return False
-    info_arg = _serializer_info_arg(mode, count_positional_params(sig))
+    info_arg = _serializer_info_arg(mode, count_positional_required_params(sig))
     if info_arg is None:
         raise PydanticUserError(
             f'Unrecognized field_serializer function signature for {serializer} with `mode={mode}`:{sig}',
@@ -631,7 +631,7 @@ def inspect_model_serializer(serializer: Callable[..., Any], mode: Literal['plai
         )
 
     sig = signature(serializer)
-    info_arg = _serializer_info_arg(mode, count_positional_params(sig))
+    info_arg = _serializer_info_arg(mode, count_positional_required_params(sig))
     if info_arg is None:
         raise PydanticUserError(
             f'Unrecognized model_serializer function signature for {serializer} with `mode={mode}`:{sig}',
@@ -777,11 +777,11 @@ def get_function_return_type(
         return explicit_return_type
 
 
-def count_positional_params(sig: Signature) -> int:
+def count_positional_required_params(sig: Signature) -> int:
     """Get the number of positional (required) arguments of a signature.
 
     This function should only be used to inspect signatures of validation and serialization functions.
-    The first argument (the value being serialized or validated) is counted as a positional argument
+    The first argument (the value being serialized or validated) is counted as a required argument
     even if a default value exists.
 
     Returns:
