@@ -70,3 +70,65 @@ def test_tzinfo_validator_example_pattern() -> None:
     ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(LA)])
     with pytest.raises(Exception):
         ta.validate_python(dt.datetime.now())
+
+
+def test_utcoffset_validator_example_pattern() -> None:
+    """test that utcoffset custom validator pattern works as explained"""
+
+    def my_validator_function(
+        lower_bound: int,
+        upper_bound: int,
+        value: dt.datetime,
+        handler: Callable,
+    ):
+        """validate and test bounds"""
+        # validate utcoffset exists
+        assert value.utcoffset() is not None
+
+        # validate bound range
+        assert lower_bound <= upper_bound
+
+        result = handler(value)
+
+        # validate value is in range
+        hours_offset = value.utcoffset().total_seconds() / 3600
+
+        assert hours_offset >= lower_bound
+        assert hours_offset <= upper_bound
+
+        return result
+
+    @dataclass(frozen=True)
+    class MyDatetimeValidator:
+        lower_bound: int
+        upper_bound: int
+
+        def __get_pydantic_core_schema__(
+            self,
+            source_type: Any,
+            handler: GetCoreSchemaHandler,
+        ) -> CoreSchema:
+            return core_schema.no_info_wrap_validator_function(
+                partial(
+                    my_validator_function,
+                    self.lower_bound,
+                    self.upper_bound,
+                ),
+                handler(source_type),
+            )
+
+    LA = 'America/Los_Angeles'
+
+    # test valid bound passing
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(-10, 10)])
+    ta.validate_python(dt.datetime.now(pytz.timezone(LA)))
+
+    # test valid bound failing - missing TZ
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(-12, 12)])
+    with pytest.raises(Exception):
+        ta.validate_python(dt.datetime.now())
+
+    # test invalid bound
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(0, 4)])
+    with pytest.raises(Exception):
+        ta.validate_python(dt.datetime.now(pytz.timezone(LA)))
