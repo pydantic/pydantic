@@ -1,7 +1,7 @@
 """Tests for the experimental transform module."""
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Union
 
 import pytest
 from typing_extensions import Annotated
@@ -102,7 +102,7 @@ def test_predicates() -> None:
     'model, expected_val_schema, expected_ser_schema',
     [
         (
-            Annotated[int | str, parse() | parse(str)],
+            Annotated[Union[int, str], parse() | parse(str)],
             {'anyOf': [{'type': 'integer'}, {'type': 'string'}]},
             {'anyOf': [{'type': 'integer'}, {'type': 'string'}]},
         ),
