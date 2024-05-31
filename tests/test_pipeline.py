@@ -1,13 +1,17 @@
 """Tests for the experimental transform module."""
 from __future__ import annotations
 
+import warnings
 from typing import Any, List, Union
 
 import pytest
 from typing_extensions import Annotated
 
-from pydantic import TypeAdapter, ValidationError
-from pydantic.experimental.pipeline import parse
+from pydantic import PydanticExperimentalWarning, TypeAdapter, ValidationError
+
+with warnings.catch_warnings():
+    warnings.filterwarnings('ignore', category=PydanticExperimentalWarning)
+    from pydantic.experimental.pipeline import parse
 
 
 @pytest.mark.parametrize('potato_variation', ['potato', ' potato ', ' potato', 'potato ', ' POTATO ', ' PoTatO '])
