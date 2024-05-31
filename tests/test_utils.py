@@ -670,7 +670,7 @@ def test_handle_call_schema():
 
 
 def test_pretty_print(capfd):
-    # Included metadata
+    # 1. Included metadata
     schema = core_schema.AnySchema(
         type='any',
         ref='meta_schema',
@@ -685,12 +685,52 @@ def test_pretty_print(capfd):
         'serialization': {'type': 'bool'},
     }
 
+    # Given CI/CD formatting differences, this test just checks that the data produced is the same.
     pretty_print_core_schema(schema=schema, include_metadata=True)
     content = capfd.readouterr()
     content_as_json = json.loads(content.out.replace("'", '"'))
     assert content_as_json == expected_meta_info
 
-    # Excluded metadata (Model Schema)
+    # 2. Strip meta_data (ModelFields Schema)
+    schema = core_schema.model_fields_schema(
+        ref='meta_schema',
+        metadata={'schema_type': 'model', 'test_id': '43'},
+        computed_fields=[
+            core_schema.computed_field(
+                property_name='TestModel',
+                return_schema=core_schema.model_fields_schema(
+                    fields={'a': core_schema.model_field(core_schema.str_schema())},
+                ),
+                alias='comp_field_1',
+                metadata={'comp_field_key': 'comp_field_data'},
+            )
+        ],
+        fields={'a': core_schema.model_field(core_schema.str_schema())},
+    )
+    expected_stripped_fields = {
+        'type': 'model-fields',
+        'fields': {'a': {'type': 'model-field', 'schema': {'type': 'str'}}},
+        'computed_fields': [
+            {
+                'type': 'computed-field',
+                'property_name': 'TestModel',
+                'return_schema': {
+                    'type': 'model-fields',
+                    'fields': {'a': {'type': 'model-field', 'schema': {'type': 'str'}}},
+                },
+                'alias': 'comp_field_1',
+                'metadata': {'comp_field_key': 'comp_field_data'},
+            }
+        ],
+        'ref': 'meta_schema',
+    }
+
+    pretty_print_core_schema(schema=schema, include_metadata=False)
+    content = capfd.readouterr()
+    content_as_json = json.loads(content.out.replace("'", '"'))
+    assert content_as_json == expected_stripped_fields
+
+    # 3. Excluded metadata (Model Schema)
     class TestModel:
         __slots__ = (
             '__dict__',
@@ -710,30 +750,17 @@ def test_pretty_print(capfd):
             fields={'a': core_schema.model_field(core_schema.str_schema())},
         ),
     )
-    expected_stripped_info = "{\n    'type': 'model',\n    'cls': <class 'tests.test_utils.test_pretty_print.<locals>.TestModel'>,\n    'schema': {\n        'type': 'model-fields',\n        'fields': {'a': {'type': 'model-field', 'schema': {'type': 'str'}}}\n    },\n    'config': {'str_max_length': 5},\n    'ref': 'meta_schema'\n}\n"
+    expected_cls_stripped_info = {
+        'type': 'model',
+        'schema': {'type': 'model-fields', 'fields': {'a': {'type': 'model-field', 'schema': {'type': 'str'}}}},
+        'config': {'str_max_length': 5},
+        'ref': 'meta_schema',
+    }
 
     pretty_print_core_schema(schema=schema, include_metadata=False)
     content = capfd.readouterr()
-    assert content.out == expected_stripped_info
-
-    # Strip meta_data (ModelFields Schema)
-    schema = core_schema.model_fields_schema(
-        ref='meta_schema',
-        metadata={'schema_type': 'model', 'test_id': '43'},
-        computed_fields=[
-            core_schema.computed_field(
-                property_name='TestModel',
-                return_schema=core_schema.model_fields_schema(
-                    fields={'a': core_schema.model_field(core_schema.str_schema())},
-                ),
-                alias='comp_field_1',
-                metadata={'comp_field_key': 'comp_field_data'},
-            )
-        ],
-        fields={'a': core_schema.model_field(core_schema.str_schema())},
-    )
-    expected_stripped_fields_info = "{\n    'type': 'model-fields',\n    'fields': {'a': {'type': 'model-field', 'schema': {'type': 'str'}}},\n    'computed_fields': [\n        {\n            'type': 'computed-field',\n            'property_name': 'TestModel',\n            'return_schema': {\n                'type': 'model-fields',\n                'fields': {\n                    'a': {'type': 'model-field', 'schema': {'type': 'str'}}\n                }\n            },\n            'alias': 'comp_field_1',\n            'metadata': {'comp_field_key': 'comp_field_data'}\n        }\n    ],\n    'ref': 'meta_schema'\n}\n"
-
-    pretty_print_core_schema(schema=schema, include_metadata=False)
-    content = capfd.readouterr()
-    assert content.out == expected_stripped_fields_info
+    # Remove cls due to string formatting.
+    cls_substring = "'cls': <class 'tests.test_utils.test_pretty_print.<locals>.TestModel'>,"
+    new_content_out = content.out.replace(cls_substring, '')
+    content_as_json = json.loads(new_content_out.replace("'", '"'))
+    assert content_as_json == expected_cls_stripped_info
