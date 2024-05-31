@@ -416,7 +416,7 @@ except ValidationError as e:
 
     In the context of the previous example, we have the following:
 
-    ```python test="skip"
+    ```python lint="skip" test="skip"
     type_adapter = TypeAdapter(Pet)
 
     pet = type_adapter.validate_python(
