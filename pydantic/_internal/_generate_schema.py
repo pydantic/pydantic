@@ -539,7 +539,7 @@ class GenerateSchema:
             )
             config_wrapper = ConfigWrapper(cls.model_config, check=False)
             core_config = config_wrapper.core_config(cls)
-            title = self._get_class_title_from_config(cls, config_wrapper)
+            title = self._get_model_title_from_config(cls, config_wrapper)
             metadata = build_metadata_dict(js_functions=[partial(modify_model_json_schema, cls=cls, title=title)])
 
             model_validators = decorators.model_validators.values()
@@ -618,21 +618,21 @@ class GenerateSchema:
                 return core_schema.definition_reference_schema(model_ref)
 
     @staticmethod
-    def _get_class_title_from_config(
+    def _get_model_title_from_config(
         cls: type[BaseModel | StandardDataclass], config_wrapper: ConfigWrapper | None = None
     ) -> str | None:
-        """Get the title of a class if `class_title_generator` or `title` are set in the config, else return None"""
+        """Get the title of a model if `model_title_generator` or `title` are set in the config, else return None"""
         if config_wrapper is None:
             return None
 
         if config_wrapper.title:
             return config_wrapper.title
 
-        class_title_generator = config_wrapper.class_title_generator
-        if class_title_generator:
-            title = class_title_generator(cls.__name__)
+        model_title_generator = config_wrapper.model_title_generator
+        if model_title_generator:
+            title = model_title_generator(cls.__name__)
             if not isinstance(title, str):
-                raise TypeError(f'class_title_generator {class_title_generator} must return str, not {title.__class__}')
+                raise TypeError(f'model_title_generator {model_title_generator} must return str, not {title.__class__}')
             return title
 
         return None
@@ -1337,7 +1337,7 @@ class GenerateSchema:
                         field_name, field_info, decorators, required=required
                     )
 
-                title = self._get_class_title_from_config(typed_dict_cls, ConfigWrapper(config))
+                title = self._get_model_title_from_config(typed_dict_cls, ConfigWrapper(config))
                 metadata = build_metadata_dict(
                     js_functions=[partial(modify_model_json_schema, cls=typed_dict_cls, title=title)],
                     typed_dict_cls=typed_dict_cls,
@@ -1639,7 +1639,7 @@ class GenerateSchema:
                 model_validators = decorators.model_validators.values()
                 inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
 
-                title = self._get_class_title_from_config(dataclass, ConfigWrapper(config))
+                title = self._get_model_title_from_config(dataclass, ConfigWrapper(config))
                 metadata = build_metadata_dict(
                     js_functions=[partial(modify_model_json_schema, cls=dataclass, title=title)]
                 )

@@ -45,28 +45,28 @@ TITLE_GENERATORS: List[Callable[[str], str]] = [
 ]
 
 
-@pytest.mark.parametrize('class_title_generator', TITLE_GENERATORS)
-def test_model_class_title_generator(class_title_generator):
+@pytest.mark.parametrize('model_title_generator', TITLE_GENERATORS)
+def test_model_model_title_generator(model_title_generator):
     class Model(BaseModel):
-        model_config = ConfigDict(class_title_generator=class_title_generator)
+        model_config = ConfigDict(model_title_generator=model_title_generator)
 
     assert Model.model_json_schema() == {
         'properties': {},
-        'title': class_title_generator(Model.__name__),
+        'title': model_title_generator(Model.__name__),
         'type': 'object',
     }
 
 
-@pytest.mark.parametrize('class_title_generator', TITLE_GENERATORS)
-def test_class_title_generator_in_submodel(class_title_generator):
+@pytest.mark.parametrize('model_title_generator', TITLE_GENERATORS)
+def test_model_title_generator_in_submodel(model_title_generator):
     class SubModel(BaseModel):
-        model_config = ConfigDict(class_title_generator=class_title_generator)
+        model_config = ConfigDict(model_title_generator=model_title_generator)
 
     class Model(BaseModel):
         sub: SubModel
 
     assert Model.model_json_schema() == {
-        '$defs': {'SubModel': {'properties': {}, 'title': class_title_generator(SubModel.__name__), 'type': 'object'}},
+        '$defs': {'SubModel': {'properties': {}, 'title': model_title_generator(SubModel.__name__), 'type': 'object'}},
         'properties': {'sub': {'$ref': '#/$defs/SubModel'}},
         'required': ['sub'],
         'title': 'Model',
@@ -172,16 +172,16 @@ def test_field_title_priority_over_field_title_generator():
     }
 
 
-@pytest.mark.parametrize('class_title_generator', TITLE_GENERATORS)
-def test_dataclass_class_title_generator(class_title_generator):
-    @pydantic.dataclasses.dataclass(config=ConfigDict(class_title_generator=class_title_generator))
+@pytest.mark.parametrize('model_title_generator', TITLE_GENERATORS)
+def test_dataclass_model_title_generator(model_title_generator):
+    @pydantic.dataclasses.dataclass(config=ConfigDict(model_title_generator=model_title_generator))
     class MyDataclass:
         field_a: int
 
     assert model_json_schema(MyDataclass) == {
         'properties': {'field_a': {'title': 'Field A', 'type': 'integer'}},
         'required': ['field_a'],
-        'title': class_title_generator(MyDataclass.__name__),
+        'title': model_title_generator(MyDataclass.__name__),
         'type': 'object',
     }
 
@@ -224,15 +224,15 @@ def test_dataclass_config_field_title_generator(field_title_generator):
     }
 
 
-@pytest.mark.parametrize('class_title_generator', TITLE_GENERATORS)
-def test_typeddict_class_title_generator(class_title_generator, TypedDict):
+@pytest.mark.parametrize('model_title_generator', TITLE_GENERATORS)
+def test_typeddict_model_title_generator(model_title_generator, TypedDict):
     class MyTypedDict(TypedDict):
-        __pydantic_config__ = ConfigDict(class_title_generator=class_title_generator)
+        __pydantic_config__ = ConfigDict(model_title_generator=model_title_generator)
         pass
 
     assert TypeAdapter(MyTypedDict).json_schema() == {
         'properties': {},
-        'title': class_title_generator(MyTypedDict.__name__),
+        'title': model_title_generator(MyTypedDict.__name__),
         'type': 'object',
     }
 
@@ -360,7 +360,7 @@ def test_field_title_precedence_over_generators(TypedDict, Annotated):
 
 def test_class_title_precedence_over_generator():
     class Model(BaseModel):
-        model_config = ConfigDict(title='MyTitle', class_title_generator=lambda c: c.upper())
+        model_config = ConfigDict(title='MyTitle', model_title_generator=lambda c: c.upper())
 
     assert Model.model_json_schema() == {
         'properties': {},
@@ -368,7 +368,7 @@ def test_class_title_precedence_over_generator():
         'type': 'object',
     }
 
-    @pydantic.dataclasses.dataclass(config=ConfigDict(title='MyTitle', class_title_generator=lambda c: c.upper()))
+    @pydantic.dataclasses.dataclass(config=ConfigDict(title='MyTitle', model_title_generator=lambda c: c.upper()))
     class MyDataclass:
         pass
 
@@ -380,28 +380,28 @@ def test_class_title_precedence_over_generator():
 
 
 @pytest.mark.parametrize('invalid_return_value', (1, 2, 3, tuple(), list(), object()))
-def test_class_title_generator_returns_invalid_type(invalid_return_value, TypedDict):
+def test_model_title_generator_returns_invalid_type(invalid_return_value, TypedDict):
     with pytest.raises(
-        TypeError, match=f'class_title_generator .* must return str, not {invalid_return_value.__class__}'
+        TypeError, match=f'model_title_generator .* must return str, not {invalid_return_value.__class__}'
     ):
 
         class Model(BaseModel):
-            model_config = ConfigDict(class_title_generator=lambda m: invalid_return_value)
+            model_config = ConfigDict(model_title_generator=lambda m: invalid_return_value)
 
     with pytest.raises(
-        TypeError, match=f'class_title_generator .* must return str, not {invalid_return_value.__class__}'
+        TypeError, match=f'model_title_generator .* must return str, not {invalid_return_value.__class__}'
     ):
 
-        @pydantic.dataclasses.dataclass(config=ConfigDict(class_title_generator=lambda m: invalid_return_value))
+        @pydantic.dataclasses.dataclass(config=ConfigDict(model_title_generator=lambda m: invalid_return_value))
         class MyDataclass:
             pass
 
     with pytest.raises(
-        TypeError, match=f'class_title_generator .* must return str, not {invalid_return_value.__class__}'
+        TypeError, match=f'model_title_generator .* must return str, not {invalid_return_value.__class__}'
     ):
 
         class MyTypedDict(TypedDict):
-            __pydantic_config__ = ConfigDict(class_title_generator=lambda m: invalid_return_value)
+            __pydantic_config__ = ConfigDict(model_title_generator=lambda m: invalid_return_value)
             pass
 
         TypeAdapter(MyTypedDict)

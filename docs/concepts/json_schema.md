@@ -536,7 +536,7 @@ Specifically, the following config options are relevant:
 * [`schema_generator`][pydantic.config.ConfigDict.schema_generator]
 * [`json_schema_mode_override`][pydantic.config.ConfigDict.json_schema_mode_override]
 * [`field_title_generator`][pydantic.config.ConfigDict.field_title_generator]
-* [`class_title_generator`][pydantic.config.ConfigDict.class_title_generator]
+* [`model_title_generator`][pydantic.config.ConfigDict.model_title_generator]
 
 ### Using `json_schema_extra`
 
@@ -1090,7 +1090,7 @@ from pydantic import BaseModel, ConfigDict
 
 
 class Person(BaseModel):
-    model_config = ConfigDict(field_title_generator=lambda m: m.upper())
+    model_config = ConfigDict(field_title_generator=str.upper)
     name: str
     age: int
 
@@ -1118,9 +1118,9 @@ print(json.dumps(Person.model_json_schema(), indent=2))
 """
 ```
 
-### Using `class_title_generator`
+### Using `model_title_generator`
 
-The `class_title_generator` config option is similar to the `field_title_generator` option, but it applies to the title of the class itself.
+The `model_title_generator` config option is similar to the `field_title_generator` option, but it applies to the title of the model itself.
 
 See the following example:
 
@@ -1135,7 +1135,7 @@ def make_title(field_name: str) -> str:
 
 
 class Person(BaseModel):
-    model_config = ConfigDict(class_title_generator=make_title)
+    model_config = ConfigDict(model_title_generator=make_title)
     name: str
     age: int
 
