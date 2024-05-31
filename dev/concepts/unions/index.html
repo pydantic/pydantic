@@ -3617,6 +3617,19 @@ You can do it by creating nested <code>Annotated</code> types, e.g.:</p>
 <span class="sd">      Field required [type=missing, input_value={&#39;pet_type&#39;: &#39;cat&#39;, &#39;color&#39;: &#39;black&#39;}, input_type=dict]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>If you want to validate data against a union, and solely a union, you can use pydantic's <a href="../type_adapter/#required-fields"><code>TypeAdapter</code></a> construct instead of inheriting from the standard <code>BaseModel</code>.</p>
+<p>In the context of the previous example, we have the following:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">type_adapter</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Pet</span><span class="p">)</span>
+
+<span class="n">pet</span> <span class="o">=</span> <span class="n">type_adapter</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+    <span class="p">{</span><span class="s1">&#39;pet_type&#39;</span><span class="p">:</span> <span class="s1">&#39;cat&#39;</span><span class="p">,</span> <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="s1">&#39;black_name&#39;</span><span class="p">:</span> <span class="s1">&#39;felix&#39;</span><span class="p">}</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">pet</span><span class="p">))</span>
+<span class="c1">#&gt; BlackCat(pet_type=&#39;cat&#39;, color=&#39;black&#39;, black_name=&#39;felix&#39;)</span>
+</code></pre></div>
+</div>
 <h2 id="union-validation-errors">Union Validation Errors<a class="headerlink" href="#union-validation-errors" title="Permanent link">&para;</a></h2>
 <p>When <code>Union</code> validation fails, error messages can be quite verbose, as they will produce validation errors for
 each case in the union.
