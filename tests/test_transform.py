@@ -1,6 +1,7 @@
 """Tests for the experimental transform module."""
+from __future__ import annotations
 
-from typing import Optional
+from typing import Any
 
 import pytest
 from typing_extensions import Annotated
@@ -38,7 +39,7 @@ def test_parse_str_with_pattern() -> None:
         ('ends_with', 'ato', 'potato', 'potato'),
     ],
 )
-def test_string_validator_valid(method: str, method_arg: Optional[str], input_string: str, expected_output: str):
+def test_string_validator_valid(method: str, method_arg: str | None, input_string: str, expected_output: str):
     # annotated metadata is equivalent to parse(str).str.method(method_arg)
     # ex: parse(str).str.contains('pot')
     annotated_metadata = getattr(parse(str).str, method)
@@ -95,3 +96,55 @@ def test_predicates() -> None:
     assert ta_str.validate_python('tomato') == 'tomato'
     with pytest.raises(ValidationError):
         ta_str.validate_python('potato')
+
+
+@pytest.mark.parametrize(
+    'model, expected_val_schema, expected_ser_schema',
+    [
+        (
+            Annotated[int | str, parse() | parse(str)],
+            {'anyOf': [{'type': 'integer'}, {'type': 'string'}]},
+            {'anyOf': [{'type': 'integer'}, {'type': 'string'}]},
+        ),
+        (
+            Annotated[int, parse() | parse(str).parse(int)],
+            {'anyOf': [{'type': 'integer'}, {'type': 'string'}]},
+            {'type': 'integer'},
+        ),
+        (
+            Annotated[int, parse() | parse(str).transform(int)],
+            {'anyOf': [{'type': 'integer'}, {'type': 'string'}]},
+            {'anyOf': [{'type': 'integer'}, {'type': 'string'}]},
+        ),
+        (
+            Annotated[int, parse() | parse(str).transform(int).parse(int)],
+            {'anyOf': [{'type': 'integer'}, {'type': 'string'}]},
+            {'type': 'integer'},
+        ),
+        (
+            Annotated[int, parse(int).gt(0).lt(100)],
+            {'type': 'integer', 'exclusiveMinimum': 0, 'exclusiveMaximum': 100},
+            {'type': 'integer', 'exclusiveMinimum': 0, 'exclusiveMaximum': 100},
+        ),
+        (
+            Annotated[int, parse(int).gt(0) | parse(int).lt(100)],
+            {'anyOf': [{'type': 'integer', 'exclusiveMinimum': 0}, {'type': 'integer', 'exclusiveMaximum': 100}]},
+            {'anyOf': [{'type': 'integer', 'exclusiveMinimum': 0}, {'type': 'integer', 'exclusiveMaximum': 100}]},
+        ),
+        (
+            Annotated[list[int], parse().len(0, 100)],
+            {'type': 'array', 'items': {'type': 'integer'}, 'maxItems': 100},
+            {'type': 'array', 'items': {'type': 'integer'}, 'maxItems': 100},
+        ),
+    ],
+)
+def test_json_schema(
+    model: type[Any], expected_val_schema: dict[str, Any], expected_ser_schema: dict[str, Any]
+) -> None:
+    ta = TypeAdapter(model)
+
+    schema = ta.json_schema(mode='validation')
+    assert schema == expected_val_schema
+
+    schema = ta.json_schema(mode='serialization')
+    assert schema == expected_ser_schema

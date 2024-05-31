@@ -165,6 +165,23 @@ class User(BaseModel):
 7. For recursive types you can use `parse_defer` to reference the type itself before it's defined.
 8. You can call `parse()` before or after other steps to do pre or post processing.
 
+##### Mapping from `BeforeValidator`, `AfterValidator` and `WrapValidator`
+
+The `parse` method is a more type-safe way to define `BeforeValidator`, `AfterValidator` and `WrapValidator`:
+
+```python
+# BeforeValidator
+Annotated[int, parse(str).str.strip().parse()]  # (1)!
+# AfterValidator
+Annotated[int, parse().transform(lambda x: x * 2)]  # (2)!
+# WrapValidator
+Annotated[int, parse(str).str.strip().parse().transform(lambda x: x * 2)]  # (3)!
+```
+
+1. Strip whitespace from a string before parsing it as an integer.
+2. Multiply an integer by 2 after parsing it.
+3. Strip whitespace from a string, parse it as an integer, then multiply it by 2.
+
 #### Adding validation and serialization
 
 You can add or override validation, serialization, and JSON schemas to an arbitrary type using the markers that
