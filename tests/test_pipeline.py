@@ -1,7 +1,7 @@
 """Tests for the experimental transform module."""
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any, List, Union
 
 import pytest
 from typing_extensions import Annotated
@@ -132,7 +132,7 @@ def test_predicates() -> None:
             {'anyOf': [{'type': 'integer', 'exclusiveMinimum': 0}, {'type': 'integer', 'exclusiveMaximum': 100}]},
         ),
         (
-            Annotated[list[int], parse().len(0, 100)],
+            Annotated[List[int], parse().len(0, 100)],
             {'type': 'array', 'items': {'type': 'integer'}, 'maxItems': 100},
             {'type': 'array', 'items': {'type': 'integer'}, 'maxItems': 100},
         ),

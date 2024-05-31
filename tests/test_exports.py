@@ -34,7 +34,7 @@ def test_public_api_dynamic_imports(attr_name, value):
     reason='Produces a weird error on pypy<3.8',
 )
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-@pytest.mark.filterwarnings('ignore:This functionality is experimental:UserWarning')
+@pytest.mark.filterwarnings('ignore:PydanticExperimentalWarning')
 def test_public_internal():
     """
     check we don't make anything from _internal public
