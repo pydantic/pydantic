@@ -7,7 +7,7 @@ import pytest
 from typing_extensions import Annotated
 
 from pydantic import TypeAdapter, ValidationError
-from pydantic.transform_experimental import parse
+from pydantic.experimental.pipeline import parse
 
 
 @pytest.mark.parametrize('potato_variation', ['potato', ' potato ', ' potato', 'potato ', ' POTATO ', ' PoTatO '])
