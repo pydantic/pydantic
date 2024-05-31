@@ -10,7 +10,7 @@ from collections.abc import Container
 from dataclasses import dataclass
 from decimal import Decimal
 from functools import cached_property, partial
-from typing import TYPE_CHECKING, Any, Callable, Generic, Protocol, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Generic, Pattern, Protocol, TypeVar, Union, overload
 
 import annotated_types
 from typing_extensions import Annotated
@@ -65,7 +65,7 @@ _ConstraintAnnotation = Union[
     annotated_types.Timezone,
     annotated_types.Interval,
     annotated_types.Predicate,
-    re.Pattern[str],
+    Pattern[str],
 ]
 
 
@@ -163,7 +163,7 @@ class Validate(Generic[_InT, _OutT]):
         ...
 
     @overload
-    def constrain(self: Validate[_InT, _NewOutT], constraint: re.Pattern[str]) -> Validate[_InT, _NewOutT]:
+    def constrain(self: Validate[_InT, _NewOutT], constraint: Pattern[str]) -> Validate[_InT, _NewOutT]:
         ...
 
     def constrain(self, constraint: _ConstraintAnnotation) -> Any:
@@ -546,7 +546,7 @@ def _apply_constraint(  # noqa: C901
         else:
             s = _check_func(func, func.__name__, s)
     else:
-        assert isinstance(constraint, re.Pattern)
+        assert isinstance(constraint, Pattern)
         if s and s['type'] == 'str':
             s = s.copy()
             s['pattern'] = constraint.pattern
