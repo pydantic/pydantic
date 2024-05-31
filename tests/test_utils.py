@@ -1,4 +1,5 @@
 import collections.abc
+import json
 import os
 import pickle
 import sys
@@ -12,7 +13,7 @@ from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel
 from pydantic._internal import _repr
-from pydantic._internal._core_utils import _WalkCoreSchema
+from pydantic._internal._core_utils import _WalkCoreSchema, pretty_print_core_schema
 from pydantic._internal._typing_extra import all_literal_values, get_origin, is_new_type
 from pydantic._internal._utils import (
     BUILTIN_COLLECTIONS,
@@ -666,3 +667,100 @@ def test_handle_call_schema():
 
     schema = _WalkCoreSchema().handle_call_schema(schema, walk)
     assert schema['return_schema'] == {'type': 'int'}
+
+
+def test_pretty_print(capfd):
+    # 1. Included metadata
+    schema = core_schema.AnySchema(
+        type='any',
+        ref='meta_schema',
+        metadata={'schema_type': 'any', 'test_id': '42'},
+        serialization=core_schema.simple_ser_schema('bool'),
+    )
+
+    expected_meta_info = {
+        'type': 'any',
+        'ref': 'meta_schema',
+        'metadata': {'schema_type': 'any', 'test_id': '42'},
+        'serialization': {'type': 'bool'},
+    }
+
+    # Given CI/CD formatting differences, this test just checks that the data produced is the same.
+    pretty_print_core_schema(schema=schema, include_metadata=True)
+    content = capfd.readouterr()
+    content_as_json = json.loads(content.out.replace("'", '"'))
+    assert content_as_json == expected_meta_info
+
+    # 2. Strip meta_data (ModelFields Schema)
+    schema = core_schema.model_fields_schema(
+        ref='meta_schema',
+        metadata={'schema_type': 'model', 'test_id': '43'},
+        computed_fields=[
+            core_schema.computed_field(
+                property_name='TestModel',
+                return_schema=core_schema.model_fields_schema(
+                    fields={'a': core_schema.model_field(core_schema.str_schema())},
+                ),
+                alias='comp_field_1',
+                metadata={'comp_field_key': 'comp_field_data'},
+            )
+        ],
+        fields={'a': core_schema.model_field(core_schema.str_schema())},
+    )
+    expected_stripped_fields = {
+        'type': 'model-fields',
+        'fields': {'a': {'type': 'model-field', 'schema': {'type': 'str'}}},
+        'computed_fields': [
+            {
+                'type': 'computed-field',
+                'property_name': 'TestModel',
+                'return_schema': {
+                    'type': 'model-fields',
+                    'fields': {'a': {'type': 'model-field', 'schema': {'type': 'str'}}},
+                },
+                'alias': 'comp_field_1',
+                'metadata': {'comp_field_key': 'comp_field_data'},
+            }
+        ],
+        'ref': 'meta_schema',
+    }
+
+    pretty_print_core_schema(schema=schema, include_metadata=False)
+    content = capfd.readouterr()
+    content_as_json = json.loads(content.out.replace("'", '"'))
+    assert content_as_json == expected_stripped_fields
+
+    # 3. Excluded metadata (Model Schema)
+    class TestModel:
+        __slots__ = (
+            '__dict__',
+            '__pydantic_fields_set__',
+            '__pydantic_extra__',
+            '__pydantic_private__',
+        )
+
+    schema = core_schema.model_schema(
+        ref='meta_schema',
+        metadata={'schema_type': 'model', 'test_id': '43'},
+        custom_init=False,
+        root_model=False,
+        cls=TestModel,
+        config=core_schema.CoreConfig(str_max_length=5),
+        schema=core_schema.model_fields_schema(
+            fields={'a': core_schema.model_field(core_schema.str_schema())},
+        ),
+    )
+    expected_cls_stripped_info = {
+        'type': 'model',
+        'schema': {'type': 'model-fields', 'fields': {'a': {'type': 'model-field', 'schema': {'type': 'str'}}}},
+        'config': {'str_max_length': 5},
+        'ref': 'meta_schema',
+    }
+
+    pretty_print_core_schema(schema=schema, include_metadata=False)
+    content = capfd.readouterr()
+    # Remove cls due to string formatting.
+    cls_substring = "'cls': <class 'tests.test_utils.test_pretty_print.<locals>.TestModel'>,"
+    new_content_out = content.out.replace(cls_substring, '')
+    content_as_json = json.loads(new_content_out.replace("'", '"'))
+    assert content_as_json == expected_cls_stripped_info
