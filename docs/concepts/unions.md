@@ -412,14 +412,16 @@ except ValidationError as e:
 ```
 
 !!! tip
-    If you want to run nested discriminated unions outside of a base model (e.g. without using the `Model` base model in the above example), you can use [TypeAdapter](../concepts/type_adapter.md#required-fields).
+    If you want to validate data against a union, and solely a union, you can use pydantic's [`TypeAdapter`](../concepts/type_adapter.md#required-fields) construct 
+    instead of inheriting from the standard `BaseModel`.
 
-    taking on the previous example, we have the following:
-    ```python
+    In the context of the previous example, we have the following:
+    
+    ```python test="skip"
     type_adapter = TypeAdapter(Pet)
 
-    m = type_adapter(**{'pet_type': 'cat', 'color': 'black', 'black_name': 'felix'})
-    print(m)
+    pet = type_adapter.validate_python({'pet_type': 'cat', 'color': 'black', 'black_name': 'felix'})
+    print(repr(pet))
     #> BlackCat(pet_type='cat', color='black', black_name='felix')
     ```
 
