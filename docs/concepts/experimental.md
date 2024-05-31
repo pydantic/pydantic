@@ -25,7 +25,10 @@ class User(BaseModel):
     username: Annotated[str, parse(str).str.pattern(r'[a-z]+')]  # (3)!
     password: Annotated[
         str,
-        parse(str).transform(str.lower).predicate(lambda x: x != 'password')]  # (4)!
+        parse(str)
+        .transform(str.lower)
+        .predicate(lambda x: x != 'password'),  # (4)!
+    ]
     favorite_number: Annotated[  # (5)!
         int,
         (parse(int) | parse(str).str.strip().parse(int)).gt(0),
@@ -35,7 +38,9 @@ class User(BaseModel):
         list[User],
         parse_defer(lambda: list[User]).transform(lambda x: x[1:]),
     ]
-    bio: Annotated[datetime, parse(int).transform(lambda x: x / 1_000_000).parse()]  # (8)!
+    bio: Annotated[
+        datetime, parse(int).transform(lambda x: x / 1_000_000).parse()  # (8)!
+    ]
 ```
 
 1. Lowercase a string.
@@ -52,12 +57,18 @@ class User(BaseModel):
 The `parse` method is a more type-safe way to define `BeforeValidator`, `AfterValidator` and `WrapValidator`:
 
 ```python
+from typing_extensions import Annotated
+
+from pydantic.experimental.pipeline import parse
+
 # BeforeValidator
 Annotated[int, parse(str).str.strip().parse()]  # (1)!
 # AfterValidator
 Annotated[int, parse().transform(lambda x: x * 2)]  # (2)!
 # WrapValidator
-Annotated[int, parse(str).str.strip().parse().transform(lambda x: x * 2)]  # (3)!
+Annotated[
+    int, parse(str).str.strip().parse().transform(lambda x: x * 2)  # (3)!
+]
 ```
 
 1. Strip whitespace from a string before parsing it as an integer.
