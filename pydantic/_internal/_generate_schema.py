@@ -1086,6 +1086,10 @@ class GenerateSchema:
                     annotations,
                 )
 
+        # _function = schema['lax_schema']['function']['function']
+        # _func = _function.func
+        # schema['lax_schema']['function']['function'] = partial(_func, default_default_factory=field_info.default.default_factory)
+
         # This V1 compatibility shim should eventually be removed
         # push down any `each_item=True` validators
         # note that this won't work for any Annotated types that get wrapped by a function validator
@@ -2141,9 +2145,15 @@ def wrap_default(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_
             schema, default_factory=field_info.default_factory, validate_default=field_info.validate_default
         )
     elif field_info.default is not PydanticUndefined:
-        return core_schema.with_default_schema(
+        _schema = core_schema.with_default_schema(
             schema, default=field_info.default, validate_default=field_info.validate_default
         )
+        if hasattr(field_info.annotation, 'default_factory'):
+            if _schema['schema'].get('lax_schema') and _schema['schema']['lax_schema'].get('function'):  # type: ignore
+                orig_func = _schema['schema']['lax_schema']['function']['function'].func  # type: ignore
+                new_func = partial(orig_func, default_default_factory=field_info.default.default_factory)
+                _schema['schema']['lax_schema']['function']['function'] = new_func  # type: ignore
+        return _schema
     else:
         return schema
 

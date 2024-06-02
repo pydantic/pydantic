@@ -5663,6 +5663,20 @@ def test_typing_coercion_defaultdict():
     assert repr(m.x) == "defaultdict(<class 'str'>, {1: ''})"
 
 
+def test_defaultdict_default_factory_round_trip():
+    class Model(BaseModel):
+        answer_to_all: DefaultDict[str, int] = defaultdict(lambda: 42)
+
+    ins = Model()
+    ins.answer_to_all['a'] += 1
+
+    assert ins.answer_to_all['a'] == 43
+
+    ins_roundtrip = Model.model_validate_json(ins.model_dump_json())
+    ins_roundtrip.answer_to_all['b'] += 2
+    assert ins_roundtrip.answer_to_all == {'a': 43, 'b': 44}
+
+
 def test_typing_coercion_counter():
     class Model(BaseModel):
         x: Counter[str]
