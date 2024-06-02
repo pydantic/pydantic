@@ -1086,10 +1086,6 @@ class GenerateSchema:
                     annotations,
                 )
 
-        # _function = schema['lax_schema']['function']['function']
-        # _func = _function.func
-        # schema['lax_schema']['function']['function'] = partial(_func, default_default_factory=field_info.default.default_factory)
-
         # This V1 compatibility shim should eventually be removed
         # push down any `each_item=True` validators
         # note that this won't work for any Annotated types that get wrapped by a function validator
