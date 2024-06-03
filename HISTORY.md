@@ -1,3 +1,17 @@
+## v2.7.3 (2024-06-03)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.7.3)
+
+### What's Changed
+
+#### Packaging
+
+* Bump `pydantic-core` to `v2.18.4` by @sydney-runkle in [#9550](https://github.com/pydantic/pydantic/pull/9550)
+
+#### Fixes
+
+* Fix u style unicode strings in python @samuelcolvin in [pydantic/jiter#110](https://github.com/pydantic/jiter/pull/110)
+
 ## v2.7.2 (2024-05-28)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.7.2)
@@ -12,9 +26,9 @@
 
 * Replace `__spec__.parent` with `__package__` by @hramezani in [#9331](https://github.com/pydantic/pydantic/pull/9331)
 * Fix validation of `int`s with leading unary minus by @RajatRajdeep in [pydantic/pydantic-core#1291](https://github.com/pydantic/pydantic-core/pull/1291)
-* Fix `str` subclass validation for enums by @sydney-runkle in [pydantic/pydantic-core#1273]https://github.com/pydantic/pydantic-core/pull/1273
-* Support `BigInt`s in `Literal`s and `Enum`s by @samuelcolvin in [pydantic/pydantic-core#1297]https://github.com/pydantic/pydantic-core/pull/1297
-* Fix: uuid - allow `str` subclass as input by @davidhewitt in [pydantic/pydantic-core#1296]https://github.com/pydantic/pydantic-core/pull/1296
+* Fix `str` subclass validation for enums by @sydney-runkle in [pydantic/pydantic-core#1273](https://github.com/pydantic/pydantic-core/pull/1273)
+* Support `BigInt`s in `Literal`s and `Enum`s by @samuelcolvin in [pydantic/pydantic-core#1297](https://github.com/pydantic/pydantic-core/pull/1297)
+* Fix: uuid - allow `str` subclass as input by @davidhewitt in [pydantic/pydantic-core#1296](https://github.com/pydantic/pydantic-core/pull/1296)
 
 ## v2.7.1 (2024-04-23)
 
