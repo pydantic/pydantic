@@ -1,3 +1,17 @@
+## v2.7.3 (2024-06-03)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.7.3)
+
+### What's Changed
+
+#### Packaging
+
+* Bump `pydantic-core` to `v2.18.4` by @sydney-runkle in [#9550](https://github.com/pydantic/pydantic/pull/9550)
+
+#### Fixes
+
+* Fix u style unicode strings in python @samuelcolvin in [pydantic/jiter#110](https://github.com/pydantic/jiter/pull/110)
+
 ## v2.7.2 (2024-05-28)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.7.2)
