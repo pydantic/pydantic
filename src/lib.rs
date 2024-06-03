@@ -4,7 +4,7 @@ extern crate core;
 
 use std::sync::OnceLock;
 
-use jiter::StringCacheMode;
+use jiter::{map_json_error, PartialMode, PythonParse, StringCacheMode};
 use pyo3::exceptions::PyTypeError;
 use pyo3::{prelude::*, sync::GILOnceCell};
 
@@ -63,8 +63,21 @@ pub fn from_json<'py>(
         CacheStringsArg::Bool(b) => b.into(),
         CacheStringsArg::Literal(mode) => mode,
     };
-    jiter::python_parse(py, json_bytes, allow_inf_nan, cache_mode, allow_partial)
-        .map_err(|e| jiter::map_json_error(json_bytes, &e))
+    let partial_mode = if allow_partial {
+        PartialMode::On
+    } else {
+        PartialMode::Off
+    };
+    let parse_builder = PythonParse {
+        allow_inf_nan,
+        cache_mode,
+        partial_mode,
+        catch_duplicate_keys: false,
+        lossless_floats: false,
+    };
+    parse_builder
+        .python_parse(py, json_bytes)
+        .map_err(|e| map_json_error(json_bytes, &e))
 }
 
 pub fn get_pydantic_core_version() -> &'static str {
