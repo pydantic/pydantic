@@ -188,6 +188,11 @@ For self-referencing models, see [postponed annotations](postponed_annotations.m
 
     For example, the following would yield a validation error:
     ```py
+    from typing import Optional
+
+    from pydantic import BaseModel
+
+
     class Boo(BaseModel):
         int: Optional[int] = None
 
