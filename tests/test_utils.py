@@ -669,7 +669,10 @@ def test_handle_call_schema():
     assert schema['return_schema'] == {'type': 'int'}
 
 
-def test_pretty_print(capfd):
+def test_pretty_print(capfd, monkeypatch):
+    # This can break the test by adding color to the output streams
+    monkeypatch.delenv('FORCE_COLOR', raising=False)
+
     # 1. Included metadata
     schema = core_schema.AnySchema(
         type='any',
