@@ -193,7 +193,7 @@ For self-referencing models, see [postponed annotations](postponed_annotations.m
 
     m = Boo(int=123)
     ```
-    An error occurs since the field  `int` is set to a default value of `None` and has the exact same name as its type, so both are interpreted to be `None`. As such, `123` is not considered to be a valid value for the field `int`.  
+    An error occurs since the field  `int` is set to a default value of `None` and has the exact same name as its type, so both are interpreted to be `None`.
 
 ## Rebuild model schema
 
