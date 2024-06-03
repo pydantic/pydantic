@@ -21,3 +21,5 @@ pytest-timeout==2.3.1
 numpy==1.26.2; python_version >= "3.9" and python_version < "3.13" and implementation_name == "cpython" and platform_machine == 'x86_64'
 exceptiongroup==1.1; python_version < "3.11"
 tzdata==2024.1
+# TODO: remove manual override for typing_extensions once a version newer than 4.12.1 is released
+git+https://github.com/python/typing_extensions@main
