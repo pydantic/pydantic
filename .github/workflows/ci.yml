@@ -374,7 +374,7 @@ jobs:
         python-version: '3.8'
 
     - name: install
-      run: pip install -U twine setuptools wheel cibuildwheel
+      run: pip install -U twine setuptools wheel cibuildwheel==2.17.0
 
     - name: build sdist
       if: matrix.os == 'ubuntu' && matrix.python-version == '9'
