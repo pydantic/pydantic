@@ -184,10 +184,10 @@ print(m.model_dump())
 For self-referencing models, see [postponed annotations](postponed_annotations.md#self-referencing-or-recursive-models).
 
 !!! note
-    When defining your models, watch out for naming collisions between your field name and its type, a previously defined model, or an imported library. 
+    When defining your models, watch out for naming collisions between your field name and its type, a previously defined model, or an imported library.
 
     For example, the following would yield a validation error:
-    ```py
+    ```py test="skip"
     from typing import Optional
 
     from pydantic import BaseModel
@@ -196,7 +196,8 @@ For self-referencing models, see [postponed annotations](postponed_annotations.m
     class Boo(BaseModel):
         int: Optional[int] = None
 
-    m = Boo(int=123)
+
+    m = Boo(int=123)  # errors
     ```
     An error occurs since the field  `int` is set to a default value of `None` and has the exact same name as its type, so both are interpreted to be `None`.
 

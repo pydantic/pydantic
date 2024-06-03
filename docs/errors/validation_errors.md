@@ -1479,7 +1479,7 @@ except ValidationError as exc:
     You may encounter this error when there is a naming collision in your model between a field name and its type. More specifically, this error is likely to be thrown when the default value of that field is `None`.
 
     For example, the following would yield the `none_required` validation error since the field `int` is set to a default value of `None` and has the exact same name as its type, which causes problems with validation.
-    ```py
+    ```py test="skip"
     from typing import Optional
 
     from pydantic import BaseModel
@@ -1488,7 +1488,8 @@ except ValidationError as exc:
     class M1(BaseModel):
         int: Optional[int] = None
 
-    m = M1(int=123) # error
+
+    m = M1(int=123)  # errors
     ```
 
 ## `recursion_loop`
