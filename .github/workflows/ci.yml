@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - pydantic-people-update
     tags:
       - '**'
   pull_request: {}
