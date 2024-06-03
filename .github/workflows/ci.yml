@@ -90,6 +90,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - run: pip install -r tests/requirements.txt
+      # TODO: remove this after the the next release of typing-extensions (v4.12.3 or v.4.13.0)
+      - run: pip uninstall -y typing-extensions
+      - run: pip install -U git+https://github.com/python/typing_extensions@main
 
       - run: pip install -e .
         env:
