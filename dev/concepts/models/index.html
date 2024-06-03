@@ -3902,6 +3902,23 @@ Models possess the following methods and attributes:</p>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 <p>For self-referencing models, see <a href="../postponed_annotations/#self-referencing-or-recursive-models">postponed annotations</a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When defining your models, watch out for naming collisions between your field name and its type, a previously defined model, or an imported library.</p>
+<p>For example, the following would yield a validation error:
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">Boo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="nb">int</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">Boo</span><span class="p">(</span><span class="nb">int</span><span class="o">=</span><span class="mi">123</span><span class="p">)</span>  <span class="c1"># errors</span>
+</code></pre></div>
+An error occurs since the field  <code>int</code> is set to a default value of <code>None</code> and has the exact same name as its type, so both are interpreted to be <code>None</code>.</p>
+</div>
 <h2 id="rebuild-model-schema">Rebuild model schema<a class="headerlink" href="#rebuild-model-schema" title="Permanent link">&para;</a></h2>
 <p>The model schema can be rebuilt using <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_rebuild"><code>model_rebuild()</code></a>. This is useful for building recursive generic models.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span>
