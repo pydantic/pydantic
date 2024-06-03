@@ -90,9 +90,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - run: pip install -r tests/requirements.txt
-      # TODO: remove this after the the next release of typing-extensions (v4.12.3 or v.4.13.0)
-      - run: pip uninstall -y typing-extensions
-      - run: pip install -U git+https://github.com/python/typing_extensions@main
 
       - run: pip install -e .
         env:
@@ -662,10 +659,8 @@ jobs:
             fi
           run: |
             set -x
-            # typing-extensions isn't automatically installed because of `--no-index --no-deps`
             python3 -m venv venv
             source venv/bin/activate
-            python3 -m pip install -U pip typing-extensions
             python3 -m pip install -r tests/requirements.txt
             python3 -m pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
             python3 -m pytest --ignore=tests/test_docstrings.py
@@ -696,7 +691,6 @@ jobs:
           merge-multiple: true
           path: dist
 
-      - run: pip install typing-extensions
       - run: pip install -r tests/requirements.txt
       - run: pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
       - run: pytest --ignore=tests/test_docstrings.py
