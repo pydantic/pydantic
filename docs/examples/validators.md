@@ -3,14 +3,14 @@
 
 This page provides example snippets for creating more complex, custom validators in Pydantic.
 
-## Using Custom Validators with Annotated Metadata
+## Using Custom Validators with [`Annotated`][typing.Annotated] Metadata
 
-In this example, we'll construct a custom validator, attached to an `Annotated` type,
-that ensures a `datetime` object adheres to a given timezone constraint.
+In this example, we'll construct a custom validator, attached to an [`Annotated`][typing.Annotated] type,
+that ensures a [`datetime`][datetime.datetime] object adheres to a given timezone constraint.
 
-The custom validator supports string specification of the timezone, and will raise an error if the `datetime` object does not have the correct timezone.
+The custom validator supports string specification of the timezone, and will raise an error if the [`datetime`][datetime.datetime] object does not have the correct timezone.
 
-We use `__get_pydantic_core_schema__` in the validator to customize the schema of the annotated type (in this case, `datetime`), which allows us to add custom validation logic. Notably, we use a `wrap` validator function so that we can perform operations both before and after the default `pydantic` validation of a `datetime`.
+We use `__get_pydantic_core_schema__` in the validator to customize the schema of the annotated type (in this case, [`datetime`][datetime.datetime]), which allows us to add custom validation logic. Notably, we use a `wrap` validator function so that we can perform operations both before and after the default `pydantic` validation of a [`datetime`][datetime.datetime].
 
 ```py
 import datetime as dt
