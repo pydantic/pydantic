@@ -26,13 +26,13 @@ __all__ = ['validate_as', 'parse_defer', 'transform']
 
 
 @dataclass(**slots_true)
-class _Parse:
+class _ValidateAs:
     tp: type[Any]
     strict: bool = False
 
 
 @dataclass
-class _ParseDefer:
+class _ValidateAsDefer:
     func: Callable[[], type[Any]]
 
     @cached_property
@@ -46,13 +46,13 @@ class _Transform:
 
 
 @dataclass(**slots_true)
-class _ValidateOr:
+class _PipelineOr:
     left: Pipeline[Any, Any]
     right: Pipeline[Any, Any]
 
 
 @dataclass(**slots_true)
-class _ValidateAnd:
+class _PipelineAnd:
     left: Pipeline[Any, Any]
     right: Pipeline[Any, Any]
 
@@ -76,7 +76,7 @@ class _Constraint:
     constraint: _ConstraintAnnotation
 
 
-_Step = Union[_Parse, _ParseDefer, _Transform, _ValidateOr, _ValidateAnd, _Constraint]
+_Step = Union[_ValidateAs, _ValidateAsDefer, _Transform, _PipelineOr, _PipelineAnd, _Constraint]
 
 _InT = TypeVar('_InT')
 _OutT = TypeVar('_OutT')
@@ -120,7 +120,7 @@ class Pipeline(Generic[_InT, _OutT]):
         Types are parsed in Pydantic's `lax` mode by default,
         but you can enable `strict` mode by passing `strict=True`.
         """
-        return Pipeline[_InT, Any](self._steps + [_Parse(tp, strict=strict)])
+        return Pipeline[_InT, Any](self._steps + [_ValidateAs(tp, strict=strict)])
 
     def validate_as_deferred(self, func: Callable[[], type[_NewOutT]]) -> Pipeline[_InT, _NewOutT]:
         """Parse the input into a new type, deferring resolution of the type until the current class
@@ -128,7 +128,7 @@ class Pipeline(Generic[_InT, _OutT]):
 
         This is useful when you need to reference the class in it's own type annotations.
         """
-        return Pipeline[_InT, _NewOutT](self._steps + [_ParseDefer(func)])
+        return Pipeline[_InT, _NewOutT](self._steps + [_ValidateAsDefer(func)])
 
     # constraints
     @overload
@@ -244,13 +244,13 @@ class Pipeline(Generic[_InT, _OutT]):
     # operators
     def otherwise(self, other: Pipeline[_OtherIn, _OtherOut]) -> Pipeline[_InT | _OtherIn, _OutT | _OtherOut]:
         """Combine two validation chains, returning the result of the first chain if it succeeds, and the second chain if it fails."""
-        return Pipeline([_ValidateOr(self, other)])
+        return Pipeline([_PipelineOr(self, other)])
 
     __or__ = otherwise
 
     def then(self, other: Pipeline[_OtherIn, _OtherOut]) -> Pipeline[_InT | _OtherIn, _OutT | _OtherOut]:
         """Pipe the result of one validation chain into another."""
-        return Pipeline([_ValidateAnd(self, other)])
+        return Pipeline([_PipelineAnd(self, other)])
 
     __and__ = then
 
@@ -271,7 +271,7 @@ class Pipeline(Generic[_InT, _OutT]):
 
 validate_as = Pipeline[Any, Any]([]).validate_as
 parse_defer = Pipeline[Any, Any]([]).validate_as_deferred
-transform = Pipeline[Any, Any]([_Parse(_FieldTypeMarker)]).transform
+transform = Pipeline[Any, Any]([_ValidateAs(_FieldTypeMarker)]).transform
 
 
 class _StringValidator(Pipeline[str, str]):
@@ -333,18 +333,18 @@ def _check_func(
 def _apply_step(step: _Step, s: cs.CoreSchema | None, handler: GetCoreSchemaHandler, source_type: Any) -> cs.CoreSchema:
     from pydantic_core import core_schema as cs
 
-    if isinstance(step, _Parse):
+    if isinstance(step, _ValidateAs):
         s = _apply_parse(s, step.tp, step.strict, handler, source_type)
-    elif isinstance(step, _ParseDefer):
+    elif isinstance(step, _ValidateAsDefer):
         s = _apply_parse(s, step.tp, False, handler, source_type)
     elif isinstance(step, _Transform):
         s = _apply_transform(s, step.func)
     elif isinstance(step, _Constraint):
         s = _apply_constraint(s, step.constraint)
-    elif isinstance(step, _ValidateOr):
+    elif isinstance(step, _PipelineOr):
         s = cs.union_schema([handler(step.left), handler(step.right)])
     else:
-        assert isinstance(step, _ValidateAnd)
+        assert isinstance(step, _PipelineAnd)
         s = cs.chain_schema([handler(step.left), handler(step.right)])
     return s
 
