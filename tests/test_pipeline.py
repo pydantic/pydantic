@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import warnings
+from datetime import datetime, timezone
 from typing import Any, List, Union
 
 import pytest
 from typing_extensions import Annotated
+from zoneinfo import ZoneInfo
 
 from pydantic import PydanticExperimentalWarning, TypeAdapter, ValidationError
 
@@ -16,12 +18,31 @@ with warnings.catch_warnings():
 
 @pytest.mark.parametrize('potato_variation', ['potato', ' potato ', ' potato', 'potato ', ' POTATO ', ' PoTatO '])
 def test_parse_str(potato_variation: str) -> None:
-    ta_lower = TypeAdapter(Annotated[str, validate_as(str).str.strip().str.lower()])
+    ta_lower = TypeAdapter(Annotated[str, validate_as().str_strip().str_lower()])
     assert ta_lower.validate_python(potato_variation) == 'potato'
 
 
+def test_parse_dt() -> None:
+    expected = datetime(2021, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+
+    ta = TypeAdapter(Annotated[datetime, validate_as().datetime_tz(timezone.utc)])
+    assert ta.validate_json('"2021-01-01T00:00:00Z"') == expected
+    with pytest.raises(ValidationError):
+        ta.validate_json('"2021-01-01T00:00:00"')
+
+    ta = TypeAdapter(Annotated[datetime, validate_as().transform(lambda x: x).datetime_tz(timezone.utc)])
+    assert ta.validate_json('"2021-01-01T00:00:00Z"') == expected
+    with pytest.raises(ValidationError):
+        ta.validate_json('"2021-01-01T00:00:00"')
+
+
+def test_unsupported_timezone() -> None:
+    with pytest.raises(ValueError, match='timezone other than UTC is not supported'):
+        TypeAdapter(Annotated[datetime, validate_as().datetime_tz(ZoneInfo('America/New_York'))])
+
+
 def test_parse_str_with_pattern() -> None:
-    ta_pattern = TypeAdapter(Annotated[str, validate_as(str).str.pattern(r'[a-z]+')])
+    ta_pattern = TypeAdapter(Annotated[str, validate_as().str_pattern(r'[a-z]+')])
     assert ta_pattern.validate_python('potato') == 'potato'
     with pytest.raises(ValueError):
         ta_pattern.validate_python('POTATO')
@@ -44,9 +65,9 @@ def test_parse_str_with_pattern() -> None:
     ],
 )
 def test_string_validator_valid(method: str, method_arg: str | None, input_string: str, expected_output: str):
-    # annotated metadata is equivalent to validate_as(str).str.method(method_arg)
-    # ex: validate_as(str).str.contains('pot')
-    annotated_metadata = getattr(validate_as(str).str, method)
+    # annotated metadata is equivalent to validate_as(str).str_method(method_arg)
+    # ex: validate_as(str).str_contains('pot')
+    annotated_metadata = getattr(validate_as(str), 'str_' + method)
     annotated_metadata = annotated_metadata(method_arg) if method_arg else annotated_metadata()
 
     ta = TypeAdapter(Annotated[str, annotated_metadata])
@@ -54,15 +75,15 @@ def test_string_validator_valid(method: str, method_arg: str | None, input_strin
 
 
 def test_string_validator_invalid() -> None:
-    ta_contains = TypeAdapter(Annotated[str, validate_as(str).str.contains('potato')])
+    ta_contains = TypeAdapter(Annotated[str, validate_as(str).str_contains('potato')])
     with pytest.raises(ValidationError):
         ta_contains.validate_python('tomato')
 
-    ta_starts_with = TypeAdapter(Annotated[str, validate_as(str).str.starts_with('potato')])
+    ta_starts_with = TypeAdapter(Annotated[str, validate_as(str).str_starts_with('potato')])
     with pytest.raises(ValidationError):
         ta_starts_with.validate_python('tomato')
 
-    ta_ends_with = TypeAdapter(Annotated[str, validate_as(str).str.ends_with('potato')])
+    ta_ends_with = TypeAdapter(Annotated[str, validate_as(str).str_ends_with('potato')])
     with pytest.raises(ValidationError):
         ta_ends_with.validate_python('tomato')
 
@@ -83,7 +104,7 @@ def test_parse_int() -> None:
 
 
 def test_parse_str_to_int() -> None:
-    ta = TypeAdapter(Annotated[int, validate_as(str).str.strip().validate_as(int)])
+    ta = TypeAdapter(Annotated[int, validate_as(str).str_strip().validate_as(int)])
     assert ta.validate_python('1') == 1
     assert ta.validate_python(' 1 ') == 1
     with pytest.raises(ValidationError):

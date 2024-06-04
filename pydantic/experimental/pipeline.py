@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any, Callable, Generic, Pattern, Protocol, Typ
 
 import annotated_types
 from typing_extensions import Annotated
+from zoneinfo import ZoneInfo
 
 if TYPE_CHECKING:
     from pydantic_core import core_schema as cs
@@ -232,14 +233,46 @@ class _Pipeline(Generic[_InT, _OutT]):
         return self.predicate(partial(operator.__eq__, value))
 
     # timezone methods
-    @property
-    def dt(self: _Pipeline[_InT, _NewOutDatetime]) -> _DateTimeValidator:
-        return _DateTimeValidator(self._steps)
+    def datetime_tz_naive(self: _Pipeline[_InT, datetime.datetime]) -> _Pipeline[_InT, datetime.datetime]:
+        return self.constrain(annotated_types.Timezone(None))
+
+    def datetime_tz_aware(self: _Pipeline[_InT, datetime.datetime]) -> _Pipeline[_InT, datetime.datetime]:
+        return self.constrain(annotated_types.Timezone(...))
+
+    def datetime_tz(
+        self: _Pipeline[_InT, datetime.datetime], tz: datetime.tzinfo
+    ) -> _Pipeline[_InT, datetime.datetime]:
+        return self.constrain(annotated_types.Timezone(tz))  # type: ignore
+
+    def datetime_with_tz(
+        self: _Pipeline[_InT, datetime.datetime], tz: datetime.tzinfo | None
+    ) -> _Pipeline[_InT, datetime.datetime]:
+        return self.transform(partial(datetime.datetime.replace, tzinfo=tz))
+
+    def str_lower(self: _Pipeline[_InT, str]) -> _Pipeline[_InT, str]:
+        return self.transform(str.lower)
 
     # string methods
-    @property
-    def str(self: _Pipeline[_InT, _NewOutStr]) -> _StringValidator:
-        return _StringValidator(self._steps)
+    def str_upper(self: _Pipeline[_InT, str]) -> _Pipeline[_InT, str]:
+        return self.transform(str.upper)
+
+    def str_title(self: _Pipeline[_InT, str]) -> _Pipeline[_InT, str]:
+        return self.transform(str.title)
+
+    def str_strip(self: _Pipeline[_InT, str]) -> _Pipeline[_InT, str]:
+        return self.transform(str.strip)
+
+    def str_pattern(self: _Pipeline[_InT, str], pattern: str) -> _Pipeline[_InT, str]:
+        return self.constrain(re.compile(pattern))
+
+    def str_contains(self: _Pipeline[_InT, str], substring: str) -> _Pipeline[_InT, str]:
+        return self.predicate(lambda v: substring in v)
+
+    def str_starts_with(self: _Pipeline[_InT, str], prefix: str) -> _Pipeline[_InT, str]:
+        return self.predicate(lambda v: v.startswith(prefix))
+
+    def str_ends_with(self: _Pipeline[_InT, str], suffix: str) -> _Pipeline[_InT, str]:
+        return self.predicate(lambda v: v.endswith(suffix))
 
     # operators
     def otherwise(self, other: _Pipeline[_OtherIn, _OtherOut]) -> _Pipeline[_InT | _OtherIn, _OutT | _OtherOut]:
@@ -272,46 +305,6 @@ class _Pipeline(Generic[_InT, _OutT]):
 validate_as = _Pipeline[Any, Any]([]).validate_as
 parse_defer = _Pipeline[Any, Any]([]).validate_as_deferred
 transform = _Pipeline[Any, Any]([_ValidateAs(_FieldTypeMarker)]).transform
-
-
-class _StringValidator(_Pipeline[str, str]):
-    def lower(self) -> _Pipeline[str, str]:
-        return self.transform(str.lower)
-
-    def upper(self) -> _Pipeline[str, str]:
-        return self.transform(str.upper)
-
-    def title(self) -> _Pipeline[str, str]:
-        return self.transform(str.title)
-
-    def strip(self) -> _Pipeline[str, str]:
-        return self.transform(str.strip)
-
-    def pattern(self, pattern: str) -> _Pipeline[str, str]:
-        return self.constrain(re.compile(pattern))
-
-    def contains(self, substring: str) -> _Pipeline[str, str]:
-        return self.predicate(lambda v: substring in v)
-
-    def starts_with(self, prefix: str) -> _Pipeline[str, str]:
-        return self.predicate(lambda v: v.startswith(prefix))
-
-    def ends_with(self, suffix: str) -> _Pipeline[str, str]:
-        return self.predicate(lambda v: v.endswith(suffix))
-
-
-class _DateTimeValidator(_Pipeline[datetime.datetime, datetime.datetime]):
-    def tz_naive(self) -> _Pipeline[datetime.datetime, datetime.datetime]:
-        return self.constrain(annotated_types.Timezone(None))
-
-    def tz_aware(self) -> _Pipeline[datetime.datetime, datetime.datetime]:
-        return self.constrain(annotated_types.Timezone(...))
-
-    def tz(self, tz: datetime.tzinfo) -> _Pipeline[datetime.datetime, datetime.datetime]:
-        return self.constrain(annotated_types.Timezone(tz))  # type: ignore
-
-    def with_tz(self, tz: datetime.tzinfo | None) -> _Pipeline[datetime.datetime, datetime.datetime]:
-        return self.transform(partial(datetime.datetime.replace, tzinfo=tz))
 
 
 def _check_func(
@@ -524,8 +517,20 @@ def _apply_constraint(  # noqa: C901
                     return v.tzinfo is None
 
                 s = _check_func(check_tz_naive, 'timezone naive', s)
+        elif tz in (datetime.timezone.utc, ZoneInfo('UTC')):
+            # special case for UTC since it's such a common case
+            if s and s['type'] == 'datetime':
+                s = s.copy()
+                s['tz_constraint'] = 0
+            else:
+
+                def check_tz_utc(v: object) -> bool:
+                    assert isinstance(v, datetime.datetime)
+                    return v.utcoffset() == datetime.timedelta(0)
+
+                s = _check_func(check_tz_utc, 'timezone UTC', s)
         else:
-            raise NotImplementedError('Constraining to a specific timezone is not yet supported')
+            raise ValueError('Constraining to a specific timezone other than UTC is not supported')
     elif isinstance(constraint, annotated_types.Interval):
         if constraint.ge:
             s = _apply_constraint(s, annotated_types.Ge(constraint.ge))
