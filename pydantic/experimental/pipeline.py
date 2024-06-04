@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
     from pydantic import GetCoreSchemaHandler
 
-from pydantic._internal._internal_dataclass import slots_true
+from pydantic._internal._internal_dataclass import slots_true as _slots_true
 
 if sys.version_info < (3, 10):
     EllipsisType = type(Ellipsis)
@@ -33,7 +33,7 @@ elif sys.version_info < (3, 11):
 __all__ = ['validate_as', 'validate_as_deferred', 'transform']
 
 
-@dataclass(**slots_true)
+@dataclass(**_slots_true)
 class _ValidateAs:
     tp: type[Any]
     strict: bool = False
@@ -48,18 +48,18 @@ class _ValidateAsDefer:
         return self.func()
 
 
-@dataclass(**slots_true)
+@dataclass(**_slots_true)
 class _Transform:
     func: Callable[[Any], Any]
 
 
-@dataclass(**slots_true)
+@dataclass(**_slots_true)
 class _PipelineOr:
     left: _Pipeline[Any, Any]
     right: _Pipeline[Any, Any]
 
 
-@dataclass(**slots_true)
+@dataclass(**_slots_true)
 class _PipelineAnd:
     left: _Pipeline[Any, Any]
     right: _Pipeline[Any, Any]
@@ -79,7 +79,7 @@ _ConstraintAnnotation = Union[
 ]
 
 
-@dataclass(**slots_true)
+@dataclass(**_slots_true)
 class _Constraint:
     constraint: _ConstraintAnnotation
 
@@ -95,7 +95,7 @@ class _FieldTypeMarker:
     pass
 
 
-@dataclass(**slots_true)
+@dataclass(**_slots_true)
 class _Pipeline(Generic[_InT, _OutT]):
     """Abstract representation of a chain of validation, transformation, and parsing steps."""
 
