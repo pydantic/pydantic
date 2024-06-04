@@ -86,7 +86,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#validate-tzinfo-passed-to-an-annotated-datetime-type" class="md-skip">
+        <a href="#using-custom-validators-with-annotated-metadata" class="md-skip">
           Skip to content
         </a>
       
@@ -2514,10 +2514,10 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#validate-tzinfo-passed-to-an-annotated-datetime-type" class="md-nav__link">
+  <a href="#using-custom-validators-with-annotated-metadata" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Validate tzinfo passed to an Annotated datetime type
+        Using Custom Validators with Annotated Metadata
       
     </span>
   </a>
@@ -3026,10 +3026,10 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#validate-tzinfo-passed-to-an-annotated-datetime-type" class="md-nav__link">
+  <a href="#using-custom-validators-with-annotated-metadata" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Validate tzinfo passed to an Annotated datetime type
+        Using Custom Validators with Annotated Metadata
       
     </span>
   </a>
@@ -3065,47 +3065,65 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 
   <h1>Validators</h1>
 
-<p>!!! warning '🚧 Work in Progress'
-    This page is a work in progress.</p>
-<h2 id="validate-tzinfo-passed-to-an-annotated-datetime-type">Validate <code>tzinfo</code> passed to an Annotated <code>datetime</code> type<a class="headerlink" href="#validate-tzinfo-passed-to-an-annotated-datetime-type" title="Permanent link">&para;</a></h2>
-<p>A use case often arises where a user will want to add a timezone constraint in an annotated <code>datetime</code> type validation.</p>
-<p>In this example, we want to use a string to specify the <code>tzinfo</code> of the <code>datetime</code> object.</p>
-<p>We will use a customized validation with <code>__get_pydantic_core_schema__</code>:</p>
+<div class="admonition warning">
+<p class="admonition-title">🚧 Work in Progress</p>
+<p>This page is a work in progress.</p>
+</div>
+<p>This page provides example snippets for creating more complex, custom validators in Pydantic.</p>
+<h2 id="using-custom-validators-with-annotated-metadata">Using Custom Validators with <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a> Metadata<a class="headerlink" href="#using-custom-validators-with-annotated-metadata" title="Permanent link">&para;</a></h2>
+<p>In this example, we'll construct a custom validator, attached to an <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a> type,
+that ensures a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime"><code>datetime</code></a> object adheres to a given timezone constraint.</p>
+<p>The custom validator supports string specification of the timezone, and will raise an error if the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime"><code>datetime</code></a> object does not have the correct timezone.</p>
+<p>We use <code>__get_pydantic_core_schema__</code> in the validator to customize the schema of the annotated type (in this case, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime"><code>datetime</code></a>), which allows us to add custom validation logic. Notably, we use a <code>wrap</code> validator function so that we can perform operations both before and after the default <code>pydantic</code> validation of a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime"><code>datetime</code></a>.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label><label for="__tabbed_1_3">Python 3.10 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">datetime</span> <span class="k">as</span> <span class="nn">dt</span>
 <span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">import</span> <span class="nn">pytz</span>
 <span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">CoreSchema</span><span class="p">,</span> <span class="n">core_schema</span>
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">GetCoreSchemaHandler</span><span class="p">,</span> <span class="n">TypeAdapter</span>
-
-
-<span class="k">def</span> <span class="nf">my_validator_function</span><span class="p">(</span>
-    <span class="n">tz_constraint</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span>
-    <span class="n">value</span><span class="p">:</span> <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">,</span>
-    <span class="n">handler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
-<span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;validate tz_constraint and tz_info&quot;&quot;&quot;</span>
-
-    <span class="c1"># handle naive datetimes</span>
-    <span class="k">if</span> <span class="n">tz_constraint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">assert</span> <span class="n">value</span><span class="o">.</span><span class="n">tzinfo</span> <span class="ow">is</span> <span class="kc">None</span>
-        <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-
-    <span class="c1"># validate tz_constraint and tz-aware tzinfo</span>
-    <span class="k">assert</span> <span class="n">tz_constraint</span> <span class="ow">in</span> <span class="n">pytz</span><span class="o">.</span><span class="n">all_timezones</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="n">tz_constraint</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">tzinfo</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">result</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">GetCoreSchemaHandler</span><span class="p">,</span>
+    <span class="n">PydanticUserError</span><span class="p">,</span>
+    <span class="n">TypeAdapter</span><span class="p">,</span>
+    <span class="n">ValidationError</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">MyDatetimeValidator</span><span class="p">:</span>
     <span class="n">tz_constraint</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">tz_constraint_validator</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">value</span><span class="p">:</span> <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">,</span>
+        <span class="n">handler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>  <span class="c1"># (1)!</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate tz_constraint and tz_info.&quot;&quot;&quot;</span>
+        <span class="c1"># handle naive datetimes</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tz_constraint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="p">(</span>
+                <span class="n">value</span><span class="o">.</span><span class="n">tzinfo</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="p">),</span> <span class="s1">&#39;tz_constraint is None, but provided value is tz-aware.&#39;</span>
+            <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="c1"># validate tz_constraint and tz-aware tzinfo</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tz_constraint</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pytz</span><span class="o">.</span><span class="n">all_timezones</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Invalid tz_constraint: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">tz_constraint</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="n">code</span><span class="o">=</span><span class="s1">&#39;unevaluable-type-annotation&#39;</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>  <span class="c1"># (2)!</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">tz_constraint</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">tzinfo</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;Invalid tzinfo: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">tzinfo</span><span class="p">)</span><span class="si">}</span><span class="s1">, expected: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">tz_constraint</span><span class="si">}</span><span class="s1">&#39;</span>
+
+        <span class="k">return</span> <span class="n">result</span>
 
     <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -3113,80 +3131,283 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
         <span class="n">handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CoreSchema</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_wrap_validator_function</span><span class="p">(</span>
-            <span class="n">partial</span><span class="p">(</span><span class="n">my_validator_function</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tz_constraint</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tz_constraint_validator</span><span class="p">,</span>
             <span class="n">handler</span><span class="p">(</span><span class="n">source_type</span><span class="p">),</span>
         <span class="p">)</span>
 
 
-<span class="c1"># We can then use the validator like so</span>
 <span class="n">LA</span> <span class="o">=</span> <span class="s1">&#39;America/Los_Angeles&#39;</span>
 <span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Annotated</span><span class="p">[</span><span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">,</span> <span class="n">MyDatetimeValidator</span><span class="p">(</span><span class="n">LA</span><span class="p">)])</span>
-<span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2023</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="n">LA</span><span class="p">)))</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2023</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="n">LA</span><span class="p">)))</span>
+<span class="p">)</span>
+<span class="c1">#&gt; 2023-01-01 00:00:00-07:53</span>
+
+<span class="n">LONDON</span> <span class="o">=</span> <span class="s1">&#39;Europe/London&#39;</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+        <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2023</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="n">LONDON</span><span class="p">))</span>
+    <span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">ve</span><span class="p">:</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="n">ve</span><span class="o">.</span><span class="n">errors</span><span class="p">(),</span> <span class="n">width</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    [{&#39;ctx&#39;: {&#39;error&#39;: AssertionError(&#39;Invalid tzinfo: Europe/London, expected: America/Los_Angeles&#39;)},</span>
+<span class="sd">    &#39;input&#39;: datetime.datetime(2023, 1, 1, 0, 0, tzinfo=&lt;DstTzInfo &#39;Europe/London&#39; LMT-1 day, 23:59:00 STD&gt;),</span>
+<span class="sd">    &#39;loc&#39;: (),</span>
+<span class="sd">    &#39;msg&#39;: &#39;Assertion failed, Invalid tzinfo: Europe/London, expected: America/Los_Angeles&#39;,</span>
+<span class="sd">    &#39;type&#39;: &#39;assertion_error&#39;,</span>
+<span class="sd">    &#39;url&#39;: &#39;https://errors.pydantic.dev/2.8/v/assertion_error&#39;}]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-<p>We can also create UTC offset constraints in a similar way.  Assuming we have a <code>lower_bound</code> and an <code>upper_bound</code>, we can create a custom validator to ensure our <code>datetime</code> has a UTC offset that is inclusive within the boundary we define:</p>
+<ol>
+<li>The <code>handler</code> function is what we call to validate the input with standard <code>pydantic</code> validation</li>
+<li>We call the <code>handler</code> function to validate the input with standard <code>pydantic</code> validation in this wrap validator</li>
+</ol>
+</div>
+<div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">datetime</span> <span class="k">as</span> <span class="nn">dt</span>
 <span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">import</span> <span class="nn">pytz</span>
+<span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">CoreSchema</span><span class="p">,</span> <span class="n">core_schema</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">GetCoreSchemaHandler</span><span class="p">,</span>
+    <span class="n">PydanticUserError</span><span class="p">,</span>
+    <span class="n">TypeAdapter</span><span class="p">,</span>
+    <span class="n">ValidationError</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MyDatetimeValidator</span><span class="p">:</span>
+    <span class="n">tz_constraint</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">tz_constraint_validator</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">value</span><span class="p">:</span> <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">,</span>
+        <span class="n">handler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>  <span class="c1"># (1)!</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate tz_constraint and tz_info.&quot;&quot;&quot;</span>
+        <span class="c1"># handle naive datetimes</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tz_constraint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="p">(</span>
+                <span class="n">value</span><span class="o">.</span><span class="n">tzinfo</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="p">),</span> <span class="s1">&#39;tz_constraint is None, but provided value is tz-aware.&#39;</span>
+            <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="c1"># validate tz_constraint and tz-aware tzinfo</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tz_constraint</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pytz</span><span class="o">.</span><span class="n">all_timezones</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Invalid tz_constraint: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">tz_constraint</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="n">code</span><span class="o">=</span><span class="s1">&#39;unevaluable-type-annotation&#39;</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>  <span class="c1"># (2)!</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">tz_constraint</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">tzinfo</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;Invalid tzinfo: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">tzinfo</span><span class="p">)</span><span class="si">}</span><span class="s1">, expected: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">tz_constraint</span><span class="si">}</span><span class="s1">&#39;</span>
+
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CoreSchema</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_wrap_validator_function</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tz_constraint_validator</span><span class="p">,</span>
+            <span class="n">handler</span><span class="p">(</span><span class="n">source_type</span><span class="p">),</span>
+        <span class="p">)</span>
+
+
+<span class="n">LA</span> <span class="o">=</span> <span class="s1">&#39;America/Los_Angeles&#39;</span>
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Annotated</span><span class="p">[</span><span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">,</span> <span class="n">MyDatetimeValidator</span><span class="p">(</span><span class="n">LA</span><span class="p">)])</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2023</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="n">LA</span><span class="p">)))</span>
+<span class="p">)</span>
+<span class="c1">#&gt; 2023-01-01 00:00:00-07:53</span>
+
+<span class="n">LONDON</span> <span class="o">=</span> <span class="s1">&#39;Europe/London&#39;</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+        <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2023</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="n">LONDON</span><span class="p">))</span>
+    <span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">ve</span><span class="p">:</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="n">ve</span><span class="o">.</span><span class="n">errors</span><span class="p">(),</span> <span class="n">width</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    [{&#39;ctx&#39;: {&#39;error&#39;: AssertionError(&#39;Invalid tzinfo: Europe/London, expected: America/Los_Angeles&#39;)},</span>
+<span class="sd">    &#39;input&#39;: datetime.datetime(2023, 1, 1, 0, 0, tzinfo=&lt;DstTzInfo &#39;Europe/London&#39; LMT-1 day, 23:59:00 STD&gt;),</span>
+<span class="sd">    &#39;loc&#39;: (),</span>
+<span class="sd">    &#39;msg&#39;: &#39;Assertion failed, Invalid tzinfo: Europe/London, expected: America/Los_Angeles&#39;,</span>
+<span class="sd">    &#39;type&#39;: &#39;assertion_error&#39;,</span>
+<span class="sd">    &#39;url&#39;: &#39;https://errors.pydantic.dev/2.8/v/assertion_error&#39;}]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<ol>
+<li>The <code>handler</code> function is what we call to validate the input with standard <code>pydantic</code> validation</li>
+<li>We call the <code>handler</code> function to validate the input with standard <code>pydantic</code> validation in this wrap validator</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">datetime</span> <span class="k">as</span> <span class="nn">dt</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span>
+
+<span class="kn">import</span> <span class="nn">pytz</span>
+<span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">CoreSchema</span><span class="p">,</span> <span class="n">core_schema</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">GetCoreSchemaHandler</span><span class="p">,</span>
+    <span class="n">PydanticUserError</span><span class="p">,</span>
+    <span class="n">TypeAdapter</span><span class="p">,</span>
+    <span class="n">ValidationError</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MyDatetimeValidator</span><span class="p">:</span>
+    <span class="n">tz_constraint</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">tz_constraint_validator</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">value</span><span class="p">:</span> <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">,</span>
+        <span class="n">handler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>  <span class="c1"># (1)!</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate tz_constraint and tz_info.&quot;&quot;&quot;</span>
+        <span class="c1"># handle naive datetimes</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tz_constraint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="p">(</span>
+                <span class="n">value</span><span class="o">.</span><span class="n">tzinfo</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="p">),</span> <span class="s1">&#39;tz_constraint is None, but provided value is tz-aware.&#39;</span>
+            <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="c1"># validate tz_constraint and tz-aware tzinfo</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tz_constraint</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pytz</span><span class="o">.</span><span class="n">all_timezones</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Invalid tz_constraint: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">tz_constraint</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="n">code</span><span class="o">=</span><span class="s1">&#39;unevaluable-type-annotation&#39;</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>  <span class="c1"># (2)!</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">tz_constraint</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">tzinfo</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;Invalid tzinfo: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">tzinfo</span><span class="p">)</span><span class="si">}</span><span class="s1">, expected: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">tz_constraint</span><span class="si">}</span><span class="s1">&#39;</span>
+
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CoreSchema</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_wrap_validator_function</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tz_constraint_validator</span><span class="p">,</span>
+            <span class="n">handler</span><span class="p">(</span><span class="n">source_type</span><span class="p">),</span>
+        <span class="p">)</span>
+
+
+<span class="n">LA</span> <span class="o">=</span> <span class="s1">&#39;America/Los_Angeles&#39;</span>
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Annotated</span><span class="p">[</span><span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">,</span> <span class="n">MyDatetimeValidator</span><span class="p">(</span><span class="n">LA</span><span class="p">)])</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2023</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="n">LA</span><span class="p">)))</span>
+<span class="p">)</span>
+<span class="c1">#&gt; 2023-01-01 00:00:00-07:53</span>
+
+<span class="n">LONDON</span> <span class="o">=</span> <span class="s1">&#39;Europe/London&#39;</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+        <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2023</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="n">LONDON</span><span class="p">))</span>
+    <span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">ve</span><span class="p">:</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="n">ve</span><span class="o">.</span><span class="n">errors</span><span class="p">(),</span> <span class="n">width</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    [{&#39;ctx&#39;: {&#39;error&#39;: AssertionError(&#39;Invalid tzinfo: Europe/London, expected: America/Los_Angeles&#39;)},</span>
+<span class="sd">    &#39;input&#39;: datetime.datetime(2023, 1, 1, 0, 0, tzinfo=&lt;DstTzInfo &#39;Europe/London&#39; LMT-1 day, 23:59:00 STD&gt;),</span>
+<span class="sd">    &#39;loc&#39;: (),</span>
+<span class="sd">    &#39;msg&#39;: &#39;Assertion failed, Invalid tzinfo: Europe/London, expected: America/Los_Angeles&#39;,</span>
+<span class="sd">    &#39;type&#39;: &#39;assertion_error&#39;,</span>
+<span class="sd">    &#39;url&#39;: &#39;https://errors.pydantic.dev/2.8/v/assertion_error&#39;}]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<ol>
+<li>The <code>handler</code> function is what we call to validate the input with standard <code>pydantic</code> validation</li>
+<li>We call the <code>handler</code> function to validate the input with standard <code>pydantic</code> validation in this wrap validator</li>
+</ol>
+</div>
+</div>
+</div>
+<p>We can also enforce UTC offset constraints in a similar way.  Assuming we have a <code>lower_bound</code> and an <code>upper_bound</code>, we can create a custom validator to ensure our <code>datetime</code> has a UTC offset that is inclusive within the boundary we define:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">datetime</span> <span class="k">as</span> <span class="nn">dt</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span>
 
 <span class="kn">import</span> <span class="nn">pytz</span>
 <span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">CoreSchema</span><span class="p">,</span> <span class="n">core_schema</span>
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">GetCoreSchemaHandler</span><span class="p">,</span> <span class="n">TypeAdapter</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">GetCoreSchemaHandler</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
-<span class="k">def</span> <span class="nf">test_utcoffset_validator_example_pattern</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;test that utcoffset custom validator pattern works as explained&quot;&quot;&quot;</span>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MyDatetimeValidator</span><span class="p">:</span>
+    <span class="n">lower_bound</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">upper_bound</span><span class="p">:</span> <span class="nb">int</span>
 
-    <span class="k">def</span> <span class="nf">my_validator_function</span><span class="p">(</span>
-        <span class="n">lower_bound</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">upper_bound</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">value</span><span class="p">:</span> <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">,</span>
-        <span class="n">handler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
-    <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;validate and test bounds&quot;&quot;&quot;</span>
-        <span class="c1"># validate utcoffset exists</span>
-        <span class="k">assert</span> <span class="n">value</span><span class="o">.</span><span class="n">utcoffset</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-
-        <span class="c1"># validate bound range</span>
-        <span class="k">assert</span> <span class="n">lower_bound</span> <span class="o">&lt;=</span> <span class="n">upper_bound</span>
+    <span class="k">def</span> <span class="nf">validate_tz_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate and test bounds&quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">value</span><span class="o">.</span><span class="n">utcoffset</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;UTC offset must exist&#39;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">lower_bound</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper_bound</span><span class="p">,</span> <span class="s1">&#39;Invalid bounds&#39;</span>
 
         <span class="n">result</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
-        <span class="c1"># validate value is in range</span>
         <span class="n">hours_offset</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">utcoffset</span><span class="p">()</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="o">/</span> <span class="mi">3600</span>
-
-        <span class="k">assert</span> <span class="n">hours_offset</span> <span class="o">&gt;=</span> <span class="n">lower_bound</span>
-        <span class="k">assert</span> <span class="n">hours_offset</span> <span class="o">&lt;=</span> <span class="n">upper_bound</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lower_bound</span> <span class="o">&lt;=</span> <span class="n">hours_offset</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper_bound</span>
+        <span class="p">),</span> <span class="s1">&#39;Value out of bounds&#39;</span>
 
         <span class="k">return</span> <span class="n">result</span>
 
-    <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">class</span> <span class="nc">MyDatetimeValidator</span><span class="p">:</span>
-        <span class="n">lower_bound</span><span class="p">:</span> <span class="nb">int</span>
-        <span class="n">upper_bound</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CoreSchema</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_wrap_validator_function</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">validate_tz_bounds</span><span class="p">,</span>
+            <span class="n">handler</span><span class="p">(</span><span class="n">source_type</span><span class="p">),</span>
+        <span class="p">)</span>
 
-        <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-            <span class="n">handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span><span class="p">,</span>
-        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CoreSchema</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_wrap_validator_function</span><span class="p">(</span>
-                <span class="n">partial</span><span class="p">(</span>
-                    <span class="n">my_validator_function</span><span class="p">,</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">lower_bound</span><span class="p">,</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">upper_bound</span><span class="p">,</span>
-                <span class="p">),</span>
-                <span class="n">handler</span><span class="p">(</span><span class="n">source_type</span><span class="p">),</span>
-            <span class="p">)</span>
 
-    <span class="c1"># We can then use the validator like so</span>
-    <span class="n">LA</span> <span class="o">=</span> <span class="s1">&#39;America/Los_Angeles&#39;</span>
+<span class="n">LA</span> <span class="o">=</span> <span class="s1">&#39;America/Los_Angeles&#39;</span>  <span class="c1"># UTC-7 or UTC-8</span>
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Annotated</span><span class="p">[</span><span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">,</span> <span class="n">MyDatetimeValidator</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">5</span><span class="p">)])</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2023</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="n">LA</span><span class="p">)))</span>
+<span class="p">)</span>
+<span class="c1">#&gt; 2023-01-01 00:00:00-07:53</span>
 
-    <span class="c1"># LA has a utcoffset of -7, which falls in the bounds of -10,10</span>
-    <span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Annotated</span><span class="p">[</span><span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">,</span> <span class="n">MyDatetimeValidator</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">)])</span>
-    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="n">LA</span><span class="p">)))</span>
+<span class="n">LONDON</span> <span class="o">=</span> <span class="s1">&#39;Europe/London&#39;</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+            <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2023</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="n">LONDON</span><span class="p">))</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">errors</span><span class="p">(),</span> <span class="n">width</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    [{&#39;ctx&#39;: {&#39;error&#39;: AssertionError(&#39;Value out of bounds&#39;)},</span>
+<span class="sd">    &#39;input&#39;: datetime.datetime(2023, 1, 1, 0, 0, tzinfo=&lt;DstTzInfo &#39;Europe/London&#39; LMT-1 day, 23:59:00 STD&gt;),</span>
+<span class="sd">    &#39;loc&#39;: (),</span>
+<span class="sd">    &#39;msg&#39;: &#39;Assertion failed, Value out of bounds&#39;,</span>
+<span class="sd">    &#39;type&#39;: &#39;assertion_error&#39;,</span>
+<span class="sd">    &#39;url&#39;: &#39;https://errors.pydantic.dev/2.8/v/assertion_error&#39;}]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 
 
