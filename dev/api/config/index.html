@@ -1983,10 +1983,10 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </li>
         
           <li class="md-nav__item">
-  <a href="#pydantic.config.ConfigDict._defer_build_mode" class="md-nav__link">
+  <a href="#pydantic.config.ConfigDict.experimental_defer_build_mode" class="md-nav__link">
     <span class="md-ellipsis">
       
-        _defer_build_mode
+        experimental_defer_build_mode
       
     </span>
   </a>
@@ -3890,10 +3890,10 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </li>
         
           <li class="md-nav__item">
-  <a href="#pydantic.config.ConfigDict._defer_build_mode" class="md-nav__link">
+  <a href="#pydantic.config.ConfigDict.experimental_defer_build_mode" class="md-nav__link">
     <span class="md-ellipsis">
       
-        _defer_build_mode
+        experimental_defer_build_mode
       
     </span>
   </a>
@@ -5528,12 +5528,12 @@ an error <em>is</em> raised if there is an actual collision with an existing att
 <p>This can be useful to avoid the overhead of building models which are only
 used nested within other models, or when you want to manually define type namespace via
 <a class="autorefs autorefs-internal" href="../base_model/#pydantic.BaseModel.model_rebuild"><code>Model.model_rebuild(_types_namespace=...)</code></a>.</p>
-<p>See also <a class="autorefs autorefs-internal" href="#pydantic.config.ConfigDict._defer_build_mode"><code>_defer_build_mode</code></a>.</p>
+<p>See also <a class="autorefs autorefs-internal" href="#pydantic.config.ConfigDict.experimental_defer_build_mode"><code>experimental_defer_build_mode</code></a>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p><code>defer_build</code> does not work by default with FastAPI Pydantic models. By default, the validator and serializer
 for said models is constructed immediately for FastAPI routes. You also need to define
-<a class="autorefs autorefs-internal" href="#pydantic.config.ConfigDict._defer_build_mode"><code>_defer_build_mode=('model', 'type_adapter')</code></a> with FastAPI
+<a class="autorefs autorefs-internal" href="#pydantic.config.ConfigDict.experimental_defer_build_mode"><code>experimental_defer_build_mode=('model', 'type_adapter')</code></a> with FastAPI
 models in order for <code>defer_build=True</code> to take effect. This additional (experimental) parameter is required for
 the deferred building due to FastAPI relying on <code>TypeAdapter</code>s.</p>
 </div>
@@ -5550,16 +5550,16 @@ the deferred building due to FastAPI relying on <code>TypeAdapter</code>s.</p>
 
 
 
-<h3 id="pydantic.config.ConfigDict._defer_build_mode" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">_defer_build_mode</span>
+<h3 id="pydantic.config.ConfigDict.experimental_defer_build_mode" class="doc doc-heading">
+          <span class="doc doc-object-name doc-attribute-name">experimental_defer_build_mode</span>
 
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
-<a href="#pydantic.config.ConfigDict._defer_build_mode" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">_defer_build_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span>
+<a href="#pydantic.config.ConfigDict.experimental_defer_build_mode" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">experimental_defer_build_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span>
     <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="s2">&quot;type_adapter&quot;</span><span class="p">],</span> <span class="o">...</span>
 <span class="p">]</span>
 </code></pre></div>
@@ -5568,13 +5568,13 @@ the deferred building due to FastAPI relying on <code>TypeAdapter</code>s.</p>
   
       <p>Controls when <a class="autorefs autorefs-internal" href="#pydantic.config.ConfigDict.defer_build"><code>defer_build</code></a> is applicable. Defaults to <code>('model',)</code>.</p>
 <p>Due to backwards compatibility reasons <a class="autorefs autorefs-internal" href="../type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> does not by default
-respect <code>defer_build</code>. Meaning when <code>defer_build</code> is <code>True</code> and <code>_defer_build_mode</code> is the default <code>('model',)</code>
+respect <code>defer_build</code>. Meaning when <code>defer_build</code> is <code>True</code> and <code>experimental_defer_build_mode</code> is the default <code>('model',)</code>
 then <code>TypeAdapter</code> immediately constructs its validator and serializer instead of postponing said construction until
 the first model validation. Set this to <code>('model', 'type_adapter')</code> to make <code>TypeAdapter</code> respect the <code>defer_build</code>
 so it postpones validator and serializer construction until the first validation or serialization.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The <code>_defer_build_mode</code> parameter is named with an underscore to suggest this is an experimental feature. It may
+<p>The <code>experimental_defer_build_mode</code> parameter is named with an underscore to suggest this is an experimental feature. It may
 be removed or changed in the future in a minor release.</p>
 </div>
   </div>
