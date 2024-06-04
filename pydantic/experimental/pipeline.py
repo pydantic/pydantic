@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 from pydantic._internal._internal_dataclass import slots_true
 
-__all__ = ['parse', 'parse_defer', 'transform', 'constrain']
+__all__ = ['parse', 'parse_defer', 'transform']
 
 
 @dataclass(**slots_true)
@@ -83,6 +83,10 @@ _OutT = TypeVar('_OutT')
 _NewOutT = TypeVar('_NewOutT')
 
 
+class _FieldTypeMarker:
+    pass
+
+
 @dataclass(**slots_true)
 class Pipeline(Generic[_InT, _OutT]):
     """Abstract representation of a chain of validation, transformation, and parsing steps."""
@@ -93,6 +97,11 @@ class Pipeline(Generic[_InT, _OutT]):
         self,
         func: Callable[[_OutT], _NewOutT],
     ) -> Pipeline[_InT, _NewOutT]:
+        """Transform the output of the previous step.
+
+        If used as the first step in a pipeline, the type of the field is used.
+        That is, the transformation is applied to after the value is parsed to the field's type.
+        """
         return Pipeline[_InT, _NewOutT](self._steps + [_Transform(func)])
 
     @overload
@@ -103,7 +112,7 @@ class Pipeline(Generic[_InT, _OutT]):
     def parse(self, *, strict: bool = ...) -> Pipeline[_InT, Any]:
         ...
 
-    def parse(self, tp: Any = ..., *, strict: bool = False) -> Pipeline[_InT, Any]:
+    def parse(self, tp: Any = _FieldTypeMarker, *, strict: bool = False) -> Pipeline[_InT, Any]:
         """Parse the input into a new type.
 
         If not type is provided, the type of the field is used.
@@ -169,7 +178,13 @@ class Pipeline(Generic[_InT, _OutT]):
         ...
 
     def constrain(self, constraint: _ConstraintAnnotation) -> Any:
-        """Constrain a value to meet a certain condition."""
+        """Constrain a value to meet a certain condition.
+
+        We support most conditions from `annotated_types`, as well as regular expressions.
+
+        Most of the time you'll be calling a shortcut method like `gt`, `lt`, `len`, etc
+        so you don't need to call this directly.
+        """
         return Pipeline[_InT, _OutT](self._steps + [_Constraint(constraint)])
 
     def gt(self: Pipeline[_InT, _NewOutGt], gt: _NewOutGt) -> Pipeline[_InT, _NewOutGt]:
@@ -256,8 +271,7 @@ class Pipeline(Generic[_InT, _OutT]):
 
 parse = Pipeline[Any, Any]([]).parse
 parse_defer = Pipeline[Any, Any]([]).parse_defer
-transform = Pipeline[Any, Any]([]).transform
-constrain = Pipeline[Any, Any]([]).constrain
+transform = Pipeline[Any, Any]([_Parse(_FieldTypeMarker)]).transform
 
 
 class _StringValidator(Pipeline[str, str]):
@@ -346,7 +360,7 @@ def _apply_parse(
 
     from pydantic import Strict
 
-    if tp is ...:
+    if tp is _FieldTypeMarker:
         return handler(source_type)
 
     if strict:
@@ -579,5 +593,3 @@ _NewOutInterval = TypeVar('_NewOutInterval', bound=_SupportsRange)
 _NewOutStr = TypeVar('_NewOutStr', bound=str)
 _OtherIn = TypeVar('_OtherIn')
 _OtherOut = TypeVar('_OtherOut')
-
-__all__ = ['constrain', 'transform', 'parse', 'parse_defer']

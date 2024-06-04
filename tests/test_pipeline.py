@@ -11,7 +11,7 @@ from pydantic import PydanticExperimentalWarning, TypeAdapter, ValidationError
 
 with warnings.catch_warnings():
     warnings.filterwarnings('ignore', category=PydanticExperimentalWarning)
-    from pydantic.experimental.pipeline import parse
+    from pydantic.experimental.pipeline import parse, transform
 
 
 @pytest.mark.parametrize('potato_variation', ['potato', ' potato ', ' potato', 'potato ', ' POTATO ', ' PoTatO '])
@@ -152,3 +152,9 @@ def test_json_schema(
 
     schema = ta.json_schema(mode='serialization')
     assert schema == expected_ser_schema
+
+
+def test_transform_first_step() -> None:
+    """Check that when transform() is used as the first step in a pipeline it run after parsing."""
+    ta = TypeAdapter(Annotated[int, transform(lambda x: x + 1)])
+    assert ta.validate_python('1') == 2

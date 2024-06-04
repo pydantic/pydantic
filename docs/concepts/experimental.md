@@ -59,7 +59,7 @@ The `parse` method is a more type-safe way to define `BeforeValidator`, `AfterVa
 ```python
 from typing_extensions import Annotated
 
-from pydantic.experimental.pipeline import parse
+from pydantic.experimental.pipeline import parse, transform
 
 # BeforeValidator
 Annotated[int, parse(str).str.strip().parse()]  # (1)!
