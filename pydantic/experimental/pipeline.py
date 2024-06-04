@@ -386,7 +386,7 @@ def _apply_constraint(  # noqa: C901
     """Apply a single constraint to a schema."""
     if isinstance(constraint, annotated_types.Gt):
         gt = constraint.gt
-        if s and s['type'] in ('int', 'float', 'decimal'):
+        if s and s['type'] in {'int', 'float', 'decimal'}:
             s = s.copy()
             if s['type'] == 'int' and isinstance(gt, int):
                 s['gt'] = gt
@@ -402,7 +402,7 @@ def _apply_constraint(  # noqa: C901
             s = _check_func(check_gt, f'> {gt}', s)
     elif isinstance(constraint, annotated_types.Ge):
         ge = constraint.ge
-        if s and s['type'] in ('int', 'float', 'decimal'):
+        if s and s['type'] in {'int', 'float', 'decimal'}:
             s = s.copy()
             if s['type'] == 'int' and isinstance(ge, int):
                 s['ge'] = ge
@@ -417,7 +417,7 @@ def _apply_constraint(  # noqa: C901
         s = _check_func(check_ge, f'>= {ge}', s)
     elif isinstance(constraint, annotated_types.Lt):
         lt = constraint.lt
-        if s and s['type'] in ('int', 'float', 'decimal'):
+        if s and s['type'] in {'int', 'float', 'decimal'}:
             s = s.copy()
             if s['type'] == 'int' and isinstance(lt, int):
                 s['lt'] = lt
@@ -432,7 +432,7 @@ def _apply_constraint(  # noqa: C901
         s = _check_func(check_lt, f'< {lt}', s)
     elif isinstance(constraint, annotated_types.Le):
         le = constraint.le
-        if s and s['type'] in ('int', 'float', 'decimal'):
+        if s and s['type'] in {'int', 'float', 'decimal'}:
             s = s.copy()
             if s['type'] == 'int' and isinstance(le, int):
                 s['le'] = le
@@ -449,7 +449,7 @@ def _apply_constraint(  # noqa: C901
         min_len = constraint.min_length
         max_len = constraint.max_length
 
-        if s and s['type'] in ('str', 'list', 'tuple', 'set', 'frozenset', 'dict'):
+        if s and s['type'] in {'str', 'list', 'tuple', 'set', 'frozenset', 'dict'}:
             assert (
                 s['type'] == 'str'
                 or s['type'] == 'list'
@@ -472,7 +472,7 @@ def _apply_constraint(  # noqa: C901
         s = _check_func(check_len, f'length >= {min_len} and length <= {max_len}', s)
     elif isinstance(constraint, annotated_types.MultipleOf):
         multiple_of = constraint.multiple_of
-        if s and s['type'] in ('int', 'float', 'decimal'):
+        if s and s['type'] in {'int', 'float', 'decimal'}:
             s = s.copy()
             if s['type'] == 'int' and isinstance(multiple_of, int):
                 s['multiple_of'] = multiple_of
