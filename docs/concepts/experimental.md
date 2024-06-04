@@ -6,7 +6,7 @@ In this section you will find documentation for new, experimental features in Py
 
 ## Pipeline API
 
-Pydantic v2.8.0 introduced an experimental pipeline API that allows composing parsing, constraints and transformations in a more type-safe manner than existing APIs. This API is subject to change or removal, we are looking for feedback and suggestions before making it a permanent part of Pydantic.
+Pydantic v2.8.0 introduced an experimental "pipeline" API that allows composing parsing, constraints and transformations in a more type-safe manner than existing APIs. This API is subject to change or removal, we are looking for feedback and suggestions before making it a permanent part of Pydantic.
 
 ```python
 from __future__ import annotations
