@@ -47,14 +47,14 @@ class _Transform:
 
 @dataclass(**slots_true)
 class _ValidateOr:
-    left: Validate[Any, Any]
-    right: Validate[Any, Any]
+    left: Pipeline[Any, Any]
+    right: Pipeline[Any, Any]
 
 
 @dataclass(**slots_true)
 class _ValidateAnd:
-    left: Validate[Any, Any]
-    right: Validate[Any, Any]
+    left: Pipeline[Any, Any]
+    right: Pipeline[Any, Any]
 
 
 _ConstraintAnnotation = Union[
@@ -84,7 +84,7 @@ _NewOutT = TypeVar('_NewOutT')
 
 
 @dataclass(**slots_true)
-class Validate(Generic[_InT, _OutT]):
+class Pipeline(Generic[_InT, _OutT]):
     """Abstract representation of a chain of validation, transformation, and parsing steps."""
 
     _steps: list[_Step]
@@ -92,18 +92,18 @@ class Validate(Generic[_InT, _OutT]):
     def transform(
         self,
         func: Callable[[_OutT], _NewOutT],
-    ) -> Validate[_InT, _NewOutT]:
-        return Validate[_InT, _NewOutT](self._steps + [_Transform(func)])
+    ) -> Pipeline[_InT, _NewOutT]:
+        return Pipeline[_InT, _NewOutT](self._steps + [_Transform(func)])
 
     @overload
-    def parse(self, tp: type[_NewOutT], *, strict: bool = ...) -> Validate[_InT, _NewOutT]:
+    def parse(self, tp: type[_NewOutT], *, strict: bool = ...) -> Pipeline[_InT, _NewOutT]:
         ...
 
     @overload
-    def parse(self, *, strict: bool = ...) -> Validate[_InT, Any]:
+    def parse(self, *, strict: bool = ...) -> Pipeline[_InT, Any]:
         ...
 
-    def parse(self, tp: Any = ..., *, strict: bool = False) -> Validate[_InT, Any]:
+    def parse(self, tp: Any = ..., *, strict: bool = False) -> Pipeline[_InT, Any]:
         """Parse the input into a new type.
 
         If not type is provided, the type of the field is used.
@@ -111,131 +111,131 @@ class Validate(Generic[_InT, _OutT]):
         Types are parsed in Pydantic's `lax` mode by default,
         but you can enable `strict` mode by passing `strict=True`.
         """
-        return Validate[_InT, Any](self._steps + [_Parse(tp, strict=strict)])
+        return Pipeline[_InT, Any](self._steps + [_Parse(tp, strict=strict)])
 
-    def parse_defer(self, func: Callable[[], type[_NewOutT]]) -> Validate[_InT, _NewOutT]:
+    def parse_defer(self, func: Callable[[], type[_NewOutT]]) -> Pipeline[_InT, _NewOutT]:
         """Parse the input into a new type, deferring resolution of the type until the current class
         is fully defined.
 
         This is useful when you need to reference the class in it's own type annotations.
         """
-        return Validate[_InT, _NewOutT](self._steps + [_ParseDefer(func)])
+        return Pipeline[_InT, _NewOutT](self._steps + [_ParseDefer(func)])
 
     # constraints
     @overload
-    def constrain(self: Validate[_InT, _NewOutGe], constraint: annotated_types.Ge) -> Validate[_InT, _NewOutGe]:
+    def constrain(self: Pipeline[_InT, _NewOutGe], constraint: annotated_types.Ge) -> Pipeline[_InT, _NewOutGe]:
         ...
 
     @overload
-    def constrain(self: Validate[_InT, _NewOutGt], constraint: annotated_types.Gt) -> Validate[_InT, _NewOutGt]:
+    def constrain(self: Pipeline[_InT, _NewOutGt], constraint: annotated_types.Gt) -> Pipeline[_InT, _NewOutGt]:
         ...
 
     @overload
-    def constrain(self: Validate[_InT, _NewOutLe], constraint: annotated_types.Le) -> Validate[_InT, _NewOutLe]:
+    def constrain(self: Pipeline[_InT, _NewOutLe], constraint: annotated_types.Le) -> Pipeline[_InT, _NewOutLe]:
         ...
 
     @overload
-    def constrain(self: Validate[_InT, _NewOutLt], constraint: annotated_types.Lt) -> Validate[_InT, _NewOutLt]:
+    def constrain(self: Pipeline[_InT, _NewOutLt], constraint: annotated_types.Lt) -> Pipeline[_InT, _NewOutLt]:
         ...
 
     @overload
-    def constrain(self: Validate[_InT, _NewOutLen], constraint: annotated_types.Len) -> Validate[_InT, _NewOutLen]:
-        ...
-
-    @overload
-    def constrain(
-        self: Validate[_InT, _NewOutDiv], constraint: annotated_types.MultipleOf
-    ) -> Validate[_InT, _NewOutDiv]:
+    def constrain(self: Pipeline[_InT, _NewOutLen], constraint: annotated_types.Len) -> Pipeline[_InT, _NewOutLen]:
         ...
 
     @overload
     def constrain(
-        self: Validate[_InT, _NewOutDatetime], constraint: annotated_types.Timezone
-    ) -> Validate[_InT, _NewOutDatetime]:
-        ...
-
-    @overload
-    def constrain(self: Validate[_InT, _OutT], constraint: annotated_types.Predicate) -> Validate[_InT, _OutT]:
+        self: Pipeline[_InT, _NewOutDiv], constraint: annotated_types.MultipleOf
+    ) -> Pipeline[_InT, _NewOutDiv]:
         ...
 
     @overload
     def constrain(
-        self: Validate[_InT, _NewOutInterval], constraint: annotated_types.Interval
-    ) -> Validate[_InT, _NewOutInterval]:
+        self: Pipeline[_InT, _NewOutDatetime], constraint: annotated_types.Timezone
+    ) -> Pipeline[_InT, _NewOutDatetime]:
         ...
 
     @overload
-    def constrain(self: Validate[_InT, _NewOutT], constraint: Pattern[str]) -> Validate[_InT, _NewOutT]:
+    def constrain(self: Pipeline[_InT, _OutT], constraint: annotated_types.Predicate) -> Pipeline[_InT, _OutT]:
+        ...
+
+    @overload
+    def constrain(
+        self: Pipeline[_InT, _NewOutInterval], constraint: annotated_types.Interval
+    ) -> Pipeline[_InT, _NewOutInterval]:
+        ...
+
+    @overload
+    def constrain(self: Pipeline[_InT, _NewOutT], constraint: Pattern[str]) -> Pipeline[_InT, _NewOutT]:
         ...
 
     def constrain(self, constraint: _ConstraintAnnotation) -> Any:
         """Constrain a value to meet a certain condition."""
-        return Validate[_InT, _OutT](self._steps + [_Constraint(constraint)])
+        return Pipeline[_InT, _OutT](self._steps + [_Constraint(constraint)])
 
-    def gt(self: Validate[_InT, _NewOutGt], gt: _NewOutGt) -> Validate[_InT, _NewOutGt]:
+    def gt(self: Pipeline[_InT, _NewOutGt], gt: _NewOutGt) -> Pipeline[_InT, _NewOutGt]:
         """Constrain a value to be greater than a certain value."""
         return self.constrain(annotated_types.Gt(gt))
 
-    def lt(self: Validate[_InT, _NewOutLt], lt: _NewOutLt) -> Validate[_InT, _NewOutLt]:
+    def lt(self: Pipeline[_InT, _NewOutLt], lt: _NewOutLt) -> Pipeline[_InT, _NewOutLt]:
         """Constrain a value to be less than a certain value."""
         return self.constrain(annotated_types.Lt(lt))
 
-    def ge(self: Validate[_InT, _NewOutGe], ge: _NewOutGe) -> Validate[_InT, _NewOutGe]:
+    def ge(self: Pipeline[_InT, _NewOutGe], ge: _NewOutGe) -> Pipeline[_InT, _NewOutGe]:
         """Constrain a value to be greater than or equal to a certain value."""
         return self.constrain(annotated_types.Ge(ge))
 
-    def le(self: Validate[_InT, _NewOutLe], le: _NewOutLe) -> Validate[_InT, _NewOutLe]:
+    def le(self: Pipeline[_InT, _NewOutLe], le: _NewOutLe) -> Pipeline[_InT, _NewOutLe]:
         """Constrain a value to be less than or equal to a certain value."""
         return self.constrain(annotated_types.Le(le))
 
-    def len(self: Validate[_InT, _NewOutLen], min_len: int, max_len: int | None = None) -> Validate[_InT, _NewOutLen]:
+    def len(self: Pipeline[_InT, _NewOutLen], min_len: int, max_len: int | None = None) -> Pipeline[_InT, _NewOutLen]:
         """Constrain a value to have a certain length."""
         return self.constrain(annotated_types.Len(min_len, max_len))
 
-    def multiple_of(self: Validate[_InT, _NewOutDiv], multiple_of: _NewOutDiv) -> Validate[_InT, _NewOutDiv]:
+    def multiple_of(self: Pipeline[_InT, _NewOutDiv], multiple_of: _NewOutDiv) -> Pipeline[_InT, _NewOutDiv]:
         """Constrain a value to be a multiple of a certain number."""
         return self.constrain(annotated_types.MultipleOf(multiple_of))
 
-    def predicate(self: Validate[_InT, _NewOutT], func: Callable[[_NewOutT], bool]) -> Validate[_InT, _NewOutT]:
+    def predicate(self: Pipeline[_InT, _NewOutT], func: Callable[[_NewOutT], bool]) -> Pipeline[_InT, _NewOutT]:
         """Constrain a value to meet a certain predicate."""
         return self.constrain(annotated_types.Predicate(func))
 
-    def not_in(self: Validate[_InT, _OutT], values: Container[_OutT]) -> Validate[_InT, _OutT]:
+    def not_in(self: Pipeline[_InT, _OutT], values: Container[_OutT]) -> Pipeline[_InT, _OutT]:
         """Constrain a value to not be in a certain set."""
         return self.predicate(partial(operator.__contains__, values))
 
-    def in_(self: Validate[_InT, _OutT], values: Container[_OutT]) -> Validate[_InT, _OutT]:
+    def in_(self: Pipeline[_InT, _OutT], values: Container[_OutT]) -> Pipeline[_InT, _OutT]:
         """Constrain a value to be in a certain set."""
         return self.predicate(partial(operator.__contains__, values))
 
-    def not_eq(self: Validate[_InT, _OutT], value: _OutT) -> Validate[_InT, _OutT]:
+    def not_eq(self: Pipeline[_InT, _OutT], value: _OutT) -> Pipeline[_InT, _OutT]:
         """Constrain a value to not be equal to a certain value."""
         return self.predicate(partial(operator.__ne__, value))
 
-    def eq(self: Validate[_InT, _OutT], value: _OutT) -> Validate[_InT, _OutT]:
+    def eq(self: Pipeline[_InT, _OutT], value: _OutT) -> Pipeline[_InT, _OutT]:
         """Constrain a value to be equal to a certain value."""
         return self.predicate(partial(operator.__eq__, value))
 
     # timezone methods
     @property
-    def dt(self: Validate[_InT, _NewOutDatetime]) -> _DateTimeValidator:
+    def dt(self: Pipeline[_InT, _NewOutDatetime]) -> _DateTimeValidator:
         return _DateTimeValidator(self._steps)
 
     # string methods
     @property
-    def str(self: Validate[_InT, _NewOutStr]) -> _StringValidator:
+    def str(self: Pipeline[_InT, _NewOutStr]) -> _StringValidator:
         return _StringValidator(self._steps)
 
     # operators
-    def otherwise(self, other: Validate[_OtherIn, _OtherOut]) -> Validate[_InT | _OtherIn, _OutT | _OtherOut]:
+    def otherwise(self, other: Pipeline[_OtherIn, _OtherOut]) -> Pipeline[_InT | _OtherIn, _OutT | _OtherOut]:
         """Combine two validation chains, returning the result of the first chain if it succeeds, and the second chain if it fails."""
-        return Validate([_ValidateOr(self, other)])
+        return Pipeline([_ValidateOr(self, other)])
 
     __or__ = otherwise
 
-    def then(self, other: Validate[_OtherIn, _OtherOut]) -> Validate[_InT | _OtherIn, _OutT | _OtherOut]:
+    def then(self, other: Pipeline[_OtherIn, _OtherOut]) -> Pipeline[_InT | _OtherIn, _OutT | _OtherOut]:
         """Pipe the result of one validation chain into another."""
-        return Validate([_ValidateAnd(self, other)])
+        return Pipeline([_ValidateAnd(self, other)])
 
     __and__ = then
 
@@ -254,49 +254,49 @@ class Validate(Generic[_InT, _OutT]):
         return s
 
 
-parse = Validate[Any, Any]([]).parse
-parse_defer = Validate[Any, Any]([]).parse_defer
-transform = Validate[Any, Any]([]).transform
-constrain = Validate[Any, Any]([]).constrain
+parse = Pipeline[Any, Any]([]).parse
+parse_defer = Pipeline[Any, Any]([]).parse_defer
+transform = Pipeline[Any, Any]([]).transform
+constrain = Pipeline[Any, Any]([]).constrain
 
 
-class _StringValidator(Validate[str, str]):
-    def lower(self) -> Validate[str, str]:
+class _StringValidator(Pipeline[str, str]):
+    def lower(self) -> Pipeline[str, str]:
         return self.transform(str.lower)
 
-    def upper(self) -> Validate[str, str]:
+    def upper(self) -> Pipeline[str, str]:
         return self.transform(str.upper)
 
-    def title(self) -> Validate[str, str]:
+    def title(self) -> Pipeline[str, str]:
         return self.transform(str.title)
 
-    def strip(self) -> Validate[str, str]:
+    def strip(self) -> Pipeline[str, str]:
         return self.transform(str.strip)
 
-    def pattern(self, pattern: str) -> Validate[str, str]:
+    def pattern(self, pattern: str) -> Pipeline[str, str]:
         return self.constrain(re.compile(pattern))
 
-    def contains(self, substring: str) -> Validate[str, str]:
+    def contains(self, substring: str) -> Pipeline[str, str]:
         return self.predicate(lambda v: substring in v)
 
-    def starts_with(self, prefix: str) -> Validate[str, str]:
+    def starts_with(self, prefix: str) -> Pipeline[str, str]:
         return self.predicate(lambda v: v.startswith(prefix))
 
-    def ends_with(self, suffix: str) -> Validate[str, str]:
+    def ends_with(self, suffix: str) -> Pipeline[str, str]:
         return self.predicate(lambda v: v.endswith(suffix))
 
 
-class _DateTimeValidator(Validate[datetime.datetime, datetime.datetime]):
-    def tz_naive(self) -> Validate[datetime.datetime, datetime.datetime]:
+class _DateTimeValidator(Pipeline[datetime.datetime, datetime.datetime]):
+    def tz_naive(self) -> Pipeline[datetime.datetime, datetime.datetime]:
         return self.constrain(annotated_types.Timezone(None))
 
-    def tz_aware(self) -> Validate[datetime.datetime, datetime.datetime]:
+    def tz_aware(self) -> Pipeline[datetime.datetime, datetime.datetime]:
         return self.constrain(annotated_types.Timezone(...))
 
-    def tz(self, tz: datetime.tzinfo) -> Validate[datetime.datetime, datetime.datetime]:
+    def tz(self, tz: datetime.tzinfo) -> Pipeline[datetime.datetime, datetime.datetime]:
         return self.constrain(annotated_types.Timezone(tz))  # type: ignore
 
-    def with_tz(self, tz: datetime.tzinfo | None) -> Validate[datetime.datetime, datetime.datetime]:
+    def with_tz(self, tz: datetime.tzinfo | None) -> Pipeline[datetime.datetime, datetime.datetime]:
         return self.transform(partial(datetime.datetime.replace, tzinfo=tz))
 
 
