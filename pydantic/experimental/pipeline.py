@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 from pydantic._internal._internal_dataclass import slots_true
 
-__all__ = ['parse', 'parse_defer', 'transform']
+__all__ = ['validate_as', 'parse_defer', 'transform']
 
 
 @dataclass(**slots_true)
@@ -105,15 +105,15 @@ class Pipeline(Generic[_InT, _OutT]):
         return Pipeline[_InT, _NewOutT](self._steps + [_Transform(func)])
 
     @overload
-    def parse(self, tp: type[_NewOutT], *, strict: bool = ...) -> Pipeline[_InT, _NewOutT]:
+    def validate_as(self, tp: type[_NewOutT], *, strict: bool = ...) -> Pipeline[_InT, _NewOutT]:
         ...
 
     @overload
-    def parse(self, *, strict: bool = ...) -> Pipeline[_InT, Any]:
+    def validate_as(self, *, strict: bool = ...) -> Pipeline[_InT, Any]:
         ...
 
-    def parse(self, tp: Any = _FieldTypeMarker, *, strict: bool = False) -> Pipeline[_InT, Any]:
-        """Parse the input into a new type.
+    def validate_as(self, tp: Any = _FieldTypeMarker, *, strict: bool = False) -> Pipeline[_InT, Any]:
+        """Validate / parse the input into a new type.
 
         If not type is provided, the type of the field is used.
 
@@ -122,7 +122,7 @@ class Pipeline(Generic[_InT, _OutT]):
         """
         return Pipeline[_InT, Any](self._steps + [_Parse(tp, strict=strict)])
 
-    def parse_defer(self, func: Callable[[], type[_NewOutT]]) -> Pipeline[_InT, _NewOutT]:
+    def validate_as_deferred(self, func: Callable[[], type[_NewOutT]]) -> Pipeline[_InT, _NewOutT]:
         """Parse the input into a new type, deferring resolution of the type until the current class
         is fully defined.
 
@@ -269,8 +269,8 @@ class Pipeline(Generic[_InT, _OutT]):
         return s
 
 
-parse = Pipeline[Any, Any]([]).parse
-parse_defer = Pipeline[Any, Any]([]).parse_defer
+validate_as = Pipeline[Any, Any]([]).validate_as
+parse_defer = Pipeline[Any, Any]([]).validate_as_deferred
 transform = Pipeline[Any, Any]([_Parse(_FieldTypeMarker)]).transform
 
 
