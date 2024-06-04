@@ -513,7 +513,7 @@ def test_snake2camel_start_lower(value: str, result: str) -> None:
         ('snake_2_', 'Snake2_'),
     ],
 )
-def test_snake2camel(value: str, result: str) -> None:
+def test_snake2pascal(value: str, result: str) -> None:
     assert to_pascal(value) == result
 
 
