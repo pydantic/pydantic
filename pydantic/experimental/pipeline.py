@@ -22,6 +22,8 @@ if TYPE_CHECKING:
 
 from pydantic._internal._internal_dataclass import slots_true
 
+__all__ = ['parse', 'parse_defer', 'transform', 'constrain']
+
 
 @dataclass(**slots_true)
 class _Parse:
