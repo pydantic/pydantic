@@ -513,7 +513,7 @@ def test_snake2camel_start_lower(value: str, result: str) -> None:
         ('snake_2_', 'Snake2_'),
     ],
 )
-def test_snake2camel(value: str, result: str) -> None:
+def test_snake2pascal(value: str, result: str) -> None:
     assert to_pascal(value) == result
 
 
@@ -538,10 +538,19 @@ def test_snake2camel(value: str, result: str) -> None:
         ('camel2', 'camel_2'),
         ('camel2_', 'camel_2_'),
         ('_camel2', '_camel_2'),
+        ('kebab-to-snake', 'kebab_to_snake'),
+        ('kebab-Snake', 'kebab_snake'),
+        ('Kebab-Snake', 'kebab_snake'),
+        ('PascalToSnake', 'pascal_to_snake'),
+        ('snake_to_snake', 'snake_to_snake'),
     ],
 )
-def test_camel2snake(value: str, result: str) -> None:
+def test_to_snake(value: str, result: str) -> None:
     assert to_snake(value) == result
+
+
+def test_to_camel_from_camel() -> None:
+    assert to_camel('alreadyCamel') == 'alreadyCamel'
 
 
 def test_handle_tuple_schema():
