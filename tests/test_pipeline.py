@@ -9,9 +9,7 @@ from typing import Any, List, Union
 import pytest
 from typing_extensions import Annotated
 
-if sys.version_info < (3, 9):
-    from backports.zoneinfo import ZoneInfo
-else:
+if sys.version_info >= (3, 9):
     from zoneinfo import ZoneInfo
 
 from pydantic import PydanticExperimentalWarning, TypeAdapter, ValidationError
@@ -53,6 +51,7 @@ def test_parse_dt() -> None:
         ta.validate_json('"2002-01-01T00:00:00Z"')
 
 
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='requires python 3.9 or higher')
 def test_unsupported_timezone() -> None:
     with pytest.raises(ValueError, match='timezone other than UTC is not supported'):
         TypeAdapter(Annotated[datetime, validate_as().datetime_tz(ZoneInfo('America/New_York'))])

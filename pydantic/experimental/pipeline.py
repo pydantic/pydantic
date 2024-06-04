@@ -16,9 +16,7 @@ from typing import TYPE_CHECKING, Any, Callable, Generic, Pattern, Protocol, Typ
 import annotated_types
 from typing_extensions import Annotated
 
-if sys.version_info < (3, 9):
-    from backports.zoneinfo import ZoneInfo
-else:
+if sys.version_info >= (3, 9):
     from zoneinfo import ZoneInfo
 
 if TYPE_CHECKING:
@@ -110,7 +108,7 @@ class _Pipeline(Generic[_InT, _OutT]):
         """
         return _Pipeline[_InT, _NewOutT](self._steps + [_Transform(func)])
 
-    def validate_as(self, tp: Union[type[_NewOutT], Any] = Ellipsis, *, strict: bool = False) -> _Pipeline[_InT, Any]:
+    def validate_as(self, tp: type[_NewOutT] | Any = Ellipsis, *, strict: bool = False) -> _Pipeline[_InT, Any]:
         """Validate / parse the input into a new type.
 
         If no type is provided, the type of the field is used.
@@ -497,6 +495,11 @@ def _apply_constraint(  # noqa: C901
     elif isinstance(constraint, annotated_types.Timezone):
         tz = constraint.tz
 
+        if sys.version_info >= (3, 9):
+            utc_options = [datetime.timezone.utc, ZoneInfo('UTC')]
+        else:
+            utc_options = [datetime.timezone.utc]
+
         if tz is ...:
             if s and s['type'] == 'datetime':
                 s = s.copy()
@@ -519,7 +522,7 @@ def _apply_constraint(  # noqa: C901
                     return v.tzinfo is None
 
                 s = _check_func(check_tz_naive, 'timezone naive', s)
-        elif tz in (datetime.timezone.utc, ZoneInfo('UTC')):
+        elif tz in utc_options:
             # special case for UTC since it's such a common case
             if s and s['type'] == 'datetime':
                 s = s.copy()
