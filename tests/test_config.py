@@ -710,7 +710,7 @@ def test_config_model_defer_build(
 ):
     config = ConfigDict(defer_build=True)
     if defer_build_mode is not None:
-        config['_defer_build_mode'] = defer_build_mode
+        config['experimental_defer_build_mode'] = defer_build_mode
 
     class MyModel(BaseModel):
         model_config = config
@@ -719,11 +719,11 @@ def test_config_model_defer_build(
     if defer_build_mode is None or 'model' in defer_build_mode:
         assert isinstance(MyModel.__pydantic_validator__, MockValSer)
         assert isinstance(MyModel.__pydantic_serializer__, MockValSer)
-        assert generate_schema_calls.count == 0, 'Should respect _defer_build_mode'
+        assert generate_schema_calls.count == 0, 'Should respect experimental_defer_build_mode'
     else:
         assert isinstance(MyModel.__pydantic_validator__, SchemaValidator)
         assert isinstance(MyModel.__pydantic_serializer__, SchemaSerializer)
-        assert generate_schema_calls.count == 1, 'Should respect _defer_build_mode'
+        assert generate_schema_calls.count == 1, 'Should respect experimental_defer_build_mode'
 
     m = MyModel(x=1)
     assert m.x == 1
@@ -742,7 +742,7 @@ def test_config_model_type_adapter_defer_build(
 ):
     config = ConfigDict(defer_build=True)
     if defer_build_mode is not None:
-        config['_defer_build_mode'] = defer_build_mode
+        config['experimental_defer_build_mode'] = defer_build_mode
 
     class MyModel(BaseModel):
         model_config = config
@@ -770,7 +770,7 @@ def test_config_plain_type_adapter_defer_build(
 ):
     config = ConfigDict(defer_build=True)
     if defer_build_mode is not None:
-        config['_defer_build_mode'] = defer_build_mode
+        config['experimental_defer_build_mode'] = defer_build_mode
     is_deferred = defer_build_mode is not None and 'type_adapter' in defer_build_mode
 
     ta = TypeAdapter(Dict[str, int], config=config)
@@ -792,7 +792,7 @@ def test_config_model_defer_build_nested(
 ):
     config = ConfigDict(defer_build=True)
     if defer_build_mode:
-        config['_defer_build_mode'] = defer_build_mode
+        config['experimental_defer_build_mode'] = defer_build_mode
 
     assert generate_schema_calls.count == 0
 
@@ -807,7 +807,7 @@ def test_config_model_defer_build_nested(
     assert isinstance(MyModel.__pydantic_serializer__, SchemaSerializer)
 
     expected_schema_count = 1 if defer_build_mode is None or 'model' in defer_build_mode else 2
-    assert generate_schema_calls.count == expected_schema_count, 'Should respect _defer_build_mode'
+    assert generate_schema_calls.count == expected_schema_count, 'Should respect experimental_defer_build_mode'
 
     if defer_build_mode is None or 'model' in defer_build_mode:
         assert isinstance(MyNestedModel.__pydantic_validator__, MockValSer)
