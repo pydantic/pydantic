@@ -154,7 +154,9 @@ print(
 LONDON = 'Europe/London'
 try:
     print(
-        ta.validate_python(dt.datetime(2023, 1, 1, 0, 0, tzinfo=pytz.timezone(LONDON)))
+        ta.validate_python(
+            dt.datetime(2023, 1, 1, 0, 0, tzinfo=pytz.timezone(LONDON))
+        )
     )
 except ValidationError as e:
     pprint(e.errors(), width=100)
