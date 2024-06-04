@@ -383,6 +383,7 @@ def _apply_transform(s: cs.CoreSchema | None, func: Callable[[Any], Any]) -> cs.
 def _apply_constraint(  # noqa: C901
     s: cs.CoreSchema | None, constraint: _ConstraintAnnotation
 ) -> cs.CoreSchema:
+    """Apply a single constraint to a schema."""
     if isinstance(constraint, annotated_types.Gt):
         gt = constraint.gt
         if s and s['type'] in ('int', 'float', 'decimal'):
@@ -525,22 +526,22 @@ def _apply_constraint(  # noqa: C901
         func = constraint.func
 
         if func.__name__ == '<lambda>':
+            # attempt to extract the source code for a lambda function
+            # to use as the function name in error messages
+            # TODO: is there a better way? should we just not do this?
+            import inspect
 
-            def on_lambda_err() -> str:
-                # TODO: is there a better way?
-                import inspect
+            try:
+                # remove ')' suffix, can use removesuffix once we drop 3.8
+                source = inspect.getsource(func).strip()
+                if source.endswith(')'):
+                    source = source[:-1]
+                lambda_source_code = '`' + ''.join(''.join(source.split('lambda ')[1:]).split(':')[1:]).strip() + '`'
+            except OSError:
+                # stringified annotations
+                lambda_source_code = 'lambda'
 
-                try:
-                    # remove ')' suffix, can use removesuffix once we drop 3.8
-                    source = inspect.getsource(func).strip()
-                    if source.endswith(')'):
-                        source = source[:-1]
-                    return '`' + ''.join(''.join(source.split('lambda ')[1:]).split(':')[1:]).strip() + '`'
-                except OSError:
-                    # stringified annotations
-                    return 'lambda'
-
-            s = _check_func(func, on_lambda_err, s)
+            s = _check_func(func, lambda_source_code, s)
         else:
             s = _check_func(func, func.__name__, s)
     else:
