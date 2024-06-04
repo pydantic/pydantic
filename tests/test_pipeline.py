@@ -1,13 +1,18 @@
 """Tests for the experimental transform module."""
 from __future__ import annotations
 
+import sys
 import warnings
 from datetime import datetime, timezone
 from typing import Any, List, Union
 
 import pytest
 from typing_extensions import Annotated
-from zoneinfo import ZoneInfo
+
+if sys.version_info < (3, 9):
+    from backports.zoneinfo import ZoneInfo
+else:
+    from zoneinfo import ZoneInfo
 
 from pydantic import PydanticExperimentalWarning, TypeAdapter, ValidationError
 

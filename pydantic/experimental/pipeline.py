@@ -15,7 +15,11 @@ from typing import TYPE_CHECKING, Any, Callable, Generic, Pattern, Protocol, Typ
 
 import annotated_types
 from typing_extensions import Annotated
-from zoneinfo import ZoneInfo
+
+if sys.version_info < (3, 9):
+    from backports.zoneinfo import ZoneInfo
+else:
+    from zoneinfo import ZoneInfo
 
 if TYPE_CHECKING:
     from pydantic_core import core_schema as cs
@@ -23,12 +27,6 @@ if TYPE_CHECKING:
     from pydantic import GetCoreSchemaHandler
 
 from pydantic._internal._internal_dataclass import slots_true as _slots_true
-
-if sys.version_info < (3, 10):
-    EllipsisType = type(Ellipsis)
-elif sys.version_info < (3, 11):
-    from types import EllipsisType as EllipsisType
-
 
 __all__ = ['validate_as', 'validate_as_deferred', 'transform']
 
@@ -112,21 +110,16 @@ class _Pipeline(Generic[_InT, _OutT]):
         """
         return _Pipeline[_InT, _NewOutT](self._steps + [_Transform(func)])
 
-    @overload
-    def validate_as(self, tp: type[_NewOutT], *, strict: bool = ...) -> _Pipeline[_InT, _NewOutT]:
-        ...
-
-    @overload
-    def validate_as(self, tp: EllipsisType = Ellipsis, *, strict: bool = ...) -> _Pipeline[_InT, Any]:
-        ...
-
-    def validate_as(self, tp: Any = _FieldTypeMarker, *, strict: bool = False) -> _Pipeline[_InT, Any]:
+    def validate_as(self, tp: Union[type[_NewOutT], Any] = Ellipsis, *, strict: bool = False) -> _Pipeline[_InT, Any]:
         """Validate / parse the input into a new type.
 
         If no type is provided, the type of the field is used.
 
         Types are parsed in Pydantic's `lax` mode by default,
         but you can enable `strict` mode by passing `strict=True`.
+
+        # TODO: Eventually overload with type[_NewOutT] as one option and ellipsis or EllipsisType as the other,
+        # but this is blocked by 3.8 and 3.9 support.
         """
         if tp is Ellipsis:
             tp = _FieldTypeMarker
