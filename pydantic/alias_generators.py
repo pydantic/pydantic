@@ -30,8 +30,9 @@ def to_camel(snake: str) -> str:
     Returns:
         The converted camelCase string.
     """
-    # If the string is already in camelCase, return it as it is
-    if re.match('^[a-z]+[A-Za-z0-9]*$', snake):
+    # If the string is already in camelCase and does not contain a digit followed
+    # by a lowercase letter, return it as it is
+    if re.match('^[a-z]+[A-Za-z0-9]*$', snake) and not re.search(r'\d[a-z]', snake):
         return snake
 
     camel = to_pascal(snake)
