@@ -1,9 +1,13 @@
+import datetime as dt
 import sys
-from typing import Any, Generic, Iterator, List, Optional, Set, TypeVar
+from dataclasses import dataclass
+from functools import partial
+from typing import Any, Callable, Generic, Iterator, List, Optional, Set, TypeVar, Union
 
 import pytest
+import pytz
 from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt, Predicate
-from pydantic_core import PydanticUndefined, core_schema
+from pydantic_core import CoreSchema, PydanticUndefined, core_schema
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field, GetCoreSchemaHandler, TypeAdapter, ValidationError
@@ -482,3 +486,126 @@ def test_min_length_field_info_not_lost():
             'type': 'string_too_short',
         }
     ]
+
+
+def test_tzinfo_validator_example_pattern() -> None:
+    """Test that tzinfo custom validator pattern works as explained in the examples/validators docs."""
+
+    def my_validator_function(
+        tz_constraint: Union[str, None],
+        value: dt.datetime,
+        handler: Callable,
+    ):
+        """Validate tz_constraint and tz_info"""
+
+        # handle naive datetimes
+        if tz_constraint is None:
+            assert value.tzinfo is None
+            return handler(value)
+
+        # validate tz_constraint and tz-aware tzinfo
+        assert tz_constraint in pytz.all_timezones
+        result = handler(value)
+        assert tz_constraint == str(result.tzinfo)
+
+        return result
+
+    @dataclass(frozen=True)
+    class MyDatetimeValidator:
+        tz_constraint: Optional[str] = None
+
+        def __get_pydantic_core_schema__(
+            self,
+            source_type: Any,
+            handler: GetCoreSchemaHandler,
+        ) -> CoreSchema:
+            return core_schema.no_info_wrap_validator_function(
+                partial(my_validator_function, self.tz_constraint), handler(source_type)
+            )
+
+    LA = 'America/Los_Angeles'
+
+    # passing naive test
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator()])
+    ta.validate_python(dt.datetime.now())
+
+    # failing naive test
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator()])
+    with pytest.raises(Exception):
+        ta.validate_python(dt.datetime.now(pytz.timezone(LA)))
+
+    # passing tz-aware test
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(LA)])
+    ta.validate_python(dt.datetime.now(pytz.timezone(LA)))
+
+    # failing bad tz
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator('foo')])
+    with pytest.raises(Exception):
+        ta.validate_python(dt.datetime.now())
+
+    # failing tz-aware test
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(LA)])
+    with pytest.raises(Exception):
+        ta.validate_python(dt.datetime.now())
+
+
+def test_utcoffset_validator_example_pattern() -> None:
+    """Test that utcoffset custom validator pattern works as explained in the examples/validators docs."""
+
+    def my_validator_function(
+        lower_bound: int,
+        upper_bound: int,
+        value: dt.datetime,
+        handler: Callable,
+    ):
+        """validate and test bounds"""
+        # validate utcoffset exists
+        assert value.utcoffset() is not None
+
+        # validate bound range
+        assert lower_bound <= upper_bound
+
+        result = handler(value)
+
+        # validate value is in range
+        hours_offset = value.utcoffset().total_seconds() / 3600
+
+        assert hours_offset >= lower_bound
+        assert hours_offset <= upper_bound
+
+        return result
+
+    @dataclass(frozen=True)
+    class MyDatetimeValidator:
+        lower_bound: int
+        upper_bound: int
+
+        def __get_pydantic_core_schema__(
+            self,
+            source_type: Any,
+            handler: GetCoreSchemaHandler,
+        ) -> CoreSchema:
+            return core_schema.no_info_wrap_validator_function(
+                partial(
+                    my_validator_function,
+                    self.lower_bound,
+                    self.upper_bound,
+                ),
+                handler(source_type),
+            )
+
+    LA = 'America/Los_Angeles'
+
+    # test valid bound passing
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(-10, 10)])
+    ta.validate_python(dt.datetime.now(pytz.timezone(LA)))
+
+    # test valid bound failing - missing TZ
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(-12, 12)])
+    with pytest.raises(Exception):
+        ta.validate_python(dt.datetime.now())
+
+    # test invalid bound
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(0, 4)])
+    with pytest.raises(Exception):
+        ta.validate_python(dt.datetime.now(pytz.timezone(LA)))
