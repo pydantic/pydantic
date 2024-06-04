@@ -5,6 +5,7 @@ from __future__ import annotations
 import datetime
 import operator
 import re
+import sys
 from collections import deque
 from collections.abc import Container
 from dataclasses import dataclass
@@ -23,7 +24,13 @@ if TYPE_CHECKING:
 
 from pydantic._internal._internal_dataclass import slots_true
 
-__all__ = ['validate_as', 'parse_defer', 'transform']
+if sys.version_info < (3, 10):
+    EllipsisType = type(Ellipsis)
+elif sys.version_info < (3, 11):
+    from types import EllipsisType as EllipsisType
+
+
+__all__ = ['validate_as', 'validate_as_deferred', 'transform']
 
 
 @dataclass(**slots_true)
@@ -110,17 +117,19 @@ class _Pipeline(Generic[_InT, _OutT]):
         ...
 
     @overload
-    def validate_as(self, *, strict: bool = ...) -> _Pipeline[_InT, Any]:
+    def validate_as(self, tp: EllipsisType = Ellipsis, *, strict: bool = ...) -> _Pipeline[_InT, Any]:
         ...
 
     def validate_as(self, tp: Any = _FieldTypeMarker, *, strict: bool = False) -> _Pipeline[_InT, Any]:
         """Validate / parse the input into a new type.
 
-        If not type is provided, the type of the field is used.
+        If no type is provided, the type of the field is used.
 
         Types are parsed in Pydantic's `lax` mode by default,
         but you can enable `strict` mode by passing `strict=True`.
         """
+        if tp is Ellipsis:
+            tp = _FieldTypeMarker
         return _Pipeline[_InT, Any](self._steps + [_ValidateAs(tp, strict=strict)])
 
     def validate_as_deferred(self, func: Callable[[], type[_NewOutT]]) -> _Pipeline[_InT, _NewOutT]:
@@ -303,7 +312,7 @@ class _Pipeline(Generic[_InT, _OutT]):
 
 
 validate_as = _Pipeline[Any, Any]([]).validate_as
-parse_defer = _Pipeline[Any, Any]([]).validate_as_deferred
+validate_as_deferred = _Pipeline[Any, Any]([]).validate_as_deferred
 transform = _Pipeline[Any, Any]([_ValidateAs(_FieldTypeMarker)]).transform
 
 

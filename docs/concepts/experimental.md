@@ -16,30 +16,35 @@ from datetime import datetime
 from typing_extensions import Annotated
 
 from pydantic import BaseModel
-from pydantic.experimental.pipeline import parse, parse_defer
+from pydantic.experimental.pipeline import validate_as, validate_as_deferred
 
 
 class User(BaseModel):
-    name: Annotated[str, parse(str).str.lower()]  # (1)!
-    age: Annotated[int, parse(int).gt(0)]  # (2)!
-    username: Annotated[str, parse(str).str.pattern(r'[a-z]+')]  # (3)!
+    name: Annotated[str, validate_as(str).str_lower()]  # (1)!
+    age: Annotated[int, validate_as(int).gt(0)]  # (2)!
+    username: Annotated[str, validate_as(str).str_pattern(r'[a-z]+')]  # (3)!
     password: Annotated[
         str,
-        parse(str)
+        validate_as(str)
         .transform(str.lower)
         .predicate(lambda x: x != 'password'),  # (4)!
     ]
     favorite_number: Annotated[  # (5)!
         int,
-        (parse(int) | parse(str).str.strip().parse(int)).gt(0),
+        (validate_as(int) | validate_as(str).str_strip().validate_as(int)).gt(
+            0
+        ),
     ]
-    friends: Annotated[list[User], parse().len(0, 100)]  # (6)!
+    friends: Annotated[list[User], validate_as(...).len(0, 100)]  # (6)!
     family: Annotated[  # (7)!
         list[User],
-        parse_defer(lambda: list[User]).transform(lambda x: x[1:]),
+        validate_as_deferred(lambda: list[User]).transform(lambda x: x[1:]),
     ]
     bio: Annotated[
-        datetime, parse(int).transform(lambda x: x / 1_000_000).parse()  # (8)!
+        datetime,
+        validate_as(int)
+        .transform(lambda x: x / 1_000_000)
+        .validate_as(...),  # (8)!
     ]
 ```
 
@@ -48,29 +53,33 @@ class User(BaseModel):
 3. Constrain a string to match a regex pattern.
 4. You can also use the lower level transform, constrain and predicate methods.
 5. Use the `|` or `&` operators to combine steps (like a logical OR or AND).
-6. Calling `parse()` with no arguments implies `parse(<field type>)`. Use `parse(Any)` to accept any type.
-7. For recursive types you can use `parse_defer` to reference the type itself before it's defined.
-8. You can call `parse()` before or after other steps to do pre or post processing.
+6. Calling `validate_as(...)` with `Ellipsis`, `...` as the first positional argument implies `validate_as(<field type>)`. Use `validate_as(Any)` to accept any type.
+7. For recursive types you can use `validate_as_deferred` to reference the type itself before it's defined.
+8. You can call `validate_as()` before or after other steps to do pre or post processing.
 
 ### Mapping from `BeforeValidator`, `AfterValidator` and `WrapValidator`
 
-The `parse` method is a more type-safe way to define `BeforeValidator`, `AfterValidator` and `WrapValidator`:
+The `validate_as` method is a more type-safe way to define `BeforeValidator`, `AfterValidator` and `WrapValidator`:
 
 ```python
 from typing_extensions import Annotated
 
-from pydantic.experimental.pipeline import parse, transform
+from pydantic.experimental.pipeline import transform, validate_as
 
 # BeforeValidator
-Annotated[int, parse(str).str.strip().parse()]  # (1)!
+Annotated[int, validate_as(str).str_strip().validate_as(...)]  # (1)!
 # AfterValidator
 Annotated[int, transform(lambda x: x * 2)]  # (2)!
 # WrapValidator
 Annotated[
-    int, parse(str).str.strip().parse().transform(lambda x: x * 2)  # (3)!
+    int,
+    validate_as(str)
+    .str_strip()
+    .validate_as(...)
+    .transform(lambda x: x * 2),  # (3)!
 ]
 ```
 
 1. Strip whitespace from a string before parsing it as an integer.
 2. Multiply an integer by 2 after parsing it.
-3. Strip whitespace from a string, parse it as an integer, then multiply it by 2.
+3. Strip whitespace from a string, validate it as an integer, then multiply it by 2.
