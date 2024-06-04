@@ -23,17 +23,29 @@ def test_parse_str(potato_variation: str) -> None:
 
 
 def test_parse_dt() -> None:
-    expected = datetime(2021, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+    expected = datetime(2000, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
 
     ta = TypeAdapter(Annotated[datetime, validate_as().datetime_tz(timezone.utc)])
-    assert ta.validate_json('"2021-01-01T00:00:00Z"') == expected
+    assert ta.validate_json('"2000-01-01T00:00:00Z"') == expected
     with pytest.raises(ValidationError):
-        ta.validate_json('"2021-01-01T00:00:00"')
+        ta.validate_json('"2000-01-01T00:00:00"')
 
     ta = TypeAdapter(Annotated[datetime, validate_as().transform(lambda x: x).datetime_tz(timezone.utc)])
-    assert ta.validate_json('"2021-01-01T00:00:00Z"') == expected
+    assert ta.validate_json('"2000-01-01T00:00:00Z"') == expected
     with pytest.raises(ValidationError):
-        ta.validate_json('"2021-01-01T00:00:00"')
+        ta.validate_json('"2000-01-01T00:00:00"')
+
+    ta = TypeAdapter(
+        Annotated[
+            datetime,
+            validate_as().gt(datetime(1999, 1, 1, tzinfo=timezone.utc)).lt(datetime(2001, 1, 1, tzinfo=timezone.utc)),
+        ]
+    )
+    assert ta.validate_json('"2000-01-01T00:00:00Z"') == expected
+    with pytest.raises(ValidationError):
+        ta.validate_json('"1988-01-01T00:00:00Z"')
+    with pytest.raises(ValidationError):
+        ta.validate_json('"2002-01-01T00:00:00Z"')
 
 
 def test_unsupported_timezone() -> None:
