@@ -14,16 +14,20 @@ We use `__get_pydantic_core_schema__` in the validator to customize the schema o
 
 ```py
 import datetime as dt
-from pprint import pprint
 from dataclasses import dataclass
-from functools import partial
+from pprint import pprint
 from typing import Any, Callable, Optional
 
 import pytz
 from pydantic_core import CoreSchema, core_schema
 from typing_extensions import Annotated
 
-from pydantic import GetCoreSchemaHandler, PydanticUserError, TypeAdapter, ValidationError
+from pydantic import (
+    GetCoreSchemaHandler,
+    PydanticUserError,
+    TypeAdapter,
+    ValidationError,
+)
 
 
 @dataclass(frozen=True)
@@ -38,12 +42,17 @@ class MyDatetimeValidator:
         """Validate tz_constraint and tz_info."""
         # handle naive datetimes
         if self.tz_constraint is None:
-            assert value.tzinfo is None, 'tz_constraint is None, but provided value is tz-aware.'
+            assert (
+                value.tzinfo is None
+            ), 'tz_constraint is None, but provided value is tz-aware.'
             return handler(value)
 
         # validate tz_constraint and tz-aware tzinfo
         if self.tz_constraint not in pytz.all_timezones:
-            raise PydanticUserError(f'Invalid tz_constraint: {self.tz_constraint}', code='unevaluable-type-annotation')
+            raise PydanticUserError(
+                f'Invalid tz_constraint: {self.tz_constraint}',
+                code='unevaluable-type-annotation',
+            )
         result = handler(value)  # (2)!
         assert self.tz_constraint == str(
             result.tzinfo
@@ -64,12 +73,16 @@ class MyDatetimeValidator:
 
 LA = 'America/Los_Angeles'
 ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(LA)])
-print(ta.validate_python(dt.datetime(2023, 1, 1, 0, 0, tzinfo=pytz.timezone(LA))))
-# > 2023-01-01 00:00:00-07:53
+print(
+    ta.validate_python(dt.datetime(2023, 1, 1, 0, 0, tzinfo=pytz.timezone(LA)))
+)
+#> 2023-01-01 00:00:00-07:53
 
 LONDON = 'Europe/London'
 try:
-    ta.validate_python(dt.datetime(2023, 1, 1, 0, 0, tzinfo=pytz.timezone(LONDON)))
+    ta.validate_python(
+        dt.datetime(2023, 1, 1, 0, 0, tzinfo=pytz.timezone(LONDON))
+    )
 except ValidationError as ve:
     pprint(ve.errors(), width=100)
     """
@@ -114,7 +127,9 @@ class MyDatetimeValidator:
         result = handler(value)
 
         hours_offset = value.utcoffset().total_seconds() / 3600
-        assert self.lower_bound <= hours_offset <= self.upper_bound, 'Value out of bounds'
+        assert (
+            self.lower_bound <= hours_offset <= self.upper_bound
+        ), 'Value out of bounds'
 
         return result
 
@@ -131,17 +146,21 @@ class MyDatetimeValidator:
 
 LA = 'America/Los_Angeles'  # UTC-7 or UTC-8
 ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(-10, -5)])
-print(ta.validate_python(dt.datetime.now(pytz.timezone(LA))))
-# > 2024-06-04 10:49:44.053313-07:00
+print(
+    ta.validate_python(dt.datetime(2023, 1, 1, 0, 0, tzinfo=pytz.timezone(LA)))
+)
+#> 2023-01-01 00:00:00-07:53
 
 LONDON = 'Europe/London'
 try:
-    print(ta.validate_python(dt.datetime.now(pytz.timezone(LONDON))))
+    print(
+        ta.validate_python(dt.datetime(2023, 1, 1, 0, 0, tzinfo=pytz.timezone(LONDON)))
+    )
 except ValidationError as e:
     pprint(e.errors(), width=100)
     """
     [{'ctx': {'error': AssertionError('Value out of bounds')},
-    'input': datetime.datetime(2024, 6, 4, 18, 49, 44, 54720, tzinfo=<DstTzInfo 'Europe/London' BST+1:00:00 DST>),
+    'input': datetime.datetime(2023, 1, 1, 0, 0, tzinfo=<DstTzInfo 'Europe/London' LMT-1 day, 23:59:00 STD>),
     'loc': (),
     'msg': 'Assertion failed, Value out of bounds',
     'type': 'assertion_error',
