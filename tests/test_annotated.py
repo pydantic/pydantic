@@ -1,12 +1,15 @@
+import datetime as dt
 import sys
-from typing import Any, Generic, Iterator, List, Optional, Set, TypeVar
+from dataclasses import dataclass
+from typing import Any, Callable, Generic, Iterator, List, Optional, Set, TypeVar
 
 import pytest
+import pytz
 from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt, Predicate
-from pydantic_core import PydanticUndefined, core_schema
+from pydantic_core import CoreSchema, PydanticUndefined, core_schema
 from typing_extensions import Annotated
 
-from pydantic import BaseModel, Field, GetCoreSchemaHandler, TypeAdapter, ValidationError
+from pydantic import BaseModel, Field, GetCoreSchemaHandler, PydanticUserError, TypeAdapter, ValidationError
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.fields import PrivateAttr
 from pydantic.functional_validators import AfterValidator
@@ -482,3 +485,116 @@ def test_min_length_field_info_not_lost():
             'type': 'string_too_short',
         }
     ]
+
+
+def test_tzinfo_validator_example_pattern() -> None:
+    """Test that tzinfo custom validator pattern works as explained in the examples/validators docs."""
+
+    @dataclass(frozen=True)
+    class MyDatetimeValidator:
+        tz_constraint: Optional[str] = None
+
+        def tz_constraint_validator(
+            self,
+            value: dt.datetime,
+            handler: Callable,  # (1)!
+        ):
+            """Validate tz_constraint and tz_info."""
+            # handle naive datetimes
+            if self.tz_constraint is None:
+                assert value.tzinfo is None, 'tz_constraint is None, but provided value is tz-aware.'
+                return handler(value)
+
+            # validate tz_constraint and tz-aware tzinfo
+            if self.tz_constraint not in pytz.all_timezones:
+                raise PydanticUserError(
+                    f'Invalid tz_constraint: {self.tz_constraint}', code='unevaluable-type-annotation'
+                )
+            result = handler(value)  # (2)!
+            assert self.tz_constraint == str(
+                result.tzinfo
+            ), f'Invalid tzinfo: {str(result.tzinfo)}, expected: {self.tz_constraint}'
+
+            return result
+
+        def __get_pydantic_core_schema__(
+            self,
+            source_type: Any,
+            handler: GetCoreSchemaHandler,
+        ) -> CoreSchema:
+            return core_schema.no_info_wrap_validator_function(
+                self.tz_constraint_validator,
+                handler(source_type),
+            )
+
+    LA = 'America/Los_Angeles'
+
+    # passing naive test
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator()])
+    ta.validate_python(dt.datetime.now())
+
+    # failing naive test
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator()])
+    with pytest.raises(Exception):
+        ta.validate_python(dt.datetime.now(pytz.timezone(LA)))
+
+    # passing tz-aware test
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(LA)])
+    ta.validate_python(dt.datetime.now(pytz.timezone(LA)))
+
+    # failing bad tz
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator('foo')])
+    with pytest.raises(Exception):
+        ta.validate_python(dt.datetime.now())
+
+    # failing tz-aware test
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(LA)])
+    with pytest.raises(Exception):
+        ta.validate_python(dt.datetime.now())
+
+
+def test_utcoffset_validator_example_pattern() -> None:
+    """Test that utcoffset custom validator pattern works as explained in the examples/validators docs."""
+
+    @dataclass(frozen=True)
+    class MyDatetimeValidator:
+        lower_bound: int
+        upper_bound: int
+
+        def validate_tz_bounds(self, value: dt.datetime, handler: Callable):
+            """Validate and test bounds"""
+            assert value.utcoffset() is not None, 'UTC offset must exist'
+            assert self.lower_bound <= self.upper_bound, 'Invalid bounds'
+
+            result = handler(value)
+
+            hours_offset = value.utcoffset().total_seconds() / 3600
+            assert self.lower_bound <= hours_offset <= self.upper_bound, 'Value out of bounds'
+
+            return result
+
+        def __get_pydantic_core_schema__(
+            self,
+            source_type: Any,
+            handler: GetCoreSchemaHandler,
+        ) -> CoreSchema:
+            return core_schema.no_info_wrap_validator_function(
+                self.validate_tz_bounds,
+                handler(source_type),
+            )
+
+    LA = 'America/Los_Angeles'
+
+    # test valid bound passing
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(-10, 10)])
+    ta.validate_python(dt.datetime.now(pytz.timezone(LA)))
+
+    # test valid bound failing - missing TZ
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(-12, 12)])
+    with pytest.raises(Exception):
+        ta.validate_python(dt.datetime.now())
+
+    # test invalid bound
+    ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(0, 4)])
+    with pytest.raises(Exception):
+        ta.validate_python(dt.datetime.now(pytz.timezone(LA)))
