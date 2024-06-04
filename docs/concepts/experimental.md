@@ -64,7 +64,7 @@ from pydantic.experimental.pipeline import parse, transform
 # BeforeValidator
 Annotated[int, parse(str).str.strip().parse()]  # (1)!
 # AfterValidator
-Annotated[int, parse().transform(lambda x: x * 2)]  # (2)!
+Annotated[int, transform(lambda x: x * 2)]  # (2)!
 # WrapValidator
 Annotated[
     int, parse(str).str.strip().parse().transform(lambda x: x * 2)  # (3)!
