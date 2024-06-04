@@ -525,7 +525,7 @@ def complete_model_class(
         ref_mode='unpack',
     )
 
-    if config_wrapper.defer_build and 'model' in config_wrapper._defer_build_mode:
+    if config_wrapper.defer_build and 'model' in config_wrapper.experimental_defer_build_mode:
         set_model_mocks(cls, cls_name)
         return False
 
