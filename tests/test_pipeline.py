@@ -35,7 +35,7 @@ def test_parse_str_with_pattern() -> None:
 
 
 @pytest.mark.parametrize(
-    'type, pipeline, valid_cases, invalid_cases',
+    'type_, pipeline, valid_cases, invalid_cases',
     [
         (int, validate_as(...).ge(0), [0, 1, 100], [-1, -100]),
         (float, validate_as(...).ge(0.0), [1.8, 0.0], [-1.0]),
@@ -72,6 +72,14 @@ def test_parse_tz() -> None:
     assert ta_tza.validate_python(date_a) == date_a
     with pytest.raises(ValueError):
         ta_tza.validate_python(date)
+
+
+def test_in() -> None:
+    ta = TypeAdapter(Annotated[str, validate_as(str).in_(['potato', 'tomato'])])
+    assert ta.validate_python('potato') == 'potato'
+    assert ta.validate_python('tomato') == 'tomato'
+    with pytest.raises(ValueError):
+        ta.validate_python('tomatoe')
 
 
 @pytest.mark.parametrize(
