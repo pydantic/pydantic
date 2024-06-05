@@ -21,7 +21,6 @@ if TYPE_CHECKING:
 
     from pydantic import GetCoreSchemaHandler
 
-from pydantic._internal._internal_dataclass import frozen_true as _frozen_true
 from pydantic._internal._internal_dataclass import slots_true as _slots_true
 
 if sys.version_info < (3, 10):
@@ -31,8 +30,10 @@ else:
 
 __all__ = ['validate_as', 'validate_as_deferred', 'transform']
 
+_slots_frozen = {**_slots_true, 'frozen': True}
 
-@dataclass(**_slots_true, **_frozen_true)
+
+@dataclass(**_slots_frozen)
 class _ValidateAs:
     tp: type[Any]
     strict: bool = False
@@ -47,39 +48,39 @@ class _ValidateAsDefer:
         return self.func()
 
 
-@dataclass(**_slots_true, **_frozen_true)
+@dataclass(**_slots_frozen)
 class _Transform:
     func: Callable[[Any], Any]
 
 
-@dataclass(**_slots_true, **_frozen_true)
+@dataclass(**_slots_frozen)
 class _PipelineOr:
     left: _Pipeline[Any, Any]
     right: _Pipeline[Any, Any]
 
 
-@dataclass(**_slots_true, **_frozen_true)
+@dataclass(**_slots_frozen)
 class _PipelineAnd:
     left: _Pipeline[Any, Any]
     right: _Pipeline[Any, Any]
 
 
-@dataclass(**_slots_true, **_frozen_true)
+@dataclass(**_slots_frozen)
 class _Eq:
     value: Any
 
 
-@dataclass(**_slots_true, **_frozen_true)
+@dataclass(**_slots_frozen)
 class _NotEq:
     value: Any
 
 
-@dataclass(**_slots_true, **_frozen_true)
+@dataclass(**_slots_frozen)
 class _In:
     values: Container[Any]
 
 
-@dataclass(**_slots_true, **_frozen_true)
+@dataclass(**_slots_frozen)
 class _NotIn:
     values: Container[Any]
 
@@ -104,7 +105,7 @@ _ConstraintAnnotation = Union[
 ]
 
 
-@dataclass(**_slots_true, **_frozen_true)
+@dataclass(**_slots_frozen)
 class _Constraint:
     constraint: _ConstraintAnnotation
 
