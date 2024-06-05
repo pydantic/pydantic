@@ -18,7 +18,7 @@ from pydantic import PydanticExperimentalWarning, TypeAdapter, ValidationError
 
 with warnings.catch_warnings():
     warnings.filterwarnings('ignore', category=PydanticExperimentalWarning)
-    from pydantic.experimental.pipeline import transform, validate_as
+    from pydantic.experimental.pipeline import _Pipeline, transform, validate_as
 
 
 @pytest.mark.parametrize('potato_variation', ['potato', ' potato ', ' potato', 'potato ', ' POTATO ', ' PoTatO '])
@@ -34,40 +34,24 @@ def test_parse_str_with_pattern() -> None:
         ta_pattern.validate_python('POTATO')
 
 
-def test_parse_ge_le() -> None:
-    ta_ge = TypeAdapter(Annotated[int, validate_as(int).ge(0)])
-    assert ta_ge.validate_python(100) == 100
-    assert ta_ge.validate_python(0) == 0
-    with pytest.raises(ValueError):
-        ta_ge.validate_python(-1)
-
-    ta_gef = TypeAdapter(Annotated[float, validate_as(float).ge(0.0)])
-    assert ta_gef.validate_python(1.8) == 1.8
-    assert ta_gef.validate_python(0.0) == 0.0
-    with pytest.raises(ValueError):
-        ta_gef.validate_python(-1.0)
-
-    ta_ged = TypeAdapter(Annotated[float, validate_as(Decimal).ge(Decimal(0.0))])
-    assert ta_ged.validate_python(Decimal(1)) == Decimal(1)
-    with pytest.raises(ValueError):
-        ta_ged.validate_python(Decimal(-1.0))
-
-    ta_le = TypeAdapter(Annotated[int, validate_as(int).le(5)])
-    assert ta_le.validate_python(2) == 2
-    assert ta_le.validate_python(5) == 5
-    with pytest.raises(ValueError):
-        ta_le.validate_python(100)
-
-    ta_lef = TypeAdapter(Annotated[float, validate_as(float).le(1.0)])
-    assert ta_lef.validate_python(0.5) == 0.5
-    assert ta_lef.validate_python(0.0) == 0.0
-    with pytest.raises(ValueError):
-        ta_lef.validate_python(100.0)
-
-    ta_led = TypeAdapter(Annotated[float, validate_as(Decimal).le(Decimal(1.0))])
-    assert ta_led.validate_python(Decimal(1)) == Decimal(1)
-    with pytest.raises(ValueError):
-        ta_led.validate_python(Decimal(5.0))
+@pytest.mark.parametrize(
+    'type, pipeline, valid_cases, invalid_cases',
+    [
+        (int, validate_as(...).ge(0), [0, 1, 100], [-1, -100]),
+        (float, validate_as(...).ge(0.0), [1.8, 0.0], [-1.0]),
+        (Decimal, validate_as(...).ge(Decimal(0.0)), [Decimal(1), Decimal(0.0)], [Decimal(-1.0)]),
+        (int, validate_as(...).le(5), [2, 4], [6, 100]),
+        (float, validate_as(...).le(1.0), [0.5, 0.0], [100.0]),
+        (Decimal, validate_as(...).le(Decimal(1.0)), [Decimal(1)], [Decimal(5.0)]),
+    ]
+)
+def test_ge_le(type: Any, pipeline: _Pipeline, valid_cases: List[Any], invalid_cases: List[Any]) -> None:
+    ta = TypeAdapter(Annotated[type, pipeline])
+    for x in valid_cases:
+        assert ta.validate_python(x) == x
+    for y in invalid_cases:
+        with pytest.raises(ValueError):
+            ta.validate_python(y)
 
 
 def test_parse_multipleOf() -> None:
