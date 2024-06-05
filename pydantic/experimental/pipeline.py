@@ -319,7 +319,7 @@ class _Pipeline(Generic[_InT, _OutT]):
 
     __or__ = otherwise
 
-    def then(self, other: _Pipeline[_OtherIn, _OtherOut]) -> _Pipeline[_InT | _OtherIn, _OutT | _OtherOut]:
+    def then(self, other: _Pipeline[_OutT, _OtherOut]) -> _Pipeline[_InT, _OtherOut]:
         """Pipe the result of one validation chain into another."""
         return _Pipeline([_PipelineAnd(self, other)])
 
