@@ -165,7 +165,7 @@ def test_predicates() -> None:
         (
             Annotated[int, validate_as(...) | validate_as(str).transform(int)],
             {'anyOf': [{'type': 'integer'}, {'type': 'string'}]},
-            {'anyOf': [{'type': 'integer'}, {'type': 'string'}]},
+            {'type': 'integer'},
         ),
         (
             Annotated[int, validate_as(...) | validate_as(str).transform(int).validate_as(int)],

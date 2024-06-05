@@ -24,6 +24,7 @@ if TYPE_CHECKING:
 from pydantic._internal._internal_dataclass import slots_true as _slots_true
 
 if sys.version_info < (3, 10):
+    # TODO: remove this once we drop 3.9
     EllipsisType = type(Ellipsis)
 else:
     from types import EllipsisType
@@ -142,10 +143,10 @@ class _Pipeline(Generic[_InT, _OutT]):
         ...
 
     @overload
-    def validate_as(self, tp: EllipsisType, *, strict: bool = ...) -> _Pipeline[_InT, Any]:
+    def validate_as(self, tp: EllipsisType, *, strict: bool = ...) -> _Pipeline[_InT, Any]:  # type: ignore
         ...
 
-    def validate_as(self, tp: type[_NewOutT] | EllipsisType, *, strict: bool = False) -> _Pipeline[_InT, Any]:
+    def validate_as(self, tp: type[_NewOutT] | EllipsisType, *, strict: bool = False) -> _Pipeline[_InT, Any]:  # type: ignore
         """Validate / parse the input into a new type.
 
         If no type is provided, the type of the field is used.
@@ -381,7 +382,7 @@ def _apply_step(step: _Step, s: cs.CoreSchema | None, handler: GetCoreSchemaHand
     elif isinstance(step, _ValidateAsDefer):
         s = _apply_parse(s, step.tp, False, handler, source_type)
     elif isinstance(step, _Transform):
-        s = _apply_transform(s, step.func)
+        s = _apply_transform(s, step.func, handler)
     elif isinstance(step, _Constraint):
         s = _apply_constraint(s, step.constraint)
     elif isinstance(step, _PipelineOr):
@@ -415,7 +416,9 @@ def _apply_parse(
         return cs.chain_schema([s, handler(tp)]) if s else handler(tp)
 
 
-def _apply_transform(s: cs.CoreSchema | None, func: Callable[[Any], Any]) -> cs.CoreSchema:
+def _apply_transform(
+    s: cs.CoreSchema | None, func: Callable[[Any], Any], handler: GetCoreSchemaHandler
+) -> cs.CoreSchema:
     from pydantic_core import core_schema as cs
 
     if s is None:
@@ -434,6 +437,16 @@ def _apply_transform(s: cs.CoreSchema | None, func: Callable[[Any], Any]) -> cs.
             s = s.copy()
             s['to_upper'] = True
             return s
+
+    # TODO: need to expand this logic to cover more cases, like datetimes, etc
+    basic_builtin_types = [int, float, bool, str, list, dict, set, tuple, bytes]
+    if func in basic_builtin_types:
+        # handle case where func is a standard type constructor, like int, float, etc.
+        # where we want to get more accurate schema information
+        # The general challenge here is how do we infer the type of the output of a function
+        # and attach that appropriately to the schema
+        # For now, we're challenged by the coupling of validation and serialization info
+        return cs.chain_schema([s, handler(func)])
     return cs.no_info_after_validator_function(func, s)
 
 
@@ -661,6 +674,5 @@ _NewOutLen = TypeVar('_NewOutLen', bound=_SupportsLen)
 _NewOutDiv = TypeVar('_NewOutDiv', bound=annotated_types.SupportsDiv)
 _NewOutDatetime = TypeVar('_NewOutDatetime', bound=datetime.datetime)
 _NewOutInterval = TypeVar('_NewOutInterval', bound=_SupportsRange)
-_NewOutStr = TypeVar('_NewOutStr', bound=str)
 _OtherIn = TypeVar('_OtherIn')
 _OtherOut = TypeVar('_OtherOut')
