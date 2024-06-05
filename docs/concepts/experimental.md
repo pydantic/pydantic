@@ -18,10 +18,18 @@ warnings.filterwarnings('ignore', category=PydanticExperimentalWarning)
 
 ## Pipeline API
 
-Pydantic v2.8.0 introduced an experimental "pipeline" API that allows composing parsing, constraints and transformations in a more type-safe manner than existing APIs. This API is subject to change or removal, we are looking for feedback and suggestions before making it a permanent part of Pydantic.
+Pydantic v2.8.0 introduced an experimental "pipeline" API that allows composing of parsing (validation), constraints and transformations in a more type-safe manner than existing APIs. This API is subject to change or removal, we are looking for feedback and suggestions before making it a permanent part of Pydantic.
 
 ??? api "API Documentation"
     [`pydantic.experimental.pipeline`][pydantic.experimental.pipeline]<br>
+
+Generally, the pipeline API is used to define a sequence of steps to apply to incoming data during validation. The pipeline API is designed to be more type-safe and composable than the existing Pydantic API.
+
+Each step in the pipeline can be:
+* A validation step that runs pydantic validation on the provided type
+* A transformation step that modifies the data
+* A constraint step that checks the data against a condition
+* A predicate step that checks the data against a condition and raises an error if it returns `False`
 
 ```python
 from __future__ import annotations
