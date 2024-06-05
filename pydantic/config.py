@@ -4,15 +4,15 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, ForwardRef, Optional, Tup
 
 from typing_extensions import Literal, Protocol
 
-from .typing import AnyArgTCallable, AnyCallable
-from .utils import GetterDict
-from .version import compiled
+from pydantic.typing import AnyArgTCallable, AnyCallable
+from pydantic.utils import GetterDict
+from pydantic.version import compiled
 
 if TYPE_CHECKING:
     from typing import overload
 
-    from .fields import ModelField
-    from .main import BaseModel
+    from pydantic.fields import ModelField
+    from pydantic.main import BaseModel
 
     ConfigType = Type['BaseConfig']
 

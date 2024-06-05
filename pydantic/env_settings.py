@@ -3,12 +3,12 @@ import warnings
 from pathlib import Path
 from typing import AbstractSet, Any, Callable, ClassVar, Dict, List, Mapping, Optional, Tuple, Type, Union
 
-from .config import BaseConfig, Extra
-from .fields import ModelField
-from .main import BaseModel
-from .types import JsonWrapper
-from .typing import StrPath, display_as_type, get_origin, is_union
-from .utils import deep_update, lenient_issubclass, path_type, sequence_like
+from pydantic.config import BaseConfig, Extra
+from pydantic.fields import ModelField
+from pydantic.main import BaseModel
+from pydantic.types import JsonWrapper
+from pydantic.typing import StrPath, display_as_type, get_origin, is_union
+from pydantic.utils import deep_update, lenient_issubclass, path_type, sequence_like
 
 env_file_sentinel = str(object())
 

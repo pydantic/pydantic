@@ -26,11 +26,11 @@ from typing import (
 
 from typing_extensions import dataclass_transform
 
-from .class_validators import ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
-from .config import BaseConfig, Extra, inherit_config, prepare_config
-from .error_wrappers import ErrorWrapper, ValidationError
-from .errors import ConfigError, DictError, ExtraError, MissingError
-from .fields import (
+from pydantic.class_validators import ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
+from pydantic.config import BaseConfig, Extra, inherit_config, prepare_config
+from pydantic.error_wrappers import ErrorWrapper, ValidationError
+from pydantic.errors import ConfigError, DictError, ExtraError, MissingError
+from pydantic.fields import (
     MAPPING_LIKE_SHAPES,
     Field,
     ModelField,
@@ -39,11 +39,11 @@ from .fields import (
     Undefined,
     is_finalvar_with_default_val,
 )
-from .json import custom_pydantic_encoder, pydantic_encoder
-from .parse import Protocol, load_file, load_str_bytes
-from .schema import default_ref_template, model_schema
-from .types import PyObject, StrBytes
-from .typing import (
+from pydantic.json import custom_pydantic_encoder, pydantic_encoder
+from pydantic.parse import Protocol, load_file, load_str_bytes
+from pydantic.schema import default_ref_template, model_schema
+from pydantic.types import PyObject, StrBytes
+from pydantic.typing import (
     AnyCallable,
     get_args,
     get_origin,
@@ -53,7 +53,7 @@ from .typing import (
     resolve_annotations,
     update_model_forward_refs,
 )
-from .utils import (
+from pydantic.utils import (
     DUNDER_ATTRIBUTES,
     ROOT_KEY,
     ClassAttribute,
@@ -73,9 +73,9 @@ from .utils import (
 if TYPE_CHECKING:
     from inspect import Signature
 
-    from .class_validators import ValidatorListDict
-    from .types import ModelOrDc
-    from .typing import (
+    from pydantic.class_validators import ValidatorListDict
+    from pydantic.types import ModelOrDc
+    from pydantic.typing import (
         AbstractSetIntStr,
         AnyClassMethod,
         CallableGenerator,
@@ -669,7 +669,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     def schema_json(
         cls, *, by_alias: bool = True, ref_template: str = default_ref_template, **dumps_kwargs: Any
     ) -> str:
-        from .json import pydantic_encoder
+        from pydantic.json import pydantic_encoder
 
         return cls.__config__.json_dumps(
             cls.schema(by_alias=by_alias, ref_template=ref_template), default=pydantic_encoder, **dumps_kwargs

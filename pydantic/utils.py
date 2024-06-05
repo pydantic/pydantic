@@ -28,8 +28,8 @@ from typing import (
 
 from typing_extensions import Annotated
 
-from .errors import ConfigError
-from .typing import (
+from pydantic.errors import ConfigError
+from pydantic.typing import (
     NoneType,
     WithArgsTypes,
     all_literal_values,
@@ -39,17 +39,17 @@ from .typing import (
     is_literal_type,
     is_union,
 )
-from .version import version_info
+from pydantic.version import version_info
 
 if TYPE_CHECKING:
     from inspect import Signature
     from pathlib import Path
 
-    from .config import BaseConfig
-    from .dataclasses import Dataclass
-    from .fields import ModelField
-    from .main import BaseModel
-    from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs
+    from pydantic.config import BaseConfig
+    from pydantic.dataclasses import Dataclass
+    from pydantic.fields import ModelField
+    from pydantic.main import BaseModel
+    from pydantic.typing import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs
 
     RichReprResult = Iterable[Union[Any, Tuple[Any], Tuple[str, Any], Tuple[str, Any, Any]]]
 
@@ -240,7 +240,7 @@ def generate_model_signature(
     """
     from inspect import Parameter, Signature, signature
 
-    from .config import Extra
+    from pydantic.config import Extra
 
     present_params = signature(init).parameters.values()
     merged_params: Dict[str, Parameter] = {}
@@ -298,7 +298,7 @@ def generate_model_signature(
 
 
 def get_model(obj: Union[Type['BaseModel'], Type['Dataclass']]) -> Type['BaseModel']:
-    from .main import BaseModel
+    from pydantic.main import BaseModel
 
     try:
         model_cls = obj.__pydantic_model__  # type: ignore

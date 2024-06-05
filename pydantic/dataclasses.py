@@ -47,17 +47,17 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, Generator, Opti
 
 from typing_extensions import dataclass_transform
 
-from .class_validators import gather_all_validators
-from .config import BaseConfig, ConfigDict, Extra, get_config
-from .error_wrappers import ValidationError
-from .errors import DataclassTypeError
-from .fields import Field, FieldInfo, Required, Undefined
-from .main import create_model, validate_model
-from .utils import ClassAttribute
+from pydantic.class_validators import gather_all_validators
+from pydantic.config import BaseConfig, ConfigDict, Extra, get_config
+from pydantic.error_wrappers import ValidationError
+from pydantic.errors import DataclassTypeError
+from pydantic.fields import Field, FieldInfo, Required, Undefined
+from pydantic.main import create_model, validate_model
+from pydantic.utils import ClassAttribute
 
 if TYPE_CHECKING:
-    from .main import BaseModel
-    from .typing import CallableGenerator, NoArgAnyCallable
+    from pydantic.main import BaseModel
+    from pydantic.typing import CallableGenerator, NoArgAnyCallable
 
     DataclassT = TypeVar('DataclassT', bound='Dataclass')
 
