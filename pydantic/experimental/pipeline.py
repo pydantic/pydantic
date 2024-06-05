@@ -570,9 +570,6 @@ def _apply_constraint(  # noqa: C901
     elif isinstance(constraint, annotated_types.Predicate):
         func = constraint.func
 
-        if func.__name__ == '_check_not_in':
-            s = _check_func(func, 'not in', s)
-
         if func.__name__ == '<lambda>':
             # attempt to extract the source code for a lambda function
             # to use as the function name in error messages
