@@ -6003,6 +6003,7 @@ Defaults to <code>'rust-regex'</code>.</p>
   
       <p>Whether docstrings of attributes (bare string literals immediately following the attribute declaration)
 should be used for field descriptions. Defaults to <code>False</code>.</p>
+<p>Available in Pydantic v2.7+.</p>
 <p><div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
 
 
@@ -6138,9 +6139,7 @@ especially with <code>TypedDict</code>.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/config.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 995</span>
-<span class="normal"> 996</span>
-<span class="normal"> 997</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 997</span>
 <span class="normal"> 998</span>
 <span class="normal"> 999</span>
 <span class="normal">1000</span>
@@ -6178,7 +6177,9 @@ especially with <code>TypedDict</code>.</p>
 <span class="normal">1032</span>
 <span class="normal">1033</span>
 <span class="normal">1034</span>
-<span class="normal">1035</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
+<span class="normal">1035</span>
+<span class="normal">1036</span>
+<span class="normal">1037</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.8/concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict</span>
 
 <span class="sd">    A convenience decorator to set a [Pydantic configuration](config.md) on a `TypedDict` or a `dataclass` from the standard library.</span>
