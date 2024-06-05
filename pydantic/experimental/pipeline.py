@@ -287,10 +287,10 @@ class _Pipeline(Generic[_InT, _OutT]):
     ) -> _Pipeline[_InT, datetime.datetime]:
         return self.transform(partial(datetime.datetime.replace, tzinfo=tz))
 
+    # string methods
     def str_lower(self: _Pipeline[_InT, str]) -> _Pipeline[_InT, str]:
         return self.transform(str.lower)
 
-    # string methods
     def str_upper(self: _Pipeline[_InT, str]) -> _Pipeline[_InT, str]:
         return self.transform(str.upper)
 
