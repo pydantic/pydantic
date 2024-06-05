@@ -5,7 +5,7 @@ import datetime
 import sys
 import warnings
 from decimal import Decimal
-from typing import Any, List, Union
+from typing import Any, Callable, List, Union
 
 import pytest
 import pytz
@@ -264,31 +264,48 @@ def test_composition() -> None:
         ta.validate_python(21)
 
     # test that sticking a transform in the middle doesn't break the composition
-    calls: list[int] = []
+    calls: list[tuple[str, int]] = []
 
-    def tf(x: int) -> int:
-        calls.append(x)
-        return x
+    def tf(step: str) -> Callable[[int], int]:
+        def inner(x: int) -> int:
+            calls.append((step, x))
+            return x
+
+        return inner
 
     ta = TypeAdapter(
         Annotated[
             int,
-            validate_as(int).transform(tf).gt(10).transform(tf) | validate_as(int).transform(tf).lt(5).transform(tf),
+            validate_as(int).transform(tf('1')).gt(10).transform(tf('2'))
+            | validate_as(int).transform(tf('3')).lt(5).transform(tf('4')),
         ]
     )
     assert ta.validate_python(1) == 1
+    assert calls == [('1', 1), ('3', 1), ('4', 1)]
+    calls.clear()
     assert ta.validate_python(20) == 20
+    assert calls == [('1', 20), ('2', 20)]
+    calls.clear()
     with pytest.raises(ValidationError):
         ta.validate_python(9)
+    assert calls == [('1', 9), ('3', 9)]
+    calls.clear()
 
     ta = TypeAdapter(
         Annotated[
             int,
-            validate_as(int).transform(tf).gt(10).transform(tf) & validate_as(int).transform(tf).le(20).transform(tf),
+            validate_as(int).transform(tf('1')).gt(10).transform(tf('2'))
+            & validate_as(int).transform(tf('3')).le(20).transform(tf('4')),
         ]
     )
     assert ta.validate_python(15) == 15
+    assert calls == [('1', 15), ('2', 15), ('3', 15), ('4', 15)]
+    calls.clear()
     with pytest.raises(ValidationError):
         ta.validate_python(9)
+    assert calls == [('1', 9)]
+    calls.clear()
     with pytest.raises(ValidationError):
         ta.validate_python(21)
+    assert calls == [('1', 21), ('2', 21), ('3', 21)]
+    calls.clear()
