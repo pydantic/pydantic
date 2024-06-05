@@ -21,10 +21,10 @@ if TYPE_CHECKING:
 
     from pydantic import GetCoreSchemaHandler
 
+from pydantic._internal._internal_dataclass import frozen_true as _frozen_true
 from pydantic._internal._internal_dataclass import slots_true as _slots_true
 
 if sys.version_info < (3, 10):
-    # TODO: remove this once we drop 3.9
     EllipsisType = type(Ellipsis)
 else:
     from types import EllipsisType
@@ -32,7 +32,7 @@ else:
 __all__ = ['validate_as', 'validate_as_deferred', 'transform']
 
 
-@dataclass(**_slots_true)
+@dataclass(**_slots_true, **_frozen_true)
 class _ValidateAs:
     tp: type[Any]
     strict: bool = False
@@ -47,39 +47,39 @@ class _ValidateAsDefer:
         return self.func()
 
 
-@dataclass(**_slots_true)
+@dataclass(**_slots_true, **_frozen_true)
 class _Transform:
     func: Callable[[Any], Any]
 
 
-@dataclass(**_slots_true)
+@dataclass(**_slots_true, **_frozen_true)
 class _PipelineOr:
     left: _Pipeline[Any, Any]
     right: _Pipeline[Any, Any]
 
 
-@dataclass(**_slots_true)
+@dataclass(**_slots_true, **_frozen_true)
 class _PipelineAnd:
     left: _Pipeline[Any, Any]
     right: _Pipeline[Any, Any]
 
 
-@dataclass(**_slots_true)
+@dataclass(**_slots_true, **_frozen_true)
 class _Eq:
     value: Any
 
 
-@dataclass(**_slots_true)
+@dataclass(**_slots_true, **_frozen_true)
 class _NotEq:
     value: Any
 
 
-@dataclass(**_slots_true)
+@dataclass(**_slots_true, **_frozen_true)
 class _In:
     values: Container[Any]
 
 
-@dataclass(**_slots_true)
+@dataclass(**_slots_true, **_frozen_true)
 class _NotIn:
     values: Container[Any]
 
@@ -104,7 +104,7 @@ _ConstraintAnnotation = Union[
 ]
 
 
-@dataclass(**_slots_true)
+@dataclass(**_slots_true, **_frozen_true)
 class _Constraint:
     constraint: _ConstraintAnnotation
 
@@ -121,11 +121,14 @@ class _FieldTypeMarker:
 
 
 # TODO: ultimately, make this public, see https://github.com/pydantic/pydantic/pull/9459#discussion_r1628197626
+# Also, make this frozen eventually, but that doesn't work right now because of the generic base
+# Which attempts to modify __orig_base__ and such.
+# We could go with a manual freeze, but that seems overkill for now.
 @dataclass(**_slots_true)
 class _Pipeline(Generic[_InT, _OutT]):
     """Abstract representation of a chain of validation, transformation, and parsing steps."""
 
-    _steps: list[_Step]
+    _steps: tuple[_Step, ...]
 
     def transform(
         self,
@@ -136,7 +139,7 @@ class _Pipeline(Generic[_InT, _OutT]):
         If used as the first step in a pipeline, the type of the field is used.
         That is, the transformation is applied to after the value is parsed to the field's type.
         """
-        return _Pipeline[_InT, _NewOutT](self._steps + [_Transform(func)])
+        return _Pipeline[_InT, _NewOutT](self._steps + (_Transform(func),))
 
     @overload
     def validate_as(self, tp: type[_NewOutT], *, strict: bool = ...) -> _Pipeline[_InT, _NewOutT]:
@@ -155,8 +158,8 @@ class _Pipeline(Generic[_InT, _OutT]):
         but you can enable `strict` mode by passing `strict=True`.
         """
         if isinstance(tp, EllipsisType):
-            return _Pipeline[_InT, Any](self._steps + [_ValidateAs(_FieldTypeMarker, strict=strict)])
-        return _Pipeline[_InT, _NewOutT](self._steps + [_ValidateAs(tp, strict=strict)])
+            return _Pipeline[_InT, Any](self._steps + (_ValidateAs(_FieldTypeMarker, strict=strict),))
+        return _Pipeline[_InT, _NewOutT](self._steps + (_ValidateAs(tp, strict=strict),))
 
     def validate_as_deferred(self, func: Callable[[], type[_NewOutT]]) -> _Pipeline[_InT, _NewOutT]:
         """Parse the input into a new type, deferring resolution of the type until the current class
@@ -164,7 +167,7 @@ class _Pipeline(Generic[_InT, _OutT]):
 
         This is useful when you need to reference the class in it's own type annotations.
         """
-        return _Pipeline[_InT, _NewOutT](self._steps + [_ValidateAsDefer(func)])
+        return _Pipeline[_InT, _NewOutT](self._steps + (_ValidateAsDefer(func),))
 
     # constraints
     @overload
@@ -237,7 +240,7 @@ class _Pipeline(Generic[_InT, _OutT]):
         Most of the time you'll be calling a shortcut method like `gt`, `lt`, `len`, etc
         so you don't need to call this directly.
         """
-        return _Pipeline[_InT, _OutT](self._steps + [_Constraint(constraint)])
+        return _Pipeline[_InT, _OutT](self._steps + (_Constraint(constraint),))
 
     def predicate(self: _Pipeline[_InT, _NewOutT], func: Callable[[_NewOutT], bool]) -> _Pipeline[_InT, _NewOutT]:
         """Constrain a value to meet a certain predicate."""
@@ -328,13 +331,13 @@ class _Pipeline(Generic[_InT, _OutT]):
     # operators
     def otherwise(self, other: _Pipeline[_OtherIn, _OtherOut]) -> _Pipeline[_InT | _OtherIn, _OutT | _OtherOut]:
         """Combine two validation chains, returning the result of the first chain if it succeeds, and the second chain if it fails."""
-        return _Pipeline([_PipelineOr(self, other)])
+        return _Pipeline((_PipelineOr(self, other),))
 
     __or__ = otherwise
 
     def then(self, other: _Pipeline[_OutT, _OtherOut]) -> _Pipeline[_InT, _OtherOut]:
         """Pipe the result of one validation chain into another."""
-        return _Pipeline([_PipelineAnd(self, other)])
+        return _Pipeline((_PipelineAnd(self, other),))
 
     __and__ = then
 
@@ -353,9 +356,9 @@ class _Pipeline(Generic[_InT, _OutT]):
         return s
 
 
-validate_as = _Pipeline[Any, Any]([]).validate_as
-validate_as_deferred = _Pipeline[Any, Any]([]).validate_as_deferred
-transform = _Pipeline[Any, Any]([_ValidateAs(_FieldTypeMarker)]).transform
+validate_as = _Pipeline[Any, Any](()).validate_as
+validate_as_deferred = _Pipeline[Any, Any](()).validate_as_deferred
+transform = _Pipeline[Any, Any]((_ValidateAs(_FieldTypeMarker),)).transform
 
 
 def _check_func(
