@@ -187,6 +187,11 @@ def test_predicates() -> None:
             {'type': 'array', 'items': {'type': 'integer'}, 'maxItems': 100},
             {'type': 'array', 'items': {'type': 'integer'}, 'maxItems': 100},
         ),
+        (
+            Annotated[int, validate_as(str).transform(int)],
+            {'type': 'string'},
+            {'type': 'integer'},
+        ),
     ],
 )
 def test_json_schema(
