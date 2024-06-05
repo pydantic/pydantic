@@ -18,7 +18,7 @@ from pydantic import PydanticExperimentalWarning, TypeAdapter, ValidationError
 
 with warnings.catch_warnings():
     warnings.filterwarnings('ignore', category=PydanticExperimentalWarning)
-    from pydantic.experimental.pipeline import _Pipeline, transform, validate_as
+    from pydantic.experimental.pipeline import _Pipeline, transform, validate_as  # type: ignore
 
 
 @pytest.mark.parametrize('potato_variation', ['potato', ' potato ', ' potato', 'potato ', ' POTATO ', ' PoTatO '])
@@ -45,7 +45,7 @@ def test_parse_str_with_pattern() -> None:
         (Decimal, validate_as(...).le(Decimal(1.0)), [Decimal(1)], [Decimal(5.0)]),
     ],
 )
-def test_ge_le(type_: Any, pipeline: _Pipeline, valid_cases: list[Any], invalid_cases: list[Any]) -> None:
+def test_ge_le(type_: Any, pipeline: _Pipeline[Any, Any], valid_cases: list[Any], invalid_cases: list[Any]) -> None:
     ta = TypeAdapter(Annotated[type_, pipeline])
     for x in valid_cases:
         assert ta.validate_python(x) == x
@@ -247,3 +247,48 @@ def test_in() -> None:
     assert ta.validate_python('potato') == 'potato'
     with pytest.raises(ValidationError):
         ta.validate_python('carrot')
+
+
+def test_composition() -> None:
+    ta = TypeAdapter(Annotated[int, validate_as(int).gt(10) | validate_as(int).lt(5)])
+    assert ta.validate_python(1) == 1
+    assert ta.validate_python(20) == 20
+    with pytest.raises(ValidationError):
+        ta.validate_python(9)
+
+    ta = TypeAdapter(Annotated[int, validate_as(int).gt(10) & validate_as(int).le(20)])
+    assert ta.validate_python(15) == 15
+    with pytest.raises(ValidationError):
+        ta.validate_python(9)
+    with pytest.raises(ValidationError):
+        ta.validate_python(21)
+
+    # test that sticking a transform in the middle doesn't break the composition
+    calls: list[int] = []
+
+    def tf(x: int) -> int:
+        calls.append(x)
+        return x
+
+    ta = TypeAdapter(
+        Annotated[
+            int,
+            validate_as(int).transform(tf).gt(10).transform(tf) | validate_as(int).transform(tf).lt(5).transform(tf),
+        ]
+    )
+    assert ta.validate_python(1) == 1
+    assert ta.validate_python(20) == 20
+    with pytest.raises(ValidationError):
+        ta.validate_python(9)
+
+    ta = TypeAdapter(
+        Annotated[
+            int,
+            validate_as(int).transform(tf).gt(10).transform(tf) & validate_as(int).transform(tf).le(20).transform(tf),
+        ]
+    )
+    assert ta.validate_python(15) == 15
+    with pytest.raises(ValidationError):
+        ta.validate_python(9)
+    with pytest.raises(ValidationError):
+        ta.validate_python(21)
