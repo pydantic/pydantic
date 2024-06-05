@@ -31,6 +31,8 @@ Each step in the pipeline can be:
 * A constraint step that checks the data against a condition
 * A predicate step that checks the data against a condition and raises an error if it returns `False`
 
+<!-- TODO: (@sydney-runkle) add more documentation once we solidify the API during the experimental phase -->
+
 ```python
 from __future__ import annotations
 

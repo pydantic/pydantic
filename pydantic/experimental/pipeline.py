@@ -57,6 +57,26 @@ class _PipelineAnd:
     right: _Pipeline[Any, Any]
 
 
+@dataclass(**_slots_true)
+class _Eq:
+    value: Any
+
+
+@dataclass(**_slots_true)
+class _NotEq:
+    value: Any
+
+
+@dataclass(**_slots_true)
+class _In:
+    values: Container[Any]
+
+
+@dataclass(**_slots_true)
+class _NotIn:
+    values: Container[Any]
+
+
 _ConstraintAnnotation = Union[
     annotated_types.Le,
     annotated_types.Ge,
@@ -67,6 +87,12 @@ _ConstraintAnnotation = Union[
     annotated_types.Timezone,
     annotated_types.Interval,
     annotated_types.Predicate,
+    # common predicates not included in annotated_types
+    _Eq,
+    _NotEq,
+    _In,
+    _NotIn,
+    # regular expressions
     Pattern[str],
 ]
 
@@ -171,6 +197,22 @@ class _Pipeline(Generic[_InT, _OutT]):
         ...
 
     @overload
+    def constrain(self: _Pipeline[_InT, _OutT], constraint: _Eq) -> _Pipeline[_InT, _OutT]:
+        ...
+
+    @overload
+    def constrain(self: _Pipeline[_InT, _OutT], constraint: _NotEq) -> _Pipeline[_InT, _OutT]:
+        ...
+
+    @overload
+    def constrain(self: _Pipeline[_InT, _OutT], constraint: _In) -> _Pipeline[_InT, _OutT]:
+        ...
+
+    @overload
+    def constrain(self: _Pipeline[_InT, _OutT], constraint: _NotIn) -> _Pipeline[_InT, _OutT]:
+        ...
+
+    @overload
     def constrain(self: _Pipeline[_InT, _NewOutT], constraint: Pattern[str]) -> _Pipeline[_InT, _NewOutT]:
         ...
 
@@ -212,21 +254,21 @@ class _Pipeline(Generic[_InT, _OutT]):
         """Constrain a value to meet a certain predicate."""
         return self.constrain(annotated_types.Predicate(func))
 
-    def not_in(self: _Pipeline[_InT, _OutT], values: Container[_OutT]) -> _Pipeline[_InT, _OutT]:
-        """Constrain a value to not be in a certain set."""
-        return self.predicate(partial(operator.__contains__, values))
-
-    def in_(self: _Pipeline[_InT, _OutT], values: Container[_OutT]) -> _Pipeline[_InT, _OutT]:
-        """Constrain a value to be in a certain set."""
-        return self.predicate(partial(operator.__contains__, values))
+    def eq(self: _Pipeline[_InT, _OutT], value: _OutT) -> _Pipeline[_InT, _OutT]:
+        """Constrain a value to be equal to a certain value."""
+        return self.constrain(_Eq(value))
 
     def not_eq(self: _Pipeline[_InT, _OutT], value: _OutT) -> _Pipeline[_InT, _OutT]:
         """Constrain a value to not be equal to a certain value."""
-        return self.predicate(partial(operator.__ne__, value))
+        return self.constrain(_NotEq(value))
 
-    def eq(self: _Pipeline[_InT, _OutT], value: _OutT) -> _Pipeline[_InT, _OutT]:
-        """Constrain a value to be equal to a certain value."""
-        return self.predicate(partial(operator.__eq__, value))
+    def in_(self: _Pipeline[_InT, _OutT], values: Container[_OutT]) -> _Pipeline[_InT, _OutT]:
+        """Constrain a value to be in a certain set."""
+        return self.constrain(_In(values))
+
+    def not_in(self: _Pipeline[_InT, _OutT], values: Container[_OutT]) -> _Pipeline[_InT, _OutT]:
+        """Constrain a value to not be in a certain set."""
+        return self.constrain(_NotIn(values))
 
     # timezone methods
     def datetime_tz_naive(self: _Pipeline[_InT, datetime.datetime]) -> _Pipeline[_InT, datetime.datetime]:
@@ -528,6 +570,9 @@ def _apply_constraint(  # noqa: C901
     elif isinstance(constraint, annotated_types.Predicate):
         func = constraint.func
 
+        if func.__name__ == '_check_not_in':
+            s = _check_func(func, 'not in', s)
+
         if func.__name__ == '<lambda>':
             # attempt to extract the source code for a lambda function
             # to use as the function name in error messages
@@ -547,6 +592,34 @@ def _apply_constraint(  # noqa: C901
             s = _check_func(func, lambda_source_code, s)
         else:
             s = _check_func(func, func.__name__, s)
+    elif isinstance(constraint, _NotEq):
+        value = constraint.value
+
+        def check_not_eq(v: Any) -> bool:
+            return operator.__ne__(v, value)
+
+        s = _check_func(check_not_eq, f'!= {value}', s)
+    elif isinstance(constraint, _Eq):
+        value = constraint.value
+
+        def check_eq(v: Any) -> bool:
+            return operator.__eq__(v, value)
+
+        s = _check_func(check_eq, f'== {value}', s)
+    elif isinstance(constraint, _In):
+        values = constraint.values
+
+        def check_in(v: Any) -> bool:
+            return operator.__contains__(values, v)
+
+        s = _check_func(check_in, f'in {values}', s)
+    elif isinstance(constraint, _NotIn):
+        values = constraint.values
+
+        def check_not_in(v: Any) -> bool:
+            return operator.__not__(operator.__contains__(values, v))
+
+        s = _check_func(check_not_in, f'not in {values}', s)
     else:
         assert isinstance(constraint, Pattern)
         if s and s['type'] == 'str':

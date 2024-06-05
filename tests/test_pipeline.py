@@ -205,3 +205,31 @@ def test_transform_first_step() -> None:
     """Check that when transform() is used as the first step in a pipeline it run after parsing."""
     ta = TypeAdapter(Annotated[int, transform(lambda x: x + 1)])
     assert ta.validate_python('1') == 2
+
+
+def test_not_eq() -> None:
+    ta = TypeAdapter(Annotated[str, validate_as(str).not_eq('potato')])
+    assert ta.validate_python('tomato') == 'tomato'
+    with pytest.raises(ValidationError):
+        ta.validate_python('potato')
+
+
+def test_eq() -> None:
+    ta = TypeAdapter(Annotated[str, validate_as(str).eq('potato')])
+    assert ta.validate_python('potato') == 'potato'
+    with pytest.raises(ValidationError):
+        ta.validate_python('tomato')
+
+
+def test_not_in() -> None:
+    ta = TypeAdapter(Annotated[str, validate_as(str).not_in(['potato', 'tomato'])])
+    assert ta.validate_python('carrot') == 'carrot'
+    with pytest.raises(ValidationError):
+        ta.validate_python('potato')
+
+
+def test_in() -> None:
+    ta = TypeAdapter(Annotated[str, validate_as(str).in_(['potato', 'tomato'])])
+    assert ta.validate_python('potato') == 'potato'
+    with pytest.raises(ValidationError):
+        ta.validate_python('carrot')
