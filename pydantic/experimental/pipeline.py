@@ -5,6 +5,7 @@ from __future__ import annotations
 import datetime
 import operator
 import re
+import sys
 from collections import deque
 from collections.abc import Container
 from dataclasses import dataclass
@@ -21,6 +22,11 @@ if TYPE_CHECKING:
     from pydantic import GetCoreSchemaHandler
 
 from pydantic._internal._internal_dataclass import slots_true as _slots_true
+
+if sys.version_info < (3, 10):
+    EllipsisType = type(Ellipsis)
+else:
+    from types import EllipsisType
 
 __all__ = ['validate_as', 'validate_as_deferred', 'transform']
 
@@ -131,20 +137,25 @@ class _Pipeline(Generic[_InT, _OutT]):
         """
         return _Pipeline[_InT, _NewOutT](self._steps + [_Transform(func)])
 
-    def validate_as(self, tp: type[_NewOutT] | Any = Ellipsis, *, strict: bool = False) -> _Pipeline[_InT, Any]:
+    @overload
+    def validate_as(self, tp: type[_NewOutT], *, strict: bool = ...) -> _Pipeline[_InT, _NewOutT]:
+        ...
+
+    @overload
+    def validate_as(self, tp: EllipsisType, *, strict: bool = ...) -> _Pipeline[_InT, Any]:
+        ...
+
+    def validate_as(self, tp: type[_NewOutT] | EllipsisType, *, strict: bool = False) -> _Pipeline[_InT, Any]:
         """Validate / parse the input into a new type.
 
         If no type is provided, the type of the field is used.
 
         Types are parsed in Pydantic's `lax` mode by default,
         but you can enable `strict` mode by passing `strict=True`.
-
-        TODO: Eventually overload with type[_NewOutT] as one option and ellipsis or EllipsisType as the other,
-        but this is blocked by 3.8 and 3.9 support.
         """
-        if tp is Ellipsis:
-            tp = _FieldTypeMarker
-        return _Pipeline[_InT, Any](self._steps + [_ValidateAs(tp, strict=strict)])
+        if isinstance(tp, EllipsisType):
+            return _Pipeline[_InT, Any](self._steps + [_ValidateAs(_FieldTypeMarker, strict=strict)])
+        return _Pipeline[_InT, _NewOutT](self._steps + [_ValidateAs(tp, strict=strict)])
 
     def validate_as_deferred(self, func: Callable[[], type[_NewOutT]]) -> _Pipeline[_InT, _NewOutT]:
         """Parse the input into a new type, deferring resolution of the type until the current class

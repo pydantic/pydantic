@@ -23,12 +23,12 @@ with warnings.catch_warnings():
 
 @pytest.mark.parametrize('potato_variation', ['potato', ' potato ', ' potato', 'potato ', ' POTATO ', ' PoTatO '])
 def test_parse_str(potato_variation: str) -> None:
-    ta_lower = TypeAdapter(Annotated[str, validate_as().str_strip().str_lower()])
+    ta_lower = TypeAdapter(Annotated[str, validate_as(...).str_strip().str_lower()])
     assert ta_lower.validate_python(potato_variation) == 'potato'
 
 
 def test_parse_str_with_pattern() -> None:
-    ta_pattern = TypeAdapter(Annotated[str, validate_as().str_pattern(r'[a-z]+')])
+    ta_pattern = TypeAdapter(Annotated[str, validate_as(...).str_pattern(r'[a-z]+')])
     assert ta_pattern.validate_python('potato') == 'potato'
     with pytest.raises(ValueError):
         ta_pattern.validate_python('POTATO')
@@ -153,22 +153,22 @@ def test_predicates() -> None:
     'model, expected_val_schema, expected_ser_schema',
     [
         (
-            Annotated[Union[int, str], validate_as() | validate_as(str)],
+            Annotated[Union[int, str], validate_as(...) | validate_as(str)],
             {'anyOf': [{'type': 'integer'}, {'type': 'string'}]},
             {'anyOf': [{'type': 'integer'}, {'type': 'string'}]},
         ),
         (
-            Annotated[int, validate_as() | validate_as(str).validate_as(int)],
+            Annotated[int, validate_as(...) | validate_as(str).validate_as(int)],
             {'anyOf': [{'type': 'integer'}, {'type': 'string'}]},
             {'type': 'integer'},
         ),
         (
-            Annotated[int, validate_as() | validate_as(str).transform(int)],
+            Annotated[int, validate_as(...) | validate_as(str).transform(int)],
             {'anyOf': [{'type': 'integer'}, {'type': 'string'}]},
             {'anyOf': [{'type': 'integer'}, {'type': 'string'}]},
         ),
         (
-            Annotated[int, validate_as() | validate_as(str).transform(int).validate_as(int)],
+            Annotated[int, validate_as(...) | validate_as(str).transform(int).validate_as(int)],
             {'anyOf': [{'type': 'integer'}, {'type': 'string'}]},
             {'type': 'integer'},
         ),
@@ -183,7 +183,7 @@ def test_predicates() -> None:
             {'anyOf': [{'type': 'integer', 'exclusiveMinimum': 0}, {'type': 'integer', 'exclusiveMaximum': 100}]},
         ),
         (
-            Annotated[List[int], validate_as().len(0, 100)],
+            Annotated[List[int], validate_as(...).len(0, 100)],
             {'type': 'array', 'items': {'type': 'integer'}, 'maxItems': 100},
             {'type': 'array', 'items': {'type': 'integer'}, 'maxItems': 100},
         ),
