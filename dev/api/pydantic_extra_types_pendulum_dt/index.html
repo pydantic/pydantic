@@ -2379,6 +2379,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.pendulum_dt.Duration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Duration
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2429,6 +2440,60 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
     
   
     Language
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pydantic_extra_types_script_code/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    
+  
+    Script Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pydantic_extra_types_ulid/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    
+  
+    ULID
   
 
     
@@ -3084,6 +3149,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.pendulum_dt.Duration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Duration
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3284,6 +3360,57 @@ This type exists because Pydantic throws a fit on unknown types.</p>
 
 </div>
 
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_extra_types.pendulum_dt.Duration" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">Duration</span>
+
+
+<a href="#pydantic_extra_types.pendulum_dt.Duration" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pendulum.Duration">Duration</span></code></p>
+
+  
+      <p>A <code>pendulum.Duration</code> object. At runtime, this type decomposes into pendulum.Duration automatically.
+This type exists because Pydantic throws a fit on unknown types.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span> <span class="nn">pydantic_extra_types.pendulum_dt</span> <span class="kn">import</span> <span class="n">Duration</span>
+
+<span class="k">class</span> <span class="nc">test_model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">delta_t</span><span class="p">:</span> <span class="n">Duration</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">test_model</span><span class="p">(</span><span class="n">delta_t</span><span class="o">=</span><span class="s1">&#39;P1DT25H&#39;</span><span class="p">))</span>
+
+<span class="c1">#&gt; test_model(delta_t=Duration(days=2, hours=1))</span>
+</code></pre></div>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+
+</div>
+
 
 
 
@@ -3349,7 +3476,7 @@ This type exists because Pydantic throws a fit on unknown types.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.18.4", "pydantic-extra-types==2.6.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.18.4", "pydantic-extra-types==2.8.0"]
     </script>
 
               </article>
