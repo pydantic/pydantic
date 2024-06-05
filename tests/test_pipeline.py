@@ -45,7 +45,7 @@ def test_parse_str_with_pattern() -> None:
         (Decimal, validate_as(...).le(Decimal(1.0)), [Decimal(1)], [Decimal(5.0)]),
     ]
 )
-def test_ge_le(type_: Any, pipeline: _Pipeline, valid_cases: List[Any], invalid_cases: List[Any]) -> None:
+def test_ge_le(type_: Any, pipeline: _Pipeline, valid_cases: list[Any], invalid_cases: list[Any]) -> None:
     ta = TypeAdapter(Annotated[type_, pipeline])
     for x in valid_cases:
         assert ta.validate_python(x) == x
