@@ -113,6 +113,7 @@ class _FieldTypeMarker:
     pass
 
 
+# TODO: ultimately, make this public, see https://github.com/pydantic/pydantic/pull/9459#discussion_r1628197626
 @dataclass(**_slots_true)
 class _Pipeline(Generic[_InT, _OutT]):
     """Abstract representation of a chain of validation, transformation, and parsing steps."""
