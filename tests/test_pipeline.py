@@ -3,14 +3,13 @@ from __future__ import annotations
 
 import sys
 import warnings
-from datetime import datetime, timezone
 from typing import Any, List, Union
 
 import pytest
 from typing_extensions import Annotated
 
 if sys.version_info >= (3, 9):
-    from zoneinfo import ZoneInfo
+    pass
 
 from pydantic import PydanticExperimentalWarning, TypeAdapter, ValidationError
 
@@ -23,38 +22,6 @@ with warnings.catch_warnings():
 def test_parse_str(potato_variation: str) -> None:
     ta_lower = TypeAdapter(Annotated[str, validate_as().str_strip().str_lower()])
     assert ta_lower.validate_python(potato_variation) == 'potato'
-
-
-def test_parse_dt() -> None:
-    expected = datetime(2000, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
-
-    ta = TypeAdapter(Annotated[datetime, validate_as().datetime_tz(timezone.utc)])
-    assert ta.validate_json('"2000-01-01T00:00:00Z"') == expected
-    with pytest.raises(ValidationError):
-        ta.validate_json('"2000-01-01T00:00:00"')
-
-    ta = TypeAdapter(Annotated[datetime, validate_as().transform(lambda x: x).datetime_tz(timezone.utc)])
-    assert ta.validate_json('"2000-01-01T00:00:00Z"') == expected
-    with pytest.raises(ValidationError):
-        ta.validate_json('"2000-01-01T00:00:00"')
-
-    ta = TypeAdapter(
-        Annotated[
-            datetime,
-            validate_as().gt(datetime(1999, 1, 1, tzinfo=timezone.utc)).lt(datetime(2001, 1, 1, tzinfo=timezone.utc)),
-        ]
-    )
-    assert ta.validate_json('"2000-01-01T00:00:00Z"') == expected
-    with pytest.raises(ValidationError):
-        ta.validate_json('"1988-01-01T00:00:00Z"')
-    with pytest.raises(ValidationError):
-        ta.validate_json('"2002-01-01T00:00:00Z"')
-
-
-@pytest.mark.skipif(sys.version_info < (3, 9), reason='requires python 3.9 or higher')
-def test_unsupported_timezone() -> None:
-    with pytest.raises(ValueError, match='timezone other than UTC is not supported'):
-        TypeAdapter(Annotated[datetime, validate_as().datetime_tz(ZoneInfo('America/New_York'))])
 
 
 def test_parse_str_with_pattern() -> None:

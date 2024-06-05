@@ -5,7 +5,6 @@ from __future__ import annotations
 import datetime
 import operator
 import re
-import sys
 from collections import deque
 from collections.abc import Container
 from dataclasses import dataclass
@@ -15,9 +14,6 @@ from typing import TYPE_CHECKING, Any, Callable, Generic, Pattern, Protocol, Typ
 
 import annotated_types
 from typing_extensions import Annotated
-
-if sys.version_info >= (3, 9):
-    from zoneinfo import ZoneInfo
 
 if TYPE_CHECKING:
     from pydantic_core import core_schema as cs
@@ -495,11 +491,6 @@ def _apply_constraint(  # noqa: C901
     elif isinstance(constraint, annotated_types.Timezone):
         tz = constraint.tz
 
-        if sys.version_info >= (3, 9):
-            utc_options = [datetime.timezone.utc, ZoneInfo('UTC')]
-        else:
-            utc_options = [datetime.timezone.utc]
-
         if tz is ...:
             if s and s['type'] == 'datetime':
                 s = s.copy()
@@ -522,20 +513,8 @@ def _apply_constraint(  # noqa: C901
                     return v.tzinfo is None
 
                 s = _check_func(check_tz_naive, 'timezone naive', s)
-        elif tz in utc_options:
-            # special case for UTC since it's such a common case
-            if s and s['type'] == 'datetime':
-                s = s.copy()
-                s['tz_constraint'] = 0
-            else:
-
-                def check_tz_utc(v: object) -> bool:
-                    assert isinstance(v, datetime.datetime)
-                    return v.utcoffset() == datetime.timedelta(0)
-
-                s = _check_func(check_tz_utc, 'timezone UTC', s)
         else:
-            raise ValueError('Constraining to a specific timezone other than UTC is not supported')
+            raise NotImplementedError('Constraining to a specific timezone is not yet supported')
     elif isinstance(constraint, annotated_types.Interval):
         if constraint.ge:
             s = _apply_constraint(s, annotated_types.Ge(constraint.ge))
