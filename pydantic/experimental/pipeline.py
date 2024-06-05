@@ -1,4 +1,4 @@
-"""Experimental functionality, be prepared for this to break."""
+"""Experimental pipeline API functionality. Be careful with this API, it's subject to change."""
 
 from __future__ import annotations
 
@@ -112,8 +112,8 @@ class _Pipeline(Generic[_InT, _OutT]):
         Types are parsed in Pydantic's `lax` mode by default,
         but you can enable `strict` mode by passing `strict=True`.
 
-        # TODO: Eventually overload with type[_NewOutT] as one option and ellipsis or EllipsisType as the other,
-        # but this is blocked by 3.8 and 3.9 support.
+        TODO: Eventually overload with type[_NewOutT] as one option and ellipsis or EllipsisType as the other, 
+        but this is blocked by 3.8 and 3.9 support.
         """
         if tp is Ellipsis:
             tp = _FieldTypeMarker
