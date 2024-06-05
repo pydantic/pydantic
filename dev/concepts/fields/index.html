@@ -4234,16 +4234,27 @@ model when exporting the model.</p>
 <span class="c1">#&gt; {&#39;deprecated&#39;: True, &#39;title&#39;: &#39;Deprecated Field&#39;, &#39;type&#39;: &#39;integer&#39;}</span>
 </code></pre></div>
 <h3 id="deprecated-via-the-warningsdeprecated-decorator"><code>deprecated</code> via the <code>warnings.deprecated</code> decorator<a class="headerlink" href="#deprecated-via-the-warningsdeprecated-decorator" title="Permanent link">&para;</a></h3>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">deprecated</span>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You can only use the <code>deprecated</code> decorator in this way if you have
+<code>typing_extensions</code> &gt;= 4.9.0 installed.</p>
+</div>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">importlib.metadata</span>
+
+<span class="kn">from</span> <span class="nn">packaging.version</span> <span class="kn">import</span> <span class="n">Version</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">deprecated</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 
+<span class="k">if</span> <span class="n">Version</span><span class="p">(</span><span class="n">importlib</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">version</span><span class="p">(</span><span class="s1">&#39;typing_extensions&#39;</span><span class="p">))</span> <span class="o">&gt;=</span> <span class="n">Version</span><span class="p">(</span><span class="s1">&#39;4.9&#39;</span><span class="p">):</span>
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">deprecated_field</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">deprecated</span><span class="p">(</span><span class="s1">&#39;This is deprecated&#39;</span><span class="p">)]</span>
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">deprecated_field</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">deprecated</span><span class="p">(</span><span class="s1">&#39;This is deprecated&#39;</span><span class="p">)]</span>
 
-    <span class="c1"># Or explicitly using `Field`:</span>
-    <span class="n">alt_form</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">deprecated</span><span class="o">=</span><span class="n">deprecated</span><span class="p">(</span><span class="s1">&#39;This is deprecated&#39;</span><span class="p">))]</span>
+        <span class="c1"># Or explicitly using `Field`:</span>
+        <span class="n">alt_form</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
+            <span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">deprecated</span><span class="o">=</span><span class="n">deprecated</span><span class="p">(</span><span class="s1">&#39;This is deprecated&#39;</span><span class="p">))</span>
+        <span class="p">]</span>
 </code></pre></div>
 <h3 id="deprecated-as-a-boolean"><code>deprecated</code> as a boolean<a class="headerlink" href="#deprecated-as-a-boolean" title="Permanent link">&para;</a></h3>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
