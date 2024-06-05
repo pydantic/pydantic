@@ -43,7 +43,7 @@ def test_parse_str_with_pattern() -> None:
         (int, validate_as(...).le(5), [2, 4], [6, 100]),
         (float, validate_as(...).le(1.0), [0.5, 0.0], [100.0]),
         (Decimal, validate_as(...).le(Decimal(1.0)), [Decimal(1)], [Decimal(5.0)]),
-    ]
+    ],
 )
 def test_ge_le(type_: Any, pipeline: _Pipeline, valid_cases: list[Any], invalid_cases: list[Any]) -> None:
     ta = TypeAdapter(Annotated[type_, pipeline])
