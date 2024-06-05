@@ -1,11 +1,14 @@
 """Tests for the experimental transform module."""
 from __future__ import annotations
 
+import datetime
 import sys
 import warnings
+from decimal import Decimal
 from typing import Any, List, Union
 
 import pytest
+import pytz
 from typing_extensions import Annotated
 
 if sys.version_info >= (3, 9):
@@ -29,6 +32,62 @@ def test_parse_str_with_pattern() -> None:
     assert ta_pattern.validate_python('potato') == 'potato'
     with pytest.raises(ValueError):
         ta_pattern.validate_python('POTATO')
+
+
+def test_parse_ge_le() -> None:
+    ta_ge = TypeAdapter(Annotated[int, validate_as(int).ge(0)])
+    assert ta_ge.validate_python(100) == 100
+    assert ta_ge.validate_python(0) == 0
+    with pytest.raises(ValueError):
+        ta_ge.validate_python(-1)
+
+    ta_gef = TypeAdapter(Annotated[float, validate_as(float).ge(0.0)])
+    assert ta_gef.validate_python(1.8) == 1.8
+    assert ta_gef.validate_python(0.0) == 0.0
+    with pytest.raises(ValueError):
+        ta_gef.validate_python(-1.0)
+
+    ta_ged = TypeAdapter(Annotated[float, validate_as(Decimal).ge(Decimal(0.0))])
+    assert ta_ged.validate_python(Decimal(1)) == Decimal(1)
+    with pytest.raises(ValueError):
+        ta_ged.validate_python(Decimal(-1.0))
+
+    ta_le = TypeAdapter(Annotated[int, validate_as(int).le(5)])
+    assert ta_le.validate_python(2) == 2
+    assert ta_le.validate_python(5) == 5
+    with pytest.raises(ValueError):
+        ta_le.validate_python(100)
+
+    ta_lef = TypeAdapter(Annotated[float, validate_as(float).le(1.0)])
+    assert ta_lef.validate_python(0.5) == 0.5
+    assert ta_lef.validate_python(0.0) == 0.0
+    with pytest.raises(ValueError):
+        ta_lef.validate_python(100.0)
+
+    ta_led = TypeAdapter(Annotated[float, validate_as(Decimal).le(Decimal(1.0))])
+    assert ta_led.validate_python(Decimal(1)) == Decimal(1)
+    with pytest.raises(ValueError):
+        ta_led.validate_python(Decimal(5.0))
+
+
+def test_parse_multipleOf() -> None:
+    ta_m = TypeAdapter(Annotated[int, validate_as(int).multiple_of(5)])
+    assert ta_m.validate_python(5) == 5
+    assert ta_m.validate_python(20) == 20
+    with pytest.raises(ValueError):
+        ta_m.validate_python(18)
+
+
+def test_parse_tz() -> None:
+    ta_tz = TypeAdapter(Annotated[datetime.datetime, validate_as(str).datetime_tz_naive()])
+    date = datetime.datetime(2032, 6, 4, 11, 15, 30, 400000)
+    assert ta_tz.validate_python(date) == date
+
+    ta_tza = TypeAdapter(Annotated[datetime.datetime, validate_as(str).datetime_tz_aware()])
+    date_a = datetime.datetime(2032, 6, 4, 11, 15, 30, 400000, pytz.UTC)
+    assert ta_tza.validate_python(date_a) == date_a
+    with pytest.raises(ValueError):
+        ta_tza.validate_python(date)
 
 
 @pytest.mark.parametrize(
