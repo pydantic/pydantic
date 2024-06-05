@@ -4529,7 +4529,7 @@ and also covers some of the use cases of "root" models. (<a href="../concepts/mo
 may need to explicitly specify the generic parameter:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
 
-<span class="n">adapter</span><span class="p">:</span> <span class="n">TypeAdapter</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">)</span>
+<span class="n">adapter</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">](</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">)</span>
 <span class="o">...</span>
 </code></pre></div>
 <p>See <a href="../concepts/type_adapter/">Type Adapter</a> for more information.</p>
