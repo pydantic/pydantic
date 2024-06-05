@@ -1,11 +1,14 @@
 """Tests for the experimental transform module."""
 from __future__ import annotations
 
+import datetime
 import sys
 import warnings
+from decimal import Decimal
 from typing import Any, List, Union
 
 import pytest
+import pytz
 from typing_extensions import Annotated
 
 if sys.version_info >= (3, 9):
@@ -15,7 +18,7 @@ from pydantic import PydanticExperimentalWarning, TypeAdapter, ValidationError
 
 with warnings.catch_warnings():
     warnings.filterwarnings('ignore', category=PydanticExperimentalWarning)
-    from pydantic.experimental.pipeline import transform, validate_as
+    from pydantic.experimental.pipeline import _Pipeline, transform, validate_as
 
 
 @pytest.mark.parametrize('potato_variation', ['potato', ' potato ', ' potato', 'potato ', ' POTATO ', ' PoTatO '])
@@ -29,6 +32,46 @@ def test_parse_str_with_pattern() -> None:
     assert ta_pattern.validate_python('potato') == 'potato'
     with pytest.raises(ValueError):
         ta_pattern.validate_python('POTATO')
+
+
+@pytest.mark.parametrize(
+    'type_, pipeline, valid_cases, invalid_cases',
+    [
+        (int, validate_as(...).ge(0), [0, 1, 100], [-1, -100]),
+        (float, validate_as(...).ge(0.0), [1.8, 0.0], [-1.0]),
+        (Decimal, validate_as(...).ge(Decimal(0.0)), [Decimal(1), Decimal(0.0)], [Decimal(-1.0)]),
+        (int, validate_as(...).le(5), [2, 4], [6, 100]),
+        (float, validate_as(...).le(1.0), [0.5, 0.0], [100.0]),
+        (Decimal, validate_as(...).le(Decimal(1.0)), [Decimal(1)], [Decimal(5.0)]),
+    ],
+)
+def test_ge_le(type_: Any, pipeline: _Pipeline, valid_cases: list[Any], invalid_cases: list[Any]) -> None:
+    ta = TypeAdapter(Annotated[type_, pipeline])
+    for x in valid_cases:
+        assert ta.validate_python(x) == x
+    for y in invalid_cases:
+        with pytest.raises(ValueError):
+            ta.validate_python(y)
+
+
+def test_parse_multipleOf() -> None:
+    ta_m = TypeAdapter(Annotated[int, validate_as(int).multiple_of(5)])
+    assert ta_m.validate_python(5) == 5
+    assert ta_m.validate_python(20) == 20
+    with pytest.raises(ValueError):
+        ta_m.validate_python(18)
+
+
+def test_parse_tz() -> None:
+    ta_tz = TypeAdapter(Annotated[datetime.datetime, validate_as(str).datetime_tz_naive()])
+    date = datetime.datetime(2032, 6, 4, 11, 15, 30, 400000)
+    assert ta_tz.validate_python(date) == date
+
+    ta_tza = TypeAdapter(Annotated[datetime.datetime, validate_as(str).datetime_tz_aware()])
+    date_a = datetime.datetime(2032, 6, 4, 11, 15, 30, 400000, pytz.UTC)
+    assert ta_tza.validate_python(date_a) == date_a
+    with pytest.raises(ValueError):
+        ta_tza.validate_python(date)
 
 
 @pytest.mark.parametrize(
