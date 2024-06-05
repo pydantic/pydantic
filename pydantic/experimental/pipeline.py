@@ -438,15 +438,6 @@ def _apply_transform(
             s['to_upper'] = True
             return s
 
-    # TODO: need to expand this logic to cover more cases, like datetimes, etc
-    basic_builtin_types = [int, float, bool, str, list, dict, set, tuple, bytes]
-    if func in basic_builtin_types:
-        # handle case where func is a standard type constructor, like int, float, etc.
-        # where we want to get more accurate schema information
-        # The general challenge here is how do we infer the type of the output of a function
-        # and attach that appropriately to the schema
-        # For now, we're challenged by the coupling of validation and serialization info
-        return cs.chain_schema([s, handler(func)])
     return cs.no_info_after_validator_function(func, s)
 
 

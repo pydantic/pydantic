@@ -163,7 +163,7 @@ def test_predicates() -> None:
             {'type': 'integer'},
         ),
         (
-            Annotated[int, validate_as(...) | validate_as(str).transform(int)],
+            Annotated[int, validate_as(...) | validate_as(str).validate_as(int)],
             {'anyOf': [{'type': 'integer'}, {'type': 'string'}]},
             {'type': 'integer'},
         ),
@@ -187,10 +187,19 @@ def test_predicates() -> None:
             {'type': 'array', 'items': {'type': 'integer'}, 'maxItems': 100},
             {'type': 'array', 'items': {'type': 'integer'}, 'maxItems': 100},
         ),
+        # note - we added this to confirm the fact that the transform doesn't impact the JSON schema,
+        # as it's applied as a function after validator
         (
             Annotated[int, validate_as(str).transform(int)],
             {'type': 'string'},
-            {'type': 'integer'},
+            {'type': 'string'},  # see this is still string
+        ),
+        # in juxtaposition to the case above, when we use validate_as (recommended),
+        # the JSON schema is updated appropriately
+        (
+            Annotated[int, validate_as(str).validate_as(int)],
+            {'type': 'string'},
+            {'type': 'integer'},  # aha, this is now an integer
         ),
     ],
 )
