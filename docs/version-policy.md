@@ -44,7 +44,7 @@ We use one of the following naming conventions to indicate that a feature is exp
 
 1. The feature is located in the `experimental` module. In this case, you can access the feature like this:
 
-    ```python
+    ```python test="skip" lint="skip"
     from pydantic.experimental import feature_name
     ```
 
