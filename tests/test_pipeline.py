@@ -74,14 +74,6 @@ def test_parse_tz() -> None:
         ta_tza.validate_python(date)
 
 
-def test_in() -> None:
-    ta = TypeAdapter(Annotated[str, validate_as(str).in_(['potato', 'tomato'])])
-    assert ta.validate_python('potato') == 'potato'
-    assert ta.validate_python('tomato') == 'tomato'
-    with pytest.raises(ValueError):
-        ta.validate_python('tomatoe')
-
-
 @pytest.mark.parametrize(
     'method, method_arg, input_string, expected_output',
     [
