@@ -171,7 +171,7 @@ class TypeAdapter(Generic[T]):
 
     @overload
     def __init__(
-        self: TypeAdapter[T],
+        self,
         type: type[T],
         *,
         config: ConfigDict | None = ...,
@@ -185,7 +185,7 @@ class TypeAdapter(Generic[T]):
     # See https://github.com/python/typing/pull/1618
     @overload
     def __init__(
-        self: TypeAdapter[Any],
+        self,
         type: Any,
         *,
         config: ConfigDict | None = ...,
