@@ -938,6 +938,8 @@ class ConfigDict(TypedDict, total=False):
     Whether docstrings of attributes (bare string literals immediately following the attribute declaration)
     should be used for field descriptions. Defaults to `False`.
 
+    Available in Pydantic v2.7+.
+
     ```py
     from pydantic import BaseModel, ConfigDict, Field
 
