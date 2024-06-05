@@ -227,6 +227,10 @@ class _Pipeline(Generic[_InT, _OutT]):
         """
         return _Pipeline[_InT, _OutT](self._steps + [_Constraint(constraint)])
 
+    def predicate(self: _Pipeline[_InT, _NewOutT], func: Callable[[_NewOutT], bool]) -> _Pipeline[_InT, _NewOutT]:
+        """Constrain a value to meet a certain predicate."""
+        return self.constrain(annotated_types.Predicate(func))
+
     def gt(self: _Pipeline[_InT, _NewOutGt], gt: _NewOutGt) -> _Pipeline[_InT, _NewOutGt]:
         """Constrain a value to be greater than a certain value."""
         return self.constrain(annotated_types.Gt(gt))
@@ -250,10 +254,6 @@ class _Pipeline(Generic[_InT, _OutT]):
     def multiple_of(self: _Pipeline[_InT, _NewOutDiv], multiple_of: _NewOutDiv) -> _Pipeline[_InT, _NewOutDiv]:
         """Constrain a value to be a multiple of a certain number."""
         return self.constrain(annotated_types.MultipleOf(multiple_of))
-
-    def predicate(self: _Pipeline[_InT, _NewOutT], func: Callable[[_NewOutT], bool]) -> _Pipeline[_InT, _NewOutT]:
-        """Constrain a value to meet a certain predicate."""
-        return self.constrain(annotated_types.Predicate(func))
 
     def eq(self: _Pipeline[_InT, _OutT], value: _OutT) -> _Pipeline[_InT, _OutT]:
         """Constrain a value to be equal to a certain value."""
