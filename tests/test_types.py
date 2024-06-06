@@ -4098,6 +4098,7 @@ def test_compiled_pattern_in_field(use_field):
     """
     pattern_value = r'^whatev.r\d$'
     field_pattern = re.compile(pattern_value)
+    expected_pattern_value = f'(?u){pattern_value}'
 
     if use_field:
 
@@ -4114,7 +4115,7 @@ def test_compiled_pattern_in_field(use_field):
 
     if use_field:
         # In Field re.Pattern is converted to str instantly
-        assert field_metadata_pattern == pattern_value
+        assert field_metadata_pattern == expected_pattern_value
         assert isinstance(field_metadata_pattern, str)
 
     else:
@@ -4128,16 +4129,53 @@ def test_compiled_pattern_in_field(use_field):
 
     with pytest.raises(
         ValidationError,
-        match=re.escape("String should match pattern '" + pattern_value + "'"),
+        match=re.escape("String should match pattern '" + expected_pattern_value + "'"),
     ):
         Foobar(str_regex=' whatever1')
 
     assert Foobar.model_json_schema() == {
         'type': 'object',
         'title': 'Foobar',
-        'properties': {'str_regex': {'pattern': pattern_value, 'title': 'Str Regex', 'type': 'string'}},
+        'properties': {'str_regex': {'pattern': expected_pattern_value, 'title': 'Str Regex', 'type': 'string'}},
         'required': ['str_regex'],
     }
+
+
+@pytest.mark.parametrize(
+    'pattern,expected',
+    (
+        (re.compile(''), r'(?u)'),
+        (re.compile(r'(?P<name>name_group)'), r'(?u)(?P<name>name_group)'),
+        (re.compile(r'(?i:(flag_for_group+))'), r'(?u)(?i:(flag_for_group+))'),
+        (re.compile(r'(?i-m:(flag_for_group+))', re.MULTILINE), r'(?mu)(?i-m:(flag_for_group+))'),
+        (re.compile(r'^[a-z]+$', re.IGNORECASE), r'(?iu)^[a-z]+$'),
+        (re.compile(r'^[a-z]+$', re.IGNORECASE | re.MULTILINE), r'(?imu)^[a-z]+$'),
+        (re.compile(r'^[a-z]+$', re.IGNORECASE | re.MULTILINE | re.DOTALL), r'(?imsu)^[a-z]+$'),
+        (re.compile(r'^[a-z]+$', re.IGNORECASE | re.MULTILINE | re.DOTALL | re.VERBOSE), r'(?imsxu)^[a-z]+$'),
+        (re.compile(r'(?x)^[a-z]+$', re.IGNORECASE | re.MULTILINE), r'(?imxu)^[a-z]+$'),
+        (re.compile(r'(?ix)^[a-z]+$', re.IGNORECASE | re.MULTILINE | re.DOTALL), r'(?imsxu)^[a-z]+$'),
+    ),
+)
+@pytest.mark.parametrize('regex_engine', ['python-re', 'rust-regex'])
+def test_field_pattern_converted_to_string(pattern, expected, regex_engine):
+    class Model(BaseModel):
+        field: str = Field(pattern=pattern)
+
+        model_config = ConfigDict(regex_engine=regex_engine)
+
+    assert Model.model_fields['field'].metadata[0].pattern == expected
+
+
+def test_extended_flag_not_supported_by_rust_engine():
+    with pytest.raises(
+        SchemaError,
+        match='unrecognized flag',
+    ):
+
+        class Model(BaseModel):
+            field: str = Field(pattern=re.compile(r'', re.ASCII))
+
+            model_config = ConfigDict(regex_engine='rust-regex')
 
 
 def test_pattern_with_invalid_param():

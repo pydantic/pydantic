@@ -39,6 +39,7 @@ from ._internal import (
     _core_utils,
     _fields,
     _internal_dataclass,
+    _regex,
     _typing_extra,
     _utils,
     _validators,
@@ -716,7 +717,9 @@ class StringConstraints(annotated_types.GroupedMetadata):
                 strip_whitespace=self.strip_whitespace,
                 to_upper=self.to_upper,
                 to_lower=self.to_lower,
-                pattern=self.pattern.pattern if isinstance(self.pattern, Pattern) else self.pattern,
+                pattern=(
+                    _regex.extract_flagged_pattern(self.pattern) if isinstance(self.pattern, Pattern) else self.pattern
+                ),
             )
 
 

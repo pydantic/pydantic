@@ -17,7 +17,7 @@ from pydantic_core import PydanticUndefined
 from typing_extensions import Literal, TypeAlias, Unpack, deprecated
 
 from . import types
-from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils
+from ._internal import _decorators, _fields, _generics, _internal_dataclass, _regex, _repr, _typing_extra, _utils
 from .aliases import AliasChoices, AliasPath
 from .config import JsonDict
 from .errors import PydanticUserError
@@ -798,7 +798,7 @@ def Field(  # noqa: C901
         raise PydanticUserError('`regex` is removed. use `pattern` instead', code='removed-kwargs')
 
     if isinstance(pattern, typing.Pattern):
-        pattern = pattern.pattern
+        pattern = _regex.extract_flagged_pattern(pattern)
 
     if extra:
         warn(
