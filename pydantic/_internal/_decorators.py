@@ -514,12 +514,11 @@ def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) 
     """
     try:
         sig = signature(validator)
-    except ValueError:
-        # builtins and some C extensions don't have signatures
-        # assume that they don't take an info argument and only take a single argument
-        # e.g. `str.strip` or `datetime.datetime`
+    except (ValueError, TypeError):
+        # `inspect.signature` might not be able to infer a signature, e.g. with C objects.
+        # In this case, we assume no info argument is present:
         return False
-    n_positional = count_positional_params(sig)
+    n_positional = count_positional_required_params(sig)
     if mode == 'wrap':
         if n_positional == 3:
             return True
@@ -555,12 +554,17 @@ def inspect_field_serializer(
     Returns:
         Tuple of (is_field_serializer, info_arg).
     """
-    sig = signature(serializer)
+    try:
+        sig = signature(serializer)
+    except (ValueError, TypeError):
+        # `inspect.signature` might not be able to infer a signature, e.g. with C objects.
+        # In this case, we assume no info argument is present and this is not a method:
+        return (False, False)
 
     first = next(iter(sig.parameters.values()), None)
     is_field_serializer = first is not None and first.name == 'self'
 
-    n_positional = count_positional_params(sig)
+    n_positional = count_positional_required_params(sig)
     if is_field_serializer:
         # -1 to correct for self parameter
         info_arg = _serializer_info_arg(mode, n_positional - 1)
@@ -599,7 +603,7 @@ def inspect_annotated_serializer(serializer: Callable[..., Any], mode: Literal['
         # `inspect.signature` might not be able to infer a signature, e.g. with C objects.
         # In this case, we assume no info argument is present:
         return False
-    info_arg = _serializer_info_arg(mode, count_positional_params(sig))
+    info_arg = _serializer_info_arg(mode, count_positional_required_params(sig))
     if info_arg is None:
         raise PydanticUserError(
             f'Unrecognized field_serializer function signature for {serializer} with `mode={mode}`:{sig}',
@@ -627,7 +631,7 @@ def inspect_model_serializer(serializer: Callable[..., Any], mode: Literal['plai
         )
 
     sig = signature(serializer)
-    info_arg = _serializer_info_arg(mode, count_positional_params(sig))
+    info_arg = _serializer_info_arg(mode, count_positional_required_params(sig))
     if info_arg is None:
         raise PydanticUserError(
             f'Unrecognized model_serializer function signature for {serializer} with `mode={mode}`:{sig}',
@@ -773,8 +777,26 @@ def get_function_return_type(
         return explicit_return_type
 
 
-def count_positional_params(sig: Signature) -> int:
-    return sum(1 for param in sig.parameters.values() if can_be_positional(param))
+def count_positional_required_params(sig: Signature) -> int:
+    """Get the number of positional (required) arguments of a signature.
+
+    This function should only be used to inspect signatures of validation and serialization functions.
+    The first argument (the value being serialized or validated) is counted as a required argument
+    even if a default value exists.
+
+    Returns:
+        The number of positional arguments of a signature.
+    """
+    parameters = list(sig.parameters.values())
+    return sum(
+        1
+        for param in parameters
+        if can_be_positional(param)
+        # First argument is the value being validated/serialized, and can have a default value
+        # (e.g. `float`, which has signature `(x=0, /)`). We assume other parameters (the info arg
+        # for instance) should be required, and thus without any default value.
+        and (param.default is Parameter.empty or param == parameters[0])
+    )
 
 
 def can_be_positional(param: Parameter) -> bool:

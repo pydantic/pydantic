@@ -1,6 +1,5 @@
 import contextlib
 import re
-import sys
 from collections import deque
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -64,7 +63,6 @@ def test_annotated_validator_before() -> None:
     assert Model(x='1.0').x == 1.0
 
 
-@pytest.mark.xfail(sys.version_info >= (3, 9) and sys.implementation.name == 'pypy', reason='PyPy 3.9+ bug')
 def test_annotated_validator_builtin() -> None:
     """https://github.com/pydantic/pydantic/issues/6752"""
     TruncatedFloat = Annotated[float, BeforeValidator(int)]
@@ -2886,3 +2884,17 @@ def test_plain_validator_with_unsupported_type() -> None:
     model = type_adapter.validate_python('abcdefg')
     assert isinstance(model, UnsupportedClass)
     assert isinstance(type_adapter.dump_python(model), UnsupportedClass)
+
+
+def test_validator_with_default_values() -> None:
+    def validate_x(v: int, unrelated_arg: int = 1, other_unrelated_arg: int = 2) -> int:
+        assert v != -1
+        return v
+
+    class Model(BaseModel):
+        x: int
+
+        val_x = field_validator('x')(validate_x)
+
+    with pytest.raises(ValidationError):
+        Model(x=-1)

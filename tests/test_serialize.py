@@ -225,6 +225,10 @@ def test_serialize_valid_signatures():
     def ser_plain(v: Any, info: SerializationInfo) -> Any:
         return f'{v:,}'
 
+    def ser_plain_no_info(v: Any, unrelated_arg: int = 1, other_unrelated_arg: int = 2) -> Any:
+        # Arguments with default values are not treated as info arg.
+        return f'{v:,}'
+
     def ser_wrap(v: Any, nxt: SerializerFunctionWrapHandler, info: SerializationInfo) -> Any:
         return f'{nxt(v):,}'
 
@@ -233,6 +237,7 @@ def test_serialize_valid_signatures():
         f2: int
         f3: int
         f4: int
+        f5: int
 
         @field_serializer('f1')
         def ser_f1(self, v: Any, info: FieldSerializationInfo) -> Any:
@@ -249,7 +254,8 @@ def test_serialize_valid_signatures():
             return f'{nxt(v):,}'
 
         ser_f3 = field_serializer('f3')(ser_plain)
-        ser_f4 = field_serializer('f4', mode='wrap')(ser_wrap)
+        ser_f4 = field_serializer('f4')(ser_plain_no_info)
+        ser_f5 = field_serializer('f5', mode='wrap')(ser_wrap)
 
     m = MyModel(**{f'f{x}': x * 1_000 for x in range(1, 9)})
 
@@ -258,8 +264,9 @@ def test_serialize_valid_signatures():
         'f2': '2,000',
         'f3': '3,000',
         'f4': '4,000',
+        'f5': '5,000',
     }
-    assert m.model_dump_json() == '{"f1":"1,000","f2":"2,000","f3":"3,000","f4":"4,000"}'
+    assert m.model_dump_json() == '{"f1":"1,000","f2":"2,000","f3":"3,000","f4":"4,000","f5":"5,000"}'
 
 
 def test_invalid_signature_no_params() -> None:
@@ -906,7 +913,7 @@ def test_type_adapter_dump_with_context():
         y: float
 
         @model_serializer(mode='wrap')
-        def _serialize(self, handler, info: Optional[SerializationInfo] = None):
+        def _serialize(self, handler, info: SerializationInfo):
             data = handler(self)
             if info.context and info.context.get('mode') == 'x-only':
                 data.pop('y')
