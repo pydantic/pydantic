@@ -4087,6 +4087,7 @@ def test_pattern(pattern_type, pattern_value, matching_value, non_matching_value
     }
 
 
+@pytest.mark.xfail(reason='requires next minor release of pydantic-core: v2.19.0')
 @pytest.mark.parametrize(
     'use_field',
     [pytest.param(True, id='Field'), pytest.param(False, id='constr')],
