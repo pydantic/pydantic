@@ -4112,15 +4112,8 @@ def test_compiled_pattern_in_field(use_field):
     assert len(field_general_metadata) == 1
     field_metadata_pattern = field_general_metadata[0].pattern
 
-    if use_field:
-        # In Field re.Pattern is converted to str instantly
-        assert field_metadata_pattern == pattern_value
-        assert isinstance(field_metadata_pattern, str)
-
-    else:
-        # In constr re.Pattern is kept as is
-        assert field_metadata_pattern == field_pattern
-        assert isinstance(field_metadata_pattern, re.Pattern)
+    assert field_metadata_pattern == field_pattern
+    assert isinstance(field_metadata_pattern, re.Pattern)
 
     matching_value = 'whatever1'
     f = Foobar(str_regex=matching_value)
@@ -6685,3 +6678,14 @@ def test_strict_enum_with_use_enum_values() -> None:
     # validation error raised bc foo field uses strict mode
     with pytest.raises(ValidationError):
         Foo(foo='1')
+
+
+@pytest.mark.xfail(reason='requires next minor release of pydantic-core: v2.19.0')
+def test_python_re_respects_flags() -> None:
+    class Model(BaseModel):
+        a: Annotated[str, StringConstraints(pattern=re.compile(r'[A-Z]+', re.IGNORECASE))]
+
+        model_config = ConfigDict(regex_engine='python-re')
+
+    # allows lowercase letters, even though the pattern is uppercase only due to the IGNORECASE flag
+    assert Model(a='abc').a == 'abc'
