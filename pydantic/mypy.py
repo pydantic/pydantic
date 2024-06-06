@@ -57,6 +57,7 @@ from mypy.types import (
     Type,
     TypeOfAny,
     TypeType,
+    TypeVarId,
     TypeVarType,
     UnionType,
     get_proper_type,
@@ -498,7 +499,7 @@ class PydanticModelTransformer:
             tvd = TypeVarType(
                 self_tvar_name,
                 tvar_fullname,
-                -1,
+                TypeVarId(-1),
                 [],
                 obj_type,
                 AnyType(TypeOfAny.from_omitted_generics),  # type: ignore[arg-type]
