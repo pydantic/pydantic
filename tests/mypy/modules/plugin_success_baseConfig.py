@@ -18,7 +18,8 @@ class SelfReferencingModel(BaseModel):
     submodel: Optional['SelfReferencingModel']
 
     @property
-    def prop(self) -> None: ...
+    def prop(self) -> None:
+        ...
 
 
 SelfReferencingModel.model_rebuild()

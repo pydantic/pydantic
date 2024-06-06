@@ -177,7 +177,7 @@ unconfirmed_label = 'pending'
 [tool.ruff]
 line-length = 120
 target-version = 'py38'
-extend-exclude = ['pydantic/v1', 'tests/mypy/outputs']
+extend-exclude = ['pydantic/v1', 'tests/mypy/']
 
 [tool.ruff.lint]
 extend-select = ['Q', 'RUF100', 'C90', 'UP', 'I', 'D', 'T']

@@ -16,7 +16,8 @@ class Model(BaseModel):
         frozen = True
         extra = Extra.forbid
 
-        def config_method(self) -> None: ...
+        def config_method(self) -> None:
+            ...
 
 
 model = Model(x=1, y='y', z='z')
@@ -302,4 +303,5 @@ class ModelWithAnnotatedValidator(BaseModel):
         self.instance_method()
         return name
 
-    def instance_method(self) -> None: ...
+    def instance_method(self) -> None:
+        ...

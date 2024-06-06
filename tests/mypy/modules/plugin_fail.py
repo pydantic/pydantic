@@ -283,4 +283,5 @@ class ModelWithAnnotatedValidator(BaseModel):
         self.instance_method()
         return name
 
-    def instance_method(self) -> None: ...
+    def instance_method(self) -> None:
+        ...

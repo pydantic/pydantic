@@ -3,7 +3,6 @@ Test pydantic's compliance with mypy.
 
 Do a little skipping about with types to demonstrate its usage.
 """
-
 import os
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path, PurePath

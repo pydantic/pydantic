@@ -1,7 +1,6 @@
 """
 Test mypy failure with invalid types.
 """
-
 from typing import Generic, List, TypeVar
 
 from pydantic import BaseModel
