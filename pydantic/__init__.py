@@ -1,6 +1,8 @@
+import importlib
 import typing
 
-from ._migration import getattr_migration
+from pydantic._migration import getattr_migration
+
 from .version import VERSION
 
 if typing.TYPE_CHECKING:
@@ -387,12 +389,10 @@ def __getattr__(attr_name: str) -> object:
 
     package, module_name = dynamic_attr
 
-    from importlib import import_module
-
     if module_name == '__module__':
-        return import_module(f'.{attr_name}', package=package)
+        return importlib.import_module(f'.{attr_name}', package=package)
     else:
-        module = import_module(module_name, package=package)
+        module = importlib.import_module(module_name, package=package)
         return getattr(module, attr_name)
 
 
