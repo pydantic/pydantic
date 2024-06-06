@@ -356,6 +356,9 @@ class _Pipeline(Generic[_InT, _OutT]):
         s = s or cs.any_schema()
         return s
 
+    def __supports_type__(self, _: _OutT) -> bool:
+        raise NotImplementedError
+
 
 validate_as = _Pipeline[Any, Any](()).validate_as
 validate_as_deferred = _Pipeline[Any, Any](()).validate_as_deferred
