@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://docs.pydantic.dev/latest/concepts/config/">
+        <link rel="canonical" href="https://docs.pydantic.dev/latest/concepts/experimental/">
       
       
-        <link rel="prev" href="../alias/">
+        <link rel="prev" href="../plugins/">
       
       
-        <link rel="next" href="../serialization/">
+        <link rel="next" href="../../api/base_model/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Configuration - Pydantic</title>
+        <title>Experimental - Pydantic</title>
       
     
     
@@ -86,7 +86,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#configuration-with-dataclass-from-the-standard-library-or-typeddict" class="md-skip">
+        <a href="#experimental-features" class="md-skip">
           Skip to content
         </a>
       
@@ -144,7 +144,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Configuration
+              Experimental
             
           </span>
         </div>
@@ -962,34 +962,10 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    
-  
-    Configuration
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../config/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1004,48 +980,6 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="Page contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#configuration-with-dataclass-from-the-standard-library-or-typeddict" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Configuration with dataclass from the standard library or TypedDict
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#change-behaviour-globally" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Change behaviour globally
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1352,10 +1286,36 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../experimental/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    
+  
+    Experimental
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -1370,6 +1330,78 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#feedback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feedback
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#warnings-on-import" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Warnings on Import
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pipeline-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pipeline API
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pipeline API">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mapping-from-beforevalidator-aftervalidator-and-wrapvalidator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mapping from BeforeValidator, AfterValidator and WrapValidator
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -3137,6 +3169,8 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -3145,10 +3179,10 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#configuration-with-dataclass-from-the-standard-library-or-typeddict" class="md-nav__link">
+  <a href="#feedback" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Configuration with dataclass from the standard library or TypedDict
+        Feedback
       
     </span>
   </a>
@@ -3156,13 +3190,41 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </li>
       
         <li class="md-nav__item">
-  <a href="#change-behaviour-globally" class="md-nav__link">
+  <a href="#warnings-on-import" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Change behaviour globally
+        Warnings on Import
       
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pipeline-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pipeline API
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pipeline API">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mapping-from-beforevalidator-aftervalidator-and-wrapvalidator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mapping from BeforeValidator, AfterValidator and WrapValidator
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -3193,145 +3255,136 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 
 
-  <h1>Configuration</h1>
+<h1 id="experimental-features">Experimental Features<a class="headerlink" href="#experimental-features" title="Permanent link">&para;</a></h1>
+<p>In this section you will find documentation for new, experimental features in Pydantic. These features are subject to change or removal, and we are looking for feedback and suggestions before making them a permanent part of Pydantic.</p>
+<p>See our <a href="../../version-policy/#experimental-features">Version Policy</a> for more information on experimental features.</p>
+<h2 id="feedback">Feedback<a class="headerlink" href="#feedback" title="Permanent link">&para;</a></h2>
+<p>We welcome feedback on experimental features! Please open an issue on the <a href="https://github.com/pydantic/pydantic/issues/new/choose">Pydantic GitHub repository</a> to share your thoughts, requests, or suggestions.</p>
+<p>We also encourage you to read through existing feedback and add your thoughts to existing issues.</p>
+<h2 id="warnings-on-import">Warnings on Import<a class="headerlink" href="#warnings-on-import" title="Permanent link">&para;</a></h2>
+<p>When you import an experimental feature from the <code>experimental</code> module, you'll see a warning message that the feature is experimental. You can disable this warning with the following:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">warnings</span>
 
-<p>Behaviour of Pydantic can be controlled via the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_config"><code>BaseModel.model_config</code></a>,
-and as an argument to <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a>.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Before <strong>v2.0</strong>, the <code>Config</code> class was used. This is still supported, but <strong>deprecated</strong>.</p>
-</div>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">PydanticExperimentalWarning</span>
 
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-
-    <span class="n">v</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">v</span><span class="o">=</span><span class="s1">&#39;x&#39;</span> <span class="o">*</span> <span class="mi">20</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for Model</span>
-<span class="sd">    v</span>
-<span class="sd">      String should have at most 10 characters [type=string_too_long, input_value=&#39;xxxxxxxxxxxxxxxxxxxx&#39;, input_type=str]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="n">PydanticExperimentalWarning</span><span class="p">)</span>
 </code></pre></div>
-<p>Also, you can specify config options as model class kwargs:
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<h2 id="pipeline-api">Pipeline API<a class="headerlink" href="#pipeline-api" title="Permanent link">&para;</a></h2>
+<p>Pydantic v2.8.0 introduced an experimental "pipeline" API that allows composing of parsing (validation), constraints and transformations in a more type-safe manner than existing APIs. This API is subject to change or removal, we are looking for feedback and suggestions before making it a permanent part of Pydantic.</p>
+<details class="api">
+<summary>API Documentation</summary>
+<p><a class="autorefs autorefs-internal" href="../../api/experimental/#pydantic.experimental.pipeline"><code>pydantic.experimental.pipeline</code></a><br></p>
+</details>
+<p>Generally, the pipeline API is used to define a sequence of steps to apply to incoming data during validation. The pipeline API is designed to be more type-safe and composable than the existing Pydantic API.</p>
+<p>Each step in the pipeline can be:
+* A validation step that runs pydantic validation on the provided type
+* A transformation step that modifies the data
+* A constraint step that checks the data against a condition
+* A predicate step that checks the data against a condition and raises an error if it returns <code>False</code></p>
+<!-- TODO: (@sydney-runkle) add more documentation once we solidify the API during the experimental phase -->
 
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="s1">&#39;forbid&#39;</span><span class="p">):</span>  <span class="c1"># (1)!</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;spam&#39;</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="s1">&#39;oh no&#39;</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for Model</span>
-<span class="sd">    b</span>
-<span class="sd">      Extra inputs are not permitted [type=extra_forbidden, input_value=&#39;oh no&#39;, input_type=str]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div></p>
-<ol>
-<li>See the <a href="#extra-attributes">Extra Attributes</a> section for more details.</li>
-</ol>
-<p>Similarly, if using the <a class="autorefs autorefs-internal" href="../../api/dataclasses/#pydantic.dataclasses"><code>@dataclass</code></a> decorator from Pydantic:
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
-<span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
-
-<span class="n">config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">validate_assignment</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-
-<span class="nd">@dataclass</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">User</span><span class="p">:</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
-    <span class="n">signup_ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="kc">None</span>
-
-
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">,</span> <span class="n">signup_ts</span><span class="o">=</span><span class="s1">&#39;2032-06-21T12:00&#39;</span><span class="p">)</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">user</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;x&#39;</span> <span class="o">*</span> <span class="mi">20</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for User</span>
-<span class="sd">    name</span>
-<span class="sd">      String should have at most 10 characters [type=string_too_long, input_value=&#39;xxxxxxxxxxxxxxxxxxxx&#39;, input_type=str]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div></p>
-<h2 id="configuration-with-dataclass-from-the-standard-library-or-typeddict">Configuration with <code>dataclass</code> from the standard library or <code>TypedDict</code><a class="headerlink" href="#configuration-with-dataclass-from-the-standard-library-or-typeddict" title="Permanent link">&para;</a></h2>
-<p>If using the <code>dataclass</code> from the standard library or <code>TypedDict</code>, you should use <code>__pydantic_config__</code> instead.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span> <span class="nn">pydantic.experimental.pipeline</span> <span class="kn">import</span> <span class="n">validate_as</span><span class="p">,</span> <span class="n">validate_as_deferred</span>
 
 
-<span class="nd">@dataclass</span>
-<span class="k">class</span> <span class="nc">User</span><span class="p">:</span>
-    <span class="n">__pydantic_config__</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
-    <span class="n">signup_ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">validate_as</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">str_lower</span><span class="p">()]</span>  <span class="c1"># (1)!</span>
+    <span class="n">age</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">validate_as</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span><span class="o">.</span><span class="n">gt</span><span class="p">(</span><span class="mi">0</span><span class="p">)]</span>  <span class="c1"># (2)!</span>
+    <span class="n">username</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">validate_as</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">str_pattern</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[a-z]+&#39;</span><span class="p">)]</span>  <span class="c1"># (3)!</span>
+    <span class="n">password</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
+        <span class="nb">str</span><span class="p">,</span>
+        <span class="n">validate_as</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">lower</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">predicate</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">!=</span> <span class="s1">&#39;password&#39;</span><span class="p">),</span>  <span class="c1"># (4)!</span>
+    <span class="p">]</span>
+    <span class="n">favorite_number</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>  <span class="c1"># (5)!</span>
+        <span class="nb">int</span><span class="p">,</span>
+        <span class="p">(</span><span class="n">validate_as</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span> <span class="o">|</span> <span class="n">validate_as</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">str_strip</span><span class="p">()</span><span class="o">.</span><span class="n">validate_as</span><span class="p">(</span><span class="nb">int</span><span class="p">))</span><span class="o">.</span><span class="n">gt</span><span class="p">(</span>
+            <span class="mi">0</span>
+        <span class="p">),</span>
+    <span class="p">]</span>
+    <span class="n">friends</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">User</span><span class="p">],</span> <span class="n">validate_as</span><span class="p">(</span><span class="o">...</span><span class="p">)</span><span class="o">.</span><span class="n">len</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)]</span>  <span class="c1"># (6)!</span>
+    <span class="n">family</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>  <span class="c1"># (7)!</span>
+        <span class="nb">list</span><span class="p">[</span><span class="n">User</span><span class="p">],</span>
+        <span class="n">validate_as_deferred</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">User</span><span class="p">])</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">:]),</span>
+    <span class="p">]</span>
+    <span class="n">bio</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
+        <span class="n">datetime</span><span class="p">,</span>
+        <span class="n">validate_as</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">/</span> <span class="mi">1_000_000</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">validate_as</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>  <span class="c1"># (8)!</span>
+    <span class="p">]</span>
 </code></pre></div>
-<p>Alternatively, the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.with_config"><code>with_config</code></a> decorator can be used to comply with type checkers.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypedDict</span>
+<ol>
+<li>Lowercase a string.</li>
+<li>Constrain an integer to be greater than zero.</li>
+<li>Constrain a string to match a regex pattern.</li>
+<li>You can also use the lower level transform, constrain and predicate methods.</li>
+<li>Use the <code>|</code> or <code>&amp;</code> operators to combine steps (like a logical OR or AND).</li>
+<li>Calling <code>validate_as(...)</code> with <code>Ellipsis</code>, <code>...</code> as the first positional argument implies <code>validate_as(&lt;field type&gt;)</code>. Use <code>validate_as(Any)</code> to accept any type.</li>
+<li>For recursive types you can use <code>validate_as_deferred</code> to reference the type itself before it's defined.</li>
+<li>You can call <code>validate_as()</code> before or after other steps to do pre or post processing.</li>
+</ol>
+<h3 id="mapping-from-beforevalidator-aftervalidator-and-wrapvalidator">Mapping from <code>BeforeValidator</code>, <code>AfterValidator</code> and <code>WrapValidator</code><a class="headerlink" href="#mapping-from-beforevalidator-aftervalidator-and-wrapvalidator" title="Permanent link">&para;</a></h3>
+<p>The <code>validate_as</code> method is a more type-safe way to define <code>BeforeValidator</code>, <code>AfterValidator</code> and <code>WrapValidator</code>:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">with_config</span>
+<span class="kn">from</span> <span class="nn">pydantic.experimental.pipeline</span> <span class="kn">import</span> <span class="n">transform</span><span class="p">,</span> <span class="n">validate_as</span>
 
-
-<span class="nd">@with_config</span><span class="p">(</span><span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_to_lower</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="nb">str</span>
+<span class="c1"># BeforeValidator</span>
+<span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">validate_as</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">str_strip</span><span class="p">()</span><span class="o">.</span><span class="n">validate_as</span><span class="p">(</span><span class="o">...</span><span class="p">)]</span>  <span class="c1"># (1)!</span>
+<span class="c1"># AfterValidator</span>
+<span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">transform</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)]</span>  <span class="c1"># (2)!</span>
+<span class="c1"># WrapValidator</span>
+<span class="n">Annotated</span><span class="p">[</span>
+    <span class="nb">int</span><span class="p">,</span>
+    <span class="n">validate_as</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">str_strip</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">validate_as</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">*</span> <span class="mi">2</span><span class="p">),</span>  <span class="c1"># (3)!</span>
+<span class="p">]</span>
 </code></pre></div>
-<h2 id="change-behaviour-globally">Change behaviour globally<a class="headerlink" href="#change-behaviour-globally" title="Permanent link">&para;</a></h2>
-<p>If you wish to change the behaviour of Pydantic globally, you can create your own custom <code>BaseModel</code>
-with custom <code>model_config</code> since the config is inherited:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+<ol>
+<li>Strip whitespace from a string before parsing it as an integer.</li>
+<li>Multiply an integer by 2 after parsing it.</li>
+<li>Strip whitespace from a string, validate it as an integer, then multiply it by 2.</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
+<span class="kn">from</span> <span class="nn">pydantic.experimental.pipeline</span> <span class="kn">import</span> <span class="n">transform</span><span class="p">,</span> <span class="n">validate_as</span>
 
-<span class="k">class</span> <span class="nc">Parent</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s1">&#39;allow&#39;</span><span class="p">)</span>
-
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">Parent</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;x&#39;: &#39;foo&#39;, &#39;y&#39;: &#39;bar&#39;}</span>
+<span class="c1"># BeforeValidator</span>
+<span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">validate_as</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">str_strip</span><span class="p">()</span><span class="o">.</span><span class="n">validate_as</span><span class="p">(</span><span class="o">...</span><span class="p">)]</span>  <span class="c1"># (1)!</span>
+<span class="c1"># AfterValidator</span>
+<span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">transform</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)]</span>  <span class="c1"># (2)!</span>
+<span class="c1"># WrapValidator</span>
+<span class="n">Annotated</span><span class="p">[</span>
+    <span class="nb">int</span><span class="p">,</span>
+    <span class="n">validate_as</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">str_strip</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">validate_as</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">*</span> <span class="mi">2</span><span class="p">),</span>  <span class="c1"># (3)!</span>
+<span class="p">]</span>
 </code></pre></div>
-<p>If you add a <code>model_config</code> to the <code>Model</code> class, it will <em>merge</em> with the <code>model_config</code> from <code>Parent</code>:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
-
-
-<span class="k">class</span> <span class="nc">Parent</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s1">&#39;allow&#39;</span><span class="p">)</span>
-
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">Parent</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_to_lower</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># (1)!</span>
-
-    <span class="n">x</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;FOO&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;x&#39;: &#39;foo&#39;, &#39;y&#39;: &#39;bar&#39;}</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_config</span><span class="p">)</span>
-<span class="c1">#&gt; {&#39;extra&#39;: &#39;allow&#39;, &#39;str_to_lower&#39;: True}</span>
-</code></pre></div>
+<ol>
+<li>Strip whitespace from a string before parsing it as an integer.</li>
+<li>Multiply an integer by 2 after parsing it.</li>
+<li>Strip whitespace from a string, validate it as an integer, then multiply it by 2.</li>
+</ol>
+</div>
+</div>
+</div>
 
 
 

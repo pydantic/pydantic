@@ -76,6 +76,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://docs.pydantic.dev/latest/api/experimental/</loc>
+         <lastmod>2024-06-06</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://docs.pydantic.dev/latest/api/fields/</loc>
          <lastmod>2024-06-06</lastmod>
          <changefreq>daily</changefreq>
@@ -232,6 +237,11 @@
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/concepts/dataclasses/</loc>
+         <lastmod>2024-06-06</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.pydantic.dev/latest/concepts/experimental/</loc>
          <lastmod>2024-06-06</lastmod>
          <changefreq>daily</changefreq>
     </url>
