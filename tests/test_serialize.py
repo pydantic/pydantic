@@ -913,7 +913,7 @@ def test_type_adapter_dump_with_context():
         y: float
 
         @model_serializer(mode='wrap')
-        def _serialize(self, handler, info: Optional[SerializationInfo] = None):
+        def _serialize(self, handler, info: SerializationInfo):
             data = handler(self)
             if info.context and info.context.get('mode') == 'x-only':
                 data.pop('y')
