@@ -463,9 +463,9 @@ except ValidationError as e:
     the method returns an instance of the model.
 
 !!! note "On Inheritance"
-    A `@model_validator` defined in a base class will be called for a subclass.
+    A `@model_validator` defined in a base class will be called during the validation of a subclass instance.
 
-    Overriding a `@model_validator` in a subclass will override the base class' `@model_validator`, and thus only the subclass' `@model_validator` will be called.
+    Overriding a `@model_validator` in a subclass will override the base class' `@model_validator`, and thus only the subclass' version of said `@model_validator` will be called.
 
 Model validators can be `mode='before'`, `mode='after'` or `mode='wrap'`.
 
