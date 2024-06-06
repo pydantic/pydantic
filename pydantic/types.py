@@ -2273,8 +2273,8 @@ class Base64UrlEncoder(EncoderProtocol):
         """
         return base64.urlsafe_b64encode(value)
 
-    @classmethod
-    def get_json_format(cls) -> Literal['base64url']:
+    @staticmethod
+    def get_json_format() -> Literal['base64url']:
         """Get the JSON format for the encoded data.
 
         Returns:
