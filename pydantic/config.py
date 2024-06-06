@@ -1,4 +1,5 @@
 """Configuration for Pydantic models."""
+
 from __future__ import annotations as _annotations
 
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, TypeVar, Union

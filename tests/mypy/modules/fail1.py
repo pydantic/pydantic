@@ -1,6 +1,7 @@
 """
 Test mypy failure with missing attribute
 """
+
 from datetime import datetime
 from typing import List, Optional
 

@@ -3481,8 +3481,7 @@ def test_nested_generic():
     class Ref(BaseModel, Generic[T]):
         uuid: str
 
-        def resolve(self) -> T:
-            ...
+        def resolve(self) -> T: ...
 
     class Model(BaseModel):
         ref: Ref['Model']
@@ -3543,15 +3542,13 @@ def test_complex_nested_generic():
     class Ref(BaseModel, Generic[T]):
         uuid: str
 
-        def resolve(self) -> T:
-            ...
+        def resolve(self) -> T: ...
 
     class Model(BaseModel):
         uuid: str
         model: Union[Ref['Model'], 'Model']
 
-        def resolve(self) -> 'Model':
-            ...
+        def resolve(self) -> 'Model': ...
 
     Model.model_rebuild()
 

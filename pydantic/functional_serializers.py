@@ -1,4 +1,5 @@
 """This module contains related classes and functions for serialization."""
+
 from __future__ import annotations
 
 import dataclasses
@@ -190,8 +191,7 @@ def field_serializer(
     return_type: Any = ...,
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
     check_fields: bool | None = ...,
-) -> Callable[[_PlainSerializeMethodType], _PlainSerializeMethodType]:
-    ...
+) -> Callable[[_PlainSerializeMethodType], _PlainSerializeMethodType]: ...
 
 
 @overload
@@ -203,8 +203,7 @@ def field_serializer(
     return_type: Any = ...,
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
     check_fields: bool | None = ...,
-) -> Callable[[_PlainSerializeMethodType], _PlainSerializeMethodType]:
-    ...
+) -> Callable[[_PlainSerializeMethodType], _PlainSerializeMethodType]: ...
 
 
 @overload
@@ -216,8 +215,7 @@ def field_serializer(
     return_type: Any = ...,
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
     check_fields: bool | None = ...,
-) -> Callable[[_WrapSerializeMethodType], _WrapSerializeMethodType]:
-    ...
+) -> Callable[[_WrapSerializeMethodType], _WrapSerializeMethodType]: ...
 
 
 def field_serializer(
@@ -292,8 +290,7 @@ FuncType = TypeVar('FuncType', bound=Callable[..., Any])
 
 
 @overload
-def model_serializer(__f: FuncType) -> FuncType:
-    ...
+def model_serializer(__f: FuncType) -> FuncType: ...
 
 
 @overload
@@ -302,8 +299,7 @@ def model_serializer(
     mode: Literal['plain', 'wrap'] = ...,
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
     return_type: Any = ...,
-) -> Callable[[FuncType], FuncType]:
-    ...
+) -> Callable[[FuncType], FuncType]: ...
 
 
 def model_serializer(

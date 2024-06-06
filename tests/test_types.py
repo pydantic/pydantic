@@ -5357,8 +5357,7 @@ def test_default_union_class():
 
 @pytest.mark.parametrize('max_length', [10, None])
 def test_union_subclass(max_length: Union[int, None]):
-    class MyStr(str):
-        ...
+    class MyStr(str): ...
 
     class Model(BaseModel):
         x: Union[int, Annotated[str, Field(max_length=max_length)]]

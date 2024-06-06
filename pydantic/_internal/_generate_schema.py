@@ -1,4 +1,5 @@
 """Convert python types to pydantic-core schema."""
+
 from __future__ import annotations as _annotations
 
 import collections.abc
@@ -705,12 +706,10 @@ class GenerateSchema:
         return obj
 
     @overload
-    def _get_args_resolving_forward_refs(self, obj: Any, required: Literal[True]) -> tuple[Any, ...]:
-        ...
+    def _get_args_resolving_forward_refs(self, obj: Any, required: Literal[True]) -> tuple[Any, ...]: ...
 
     @overload
-    def _get_args_resolving_forward_refs(self, obj: Any) -> tuple[Any, ...] | None:
-        ...
+    def _get_args_resolving_forward_refs(self, obj: Any) -> tuple[Any, ...] | None: ...
 
     def _get_args_resolving_forward_refs(self, obj: Any, required: bool = False) -> tuple[Any, ...] | None:
         args = get_args(obj)

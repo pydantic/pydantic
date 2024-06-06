@@ -1,4 +1,5 @@
 """Defining fields on models."""
+
 from __future__ import annotations as _annotations
 
 import dataclasses
@@ -1036,13 +1037,11 @@ def computed_field(
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None = None,
     repr: bool = True,
     return_type: Any = PydanticUndefined,
-) -> typing.Callable[[PropertyT], PropertyT]:
-    ...
+) -> typing.Callable[[PropertyT], PropertyT]: ...
 
 
 @typing.overload
-def computed_field(__func: PropertyT) -> PropertyT:
-    ...
+def computed_field(__func: PropertyT) -> PropertyT: ...
 
 
 def computed_field(

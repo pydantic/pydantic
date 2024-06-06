@@ -37,8 +37,7 @@ _LIMITED_DICT_SIZE = 100
 if TYPE_CHECKING:
 
     class LimitedDict(dict, MutableMapping[KT, VT]):
-        def __init__(self, size_limit: int = _LIMITED_DICT_SIZE):
-            ...
+        def __init__(self, size_limit: int = _LIMITED_DICT_SIZE): ...
 
 else:
 

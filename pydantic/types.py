@@ -1,4 +1,5 @@
 """The types module contains custom types used by pydantic."""
+
 from __future__ import annotations as _annotations
 
 import base64

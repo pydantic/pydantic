@@ -11,6 +11,7 @@ Warning: Deprecated
     See [`pydantic-extra-types.Color`](../usage/types/extra_types/color_types.md)
     for more information.
 """
+
 import math
 import re
 from colorsys import hls_to_rgb, rgb_to_hls

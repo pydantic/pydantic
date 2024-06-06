@@ -1,4 +1,5 @@
 """Logic for creating models."""
+
 from __future__ import annotations as _annotations
 
 import operator
@@ -1437,8 +1438,7 @@ def create_model(
     __validators__: dict[str, classmethod[Any, ..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     **field_definitions: Any,
-) -> type[BaseModel]:
-    ...
+) -> type[BaseModel]: ...
 
 
 @overload
@@ -1453,8 +1453,7 @@ def create_model(
     __validators__: dict[str, classmethod[Any, ..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     **field_definitions: Any,
-) -> type[ModelT]:
-    ...
+) -> type[ModelT]: ...
 
 
 def create_model(  # noqa: C901

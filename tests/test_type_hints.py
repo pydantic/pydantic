@@ -2,6 +2,7 @@
 Test pydantic model type hints (annotations) and that they can be
 queried by :py:meth:`typing.get_type_hints`.
 """
+
 import inspect
 import sys
 from typing import (

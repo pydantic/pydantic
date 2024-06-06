@@ -8,6 +8,7 @@ In general you shouldn't need to use this module directly; instead, you can use
 [`BaseModel.model_json_schema`][pydantic.BaseModel.model_json_schema] and
 [`TypeAdapter.json_schema`][pydantic.TypeAdapter.json_schema].
 """
+
 from __future__ import annotations as _annotations
 
 import dataclasses

@@ -1,4 +1,5 @@
 """Logic related to validators applied to models etc. via the `@field_validator` and `@model_validator` decorators."""
+
 from __future__ import annotations as _annotations
 
 from collections import deque

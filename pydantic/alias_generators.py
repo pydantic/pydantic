@@ -1,4 +1,5 @@
 """Alias generators for converting between different capitalization conventions."""
+
 import re
 
 __all__ = ('to_pascal', 'to_camel', 'to_snake')
