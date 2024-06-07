@@ -1380,7 +1380,7 @@ def test_non_serializable_default(type_, default_value, properties):
 )
 def test_callable_fallback_with_non_serializable_default(warning_match):
     class Model(BaseModel):
-        callback: Union[int, Callable[[int], int]] = lambda x: x  # noqa E731
+        callback: Union[int, Callable[[int], int]] = lambda x: x
 
     class MyGenerator(GenerateJsonSchema):
         ignored_warning_kinds = ()
