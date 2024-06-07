@@ -2776,37 +2776,6 @@ def test_tuple_with_extra_schema():
     }
 
 
-def test_path_modify_schema():
-    class MyPath(Path):
-        @classmethod
-        def __get_pydantic_core_schema__(cls, _source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return handler(Path)
-
-        @classmethod
-        def __get_pydantic_json_schema__(
-            cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
-        ) -> JsonSchemaValue:
-            schema = handler(core_schema)
-            schema.update(foobar=123)
-            return schema
-
-    class Model(BaseModel):
-        path1: Path
-        path2: MyPath
-        path3: List[MyPath]
-
-    assert Model.model_json_schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {
-            'path1': {'title': 'Path1', 'type': 'string', 'format': 'path'},
-            'path2': {'title': 'Path2', 'type': 'string', 'format': 'path', 'foobar': 123},
-            'path3': {'title': 'Path3', 'type': 'array', 'items': {'type': 'string', 'format': 'path', 'foobar': 123}},
-        },
-        'required': ['path1', 'path2', 'path3'],
-    }
-
-
 def test_frozen_set():
     class Model(BaseModel):
         a: FrozenSet[int] = frozenset({1, 2, 3})

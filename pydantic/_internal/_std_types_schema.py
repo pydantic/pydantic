@@ -39,6 +39,7 @@ from . import _known_annotated_metadata, _typing_extra, _validators
 from ._core_utils import get_type_ref
 from ._internal_dataclass import slots_true
 from ._schema_generation_shared import GetCoreSchemaHandler, GetJsonSchemaHandler
+from ._utils import lenient_issubclass
 
 if typing.TYPE_CHECKING:
     from ._generate_schema import GenerateSchema
@@ -207,14 +208,7 @@ def path_schema_prepare_pydantic_annotations(
 ) -> tuple[Any, list[Any]] | None:
     import pathlib
 
-    if source_type not in {
-        os.PathLike,
-        pathlib.Path,
-        pathlib.PurePath,
-        pathlib.PosixPath,
-        pathlib.PurePosixPath,
-        pathlib.PureWindowsPath,
-    }:
+    if not lenient_issubclass(source_type, os.PathLike):
         return None
 
     metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
