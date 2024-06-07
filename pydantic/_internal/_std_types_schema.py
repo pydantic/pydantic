@@ -403,7 +403,7 @@ def sequence_like_prepare_pydantic_annotations(
     args = get_args(source_type)
 
     if not args:
-        args = (Any,)
+        args = typing.cast(tuple[Any], (Any,))
     elif len(args) != 1:
         raise ValueError('Expected sequence to have exactly 1 generic parameter')
 
@@ -574,7 +574,7 @@ def mapping_like_prepare_pydantic_annotations(
     args = get_args(source_type)
 
     if not args:
-        args = (Any, Any)
+        args = typing.cast(tuple[Any, Any], (Any, Any))
     elif mapped_origin is collections.Counter:
         # a single generic
         if len(args) != 1:

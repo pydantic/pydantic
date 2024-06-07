@@ -533,11 +533,11 @@ class NameEmail(_repr.Representation):
 
     @classmethod
     def _validate(cls, input_value: Self | str, /) -> Self:
-        if isinstance(input_value, cls):
-            return input_value
-        else:
+        if isinstance(input_value, str):
             name, email = validate_email(input_value)
             return cls(name, email)
+        else:
+            return input_value
 
     def __str__(self) -> str:
         if '@' in self.name:

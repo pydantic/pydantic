@@ -95,7 +95,7 @@ def pydantic_encoder(obj: Any) -> Any:
     if isinstance(obj, BaseModel):
         return obj.model_dump()
     elif is_dataclass(obj):
-        return asdict(obj)
+        return asdict(obj)  # type: ignore
 
     # Check the class type and its superclasses for a matching encoder
     for base in obj.__class__.__mro__[:-1]:

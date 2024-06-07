@@ -2279,7 +2279,9 @@ def models_json_schema(
             cls.__pydantic_core_schema__.rebuild()
 
     instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
-    inputs = [(m, mode, m.__pydantic_core_schema__) for m, mode in models]
+    inputs: list[tuple[type[BaseModel] | type[PydanticDataclass], JsonSchemaMode, CoreSchema]] = [
+        (m, mode, m.__pydantic_core_schema__) for m, mode in models
+    ]
     json_schemas_map, definitions = instance.generate_definitions(inputs)
 
     json_schema: dict[str, Any] = {}
