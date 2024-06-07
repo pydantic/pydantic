@@ -1091,8 +1091,7 @@ def test_validation_each_item_invalid_type():
 
                 @validator('foobar', each_item=True)
                 @classmethod
-                def check_foobar(cls, v: Any):
-                    ...
+                def check_foobar(cls, v: Any): ...
 
 
 def test_validation_each_item_nullable():
@@ -2060,8 +2059,7 @@ def test_v1_validator_signature_kwargs_not_allowed() -> None:
                 a: int
 
                 @validator('a')
-                def check_a(cls, value: Any, foo: Any) -> Any:
-                    ...
+                def check_a(cls, value: Any, foo: Any) -> Any: ...
 
 
 def test_v1_validator_signature_kwargs1() -> None:
@@ -2138,8 +2136,7 @@ def test_v1_validator_signature_with_field() -> None:
                 b: int
 
                 @validator('b')
-                def check_b(cls, value: Any, field: Any) -> Any:
-                    ...
+                def check_b(cls, value: Any, field: Any) -> Any: ...
 
 
 def test_v1_validator_signature_with_config() -> None:
@@ -2151,8 +2148,7 @@ def test_v1_validator_signature_with_config() -> None:
                 b: int
 
                 @validator('b')
-                def check_b(cls, value: Any, config: Any) -> Any:
-                    ...
+                def check_b(cls, value: Any, config: Any) -> Any: ...
 
 
 def test_model_config_validate_default():

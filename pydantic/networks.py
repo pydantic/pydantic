@@ -1,4 +1,5 @@
 """The networks module contains types for common network-related fields."""
+
 from __future__ import annotations as _annotations
 
 import dataclasses as _dataclasses

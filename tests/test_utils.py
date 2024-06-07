@@ -57,8 +57,7 @@ T = TypeVar('T')
 
 
 class LoggedVar(Generic[T]):
-    def get(self) -> T:
-        ...
+    def get(self) -> T: ...
 
 
 @pytest.mark.parametrize(

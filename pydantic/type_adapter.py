@@ -1,4 +1,5 @@
 """Type adapter specification."""
+
 from __future__ import annotations as _annotations
 
 import sys
@@ -177,8 +178,7 @@ class TypeAdapter(Generic[T]):
         config: ConfigDict | None = ...,
         _parent_depth: int = ...,
         module: str | None = ...,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     # This second overload is for unsupported special forms (such as Annotated, Union, etc.)
     # Currently there is no way to type this correctly
@@ -191,8 +191,7 @@ class TypeAdapter(Generic[T]):
         config: ConfigDict | None = ...,
         _parent_depth: int = ...,
         module: str | None = ...,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def __init__(
         self,

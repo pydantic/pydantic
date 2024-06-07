@@ -2,6 +2,7 @@
 
 Plugin interface for Pydantic plugins, and related types.
 """
+
 from __future__ import annotations
 
 from typing import Any, Callable, NamedTuple

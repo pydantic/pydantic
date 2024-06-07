@@ -1,6 +1,7 @@
 """
 Tests for internal things that are complex enough to warrant their own unit tests.
 """
+
 from dataclasses import dataclass
 
 import pytest

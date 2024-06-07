@@ -1381,7 +1381,7 @@ def test_non_serializable_default(type_, default_value, properties):
 )
 def test_callable_fallback_with_non_serializable_default(warning_match):
     class Model(BaseModel):
-        callback: Union[int, Callable[[int], int]] = lambda x: x  # noqa E731
+        callback: Union[int, Callable[[int], int]] = lambda x: x
 
     class MyGenerator(GenerateJsonSchema):
         ignored_warning_kinds = ()
@@ -3486,8 +3486,7 @@ def test_nested_generic():
     class Ref(BaseModel, Generic[T]):
         uuid: str
 
-        def resolve(self) -> T:
-            ...
+        def resolve(self) -> T: ...
 
     class Model(BaseModel):
         ref: Ref['Model']
@@ -3548,15 +3547,13 @@ def test_complex_nested_generic():
     class Ref(BaseModel, Generic[T]):
         uuid: str
 
-        def resolve(self) -> T:
-            ...
+        def resolve(self) -> T: ...
 
     class Model(BaseModel):
         uuid: str
         model: Union[Ref['Model'], 'Model']
 
-        def resolve(self) -> 'Model':
-            ...
+        def resolve(self) -> 'Model': ...
 
     Model.model_rebuild()
 

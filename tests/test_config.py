@@ -101,11 +101,9 @@ class TestsBaseConfig:
             frozen = True
 
         class MyBaseModel(BaseModel):
-            class Config(MyConfig):
-                ...
+            class Config(MyConfig): ...
 
-        class MyModel(MyBaseModel):
-            ...
+        class MyModel(MyBaseModel): ...
 
         MyModel.model_config['title'] = 'MyTitle'
         MyModel.model_config['frozen'] = True

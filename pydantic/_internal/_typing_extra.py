@@ -1,4 +1,5 @@
 """Logic for interacting with type annotations, mostly extensions, shims and hacks to wrap python's typing module."""
+
 from __future__ import annotations as _annotations
 
 import dataclasses

@@ -1,4 +1,5 @@
 """Git utilities, adopted from mypy's git utilities (https://github.com/python/mypy/blob/master/mypy/git.py)."""
+
 from __future__ import annotations
 
 import os
