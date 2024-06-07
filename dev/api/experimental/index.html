@@ -3762,7 +3762,8 @@ but you can enable <code>strict</code> mode by passing <code>strict=True</code>.
 
           <details class="quote">
             <summary>Source code in <code>pydantic/experimental/pipeline.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">153</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">152</span>
+<span class="normal">153</span>
 <span class="normal">154</span>
 <span class="normal">155</span>
 <span class="normal">156</span>
@@ -3771,8 +3772,7 @@ but you can enable <code>strict</code> mode by passing <code>strict=True</code>.
 <span class="normal">159</span>
 <span class="normal">160</span>
 <span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_as</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tp</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">_NewOutT</span><span class="p">]</span> <span class="o">|</span> <span class="n">EllipsisType</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>  <span class="c1"># type: ignore</span>
+<span class="normal">162</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_as</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tp</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">_NewOutT</span><span class="p">]</span> <span class="o">|</span> <span class="n">EllipsisType</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>  <span class="c1"># type: ignore</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate / parse the input into a new type.</span>
 
 <span class="sd">    If no type is provided, the type of the field is used.</span>
@@ -3812,13 +3812,13 @@ is fully defined.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/experimental/pipeline.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">165</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">164</span>
+<span class="normal">165</span>
 <span class="normal">166</span>
 <span class="normal">167</span>
 <span class="normal">168</span>
 <span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_as_deferred</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="nb">type</span><span class="p">[</span><span class="n">_NewOutT</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutT</span><span class="p">]:</span>
+<span class="normal">170</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_as_deferred</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="nb">type</span><span class="p">[</span><span class="n">_NewOutT</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse the input into a new type, deferring resolution of the type until the current class</span>
 <span class="sd">    is fully defined.</span>
 
@@ -3853,15 +3853,15 @@ so you don't need to call this directly.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/experimental/pipeline.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">236</span>
-<span class="normal">237</span>
-<span class="normal">238</span>
-<span class="normal">239</span>
-<span class="normal">240</span>
-<span class="normal">241</span>
-<span class="normal">242</span>
-<span class="normal">243</span>
-<span class="normal">244</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">constrain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constraint</span><span class="p">:</span> <span class="n">_ConstraintAnnotation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">constrain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constraint</span><span class="p">:</span> <span class="n">_ConstraintAnnotation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Constrain a value to meet a certain condition.</span>
 
 <span class="sd">    We support most conditions from `annotated_types`, as well as regular expressions.</span>
@@ -3897,9 +3897,9 @@ so you don't need to call this directly.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/experimental/pipeline.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">246</span>
-<span class="normal">247</span>
-<span class="normal">248</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predicate</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutT</span><span class="p">],</span> <span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_NewOutT</span><span class="p">],</span> <span class="nb">bool</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutT</span><span class="p">]:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">predicate</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutT</span><span class="p">],</span> <span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_NewOutT</span><span class="p">],</span> <span class="nb">bool</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Constrain a value to meet a certain predicate.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">constrain</span><span class="p">(</span><span class="n">annotated_types</span><span class="o">.</span><span class="n">Predicate</span><span class="p">(</span><span class="n">func</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
@@ -3927,9 +3927,9 @@ so you don't need to call this directly.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/experimental/pipeline.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">250</span>
-<span class="normal">251</span>
-<span class="normal">252</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">gt</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutGt</span><span class="p">],</span> <span class="n">gt</span><span class="p">:</span> <span class="n">_NewOutGt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutGt</span><span class="p">]:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">gt</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutGt</span><span class="p">],</span> <span class="n">gt</span><span class="p">:</span> <span class="n">_NewOutGt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutGt</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Constrain a value to be greater than a certain value.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">constrain</span><span class="p">(</span><span class="n">annotated_types</span><span class="o">.</span><span class="n">Gt</span><span class="p">(</span><span class="n">gt</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
@@ -3957,9 +3957,9 @@ so you don't need to call this directly.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/experimental/pipeline.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">254</span>
-<span class="normal">255</span>
-<span class="normal">256</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">lt</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutLt</span><span class="p">],</span> <span class="n">lt</span><span class="p">:</span> <span class="n">_NewOutLt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutLt</span><span class="p">]:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">lt</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutLt</span><span class="p">],</span> <span class="n">lt</span><span class="p">:</span> <span class="n">_NewOutLt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutLt</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Constrain a value to be less than a certain value.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">constrain</span><span class="p">(</span><span class="n">annotated_types</span><span class="o">.</span><span class="n">Lt</span><span class="p">(</span><span class="n">lt</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
@@ -3987,9 +3987,9 @@ so you don't need to call this directly.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/experimental/pipeline.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">258</span>
-<span class="normal">259</span>
-<span class="normal">260</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">ge</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutGe</span><span class="p">],</span> <span class="n">ge</span><span class="p">:</span> <span class="n">_NewOutGe</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutGe</span><span class="p">]:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">ge</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutGe</span><span class="p">],</span> <span class="n">ge</span><span class="p">:</span> <span class="n">_NewOutGe</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutGe</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Constrain a value to be greater than or equal to a certain value.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">constrain</span><span class="p">(</span><span class="n">annotated_types</span><span class="o">.</span><span class="n">Ge</span><span class="p">(</span><span class="n">ge</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
@@ -4017,9 +4017,9 @@ so you don't need to call this directly.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/experimental/pipeline.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">262</span>
-<span class="normal">263</span>
-<span class="normal">264</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">le</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutLe</span><span class="p">],</span> <span class="n">le</span><span class="p">:</span> <span class="n">_NewOutLe</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutLe</span><span class="p">]:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">le</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutLe</span><span class="p">],</span> <span class="n">le</span><span class="p">:</span> <span class="n">_NewOutLe</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutLe</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Constrain a value to be less than or equal to a certain value.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">constrain</span><span class="p">(</span><span class="n">annotated_types</span><span class="o">.</span><span class="n">Le</span><span class="p">(</span><span class="n">le</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
@@ -4049,9 +4049,9 @@ so you don't need to call this directly.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/experimental/pipeline.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">266</span>
-<span class="normal">267</span>
-<span class="normal">268</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">len</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutLen</span><span class="p">],</span> <span class="n">min_len</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">max_len</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutLen</span><span class="p">]:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">len</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutLen</span><span class="p">],</span> <span class="n">min_len</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">max_len</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutLen</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Constrain a value to have a certain length.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">constrain</span><span class="p">(</span><span class="n">annotated_types</span><span class="o">.</span><span class="n">Len</span><span class="p">(</span><span class="n">min_len</span><span class="p">,</span> <span class="n">max_len</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
@@ -4081,9 +4081,9 @@ so you don't need to call this directly.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/experimental/pipeline.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">270</span>
-<span class="normal">271</span>
-<span class="normal">272</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">multiple_of</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutDiv</span><span class="p">],</span> <span class="n">multiple_of</span><span class="p">:</span> <span class="n">_NewOutDiv</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutDiv</span><span class="p">]:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">multiple_of</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutDiv</span><span class="p">],</span> <span class="n">multiple_of</span><span class="p">:</span> <span class="n">_NewOutDiv</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_NewOutDiv</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Constrain a value to be a multiple of a certain number.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">constrain</span><span class="p">(</span><span class="n">annotated_types</span><span class="o">.</span><span class="n">MultipleOf</span><span class="p">(</span><span class="n">multiple_of</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
@@ -4111,9 +4111,9 @@ so you don't need to call this directly.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/experimental/pipeline.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">274</span>
-<span class="normal">275</span>
-<span class="normal">276</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">eq</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_OutT</span><span class="p">],</span> <span class="n">value</span><span class="p">:</span> <span class="n">_OutT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_OutT</span><span class="p">]:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">eq</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_OutT</span><span class="p">],</span> <span class="n">value</span><span class="p">:</span> <span class="n">_OutT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_OutT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Constrain a value to be equal to a certain value.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">constrain</span><span class="p">(</span><span class="n">_Eq</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
@@ -4141,9 +4141,9 @@ so you don't need to call this directly.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/experimental/pipeline.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">278</span>
-<span class="normal">279</span>
-<span class="normal">280</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">not_eq</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_OutT</span><span class="p">],</span> <span class="n">value</span><span class="p">:</span> <span class="n">_OutT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_OutT</span><span class="p">]:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">not_eq</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_OutT</span><span class="p">],</span> <span class="n">value</span><span class="p">:</span> <span class="n">_OutT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_OutT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Constrain a value to not be equal to a certain value.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">constrain</span><span class="p">(</span><span class="n">_NotEq</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
@@ -4171,9 +4171,9 @@ so you don't need to call this directly.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/experimental/pipeline.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">282</span>
-<span class="normal">283</span>
-<span class="normal">284</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">in_</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_OutT</span><span class="p">],</span> <span class="n">values</span><span class="p">:</span> <span class="n">Container</span><span class="p">[</span><span class="n">_OutT</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_OutT</span><span class="p">]:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">in_</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_OutT</span><span class="p">],</span> <span class="n">values</span><span class="p">:</span> <span class="n">Container</span><span class="p">[</span><span class="n">_OutT</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_OutT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Constrain a value to be in a certain set.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">constrain</span><span class="p">(</span><span class="n">_In</span><span class="p">(</span><span class="n">values</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
@@ -4201,9 +4201,9 @@ so you don't need to call this directly.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/experimental/pipeline.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">286</span>
-<span class="normal">287</span>
-<span class="normal">288</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">not_in</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_OutT</span><span class="p">],</span> <span class="n">values</span><span class="p">:</span> <span class="n">Container</span><span class="p">[</span><span class="n">_OutT</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_OutT</span><span class="p">]:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">not_in</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_OutT</span><span class="p">],</span> <span class="n">values</span><span class="p">:</span> <span class="n">Container</span><span class="p">[</span><span class="n">_OutT</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_OutT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Constrain a value to not be in a certain set.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">constrain</span><span class="p">(</span><span class="n">_NotIn</span><span class="p">(</span><span class="n">values</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
@@ -4233,9 +4233,9 @@ so you don't need to call this directly.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/experimental/pipeline.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">333</span>
-<span class="normal">334</span>
-<span class="normal">335</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">otherwise</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_OtherIn</span><span class="p">,</span> <span class="n">_OtherOut</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span> <span class="o">|</span> <span class="n">_OtherIn</span><span class="p">,</span> <span class="n">_OutT</span> <span class="o">|</span> <span class="n">_OtherOut</span><span class="p">]:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">otherwise</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_OtherIn</span><span class="p">,</span> <span class="n">_OtherOut</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span> <span class="o">|</span> <span class="n">_OtherIn</span><span class="p">,</span> <span class="n">_OutT</span> <span class="o">|</span> <span class="n">_OtherOut</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Combine two validation chains, returning the result of the first chain if it succeeds, and the second chain if it fails.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">_Pipeline</span><span class="p">((</span><span class="n">_PipelineOr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">),))</span>
 </code></pre></div></td></tr></table></div>
@@ -4265,9 +4265,9 @@ so you don't need to call this directly.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/experimental/pipeline.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">339</span>
-<span class="normal">340</span>
-<span class="normal">341</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">then</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_OutT</span><span class="p">,</span> <span class="n">_OtherOut</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_OtherOut</span><span class="p">]:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">then</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_OutT</span><span class="p">,</span> <span class="n">_OtherOut</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">_Pipeline</span><span class="p">[</span><span class="n">_InT</span><span class="p">,</span> <span class="n">_OtherOut</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Pipe the result of one validation chain into another.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">_Pipeline</span><span class="p">((</span><span class="n">_PipelineAnd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">),))</span>
 </code></pre></div></td></tr></table></div>
