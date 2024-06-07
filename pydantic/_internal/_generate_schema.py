@@ -1804,7 +1804,7 @@ class GenerateSchema:
         pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
 
         def inner_handler(obj: Any) -> CoreSchema:
-            from_property = self._generate_schema_from_property(obj, obj)
+            from_property = self._generate_schema_from_property(obj, source_type)
             if from_property is None:
                 schema = self._generate_schema_inner(obj)
             else:

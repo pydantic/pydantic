@@ -462,6 +462,11 @@ except ValidationError as e:
     In the context of the above example, you could also use `def check_passwords_match(self: 'UserModel)' -> 'UserModel'` to indicate that
     the method returns an instance of the model.
 
+!!! note "On Inheritance"
+    A `@model_validator` defined in a base class will be called during the validation of a subclass instance.
+
+    Overriding a `@model_validator` in a subclass will override the base class' `@model_validator`, and thus only the subclass' version of said `@model_validator` will be called.
+
 Model validators can be `mode='before'`, `mode='after'` or `mode='wrap'`.
 
 Before model validators are passed the raw input which is often a `dict[str, Any]` but could also be an instance of the model itself (e.g. if `UserModel.model_validate(UserModel.construct(...))` is called) or anything else since you can pass arbitrary objects into `model_validate`.
