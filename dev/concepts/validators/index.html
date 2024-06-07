@@ -3900,6 +3900,11 @@ return type of the decorated method.
 In the context of the above example, you could also use <code>def check_passwords_match(self: 'UserModel)' -&gt; 'UserModel'</code> to indicate that
 the method returns an instance of the model.</p>
 </div>
+<div class="admonition note">
+<p class="admonition-title">On Inheritance</p>
+<p>A <code>@model_validator</code> defined in a base class will be called during the validation of a subclass instance.</p>
+<p>Overriding a <code>@model_validator</code> in a subclass will override the base class' <code>@model_validator</code>, and thus only the subclass' version of said <code>@model_validator</code> will be called.</p>
+</div>
 <p>Model validators can be <code>mode='before'</code>, <code>mode='after'</code> or <code>mode='wrap'</code>.</p>
 <p>Before model validators are passed the raw input which is often a <code>dict[str, Any]</code> but could also be an instance of the model itself (e.g. if <code>UserModel.model_validate(UserModel.construct(...))</code> is called) or anything else since you can pass arbitrary objects into <code>model_validate</code>.
 Because of this <code>mode='before'</code> validators are extremely flexible and powerful but can be cumbersome and error prone to implement.
