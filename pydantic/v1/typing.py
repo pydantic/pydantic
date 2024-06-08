@@ -57,13 +57,20 @@ if sys.version_info < (3, 9):
 
     def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:
         return type_._evaluate(globalns, localns)
-
+    
+elif sys.version_info <= (3, 12, 3):
+    
+    def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:
+        # For Python 3.9 to 3.12.3 and fix the error below
+        # TypeError: ForwardRef._evaluate() missing 1 required keyword-only argument: 'recursive_guard'
+        return cast(Any, type_)._evaluate(globalns, localns, set(), recursive_guard=set())
+    
 else:
 
     def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:
         # Even though it is the right signature for python 3.9, mypy complains with
         # `error: Too many arguments for "_evaluate" of "ForwardRef"` hence the cast...
-        return cast(Any, type_)._evaluate(globalns, localns, set(), recursive_guard=set())
+        return cast(Any, type_)._evaluate(globalns, localns, set())
 
 
 if sys.version_info < (3, 9):
