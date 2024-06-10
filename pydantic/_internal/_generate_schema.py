@@ -1444,7 +1444,6 @@ class GenerateSchema:
         item_type = self._get_first_arg_or_any(sequence_type)
         item_type_schema = self.generate_schema(item_type)
         list_schema = core_schema.list_schema(item_type_schema)
-        metadata = build_metadata_dict(initial_metadata={'known_metadata_as': typing.Sequence})
 
         python_schema = core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence')
         if item_type != Any:
@@ -1458,7 +1457,7 @@ class GenerateSchema:
             serialize_sequence_via_list, schema=item_type_schema, info_arg=True
         )
         return core_schema.json_or_python_schema(
-            json_schema=list_schema, python_schema=python_schema, serialization=serialization, metadata=metadata
+            json_schema=list_schema, python_schema=python_schema, serialization=serialization
         )
 
     def _iterable_schema(self, type_: Any) -> core_schema.GeneratorSchema:
