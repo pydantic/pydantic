@@ -1061,7 +1061,7 @@ class GenerateJsonSchema:
             if (
                 ser_func
                 and schema['schema']['serialization'].get('type') == 'function-plain'  # type: ignore
-                and schema['schema']['serialization'].get('info-arg') is False  # type: ignore
+                and schema['schema']['serialization'].get('info_arg') is False  # type: ignore
             ):
                 default = ser_func(default)  # type: ignore
 
