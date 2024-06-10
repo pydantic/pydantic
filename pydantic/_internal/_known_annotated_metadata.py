@@ -204,6 +204,9 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
     schema = schema.copy()
     schema_update, other_metadata = collect_known_metadata([annotation])
     schema_type = schema['type']
+
+    chain_schema_steps: list[CoreSchema] = []
+
     for constraint, value in schema_update.items():
         if constraint not in CONSTRAINTS_TO_ALLOWED_SCHEMAS:
             raise ValueError(f'Unknown constraint {constraint}')
@@ -229,12 +232,7 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             )
         elif constraint == 'pattern':
             # insert a str schema to make sure the regex engine matches
-            return cs.chain_schema(
-                [
-                    schema,
-                    cs.str_schema(pattern=value),
-                ]
-            )
+            chain_schema_steps.append(cs.str_schema(pattern=value))
         elif constraint == 'gt':
             s = cs.no_info_after_validator_function(
                 partial(_validators.greater_than_validator, gt=value),
@@ -283,26 +281,11 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             add_js_update_schema(s, lambda: {'maxLength': (as_jsonable_value(value))})
             return s
         elif constraint == 'strip_whitespace':
-            return cs.chain_schema(
-                [
-                    schema,
-                    cs.str_schema(strip_whitespace=True),
-                ]
-            )
+            chain_schema_steps.append(cs.str_schema(strip_whitespace=True))
         elif constraint == 'to_lower':
-            return cs.chain_schema(
-                [
-                    schema,
-                    cs.str_schema(to_lower=True),
-                ]
-            )
+            chain_schema_steps.append(cs.str_schema(to_lower=True))
         elif constraint == 'to_upper':
-            return cs.chain_schema(
-                [
-                    schema,
-                    cs.str_schema(to_upper=True),
-                ]
-            )
+            chain_schema_steps.append(cs.str_schema(to_upper=True))
         elif constraint == 'min_length':
             return cs.no_info_after_validator_function(
                 partial(_validators.min_length_validator, min_length=annotation.min_length),
@@ -314,12 +297,7 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                 schema,
             )
         elif constraint == 'coerce_numbers_to_str':
-            return cs.chain_schema(
-                [
-                    schema,
-                    cs.str_schema(coerce_numbers_to_str=True),  # type: ignore
-                ]
-            )
+            chain_schema_steps.append(cs.str_schema(coerce_numbers_to_str=True))
         else:
             raise RuntimeError(f'Unable to apply constraint {constraint} to schema {schema_type}')
 
@@ -374,6 +352,10 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             return cs.no_info_after_validator_function(val_func, schema)
         # ignore any other unknown metadata
         return None
+
+    if chain_schema_steps:
+        chain_schema_steps = [schema] + chain_schema_steps
+        return cs.chain_schema(chain_schema_steps)
 
     return schema
 
