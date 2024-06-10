@@ -104,6 +104,7 @@ serialization_mode! {
     "ser_json_inf_nan",
     Null => "null",
     Constants => "constants",
+    Strings => "strings",
 }
 
 impl TimedeltaMode {

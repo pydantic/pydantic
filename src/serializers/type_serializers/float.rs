@@ -30,6 +30,24 @@ impl FloatSerializer {
     }
 }
 
+pub fn serialize_f64<S: Serializer>(v: f64, serializer: S, inf_nan_mode: InfNanMode) -> Result<S::Ok, S::Error> {
+    if v.is_nan() || v.is_infinite() {
+        match inf_nan_mode {
+            InfNanMode::Null => serializer.serialize_none(),
+            InfNanMode::Constants => serializer.serialize_f64(v),
+            InfNanMode::Strings => {
+                if v.is_nan() {
+                    serializer.serialize_str("NaN")
+                } else {
+                    serializer.serialize_str(if v.is_sign_positive() { "Infinity" } else { "-Infinity" })
+                }
+            }
+        }
+    } else {
+        serializer.serialize_f64(v)
+    }
+}
+
 impl BuildSerializer for FloatSerializer {
     const EXPECTED_TYPE: &'static str = "float";
 
@@ -85,16 +103,11 @@ impl TypeSerializer for FloatSerializer {
         serializer: S,
         include: Option<&Bound<'_, PyAny>>,
         exclude: Option<&Bound<'_, PyAny>>,
+        // TODO: Merge extra.config into self.inf_nan_mode?
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         match value.extract::<f64>() {
-            Ok(v) => {
-                if (v.is_nan() || v.is_infinite()) && self.inf_nan_mode == InfNanMode::Null {
-                    serializer.serialize_none()
-                } else {
-                    serializer.serialize_f64(v)
-                }
-            }
+            Ok(v) => serialize_f64(v, serializer, self.inf_nan_mode.clone()),
             Err(_) => {
                 extra.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
                 infer_serialize(value, serializer, include, exclude, extra)
