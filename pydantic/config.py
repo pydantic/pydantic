@@ -899,6 +899,10 @@ class ConfigDict(TypedDict, total=False):
     - `python-re` use the [`re`](https://docs.python.org/3/library/re.html) module,
       which supports all regex features, but may be slower.
 
+    !!! note
+        If you use a compiled regex pattern, the python-re engine will be used regardless of this setting.
+        This is so that flags such as `re.IGNORECASE` are respected.
+
     ```py
     from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
