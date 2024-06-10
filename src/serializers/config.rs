@@ -51,7 +51,7 @@ pub trait FromConfig {
 
 macro_rules! serialization_mode {
     ($name:ident, $config_key:expr, $($variant:ident => $value:expr),* $(,)?) => {
-        #[derive(Default, Debug, Clone, PartialEq, Eq)]
+        #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
         pub(crate) enum $name {
             #[default]
             $($variant,)*
@@ -112,7 +112,7 @@ impl TimedeltaMode {
         py_timedelta.call_method0(intern!(py_timedelta.py(), "total_seconds"))
     }
 
-    pub fn either_delta_to_json(&self, py: Python, either_delta: &EitherTimedelta) -> PyResult<PyObject> {
+    pub fn either_delta_to_json(self, py: Python, either_delta: &EitherTimedelta) -> PyResult<PyObject> {
         match self {
             Self::Iso8601 => {
                 let d = either_delta.to_duration()?;
@@ -128,7 +128,7 @@ impl TimedeltaMode {
         }
     }
 
-    pub fn json_key<'py>(&self, py: Python, either_delta: &EitherTimedelta) -> PyResult<Cow<'py, str>> {
+    pub fn json_key<'py>(self, py: Python, either_delta: &EitherTimedelta) -> PyResult<Cow<'py, str>> {
         match self {
             Self::Iso8601 => {
                 let d = either_delta.to_duration()?;
@@ -143,7 +143,7 @@ impl TimedeltaMode {
     }
 
     pub fn timedelta_serialize<S: serde::ser::Serializer>(
-        &self,
+        self,
         py: Python,
         either_delta: &EitherTimedelta,
         serializer: S,
@@ -164,7 +164,7 @@ impl TimedeltaMode {
 }
 
 impl BytesMode {
-    pub fn bytes_to_string<'a>(&self, py: Python, bytes: &'a [u8]) -> PyResult<Cow<'a, str>> {
+    pub fn bytes_to_string<'a>(self, py: Python, bytes: &'a [u8]) -> PyResult<Cow<'a, str>> {
         match self {
             Self::Utf8 => from_utf8(bytes)
                 .map_err(|err| utf8_py_error(py, err, bytes))
@@ -176,7 +176,7 @@ impl BytesMode {
         }
     }
 
-    pub fn serialize_bytes<S: serde::ser::Serializer>(&self, bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error> {
+    pub fn serialize_bytes<S: serde::ser::Serializer>(self, bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error> {
         match self {
             Self::Utf8 => match from_utf8(bytes) {
                 Ok(s) => serializer.serialize_str(s),

@@ -404,7 +404,7 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
         ObType::Bool => serialize!(bool),
         ObType::Float | ObType::FloatSubclass => {
             let v = value.extract::<f64>().map_err(py_err_se_err)?;
-            type_serializers::float::serialize_f64(v, serializer, extra.config.inf_nan_mode.clone())
+            type_serializers::float::serialize_f64(v, serializer, extra.config.inf_nan_mode)
         }
         ObType::Decimal => value.to_string().serialize(serializer),
         ObType::Str | ObType::StrSubclass => {
