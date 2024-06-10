@@ -387,6 +387,10 @@ def test_allow_inf_nan_true_json() -> None:
     assert v.validate_json('Infinity') == float('inf')
     assert v.validate_json('-Infinity') == float('-inf')
 
+    assert v.validate_json('"NaN"') == IsFloatNan()
+    assert v.validate_json('"Infinity"') == float('inf')
+    assert v.validate_json('"-Infinity"') == float('-inf')
+
 
 def test_allow_inf_nan_false_json() -> None:
     v = SchemaValidator(core_schema.float_schema(), core_schema.CoreConfig(allow_inf_nan=False))

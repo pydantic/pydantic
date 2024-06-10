@@ -623,6 +623,14 @@ def test_ser_json_inf_nan_with_any() -> None:
     assert s.to_python(nan, mode='json') is None
     assert s.to_json(nan) == b'null'
 
+    s = SchemaSerializer(core_schema.any_schema(), core_schema.CoreConfig(ser_json_inf_nan='strings'))
+    assert isinf(s.to_python(inf))
+    assert isinf(s.to_python(inf, mode='json'))
+    assert s.to_json(inf) == b'"Infinity"'
+    assert isnan(s.to_python(nan))
+    assert isnan(s.to_python(nan, mode='json'))
+    assert s.to_json(nan) == b'"NaN"'
+
 
 def test_ser_json_inf_nan_with_list_of_any() -> None:
     s = SchemaSerializer(

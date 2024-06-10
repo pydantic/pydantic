@@ -9,6 +9,7 @@ use pyo3::types::{PyByteArray, PyBytes, PyDict, PyFrozenSet, PyIterator, PyList,
 use serde::ser::{Error, Serialize, SerializeMap, SerializeSeq, Serializer};
 
 use crate::input::{EitherTimedelta, Int};
+use crate::serializers::type_serializers;
 use crate::tools::{extract_i64, py_err, safe_repr};
 use crate::url::{PyMultiHostUrl, PyUrl};
 
@@ -403,11 +404,7 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
         ObType::Bool => serialize!(bool),
         ObType::Float | ObType::FloatSubclass => {
             let v = value.extract::<f64>().map_err(py_err_se_err)?;
-            if (v.is_nan() || v.is_infinite()) && extra.config.inf_nan_mode == InfNanMode::Null {
-                serializer.serialize_none()
-            } else {
-                serializer.serialize_f64(v)
-            }
+            type_serializers::float::serialize_f64(v, serializer, extra.config.inf_nan_mode.clone())
         }
         ObType::Decimal => value.to_string().serialize(serializer),
         ObType::Str | ObType::StrSubclass => {
