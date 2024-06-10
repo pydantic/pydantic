@@ -152,6 +152,9 @@ def test_numpy():
         (float('inf'), 'Infinity', {'ser_json_inf_nan': 'constants'}),
         (float('-inf'), '-Infinity', {'ser_json_inf_nan': 'constants'}),
         (float('nan'), 'NaN', {'ser_json_inf_nan': 'constants'}),
+        (float('inf'), '"Infinity"', {'ser_json_inf_nan': 'strings'}),
+        (float('-inf'), '"-Infinity"', {'ser_json_inf_nan': 'strings'}),
+        (float('nan'), '"NaN"', {'ser_json_inf_nan': 'strings'}),
     ],
 )
 def test_float_inf_and_nan_serializers(value, expected_json, config):
