@@ -662,7 +662,7 @@ class GenerateJsonSchema:
         json_schema = {'type': 'string'}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.string)
         if isinstance(json_schema.get('pattern'), Pattern):
-            # for now, we skip application of regex flags to the pattern
+            # TODO: should we add regex flags to the pattern?
             json_schema['pattern'] = json_schema.get('pattern').pattern  # type: ignore
         return json_schema
 
