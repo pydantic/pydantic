@@ -6684,3 +6684,12 @@ def test_strict_enum_with_use_enum_values() -> None:
     # validation error raised bc foo field uses strict mode
     with pytest.raises(ValidationError):
         Foo(foo='1')
+
+
+def test_constraints_on_str_like() -> None:
+    """See https://github.com/pydantic/pydantic/issues/8577 for motivation."""
+
+    class Foo(BaseModel):
+        baz: Annotated[EmailStr, StringConstraints(to_lower=True, strip_whitespace=True)]
+
+    assert Foo(baz=' uSeR@ExAmPlE.com  ').baz == 'user@example.com'
