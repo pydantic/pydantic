@@ -107,7 +107,7 @@ impl TypeSerializer for FloatSerializer {
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
         match value.extract::<f64>() {
-            Ok(v) => serialize_f64(v, serializer, self.inf_nan_mode.clone()),
+            Ok(v) => serialize_f64(v, serializer, self.inf_nan_mode),
             Err(_) => {
                 extra.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
                 infer_serialize(value, serializer, include, exclude, extra)
