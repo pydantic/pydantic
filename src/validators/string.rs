@@ -164,7 +164,7 @@ impl StrConstrainedValidator {
                     .map(|s| s.to_str())
                     .transpose()?
                     .unwrap_or(RegexEngine::RUST_REGEX);
-                Pattern::compile(py, s, regex_engine)
+                Pattern::compile(s, regex_engine)
             })
             .transpose()?;
         let min_length: Option<usize> =
@@ -230,18 +230,47 @@ impl RegexEngine {
 }
 
 impl Pattern {
-    fn compile(py: Python<'_>, pattern: String, engine: &str) -> PyResult<Self> {
-        let engine = match engine {
-            RegexEngine::RUST_REGEX => {
-                RegexEngine::RustRegex(Regex::new(&pattern).map_err(|e| py_schema_error_type!("{}", e))?)
-            }
-            RegexEngine::PYTHON_RE => {
-                let re_compile = py.import_bound(intern!(py, "re"))?.getattr(intern!(py, "compile"))?;
-                RegexEngine::PythonRe(re_compile.call1((&pattern,))?.into())
-            }
-            _ => return Err(py_schema_error_type!("Invalid regex engine: {}", engine)),
-        };
-        Ok(Self { pattern, engine })
+    fn extract_pattern_str(pattern: &Bound<'_, PyAny>) -> PyResult<String> {
+        if pattern.is_instance_of::<PyString>() {
+            Ok(pattern.to_string())
+        } else {
+            pattern
+                .getattr("pattern")
+                .and_then(|attr| attr.extract::<String>())
+                .map_err(|_| py_schema_error_type!("Invalid pattern, must be str or re.Pattern: {}", pattern))
+        }
+    }
+
+    fn compile(pattern: Bound<'_, PyAny>, engine: &str) -> PyResult<Self> {
+        let pattern_str = Self::extract_pattern_str(&pattern)?;
+
+        let py = pattern.py();
+
+        let re_module = py.import_bound(intern!(py, "re"))?;
+        let re_compile = re_module.getattr(intern!(py, "compile"))?;
+        let re_pattern = re_module.getattr(intern!(py, "Pattern"))?;
+
+        if pattern.is_instance(&re_pattern)? {
+            // if the pattern is already a compiled regex object, we default to using the python re engine
+            // so that any flags, etc. are preserved
+            Ok(Self {
+                pattern: pattern_str,
+                engine: RegexEngine::PythonRe(pattern.to_object(py)),
+            })
+        } else {
+            let engine = match engine {
+                RegexEngine::RUST_REGEX => {
+                    RegexEngine::RustRegex(Regex::new(&pattern_str).map_err(|e| py_schema_error_type!("{}", e))?)
+                }
+                RegexEngine::PYTHON_RE => RegexEngine::PythonRe(re_compile.call1((pattern,))?.into()),
+                _ => return Err(py_schema_error_type!("Invalid regex engine: {}", engine)),
+            };
+
+            Ok(Self {
+                pattern: pattern_str,
+                engine,
+            })
+        }
     }
 
     fn is_match(&self, py: Python<'_>, target: &str) -> PyResult<bool> {

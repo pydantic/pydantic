@@ -398,3 +398,10 @@ def test_coerce_numbers_to_str_schema_with_strict_mode(number: int):
         v.validate_python(number)
     with pytest.raises(ValidationError):
         v.validate_json(str(number))
+
+
+@pytest.mark.parametrize('engine', [None, 'rust-regex', 'python-re'])
+def test_compiled_regex(engine) -> None:
+    v = SchemaValidator(core_schema.str_schema(pattern=re.compile('abc', re.IGNORECASE), regex_engine=engine))
+    assert v.validate_python('abc') == 'abc'
+    assert v.validate_python('ABC') == 'ABC'
