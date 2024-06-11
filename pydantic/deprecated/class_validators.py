@@ -19,30 +19,24 @@ _ALLOW_REUSE_WARNING_MESSAGE = '`allow_reuse` is deprecated and will be ignored;
 if TYPE_CHECKING:
 
     class _OnlyValueValidatorClsMethod(Protocol):
-        def __call__(self, __cls: Any, __value: Any) -> Any:
-            ...
+        def __call__(self, __cls: Any, __value: Any) -> Any: ...
 
     class _V1ValidatorWithValuesClsMethod(Protocol):
-        def __call__(self, __cls: Any, __value: Any, values: dict[str, Any]) -> Any:
-            ...
+        def __call__(self, __cls: Any, __value: Any, values: dict[str, Any]) -> Any: ...
 
     class _V1ValidatorWithValuesKwOnlyClsMethod(Protocol):
-        def __call__(self, __cls: Any, __value: Any, *, values: dict[str, Any]) -> Any:
-            ...
+        def __call__(self, __cls: Any, __value: Any, *, values: dict[str, Any]) -> Any: ...
 
     class _V1ValidatorWithKwargsClsMethod(Protocol):
-        def __call__(self, __cls: Any, **kwargs: Any) -> Any:
-            ...
+        def __call__(self, __cls: Any, **kwargs: Any) -> Any: ...
 
     class _V1ValidatorWithValuesAndKwargsClsMethod(Protocol):
-        def __call__(self, __cls: Any, values: dict[str, Any], **kwargs: Any) -> Any:
-            ...
+        def __call__(self, __cls: Any, values: dict[str, Any], **kwargs: Any) -> Any: ...
 
     class _V1RootValidatorClsMethod(Protocol):
         def __call__(
             self, __cls: Any, __values: _decorators_v1.RootValidatorValues
-        ) -> _decorators_v1.RootValidatorValues:
-            ...
+        ) -> _decorators_v1.RootValidatorValues: ...
 
     V1Validator = Union[
         _OnlyValueValidatorClsMethod,
@@ -171,8 +165,7 @@ def root_validator(
 ) -> Callable[
     [_V1RootValidatorFunctionType],
     _V1RootValidatorFunctionType,
-]:
-    ...
+]: ...
 
 
 @overload
@@ -185,8 +178,7 @@ def root_validator(
 ) -> Callable[
     [_V1RootValidatorFunctionType],
     _V1RootValidatorFunctionType,
-]:
-    ...
+]: ...
 
 
 @overload
@@ -200,8 +192,7 @@ def root_validator(
 ) -> Callable[
     [_V1RootValidatorFunctionType],
     _V1RootValidatorFunctionType,
-]:
-    ...
+]: ...
 
 
 @deprecated(

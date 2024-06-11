@@ -1,4 +1,5 @@
 """Tests for the experimental transform module."""
+
 from __future__ import annotations
 
 import datetime
@@ -9,6 +10,7 @@ from typing import Any, Callable, List, Union
 
 import pytest
 import pytz
+from annotated_types import Interval
 from typing_extensions import Annotated
 
 if sys.version_info >= (3, 9):
@@ -43,9 +45,17 @@ def test_parse_str_with_pattern() -> None:
         (int, validate_as(...).le(5), [2, 4], [6, 100]),
         (float, validate_as(...).le(1.0), [0.5, 0.0], [100.0]),
         (Decimal, validate_as(...).le(Decimal(1.0)), [Decimal(1)], [Decimal(5.0)]),
+        (int, validate_as(...).gt(0), [1, 2, 100], [0, -1]),
+        (float, validate_as(...).gt(0.0), [0.1, 1.8], [0.0, -1.0]),
+        (Decimal, validate_as(...).gt(Decimal(0.0)), [Decimal(1)], [Decimal(0.0), Decimal(-1.0)]),
+        (int, validate_as(...).lt(5), [2, 4], [5, 6, 100]),
+        (float, validate_as(...).lt(1.0), [0.5, 0.0], [1.0, 100.0]),
+        (Decimal, validate_as(...).lt(Decimal(1.0)), [Decimal(0.5)], [Decimal(1.0), Decimal(5.0)]),
     ],
 )
-def test_ge_le(type_: Any, pipeline: _Pipeline[Any, Any], valid_cases: list[Any], invalid_cases: list[Any]) -> None:
+def test_ge_le_gt_lt(
+    type_: Any, pipeline: _Pipeline[Any, Any], valid_cases: list[Any], invalid_cases: list[Any]
+) -> None:
     ta = TypeAdapter(Annotated[type_, pipeline])
     for x in valid_cases:
         assert ta.validate_python(x) == x
@@ -54,18 +64,110 @@ def test_ge_le(type_: Any, pipeline: _Pipeline[Any, Any], valid_cases: list[Any]
             ta.validate_python(y)
 
 
-def test_parse_multipleOf() -> None:
-    ta_m = TypeAdapter(Annotated[int, validate_as(int).multiple_of(5)])
-    assert ta_m.validate_python(5) == 5
-    assert ta_m.validate_python(20) == 20
-    with pytest.raises(ValueError):
-        ta_m.validate_python(18)
+@pytest.mark.parametrize(
+    'type_, pipeline, valid_cases, invalid_cases',
+    [
+        (int, validate_as(int).multiple_of(5), [5, 20, 0], [18, 7]),
+        (float, validate_as(float).multiple_of(2.5), [2.5, 5.0, 7.5], [3.0, 1.1]),
+        (
+            Decimal,
+            validate_as(Decimal).multiple_of(Decimal('1.5')),
+            [Decimal('1.5'), Decimal('3.0'), Decimal('4.5')],
+            [Decimal('1.4'), Decimal('2.1')],
+        ),
+    ],
+)
+def test_parse_multipleOf(type_: Any, pipeline: Any, valid_cases: list[Any], invalid_cases: list[Any]) -> None:
+    ta = TypeAdapter(Annotated[type_, pipeline])
+    for x in valid_cases:
+        assert ta.validate_python(x) == x
+    for y in invalid_cases:
+        with pytest.raises(ValueError):
+            ta.validate_python(y)
+
+
+@pytest.mark.parametrize(
+    'type_, pipeline, valid_cases, invalid_cases',
+    [
+        (int, validate_as(int).constrain(Interval(ge=0, le=10)), [0, 5, 10], [11]),
+        (float, validate_as(float).constrain(Interval(gt=0.0, lt=10.0)), [0.1, 9.9], [10.0]),
+        (
+            Decimal,
+            validate_as(Decimal).constrain(Interval(ge=Decimal('1.0'), lt=Decimal('10.0'))),
+            [Decimal('1.0'), Decimal('5.5'), Decimal('9.9')],
+            [Decimal('0.0'), Decimal('10.0')],
+        ),
+        (int, validate_as(int).constrain(Interval(gt=1, lt=5)), [2, 4], [1, 5]),
+        (float, validate_as(float).constrain(Interval(ge=1.0, le=5.0)), [1.0, 3.0, 5.0], [0.9, 5.1]),
+    ],
+)
+def test_interval_constraints(type_: Any, pipeline: Any, valid_cases: list[Any], invalid_cases: list[Any]) -> None:
+    ta = TypeAdapter(Annotated[type_, pipeline])
+    for x in valid_cases:
+        assert ta.validate_python(x) == x
+    for y in invalid_cases:
+        with pytest.raises(ValueError):
+            ta.validate_python(y)
+
+
+@pytest.mark.parametrize(
+    'type_, pipeline, valid_cases, invalid_cases',
+    [
+        (
+            str,
+            validate_as(str).len(min_len=2, max_len=5),
+            ['ab', 'abc', 'abcd', 'abcde'],
+            ['a', 'abcdef'],
+        ),
+        (
+            list,
+            validate_as(list).len(min_len=1, max_len=3),
+            [[1], [1, 2], [1, 2, 3]],
+            [[], [1, 2, 3, 4]],
+        ),
+        (tuple, validate_as(tuple).len(min_len=1, max_len=2), [(1,), (1, 2)], [(), (1, 2, 3)]),
+        (
+            set,
+            validate_as(set).len(min_len=2, max_len=4),
+            [{1, 2}, {1, 2, 3}, {1, 2, 3, 4}],
+            [{1}, {1, 2, 3, 4, 5}],
+        ),
+        (
+            frozenset,
+            validate_as(frozenset).len(min_len=2, max_len=3),
+            [frozenset({1, 2}), frozenset({1, 2, 3})],
+            [frozenset({1}), frozenset({1, 2, 3, 4})],
+        ),
+        (
+            dict,
+            validate_as(dict).len(min_len=1, max_len=2),
+            [{'a': 1}, {'a': 1, 'b': 2}],
+            [{}, {'a': 1, 'b': 2, 'c': 3}],
+        ),
+        (
+            str,
+            validate_as(str).len(min_len=2),  # max_len is None
+            ['ab', 'abc', 'abcd', 'abcde', 'abcdef'],
+            ['a'],
+        ),
+    ],
+)
+def test_len_constraints(type_: Any, pipeline: Any, valid_cases: list[Any], invalid_cases: list[Any]) -> None:
+    ta = TypeAdapter(Annotated[type_, pipeline])
+    for x in valid_cases:
+        assert ta.validate_python(x) == x
+    for y in invalid_cases:
+        with pytest.raises(ValueError):
+            ta.validate_python(y)
 
 
 def test_parse_tz() -> None:
     ta_tz = TypeAdapter(Annotated[datetime.datetime, validate_as(str).datetime_tz_naive()])
     date = datetime.datetime(2032, 6, 4, 11, 15, 30, 400000)
     assert ta_tz.validate_python(date) == date
+    date_a = datetime.datetime(2032, 6, 4, 11, 15, 30, 400000, tzinfo=pytz.UTC)
+    with pytest.raises(ValueError):
+        ta_tz.validate_python(date_a)
 
     ta_tza = TypeAdapter(Annotated[datetime.datetime, validate_as(str).datetime_tz_aware()])
     date_a = datetime.datetime(2032, 6, 4, 11, 15, 30, 400000, pytz.UTC)

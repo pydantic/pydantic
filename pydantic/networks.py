@@ -1,4 +1,5 @@
 """The networks module contains types for common network-related fields."""
+
 from __future__ import annotations as _annotations
 
 import dataclasses as _dataclasses
@@ -113,7 +114,7 @@ AnyHttpUrl = Annotated[Url, UrlConstraints(allowed_schemes=['http', 'https'])]
 HttpUrl = Annotated[Url, UrlConstraints(max_length=2083, allowed_schemes=['http', 'https'])]
 """A type that will accept any http or https URL.
 
-* TLD required
+* TLD not required
 * Host required
 * Max length 2083
 
@@ -196,7 +197,7 @@ AnyWebsocketUrl = Annotated[Url, UrlConstraints(allowed_schemes=['ws', 'wss'])]
 WebsocketUrl = Annotated[Url, UrlConstraints(max_length=2083, allowed_schemes=['ws', 'wss'])]
 """A type that will accept any ws or wss URL.
 
-* TLD required
+* TLD not required
 * Host required
 * Max length 2083
 """
