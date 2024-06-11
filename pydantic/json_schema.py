@@ -1056,12 +1056,13 @@ class GenerateJsonSchema:
         # we reflect the application of custom plain, no-info serializers to defaults for
         # json schemas viewed in serialization mode
         # TODO: improvements along with https://github.com/pydantic/pydantic/issues/8208
+        # TODO: improve type safety here
         if self.mode == 'serialization':
-            ser_func = schema['schema'].get('serialization', {}).get('function')
             if (
-                ser_func
-                and schema['schema']['serialization'].get('type') == 'function-plain'  # type: ignore
-                and schema['schema']['serialization'].get('info_arg') is False  # type: ignore
+                (ser_schema := schema['schema'].get('serialization', {}))
+                and (ser_func := ser_schema.get('function'))
+                and ser_schema.get('type') == 'function-plain'  # type: ignore
+                and ser_schema.get('info_arg') is False  # type: ignore
             ):
                 default = ser_func(default)  # type: ignore
 
