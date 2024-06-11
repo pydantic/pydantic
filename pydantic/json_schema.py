@@ -1057,6 +1057,19 @@ class GenerateJsonSchema:
         # else:
         #     return json_schema
 
+        # we reflect the application of custom plain, no-info serializers to defaults for
+        # json schemas viewed in serialization mode
+        # TODO: improvements along with https://github.com/pydantic/pydantic/issues/8208
+        # TODO: improve type safety here
+        if self.mode == 'serialization':
+            if (
+                (ser_schema := schema['schema'].get('serialization', {}))
+                and (ser_func := ser_schema.get('function'))
+                and ser_schema.get('type') == 'function-plain'  # type: ignore
+                and ser_schema.get('info_arg') is False  # type: ignore
+            ):
+                default = ser_func(default)  # type: ignore
+
         try:
             encoded_default = self.encode_default(default)
         except pydantic_core.PydanticSerializationError:
