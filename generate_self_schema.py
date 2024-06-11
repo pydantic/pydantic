@@ -10,10 +10,11 @@ from __future__ import annotations as _annotations
 import decimal
 import importlib.util
 import re
+import sys
 from collections.abc import Callable
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, ForwardRef, List, Set, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, ForwardRef, List, Pattern, Set, Type, Union
 
 from typing_extensions import TypedDict, get_args, get_origin, is_typeddict
 
@@ -46,7 +47,7 @@ else:
 schema_ref_validator = {'type': 'definition-ref', 'schema_ref': 'root-schema'}
 
 
-def get_schema(obj: Any, definitions: dict[str, core_schema.CoreSchema]) -> core_schema.CoreSchema:
+def get_schema(obj: Any, definitions: dict[str, core_schema.CoreSchema]) -> core_schema.CoreSchema:  # noqa: C901
     if isinstance(obj, str):
         return {'type': obj}
     elif obj in (datetime, timedelta, date, time, bool, int, float, str, decimal.Decimal):
@@ -80,6 +81,9 @@ def get_schema(obj: Any, definitions: dict[str, core_schema.CoreSchema]) -> core
         }
     elif issubclass(origin, Type):
         # can't really use 'is-instance' since this is used for the class_ parameter of 'is-instance' validators
+        return {'type': 'any'}
+    elif origin in (Pattern, re.Pattern):
+        # can't really use 'is-instance' easily with Pattern, so we use `any` as a placeholder for now
         return {'type': 'any'}
     else:
         # debug(obj)
@@ -189,16 +193,12 @@ def all_literal_values(type_: type[core_schema.Literal]) -> list[any]:
 
 
 def eval_forward_ref(type_: Any) -> Any:
-    try:
-        try:
-            # Python 3.12+
-            return type_._evaluate(core_schema.__dict__, None, type_params=set(), recursive_guard=set())
-        except TypeError:
-            # Python 3.9+
-            return type_._evaluate(core_schema.__dict__, None, set())
-    except TypeError:
-        # for Python 3.8
+    if sys.version_info < (3, 9):
         return type_._evaluate(core_schema.__dict__, None)
+    elif sys.version_info < (3, 12, 4):
+        return type_._evaluate(core_schema.__dict__, None, recursive_guard=set())
+    else:
+        return type_._evaluate(core_schema.__dict__, None, type_params=set(), recursive_guard=set())
 
 
 def main() -> None:
