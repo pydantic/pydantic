@@ -1,11 +1,11 @@
 black==22.8.0
-flake8==5.0.4
-flake8-quotes==3.3.1
-hypothesis==6.54.4
+flake8==6.1.0
+flake8-quotes==3.4.0
+hypothesis==6.79.1
 isort==5.10.1
 pyupgrade==2.37.3
 mypy==0.971
 pre-commit==2.20.0
-pycodestyle==2.9.1
-pyflakes==2.5.0
+pycodestyle==2.11.1
+pyflakes==3.1.0
 twine==4.0.1

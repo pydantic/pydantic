@@ -1,6 +1,6 @@
 # requirements for compilation and from setup.py so dependabot prompts us to test with latest version of these packages
 
-Cython==0.29.32;sys_platform!='win32'
+Cython==0.29.37;sys_platform!='win32'
 devtools==0.9.0
 email-validator==2.0.0.post2
 dataclasses==0.6; python_version < '3.7'
