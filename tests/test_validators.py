@@ -63,6 +63,29 @@ def test_annotated_validator_before() -> None:
     assert Model(x='1.0').x == 1.0
 
 
+def test_validator_with_context() -> None:
+    def get_context():
+        return {'check_title': lambda x: x.istitle()}
+
+    class User(BaseModel):
+        first_name: str
+
+        @field_validator('first_name', check_fields=False)
+        @classmethod
+        def validate_choice(cls, v: str, info: ValidationInfo):
+            if not info.context:
+                return v
+
+            check_title = info.context.get('check_title')
+            if check_title and check_title(v):
+                raise ValueError('First name needs to be a title')
+            return v
+
+    user = User(first_name="hello")
+    with pytest.raises(ValidationError):
+        User.model_validate(user, context=get_context())
+
+
 def test_annotated_validator_builtin() -> None:
     """https://github.com/pydantic/pydantic/issues/6752"""
     TruncatedFloat = Annotated[float, BeforeValidator(int)]
