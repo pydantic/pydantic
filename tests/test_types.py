@@ -6690,7 +6690,7 @@ def test_python_re_respects_flags() -> None:
     # allows lowercase letters, even though the pattern is uppercase only due to the IGNORECASE flag
     assert Model(a='abc').a == 'abc'
 
-    
+
 def test_constraints_on_str_like() -> None:
     """See https://github.com/pydantic/pydantic/issues/8577 for motivation."""
 
