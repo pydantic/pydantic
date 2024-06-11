@@ -6256,7 +6256,7 @@ def test_str_schema_with_pattern() -> None:
         'pattern': 'abc',
     }
 
- 
+
 def test_plain_serializer_applies_to_default() -> None:
     class Model(BaseModel):
         custom_str: Annotated[str, PlainSerializer(lambda x: f'serialized-{x}', return_type=str)] = 'foo'
