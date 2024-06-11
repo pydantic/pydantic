@@ -189,13 +189,64 @@ jobs:
         name: coverage
         path: coverage
 
+# We cannot use tracing on 3.12 without Cython 3+, which makes the coverage useless.
+# However, we can at least make sure tests run to completion on a cythonized build.
+  test-linux-compiled-notrace:
+    name: test py${{ matrix.python-version }} on linux compiled without tracing
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.12']
+    env:
+      PYTHON: ${{ matrix.python-version }}
+      OS: ubuntu
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: set up python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - uses: actions/cache@v3
+      id: cache
+      with:
+        path: ${{ env.pythonLocation }}
+        key: >
+          test-linux-compiled-v3
+          ${{ runner.os }}
+          ${{ env.pythonLocation }}
+          ${{ hashFiles('setup.py') }}
+          ${{ hashFiles('requirements.txt') }}
+          ${{ hashFiles('tests/requirements-testing.txt') }}
+
+    - name: install
+      run: make install-testing
+
+    - name: compile
+      run: |
+        make build
+        python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
+        ls -alh
+        ls -alh pydantic/
+
+    - run: mkdir coverage
+
+    - name: test
+      run: make test
+      env:
+        COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-compiled
+        CONTEXT: linux-py${{ matrix.python-version }}-compiled
+
   test-not-compiled:
     name: test py${{ matrix.python-version }} on ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-13, macos-latest, windows-latest]
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
         exclude:
           # Python 3.7, 3.8, and 3.9 are not available on macOS 14
           - os: macos-13
@@ -357,7 +408,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu , macos , windows]
-        python-version: ['7', '8', '9', '10', '11']
+        python-version: ['7', '8', '9', '10', '11', '12']
         include:
         - os: ubuntu
           platform: linux
