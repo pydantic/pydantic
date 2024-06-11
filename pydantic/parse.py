@@ -4,7 +4,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Union
 
-from .types import StrBytes
+from pydantic.types import StrBytes
 
 
 class Protocol(str, Enum):

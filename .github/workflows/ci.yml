@@ -194,10 +194,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu, macos, windows]
+        os: [ubuntu-latest, macos-13, macos-latest, windows-latest]
         python-version: ['3.7', '3.8', '3.9', '3.10']
-        include:
-        - os: ubuntu
+        exclude:
+          # Python 3.7, 3.8, and 3.9 are not available on macOS 14
+          - os: macos-13
+            python-version: '3.10'
+          - os: macos-latest
+            python-version: '3.7'
+          - os: macos-latest
+            python-version: '3.8'
+          - os: macos-latest
+            python-version: '3.9'
+
+    runs-on: ${{ matrix.os }}
 
     env:
       PYTHON: ${{ matrix.python-version }}
@@ -205,7 +215,6 @@ jobs:
       COMPILED: no
       DEPS: yes
 
-    runs-on: ${{ matrix.os }}-latest
     steps:
     - uses: actions/checkout@v3
 
@@ -365,7 +374,7 @@ jobs:
         python-version: '3.8'
 
     - name: install
-      run: pip install -U twine setuptools wheel cibuildwheel
+      run: pip install -U twine setuptools wheel cibuildwheel==2.17.0
 
     - name: build sdist
       if: matrix.os == 'ubuntu' && matrix.python-version == '9'

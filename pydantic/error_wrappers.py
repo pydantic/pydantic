@@ -1,15 +1,15 @@
 import json
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Sequence, Tuple, Type, Union
 
-from .json import pydantic_encoder
-from .utils import Representation
+from pydantic.json import pydantic_encoder
+from pydantic.utils import Representation
 
 if TYPE_CHECKING:
     from typing_extensions import TypedDict
 
-    from .config import BaseConfig
-    from .types import ModelOrDc
-    from .typing import ReprArgs
+    from pydantic.config import BaseConfig
+    from pydantic.types import ModelOrDc
+    from pydantic.typing import ReprArgs
 
     Loc = Tuple[Union[int, str], ...]
 
