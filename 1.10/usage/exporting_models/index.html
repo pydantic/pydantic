@@ -1293,10 +1293,10 @@ returned, so sub-models will not be converted to dictionaries.</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;banana&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}))</span>
 <span class="c1">#&gt; banana=0 foo=&#39;hello&#39; bar=BarModel(whatever=123)</span>
 <span class="nb">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">bar</span><span class="p">),</span> <span class="nb">id</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span><span class="n">bar</span><span class="p">))</span>
-<span class="c1">#&gt; 140122777294864 140122777294864</span>
+<span class="c1">#&gt; 139932704073008 139932704073008</span>
 <span class="c1"># normal copy gives the same object reference for `bar`</span>
 <span class="nb">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">bar</span><span class="p">),</span> <span class="nb">id</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">bar</span><span class="p">))</span>
-<span class="c1">#&gt; 140122777294864 140122777298512</span>
+<span class="c1">#&gt; 139932704073008 139932704076656</span>
 <span class="c1"># deep copy gives a new object reference for `bar`</span>
 </code></pre></div>
 </div>
@@ -1672,7 +1672,7 @@ meaning you cannot always customise the encoding using <code>Config.json_encoder
 <span class="sd">b&#39;\x80\x04\x95\x8e\x00\x00\x00\x00\x00\x00\x00\x8c\x17exporting_models_pickle</span>
 <span class="sd">\x94\x8c\x0bFooBarModel\x94\x93\x94)\x81\x94}\x94(\x8c\x08__dict__\x94}\x94(\</span>
 <span class="sd">x8c\x01a\x94\x8c\x05hello\x94\x8c\x01b\x94K{u\x8c\x0e__fields_set__\x94\x8f\x</span>
-<span class="sd">94(h\th\x07\x90\x8c\x1c__private_attribute_values__\x94}\x94ub.&#39;</span>
+<span class="sd">94(h\x07h\t\x90\x8c\x1c__private_attribute_values__\x94}\x94ub.&#39;</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="n">m2</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m2</span><span class="p">)</span>
