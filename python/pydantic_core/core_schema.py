@@ -10,7 +10,7 @@ import warnings
 from collections.abc import Mapping
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, Callable, Dict, Hashable, List, Set, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Hashable, List, Pattern, Set, Tuple, Type, Union
 
 from typing_extensions import deprecated
 
@@ -744,7 +744,7 @@ def decimal_schema(
 
 class StringSchema(TypedDict, total=False):
     type: Required[Literal['str']]
-    pattern: str
+    pattern: Union[str, Pattern[str]]
     max_length: int
     min_length: int
     strip_whitespace: bool
@@ -760,7 +760,7 @@ class StringSchema(TypedDict, total=False):
 
 def str_schema(
     *,
-    pattern: str | None = None,
+    pattern: str | Pattern[str] | None = None,
     max_length: int | None = None,
     min_length: int | None = None,
     strip_whitespace: bool | None = None,
