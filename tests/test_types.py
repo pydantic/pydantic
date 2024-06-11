@@ -2713,7 +2713,13 @@ def test_secretfield():
     class Foobar(SecretField):
         ...
 
-    message = "Can't instantiate abstract class Foobar with abstract methods? get_secret_value"
+    if sys.version_info < (3, 12):
+        message = "Can't instantiate abstract class Foobar with abstract methods? get_secret_value"
+    else:
+        message = (
+            "Can't instantiate abstract class Foobar without an implementation for abstract method "
+            "'get_secret_value'"
+        )
 
     with pytest.raises(TypeError, match=message):
         Foobar()
