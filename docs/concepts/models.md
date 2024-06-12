@@ -444,12 +444,13 @@ except ValidationError as e:
 
 ## Helper functions
 
-*Pydantic* provides two `classmethod` helper functions on models for parsing data:
+*Pydantic* provides three `classmethod` helper functions on models for parsing data:
 
 * [`model_validate()`][pydantic.main.BaseModel.model_validate]: this is very similar to the `__init__` method of the model, except it takes a dict or an object
   rather than keyword arguments. If the object passed cannot be validated, or if it's not a dictionary
   or instance of the model in question, a `ValidationError` will be raised.
 * [`model_validate_json()`][pydantic.main.BaseModel.model_validate_json]: this takes a *str* or *bytes* and parses it as *json*, then passes the result to [`model_validate()`][pydantic.main.BaseModel.model_validate].
+* [`model_validate_strings()`][pydantic.main.BaseModel.model_validate_strings]: this takes a dict (can be nested) with string keys and values and validates the data in *json* mode so that said strings can be coerced into the correct types.
 
 ```py
 from datetime import datetime
@@ -499,6 +500,28 @@ except ValidationError as e:
     1 validation error for User
       Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='invalid JSON', input_type=str]
     """
+
+m = User.model_validate_strings({'id': '123', 'name': 'James'})
+print(m)
+#> id=123 name='James' signup_ts=None
+
+m = User.model_validate_strings(
+    {'id': '123', 'name': 'James', 'signup_ts': '2024-04-01T12:00:00'}
+)
+print(m)
+#> id=123 name='James' signup_ts=datetime.datetime(2024, 4, 1, 12, 0)
+
+try:
+    m = User.model_validate_strings(
+        {'id': '123', 'name': 'James', 'signup_ts': '2024-04-01'}, strict=True
+    )
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for User
+    signup_ts
+      Input should be a valid datetime, invalid datetime separator, expected `T`, `t`, `_` or space [type=datetime_parsing, input_value='2024-04-01', input_type=str]
+    """
 ```
 
 If you want to validate serialized data in a format other than JSON, you should load the data into a dict yourself and
@@ -509,7 +532,7 @@ then pass it to [`model_validate`][pydantic.main.BaseModel.model_validate].
     and [`model_validate_json`][pydantic.main.BaseModel.model_validate_json] may have different validation behavior.
     If you have data coming from a non-JSON source, but want the same validation
     behavior and errors you'd get from [`model_validate_json`][pydantic.main.BaseModel.model_validate_json],
-    our recommendation for now is to use `model_validate_json(json.dumps(data))`.
+    our recommendation for now is to use either use `model_validate_json(json.dumps(data))`, or use [`model_validate_strings`][pydantic.main.BaseModel.model_validate_strings] if the data takes the form of a (potentially nested) dict with string keys and values.
 
 !!! note
     Learn more about JSON parsing in the [JSON](../concepts/json.md) section of the docs.

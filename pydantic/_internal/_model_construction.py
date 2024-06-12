@@ -1,4 +1,5 @@
 """Private logic for creating models."""
+
 from __future__ import annotations as _annotations
 
 import builtins
@@ -100,12 +101,12 @@ class ModelMetaclass(ABCMeta):
                 if original_model_post_init is not None:
                     # if there are private_attributes and a model_post_init function, we handle both
 
-                    def wrapped_model_post_init(self: BaseModel, __context: Any) -> None:
+                    def wrapped_model_post_init(self: BaseModel, context: Any, /) -> None:
                         """We need to both initialize private attributes and call the user-defined model_post_init
                         method.
                         """
-                        init_private_attributes(self, __context)
-                        original_model_post_init(self, __context)
+                        init_private_attributes(self, context)
+                        original_model_post_init(self, context)
 
                     namespace['model_post_init'] = wrapped_model_post_init
                 else:
@@ -276,14 +277,14 @@ class ModelMetaclass(ABCMeta):
         return attributes
 
 
-def init_private_attributes(self: BaseModel, __context: Any) -> None:
+def init_private_attributes(self: BaseModel, context: Any, /) -> None:
     """This function is meant to behave like a BaseModel method to initialise private attributes.
 
     It takes context as an argument since that's what pydantic-core passes when calling it.
 
     Args:
         self: The BaseModel instance.
-        __context: The context.
+        context: The context.
     """
     if getattr(self, '__pydantic_private__', None) is None:
         pydantic_private = {}
@@ -525,7 +526,7 @@ def complete_model_class(
         ref_mode='unpack',
     )
 
-    if config_wrapper.defer_build and 'model' in config_wrapper._defer_build_mode:
+    if config_wrapper.defer_build and 'model' in config_wrapper.experimental_defer_build_mode:
         set_model_mocks(cls, cls_name)
         return False
 

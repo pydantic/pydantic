@@ -18,7 +18,7 @@ import re
 from datetime import date, datetime, time, timedelta, timezone
 from typing import Dict, Optional, Type, Union
 
-from . import errors
+from pydantic.v1 import errors
 
 date_expr = r'(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})'
 time_expr = (

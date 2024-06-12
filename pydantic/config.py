@@ -1,4 +1,5 @@
 """Configuration for Pydantic models."""
+
 from __future__ import annotations as _annotations
 
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, TypeVar, Union
@@ -716,28 +717,28 @@ class ConfigDict(TypedDict, total=False):
     used nested within other models, or when you want to manually define type namespace via
     [`Model.model_rebuild(_types_namespace=...)`][pydantic.BaseModel.model_rebuild].
 
-    See also [`_defer_build_mode`][pydantic.config.ConfigDict._defer_build_mode].
+    See also [`experimental_defer_build_mode`][pydantic.config.ConfigDict.experimental_defer_build_mode].
 
     !!! note
         `defer_build` does not work by default with FastAPI Pydantic models. By default, the validator and serializer
         for said models is constructed immediately for FastAPI routes. You also need to define
-        [`_defer_build_mode=('model', 'type_adapter')`][pydantic.config.ConfigDict._defer_build_mode] with FastAPI
+        [`experimental_defer_build_mode=('model', 'type_adapter')`][pydantic.config.ConfigDict.experimental_defer_build_mode] with FastAPI
         models in order for `defer_build=True` to take effect. This additional (experimental) parameter is required for
         the deferred building due to FastAPI relying on `TypeAdapter`s.
     """
 
-    _defer_build_mode: tuple[Literal['model', 'type_adapter'], ...]
+    experimental_defer_build_mode: tuple[Literal['model', 'type_adapter'], ...]
     """
     Controls when [`defer_build`][pydantic.config.ConfigDict.defer_build] is applicable. Defaults to `('model',)`.
 
     Due to backwards compatibility reasons [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] does not by default
-    respect `defer_build`. Meaning when `defer_build` is `True` and `_defer_build_mode` is the default `('model',)`
+    respect `defer_build`. Meaning when `defer_build` is `True` and `experimental_defer_build_mode` is the default `('model',)`
     then `TypeAdapter` immediately constructs its validator and serializer instead of postponing said construction until
     the first model validation. Set this to `('model', 'type_adapter')` to make `TypeAdapter` respect the `defer_build`
     so it postpones validator and serializer construction until the first validation or serialization.
 
     !!! note
-        The `_defer_build_mode` parameter is named with an underscore to suggest this is an experimental feature. It may
+        The `experimental_defer_build_mode` parameter is named with an underscore to suggest this is an experimental feature. It may
         be removed or changed in the future in a minor release.
     """
 
@@ -899,6 +900,10 @@ class ConfigDict(TypedDict, total=False):
     - `python-re` use the [`re`](https://docs.python.org/3/library/re.html) module,
       which supports all regex features, but may be slower.
 
+    !!! note
+        If you use a compiled regex pattern, the python-re engine will be used regardless of this setting.
+        This is so that flags such as `re.IGNORECASE` are respected.
+
     ```py
     from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
@@ -937,6 +942,8 @@ class ConfigDict(TypedDict, total=False):
     '''
     Whether docstrings of attributes (bare string literals immediately following the attribute declaration)
     should be used for field descriptions. Defaults to `False`.
+
+    Available in Pydantic v2.7+.
 
     ```py
     from pydantic import BaseModel, ConfigDict, Field

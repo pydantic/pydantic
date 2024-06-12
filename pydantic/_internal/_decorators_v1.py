@@ -1,4 +1,5 @@
 """Logic for V1 validators, e.g. `@validator` and `@root_validator`."""
+
 from __future__ import annotations as _annotations
 
 from inspect import Parameter, signature
@@ -14,36 +15,31 @@ from ._decorators import can_be_positional
 class V1OnlyValueValidator(Protocol):
     """A simple validator, supported for V1 validators and V2 validators."""
 
-    def __call__(self, __value: Any) -> Any:
-        ...
+    def __call__(self, __value: Any) -> Any: ...
 
 
 class V1ValidatorWithValues(Protocol):
     """A validator with `values` argument, supported for V1 validators and V2 validators."""
 
-    def __call__(self, __value: Any, values: dict[str, Any]) -> Any:
-        ...
+    def __call__(self, __value: Any, values: dict[str, Any]) -> Any: ...
 
 
 class V1ValidatorWithValuesKwOnly(Protocol):
     """A validator with keyword only `values` argument, supported for V1 validators and V2 validators."""
 
-    def __call__(self, __value: Any, *, values: dict[str, Any]) -> Any:
-        ...
+    def __call__(self, __value: Any, *, values: dict[str, Any]) -> Any: ...
 
 
 class V1ValidatorWithKwargs(Protocol):
     """A validator with `kwargs` argument, supported for V1 validators and V2 validators."""
 
-    def __call__(self, __value: Any, **kwargs: Any) -> Any:
-        ...
+    def __call__(self, __value: Any, **kwargs: Any) -> Any: ...
 
 
 class V1ValidatorWithValuesAndKwargs(Protocol):
     """A validator with `values` and `kwargs` arguments, supported for V1 validators and V2 validators."""
 
-    def __call__(self, __value: Any, values: dict[str, Any], **kwargs: Any) -> Any:
-        ...
+    def __call__(self, __value: Any, values: dict[str, Any], **kwargs: Any) -> Any: ...
 
 
 V1Validator = Union[
@@ -117,15 +113,13 @@ RootValidatorFieldsTuple = Tuple[Any, ...]
 class V1RootValidatorFunction(Protocol):
     """A simple root validator, supported for V1 validators and V2 validators."""
 
-    def __call__(self, __values: RootValidatorValues) -> RootValidatorValues:
-        ...
+    def __call__(self, __values: RootValidatorValues) -> RootValidatorValues: ...
 
 
 class V2CoreBeforeRootValidator(Protocol):
     """V2 validator with mode='before'."""
 
-    def __call__(self, __values: RootValidatorValues, __info: core_schema.ValidationInfo) -> RootValidatorValues:
-        ...
+    def __call__(self, __values: RootValidatorValues, __info: core_schema.ValidationInfo) -> RootValidatorValues: ...
 
 
 class V2CoreAfterRootValidator(Protocol):
@@ -133,8 +127,7 @@ class V2CoreAfterRootValidator(Protocol):
 
     def __call__(
         self, __fields_tuple: RootValidatorFieldsTuple, __info: core_schema.ValidationInfo
-    ) -> RootValidatorFieldsTuple:
-        ...
+    ) -> RootValidatorFieldsTuple: ...
 
 
 def make_v1_generic_root_validator(

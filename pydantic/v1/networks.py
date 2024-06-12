@@ -27,17 +27,17 @@ from typing import (
     no_type_check,
 )
 
-from . import errors
-from .utils import Representation, update_not_none
-from .validators import constr_length_validator, str_validator
+from pydantic.v1 import errors
+from pydantic.v1.utils import Representation, update_not_none
+from pydantic.v1.validators import constr_length_validator, str_validator
 
 if TYPE_CHECKING:
     import email_validator
     from typing_extensions import TypedDict
 
-    from .config import BaseConfig
-    from .fields import ModelField
-    from .typing import AnyCallable
+    from pydantic.v1.config import BaseConfig
+    from pydantic.v1.fields import ModelField
+    from pydantic.v1.typing import AnyCallable
 
     CallableGenerator = Generator[AnyCallable, None, None]
 

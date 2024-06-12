@@ -104,6 +104,7 @@ nav:
   - Settings Management: concepts/pydantic_settings.md
   - Performance: concepts/performance.md
   - Pydantic Plugins: concepts/plugins.md
+  - Experimental: concepts/experimental.md
 - API Documentation:
   - Pydantic:
     - BaseModel: api/base_model.md
@@ -124,6 +125,7 @@ nav:
     - Version Information: api/version.md
     - Pydantic Plugins: api/plugin.md
     - Annotated Handlers: api/annotated_handlers.md
+    - Experimental: api/experimental.md
   - Pydantic Core:
     - pydantic_core: api/pydantic_core.md
     - pydantic_core.core_schema: api/pydantic_core_schema.md
@@ -140,6 +142,8 @@ nav:
     - Pendulum: api/pydantic_extra_types_pendulum_dt.md
     - Currency: api/pydantic_extra_types_currency_code.md
     - Language: api/pydantic_extra_types_language_code.md
+    - Script Code: api/pydantic_extra_types_script_code.md
+    - ULID: api/pydantic_extra_types_ulid.md
 - Examples:
   - Secrets: examples/secrets.md
   - Validators: examples/validators.md
@@ -196,7 +200,7 @@ plugins:
         options:
           members_order: source
           separate_signature: true
-          filters: ["!^_(?!defer_build_mode)"]
+          filters: ["!^_"]
           docstring_options:
             ignore_init_summary: true
           merge_init_into_class: true
