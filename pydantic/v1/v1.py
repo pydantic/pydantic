@@ -1,9 +1,23 @@
 # NOTE This file aliases the pydantic namespace as pydantic.v1 for smoother v1 -> v2 transition
 # flake8: noqa
-from pydantic import *
+import importlib
+import os
+from typing import Any
 
-# WARNING __all__ from .errors is not included here, it will be removed as an export here in v2
-# please use "from pydantic.errors import ..." instead
+import pydantic
+from pydantic.v1 import *
+
+
+# allows importing of objects from modules directly
+# i.e. from pydantic.v1.fields import ModelField
+def __getattr__(name: str) -> Any:
+    """Module level `__getattr__` to allow imports directly from the `pydantic.v1`
+    namespace for all pydantic modules."""
+    return getattr(pydantic, name)
+
+
+# WARNING __all__ from pydantic.errors is not included here, it will be removed as an export here in v2
+# please use "from pydantic.v1.errors import ..." instead
 __all__ = [
     # annotated types utils
     "create_model_from_namedtuple",

@@ -28,12 +28,12 @@ from typing import (
 
 from typing_extensions import Annotated, Final
 
-from . import errors as errors_
-from .class_validators import Validator, make_generic_validator, prep_validators
-from .error_wrappers import ErrorWrapper
-from .errors import ConfigError, InvalidDiscriminator, MissingDiscriminator, NoneIsNotAllowedError
-from .types import Json, JsonWrapper
-from .typing import (
+from pydantic.v1 import errors as errors_
+from pydantic.v1.class_validators import Validator, make_generic_validator, prep_validators
+from pydantic.v1.error_wrappers import ErrorWrapper
+from pydantic.v1.errors import ConfigError, InvalidDiscriminator, MissingDiscriminator, NoneIsNotAllowedError
+from pydantic.v1.types import Json, JsonWrapper
+from pydantic.v1.typing import (
     NoArgAnyCallable,
     convert_generics,
     display_as_type,
@@ -48,7 +48,7 @@ from .typing import (
     is_union,
     new_type_supertype,
 )
-from .utils import (
+from pydantic.v1.utils import (
     PyObjectStr,
     Representation,
     ValueItems,
@@ -59,7 +59,7 @@ from .utils import (
     sequence_like,
     smart_deepcopy,
 )
-from .validators import constant_validator, dict_validator, find_validators, validate_json
+from pydantic.v1.validators import constant_validator, dict_validator, find_validators, validate_json
 
 Required: Any = Ellipsis
 
@@ -83,11 +83,11 @@ class UndefinedType:
 Undefined = UndefinedType()
 
 if TYPE_CHECKING:
-    from .class_validators import ValidatorsList
-    from .config import BaseConfig
-    from .error_wrappers import ErrorList
-    from .types import ModelOrDc
-    from .typing import AbstractSetIntStr, MappingIntStrAny, ReprArgs
+    from pydantic.v1.class_validators import ValidatorsList
+    from pydantic.v1.config import BaseConfig
+    from pydantic.v1.error_wrappers import ErrorList
+    from pydantic.v1.types import ModelOrDc
+    from pydantic.v1.typing import AbstractSetIntStr, MappingIntStrAny, ReprArgs
 
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
     LocStr = Union[Tuple[Union[int, str], ...], str]
@@ -490,7 +490,7 @@ class ModelField(Representation):
         class_validators: Optional[Dict[str, Validator]],
         config: Type['BaseConfig'],
     ) -> 'ModelField':
-        from .schema import get_annotation_from_field_info
+        from pydantic.v1.schema import get_annotation_from_field_info
 
         field_info, value = cls._get_field_info(name, annotation, value, config)
         required: 'BoolUndefined' = Undefined
@@ -1160,7 +1160,7 @@ class ModelField(Representation):
         """
         Whether the field is "complex" eg. env variables should be parsed as JSON.
         """
-        from .main import BaseModel
+        from pydantic.v1.main import BaseModel
 
         return (
             self.shape != SHAPE_SINGLETON

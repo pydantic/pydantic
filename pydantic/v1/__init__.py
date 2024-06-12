@@ -1,24 +1,24 @@
 # flake8: noqa
-from . import dataclasses
-from .annotated_types import create_model_from_namedtuple, create_model_from_typeddict
-from .class_validators import root_validator, validator
-from .config import BaseConfig, ConfigDict, Extra
-from .decorator import validate_arguments
-from .env_settings import BaseSettings
-from .error_wrappers import ValidationError
-from .errors import *
-from .fields import Field, PrivateAttr, Required
-from .main import *
-from .networks import *
-from .parse import Protocol
-from .tools import *
-from .types import *
-from .version import VERSION, compiled
+from pydantic.v1 import dataclasses
+from pydantic.v1.annotated_types import create_model_from_namedtuple, create_model_from_typeddict
+from pydantic.v1.class_validators import root_validator, validator
+from pydantic.v1.config import BaseConfig, ConfigDict, Extra
+from pydantic.v1.decorator import validate_arguments
+from pydantic.v1.env_settings import BaseSettings
+from pydantic.v1.error_wrappers import ValidationError
+from pydantic.v1.errors import *
+from pydantic.v1.fields import Field, PrivateAttr, Required
+from pydantic.v1.main import *
+from pydantic.v1.networks import *
+from pydantic.v1.parse import Protocol
+from pydantic.v1.tools import *
+from pydantic.v1.types import *
+from pydantic.v1.version import VERSION, compiled
 
 __version__ = VERSION
 
-# WARNING __all__ from .errors is not included here, it will be removed as an export here in v2
-# please use "from pydantic.errors import ..." instead
+# WARNING __all__ from pydantic.errors is not included here, it will be removed as an export here in v2
+# please use "from pydantic.v1.errors import ..." instead
 __all__ = [
     # annotated types utils
     'create_model_from_namedtuple',
