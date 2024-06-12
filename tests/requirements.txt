@@ -2,9 +2,6 @@ backports.zoneinfo==0.2.1;python_version<"3.9"
 coverage==7.5.3
 dirty-equals==0.7.1.post0
 hypothesis==6.103.0
-# TODO: remove manual override for dateutil once a version newer than 2.8.2 is
-# released which removes use of deprecated utcfromtimestamp
-git+https://github.com/dateutil/dateutil.git@f2293200747fb03d56c6c5997bfebeabe703576f
 # pandas doesn't offer prebuilt wheels for all versions and platforms we test in CI e.g. aarch64 musllinux
 pandas==2.1.3; python_version >= "3.9" and python_version < "3.13" and implementation_name == "cpython" and platform_machine == 'x86_64'
 pytest==8.2.1
@@ -17,9 +14,9 @@ pytest-speed==0.3.5
 pytest-mock==3.14.0
 pytest-pretty==1.2.0
 pytest-timeout==2.3.1
+python-dateutil==2.9.0.post0
 # numpy doesn't offer prebuilt wheels for all versions and platforms we test in CI e.g. aarch64 musllinux
 numpy==1.26.2; python_version >= "3.9" and python_version < "3.13" and implementation_name == "cpython" and platform_machine == 'x86_64'
 exceptiongroup==1.1; python_version < "3.11"
 tzdata==2024.1
-# TODO: remove manual override for typing_extensions once a version newer than 4.12.1 is released
-git+https://github.com/python/typing_extensions@main
+typing_extensions==4.12.2
