@@ -1,4 +1,5 @@
 """The types module contains custom types used by pydantic."""
+
 from __future__ import annotations as _annotations
 
 import base64
@@ -227,7 +228,7 @@ def conint(
     ```
 
     """  # noqa: D212
-    return Annotated[
+    return Annotated[  # pyright: ignore[reportReturnType]
         int,
         Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
@@ -473,7 +474,7 @@ def confloat(
         '''
     ```
     """  # noqa: D212
-    return Annotated[
+    return Annotated[  # pyright: ignore[reportReturnType]
         float,
         Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
@@ -661,7 +662,7 @@ def conbytes(
     Returns:
         The wrapped bytes type.
     """
-    return Annotated[
+    return Annotated[  # pyright: ignore[reportReturnType]
         bytes,
         Strict(strict) if strict is not None else None,
         annotated_types.Len(min_length or 0, max_length),
@@ -716,7 +717,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
                 strip_whitespace=self.strip_whitespace,
                 to_upper=self.to_upper,
                 to_lower=self.to_lower,
-                pattern=self.pattern.pattern if isinstance(self.pattern, Pattern) else self.pattern,
+                pattern=self.pattern,
             )
 
 
@@ -784,7 +785,7 @@ def constr(
     Returns:
         The wrapped string type.
     """  # noqa: D212
-    return Annotated[
+    return Annotated[  # pyright: ignore[reportReturnType]
         str,
         StringConstraints(
             strip_whitespace=strip_whitespace,
@@ -819,7 +820,7 @@ def conset(
     Returns:
         The wrapped set type.
     """
-    return Annotated[Set[item_type], annotated_types.Len(min_length or 0, max_length)]
+    return Annotated[Set[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
 
 
 def confrozenset(
@@ -835,7 +836,7 @@ def confrozenset(
     Returns:
         The wrapped frozenset type.
     """
-    return Annotated[FrozenSet[item_type], annotated_types.Len(min_length or 0, max_length)]
+    return Annotated[FrozenSet[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
 
 
 AnyItemType = TypeVar('AnyItemType')
@@ -870,7 +871,7 @@ def conlist(
             ),
             code='removed-kwargs',
         )
-    return Annotated[List[item_type], annotated_types.Len(min_length or 0, max_length)]
+    return Annotated[List[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~ IMPORT STRING TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1095,7 +1096,7 @@ def condecimal(
         '''
     ```
     """  # noqa: D212
-    return Annotated[
+    return Annotated[  # pyright: ignore[reportReturnType]
         Decimal,
         Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
@@ -2069,7 +2070,7 @@ def condate(
     Returns:
         A date type with the specified constraints.
     """
-    return Annotated[
+    return Annotated[  # pyright: ignore[reportReturnType]
         date,
         Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),

@@ -63,7 +63,9 @@ else:
     def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any) -> Any:
         # Even though it is the right signature for python 3.9, mypy complains with
         # `error: Too many arguments for "_evaluate" of "ForwardRef"` hence the cast...
-        return cast(Any, type_)._evaluate(globalns, localns, set())
+        # Python 3.13/3.12.4+ made `recursive_guard` a kwarg, so name it explicitly to avoid:
+        # TypeError: ForwardRef._evaluate() missing 1 required keyword-only argument: 'recursive_guard'
+        return cast(Any, type_)._evaluate(globalns, localns, recursive_guard=set())
 
 
 if sys.version_info < (3, 9):
@@ -256,7 +258,7 @@ StrPath = Union[str, PathLike]
 
 
 if TYPE_CHECKING:
-    from .fields import ModelField
+    from pydantic.v1.fields import ModelField
 
     TupleGenerator = Generator[Tuple[str, Any], None, None]
     DictStrAny = Dict[str, Any]
@@ -435,7 +437,7 @@ def is_namedtuple(type_: Type[Any]) -> bool:
     Check if a given class is a named tuple.
     It can be either a `typing.NamedTuple` or `collections.namedtuple`
     """
-    from .utils import lenient_issubclass
+    from pydantic.v1.utils import lenient_issubclass
 
     return lenient_issubclass(type_, tuple) and hasattr(type_, '_fields')
 
@@ -445,7 +447,7 @@ def is_typeddict(type_: Type[Any]) -> bool:
     Check if a given class is a typed dict (from `typing` or `typing_extensions`)
     In 3.10, there will be a public method (https://docs.python.org/3.10/library/typing.html#typing.is_typeddict)
     """
-    from .utils import lenient_issubclass
+    from pydantic.v1.utils import lenient_issubclass
 
     return lenient_issubclass(type_, dict) and hasattr(type_, '__total__')
 

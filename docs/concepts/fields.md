@@ -723,17 +723,27 @@ print(Model.model_json_schema()['properties']['deprecated_field'])
 
 ### `deprecated` via the `warnings.deprecated` decorator
 
+!!! note
+    You can only use the `deprecated` decorator in this way if you have
+    `typing_extensions` >= 4.9.0 installed.
+
 ```py test="skip"
+import importlib.metadata
+
+from packaging.version import Version
 from typing_extensions import Annotated, deprecated
 
 from pydantic import BaseModel, Field
 
+if Version(importlib.metadata.version('typing_extensions')) >= Version('4.9'):
 
-class Model(BaseModel):
-    deprecated_field: Annotated[int, deprecated('This is deprecated')]
+    class Model(BaseModel):
+        deprecated_field: Annotated[int, deprecated('This is deprecated')]
 
-    # Or explicitly using `Field`:
-    alt_form: Annotated[int, Field(deprecated=deprecated('This is deprecated'))]
+        # Or explicitly using `Field`:
+        alt_form: Annotated[
+            int, Field(deprecated=deprecated('This is deprecated'))
+        ]
 ```
 
 ### `deprecated` as a boolean

@@ -1,0 +1,9 @@
+# Linting/formatting:
+# isort/pyupgrade -> Ruff:
+4f3e794a69e84e4294c605c669e4d1876a18dd50
+# Black -> Ruff format:
+419398d1dd9f3c0babdcfde1d52c249266f59ef0
+# Ruff 0.2.1:
+918402f01d82694214ff93cd77ff62d5d5beb1ab
+# Ruff 0.4.8:
+332e77ba3b658c2a57fc72f832587b72311d87c7
