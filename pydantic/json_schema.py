@@ -1847,6 +1847,17 @@ class GenerateJsonSchema:
             return self.generate_inner(schema['schema'])
         return None
 
+    def complex_schema(self, schema: core_schema.ComplexSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a complex number.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        return {'type': 'complex'}
+
     # ### Utility methods
 
     def get_title_from_name(self, name: str) -> str:

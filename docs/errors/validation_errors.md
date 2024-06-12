@@ -177,6 +177,25 @@ except ValidationError as exc:
     #> 'callable_type'
 ```
 
+## `complex_type`
+
+This error is raised when the input value cannot be interpreted as a complex number:
+
+```py
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    num: complex
+
+
+try:
+    Model(num=1234567812412341234567812345678)
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'complex_type'
+```
+
 ## `dataclass_exact_type`
 
 This error is raised when validating a dataclass with `strict=True` and the input is not an instance of the dataclass:

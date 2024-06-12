@@ -783,6 +783,8 @@ class GenerateSchema:
             return core_schema.float_schema()
         elif obj is bool:
             return core_schema.bool_schema()
+        elif obj is complex:
+            return core_schema.complex_schema()
         elif obj is Any or obj is object:
             return core_schema.any_schema()
         elif obj is None or obj is _typing_extra.NoneType:
