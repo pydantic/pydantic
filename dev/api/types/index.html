@@ -13224,7 +13224,7 @@ validation errors.</p>
 <span class="sd">    ```</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>  <span class="c1"># noqa: D212</span>
-    <span class="k">return</span> <span class="n">Annotated</span><span class="p">[</span>
+    <span class="k">return</span> <span class="n">Annotated</span><span class="p">[</span>  <span class="c1"># pyright: ignore[reportReturnType]</span>
         <span class="nb">int</span><span class="p">,</span>
         <span class="n">Strict</span><span class="p">(</span><span class="n">strict</span><span class="p">)</span> <span class="k">if</span> <span class="n">strict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">annotated_types</span><span class="o">.</span><span class="n">Interval</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="n">gt</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="n">ge</span><span class="p">,</span> <span class="n">lt</span><span class="o">=</span><span class="n">lt</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="n">le</span><span class="p">),</span>
@@ -13622,7 +13622,7 @@ validation errors.</p>
 <span class="sd">        &#39;&#39;&#39;</span>
 <span class="sd">    ```</span>
 <span class="sd">    &quot;&quot;&quot;</span>  <span class="c1"># noqa: D212</span>
-    <span class="k">return</span> <span class="n">Annotated</span><span class="p">[</span>
+    <span class="k">return</span> <span class="n">Annotated</span><span class="p">[</span>  <span class="c1"># pyright: ignore[reportReturnType]</span>
         <span class="nb">float</span><span class="p">,</span>
         <span class="n">Strict</span><span class="p">(</span><span class="n">strict</span><span class="p">)</span> <span class="k">if</span> <span class="n">strict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">annotated_types</span><span class="o">.</span><span class="n">Interval</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="n">gt</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="n">ge</span><span class="p">,</span> <span class="n">lt</span><span class="o">=</span><span class="n">lt</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="n">le</span><span class="p">),</span>
@@ -13777,7 +13777,7 @@ validation errors.</p>
 <span class="sd">    Returns:</span>
 <span class="sd">        The wrapped bytes type.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">Annotated</span><span class="p">[</span>
+    <span class="k">return</span> <span class="n">Annotated</span><span class="p">[</span>  <span class="c1"># pyright: ignore[reportReturnType]</span>
         <span class="nb">bytes</span><span class="p">,</span>
         <span class="n">Strict</span><span class="p">(</span><span class="n">strict</span><span class="p">)</span> <span class="k">if</span> <span class="n">strict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">annotated_types</span><span class="o">.</span><span class="n">Len</span><span class="p">(</span><span class="n">min_length</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span> <span class="n">max_length</span><span class="p">),</span>
@@ -14131,7 +14131,7 @@ validation errors.</p>
 <span class="sd">    Returns:</span>
 <span class="sd">        The wrapped string type.</span>
 <span class="sd">    &quot;&quot;&quot;</span>  <span class="c1"># noqa: D212</span>
-    <span class="k">return</span> <span class="n">Annotated</span><span class="p">[</span>
+    <span class="k">return</span> <span class="n">Annotated</span><span class="p">[</span>  <span class="c1"># pyright: ignore[reportReturnType]</span>
         <span class="nb">str</span><span class="p">,</span>
         <span class="n">StringConstraints</span><span class="p">(</span>
             <span class="n">strip_whitespace</span><span class="o">=</span><span class="n">strip_whitespace</span><span class="p">,</span>
@@ -14281,7 +14281,7 @@ validation errors.</p>
 <span class="sd">    Returns:</span>
 <span class="sd">        The wrapped set type.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Set</span><span class="p">[</span><span class="n">item_type</span><span class="p">],</span> <span class="n">annotated_types</span><span class="o">.</span><span class="n">Len</span><span class="p">(</span><span class="n">min_length</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span> <span class="n">max_length</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Set</span><span class="p">[</span><span class="n">item_type</span><span class="p">],</span> <span class="n">annotated_types</span><span class="o">.</span><span class="n">Len</span><span class="p">(</span><span class="n">min_length</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span> <span class="n">max_length</span><span class="p">)]</span>  <span class="c1"># pyright: ignore[reportReturnType]</span>
 </code></pre></div></td></tr></table></div>
           </details>
   </div>
@@ -14420,7 +14420,7 @@ validation errors.</p>
 <span class="sd">    Returns:</span>
 <span class="sd">        The wrapped frozenset type.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">FrozenSet</span><span class="p">[</span><span class="n">item_type</span><span class="p">],</span> <span class="n">annotated_types</span><span class="o">.</span><span class="n">Len</span><span class="p">(</span><span class="n">min_length</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span> <span class="n">max_length</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">FrozenSet</span><span class="p">[</span><span class="n">item_type</span><span class="p">],</span> <span class="n">annotated_types</span><span class="o">.</span><span class="n">Len</span><span class="p">(</span><span class="n">min_length</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span> <span class="n">max_length</span><span class="p">)]</span>  <span class="c1"># pyright: ignore[reportReturnType]</span>
 </code></pre></div></td></tr></table></div>
           </details>
   </div>
@@ -14611,7 +14611,7 @@ See <a href="https://github.com/pydantic/pydantic-core/issues/296">this issue</a
             <span class="p">),</span>
             <span class="n">code</span><span class="o">=</span><span class="s1">&#39;removed-kwargs&#39;</span><span class="p">,</span>
         <span class="p">)</span>
-    <span class="k">return</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">item_type</span><span class="p">],</span> <span class="n">annotated_types</span><span class="o">.</span><span class="n">Len</span><span class="p">(</span><span class="n">min_length</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span> <span class="n">max_length</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">item_type</span><span class="p">],</span> <span class="n">annotated_types</span><span class="o">.</span><span class="n">Len</span><span class="p">(</span><span class="n">min_length</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span> <span class="n">max_length</span><span class="p">)]</span>  <span class="c1"># pyright: ignore[reportReturnType]</span>
 </code></pre></div></td></tr></table></div>
           </details>
   </div>
@@ -15025,7 +15025,7 @@ See <a href="https://github.com/pydantic/pydantic-core/issues/296">this issue</a
 <span class="sd">        &#39;&#39;&#39;</span>
 <span class="sd">    ```</span>
 <span class="sd">    &quot;&quot;&quot;</span>  <span class="c1"># noqa: D212</span>
-    <span class="k">return</span> <span class="n">Annotated</span><span class="p">[</span>
+    <span class="k">return</span> <span class="n">Annotated</span><span class="p">[</span>  <span class="c1"># pyright: ignore[reportReturnType]</span>
         <span class="n">Decimal</span><span class="p">,</span>
         <span class="n">Strict</span><span class="p">(</span><span class="n">strict</span><span class="p">)</span> <span class="k">if</span> <span class="n">strict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">annotated_types</span><span class="o">.</span><span class="n">Interval</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="n">gt</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="n">ge</span><span class="p">,</span> <span class="n">lt</span><span class="o">=</span><span class="n">lt</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="n">le</span><span class="p">),</span>
@@ -15219,7 +15219,7 @@ See <a href="https://github.com/pydantic/pydantic-core/issues/296">this issue</a
 <span class="sd">    Returns:</span>
 <span class="sd">        A date type with the specified constraints.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">Annotated</span><span class="p">[</span>
+    <span class="k">return</span> <span class="n">Annotated</span><span class="p">[</span>  <span class="c1"># pyright: ignore[reportReturnType]</span>
         <span class="n">date</span><span class="p">,</span>
         <span class="n">Strict</span><span class="p">(</span><span class="n">strict</span><span class="p">)</span> <span class="k">if</span> <span class="n">strict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">annotated_types</span><span class="o">.</span><span class="n">Interval</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="n">gt</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="n">ge</span><span class="p">,</span> <span class="n">lt</span><span class="o">=</span><span class="n">lt</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="n">le</span><span class="p">),</span>

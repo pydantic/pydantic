@@ -5439,7 +5439,7 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
             <span class="n">new_field_info</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">metadata</span>
             <span class="k">return</span> <span class="n">new_field_info</span>
 
-    <span class="k">return</span> <span class="n">FieldInfo</span><span class="p">(</span><span class="n">annotation</span><span class="o">=</span><span class="n">annotation</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="n">final</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">FieldInfo</span><span class="p">(</span><span class="n">annotation</span><span class="o">=</span><span class="n">annotation</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="n">final</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">)</span>  <span class="c1"># pyright: ignore[reportArgumentType]</span>
 </code></pre></div></td></tr></table></div>
           </details>
   </div>
@@ -5677,7 +5677,7 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
             <span class="n">annotation</span> <span class="o">=</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">get_args</span><span class="p">(</span><span class="n">annotation</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">default</span><span class="p">,</span> <span class="n">FieldInfo</span><span class="p">):</span>
-        <span class="n">default</span><span class="o">.</span><span class="n">annotation</span><span class="p">,</span> <span class="n">annotation_metadata</span> <span class="o">=</span> <span class="n">FieldInfo</span><span class="o">.</span><span class="n">_extract_metadata</span><span class="p">(</span><span class="n">annotation</span><span class="p">)</span>
+        <span class="n">default</span><span class="o">.</span><span class="n">annotation</span><span class="p">,</span> <span class="n">annotation_metadata</span> <span class="o">=</span> <span class="n">FieldInfo</span><span class="o">.</span><span class="n">_extract_metadata</span><span class="p">(</span><span class="n">annotation</span><span class="p">)</span>  <span class="c1"># pyright: ignore[reportArgumentType]</span>
         <span class="n">default</span><span class="o">.</span><span class="n">metadata</span> <span class="o">+=</span> <span class="n">annotation_metadata</span>
         <span class="n">default</span> <span class="o">=</span> <span class="n">default</span><span class="o">.</span><span class="n">merge_field_infos</span><span class="p">(</span>
             <span class="o">*</span><span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">annotation_metadata</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">FieldInfo</span><span class="p">)],</span> <span class="n">default</span><span class="p">,</span> <span class="n">annotation</span><span class="o">=</span><span class="n">default</span><span class="o">.</span><span class="n">annotation</span>
@@ -5688,12 +5688,12 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
         <span class="n">init_var</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">if</span> <span class="n">annotation</span> <span class="ow">is</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">InitVar</span><span class="p">:</span>
             <span class="n">init_var</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="n">annotation</span> <span class="o">=</span> <span class="n">Any</span>
+            <span class="n">annotation</span> <span class="o">=</span> <span class="n">typing</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">annotation</span><span class="p">,</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">InitVar</span><span class="p">):</span>
             <span class="n">init_var</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="n">annotation</span> <span class="o">=</span> <span class="n">annotation</span><span class="o">.</span><span class="n">type</span>
         <span class="n">pydantic_field</span> <span class="o">=</span> <span class="n">FieldInfo</span><span class="o">.</span><span class="n">_from_dataclass_field</span><span class="p">(</span><span class="n">default</span><span class="p">)</span>
-        <span class="n">pydantic_field</span><span class="o">.</span><span class="n">annotation</span><span class="p">,</span> <span class="n">annotation_metadata</span> <span class="o">=</span> <span class="n">FieldInfo</span><span class="o">.</span><span class="n">_extract_metadata</span><span class="p">(</span><span class="n">annotation</span><span class="p">)</span>
+        <span class="n">pydantic_field</span><span class="o">.</span><span class="n">annotation</span><span class="p">,</span> <span class="n">annotation_metadata</span> <span class="o">=</span> <span class="n">FieldInfo</span><span class="o">.</span><span class="n">_extract_metadata</span><span class="p">(</span><span class="n">annotation</span><span class="p">)</span>  <span class="c1"># pyright: ignore[reportArgumentType]</span>
         <span class="n">pydantic_field</span><span class="o">.</span><span class="n">metadata</span> <span class="o">+=</span> <span class="n">annotation_metadata</span>
         <span class="n">pydantic_field</span> <span class="o">=</span> <span class="n">pydantic_field</span><span class="o">.</span><span class="n">merge_field_infos</span><span class="p">(</span>
             <span class="o">*</span><span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">annotation_metadata</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">FieldInfo</span><span class="p">)],</span>
@@ -5721,7 +5721,7 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
             <span class="n">field_info</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">metadata</span>
             <span class="k">return</span> <span class="n">field_info</span>
 
-        <span class="k">return</span> <span class="n">FieldInfo</span><span class="p">(</span><span class="n">annotation</span><span class="o">=</span><span class="n">annotation</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">default</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="n">final</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">FieldInfo</span><span class="p">(</span><span class="n">annotation</span><span class="o">=</span><span class="n">annotation</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">default</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="n">final</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">)</span>  <span class="c1"># pyright: ignore[reportArgumentType]</span>
 </code></pre></div></td></tr></table></div>
           </details>
   </div>
