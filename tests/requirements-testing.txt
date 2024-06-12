@@ -12,3 +12,4 @@ typing-extensions==4.6.0
 # used in FastAPI tests, pin to avoid warnings in newer version
 # that FastAPI needs to fix
 Flask==2.2.3
+setuptools==70.0.0;python_version>="3.12"
