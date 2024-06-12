@@ -439,15 +439,42 @@ class FieldInfo(_repr.Representation):
 
         new_kwargs: dict[str, Any] = {}
         metadata = {}
+        schema_callables, schema_dict = set(), {}
         for field_info in field_infos:
+            json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None = field_info._attributes_set.get(
+                'json_schema_extra'
+            )  # type: ignore
+            if json_schema_extra:
+                if callable(json_schema_extra):
+                    schema_callables.add(json_schema_extra)
+                else:
+                    schema_dict.update(json_schema_extra)
+
             new_kwargs.update(field_info._attributes_set)
             for x in field_info.metadata:
                 if not isinstance(x, FieldInfo):
                     metadata[type(x)] = x
+        new_kwargs['json_schema_extra'] = FieldInfo._wrap_schema_extra(schema_callables, schema_dict)
+
         new_kwargs.update(overrides)
         field_info = FieldInfo(**new_kwargs)
         field_info.metadata = list(metadata.values())
         return field_info
+
+    @staticmethod
+    def _wrap_schema_extra(schema_callables, schema_dict):
+        if (schema_callables and schema_dict) or len(schema_callables) > 1:
+
+            def _schema_extra_wrapper(s):
+                s.update(schema_dict)
+                for schema_func in schema_callables:
+                    schema_func(s)
+
+            return _schema_extra_wrapper
+        elif schema_dict:
+            return schema_dict
+        elif schema_callables:
+            return schema_callables.pop()
 
     @staticmethod
     def _from_dataclass_field(dc_field: DataclassField[Any]) -> FieldInfo:

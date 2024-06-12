@@ -5681,6 +5681,37 @@ def test_multiple_parametrization_of_generic_model() -> None:
     assert calls == 1
 
 
+def test_mixed_type_callable_json_schema_extra():
+    def add_key1(s):
+        s['key_extra1'] = 'extra1'
+
+    def add_key2(s):
+        s['key_extra2'] = 'extra2'
+
+    CustomField = Annotated[
+        int,
+        Field(json_schema_extra={'key11': 'value11'}),
+        Field(json_schema_extra=add_key1),
+        Field(json_schema_extra={'key1': 'value1'}),
+        Field(json_schema_extra=add_key2),
+    ]
+
+    class Model(BaseModel):
+        a: CustomField
+
+    field_model_json_schema = Model.model_json_schema()['properties']['a']
+    field_model_json_schema.pop('title')
+
+    assert field_model_json_schema == {
+        'key1': 'value1',
+        'key11': 'value11',
+        'key_extra1': 'extra1',
+        'key_extra2': 'extra2',
+        'type': 'integer',
+    }
+    assert field_model_json_schema == TypeAdapter(CustomField).json_schema()
+
+
 def test_callable_json_schema_extra():
     def pop_default(s):
         s.pop('default')
