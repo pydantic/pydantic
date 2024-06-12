@@ -579,9 +579,15 @@ def test_partial_specification_name():
         b: BT
 
     partial_model = Model[int, BT]
-    assert partial_model.__name__ == 'Model[int, BT]'
+
+    if sys.version_info >= (3, 12):
+        model_name = 'Model[int, TypeVar]'
+    else:
+        model_name = 'Model[int, BT]'
+
+    assert partial_model.__name__ == model_name
     concrete_model = partial_model[str]
-    assert concrete_model.__name__ == 'Model[int, BT][str]'
+    assert concrete_model.__name__ == model_name + '[str]'
 
 
 def test_partial_specification_instantiation():
