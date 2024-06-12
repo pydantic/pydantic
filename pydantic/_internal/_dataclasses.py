@@ -1,4 +1,5 @@
 """Private logic for creating pydantic dataclasses."""
+
 from __future__ import annotations as _annotations
 
 import dataclasses

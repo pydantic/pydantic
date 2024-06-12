@@ -9,9 +9,9 @@ from types import GeneratorType
 from typing import Any, Callable, Dict, Type, Union
 from uuid import UUID
 
-from .color import Color
-from .networks import NameEmail
-from .types import SecretBytes, SecretStr
+from pydantic.v1.color import Color
+from pydantic.v1.networks import NameEmail
+from pydantic.v1.types import SecretBytes, SecretStr
 
 __all__ = 'pydantic_encoder', 'custom_pydantic_encoder', 'timedelta_isoformat'
 
@@ -72,7 +72,7 @@ ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
 def pydantic_encoder(obj: Any) -> Any:
     from dataclasses import asdict, is_dataclass
 
-    from .main import BaseModel
+    from pydantic.v1.main import BaseModel
 
     if isinstance(obj, BaseModel):
         return obj.dict()

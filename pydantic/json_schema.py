@@ -8,6 +8,7 @@ In general you shouldn't need to use this module directly; instead, you can use
 [`BaseModel.model_json_schema`][pydantic.BaseModel.model_json_schema] and
 [`TypeAdapter.json_schema`][pydantic.TypeAdapter.json_schema].
 """
+
 from __future__ import annotations as _annotations
 
 import dataclasses
@@ -28,6 +29,7 @@ from typing import (
     Hashable,
     Iterable,
     NewType,
+    Pattern,
     Sequence,
     Tuple,
     TypeVar,
@@ -660,6 +662,9 @@ class GenerateJsonSchema:
         """
         json_schema = {'type': 'string'}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.string)
+        if isinstance(json_schema.get('pattern'), Pattern):
+            # TODO: should we add regex flags to the pattern?
+            json_schema['pattern'] = json_schema.get('pattern').pattern  # type: ignore
         return json_schema
 
     def bytes_schema(self, schema: core_schema.BytesSchema) -> JsonSchemaValue:
@@ -1051,6 +1056,19 @@ class GenerateJsonSchema:
         #     default = schema['default_factory']()
         # else:
         #     return json_schema
+
+        # we reflect the application of custom plain, no-info serializers to defaults for
+        # json schemas viewed in serialization mode
+        # TODO: improvements along with https://github.com/pydantic/pydantic/issues/8208
+        # TODO: improve type safety here
+        if self.mode == 'serialization':
+            if (
+                (ser_schema := schema['schema'].get('serialization', {}))
+                and (ser_func := ser_schema.get('function'))
+                and ser_schema.get('type') == 'function-plain'  # type: ignore
+                and ser_schema.get('info_arg') is False  # type: ignore
+            ):
+                default = ser_func(default)  # type: ignore
 
         try:
             encoded_default = self.encode_default(default)
@@ -2278,7 +2296,9 @@ def models_json_schema(
             cls.__pydantic_core_schema__.rebuild()
 
     instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
-    inputs = [(m, mode, m.__pydantic_core_schema__) for m, mode in models]
+    inputs: list[tuple[type[BaseModel] | type[PydanticDataclass], JsonSchemaMode, CoreSchema]] = [
+        (m, mode, m.__pydantic_core_schema__) for m, mode in models
+    ]
     json_schemas_map, definitions = instance.generate_definitions(inputs)
 
     json_schema: dict[str, Any] = {}

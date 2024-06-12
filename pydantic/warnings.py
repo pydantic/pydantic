@@ -1,9 +1,15 @@
 """Pydantic-specific warnings."""
+
 from __future__ import annotations as _annotations
 
 from .version import version_short
 
-__all__ = 'PydanticDeprecatedSince20', 'PydanticDeprecationWarning'
+__all__ = (
+    'PydanticDeprecatedSince20',
+    'PydanticDeprecationWarning',
+    'PydanticDeprecatedSince26',
+    'PydanticExperimentalWarning',
+)
 
 
 class PydanticDeprecationWarning(DeprecationWarning):
@@ -56,3 +62,11 @@ class PydanticDeprecatedSince26(PydanticDeprecationWarning):
 
 class GenericBeforeBaseModelWarning(Warning):
     pass
+
+
+class PydanticExperimentalWarning(Warning):
+    """A Pydantic specific experimental functionality warning.
+
+    This warning is raised when using experimental functionality in Pydantic.
+    It is raised to warn users that the functionality may change or be removed in future versions of Pydantic.
+    """

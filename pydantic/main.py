@@ -1,4 +1,5 @@
 """Logic for creating models."""
+
 from __future__ import annotations as _annotations
 
 import operator
@@ -602,10 +603,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         strict: bool | None = None,
         context: Any | None = None,
     ) -> Self:
-        """Validate the given object contains string data against the Pydantic model.
+        """Validate the given object with string data against the Pydantic model.
 
         Args:
-            obj: The object contains string data to validate.
+            obj: The object containing string data to validate.
             strict: Whether to enforce types strictly.
             context: Extra variables to pass to the validator.
 
@@ -920,10 +921,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         }
 
     def __setstate__(self, state: dict[Any, Any]) -> None:
-        _object_setattr(self, '__pydantic_fields_set__', state['__pydantic_fields_set__'])
-        _object_setattr(self, '__pydantic_extra__', state['__pydantic_extra__'])
-        _object_setattr(self, '__pydantic_private__', state['__pydantic_private__'])
-        _object_setattr(self, '__dict__', state['__dict__'])
+        _object_setattr(self, '__pydantic_fields_set__', state.get('__pydantic_fields_set__', {}))
+        _object_setattr(self, '__pydantic_extra__', state.get('__pydantic_extra__', {}))
+        _object_setattr(self, '__pydantic_private__', state.get('__pydantic_private__', {}))
+        _object_setattr(self, '__dict__', state.get('__dict__', {}))
 
     if not TYPE_CHECKING:
 
@@ -1437,8 +1438,7 @@ def create_model(
     __validators__: dict[str, classmethod[Any, ..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     **field_definitions: Any,
-) -> type[BaseModel]:
-    ...
+) -> type[BaseModel]: ...
 
 
 @overload
@@ -1453,8 +1453,7 @@ def create_model(
     __validators__: dict[str, classmethod[Any, ..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     **field_definitions: Any,
-) -> type[ModelT]:
-    ...
+) -> type[ModelT]: ...
 
 
 def create_model(  # noqa: C901

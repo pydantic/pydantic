@@ -1,4 +1,5 @@
 """Utilities related to attribute docstring extraction."""
+
 from __future__ import annotations
 
 import ast

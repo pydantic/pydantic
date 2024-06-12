@@ -1,6 +1,7 @@
 """
 Tests for TypedDict
 """
+
 import sys
 import typing
 from typing import Any, Dict, Generic, List, Optional, TypeVar

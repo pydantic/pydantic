@@ -231,12 +231,10 @@ class WrapValidator:
 if TYPE_CHECKING:
 
     class _OnlyValueValidatorClsMethod(Protocol):
-        def __call__(self, cls: Any, value: Any, /) -> Any:
-            ...
+        def __call__(self, cls: Any, value: Any, /) -> Any: ...
 
     class _V2ValidatorClsMethod(Protocol):
-        def __call__(self, cls: Any, value: Any, info: _core_schema.ValidationInfo, /) -> Any:
-            ...
+        def __call__(self, cls: Any, value: Any, info: _core_schema.ValidationInfo, /) -> Any: ...
 
     class _V2WrapValidatorClsMethod(Protocol):
         def __call__(
@@ -246,8 +244,7 @@ if TYPE_CHECKING:
             handler: _core_schema.ValidatorFunctionWrapHandler,
             info: _core_schema.ValidationInfo,
             /,
-        ) -> Any:
-            ...
+        ) -> Any: ...
 
     _V2Validator = Union[
         _V2ValidatorClsMethod,
@@ -278,8 +275,7 @@ def field_validator(
     *fields: str,
     mode: Literal['before', 'after', 'plain'] = ...,
     check_fields: bool | None = ...,
-) -> Callable[[_V2BeforeAfterOrPlainValidatorType], _V2BeforeAfterOrPlainValidatorType]:
-    ...
+) -> Callable[[_V2BeforeAfterOrPlainValidatorType], _V2BeforeAfterOrPlainValidatorType]: ...
 
 
 @overload
@@ -289,8 +285,7 @@ def field_validator(
     *fields: str,
     mode: Literal['wrap'],
     check_fields: bool | None = ...,
-) -> Callable[[_V2WrapValidatorType], _V2WrapValidatorType]:
-    ...
+) -> Callable[[_V2WrapValidatorType], _V2WrapValidatorType]: ...
 
 
 FieldValidatorModes: TypeAlias = Literal['before', 'after', 'wrap', 'plain']
@@ -420,8 +415,7 @@ class ModelWrapValidatorWithoutInfo(Protocol[_ModelType]):
         value: Any,
         handler: ModelWrapValidatorHandler[_ModelType],
         /,
-    ) -> _ModelType:
-        ...
+    ) -> _ModelType: ...
 
 
 class ModelWrapValidator(Protocol[_ModelType]):
@@ -437,8 +431,7 @@ class ModelWrapValidator(Protocol[_ModelType]):
         handler: ModelWrapValidatorHandler[_ModelType],
         info: _core_schema.ValidationInfo,
         /,
-    ) -> _ModelType:
-        ...
+    ) -> _ModelType: ...
 
 
 class FreeModelBeforeValidatorWithoutInfo(Protocol):
@@ -453,8 +446,7 @@ class FreeModelBeforeValidatorWithoutInfo(Protocol):
         # thus validators _must_ handle all cases
         value: Any,
         /,
-    ) -> Any:
-        ...
+    ) -> Any: ...
 
 
 class ModelBeforeValidatorWithoutInfo(Protocol):
@@ -470,8 +462,7 @@ class ModelBeforeValidatorWithoutInfo(Protocol):
         # thus validators _must_ handle all cases
         value: Any,
         /,
-    ) -> Any:
-        ...
+    ) -> Any: ...
 
 
 class FreeModelBeforeValidator(Protocol):
@@ -485,8 +476,7 @@ class FreeModelBeforeValidator(Protocol):
         value: Any,
         info: _core_schema.ValidationInfo,
         /,
-    ) -> Any:
-        ...
+    ) -> Any: ...
 
 
 class ModelBeforeValidator(Protocol):
@@ -501,8 +491,7 @@ class ModelBeforeValidator(Protocol):
         value: Any,
         info: _core_schema.ValidationInfo,
         /,
-    ) -> Any:
-        ...
+    ) -> Any: ...
 
 
 ModelAfterValidatorWithoutInfo = Callable[[_ModelType], _ModelType]
@@ -526,16 +515,16 @@ def model_validator(
     mode: Literal['wrap'],
 ) -> Callable[
     [_AnyModelWrapValidator[_ModelType]], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]
-]:
-    ...
+]: ...
 
 
 @overload
 def model_validator(
     *,
     mode: Literal['before'],
-) -> Callable[[_AnyModeBeforeValidator], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]]:
-    ...
+) -> Callable[
+    [_AnyModeBeforeValidator], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]
+]: ...
 
 
 @overload
@@ -544,8 +533,7 @@ def model_validator(
     mode: Literal['after'],
 ) -> Callable[
     [_AnyModelAfterValidator[_ModelType]], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]
-]:
-    ...
+]: ...
 
 
 def model_validator(

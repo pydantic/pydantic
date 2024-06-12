@@ -4,6 +4,7 @@ An integration-style benchmark of a model with a class of what should
 
 Used to gauge overall pydantic performance.
 """
+
 import json
 from datetime import date, datetime, time
 from decimal import Decimal

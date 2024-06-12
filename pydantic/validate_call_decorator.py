@@ -1,4 +1,5 @@
 """Decorator for validating function calls."""
+
 from __future__ import annotations as _annotations
 
 import functools
@@ -17,13 +18,11 @@ if TYPE_CHECKING:
 @overload
 def validate_call(
     *, config: ConfigDict | None = None, validate_return: bool = False
-) -> Callable[[AnyCallableT], AnyCallableT]:
-    ...
+) -> Callable[[AnyCallableT], AnyCallableT]: ...
 
 
 @overload
-def validate_call(func: AnyCallableT, /) -> AnyCallableT:
-    ...
+def validate_call(func: AnyCallableT, /) -> AnyCallableT: ...
 
 
 def validate_call(
