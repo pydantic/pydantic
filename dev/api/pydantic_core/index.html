@@ -9077,7 +9077,7 @@ identifies a value as being present, and provides a way to access it.</p>
     <span class="n">timedelta_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;iso8601&quot;</span><span class="p">,</span> <span class="s2">&quot;float&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;iso8601&quot;</span><span class="p">,</span>
     <span class="n">bytes_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;utf8&quot;</span><span class="p">,</span> <span class="s2">&quot;base64&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;utf8&quot;</span><span class="p">,</span>
     <span class="n">inf_nan_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span>
-        <span class="s2">&quot;null&quot;</span><span class="p">,</span> <span class="s2">&quot;constants&quot;</span>
+        <span class="s2">&quot;null&quot;</span><span class="p">,</span> <span class="s2">&quot;constants&quot;</span><span class="p">,</span> <span class="s2">&quot;strings&quot;</span>
     <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;constants&quot;</span><span class="p">,</span>
     <span class="n">serialize_unknown</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">fallback</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -9233,11 +9233,11 @@ identifies a value as being present, and provides a way to access it.</p>
         <tr>
           <td><code>inf_nan_mode</code></td>
           <td>
-                <code><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;null&#39;, &#39;constants&#39;]</code>
+                <code><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;null&#39;, &#39;constants&#39;, &#39;strings&#39;]</code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>How to serialize <code>Infinity</code>, <code>-Infinity</code> and <code>NaN</code> values, either <code>'null'</code> or <code>'constants'</code>.</p>
+              <p>How to serialize <code>Infinity</code>, <code>-Infinity</code> and <code>NaN</code> values, either <code>'null'</code>, <code>'constants'</code>, or <code>'strings'</code>.</p>
             </div>
           </td>
           <td>
@@ -9531,7 +9531,7 @@ input is reached before the full object is deserialized, e.g. <code>["aa", "bb",
     <span class="n">timedelta_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;iso8601&quot;</span><span class="p">,</span> <span class="s2">&quot;float&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;iso8601&quot;</span><span class="p">,</span>
     <span class="n">bytes_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;utf8&quot;</span><span class="p">,</span> <span class="s2">&quot;base64&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;utf8&quot;</span><span class="p">,</span>
     <span class="n">inf_nan_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span>
-        <span class="s2">&quot;null&quot;</span><span class="p">,</span> <span class="s2">&quot;constants&quot;</span>
+        <span class="s2">&quot;null&quot;</span><span class="p">,</span> <span class="s2">&quot;constants&quot;</span><span class="p">,</span> <span class="s2">&quot;strings&quot;</span>
     <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;constants&quot;</span><span class="p">,</span>
     <span class="n">serialize_unknown</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">fallback</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -9674,11 +9674,11 @@ input is reached before the full object is deserialized, e.g. <code>["aa", "bb",
         <tr>
           <td><code>inf_nan_mode</code></td>
           <td>
-                <code><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;null&#39;, &#39;constants&#39;]</code>
+                <code><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;null&#39;, &#39;constants&#39;, &#39;strings&#39;]</code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>How to serialize <code>Infinity</code>, <code>-Infinity</code> and <code>NaN</code> values, either <code>'null'</code> or <code>'constants'</code>.</p>
+              <p>How to serialize <code>Infinity</code>, <code>-Infinity</code> and <code>NaN</code> values, either <code>'null'</code>, <code>'constants'</code>, or <code>'strings'</code>.</p>
             </div>
           </td>
           <td>
@@ -9863,7 +9863,7 @@ if <code>None</code> a <a class="autorefs autorefs-internal" href="#pydantic_cor
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.18.4", "pydantic-extra-types==2.8.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.0"]
     </script>
 
               </article>
