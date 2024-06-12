@@ -6,11 +6,11 @@
 
 #### Packaging
 
-* Bump `pydantic.v1` to `v1.10.16` reference by @sydney-runkle in []()
+* Bump `pydantic.v1` to `v1.10.16` reference by @sydney-runkle in [#9639](https://github.com/pydantic/pydantic/pull/9639)
 
 #### Fixes
 
-* Specify `recursive_guard` as kwarg in `FutureRef._evaluate` by @vfazio in [#9612](https://github.com/pydantic/pydantic/pull/#9612)
+* Specify `recursive_guard` as kwarg in `FutureRef._evaluate` by @vfazio in [#9612](https://github.com/pydantic/pydantic/pull/9612)
 
 ## v2.7.3 (2024-06-03)
 
