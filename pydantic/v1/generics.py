@@ -22,12 +22,12 @@ from weakref import WeakKeyDictionary, WeakValueDictionary
 
 from typing_extensions import Annotated, Literal as ExtLiteral
 
-from .class_validators import gather_all_validators
-from .fields import DeferredType
-from .main import BaseModel, create_model
-from .types import JsonWrapper
-from .typing import display_as_type, get_all_type_hints, get_args, get_origin, typing_base
-from .utils import all_identical, lenient_issubclass
+from pydantic.v1.class_validators import gather_all_validators
+from pydantic.v1.fields import DeferredType
+from pydantic.v1.main import BaseModel, create_model
+from pydantic.v1.types import JsonWrapper
+from pydantic.v1.typing import display_as_type, get_all_type_hints, get_args, get_origin, typing_base
+from pydantic.v1.utils import all_identical, lenient_issubclass
 
 if sys.version_info >= (3, 10):
     from typing import _UnionGenericAlias

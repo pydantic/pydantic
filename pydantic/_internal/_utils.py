@@ -2,6 +2,7 @@
 
 This should be reduced as much as possible with functions only used in one place, moved to that place.
 """
+
 from __future__ import annotations as _annotations
 
 import dataclasses
@@ -276,8 +277,7 @@ class ValueItems(_repr.Representation):
 
 if typing.TYPE_CHECKING:
 
-    def ClassAttribute(name: str, value: T) -> T:
-        ...
+    def ClassAttribute(name: str, value: T) -> T: ...
 
 else:
 

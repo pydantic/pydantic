@@ -1,4 +1,5 @@
 """Support for alias configurations."""
+
 from __future__ import annotations
 
 import dataclasses
@@ -13,7 +14,7 @@ __all__ = ('AliasGenerator', 'AliasPath', 'AliasChoices')
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
 class AliasPath:
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/alias#aliaspath-and-aliaschoices
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/alias#aliaspath-and-aliaschoices
 
     A data class used by `validation_alias` as a convenience to create aliases.
 
@@ -54,7 +55,7 @@ class AliasPath:
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
 class AliasChoices:
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/alias#aliaspath-and-aliaschoices
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/alias#aliaspath-and-aliaschoices
 
     A data class used by `validation_alias` as a convenience to create aliases.
 
@@ -84,7 +85,7 @@ class AliasChoices:
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
 class AliasGenerator:
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/alias#using-an-aliasgenerator
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/alias#using-an-aliasgenerator
 
     A data class used by `alias_generator` as a convenience to create various aliases.
 

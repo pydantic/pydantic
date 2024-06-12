@@ -1,9 +1,11 @@
 import dataclasses
+import importlib.metadata
 import json
 import math
 import re
 import sys
 import typing
+import warnings
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
@@ -33,8 +35,9 @@ from uuid import UUID
 
 import pytest
 from dirty_equals import HasRepr
+from packaging.version import Version
 from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_json
-from typing_extensions import Annotated, Literal, Self, TypedDict
+from typing_extensions import Annotated, Literal, Self, TypedDict, deprecated
 
 import pydantic
 from pydantic import (
@@ -45,6 +48,7 @@ from pydantic import (
     GetJsonSchemaHandler,
     ImportString,
     InstanceOf,
+    PlainSerializer,
     PydanticDeprecatedSince20,
     PydanticUserError,
     RootModel,
@@ -1380,13 +1384,17 @@ def test_non_serializable_default(type_, default_value, properties):
 )
 def test_callable_fallback_with_non_serializable_default(warning_match):
     class Model(BaseModel):
-        callback: Union[int, Callable[[int], int]] = lambda x: x  # noqa E731
+        callback: Union[int, Callable[[int], int]] = lambda x: x
 
     class MyGenerator(GenerateJsonSchema):
         ignored_warning_kinds = ()
 
-    with pytest.warns(PydanticJsonSchemaWarning, match=warning_match):
-        model_schema = Model.model_json_schema(schema_generator=MyGenerator)
+    with warnings.catch_warnings():
+        # we need to explicitly ignore the other warning in pytest-8
+        # TODO: rewrite it to use two nested pytest.warns() when pytest-7 is no longer supported
+        warnings.simplefilter('ignore')
+        with pytest.warns(PydanticJsonSchemaWarning, match=warning_match):
+            model_schema = Model.model_json_schema(schema_generator=MyGenerator)
     assert model_schema == {
         'properties': {'callback': {'title': 'Callback', 'type': 'integer'}},
         'title': 'Model',
@@ -2262,6 +2270,8 @@ def test_literal_schema():
         b: Literal['a']
         c: Literal['a', 1]
         d: Literal['a', Literal['b'], 1, 2]
+        e: Literal[1.0]
+        f: Literal[['a', 1]]
 
     # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
@@ -2270,8 +2280,10 @@ def test_literal_schema():
             'b': {'const': 'a', 'enum': ['a'], 'title': 'B', 'type': 'string'},
             'c': {'enum': ['a', 1], 'title': 'C'},
             'd': {'enum': ['a', 'b', 1, 2], 'title': 'D'},
+            'e': {'const': 1.0, 'enum': [1.0], 'title': 'E', 'type': 'numeric'},
+            'f': {'const': ['a', 1], 'enum': [['a', 1]], 'title': 'F', 'type': 'array'},
         },
-        'required': ['a', 'b', 'c', 'd'],
+        'required': ['a', 'b', 'c', 'd', 'e', 'f'],
         'title': 'Model',
         'type': 'object',
     }
@@ -3477,8 +3489,7 @@ def test_nested_generic():
     class Ref(BaseModel, Generic[T]):
         uuid: str
 
-        def resolve(self) -> T:
-            ...
+        def resolve(self) -> T: ...
 
     class Model(BaseModel):
         ref: Ref['Model']
@@ -3539,15 +3550,13 @@ def test_complex_nested_generic():
     class Ref(BaseModel, Generic[T]):
         uuid: str
 
-        def resolve(self) -> T:
-            ...
+        def resolve(self) -> T: ...
 
     class Model(BaseModel):
         uuid: str
         model: Union[Ref['Model'], 'Model']
 
-        def resolve(self) -> 'Model':
-            ...
+        def resolve(self) -> 'Model': ...
 
     Model.model_rebuild()
 
@@ -6069,6 +6078,73 @@ def test_default_value_encoding(field_type, default_value, expected_schema):
     assert schema == expected_schema
 
 
+def _generate_deprecated_classes():
+    @deprecated('MyModel is deprecated')
+    class MyModel(BaseModel):
+        pass
+
+    @deprecated('MyPydanticDataclass is deprecated')
+    @pydantic.dataclasses.dataclass
+    class MyPydanticDataclass:
+        pass
+
+    @deprecated('MyBuiltinDataclass is deprecated')
+    @dataclasses.dataclass
+    class MyBuiltinDataclass:
+        pass
+
+    @deprecated('MyTypedDict is deprecated')
+    class MyTypedDict(TypedDict):
+        pass
+
+    return [
+        pytest.param(MyModel, id='BaseModel'),
+        pytest.param(MyPydanticDataclass, id='pydantic-dataclass'),
+        pytest.param(MyBuiltinDataclass, id='builtin-dataclass'),
+        pytest.param(MyTypedDict, id='TypedDict'),
+    ]
+
+
+@pytest.mark.skipif(
+    Version(importlib.metadata.version('typing_extensions')) < Version('4.9'),
+    reason='`deprecated` type annotation requires typing_extensions>=4.9',
+)
+@pytest.mark.parametrize('cls', _generate_deprecated_classes())
+def test_deprecated_classes_json_schema(cls):
+    assert hasattr(cls, '__deprecated__')
+    assert TypeAdapter(cls).json_schema()['deprecated']
+
+
+@pytest.mark.skipif(
+    Version(importlib.metadata.version('typing_extensions')) < Version('4.9'),
+    reason='`deprecated` type annotation requires typing_extensions>=4.9',
+)
+@pytest.mark.parametrize('cls', _generate_deprecated_classes())
+def test_deprecated_subclasses_json_schema(cls):
+    class Model(BaseModel):
+        subclass: cls
+
+    assert Model.model_json_schema() == {
+        '$defs': {cls.__name__: {'deprecated': True, 'properties': {}, 'title': f'{cls.__name__}', 'type': 'object'}},
+        'properties': {'subclass': {'$ref': f'#/$defs/{cls.__name__}'}},
+        'required': ['subclass'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+@pytest.mark.skipif(
+    Version(importlib.metadata.version('typing_extensions')) < Version('4.9'),
+    reason='`deprecated` type annotation requires typing_extensions>=4.9',
+)
+@pytest.mark.parametrize('cls', _generate_deprecated_classes())
+def test_deprecated_class_usage_warns(cls):
+    if issubclass(cls, dict):
+        pytest.skip('TypedDict does not generate a DeprecationWarning on usage')
+    with pytest.warns(DeprecationWarning, match=f'{cls.__name__} is deprecated'):
+        cls()
+
+
 @dataclasses.dataclass
 class BuiltinDataclassParent:
     name: str
@@ -6172,3 +6248,27 @@ def test_pydantic_types_as_default_values(pydantic_type, expected_json_schema):
         parent: pydantic_type = pydantic_type(name='Jon Doe')
 
     assert Child.model_json_schema() == expected_json_schema
+
+
+def test_str_schema_with_pattern() -> None:
+    assert TypeAdapter(Annotated[str, Field(pattern='abc')]).json_schema() == {'type': 'string', 'pattern': 'abc'}
+    assert TypeAdapter(Annotated[str, Field(pattern=re.compile('abc'))]).json_schema() == {
+        'type': 'string',
+        'pattern': 'abc',
+    }
+
+
+def test_plain_serializer_applies_to_default() -> None:
+    class Model(BaseModel):
+        custom_str: Annotated[str, PlainSerializer(lambda x: f'serialized-{x}', return_type=str)] = 'foo'
+
+    assert Model.model_json_schema(mode='validation') == {
+        'properties': {'custom_str': {'default': 'foo', 'title': 'Custom Str', 'type': 'string'}},
+        'title': 'Model',
+        'type': 'object',
+    }
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': {'custom_str': {'default': 'serialized-foo', 'title': 'Custom Str', 'type': 'string'}},
+        'title': 'Model',
+        'type': 'object',
+    }

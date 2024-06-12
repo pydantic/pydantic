@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from copy import copy
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Iterable
 
 from pydantic_core import CoreSchema, PydanticCustomError, to_jsonable_python
 from pydantic_core import core_schema as cs
@@ -102,20 +102,6 @@ for constraint in ENUM_CONSTRAINTS:
     CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('enum',))
 
 
-def _is_sequence_metadata(schema: CoreSchema) -> bool:
-    """Checks if the schema is a sequence schema according to the assigned metadata during schema generation
-
-    Args:
-        schema: The core schema.
-
-    Returns:
-        True if the schema is a sequence schema, False otherwise.
-    """
-    metadata = schema.get('metadata', {})
-    handle_as = metadata.get('known_metadata_as', {})
-    return handle_as == Sequence
-
-
 def add_js_update_schema(s: cs.CoreSchema, f: Callable[[], dict[str, Any]]) -> None:
     def update_js_schema(s: cs.CoreSchema, handler: GetJsonSchemaHandler) -> dict[str, Any]:
         js_schema = handler(s)
@@ -201,9 +187,32 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
 
     from . import _validators
 
+    COMPARISON_VALIDATORS = {
+        'gt': _validators.greater_than_validator,
+        'ge': _validators.greater_than_or_equal_validator,
+        'lt': _validators.less_than_validator,
+        'le': _validators.less_than_or_equal_validator,
+        'multiple_of': _validators.multiple_of_validator,
+        'min_length': _validators.min_length_validator,
+        'max_length': _validators.max_length_validator,
+    }
+
+    CONSTRAINT_STR_FROM_ANNOTATED_TYPE = {
+        at.Gt: 'gt',
+        at.Ge: 'ge',
+        at.Lt: 'lt',
+        at.Le: 'le',
+        at.MultipleOf: 'multiple_of',
+        at.MinLen: 'min_length',
+        at.MaxLen: 'max_length',
+    }
+
     schema = schema.copy()
     schema_update, other_metadata = collect_known_metadata([annotation])
     schema_type = schema['type']
+
+    chain_schema_steps: list[CoreSchema] = []
+
     for constraint, value in schema_update.items():
         if constraint not in CONSTRAINTS_TO_ALLOWED_SCHEMAS:
             raise ValueError(f'Unknown constraint {constraint}')
@@ -222,142 +231,39 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                 schema[constraint] = value
             continue
 
-        if constraint == 'allow_inf_nan' and value is False:
-            return cs.no_info_after_validator_function(
+        if constraint in {'pattern', 'strip_whitespace', 'to_lower', 'to_upper', 'coerce_numbers_to_str'}:
+            chain_schema_steps.append(cs.str_schema(**{constraint: value}))
+        elif constraint in {'gt', 'ge', 'lt', 'le', 'multiple_of', 'min_length', 'max_length'}:
+            if constraint == 'multiple_of':
+                json_schema_constraint = 'multiple_of'
+            elif constraint in {'min_length', 'max_length'}:
+                if schema['type'] == 'list' or (
+                    schema['type'] == 'json-or-python' and schema['json_schema']['type'] == 'list'
+                ):
+                    json_schema_constraint = 'minItems' if constraint == 'min_length' else 'maxItems'
+                else:
+                    json_schema_constraint = 'minLength' if constraint == 'min_length' else 'maxLength'
+            else:
+                json_schema_constraint = constraint
+
+            schema = cs.no_info_after_validator_function(
+                partial(COMPARISON_VALIDATORS[constraint], **{constraint: value}), schema
+            )
+
+            add_js_update_schema(schema, lambda: {json_schema_constraint: as_jsonable_value(value)})
+        elif constraint == 'allow_inf_nan' and value is False:
+            schema = cs.no_info_after_validator_function(
                 _validators.forbid_inf_nan_check,
                 schema,
-            )
-        elif constraint == 'pattern':
-            # insert a str schema to make sure the regex engine matches
-            return cs.chain_schema(
-                [
-                    schema,
-                    cs.str_schema(pattern=value),
-                ]
-            )
-        elif constraint == 'gt':
-            s = cs.no_info_after_validator_function(
-                partial(_validators.greater_than_validator, gt=value),
-                schema,
-            )
-            add_js_update_schema(s, lambda: {'gt': as_jsonable_value(value)})
-            return s
-        elif constraint == 'ge':
-            return cs.no_info_after_validator_function(
-                partial(_validators.greater_than_or_equal_validator, ge=value),
-                schema,
-            )
-        elif constraint == 'lt':
-            return cs.no_info_after_validator_function(
-                partial(_validators.less_than_validator, lt=value),
-                schema,
-            )
-        elif constraint == 'le':
-            return cs.no_info_after_validator_function(
-                partial(_validators.less_than_or_equal_validator, le=value),
-                schema,
-            )
-        elif constraint == 'multiple_of':
-            return cs.no_info_after_validator_function(
-                partial(_validators.multiple_of_validator, multiple_of=value),
-                schema,
-            )
-        elif constraint == 'min_length':
-            s = cs.no_info_after_validator_function(
-                partial(_validators.min_length_validator, min_length=value),
-                schema,
-            )
-            if _is_sequence_metadata(schema):
-                add_js_update_schema(s, lambda: {'minItems': (as_jsonable_value(value))})
-                return s
-            add_js_update_schema(s, lambda: {'minLength': (as_jsonable_value(value))})
-            return s
-        elif constraint == 'max_length':
-            s = cs.no_info_after_validator_function(
-                partial(_validators.max_length_validator, max_length=value),
-                schema,
-            )
-            if _is_sequence_metadata(schema):
-                add_js_update_schema(s, lambda: {'maxItems': (as_jsonable_value(value))})
-                return s
-            add_js_update_schema(s, lambda: {'maxLength': (as_jsonable_value(value))})
-            return s
-        elif constraint == 'strip_whitespace':
-            return cs.chain_schema(
-                [
-                    schema,
-                    cs.str_schema(strip_whitespace=True),
-                ]
-            )
-        elif constraint == 'to_lower':
-            return cs.chain_schema(
-                [
-                    schema,
-                    cs.str_schema(to_lower=True),
-                ]
-            )
-        elif constraint == 'to_upper':
-            return cs.chain_schema(
-                [
-                    schema,
-                    cs.str_schema(to_upper=True),
-                ]
-            )
-        elif constraint == 'min_length':
-            return cs.no_info_after_validator_function(
-                partial(_validators.min_length_validator, min_length=annotation.min_length),
-                schema,
-            )
-        elif constraint == 'max_length':
-            return cs.no_info_after_validator_function(
-                partial(_validators.max_length_validator, max_length=annotation.max_length),
-                schema,
-            )
-        elif constraint == 'coerce_numbers_to_str':
-            return cs.chain_schema(
-                [
-                    schema,
-                    cs.str_schema(coerce_numbers_to_str=True),  # type: ignore
-                ]
             )
         else:
             raise RuntimeError(f'Unable to apply constraint {constraint} to schema {schema_type}')
 
     for annotation in other_metadata:
-        if isinstance(annotation, at.Gt):
-            return cs.no_info_after_validator_function(
-                partial(_validators.greater_than_validator, gt=annotation.gt),
-                schema,
-            )
-        elif isinstance(annotation, at.Ge):
-            return cs.no_info_after_validator_function(
-                partial(_validators.greater_than_or_equal_validator, ge=annotation.ge),
-                schema,
-            )
-        elif isinstance(annotation, at.Lt):
-            return cs.no_info_after_validator_function(
-                partial(_validators.less_than_validator, lt=annotation.lt),
-                schema,
-            )
-        elif isinstance(annotation, at.Le):
-            return cs.no_info_after_validator_function(
-                partial(_validators.less_than_or_equal_validator, le=annotation.le),
-                schema,
-            )
-        elif isinstance(annotation, at.MultipleOf):
-            return cs.no_info_after_validator_function(
-                partial(_validators.multiple_of_validator, multiple_of=annotation.multiple_of),
-                schema,
-            )
-        elif isinstance(annotation, at.MinLen):
-            return cs.no_info_after_validator_function(
-                partial(_validators.min_length_validator, min_length=annotation.min_length),
-                schema,
-            )
-        elif isinstance(annotation, at.MaxLen):
-            return cs.no_info_after_validator_function(
-                partial(_validators.max_length_validator, max_length=annotation.max_length),
-                schema,
+        if isinstance(annotation, (at.Gt, at.Ge, at.Lt, at.Le, at.MultipleOf, at.MinLen, at.MaxLen)):
+            constraint = CONSTRAINT_STR_FROM_ANNOTATED_TYPE[type(annotation)]
+            schema = cs.no_info_after_validator_function(
+                partial(COMPARISON_VALIDATORS[constraint], {constraint: getattr(annotation, constraint)}), schema
             )
         elif isinstance(annotation, at.Predicate):
             predicate_name = f'{annotation.func.__qualname__} ' if hasattr(annotation.func, '__qualname__') else ''
@@ -374,6 +280,10 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             return cs.no_info_after_validator_function(val_func, schema)
         # ignore any other unknown metadata
         return None
+
+    if chain_schema_steps:
+        chain_schema_steps = [schema] + chain_schema_steps
+        return cs.chain_schema(chain_schema_steps)
 
     return schema
 

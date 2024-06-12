@@ -1,4 +1,5 @@
 """Defining fields on models."""
+
 from __future__ import annotations as _annotations
 
 import dataclasses
@@ -58,10 +59,10 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     description: str | None
     examples: list[Any] | None
     exclude: bool | None
-    gt: float | None
-    ge: float | None
-    lt: float | None
-    le: float | None
+    gt: annotated_types.SupportsGt | None
+    ge: annotated_types.SupportsGe | None
+    lt: annotated_types.SupportsLt | None
+    le: annotated_types.SupportsLe | None
     multiple_of: float | None
     strict: bool | None
     min_length: int | None
@@ -699,10 +700,10 @@ def Field(  # noqa: C901
     pattern: str | typing.Pattern[str] | None = _Unset,
     strict: bool | None = _Unset,
     coerce_numbers_to_str: bool | None = _Unset,
-    gt: float | None = _Unset,
-    ge: float | None = _Unset,
-    lt: float | None = _Unset,
-    le: float | None = _Unset,
+    gt: annotated_types.SupportsGt | None = _Unset,
+    ge: annotated_types.SupportsGe | None = _Unset,
+    lt: annotated_types.SupportsLt | None = _Unset,
+    le: annotated_types.SupportsLe | None = _Unset,
     multiple_of: float | None = _Unset,
     allow_inf_nan: bool | None = _Unset,
     max_digits: int | None = _Unset,
@@ -712,7 +713,7 @@ def Field(  # noqa: C901
     union_mode: Literal['smart', 'left_to_right'] = _Unset,
     **extra: Unpack[_EmptyKwargs],
 ) -> Any:
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/fields
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/fields
 
     Create a field for objects that can be configured.
 
@@ -765,7 +766,7 @@ def Field(  # noqa: C901
         max_digits: Maximum number of allow digits for strings.
         decimal_places: Maximum number of decimal places allowed for numbers.
         union_mode: The strategy to apply when validating a union. Can be `smart` (the default), or `left_to_right`.
-            See [Union Mode](standard_library_types.md#union-mode) for details.
+            See [Union Mode](../concepts/unions.md#union-modes) for details.
         extra: (Deprecated) Extra fields that will be included in the JSON schema.
 
             !!! warning Deprecated
@@ -811,9 +812,6 @@ def Field(  # noqa: C901
     regex = extra.pop('regex', None)  # type: ignore
     if regex is not None:
         raise PydanticUserError('`regex` is removed. use `pattern` instead', code='removed-kwargs')
-
-    if isinstance(pattern, typing.Pattern):
-        pattern = pattern.pattern
 
     if extra:
         warn(
@@ -953,7 +951,7 @@ def PrivateAttr(
     default_factory: typing.Callable[[], Any] | None = None,
     init: Literal[False] = False,
 ) -> Any:
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/models/#private-model-attributes
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/models/#private-model-attributes
 
     Indicates that an attribute is intended for private use and not handled during normal validation/serialization.
 
@@ -1059,13 +1057,11 @@ def computed_field(
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None = None,
     repr: bool = True,
     return_type: Any = PydanticUndefined,
-) -> typing.Callable[[PropertyT], PropertyT]:
-    ...
+) -> typing.Callable[[PropertyT], PropertyT]: ...
 
 
 @typing.overload
-def computed_field(__func: PropertyT) -> PropertyT:
-    ...
+def computed_field(__func: PropertyT) -> PropertyT: ...
 
 
 def computed_field(
@@ -1084,7 +1080,7 @@ def computed_field(
     repr: bool | None = None,
     return_type: Any = PydanticUndefined,
 ) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/fields#the-computed_field-decorator
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/fields#the-computed_field-decorator
 
     Decorator to include `property` and `cached_property` when serializing models or dataclasses.
 

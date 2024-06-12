@@ -1,4 +1,5 @@
 """Private logic related to fields (the `Field()` function and `FieldInfo` class), and arguments to `Annotated`."""
+
 from __future__ import annotations as _annotations
 
 import dataclasses
@@ -226,6 +227,7 @@ def collect_model_fields(  # noqa: C901
                     # Nothing stops us from just creating a new FieldInfo for this type hint, so we do this.
                     field_info = FieldInfo.from_annotation(ann_type)
         else:
+            _warn_on_nested_alias_in_annotation(ann_type, ann_name)
             field_info = FieldInfo.from_annotated_attribute(ann_type, default)
             # attributes which are fields are removed from the class namespace:
             # 1. To match the behaviour of annotation-only fields
@@ -249,6 +251,21 @@ def collect_model_fields(  # noqa: C901
     _update_fields_from_docstrings(cls, fields, config_wrapper)
 
     return fields, class_vars
+
+
+def _warn_on_nested_alias_in_annotation(ann_type: type[Any], ann_name: str):
+    from ..fields import FieldInfo
+
+    if hasattr(ann_type, '__args__'):
+        for anno_arg in ann_type.__args__:
+            if _typing_extra.is_annotated(anno_arg):
+                for anno_type_arg in _typing_extra.get_args(anno_arg):
+                    if isinstance(anno_type_arg, FieldInfo) and anno_type_arg.alias is not None:
+                        warnings.warn(
+                            f'`alias` specification on field "{ann_name}" must be set on outermost annotation to take effect.',
+                            UserWarning,
+                        )
+                        break
 
 
 def _is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:

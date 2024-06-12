@@ -1,4 +1,5 @@
 """The types module contains custom types used by pydantic."""
+
 from __future__ import annotations as _annotations
 
 import base64
@@ -117,7 +118,7 @@ T = TypeVar('T')
 
 @_dataclasses.dataclass
 class Strict(_fields.PydanticMetadata, BaseMetadata):
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/strict_mode/#strict-mode-with-annotated-strict
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/strict_mode/#strict-mode-with-annotated-strict
 
     A field metadata class to indicate that a field should be validated in strict mode.
 
@@ -677,12 +678,12 @@ StrictBytes = Annotated[bytes, Strict()]
 
 @_dataclasses.dataclass(frozen=True)
 class StringConstraints(annotated_types.GroupedMetadata):
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/fields/#string-constraints
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/fields/#string-constraints
 
     Apply constraints to `str` types.
 
     Attributes:
-        strip_whitespace: Whether to strip whitespace from the string.
+        strip_whitespace: Whether to remove leading and trailing whitespace.
         to_upper: Whether to convert the string to uppercase.
         to_lower: Whether to convert the string to lowercase.
         strict: Whether to validate the string in strict mode.
@@ -705,7 +706,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
         if self.max_length is not None:
             yield MaxLen(self.max_length)
         if self.strict is not None:
-            yield Strict()
+            yield Strict(self.strict)
         if (
             self.strip_whitespace is not None
             or self.pattern is not None
@@ -716,7 +717,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
                 strip_whitespace=self.strip_whitespace,
                 to_upper=self.to_upper,
                 to_lower=self.to_lower,
-                pattern=self.pattern.pattern if isinstance(self.pattern, Pattern) else self.pattern,
+                pattern=self.pattern,
             )
 
 
@@ -1334,7 +1335,7 @@ except ValidationError as e:
 ```
 """
 NewPath = Annotated[Path, PathType('new')]
-"""A path for a new file or directory that must not already exist."""
+"""A path for a new file or directory that must not already exist. The parent directory must already exist."""
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ JSON TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2594,7 +2595,7 @@ __getattr__ = getattr_migration(__name__)
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class GetPydanticSchema:
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/types/#using-getpydanticschema-to-reduce-boilerplate
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/types/#using-getpydanticschema-to-reduce-boilerplate
 
     A convenience class for creating an annotation that provides pydantic custom type hooks.
 
@@ -2730,7 +2731,7 @@ class Tag:
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
 class Discriminator:
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/unions/#discriminated-unions-with-callable-discriminator
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/unions/#discriminated-unions-with-callable-discriminator
 
     Provides a way to use a custom callable as the way to extract the value of a union discriminator.
 

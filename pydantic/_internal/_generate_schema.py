@@ -1,4 +1,5 @@
 """Convert python types to pydantic-core schema."""
+
 from __future__ import annotations as _annotations
 
 import collections.abc
@@ -734,12 +735,10 @@ class GenerateSchema:
         return obj
 
     @overload
-    def _get_args_resolving_forward_refs(self, obj: Any, required: Literal[True]) -> tuple[Any, ...]:
-        ...
+    def _get_args_resolving_forward_refs(self, obj: Any, required: Literal[True]) -> tuple[Any, ...]: ...
 
     @overload
-    def _get_args_resolving_forward_refs(self, obj: Any) -> tuple[Any, ...] | None:
-        ...
+    def _get_args_resolving_forward_refs(self, obj: Any) -> tuple[Any, ...] | None: ...
 
     def _get_args_resolving_forward_refs(self, obj: Any, required: bool = False) -> tuple[Any, ...] | None:
         args = get_args(obj)
@@ -1499,7 +1498,6 @@ class GenerateSchema:
         item_type = self._get_first_arg_or_any(sequence_type)
         item_type_schema = self.generate_schema(item_type)
         list_schema = core_schema.list_schema(item_type_schema)
-        metadata = build_metadata_dict(initial_metadata={'known_metadata_as': typing.Sequence})
 
         python_schema = core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence')
         if item_type != Any:
@@ -1513,7 +1511,7 @@ class GenerateSchema:
             serialize_sequence_via_list, schema=item_type_schema, info_arg=True
         )
         return core_schema.json_or_python_schema(
-            json_schema=list_schema, python_schema=python_schema, serialization=serialization, metadata=metadata
+            json_schema=list_schema, python_schema=python_schema, serialization=serialization
         )
 
     def _iterable_schema(self, type_: Any) -> core_schema.GeneratorSchema:
@@ -1721,15 +1719,20 @@ class GenerateSchema:
 
         bound = typevar.__bound__
         constraints = typevar.__constraints__
-        default = getattr(typevar, '__default__', None)
 
-        if (bound is not None) + (len(constraints) != 0) + (default is not None) > 1:
+        try:
+            typevar_has_default = typevar.has_default()  # type: ignore
+        except AttributeError:
+            # could still have a default if it's an old version of typing_extensions.TypeVar
+            typevar_has_default = getattr(typevar, '__default__', None) is not None
+
+        if (bound is not None) + (len(constraints) != 0) + typevar_has_default > 1:
             raise NotImplementedError(
                 'Pydantic does not support mixing more than one of TypeVar bounds, constraints and defaults'
             )
 
-        if default is not None:
-            return self.generate_schema(default)
+        if typevar_has_default:
+            return self.generate_schema(typevar.__default__)  # type: ignore
         elif constraints:
             return self._union_schema(typing.Union[constraints])  # type: ignore
         elif bound:
@@ -1862,7 +1865,7 @@ class GenerateSchema:
         pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
 
         def inner_handler(obj: Any) -> CoreSchema:
-            from_property = self._generate_schema_from_property(obj, obj)
+            from_property = self._generate_schema_from_property(obj, source_type)
             if from_property is None:
                 schema = self._generate_schema_inner(obj)
             else:

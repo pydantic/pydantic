@@ -1,4 +1,5 @@
 """Provide an enhanced dataclass that performs validation."""
+
 from __future__ import annotations as _annotations
 
 import dataclasses
@@ -12,6 +13,7 @@ from ._internal import _config, _decorators, _typing_extra
 from ._internal import _dataclasses as _pydantic_dataclasses
 from ._migration import getattr_migration
 from .config import ConfigDict
+from .errors import PydanticUserError
 from .fields import Field, FieldInfo, PrivateAttr
 
 if TYPE_CHECKING:
@@ -55,8 +57,7 @@ if sys.version_info >= (3, 10):
         validate_on_init: bool | None = None,
         kw_only: bool = ...,
         slots: bool = ...,
-    ) -> type[PydanticDataclass]:
-        ...
+    ) -> type[PydanticDataclass]: ...
 
 else:
 
@@ -88,8 +89,7 @@ else:
         frozen: bool = False,
         config: ConfigDict | type[object] | None = None,
         validate_on_init: bool | None = None,
-    ) -> type[PydanticDataclass]:
-        ...
+    ) -> type[PydanticDataclass]: ...
 
 
 @dataclass_transform(field_specifiers=(dataclasses.field, Field, PrivateAttr))
@@ -107,7 +107,7 @@ def dataclass(  # noqa: C901
     kw_only: bool = False,
     slots: bool = False,
 ) -> Callable[[type[_T]], type[PydanticDataclass]] | type[PydanticDataclass]:
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/dataclasses/
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/dataclasses/
 
     A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclass`,
     but with added validation.
@@ -190,6 +190,14 @@ def dataclass(  # noqa: C901
         Returns:
             A Pydantic dataclass.
         """
+        from ._internal._utils import is_model_class
+
+        if is_model_class(cls):
+            raise PydanticUserError(
+                f'Cannot create a Pydantic dataclass from {cls.__name__} as it is already a Pydantic model',
+                code='dataclass-on-model',
+            )
+
         original_cls = cls
 
         config_dict = config
@@ -315,13 +323,13 @@ def rebuild_dataclass(
         )
 
 
-def is_pydantic_dataclass(__cls: type[Any]) -> TypeGuard[type[PydanticDataclass]]:
+def is_pydantic_dataclass(class_: type[Any], /) -> TypeGuard[type[PydanticDataclass]]:
     """Whether a class is a pydantic dataclass.
 
     Args:
-        __cls: The class.
+        class_: The class.
 
     Returns:
         `True` if the class is a pydantic dataclass, `False` otherwise.
     """
-    return dataclasses.is_dataclass(__cls) and '__pydantic_validator__' in __cls.__dict__
+    return dataclasses.is_dataclass(class_) and '__pydantic_validator__' in class_.__dict__

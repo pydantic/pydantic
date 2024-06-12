@@ -23,4 +23,4 @@ To create a new release:
    - the body should contain:
      - a copy-paste of the `HISTORY.md` section you prepared previously, plus
      - a full changelog link in the form `Full Changelog: https://github.com/pydantic/pydantic/compare/v{PREV_VERSION}...v{VERSION}/`
-7. Ask someone to approve the release once CI has run.
+7. Ask @samuelcolvin or @dmontagu to approve the release once CI has run.

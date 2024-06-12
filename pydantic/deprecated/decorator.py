@@ -26,13 +26,13 @@ if TYPE_CHECKING:
 
 
 @overload
-def validate_arguments(func: None = None, *, config: 'ConfigType' = None) -> Callable[['AnyCallableT'], 'AnyCallableT']:
-    ...
+def validate_arguments(
+    func: None = None, *, config: 'ConfigType' = None
+) -> Callable[['AnyCallableT'], 'AnyCallableT']: ...
 
 
 @overload
-def validate_arguments(func: 'AnyCallableT') -> 'AnyCallableT':
-    ...
+def validate_arguments(func: 'AnyCallableT') -> 'AnyCallableT': ...
 
 
 @deprecated(

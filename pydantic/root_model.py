@@ -14,7 +14,7 @@ from .main import BaseModel, _object_setattr
 if typing.TYPE_CHECKING:
     from typing import Any
 
-    from typing_extensions import Literal, dataclass_transform
+    from typing_extensions import Literal, Self, dataclass_transform
 
     from .fields import Field as PydanticModelField
     from .fields import PrivateAttr as PydanticModelPrivateAttr
@@ -23,19 +23,17 @@ if typing.TYPE_CHECKING:
     # takes priority (at least with pyright). We trick type checkers into thinking we apply dataclass_transform
     # on a new metaclass.
     @dataclass_transform(kw_only_default=False, field_specifiers=(PydanticModelField, PydanticModelPrivateAttr))
-    class _RootModelMetaclass(_model_construction.ModelMetaclass):
-        ...
+    class _RootModelMetaclass(_model_construction.ModelMetaclass): ...
 else:
     _RootModelMetaclass = _model_construction.ModelMetaclass
 
 __all__ = ('RootModel',)
 
-Model = typing.TypeVar('Model', bound='BaseModel')
 RootModelRootType = typing.TypeVar('RootModelRootType')
 
 
 class RootModel(BaseModel, typing.Generic[RootModelRootType], metaclass=_RootModelMetaclass):
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/models/#rootmodel-and-custom-root-types
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/models/#rootmodel-and-custom-root-types
 
     A Pydantic `BaseModel` for the root object of the model.
 
@@ -74,7 +72,7 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType], metaclass=_RootMod
     __init__.__pydantic_base_init__ = True  # pyright: ignore[reportFunctionMemberAccess]
 
     @classmethod
-    def model_construct(cls: type[Model], root: RootModelRootType, _fields_set: set[str] | None = None) -> Model:  # type: ignore
+    def model_construct(cls, root: RootModelRootType, _fields_set: set[str] | None = None) -> Self:  # type: ignore
         """Create a new model using the provided root object and update fields set.
 
         Args:
@@ -99,7 +97,7 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType], metaclass=_RootMod
         _object_setattr(self, '__pydantic_fields_set__', state['__pydantic_fields_set__'])
         _object_setattr(self, '__dict__', state['__dict__'])
 
-    def __copy__(self: Model) -> Model:
+    def __copy__(self) -> Self:
         """Returns a shallow copy of the model."""
         cls = type(self)
         m = cls.__new__(cls)
@@ -107,7 +105,7 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType], metaclass=_RootMod
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
         return m
 
-    def __deepcopy__(self: Model, memo: dict[int, Any] | None = None) -> Model:
+    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> Self:
         """Returns a deep copy of the model."""
         cls = type(self)
         m = cls.__new__(cls)

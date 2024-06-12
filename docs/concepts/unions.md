@@ -411,6 +411,21 @@ except ValidationError as e:
     """
 ```
 
+!!! tip
+    If you want to validate data against a union, and solely a union, you can use pydantic's [`TypeAdapter`](../concepts/type_adapter.md#required-fields) construct instead of inheriting from the standard `BaseModel`.
+
+    In the context of the previous example, we have the following:
+
+    ```python lint="skip" test="skip"
+    type_adapter = TypeAdapter(Pet)
+
+    pet = type_adapter.validate_python(
+        {'pet_type': 'cat', 'color': 'black', 'black_name': 'felix'}
+    )
+    print(repr(pet))
+    #> BlackCat(pet_type='cat', color='black', black_name='felix')
+    ```
+
 ## Union Validation Errors
 
 When `Union` validation fails, error messages can be quite verbose, as they will produce validation errors for

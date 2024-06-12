@@ -1,6 +1,5 @@
 import contextlib
 import re
-import sys
 from collections import deque
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -64,7 +63,6 @@ def test_annotated_validator_before() -> None:
     assert Model(x='1.0').x == 1.0
 
 
-@pytest.mark.xfail(sys.version_info >= (3, 9) and sys.implementation.name == 'pypy', reason='PyPy 3.9+ bug')
 def test_annotated_validator_builtin() -> None:
     """https://github.com/pydantic/pydantic/issues/6752"""
     TruncatedFloat = Annotated[float, BeforeValidator(int)]
@@ -1093,8 +1091,7 @@ def test_validation_each_item_invalid_type():
 
                 @validator('foobar', each_item=True)
                 @classmethod
-                def check_foobar(cls, v: Any):
-                    ...
+                def check_foobar(cls, v: Any): ...
 
 
 def test_validation_each_item_nullable():
@@ -1786,6 +1783,7 @@ def test_overridden_root_validators():
         x: str
 
         @model_validator(mode='before')
+        @classmethod
         def pre_root(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             validate_stub('A', 'pre')
             return values
@@ -1797,6 +1795,7 @@ def test_overridden_root_validators():
 
     class B(A):
         @model_validator(mode='before')
+        @classmethod
         def pre_root(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             validate_stub('B', 'pre')
             return values
@@ -1851,6 +1850,7 @@ def test_validating_assignment_model_validator_before_fail():
         model_config = ConfigDict(validate_assignment=True)
 
         @model_validator(mode='before')
+        @classmethod
         def values_are_not_string(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             assert isinstance(values, dict)
             if any(isinstance(x, str) for x in values.values()):
@@ -2059,8 +2059,7 @@ def test_v1_validator_signature_kwargs_not_allowed() -> None:
                 a: int
 
                 @validator('a')
-                def check_a(cls, value: Any, foo: Any) -> Any:
-                    ...
+                def check_a(cls, value: Any, foo: Any) -> Any: ...
 
 
 def test_v1_validator_signature_kwargs1() -> None:
@@ -2137,8 +2136,7 @@ def test_v1_validator_signature_with_field() -> None:
                 b: int
 
                 @validator('b')
-                def check_b(cls, value: Any, field: Any) -> Any:
-                    ...
+                def check_b(cls, value: Any, field: Any) -> Any: ...
 
 
 def test_v1_validator_signature_with_config() -> None:
@@ -2150,8 +2148,7 @@ def test_v1_validator_signature_with_config() -> None:
                 b: int
 
                 @validator('b')
-                def check_b(cls, value: Any, config: Any) -> Any:
-                    ...
+                def check_b(cls, value: Any, config: Any) -> Any: ...
 
 
 def test_model_config_validate_default():
@@ -2551,6 +2548,9 @@ def test_validator_allow_reuse_different_field_4():
     assert Model(x=1, y=2).model_dump() == {'x': 2, 'y': 3}
 
 
+@pytest.mark.filterwarnings(
+    'ignore:Pydantic V1 style `@root_validator` validators are deprecated.*:pydantic.warnings.PydanticDeprecatedSince20'
+)
 def test_root_validator_allow_reuse_same_field():
     with pytest.warns(UserWarning, match='`root_val` overrides an existing Pydantic `@root_validator` decorator'):
 
@@ -2883,3 +2883,17 @@ def test_plain_validator_with_unsupported_type() -> None:
     model = type_adapter.validate_python('abcdefg')
     assert isinstance(model, UnsupportedClass)
     assert isinstance(type_adapter.dump_python(model), UnsupportedClass)
+
+
+def test_validator_with_default_values() -> None:
+    def validate_x(v: int, unrelated_arg: int = 1, other_unrelated_arg: int = 2) -> int:
+        assert v != -1
+        return v
+
+    class Model(BaseModel):
+        x: int
+
+        val_x = field_validator('x')(validate_x)
+
+    with pytest.raises(ValidationError):
+        Model(x=-1)

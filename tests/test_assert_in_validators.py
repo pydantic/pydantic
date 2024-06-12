@@ -1,6 +1,7 @@
 """
 PYTEST_DONT_REWRITE
 """
+
 import difflib
 import pprint
 

@@ -1,4 +1,5 @@
 """Pydantic-specific errors."""
+
 from __future__ import annotations as _annotations
 
 import re
@@ -62,6 +63,8 @@ PydanticErrorCodes = Literal[
     'dataclass-init-false-extra-allow',
     'clashing-init-and-init-var',
     'model-config-invalid-field-name',
+    'with-config-on-model',
+    'dataclass-on-model',
 ]
 
 

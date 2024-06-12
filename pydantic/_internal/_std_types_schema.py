@@ -2,6 +2,7 @@
 
 Import of this module is deferred since it contains imports of many standard library modules.
 """
+
 from __future__ import annotations as _annotations
 
 import collections

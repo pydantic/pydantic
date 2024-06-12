@@ -8,6 +8,7 @@ In general you shouldn't need to use this module directly; instead, you can use
 [`BaseModel.model_json_schema`][pydantic.BaseModel.model_json_schema] and
 [`TypeAdapter.json_schema`][pydantic.TypeAdapter.json_schema].
 """
+
 from __future__ import annotations as _annotations
 
 import dataclasses
@@ -28,6 +29,7 @@ from typing import (
     Hashable,
     Iterable,
     NewType,
+    Pattern,
     Sequence,
     Tuple,
     TypeVar,
@@ -228,7 +230,7 @@ class _DefinitionsRemapping:
 
 
 class GenerateJsonSchema:
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/json_schema/#customizing-the-json-schema-generation-process
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/json_schema/#customizing-the-json-schema-generation-process
 
     A class for generating JSON schemas.
 
@@ -660,6 +662,9 @@ class GenerateJsonSchema:
         """
         json_schema = {'type': 'string'}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.string)
+        if isinstance(json_schema.get('pattern'), Pattern):
+            # TODO: should we add regex flags to the pattern?
+            json_schema['pattern'] = json_schema.get('pattern').pattern  # type: ignore
         return json_schema
 
     def bytes_schema(self, schema: core_schema.BytesSchema) -> JsonSchemaValue:
@@ -1051,6 +1056,19 @@ class GenerateJsonSchema:
         #     default = schema['default_factory']()
         # else:
         #     return json_schema
+
+        # we reflect the application of custom plain, no-info serializers to defaults for
+        # json schemas viewed in serialization mode
+        # TODO: improvements along with https://github.com/pydantic/pydantic/issues/8208
+        # TODO: improve type safety here
+        if self.mode == 'serialization':
+            if (
+                (ser_schema := schema['schema'].get('serialization', {}))
+                and (ser_func := ser_schema.get('function'))
+                and ser_schema.get('type') == 'function-plain'  # type: ignore
+                and ser_schema.get('info_arg') is False  # type: ignore
+            ):
+                default = ser_func(default)  # type: ignore
 
         try:
             encoded_default = self.encode_default(default)
@@ -1444,6 +1462,9 @@ class GenerateJsonSchema:
             raise ValueError(
                 f"model_config['json_schema_extra']={json_schema_extra} should be a dict, callable, or None"
             )
+
+        if hasattr(cls, '__deprecated__'):
+            json_schema['deprecated'] = True
 
         return json_schema
 
@@ -2330,7 +2351,7 @@ def _sort_json_schema(value: JsonSchemaValue, parent_key: str | None = None) -> 
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
 class WithJsonSchema:
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/json_schema/#withjsonschema-annotation
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/json_schema/#withjsonschema-annotation
 
     Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
     This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
@@ -2419,7 +2440,7 @@ else:
 
     @dataclasses.dataclass(**_internal_dataclass.slots_true)
     class SkipJsonSchema:
-        """Usage docs: https://docs.pydantic.dev/2.7/concepts/json_schema/#skipjsonschema-annotation
+        """Usage docs: https://docs.pydantic.dev/2.8/concepts/json_schema/#skipjsonschema-annotation
 
         Add this as an annotation on a field to skip generating a JSON schema for that field.
 

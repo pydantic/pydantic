@@ -687,7 +687,7 @@ may need to explicitly specify the generic parameter:
 ```python test="skip"
 from pydantic import TypeAdapter
 
-adapter: TypeAdapter[str | int] = TypeAdapter(str | int)
+adapter = TypeAdapter[str | int](str | int)
 ...
 ```
 
