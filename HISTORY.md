@@ -1,3 +1,17 @@
+## v2.7.4 (2024-06-12)
+
+[Github release](https://github.com/pydantic/pydantic/releases/tag/v2.7.4)
+
+### What's Changed
+
+#### Packaging
+
+* Bump `pydantic.v1` to `v1.10.16` reference by @sydney-runkle in [#9639](https://github.com/pydantic/pydantic/pull/9639)
+
+#### Fixes
+
+* Specify `recursive_guard` as kwarg in `FutureRef._evaluate` by @vfazio in [#9612](https://github.com/pydantic/pydantic/pull/9612)
+
 ## v2.7.3 (2024-06-03)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.7.3)
@@ -994,7 +1008,7 @@ See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more deta
 
 ## v1.10.16 (2024-06-11)
 
-* Specify recursive_guard as kwarg in FutureRef._evaluate by @vfazio in https://github.com/pydantic/pydantic/pull/#961
+* Specify recursive_guard as kwarg in FutureRef._evaluate by @vfazio in https://github.com/pydantic/pydantic/pull/9612
 * Fix mypy v1 plugin for upcoming mypy release by @ cdce8p in https://github.com/pydantic/pydantic/pull/9586
 * Import modules/objects directly from v1 namespace by @exs-dwoodward in https://github.com/pydantic/pydantic/pull/9162
 
