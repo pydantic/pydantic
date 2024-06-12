@@ -22,6 +22,9 @@ cp -r pydantic ../pydantic/v1
 # Update imports in pydantic/v1 to use pydantic.v1
 find "../pydantic/v1" -name "*.py" -exec sed -i '' -E 's/from pydantic(\.[a-zA-Z0-9_]*)? import/from pydantic.v1\1 import/g' {} \;
 
+# Remove the v1 file from v1, it's not needed in the v2 codebase
+rm ../pydantic/v1/v1.py
+
 popd
 
 # Remove V1 clone
