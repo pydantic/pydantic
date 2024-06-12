@@ -6706,23 +6706,23 @@ def test_complex_field():
     m = Model(number={'real': 1.0})
     assert repr(m) == 'Model(number=(1+0j))'
     assert m.model_dump() == {'number': complex(1, 0)}
-    assert m.model_dump_json() == '{"number":{"real":1.0}}'
+    assert m.model_dump_json() == '{"number":{"real":1.0,"imag":0.0}}'
 
     m = Model(number={'imag': 0.0})
     assert repr(m) == 'Model(number=(0+1j))'
     assert m.model_dump() == {'number': complex(0, 1)}
-    assert m.model_dump_json() == '{"number":{"imag":1.0}}'
+    assert m.model_dump_json() == '{"number":{"real":0.0,"imag":1.0}}'
 
     m = Model(number={})
     assert repr(m) == 'Model(number=(0+0j))'
     assert m.model_dump() == {'number': complex(0, 0)}
-    assert m.model_dump_json() == '{"number":{}}'
+    assert m.model_dump_json() == '{"number":{"real":0.0,"imag":0.0}}'
 
     # int and float are also accepted (with imaginary part == 0)
     m = Model(number=2)
     assert repr(m) == 'Model(number=(2+0j))'
     assert m.model_dump() == {'number': complex(2, 0)}
-    assert m.model_dump_json() == '{"number":{"real":2.0}}'
+    assert m.model_dump_json() == '{"number":{"real":2.0,"imag":0.0}}'
 
     with pytest.raises(ValidationError):
         Model(number='foo')
