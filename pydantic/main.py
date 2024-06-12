@@ -603,10 +603,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         strict: bool | None = None,
         context: Any | None = None,
     ) -> Self:
-        """Validate the given object contains string data against the Pydantic model.
+        """Validate the given object with string data against the Pydantic model.
 
         Args:
-            obj: The object contains string data to validate.
+            obj: The object containing string data to validate.
             strict: Whether to enforce types strictly.
             context: Extra variables to pass to the validator.
 

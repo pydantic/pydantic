@@ -798,9 +798,6 @@ def Field(  # noqa: C901
     if regex is not None:
         raise PydanticUserError('`regex` is removed. use `pattern` instead', code='removed-kwargs')
 
-    if isinstance(pattern, typing.Pattern):
-        pattern = pattern.pattern
-
     if extra:
         warn(
             'Using extra keyword arguments on `Field` is deprecated and will be removed.'

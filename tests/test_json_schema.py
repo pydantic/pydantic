@@ -48,6 +48,7 @@ from pydantic import (
     GetJsonSchemaHandler,
     ImportString,
     InstanceOf,
+    PlainSerializer,
     PydanticDeprecatedSince20,
     PydanticUserError,
     RootModel,
@@ -6245,3 +6246,27 @@ def test_pydantic_types_as_default_values(pydantic_type, expected_json_schema):
         parent: pydantic_type = pydantic_type(name='Jon Doe')
 
     assert Child.model_json_schema() == expected_json_schema
+
+
+def test_str_schema_with_pattern() -> None:
+    assert TypeAdapter(Annotated[str, Field(pattern='abc')]).json_schema() == {'type': 'string', 'pattern': 'abc'}
+    assert TypeAdapter(Annotated[str, Field(pattern=re.compile('abc'))]).json_schema() == {
+        'type': 'string',
+        'pattern': 'abc',
+    }
+
+
+def test_plain_serializer_applies_to_default() -> None:
+    class Model(BaseModel):
+        custom_str: Annotated[str, PlainSerializer(lambda x: f'serialized-{x}', return_type=str)] = 'foo'
+
+    assert Model.model_json_schema(mode='validation') == {
+        'properties': {'custom_str': {'default': 'foo', 'title': 'Custom Str', 'type': 'string'}},
+        'title': 'Model',
+        'type': 'object',
+    }
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': {'custom_str': {'default': 'serialized-foo', 'title': 'Custom Str', 'type': 'string'}},
+        'title': 'Model',
+        'type': 'object',
+    }
