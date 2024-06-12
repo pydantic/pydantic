@@ -1,5 +1,4 @@
 """Provide an enhanced dataclass that performs validation."""
-
 from __future__ import annotations as _annotations
 
 import dataclasses
@@ -57,7 +56,8 @@ if sys.version_info >= (3, 10):
         validate_on_init: bool | None = None,
         kw_only: bool = ...,
         slots: bool = ...,
-    ) -> type[PydanticDataclass]: ...
+    ) -> type[PydanticDataclass]:
+        ...
 
 else:
 
@@ -89,7 +89,8 @@ else:
         frozen: bool = False,
         config: ConfigDict | type[object] | None = None,
         validate_on_init: bool | None = None,
-    ) -> type[PydanticDataclass]: ...
+    ) -> type[PydanticDataclass]:
+        ...
 
 
 @dataclass_transform(field_specifiers=(dataclasses.field, Field, PrivateAttr))
