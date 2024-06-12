@@ -114,6 +114,7 @@ setup(
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
         'Intended Audience :: Developers',
         'Intended Audience :: Information Technology',
         'Intended Audience :: System Administrators',
@@ -133,7 +134,7 @@ setup(
     license='MIT',
     packages=['pydantic'],
     package_data={'pydantic': ['py.typed']},
-    python_requires='>=3.7',
+    python_requires='>=3.7, <3.13',
     zip_safe=False,  # https://mypy.readthedocs.io/en/latest/installed_packages.html
     install_requires=[
         'typing-extensions>=4.2.0'
