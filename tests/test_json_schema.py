@@ -6248,7 +6248,6 @@ def test_pydantic_types_as_default_values(pydantic_type, expected_json_schema):
     assert Child.model_json_schema() == expected_json_schema
 
 
-@pytest.mark.xfail(reason='requires next minor release of pydantic-core: v2.19.0')
 def test_str_schema_with_pattern() -> None:
     assert TypeAdapter(Annotated[str, Field(pattern='abc')]).json_schema() == {'type': 'string', 'pattern': 'abc'}
     assert TypeAdapter(Annotated[str, Field(pattern=re.compile('abc'))]).json_schema() == {

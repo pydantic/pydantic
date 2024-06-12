@@ -4087,7 +4087,6 @@ def test_pattern(pattern_type, pattern_value, matching_value, non_matching_value
     }
 
 
-@pytest.mark.xfail(reason='requires next minor release of pydantic-core: v2.19.0')
 @pytest.mark.parametrize(
     'use_field',
     [pytest.param(True, id='Field'), pytest.param(False, id='constr')],
@@ -6680,7 +6679,6 @@ def test_strict_enum_with_use_enum_values() -> None:
         Foo(foo='1')
 
 
-@pytest.mark.xfail(reason='requires next minor release of pydantic-core: v2.19.0')
 def test_python_re_respects_flags() -> None:
     class Model(BaseModel):
         a: Annotated[str, StringConstraints(pattern=re.compile(r'[A-Z]+', re.IGNORECASE))]
