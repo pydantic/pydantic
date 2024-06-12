@@ -653,7 +653,7 @@ class IPvAnyInterface:
         return cls(input_value)  # type: ignore[return-value]
 
 
-IPvAnyNetworkType: TypeAlias = IPv4Network | IPv6Network
+IPvAnyNetworkType: TypeAlias = 'IPv4Network | IPv6Network'
 
 if TYPE_CHECKING:
     IPvAnyNetwork = IPvAnyNetworkType
