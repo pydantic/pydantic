@@ -1,1 +1,1 @@
-from pydantic.__init__ import *  # noqa: F403,F401
+from pydantic import *  # noqa: F403,F401
