@@ -1,9 +1,9 @@
 import sys
 from typing import TYPE_CHECKING, Any, Dict, FrozenSet, NamedTuple, Type
 
-from .fields import Required
-from .main import BaseModel, create_model
-from .typing import is_typeddict, is_typeddict_special
+from pydantic.v1.fields import Required
+from pydantic.v1.main import BaseModel, create_model
+from pydantic.v1.typing import is_typeddict, is_typeddict_special
 
 if TYPE_CHECKING:
     from typing_extensions import TypedDict
