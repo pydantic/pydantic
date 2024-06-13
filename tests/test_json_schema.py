@@ -5685,31 +5685,41 @@ def test_mixed_type_callable_json_schema_extra():
     def add_key1(s):
         s['key_extra1'] = 'extra1'
 
-    def add_key2(s):
-        s['key_extra2'] = 'extra2'
+    def remove_key(s):
+        s.pop('key_to_remove')
 
     CustomField = Annotated[
         int,
-        Field(json_schema_extra={'key11': 'value11'}),
-        Field(json_schema_extra=add_key1),
         Field(json_schema_extra={'key1': 'value1'}),
-        Field(json_schema_extra=add_key2),
+        Field(json_schema_extra=add_key1),
+        Field(json_schema_extra={'key_to_remove': 'value'}),
+        Field(json_schema_extra=remove_key),
+    ]
+
+    CustomFieldStr = Annotated[
+        str,
+        Field(json_schema_extra={'key1': 'value1'}),
+        Field(json_schema_extra={'key2': 'value2'}),
     ]
 
     class Model(BaseModel):
         a: CustomField
+        b: CustomFieldStr
 
-    field_model_json_schema = Model.model_json_schema()['properties']['a']
-    field_model_json_schema.pop('title')
+    field_a_json_schema = Model.model_json_schema()['properties']['a']
+    field_b_json_schema = Model.model_json_schema()['properties']['b']
 
-    assert field_model_json_schema == {
+    assert field_b_json_schema == {
+        'title': 'B',
         'key1': 'value1',
-        'key11': 'value11',
-        'key_extra1': 'extra1',
-        'key_extra2': 'extra2',
-        'type': 'integer',
+        'key2': 'value2',
+        'type': 'string',
     }
-    assert field_model_json_schema == TypeAdapter(CustomField).json_schema()
+    assert field_a_json_schema == {'key1': 'value1', 'key_extra1': 'extra1', 'type': 'integer', 'title': 'A'}
+
+    # Adding in title because the type doesn't have a field title name yet.
+    assert field_a_json_schema == {'title': 'A', **TypeAdapter(CustomField).json_schema()}
+    assert field_b_json_schema == {'title': 'B', **TypeAdapter(CustomFieldStr).json_schema()}
 
 
 def test_callable_json_schema_extra():
