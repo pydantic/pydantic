@@ -1407,6 +1407,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#aliases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aliases
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3607,6 +3618,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#aliases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aliases
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4434,6 +4456,34 @@ print(Settings().model_dump())
 <span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="c1">#&gt; {&#39;fruit&#39;: &lt;Fruit.lime: 2&gt;, &#39;pet&#39;: &#39;cat&#39;}</span>
 </code></pre></div>
+<h4 id="aliases">Aliases<a class="headerlink" href="#aliases" title="Permanent link">&para;</a></h4>
+<p>Pydantic field aliases are added as CLI argument aliases.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AliasChoices</span><span class="p">,</span> <span class="n">AliasPath</span><span class="p">,</span> <span class="n">Field</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">,</span> <span class="n">cli_parse_args</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">first_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;fname&#39;</span><span class="p">,</span> <span class="n">AliasPath</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="p">)</span>
+    <span class="n">last_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;lname&#39;</span><span class="p">,</span> <span class="n">AliasPath</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+
+
+<span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;--fname&#39;</span><span class="p">,</span> <span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="s1">&#39;--lname&#39;</span><span class="p">,</span> <span class="s1">&#39;Doe&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">User</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;first_name&#39;: &#39;John&#39;, &#39;last_name&#39;: &#39;Doe&#39;}</span>
+
+<span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;--name&#39;</span><span class="p">,</span> <span class="s1">&#39;John,Doe&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">User</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;first_name&#39;: &#39;John&#39;, &#39;last_name&#39;: &#39;Doe&#39;}</span>
+
+<span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;--name&#39;</span><span class="p">,</span> <span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="s1">&#39;--lname&#39;</span><span class="p">,</span> <span class="s1">&#39;Doe&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">User</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;first_name&#39;: &#39;John&#39;, &#39;last_name&#39;: &#39;Doe&#39;}</span>
+</code></pre></div>
 <h3 id="subcommands-and-positional-arguments">Subcommands and Positional Arguments<a class="headerlink" href="#subcommands-and-positional-arguments" title="Permanent link">&para;</a></h3>
 <p>Subcommands and positional arguments are expressed using the <code>CliSubCommand</code> and <code>CliPositionalArg</code> annotations. These
 annotations can only be applied to required fields (i.e. fields that do not have a default value). Furthermore,
@@ -4444,6 +4494,10 @@ subcommands must be a valid type derived from the pydantic <code>BaseModel</code
 are grouped under a single subparser; it does not allow for multiple subparsers with each subparser having its own
 set of subcommands. For more information on subparsers, see <a href="https://docs.python.org/3/library/argparse.html#sub-commands">argparse
 subcommands</a>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code>CliSubCommand</code> and <code>CliPositionalArg</code> are always case sensitive and do not support aliases.</p>
 </div>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">sys</span>
 
