@@ -1783,11 +1783,11 @@ the type annotation for `__pydantic_extra__`:
 ```py
 from typing import Dict
 
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 
 class Model(BaseModel):
-    __pydantic_extra__: Dict[str, int]
+    __pydantic_extra__: Dict[str, int] = Field(init=False)  # (1)!
 
     x: int
 
@@ -1810,6 +1810,9 @@ assert m.y == 2
 assert m.model_dump() == {'x': 1, 'y': 2}
 assert m.__pydantic_extra__ == {'y': 2}
 ```
+
+1. The `= Field(init=False)` does not have any effect at runtime, but prevents the `__pydantic_extra__` field from
+being treated as an argument to the model's `__init__` method by type-checkers.
 
 The same configurations apply to `TypedDict` and `dataclass`' except the config is controlled by setting the
 `__pydantic_config__` attribute of the class to a valid `ConfigDict`.
