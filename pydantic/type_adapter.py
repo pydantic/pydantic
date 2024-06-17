@@ -43,7 +43,7 @@ from .plugin._schema_validator import create_schema_validator
 T = TypeVar('T')
 R = TypeVar('R')
 P = ParamSpec('P')
-TypeAdapterT = TypeVar('TypeAdapterT', bound='TypeAdapter')
+TypeAdapterT = TypeVar('TypeAdapterT', bound='TypeAdapter[Any]')
 
 
 if TYPE_CHECKING:
@@ -170,98 +170,113 @@ class TypeAdapter(Generic[T]):
         serializer: The schema serializer for the type.
     """
 
-    @overload
-    def __init__(
-        self,
-        type: type[T],
-        *,
-        config: ConfigDict | None = ...,
-        _parent_depth: int = ...,
-        module: str | None = ...,
-    ) -> None: ...
+    if TYPE_CHECKING:
 
-    # This second overload is for unsupported special forms (such as Annotated, Union, etc.)
-    # Currently there is no way to type this correctly
-    # See https://github.com/python/typing/pull/1618
-    @overload
-    def __init__(
-        self,
-        type: Any,
-        *,
-        config: ConfigDict | None = ...,
-        _parent_depth: int = ...,
-        module: str | None = ...,
-    ) -> None: ...
+        @overload
+        def __new__(
+            cls,
+            type: type[T],
+            *,
+            config: ConfigDict | None = ...,
+            _parent_depth: int = ...,
+            module: str | None = ...,
+        ) -> TypeAdapter[T]: ...
 
-    def __init__(
-        self,
-        type: Any,
-        *,
-        config: ConfigDict | None = None,
-        _parent_depth: int = 2,
-        module: str | None = None,
-    ) -> None:
-        """Initializes the TypeAdapter object.
+        @overload
+        def __new__(
+            cls,
+            type: Any,
+            *,
+            config: ConfigDict | None = ...,
+            _parent_depth: int = ...,
+            module: str | None = ...,
+        ) -> TypeAdapter[Any]: ...
 
-        Args:
-            type: The type associated with the `TypeAdapter`.
-            config: Configuration for the `TypeAdapter`, should be a dictionary conforming to [`ConfigDict`][pydantic.config.ConfigDict].
-            _parent_depth: depth at which to search the parent namespace to construct the local namespace.
-            module: The module that passes to plugin if provided.
+        def __new__(
+            cls,
+            type: Any,
+            *,
+            config: ConfigDict | None = None,
+            _parent_depth: int = 2,
+            module: str | None = None,
+        ) -> TypeAdapter[Any]:
+            """Initializes the TypeAdapter object.
 
-        !!! note
-            You cannot use the `config` argument when instantiating a `TypeAdapter` if the type you're using has its own
-            config that cannot be overridden (ex: `BaseModel`, `TypedDict`, and `dataclass`). A
-            [`type-adapter-config-unused`](../errors/usage_errors.md#type-adapter-config-unused) error will be raised in this case.
+            Args:
+                type: The type associated with the `TypeAdapter`.
+                config: Configuration for the `TypeAdapter`, should be a dictionary conforming to [`ConfigDict`][pydantic.config.ConfigDict].
+                _parent_depth: depth at which to search the parent namespace to construct the local namespace.
+                module: The module that passes to plugin if provided.
 
-        !!! note
-            The `_parent_depth` argument is named with an underscore to suggest its private nature and discourage use.
-            It may be deprecated in a minor version, so we only recommend using it if you're
-            comfortable with potential change in behavior / support.
+            !!! note
+                You cannot use the `config` argument when instantiating a `TypeAdapter` if the type you're using has its own
+                config that cannot be overridden (ex: `BaseModel`, `TypedDict`, and `dataclass`). A
+                [`type-adapter-config-unused`](../errors/usage_errors.md#type-adapter-config-unused) error will be raised in this case.
 
-        ??? tip "Compatibility with `mypy`"
-            Depending on the type used, `mypy` might raise an error when instantiating a `TypeAdapter`. As a workaround, you can explicitly
-            annotate your variable:
+            !!! note
+                The `_parent_depth` argument is named with an underscore to suggest its private nature and discourage use.
+                It may be deprecated in a minor version, so we only recommend using it if you're
+                comfortable with potential change in behavior / support.
 
-            ```py
-            from typing import Union
+            ??? tip "Compatibility with `mypy`"
+                Depending on the type used, `mypy` might raise an error when instantiating a `TypeAdapter`. As a workaround, you can explicitly
+                annotate your variable:
 
-            from pydantic import TypeAdapter
+                ```py
+                from typing import Union
 
-            ta: TypeAdapter[Union[str, int]] = TypeAdapter(Union[str, int])  # type: ignore[arg-type]
-            ```
+                from pydantic import TypeAdapter
 
-        Returns:
-            A type adapter configured for the specified `type`.
-        """
-        if _type_has_config(type) and config is not None:
-            raise PydanticUserError(
-                'Cannot use `config` when the type is a BaseModel, dataclass or TypedDict.'
-                ' These types can have their own config and setting the config via the `config`'
-                ' parameter to TypeAdapter will not override it, thus the `config` you passed to'
-                ' TypeAdapter becomes meaningless, which is probably not what you want.',
-                code='type-adapter-config-unused',
-            )
+                ta: TypeAdapter[Union[str, int]] = TypeAdapter(Union[str, int])  # type: ignore[arg-type]
+                ```
 
-        self._type = type
-        self._config = config
-        self._parent_depth = _parent_depth
-        if module is None:
-            f = sys._getframe(1)
-            self._module_name = cast(str, f.f_globals.get('__name__', ''))
-        else:
-            self._module_name = module
+            Returns:
+                A type adapter configured for the specified `type`.
+            """
+            ...
+    else:
 
-        self._core_schema: CoreSchema | None = None
-        self._validator: SchemaValidator | None = None
-        self._serializer: SchemaSerializer | None = None
+        def __init__(
+            self,
+            type: Any,
+            *,
+            config: ConfigDict | None = None,
+            _parent_depth: int = 2,
+            module: str | None = None,
+        ) -> None:
+            if _type_has_config(type) and config is not None:
+                raise PydanticUserError(
+                    'Cannot use `config` when the type is a BaseModel, dataclass or TypedDict.'
+                    ' These types can have their own config and setting the config via the `config`'
+                    ' parameter to TypeAdapter will not override it, thus the `config` you passed to'
+                    ' TypeAdapter becomes meaningless, which is probably not what you want.',
+                    code='type-adapter-config-unused',
+                )
 
-        if not self._defer_build():
-            # Immediately initialize the core schema, validator and serializer
-            with self._with_frame_depth(1):  # +1 frame depth for this __init__
-                # Model itself may be using deferred building. For backward compatibility we don't rebuild model mocks
-                # here as part of __init__ even though TypeAdapter itself is not using deferred building.
-                self._init_core_attrs(rebuild_mocks=False)
+            self._type = type
+            self._config = config
+            self._parent_depth = _parent_depth
+            if module is None:
+                f = sys._getframe(1)
+                self._module_name = cast(str, f.f_globals.get('__name__', ''))
+            else:
+                self._module_name = module
+
+            self._core_schema: CoreSchema | None = None
+            self._validator: SchemaValidator | None = None
+            self._serializer: SchemaSerializer | None = None
+
+            if not self._defer_build():
+                # Immediately initialize the core schema, validator and serializer
+                with self._with_frame_depth(1):  # +1 frame depth for this __init__
+                    # Model itself may be using deferred building. For backward compatibility we don't rebuild model mocks
+                    # here as part of __init__ even though TypeAdapter itself is not using deferred building.
+                    self._init_core_attrs(rebuild_mocks=False)
+
+    _parent_depth: int
+    _type: Any
+    _config: ConfigDict | None
+    _module_name: str
 
     @contextmanager
     def _with_frame_depth(self, depth: int) -> Iterator[None]:
@@ -583,7 +598,7 @@ class TypeAdapter(Generic[T]):
         """
         schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
 
-        inputs_ = []
+        inputs_: list[tuple[JsonSchemaKeyT, JsonSchemaMode, CoreSchema]] = []
         for key, mode, adapter in inputs:
             with adapter._with_frame_depth(1):  # +1 for json_schemas staticmethod
                 inputs_.append((key, mode, adapter.core_schema))
