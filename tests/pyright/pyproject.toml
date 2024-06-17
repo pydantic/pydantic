@@ -2,3 +2,4 @@
 extraPaths = ['../..']
 reportUnnecessaryTypeIgnoreComment = true
 pythonVersion = '3.10'
+enableExperimentalFeatures = true
