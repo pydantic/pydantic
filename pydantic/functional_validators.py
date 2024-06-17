@@ -392,7 +392,7 @@ _ModelTypeCo = TypeVar('_ModelTypeCo', covariant=True)
 class ModelWrapValidatorHandler(_core_schema.ValidatorFunctionWrapHandler, Protocol[_ModelTypeCo]):
     """@model_validator decorated function handler argument type. This is used when `mode='wrap'`."""
 
-    def __call__(  # noqa: D102
+    def __call__(  # noqa: D102  # type: ignore
         self,
         value: Any,
         outer_location: str | int | None = None,

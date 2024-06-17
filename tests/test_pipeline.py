@@ -25,12 +25,12 @@ with warnings.catch_warnings():
 
 @pytest.mark.parametrize('potato_variation', ['potato', ' potato ', ' potato', 'potato ', ' POTATO ', ' PoTatO '])
 def test_parse_str(potato_variation: str) -> None:
-    ta_lower = TypeAdapter(Annotated[str, validate_as(...).str_strip().str_lower()])
+    ta_lower = TypeAdapter[str](Annotated[str, validate_as(...).str_strip().str_lower()])
     assert ta_lower.validate_python(potato_variation) == 'potato'
 
 
 def test_parse_str_with_pattern() -> None:
-    ta_pattern = TypeAdapter(Annotated[str, validate_as(...).str_pattern(r'[a-z]+')])
+    ta_pattern = TypeAdapter[str](Annotated[str, validate_as(...).str_pattern(r'[a-z]+')])
     assert ta_pattern.validate_python('potato') == 'potato'
     with pytest.raises(ValueError):
         ta_pattern.validate_python('POTATO')
@@ -56,7 +56,7 @@ def test_parse_str_with_pattern() -> None:
 def test_ge_le_gt_lt(
     type_: Any, pipeline: _Pipeline[Any, Any], valid_cases: list[Any], invalid_cases: list[Any]
 ) -> None:
-    ta = TypeAdapter(Annotated[type_, pipeline])
+    ta = TypeAdapter[Any](Annotated[type_, pipeline])
     for x in valid_cases:
         assert ta.validate_python(x) == x
     for y in invalid_cases:
@@ -67,18 +67,18 @@ def test_ge_le_gt_lt(
 @pytest.mark.parametrize(
     'type_, pipeline, valid_cases, invalid_cases',
     [
-        (int, validate_as(int).multiple_of(5), [5, 20, 0], [18, 7]),
-        (float, validate_as(float).multiple_of(2.5), [2.5, 5.0, 7.5], [3.0, 1.1]),
+        (int, validate_as(int).multiple_of(5), [5, 20, 0], [18, 7]),  # type: ignore
+        (float, validate_as(float).multiple_of(2.5), [2.5, 5.0, 7.5], [3.0, 1.1]),  # type: ignore
         (
             Decimal,
-            validate_as(Decimal).multiple_of(Decimal('1.5')),
+            validate_as(Decimal).multiple_of(Decimal('1.5')),  # type: ignore
             [Decimal('1.5'), Decimal('3.0'), Decimal('4.5')],
             [Decimal('1.4'), Decimal('2.1')],
         ),
     ],
 )
 def test_parse_multipleOf(type_: Any, pipeline: Any, valid_cases: list[Any], invalid_cases: list[Any]) -> None:
-    ta = TypeAdapter(Annotated[type_, pipeline])
+    ta = TypeAdapter[Any](Annotated[type_, pipeline])
     for x in valid_cases:
         assert ta.validate_python(x) == x
     for y in invalid_cases:
@@ -102,7 +102,7 @@ def test_parse_multipleOf(type_: Any, pipeline: Any, valid_cases: list[Any], inv
     ],
 )
 def test_interval_constraints(type_: Any, pipeline: Any, valid_cases: list[Any], invalid_cases: list[Any]) -> None:
-    ta = TypeAdapter(Annotated[type_, pipeline])
+    ta = TypeAdapter[Any](Annotated[type_, pipeline])
     for x in valid_cases:
         assert ta.validate_python(x) == x
     for y in invalid_cases:
@@ -115,13 +115,13 @@ def test_interval_constraints(type_: Any, pipeline: Any, valid_cases: list[Any],
     [
         (
             str,
-            validate_as(str).len(min_len=2, max_len=5),
+            validate_as(str).len(min_len=2, max_len=5),  # type: ignore
             ['ab', 'abc', 'abcd', 'abcde'],
             ['a', 'abcdef'],
         ),
         (
             list,
-            validate_as(list).len(min_len=1, max_len=3),
+            validate_as(list).len(min_len=1, max_len=3),  # type: ignore
             [[1], [1, 2], [1, 2, 3]],
             [[], [1, 2, 3, 4]],
         ),
@@ -153,7 +153,7 @@ def test_interval_constraints(type_: Any, pipeline: Any, valid_cases: list[Any],
     ],
 )
 def test_len_constraints(type_: Any, pipeline: Any, valid_cases: list[Any], invalid_cases: list[Any]) -> None:
-    ta = TypeAdapter(Annotated[type_, pipeline])
+    ta = TypeAdapter[Any](Annotated[type_, pipeline])
     for x in valid_cases:
         assert ta.validate_python(x) == x
     for y in invalid_cases:
@@ -162,14 +162,24 @@ def test_len_constraints(type_: Any, pipeline: Any, valid_cases: list[Any], inva
 
 
 def test_parse_tz() -> None:
-    ta_tz = TypeAdapter(Annotated[datetime.datetime, validate_as(str).datetime_tz_naive()])
+    ta_tz = TypeAdapter[datetime.datetime](
+        Annotated[
+            datetime.datetime,
+            validate_as(datetime.datetime).datetime_tz_naive(),
+        ]
+    )
     date = datetime.datetime(2032, 6, 4, 11, 15, 30, 400000)
     assert ta_tz.validate_python(date) == date
     date_a = datetime.datetime(2032, 6, 4, 11, 15, 30, 400000, tzinfo=pytz.UTC)
     with pytest.raises(ValueError):
         ta_tz.validate_python(date_a)
 
-    ta_tza = TypeAdapter(Annotated[datetime.datetime, validate_as(str).datetime_tz_aware()])
+    ta_tza = TypeAdapter[datetime.datetime](
+        Annotated[
+            datetime.datetime,
+            validate_as(datetime.datetime).datetime_tz_aware(),
+        ]
+    )
     date_a = datetime.datetime(2032, 6, 4, 11, 15, 30, 400000, pytz.UTC)
     assert ta_tza.validate_python(date_a) == date_a
     with pytest.raises(ValueError):
@@ -198,32 +208,32 @@ def test_string_validator_valid(method: str, method_arg: str | None, input_strin
     annotated_metadata = getattr(validate_as(str), 'str_' + method)
     annotated_metadata = annotated_metadata(method_arg) if method_arg else annotated_metadata()
 
-    ta = TypeAdapter(Annotated[str, annotated_metadata])
+    ta = TypeAdapter[str](Annotated[str, annotated_metadata])
     assert ta.validate_python(input_string) == expected_output
 
 
 def test_string_validator_invalid() -> None:
-    ta_contains = TypeAdapter(Annotated[str, validate_as(str).str_contains('potato')])
+    ta_contains = TypeAdapter[str](Annotated[str, validate_as(str).str_contains('potato')])
     with pytest.raises(ValidationError):
         ta_contains.validate_python('tomato')
 
-    ta_starts_with = TypeAdapter(Annotated[str, validate_as(str).str_starts_with('potato')])
+    ta_starts_with = TypeAdapter[str](Annotated[str, validate_as(str).str_starts_with('potato')])
     with pytest.raises(ValidationError):
         ta_starts_with.validate_python('tomato')
 
-    ta_ends_with = TypeAdapter(Annotated[str, validate_as(str).str_ends_with('potato')])
+    ta_ends_with = TypeAdapter[str](Annotated[str, validate_as(str).str_ends_with('potato')])
     with pytest.raises(ValidationError):
         ta_ends_with.validate_python('tomato')
 
 
 def test_parse_int() -> None:
-    ta_gt = TypeAdapter(Annotated[int, validate_as(int).gt(0)])
+    ta_gt = TypeAdapter[int](Annotated[int, validate_as(int).gt(0)])
     assert ta_gt.validate_python(1) == 1
     assert ta_gt.validate_python('1') == 1
     with pytest.raises(ValidationError):
         ta_gt.validate_python(0)
 
-    ta_gt_strict = TypeAdapter(Annotated[int, validate_as(int, strict=True).gt(0)])
+    ta_gt_strict = TypeAdapter[int](Annotated[int, validate_as(int, strict=True).gt(0)])
     assert ta_gt_strict.validate_python(1) == 1
     with pytest.raises(ValidationError):
         ta_gt_strict.validate_python('1')
@@ -232,7 +242,7 @@ def test_parse_int() -> None:
 
 
 def test_parse_str_to_int() -> None:
-    ta = TypeAdapter(Annotated[int, validate_as(str).str_strip().validate_as(int)])
+    ta = TypeAdapter[int](Annotated[int, validate_as(str).str_strip().validate_as(int)])
     assert ta.validate_python('1') == 1
     assert ta.validate_python(' 1 ') == 1
     with pytest.raises(ValidationError):
@@ -240,12 +250,12 @@ def test_parse_str_to_int() -> None:
 
 
 def test_predicates() -> None:
-    ta_int = TypeAdapter(Annotated[int, validate_as(int).predicate(lambda x: x % 2 == 0)])
+    ta_int = TypeAdapter[int](Annotated[int, validate_as(int).predicate(lambda x: x % 2 == 0)])
     assert ta_int.validate_python(2) == 2
     with pytest.raises(ValidationError):
         ta_int.validate_python(1)
 
-    ta_str = TypeAdapter(Annotated[str, validate_as(str).predicate(lambda x: x != 'potato')])
+    ta_str = TypeAdapter[int](Annotated[str, validate_as(str).predicate(lambda x: x != 'potato')])
     assert ta_str.validate_python('tomato') == 'tomato'
     with pytest.raises(ValidationError):
         ta_str.validate_python('potato')
@@ -319,46 +329,46 @@ def test_json_schema(
 
 def test_transform_first_step() -> None:
     """Check that when transform() is used as the first step in a pipeline it run after parsing."""
-    ta = TypeAdapter(Annotated[int, transform(lambda x: x + 1)])
+    ta = TypeAdapter[int](Annotated[int, transform(lambda x: x + 1)])
     assert ta.validate_python('1') == 2
 
 
 def test_not_eq() -> None:
-    ta = TypeAdapter(Annotated[str, validate_as(str).not_eq('potato')])
+    ta = TypeAdapter[int](Annotated[str, validate_as(str).not_eq('potato')])
     assert ta.validate_python('tomato') == 'tomato'
     with pytest.raises(ValidationError):
         ta.validate_python('potato')
 
 
 def test_eq() -> None:
-    ta = TypeAdapter(Annotated[str, validate_as(str).eq('potato')])
+    ta = TypeAdapter[int](Annotated[str, validate_as(str).eq('potato')])
     assert ta.validate_python('potato') == 'potato'
     with pytest.raises(ValidationError):
         ta.validate_python('tomato')
 
 
 def test_not_in() -> None:
-    ta = TypeAdapter(Annotated[str, validate_as(str).not_in(['potato', 'tomato'])])
+    ta = TypeAdapter[int](Annotated[str, validate_as(str).not_in(['potato', 'tomato'])])
     assert ta.validate_python('carrot') == 'carrot'
     with pytest.raises(ValidationError):
         ta.validate_python('potato')
 
 
 def test_in() -> None:
-    ta = TypeAdapter(Annotated[str, validate_as(str).in_(['potato', 'tomato'])])
+    ta = TypeAdapter[int](Annotated[str, validate_as(str).in_(['potato', 'tomato'])])
     assert ta.validate_python('potato') == 'potato'
     with pytest.raises(ValidationError):
         ta.validate_python('carrot')
 
 
 def test_composition() -> None:
-    ta = TypeAdapter(Annotated[int, validate_as(int).gt(10) | validate_as(int).lt(5)])
+    ta = TypeAdapter[int](Annotated[int, validate_as(int).gt(10) | validate_as(int).lt(5)])
     assert ta.validate_python(1) == 1
     assert ta.validate_python(20) == 20
     with pytest.raises(ValidationError):
         ta.validate_python(9)
 
-    ta = TypeAdapter(Annotated[int, validate_as(int).gt(10) & validate_as(int).le(20)])
+    ta = TypeAdapter[int](Annotated[int, validate_as(int).gt(10) & validate_as(int).le(20)])
     assert ta.validate_python(15) == 15
     with pytest.raises(ValidationError):
         ta.validate_python(9)
@@ -375,7 +385,7 @@ def test_composition() -> None:
 
         return inner
 
-    ta = TypeAdapter(
+    ta = TypeAdapter[int](
         Annotated[
             int,
             validate_as(int).transform(tf('1')).gt(10).transform(tf('2'))
@@ -393,7 +403,7 @@ def test_composition() -> None:
     assert calls == [('1', 9), ('3', 9)]
     calls.clear()
 
-    ta = TypeAdapter(
+    ta = TypeAdapter[int](
         Annotated[
             int,
             validate_as(int).transform(tf('1')).gt(10).transform(tf('2'))
