@@ -2466,8 +2466,8 @@ class TaggedUnionSchema(TypedDict, total=False):
 
 
 def tagged_union_schema(
-    choices: Dict[Hashable, CoreSchema],
-    discriminator: str | list[str | int] | list[list[str | int]] | Callable[[Any], Hashable],
+    choices: Dict[Any, CoreSchema],
+    discriminator: str | list[str | int] | list[list[str | int]] | Callable[[Any], Any],
     *,
     custom_error_type: str | None = None,
     custom_error_message: str | None = None,
