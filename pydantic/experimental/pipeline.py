@@ -189,8 +189,8 @@ class _Pipeline(Generic[_InT, _OutT]):
 
     @overload
     def constrain(
-        self: _Pipeline[_InT, _NewOutDiv], constraint: annotated_types.MultipleOf
-    ) -> _Pipeline[_InT, _NewOutDiv]: ...
+        self: _Pipeline[_InT, _NewOutT], constraint: annotated_types.MultipleOf
+    ) -> _Pipeline[_InT, _NewOutT]: ...
 
     @overload
     def constrain(
@@ -254,7 +254,13 @@ class _Pipeline(Generic[_InT, _OutT]):
         """Constrain a value to have a certain length."""
         return self.constrain(annotated_types.Len(min_len, max_len))
 
-    def multiple_of(self: _Pipeline[_InT, _NewOutDiv], multiple_of: _NewOutDiv) -> _Pipeline[_InT, _NewOutDiv]:
+    @overload
+    def multiple_of(self: _Pipeline[_InT, _NewOutDiv], multiple_of: _NewOutDiv) -> _Pipeline[_InT, _NewOutDiv]: ...
+
+    @overload
+    def multiple_of(self: _Pipeline[_InT, _NewOutMod], multiple_of: _NewOutMod) -> _Pipeline[_InT, _NewOutMod]: ...
+
+    def multiple_of(self: _Pipeline[_InT, Any], multiple_of: Any) -> _Pipeline[_InT, Any]:
         """Constrain a value to be a multiple of a certain number."""
         return self.constrain(annotated_types.MultipleOf(multiple_of))
 
@@ -656,6 +662,7 @@ _NewOutLt = TypeVar('_NewOutLt', bound=annotated_types.SupportsLt)
 _NewOutLe = TypeVar('_NewOutLe', bound=annotated_types.SupportsLe)
 _NewOutLen = TypeVar('_NewOutLen', bound=_SupportsLen)
 _NewOutDiv = TypeVar('_NewOutDiv', bound=annotated_types.SupportsDiv)
+_NewOutMod = TypeVar('_NewOutMod', bound=annotated_types.SupportsMod)
 _NewOutDatetime = TypeVar('_NewOutDatetime', bound=datetime.datetime)
 _NewOutInterval = TypeVar('_NewOutInterval', bound=_SupportsRange)
 _OtherIn = TypeVar('_OtherIn')

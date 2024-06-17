@@ -67,11 +67,11 @@ def test_ge_le_gt_lt(
 @pytest.mark.parametrize(
     'type_, pipeline, valid_cases, invalid_cases',
     [
-        (int, validate_as(int).multiple_of(5), [5, 20, 0], [18, 7]),  # type: ignore
-        (float, validate_as(float).multiple_of(2.5), [2.5, 5.0, 7.5], [3.0, 1.1]),  # type: ignore
+        (int, validate_as(int).multiple_of(5), [5, 20, 0], [18, 7]),
+        (float, validate_as(float).multiple_of(2.5), [2.5, 5.0, 7.5], [3.0, 1.1]),
         (
             Decimal,
-            validate_as(Decimal).multiple_of(Decimal('1.5')),  # type: ignore
+            validate_as(Decimal).multiple_of(Decimal('1.5')),
             [Decimal('1.5'), Decimal('3.0'), Decimal('4.5')],
             [Decimal('1.4'), Decimal('2.1')],
         ),
@@ -115,32 +115,32 @@ def test_interval_constraints(type_: Any, pipeline: Any, valid_cases: list[Any],
     [
         (
             str,
-            validate_as(str).len(min_len=2, max_len=5),  # type: ignore
+            validate_as(str).len(min_len=2, max_len=5),
             ['ab', 'abc', 'abcd', 'abcde'],
             ['a', 'abcdef'],
         ),
         (
-            list,
-            validate_as(list).len(min_len=1, max_len=3),  # type: ignore
+            list[int],
+            validate_as(list[int]).len(min_len=1, max_len=3),
             [[1], [1, 2], [1, 2, 3]],
             [[], [1, 2, 3, 4]],
         ),
-        (tuple, validate_as(tuple).len(min_len=1, max_len=2), [(1,), (1, 2)], [(), (1, 2, 3)]),
+        (tuple[int, ...], validate_as(tuple[int, ...]).len(min_len=1, max_len=2), [(1,), (1, 2)], [(), (1, 2, 3)]),
         (
-            set,
-            validate_as(set).len(min_len=2, max_len=4),
+            set[int],
+            validate_as(set[int]).len(min_len=2, max_len=4),
             [{1, 2}, {1, 2, 3}, {1, 2, 3, 4}],
             [{1}, {1, 2, 3, 4, 5}],
         ),
         (
-            frozenset,
-            validate_as(frozenset).len(min_len=2, max_len=3),
+            frozenset[int],
+            validate_as(frozenset[int]).len(min_len=2, max_len=3),
             [frozenset({1, 2}), frozenset({1, 2, 3})],
             [frozenset({1}), frozenset({1, 2, 3, 4})],
         ),
         (
-            dict,
-            validate_as(dict).len(min_len=1, max_len=2),
+            dict[str, int],
+            validate_as(dict[str, int]).len(min_len=1, max_len=2),
             [{'a': 1}, {'a': 1, 'b': 2}],
             [{}, {'a': 1, 'b': 2, 'c': 3}],
         ),
