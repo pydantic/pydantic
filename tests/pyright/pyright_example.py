@@ -65,6 +65,8 @@ assert ta1.validate_json('123') + 1 == 124
 # But currently cannot infer more complex "special forms" and defaults to TypeAdapter[Any]
 ta2 = TypeAdapter(Annotated[int, Field(gt=0)])
 assert ta2.validate_python(999) + 1 == 1000
+# this won't get type checked because ta2.validate_python() returns Any!
+assert ta2.validate_python(999) + 'a' == ':('
 # If you want these to be typed, you can use a type hint as follows:
 ta3: TypeAdapter[int] = TypeAdapter(Annotated[int, Field(gt=0)])
 assert ta3.validate_python(999) + 1 == 1000
