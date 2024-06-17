@@ -344,11 +344,9 @@ impl BuildValidator for TaggedUnionValidator {
         let mut tags_repr = String::with_capacity(50);
         let mut descr = String::with_capacity(50);
         let mut first = true;
-        let mut discriminators = Vec::with_capacity(choices.len());
         let schema_choices: Bound<PyDict> = schema.get_as_req(intern!(py, "choices"))?;
         let mut lookup_map = Vec::with_capacity(choices.len());
         for (choice_key, choice_schema) in schema_choices {
-            discriminators.push(choice_key.clone());
             let validator = build_validator(&choice_schema, config, definitions)?;
             let tag_repr = choice_key.repr()?.to_string();
             if first {
