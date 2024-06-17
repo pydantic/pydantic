@@ -1,7 +1,6 @@
 // Validator for things inside of a typing.Literal[]
 // which can be an int, a string, bytes or an Enum value (including `class Foo(str, Enum)` type enums)
 use core::fmt::Debug;
-use std::cmp::Ordering;
 
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyInt, PyList};
@@ -35,7 +34,7 @@ pub struct LiteralLookup<T: Debug> {
     // Catch all for hashable types like Enum and bytes (the latter only because it is seldom used)
     expected_py_dict: Option<Py<PyDict>>,
     // Catch all for unhashable types like list
-    expected_py_list: Option<Py<PyList>>,
+    expected_py_values: Option<Vec<(Py<PyAny>, usize)>>,
 
     pub values: Vec<T>,
 }
@@ -46,7 +45,7 @@ impl<T: Debug> LiteralLookup<T> {
         let mut expected_int = AHashMap::new();
         let mut expected_str: AHashMap<String, usize> = AHashMap::new();
         let expected_py_dict = PyDict::new_bound(py);
-        let expected_py_list = PyList::empty_bound(py);
+        let mut expected_py_values = Vec::new();
         let mut values = Vec::new();
         for (k, v) in expected {
             let id = values.len();
@@ -71,7 +70,7 @@ impl<T: Debug> LiteralLookup<T> {
                     .map_err(|_| py_schema_error_type!("error extracting str {:?}", k))?;
                 expected_str.insert(str.to_string(), id);
             } else if expected_py_dict.set_item(&k, id).is_err() {
-                expected_py_list.append((&k, id))?;
+                expected_py_values.push((k.as_unbound().clone_ref(py), id));
             }
         }
 
@@ -92,9 +91,9 @@ impl<T: Debug> LiteralLookup<T> {
                 true => None,
                 false => Some(expected_py_dict.into()),
             },
-            expected_py_list: match expected_py_list.is_empty() {
+            expected_py_values: match expected_py_values.is_empty() {
                 true => None,
-                false => Some(expected_py_list.into()),
+                false => Some(expected_py_values),
             },
             values,
         })
@@ -143,23 +142,23 @@ impl<T: Debug> LiteralLookup<T> {
                 }
             }
         }
+        // cache py_input if needed, since we might need it for multiple lookups
+        let mut py_input = None;
         if let Some(expected_py_dict) = &self.expected_py_dict {
+            let py_input = py_input.get_or_insert_with(|| input.to_object(py));
             // We don't use ? to unpack the result of `get_item` in the next line because unhashable
             // inputs will produce a TypeError, which in this case we just want to treat equivalently
             // to a failed lookup
-            if let Ok(Some(v)) = expected_py_dict.bind(py).get_item(input) {
+            if let Ok(Some(v)) = expected_py_dict.bind(py).get_item(&*py_input) {
                 let id: usize = v.extract().unwrap();
                 return Ok(Some((input, &self.values[id])));
             }
         };
-        if let Some(expected_py_list) = &self.expected_py_list {
-            for item in expected_py_list.bind(py) {
-                let (k, id): (Bound<PyAny>, usize) = item.extract()?;
-                if k.compare(input.to_object(py).bind(py))
-                    .unwrap_or(Ordering::Less)
-                    .is_eq()
-                {
-                    return Ok(Some((input, &self.values[id])));
+        if let Some(expected_py_values) = &self.expected_py_values {
+            let py_input = py_input.get_or_insert_with(|| input.to_object(py));
+            for (k, id) in expected_py_values {
+                if k.bind(py).eq(&*py_input).unwrap_or(false) {
+                    return Ok(Some((input, &self.values[*id])));
                 }
             }
         };
