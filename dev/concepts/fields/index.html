@@ -3743,9 +3743,8 @@ models using the field (serialization) aliases.</p>
 <p>In case you use <code>alias</code> together with <code>validation_alias</code> or <code>serialization_alias</code> at the same time,
 the <code>validation_alias</code> will have priority over <code>alias</code> for validation, and <code>serialization_alias</code> will have priority
 over <code>alias</code> for serialization.</p>
-<p>You may also set <code>alias_priority</code> on a field to change this behavior.</p>
-<p>You can read more about <a href="../alias/#alias-precedence">Alias Precedence</a> in the
-<a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict">Model Config</a> documentation.</p>
+<p>If you use an <code>alias_generator</code> in the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.alias_generator">Model Config</a>, you can control
+the order of precedence for specified field vs generated aliases via the <code>alias_priority</code> setting. You can read more about alias precedence <a href="../alias/#alias-precedence">here</a>.</p>
 </div>
 <details class="tip">
 <summary>VSCode and Pyright users</summary>

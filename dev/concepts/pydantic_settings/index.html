@@ -1617,6 +1617,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#in-place-reloading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In-place reloading
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3828,6 +3839,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#in-place-reloading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In-place reloading
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -5194,6 +5216,37 @@ need to add your own custom sources, <code>settings_customise_sources</code> mak
 <span class="sd">      Field required [type=missing, input_value={}, input_type=dict]</span>
 <span class="sd">        For further information visit https://errors.pydantic.dev/2/v/missing</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<h2 id="in-place-reloading">In-place reloading<a class="headerlink" href="#in-place-reloading" title="Permanent link">&para;</a></h2>
+<p>In case you want to reload in-place an existing setting, you can do it by using its <code>__init__</code> method :</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>
+
+
+<span class="n">mutable_settings</span> <span class="o">=</span> <span class="n">Settings</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">mutable_settings</span><span class="o">.</span><span class="n">foo</span><span class="p">)</span>
+<span class="c1">#&gt; foo</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;foo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;bar&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">mutable_settings</span><span class="o">.</span><span class="n">foo</span><span class="p">)</span>
+<span class="c1">#&gt; foo</span>
+
+<span class="n">mutable_settings</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">mutable_settings</span><span class="o">.</span><span class="n">foo</span><span class="p">)</span>
+<span class="c1">#&gt; bar</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>
+<span class="n">mutable_settings</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">mutable_settings</span><span class="o">.</span><span class="n">foo</span><span class="p">)</span>
+<span class="c1">#&gt; foo</span>
 </code></pre></div>
 
 
