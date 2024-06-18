@@ -145,10 +145,8 @@ print(user.model_dump(by_alias=True))  # (2)!
     the `validation_alias` will have priority over `alias` for validation, and `serialization_alias` will have priority
     over `alias` for serialization.
 
-    You may also set `alias_priority` on a field to change this behavior.
-
-    You can read more about [Alias Precedence](../concepts/alias.md#alias-precedence) in the
-    [Model Config][pydantic.config.ConfigDict] documentation.
+    If you use an `alias_generator` in the [Model Config][pydantic.config.ConfigDict.alias_generator], you can control
+    the order of precedence for specified field vs generated aliases via the `alias_priority` setting. You can read more about alias precedence [here](../concepts/alias.md#alias-precedence).
 
 
 ??? tip "VSCode and Pyright users"
