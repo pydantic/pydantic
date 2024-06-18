@@ -6,7 +6,7 @@ import datetime
 import sys
 import warnings
 from decimal import Decimal
-from typing import Any, Callable, List, Union
+from typing import Any, Callable, Dict, FrozenSet, List, Set, Tuple, Union
 
 import pytest
 import pytz
@@ -120,27 +120,27 @@ def test_interval_constraints(type_: Any, pipeline: Any, valid_cases: list[Any],
             ['a', 'abcdef'],
         ),
         (
-            list[int],
-            validate_as(list[int]).len(min_len=1, max_len=3),
+            List[int],
+            validate_as(List[int]).len(min_len=1, max_len=3),
             [[1], [1, 2], [1, 2, 3]],
             [[], [1, 2, 3, 4]],
         ),
-        (tuple[int, ...], validate_as(tuple[int, ...]).len(min_len=1, max_len=2), [(1,), (1, 2)], [(), (1, 2, 3)]),
+        (Tuple[int, ...], validate_as(Tuple[int, ...]).len(min_len=1, max_len=2), [(1,), (1, 2)], [(), (1, 2, 3)]),
         (
-            set[int],
-            validate_as(set[int]).len(min_len=2, max_len=4),
+            Set[int],
+            validate_as(Set[int]).len(min_len=2, max_len=4),
             [{1, 2}, {1, 2, 3}, {1, 2, 3, 4}],
             [{1}, {1, 2, 3, 4, 5}],
         ),
         (
-            frozenset[int],
-            validate_as(frozenset[int]).len(min_len=2, max_len=3),
-            [frozenset({1, 2}), frozenset({1, 2, 3})],
-            [frozenset({1}), frozenset({1, 2, 3, 4})],
+            FrozenSet[int],
+            validate_as(FrozenSet[int]).len(min_len=2, max_len=3),
+            [FrozenSet({1, 2}), FrozenSet({1, 2, 3})],
+            [FrozenSet({1}), FrozenSet({1, 2, 3, 4})],
         ),
         (
-            dict[str, int],
-            validate_as(dict[str, int]).len(min_len=1, max_len=2),
+            Dict[str, int],
+            validate_as(Dict[str, int]).len(min_len=1, max_len=2),
             [{'a': 1}, {'a': 1, 'b': 2}],
             [{}, {'a': 1, 'b': 2, 'c': 3}],
         ),
