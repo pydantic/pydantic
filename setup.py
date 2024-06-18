@@ -134,7 +134,7 @@ setup(
     license='MIT',
     packages=['pydantic'],
     package_data={'pydantic': ['py.typed']},
-    python_requires='>=3.7, <3.13',
+    python_requires='>=3.7',
     zip_safe=False,  # https://mypy.readthedocs.io/en/latest/installed_packages.html
     install_requires=[
         'typing-extensions>=4.2.0'
