@@ -132,7 +132,7 @@ setup(
     author_email='s@muelcolvin.com',
     url='https://github.com/pydantic/pydantic',
     license='MIT',
-    packages=['pydantic'],
+    packages=['pydantic', 'pydantic.v1'],
     package_data={'pydantic': ['py.typed']},
     python_requires='>=3.7, <3.13',
     zip_safe=False,  # https://mypy.readthedocs.io/en/latest/installed_packages.html

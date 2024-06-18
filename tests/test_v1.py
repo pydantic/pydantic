@@ -56,3 +56,25 @@ def test_can_import_modules_from_v1(module_name: str) -> None:
     module_name = module_name[:-3]
 
     _ = importlib.import_module(f'pydantic.v1.{module_name}')
+
+
+@pytest.mark.parametrize(
+    ('module_path', 'obj_name'),
+    [
+        ('fields', 'ModelField'),
+        ('env_settings', 'SettingsError'),
+    ],
+)
+def test_can_import_objects_from_v1_namespace_exact_same_object(
+    module_path: str,
+    obj_name: str,
+) -> None:
+    """That imports of objects directly from the v1 namespace correspond to the
+    exact same object when imported directly from a non v1 namespace."""
+
+    # import from both `.v1` namespace and from base pydantic namespace.
+    objv1 = getattr(importlib.import_module(f'pydantic.v1.{module_path}'), obj_name)
+    obj = getattr(importlib.import_module(f'pydantic.{module_path}'), obj_name)
+
+    # ensure exact same symbol is imported
+    assert objv1 is obj
