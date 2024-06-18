@@ -135,8 +135,8 @@ def test_interval_constraints(type_: Any, pipeline: Any, valid_cases: list[Any],
         (
             FrozenSet[int],
             validate_as(FrozenSet[int]).len(min_len=2, max_len=3),
-            [FrozenSet({1, 2}), FrozenSet({1, 2, 3})],
-            [FrozenSet({1}), FrozenSet({1, 2, 3, 4})],
+            [frozenset({1, 2}), frozenset({1, 2, 3})],
+            [frozenset({1}), frozenset({1, 2, 3, 4})],
         ),
         (
             Dict[str, int],
