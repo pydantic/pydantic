@@ -96,16 +96,16 @@ Imports for `pydantic` v1 features for different versions of pydantic.
 
 === "`pydantic>2,<3`"
 
-    ```py
+    ```python test="skip" lint="skip" upgrade="skip"
     try:
         from pydantic.v1.fields import ModelField
     except ImportError:
         from pydantic.fields import ModelField
     ```
 
-=== "pydantic>=1.10.17,<3"
+=== "`pydantic>=1.10.17,<3`"
 
-    ```py
+    ```python test="skip" lint="skip" upgrade="skip"
     from pydantic.v1.fields import ModelField
     ```
 
