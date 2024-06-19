@@ -9492,7 +9492,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
     <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><span title="pydantic.main.ModelT">ModelT</span></span><span class="p">],</span> <span class="o">...</span><span class="p">]</span>
     <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="vm">__module__</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">__validators__</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#classmethod">classmethod</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]]</span>
+    <span class="n">__validators__</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]]</span>
     <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">__cls_kwargs__</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="vm">__slots__</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -9596,11 +9596,13 @@ if <code>None</code>, the value is taken from <code>sys._getframe(1)</code></p>
         <tr>
           <td><code>__validators__</code></td>
           <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#classmethod">classmethod</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>, ..., <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]] | None</code>
+                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[..., <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]] | None</code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>A dictionary of methods that validate fields.</p>
+              <p>A dictionary of methods that validate fields. The keys are the names of the validation methods to
+be added to the model, and the values are the validation methods themselves. You can read more about functional
+validators <a href="https://docs.pydantic.dev/2.8/concepts/validators/#field-validators">here</a>.</p>
             </div>
           </td>
           <td>
@@ -9819,7 +9821,9 @@ Any additional metadata in <code>typing.Annotated[&lt;type&gt;, &lt;FieldInfo&gt
 <span class="normal">1571</span>
 <span class="normal">1572</span>
 <span class="normal">1573</span>
-<span class="normal">1574</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+<span class="normal">1574</span>
+<span class="normal">1575</span>
+<span class="normal">1576</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -9827,7 +9831,7 @@ Any additional metadata in <code>typing.Annotated[&lt;type&gt;, &lt;FieldInfo&gt
     <span class="vm">__doc__</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">__base__</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">ModelT</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">ModelT</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="vm">__module__</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">__validators__</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">classmethod</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">__validators__</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">__cls_kwargs__</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="vm">__slots__</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">field_definitions</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
@@ -9844,7 +9848,9 @@ Any additional metadata in <code>typing.Annotated[&lt;type&gt;, &lt;FieldInfo&gt
 <span class="sd">        __base__: The base class or classes for the new model.</span>
 <span class="sd">        __module__: The name of the module that the model belongs to;</span>
 <span class="sd">            if `None`, the value is taken from `sys._getframe(1)`</span>
-<span class="sd">        __validators__: A dictionary of methods that validate fields.</span>
+<span class="sd">        __validators__: A dictionary of methods that validate fields. The keys are the names of the validation methods to</span>
+<span class="sd">            be added to the model, and the values are the validation methods themselves. You can read more about functional</span>
+<span class="sd">            validators [here](https://docs.pydantic.dev/2.8/concepts/validators/#field-validators).</span>
 <span class="sd">        __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.</span>
 <span class="sd">        __slots__: Deprecated. Should not be passed to `create_model`.</span>
 <span class="sd">        **field_definitions: Attributes of the new model. They should be passed in the format:</span>
