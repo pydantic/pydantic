@@ -75,12 +75,17 @@ ext_modules = None
 if not any(arg in sys.argv for arg in ['clean', 'check']) and 'SKIP_CYTHON' not in os.environ:
     try:
         from Cython.Build import cythonize
+        from Cython.Compiler.Version import version as cy_version
     except ImportError:
         pass
     else:
+        if tuple(int(_) for _ in cy_version.split(".")) > (3,):
+            raise RuntimeError("Cython 3+ is not supported.")
         # For cython test coverage install with `make build-trace`
         compiler_directives = {}
         if 'CYTHON_TRACE' in sys.argv:
+            if sys.version_info >= (3, 12):
+                raise RuntimeError("Cython 0.x does not support tracing for Python 3.12+.")
             compiler_directives['linetrace'] = True
         # Set CFLAG to all optimizations (-O3), add `-g0` to reduce size of binaries, see #2276
         # Any additional CFLAGS will be appended. Only the last optimization flag will have effect
@@ -109,6 +114,7 @@ setup(
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
         'Intended Audience :: Developers',
         'Intended Audience :: Information Technology',
         'Intended Audience :: System Administrators',
@@ -126,7 +132,7 @@ setup(
     author_email='s@muelcolvin.com',
     url='https://github.com/pydantic/pydantic',
     license='MIT',
-    packages=['pydantic'],
+    packages=['pydantic', 'pydantic.v1'],
     package_data={'pydantic': ['py.typed']},
     python_requires='>=3.7',
     zip_safe=False,  # https://mypy.readthedocs.io/en/latest/installed_packages.html

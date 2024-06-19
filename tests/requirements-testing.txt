@@ -1,5 +1,5 @@
 coverage==6.4.4
-hypothesis==6.54.4
+hypothesis==6.79.1
 # pin importlib-metadata as upper versions need typing-extensions to work if on Python < 3.8
 importlib-metadata==3.6.0;python_version<"3.8"
 mypy==0.971
@@ -12,3 +12,4 @@ typing-extensions==4.6.0
 # used in FastAPI tests, pin to avoid warnings in newer version
 # that FastAPI needs to fix
 Flask==2.2.3
+setuptools==70.0.0;python_version>="3.12"

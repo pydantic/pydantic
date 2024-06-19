@@ -1,3 +1,9 @@
+## v1.10.16 (2024-06-11)
+
+* Specify recursive_guard as kwarg in FutureRef._evaluate by @vfazio in https://github.com/pydantic/pydantic/pull/9612
+* Fix mypy v1 plugin for upcoming mypy release by @ cdce8p in https://github.com/pydantic/pydantic/pull/9586
+* Import modules/objects directly from v1 namespace by @exs-dwoodward in https://github.com/pydantic/pydantic/pull/9162
+
 ## v1.10.15 (2024-04-03)
 
 * Add pydantic.v1 namespace to Pydantic v1 by @exs-dmiketa in https://github.com/pydantic/pydantic/pull/9042
