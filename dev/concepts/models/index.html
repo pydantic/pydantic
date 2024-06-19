@@ -4915,12 +4915,16 @@ For this Pydantic provides the <code>create_model</code> function to allow model
 <li><code>typing.Annotated[&lt;type&gt;, Field(...)]</code></li>
 </ul>
 <p>Using a <code>Field(...)</code> call as the second argument in the tuple (the default value)
-allows for more advanced field configuration. It's analogous to doing the following
-with a standard <code>BaseModel</code>:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+allows for more advanced field configuration. Thus, the following are analogous:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">create_model</span>
+
+<span class="n">DynamicModel</span> <span class="o">=</span> <span class="n">create_model</span><span class="p">(</span>
+    <span class="s1">&#39;DynamicModel&#39;</span><span class="p">,</span>
+    <span class="n">foo</span><span class="o">=</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;foo description&#39;</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;FOO&#39;</span><span class="p">)),</span>
+<span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">StaticModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;foo description&#39;</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;FOO&#39;</span><span class="p">)</span>
 </code></pre></div>
 <p>The special keyword arguments <code>__config__</code> and <code>__base__</code> can be used to customize the new model.
