@@ -48,7 +48,8 @@ See more about it on the [Bump Pydantic](https://github.com/pydantic/bump-pydant
 
 ## Continue using Pydantic V1 features
 
-Pydantic V1 is still available when you need it, though we recommend migrating to Pydantic V2 for its improvements and new features.
+Pydantic V1 is still available when you need it, though we recommend migrating to
+Pydantic V2 for its improvements and new features.
 
 If you need to use latest Pydantic V1, you can install it with:
 
@@ -56,8 +57,11 @@ If you need to use latest Pydantic V1, you can install it with:
 pip install "pydantic==1.*"
 ```
 
-The Pydantic V2 package also continues to provide access to the Pydantic V1 API by importing through `pydantic.v1`.
-For example, you can use the `BaseModel` class from Pydantic V1 instead of the Pydantic V2 `pydantic.BaseModel` class:
+The Pydantic V2 package also continues to provide access to the Pydantic V1 API
+by importing through `pydantic.v1`.
+
+For example, you can use the `BaseModel` class from Pydantic V1 instead of the
+Pydantic V2 `pydantic.BaseModel` class:
 
 ```python test="skip" lint="skip" upgrade="skip"
 from pydantic.v1 import BaseModel
@@ -70,6 +74,47 @@ from pydantic.v1.utils import lenient_isinstance
 ```
 
 Pydantic V1 documentation is available at [https://docs.pydantic.dev/1.10/](https://docs.pydantic.dev/1.10/).
+
+
+#### Using Pydantic v1 features in a v1/v2 environment
+
+As of `pydantic>=1.10.17` the `pydantic.v1` namespace is available to use within v1,
+meaning that in order to unpin a `pydantic<2` dependency to allow using `v1` features,
+simply replace `pydantic<2` with `pydantic>=1.10.17,<3` and find and replace all:
+
+```python test="skip" lint="skip" upgrade="skip"
+from pydantic.<module> import <object>
+```
+
+to:
+
+```python test="skip" lint="skip" upgrade="skip"
+from pydantic.v1.<module> import <object>
+```
+
+Imports for `pydantic` v1 features for different versions of pydantic.
+
+=== "`pydantic>2,<3`"
+
+    ```py
+    try:
+        from pydantic.v1.fields import ModelField
+    except ImportError:
+        from pydantic.fields import ModelField
+    ```
+
+=== "pydantic>=1.10.17,<3"
+
+    ```py
+    from pydantic.v1.fields import ModelField
+    ```
+
+!!! note
+    When importing modules using `pydantic>=1.10.17,<2` with the `.v1` namespace
+    these modules will *not* be the same module as the same import without the `.v1`
+    namespace, but the symbols imported *will* be. For example ``pydantic.v1.fields is not pydantic.fields``
+    but ``pydantic.v1.fields.ModelField is pydantic.fields.ModelField``.
+
 
 ## Migration guide
 
