@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from datetime import date, time
 from enum import Enum, IntEnum
-from typing import Any
+from itertools import permutations
+from typing import Any, List, Optional, Union
 from uuid import UUID
 
 import pytest
@@ -170,13 +171,15 @@ class TestModelClassSimilar:
         assert m.b == 'hello'
         assert not hasattr(m, 'c')
 
-    def test_model_b_ignored(self, schema_validator: SchemaValidator):
-        # first choice works, so second choice is not used
+    def test_model_b_preferred(self, schema_validator: SchemaValidator):
+        # Note, this is a different behavior to previous smart union behavior,
+        # where the first match would be preferred. However, we believe is it better
+        # to prefer the match with the greatest number of valid fields set.
         m = schema_validator.validate_python({'a': 1, 'b': 'hello', 'c': 2.0})
-        assert isinstance(m, self.ModelA)
+        assert isinstance(m, self.ModelB)
         assert m.a == 1
         assert m.b == 'hello'
-        assert not hasattr(m, 'c')
+        assert m.c == 2.0
 
     def test_model_b_not_ignored(self, schema_validator: SchemaValidator):
         m1 = self.ModelB()
@@ -803,3 +806,477 @@ def test_model_and_literal_union() -> None:
     assert isinstance(m, ModelA)
     assert m.a == 42
     assert validator.validate_python(True) is True
+
+
+def permute_choices(choices: List[core_schema.CoreSchema]) -> List[List[core_schema.CoreSchema]]:
+    return [list(p) for p in permutations(choices)]
+
+
+class TestSmartUnionWithSubclass:
+    class ModelA:
+        a: int
+
+    class ModelB(ModelA):
+        b: int
+
+    model_a_schema = core_schema.model_schema(
+        ModelA, core_schema.model_fields_schema(fields={'a': core_schema.model_field(core_schema.int_schema())})
+    )
+    model_b_schema = core_schema.model_schema(
+        ModelB,
+        core_schema.model_fields_schema(
+            fields={
+                'a': core_schema.model_field(core_schema.int_schema()),
+                'b': core_schema.model_field(core_schema.int_schema()),
+            }
+        ),
+    )
+
+    @pytest.mark.parametrize('choices', permute_choices([model_a_schema, model_b_schema]))
+    def test_more_specific_data_matches_subclass(self, choices) -> None:
+        validator = SchemaValidator(schema=core_schema.union_schema(choices))
+        assert isinstance(validator.validate_python({'a': 1}), self.ModelA)
+        assert isinstance(validator.validate_python({'a': 1, 'b': 2}), self.ModelB)
+
+        assert isinstance(validator.validate_python({'a': 1, 'b': 2}), self.ModelB)
+
+        # confirm that a model that matches in lax mode with 2 fields
+        # is preferred over a model that matches in strict mode with 1 field
+        assert isinstance(validator.validate_python({'a': '1', 'b': '2'}), self.ModelB)
+        assert isinstance(validator.validate_python({'a': '1', 'b': 2}), self.ModelB)
+        assert isinstance(validator.validate_python({'a': 1, 'b': '2'}), self.ModelB)
+
+
+class TestSmartUnionWithDefaults:
+    class ModelA:
+        a: int = 0
+
+    class ModelB:
+        b: int = 0
+
+    model_a_schema = core_schema.model_schema(
+        ModelA,
+        core_schema.model_fields_schema(
+            fields={'a': core_schema.model_field(core_schema.with_default_schema(core_schema.int_schema(), default=0))}
+        ),
+    )
+    model_b_schema = core_schema.model_schema(
+        ModelB,
+        core_schema.model_fields_schema(
+            fields={'b': core_schema.model_field(core_schema.with_default_schema(core_schema.int_schema(), default=0))}
+        ),
+    )
+
+    @pytest.mark.parametrize('choices', permute_choices([model_a_schema, model_b_schema]))
+    def test_fields_set_ensures_best_match(self, choices) -> None:
+        validator = SchemaValidator(schema=core_schema.union_schema(choices))
+        assert isinstance(validator.validate_python({'a': 1}), self.ModelA)
+        assert isinstance(validator.validate_python({'b': 1}), self.ModelB)
+
+        # defaults to leftmost choice if there's a tie
+        assert isinstance(validator.validate_python({}), choices[0]['cls'])
+
+    @pytest.mark.parametrize('choices', permute_choices([model_a_schema, model_b_schema]))
+    def test_optional_union_with_members_having_defaults(self, choices) -> None:
+        class WrapModel:
+            val: Optional[Union[self.ModelA, self.ModelB]] = None
+
+        val = SchemaValidator(
+            core_schema.model_schema(
+                WrapModel,
+                core_schema.model_fields_schema(
+                    fields={
+                        'val': core_schema.model_field(
+                            core_schema.with_default_schema(
+                                core_schema.union_schema(choices),
+                                default=None,
+                            )
+                        )
+                    }
+                ),
+            )
+        )
+
+        assert isinstance(val.validate_python({'val': {'a': 1}}).val, self.ModelA)
+        assert isinstance(val.validate_python({'val': {'b': 1}}).val, self.ModelB)
+        assert val.validate_python({}).val is None
+
+
+def test_dc_smart_union_by_fields_set() -> None:
+    @dataclass
+    class ModelA:
+        x: int
+
+    @dataclass
+    class ModelB(ModelA):
+        y: int
+
+    dc_a_schema = core_schema.dataclass_schema(
+        ModelA,
+        core_schema.dataclass_args_schema('ModelA', [core_schema.dataclass_field('x', core_schema.int_schema())]),
+        ['x'],
+    )
+
+    dc_b_schema = core_schema.dataclass_schema(
+        ModelB,
+        core_schema.dataclass_args_schema(
+            'ModelB',
+            [
+                core_schema.dataclass_field('x', core_schema.int_schema()),
+                core_schema.dataclass_field('y', core_schema.int_schema()),
+            ],
+        ),
+        ['x', 'y'],
+    )
+
+    for choices in permute_choices([dc_a_schema, dc_b_schema]):
+        validator = SchemaValidator(core_schema.union_schema(choices=choices))
+
+        assert isinstance(validator.validate_python({'x': 1}), ModelA)
+        assert isinstance(validator.validate_python({'x': '1'}), ModelA)
+
+        assert isinstance(validator.validate_python({'x': 1, 'y': 2}), ModelB)
+        assert isinstance(validator.validate_python({'x': 1, 'y': '2'}), ModelB)
+        assert isinstance(validator.validate_python({'x': '1', 'y': 2}), ModelB)
+        assert isinstance(validator.validate_python({'x': '1', 'y': '2'}), ModelB)
+
+
+def test_dc_smart_union_with_defaults() -> None:
+    @dataclass
+    class ModelA:
+        a: int = 0
+
+    @dataclass
+    class ModelB:
+        b: int = 0
+
+    dc_a_schema = core_schema.dataclass_schema(
+        ModelA,
+        core_schema.dataclass_args_schema(
+            'ModelA',
+            [
+                core_schema.dataclass_field(
+                    'a', core_schema.with_default_schema(schema=core_schema.int_schema(), default=0)
+                )
+            ],
+        ),
+        ['a'],
+    )
+
+    dc_b_schema = core_schema.dataclass_schema(
+        ModelB,
+        core_schema.dataclass_args_schema(
+            'ModelB',
+            [
+                core_schema.dataclass_field(
+                    'b', core_schema.with_default_schema(schema=core_schema.int_schema(), default=0)
+                )
+            ],
+        ),
+        ['b'],
+    )
+
+    for choices in permute_choices([dc_a_schema, dc_b_schema]):
+        validator = SchemaValidator(core_schema.union_schema(choices=choices))
+
+        assert isinstance(validator.validate_python({'a': 1}), ModelA)
+        assert isinstance(validator.validate_python({'b': 1}), ModelB)
+
+
+def test_td_smart_union_by_fields_set() -> None:
+    td_a_schema = core_schema.typed_dict_schema(
+        fields={'x': core_schema.typed_dict_field(core_schema.int_schema())},
+    )
+
+    td_b_schema = core_schema.typed_dict_schema(
+        fields={
+            'x': core_schema.typed_dict_field(core_schema.int_schema()),
+            'y': core_schema.typed_dict_field(core_schema.int_schema()),
+        },
+    )
+
+    for choices in permute_choices([td_a_schema, td_b_schema]):
+        validator = SchemaValidator(core_schema.union_schema(choices=choices))
+
+        assert set(validator.validate_python({'x': 1}).keys()) == {'x'}
+        assert set(validator.validate_python({'x': '1'}).keys()) == {'x'}
+
+        assert set(validator.validate_python({'x': 1, 'y': 2}).keys()) == {'x', 'y'}
+        assert set(validator.validate_python({'x': 1, 'y': '2'}).keys()) == {'x', 'y'}
+        assert set(validator.validate_python({'x': '1', 'y': 2}).keys()) == {'x', 'y'}
+        assert set(validator.validate_python({'x': '1', 'y': '2'}).keys()) == {'x', 'y'}
+
+
+def test_smart_union_does_nested_model_field_counting() -> None:
+    class SubModelA:
+        x: int = 1
+
+    class SubModelB:
+        y: int = 2
+
+    class ModelA:
+        sub: SubModelA
+
+    class ModelB:
+        sub: SubModelB
+
+    model_a_schema = core_schema.model_schema(
+        ModelA,
+        core_schema.model_fields_schema(
+            fields={
+                'sub': core_schema.model_field(
+                    core_schema.model_schema(
+                        SubModelA,
+                        core_schema.model_fields_schema(
+                            fields={
+                                'x': core_schema.model_field(
+                                    core_schema.with_default_schema(core_schema.int_schema(), default=1)
+                                )
+                            }
+                        ),
+                    )
+                )
+            }
+        ),
+    )
+
+    model_b_schema = core_schema.model_schema(
+        ModelB,
+        core_schema.model_fields_schema(
+            fields={
+                'sub': core_schema.model_field(
+                    core_schema.model_schema(
+                        SubModelB,
+                        core_schema.model_fields_schema(
+                            fields={
+                                'y': core_schema.model_field(
+                                    core_schema.with_default_schema(core_schema.int_schema(), default=2)
+                                )
+                            }
+                        ),
+                    )
+                )
+            }
+        ),
+    )
+
+    for choices in permute_choices([model_a_schema, model_b_schema]):
+        validator = SchemaValidator(core_schema.union_schema(choices=choices))
+
+        assert isinstance(validator.validate_python({'sub': {'x': 1}}), ModelA)
+        assert isinstance(validator.validate_python({'sub': {'y': 3}}), ModelB)
+
+        # defaults to leftmost choice if there's a tie
+        assert isinstance(validator.validate_python({'sub': {}}), choices[0]['cls'])
+
+
+def test_smart_union_does_nested_dataclass_field_counting() -> None:
+    @dataclass
+    class SubModelA:
+        x: int = 1
+
+    @dataclass
+    class SubModelB:
+        y: int = 2
+
+    @dataclass
+    class ModelA:
+        sub: SubModelA
+
+    @dataclass
+    class ModelB:
+        sub: SubModelB
+
+    dc_a_schema = core_schema.dataclass_schema(
+        ModelA,
+        core_schema.dataclass_args_schema(
+            'ModelA',
+            [
+                core_schema.dataclass_field(
+                    'sub',
+                    core_schema.with_default_schema(
+                        core_schema.dataclass_schema(
+                            SubModelA,
+                            core_schema.dataclass_args_schema(
+                                'SubModelA',
+                                [
+                                    core_schema.dataclass_field(
+                                        'x', core_schema.with_default_schema(core_schema.int_schema(), default=1)
+                                    )
+                                ],
+                            ),
+                            ['x'],
+                        ),
+                        default=SubModelA(),
+                    ),
+                )
+            ],
+        ),
+        ['sub'],
+    )
+
+    dc_b_schema = core_schema.dataclass_schema(
+        ModelB,
+        core_schema.dataclass_args_schema(
+            'ModelB',
+            [
+                core_schema.dataclass_field(
+                    'sub',
+                    core_schema.with_default_schema(
+                        core_schema.dataclass_schema(
+                            SubModelB,
+                            core_schema.dataclass_args_schema(
+                                'SubModelB',
+                                [
+                                    core_schema.dataclass_field(
+                                        'y', core_schema.with_default_schema(core_schema.int_schema(), default=2)
+                                    )
+                                ],
+                            ),
+                            ['y'],
+                        ),
+                        default=SubModelB(),
+                    ),
+                )
+            ],
+        ),
+        ['sub'],
+    )
+
+    for choices in permute_choices([dc_a_schema, dc_b_schema]):
+        validator = SchemaValidator(core_schema.union_schema(choices=choices))
+
+        assert isinstance(validator.validate_python({'sub': {'x': 1}}), ModelA)
+        assert isinstance(validator.validate_python({'sub': {'y': 3}}), ModelB)
+
+        # defaults to leftmost choice if there's a tie
+        assert isinstance(validator.validate_python({'sub': {}}), choices[0]['cls'])
+
+
+def test_smart_union_does_nested_typed_dict_field_counting() -> None:
+    td_a_schema = core_schema.typed_dict_schema(
+        fields={
+            'sub': core_schema.typed_dict_field(
+                core_schema.typed_dict_schema(fields={'x': core_schema.typed_dict_field(core_schema.int_schema())})
+            )
+        }
+    )
+
+    td_b_schema = core_schema.typed_dict_schema(
+        fields={
+            'sub': core_schema.typed_dict_field(
+                core_schema.typed_dict_schema(fields={'y': core_schema.typed_dict_field(core_schema.int_schema())})
+            )
+        }
+    )
+
+    for choices in permute_choices([td_a_schema, td_b_schema]):
+        validator = SchemaValidator(core_schema.union_schema(choices=choices))
+
+        assert set(validator.validate_python({'sub': {'x': 1}})['sub'].keys()) == {'x'}
+        assert set(validator.validate_python({'sub': {'y': 2}})['sub'].keys()) == {'y'}
+
+
+def test_nested_unions_bubble_up_field_count() -> None:
+    class SubModelX:
+        x1: int = 0
+        x2: int = 0
+        x3: int = 0
+
+    class SubModelY:
+        x1: int = 0
+        x2: int = 0
+        x3: int = 0
+
+    class SubModelZ:
+        z1: int = 0
+        z2: int = 0
+        z3: int = 0
+
+    class SubModelW:
+        w1: int = 0
+        w2: int = 0
+        w3: int = 0
+
+    class ModelA:
+        a: Union[SubModelX, SubModelY]
+
+    class ModelB:
+        b: Union[SubModelZ, SubModelW]
+
+    model_x_schema = core_schema.model_schema(
+        SubModelX,
+        core_schema.model_fields_schema(
+            fields={
+                'x1': core_schema.model_field(core_schema.with_default_schema(core_schema.int_schema(), default=0)),
+                'x2': core_schema.model_field(core_schema.with_default_schema(core_schema.int_schema(), default=0)),
+                'x3': core_schema.model_field(core_schema.with_default_schema(core_schema.int_schema(), default=0)),
+            }
+        ),
+    )
+
+    model_y_schema = core_schema.model_schema(
+        SubModelY,
+        core_schema.model_fields_schema(
+            fields={
+                'x1': core_schema.model_field(core_schema.with_default_schema(core_schema.int_schema(), default=0)),
+                'x2': core_schema.model_field(core_schema.with_default_schema(core_schema.int_schema(), default=0)),
+                'x3': core_schema.model_field(core_schema.with_default_schema(core_schema.int_schema(), default=0)),
+            }
+        ),
+    )
+
+    model_z_schema = core_schema.model_schema(
+        SubModelZ,
+        core_schema.model_fields_schema(
+            fields={
+                'z1': core_schema.model_field(core_schema.with_default_schema(core_schema.int_schema(), default=0)),
+                'z2': core_schema.model_field(core_schema.with_default_schema(core_schema.int_schema(), default=0)),
+                'z3': core_schema.model_field(core_schema.with_default_schema(core_schema.int_schema(), default=0)),
+            }
+        ),
+    )
+
+    model_w_schema = core_schema.model_schema(
+        SubModelW,
+        core_schema.model_fields_schema(
+            fields={
+                'w1': core_schema.model_field(core_schema.with_default_schema(core_schema.int_schema(), default=0)),
+                'w2': core_schema.model_field(core_schema.with_default_schema(core_schema.int_schema(), default=0)),
+                'w3': core_schema.model_field(core_schema.with_default_schema(core_schema.int_schema(), default=0)),
+            }
+        ),
+    )
+
+    model_a_schema_options = [
+        core_schema.union_schema([model_x_schema, model_y_schema]),
+        core_schema.union_schema([model_y_schema, model_x_schema]),
+    ]
+
+    model_b_schema_options = [
+        core_schema.union_schema([model_z_schema, model_w_schema]),
+        core_schema.union_schema([model_w_schema, model_z_schema]),
+    ]
+
+    for model_a_schema in model_a_schema_options:
+        for model_b_schema in model_b_schema_options:
+            validator = SchemaValidator(
+                core_schema.union_schema(
+                    [
+                        core_schema.model_schema(
+                            ModelA,
+                            core_schema.model_fields_schema(fields={'a': core_schema.model_field(model_a_schema)}),
+                        ),
+                        core_schema.model_schema(
+                            ModelB,
+                            core_schema.model_fields_schema(fields={'b': core_schema.model_field(model_b_schema)}),
+                        ),
+                    ]
+                )
+            )
+
+            result = validator.validate_python(
+                {'a': {'x1': 1, 'x2': 2, 'y1': 1, 'y2': 2}, 'b': {'w1': 1, 'w2': 2, 'w3': 3}}
+            )
+            assert isinstance(result, ModelB)
+            assert isinstance(result.b, SubModelW)
