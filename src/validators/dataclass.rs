@@ -154,6 +154,7 @@ impl Validator for DataclassArgsValidator {
         let mut used_keys: AHashSet<&str> = AHashSet::with_capacity(self.fields.len());
 
         let state = &mut state.rebind_extra(|extra| extra.data = Some(output_dict.clone()));
+        let mut fields_set_count: usize = 0;
 
         macro_rules! set_item {
             ($field:ident, $value:expr) => {{
@@ -175,6 +176,7 @@ impl Validator for DataclassArgsValidator {
                     Ok(Some(value)) => {
                         // Default value exists, and passed validation if required
                         set_item!(field, value);
+                        fields_set_count += 1;
                     }
                     Ok(None) | Err(ValError::Omit) => continue,
                     // Note: this will always use the field name even if there is an alias
@@ -214,7 +216,10 @@ impl Validator for DataclassArgsValidator {
                 }
                 // found a positional argument, validate it
                 (Some(pos_value), None) => match field.validator.validate(py, pos_value.borrow_input(), state) {
-                    Ok(value) => set_item!(field, value),
+                    Ok(value) => {
+                        set_item!(field, value);
+                        fields_set_count += 1;
+                    }
                     Err(ValError::LineErrors(line_errors)) => {
                         errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
                     }
@@ -222,7 +227,10 @@ impl Validator for DataclassArgsValidator {
                 },
                 // found a keyword argument, validate it
                 (None, Some((lookup_path, kw_value))) => match field.validator.validate(py, kw_value, state) {
-                    Ok(value) => set_item!(field, value),
+                    Ok(value) => {
+                        set_item!(field, value);
+                        fields_set_count += 1;
+                    }
                     Err(ValError::LineErrors(line_errors)) => {
                         errors.extend(
                             line_errors
@@ -335,6 +343,8 @@ impl Validator for DataclassArgsValidator {
                 }
             }
         }
+
+        state.add_fields_set(fields_set_count);
 
         if errors.is_empty() {
             if let Some(init_only_args) = init_only_args {
