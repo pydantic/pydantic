@@ -1154,14 +1154,18 @@ Fields are defined by one of the following tuple forms:
 * `typing.Annotated[<type>, Field(...)]`
 
 Using a `Field(...)` call as the second argument in the tuple (the default value)
-allows for more advanced field configuration. It's analogous to doing the following
-with a standard `BaseModel`:
+allows for more advanced field configuration. Thus, the following are analogous:
 
 ```py
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, create_model
+
+DynamicModel = create_model(
+    'DynamicModel',
+    foo=(str, Field(..., description='foo description', alias='FOO')),
+)
 
 
-class Model(BaseModel):
+class StaticModel(BaseModel):
     foo: str = Field(..., description='foo description', alias='FOO')
 ```
 
