@@ -114,7 +114,7 @@ The union match which produced the highest exactness score will be considered th
 
 In this mode, the following steps are taken to try to select the best match for the input:
 
-=== "`BaseModel`s, `dataclass`es, and `TypedDict`s"
+=== "`BaseModel`, `dataclass`, and `TypedDict`"
 
     1. Union members are attempted left to right, with any successful matches scored into one of the three exactness categories described above,
     with the valid fields set count also tallied.
