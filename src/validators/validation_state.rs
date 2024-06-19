@@ -18,6 +18,7 @@ pub enum Exactness {
 pub struct ValidationState<'a, 'py> {
     pub recursion_guard: &'a mut RecursionState,
     pub exactness: Option<Exactness>,
+    pub fields_set_count: Option<usize>,
     // deliberately make Extra readonly
     extra: Extra<'a, 'py>,
 }
@@ -27,6 +28,7 @@ impl<'a, 'py> ValidationState<'a, 'py> {
         Self {
             recursion_guard, // Don't care about exactness unless doing union validation
             exactness: None,
+            fields_set_count: None,
             extra,
         }
     }
@@ -66,6 +68,10 @@ impl<'a, 'py> ValidationState<'a, 'py> {
             }
             Some(Exactness::Exact) => self.exactness = Some(exactness),
         }
+    }
+
+    pub fn add_fields_set(&mut self, fields_set_count: usize) {
+        *self.fields_set_count.get_or_insert(0) += fields_set_count;
     }
 
     pub fn cache_str(&self) -> StringCacheMode {

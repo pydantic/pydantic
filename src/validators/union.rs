@@ -108,10 +108,12 @@ impl UnionValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         let old_exactness = state.exactness;
+        let old_fields_set_count = state.fields_set_count;
+
         let strict = state.strict_or(self.strict);
         let mut errors = MaybeErrors::new(self.custom_error.as_ref());
 
-        let mut success = None;
+        let mut best_match: Option<(Py<PyAny>, Exactness, Option<usize>)> = None;
 
         for (choice, label) in &self.choices {
             let state = &mut state.rebind_extra(|extra| {
@@ -120,47 +122,67 @@ impl UnionValidator {
                 }
             });
             state.exactness = Some(Exactness::Exact);
+            state.fields_set_count = None;
             let result = choice.validate(py, input, state);
             match result {
-                Ok(new_success) => match state.exactness {
-                    // exact match, return
-                    Some(Exactness::Exact) => {
+                Ok(new_success) => match (state.exactness, state.fields_set_count) {
+                    (Some(Exactness::Exact), None) => {
+                        // exact match with no fields set data, return immediately
                         return {
                             // exact match, return, restore any previous exactness
                             state.exactness = old_exactness;
+                            state.fields_set_count = old_fields_set_count;
                             Ok(new_success)
                         };
                     }
                     _ => {
                         // success should always have an exactness
                         debug_assert_ne!(state.exactness, None);
+
                         let new_exactness = state.exactness.unwrap_or(Exactness::Lax);
-                        // if the new result has higher exactness than the current success, replace it
-                        if success
-                            .as_ref()
-                            .map_or(true, |(_, current_exactness)| *current_exactness < new_exactness)
-                        {
-                            // TODO: is there a possible optimization here, where once there has
-                            // been one success, we turn on strict mode, to avoid unnecessary
-                            // coercions for further validation?
-                            success = Some((new_success, new_exactness));
+                        let new_fields_set_count = state.fields_set_count;
+
+                        // we use both the exactness and the fields_set_count to determine the best union member match
+                        // if fields_set_count is available for the current best match and the new candidate, we use this
+                        // as the primary metric. If the new fields_set_count is greater, the new candidate is better.
+                        // if the fields_set_count is the same, we use the exactness as a tie breaker to determine the best match.
+                        // if the fields_set_count is not available for either the current best match or the new candidate,
+                        // we use the exactness to determine the best match.
+                        let new_success_is_best_match: bool =
+                            best_match
+                                .as_ref()
+                                .map_or(true, |(_, cur_exactness, cur_fields_set_count)| {
+                                    match (*cur_fields_set_count, new_fields_set_count) {
+                                        (Some(cur), Some(new)) if cur != new => cur < new,
+                                        _ => *cur_exactness < new_exactness,
+                                    }
+                                });
+
+                        if new_success_is_best_match {
+                            best_match = Some((new_success, new_exactness, new_fields_set_count));
                         }
                     }
                 },
                 Err(ValError::LineErrors(lines)) => {
                     // if we don't yet know this validation will succeed, record the error
-                    if success.is_none() {
+                    if best_match.is_none() {
                         errors.push(choice, label.as_deref(), lines);
                     }
                 }
                 otherwise => return otherwise,
             }
         }
-        state.exactness = old_exactness;
 
-        if let Some((success, exactness)) = success {
+        // restore previous validation state to prepare for any future validations
+        state.exactness = old_exactness;
+        state.fields_set_count = old_fields_set_count;
+
+        if let Some((best_match, exactness, fields_set_count)) = best_match {
             state.floor_exactness(exactness);
-            return Ok(success);
+            if let Some(count) = fields_set_count {
+                state.add_fields_set(count);
+            }
+            return Ok(best_match);
         }
 
         // no matches, build errors

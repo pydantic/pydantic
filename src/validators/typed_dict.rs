@@ -165,6 +165,7 @@ impl Validator for TypedDictValidator {
 
         {
             let state = &mut state.rebind_extra(|extra| extra.data = Some(output_dict.clone()));
+            let mut fields_set_count: usize = 0;
 
             for field in &self.fields {
                 let op_key_value = match dict.get_item(&field.lookup_key) {
@@ -186,6 +187,7 @@ impl Validator for TypedDictValidator {
                     match field.validator.validate(py, value.borrow_input(), state) {
                         Ok(value) => {
                             output_dict.set_item(&field.name_py, value)?;
+                            fields_set_count += 1;
                         }
                         Err(ValError::Omit) => continue,
                         Err(ValError::LineErrors(line_errors)) => {
@@ -227,6 +229,8 @@ impl Validator for TypedDictValidator {
                     Err(err) => return Err(err),
                 }
             }
+
+            state.add_fields_set(fields_set_count);
         }
 
         if let Some(used_keys) = used_keys {
