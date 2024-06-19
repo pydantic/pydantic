@@ -2916,9 +2916,10 @@ class _AllowAnyJson:
 
 if TYPE_CHECKING:
     # This seems to only be necessary for mypy
+    JV = TypeVar('JV', bound='JsonValue')
     JsonValue: TypeAlias = Union[
-        List['JsonValue'],
-        Dict[str, 'JsonValue'],
+        List[JV],
+        Dict[str, JV],
         str,
         bool,
         int,

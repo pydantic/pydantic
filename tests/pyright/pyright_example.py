@@ -5,7 +5,7 @@ This file is used to test pyright's ability to check pydantic code.
 from functools import cached_property
 from typing import List
 
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field, JsonValue, computed_field
 
 
 class MyModel(BaseModel):
@@ -56,3 +56,14 @@ class Square2(BaseModel):
 sq = Square(side=10)
 y = 12.4 + sq.area
 z = 'x' + sq.area  # type: ignore
+
+
+def bar() -> list[str]:
+    raise NotImplementedError
+
+
+foo: dict[str, JsonValue] = {
+    'a': {'b': 'hello'},
+    'b': 'c',
+}
+foo['l'] = bar()  # this works because bar() returns a list[str] which is a valid JsonValue
