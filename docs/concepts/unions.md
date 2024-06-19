@@ -92,6 +92,9 @@ In this mode, pydantic selects the best match for the input from the union membe
 
 #### Number of valid fields set
 
+!!! note
+    This metric was introduced in Pydantic v2.8.0. Prior to this version, only exactness was used to determine the best match.
+
 This metric is currently only relevant for models, dataclasses, and typed dicts.
 
 The greater the number of valid fields set, the better the match. The number of fields set on nested models is also taken into account.
