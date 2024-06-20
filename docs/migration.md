@@ -75,8 +75,7 @@ from pydantic.v1.utils import lenient_isinstance
 
 Pydantic V1 documentation is available at [https://docs.pydantic.dev/1.10/](https://docs.pydantic.dev/1.10/).
 
-
-#### Using Pydantic v1 features in a v1/v2 environment
+### Using Pydantic v1 features in a v1/v2 environment
 
 As of `pydantic>=1.10.17`, the `pydantic.v1` namespace can be used within V1.
 This makes it easier to migrate to V2, which also supports the `pydantic.v1`
@@ -99,14 +98,15 @@ from pydantic.v1.<module> import <object>
 Here's how you can import `pydantic`'s v1 features based on your version of `pydantic`:
 
 === "`pydantic>=1.10.17,<3`"
-    As of `1.10.17` the `.v1` namespace is usable, allowing imports as below:
+    As of `v1.10.17` the `.v1` namespace is available in V1, allowing imports as below:
 
     ```python test="skip" lint="skip" upgrade="skip"
     from pydantic.v1.fields import ModelField
     ```
 
 === "`pydantic<3`"
-    Try/except usable for multiple versions of pydantic:
+    All versions of Pydantic V1 and V2 support the following import pattern, in case you don't
+    know which version of Pydantic you are using:
 
     ```python test="skip" lint="skip" upgrade="skip"
     try:
@@ -118,11 +118,9 @@ Here's how you can import `pydantic`'s v1 features based on your version of `pyd
 !!! note
     When importing modules using `pydantic>=1.10.17,<2` with the `.v1` namespace
     these modules will *not* be the **same** module as the same import without the `.v1`
-    namespace, but the symbols imported *will* be. For example ``pydantic.v1.fields is not pydantic.fields``
-    but ``pydantic.v1.fields.ModelField is pydantic.fields.ModelField``. However
-    this is not likely to be relevant in 99% of cases, and is an unfortunate
-    consequence of providing a smoother migration experience.
-
+    namespace, but the symbols imported *will* be. For example `pydantic.v1.fields is not pydantic.fields`
+    but `pydantic.v1.fields.ModelField is pydantic.fields.ModelField`. Luckily, this is not likely to be relevant
+    in the vast majority of cases. It's just an unfortunate consequence of providing a smoother migration experience.
 
 ## Migration guide
 
