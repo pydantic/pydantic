@@ -33,7 +33,8 @@ def main():
         print(f'WARNING: v{new_version} already in history, stopping')
         sys.exit(1)
 
-    title = f'v{new_version} ({date.today():%Y-%m-%d})'
+    date_today_str = f'{date.today():%Y-%m-%d}'
+    title = f'v{new_version} ({date_today_str})'
     notes = get_notes(new_version)
     new_chunk = (
         f'## {title}\n\n'
@@ -47,6 +48,15 @@ def main():
 
     history_path.write_text(history)
     print(f'\nSUCCESS: added "{title}" section to {history_path.relative_to(root_dir)}')
+
+    citation_path = root_dir / 'CITATION.cff'
+    citation_text = citation_path.read_text()
+    citation_text = re.sub(r'(?<=\nversion: ).*', f'v{new_version}', citation_text)
+    citation_text = re.sub(r'(?<=date-released: ).*', date_today_str, citation_text)
+    citation_path.write_text(citation_text)
+    print(
+        f'SUCCESS: updated version=v{new_version} and date-released={date_today_str} in {citation_path.relative_to(root_dir)}'
+    )
 
 
 def get_notes(new_version: str) -> str:

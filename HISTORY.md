@@ -1006,6 +1006,12 @@ See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more deta
 
 <!-- package description limit -->
 
+## v1.10.17 (2024-06-20)
+
+* Advertise Python 3.12 for 1.10.x! Part Deux by @vfazio in https://github.com/pydantic/pydantic/pull/9644
+* Mirrored modules in `v1` namespace to fix typing and object resolution in python>3.11 by @exs-dwoodward in https://github.com/pydantic/pydantic/pull/9660
+* setup: remove upper bound from python_requires by @vfazio in https://github.com/pydantic/pydantic/pull/9685
+
 ## v1.10.16 (2024-06-11)
 
 * Specify recursive_guard as kwarg in FutureRef._evaluate by @vfazio in https://github.com/pydantic/pydantic/pull/9612

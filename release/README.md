@@ -9,7 +9,7 @@ Prerequisites:
 To create a new release:
 1. Edit `pydantic/version.py` to set the new version number.
 2. **(If the new version is a new minor or major release)** run `pre-commit run -a usage_docs` to update the usage links in docstrings.
-3. Run `pdm run release/make_history.py` to update `HISTORY.md`
+3. Run `pdm run release/make_history.py` to update `HISTORY.md` and `CITATION.cff`.
 4. **Important:** curate the changes in `HISTORY.md`:
    - make sure the markdown is valid; in particular, check text that should be in `code-blocks` is.
    - mark any breaking changes with `**Breaking Change:**`

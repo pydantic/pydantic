@@ -345,7 +345,7 @@ def inspect_namespace(  # noqa C901
 
     ignored_names: set[str] = set()
     for var_name, value in list(namespace.items()):
-        if var_name == 'model_config':
+        if var_name == 'model_config' or var_name == '__pydantic_extra__':
             continue
         elif (
             isinstance(value, type)
