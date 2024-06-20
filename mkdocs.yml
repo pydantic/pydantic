@@ -160,6 +160,7 @@ nav:
   - devtools: integrations/devtools.md
   - Rich: integrations/rich.md
   - Linting: integrations/linting.md
+  - AWS Lambda: integrations/aws_lambda.md
 - Blog: https://blog.pydantic.dev/
 - Pydantic People: pydantic_people.md
 
