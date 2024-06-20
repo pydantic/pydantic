@@ -3017,16 +3017,15 @@ class FailFast:
     This can be useful when you want to validate a large amount of data and you only need to know if it's valid or not.
 
     ```py
+    from typing import List
     from typing_extensions import Annotated
     from pydantic import BaseModel, FailFast
 
     class Model(BaseModel):
-        x: Annotated[int, FailFast()]
+        x: Annotated[List[int], FailFast()]
 
     # This will raise a single error for the first invalid value and stop validation
-    obj = Model(
-        x=[1, 2, 'a', 4, 5, 'b', 7, 8, 9, 10, 'c']
-    )
+    obj = Model(x=[1, 2, 'a', 4, 5, 'b', 7, 8, 9, 'c'])
     ```
     """
 
