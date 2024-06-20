@@ -48,7 +48,8 @@ See more about it on the [Bump Pydantic](https://github.com/pydantic/bump-pydant
 
 ## Continue using Pydantic V1 features
 
-Pydantic V1 is still available when you need it, though we recommend migrating to Pydantic V2 for its improvements and new features.
+Pydantic V1 is still available when you need it, though we recommend migrating to
+Pydantic V2 for its improvements and new features.
 
 If you need to use latest Pydantic V1, you can install it with:
 
@@ -56,8 +57,11 @@ If you need to use latest Pydantic V1, you can install it with:
 pip install "pydantic==1.*"
 ```
 
-The Pydantic V2 package also continues to provide access to the Pydantic V1 API by importing through `pydantic.v1`.
-For example, you can use the `BaseModel` class from Pydantic V1 instead of the Pydantic V2 `pydantic.BaseModel` class:
+The Pydantic V2 package also continues to provide access to the Pydantic V1 API
+by importing through `pydantic.v1`.
+
+For example, you can use the `BaseModel` class from Pydantic V1 instead of the
+Pydantic V2 `pydantic.BaseModel` class:
 
 ```python test="skip" lint="skip" upgrade="skip"
 from pydantic.v1 import BaseModel
@@ -70,6 +74,55 @@ from pydantic.v1.utils import lenient_isinstance
 ```
 
 Pydantic V1 documentation is available at [https://docs.pydantic.dev/1.10/](https://docs.pydantic.dev/1.10/).
+
+
+#### Using Pydantic v1 features in a v1/v2 environment
+
+As of `pydantic>=1.10.17`, the `pydantic.v1` namespace can be used within V1.
+This makes it easier to migrate to V2, which also supports the `pydantic.v1`
+namespace. In order to unpin a `pydantic<2` dependency and continue using V1
+features, take the following steps:
+
+1. Replace `pydantic<2` with `pydantic>=1.10.17`
+2. Find and replace all occurrences of:
+
+```python test="skip" lint="skip" upgrade="skip"
+from pydantic.<module> import <object>
+```
+
+with:
+
+```python test="skip" lint="skip" upgrade="skip"
+from pydantic.v1.<module> import <object>
+```
+
+Here's how you can import `pydantic`'s v1 features based on your version of `pydantic`:
+
+=== "`pydantic>=1.10.17,<3`"
+    As of `1.10.17` the `.v1` namespace is usable, allowing imports as below:
+
+    ```python test="skip" lint="skip" upgrade="skip"
+    from pydantic.v1.fields import ModelField
+    ```
+
+=== "`pydantic<3`"
+    Try/except usable for multiple versions of pydantic:
+
+    ```python test="skip" lint="skip" upgrade="skip"
+    try:
+        from pydantic.v1.fields import ModelField
+    except ImportError:
+        from pydantic.fields import ModelField
+    ```
+
+!!! note
+    When importing modules using `pydantic>=1.10.17,<2` with the `.v1` namespace
+    these modules will *not* be the **same** module as the same import without the `.v1`
+    namespace, but the symbols imported *will* be. For example ``pydantic.v1.fields is not pydantic.fields``
+    but ``pydantic.v1.fields.ModelField is pydantic.fields.ModelField``. However
+    this is not likely to be relevant in 99% of cases, and is an unfortunate
+    consequence of providing a smoother migration experience.
+
 
 ## Migration guide
 
@@ -828,6 +881,33 @@ Read more about it in the [Composing types via `Annotated`](concepts/types.md#co
 docs.
 
 For `ConstrainedStr` you can use [`StringConstraints`][pydantic.types.StringConstraints] instead.
+
+#### Mypy Plugins
+
+Pydantic V2 contains a [mypy](https://mypy.readthedocs.io/en/stable/extending_mypy.html#configuring-mypy-to-use-plugins) plugin in
+`pydantic.mypy`.
+
+When using [V1 features](migration.md#continue-using-pydantic-v1-features) the
+`pydantic.v1.mypy` plugin might need to also be enabled.
+
+To configure the `mypy` plugins:
+
+=== `mypy.ini`
+
+    ```ini
+    [mypy]
+    plugins = pydantic.mypy, pydantic.v1.mypy # include `.v1.mypy` if required.
+    ```
+
+=== `pyproject.toml`
+
+    ```toml
+    [tool.mypy]
+    plugins = [
+        "pydantic.mypy",
+        "pydantic.v1.mypy",
+    ]
+    ```
 
 ## Other changes
 
