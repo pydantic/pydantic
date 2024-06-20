@@ -3018,6 +3018,6 @@ class FailFast:
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         schema = handler(source_type)
-        schema['fail_fast'] = self.fail_fast
+        schema['fail_fast'] = self.fail_fast  # type: ignore
 
         return schema
