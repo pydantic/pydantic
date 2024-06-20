@@ -110,6 +110,7 @@ __all__ = (
     'Discriminator',
     'JsonValue',
     'OnErrorOmit',
+    'FailFast',
 )
 
 
@@ -3007,3 +3008,16 @@ this annotation omits the item from the iteration if there is any error validati
 That is, instead of a [`ValidationError`][pydantic_core.ValidationError] being propagated up and the entire iterable being discarded
 any invalid items are discarded and the valid ones are returned.
 """
+
+
+@_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
+class FailFast:
+    """Allow to control behavior of fail-fast feature for sequence types."""
+
+    fail_fast: bool = True
+
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        schema = handler(source_type)
+        schema['fail_fast'] = self.fail_fast
+
+        return schema

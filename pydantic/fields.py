@@ -80,6 +80,7 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     init_var: bool | None
     kw_only: bool | None
     coerce_numbers_to_str: bool | None
+    fail_fast: bool | None
 
 
 class _FieldInfoInputs(_FromFieldInfoInputs, total=False):
@@ -187,6 +188,7 @@ class FieldInfo(_repr.Representation):
         'decimal_places': None,
         'union_mode': None,
         'coerce_numbers_to_str': None,
+        'fail_fast': types.FailFast,
     }
 
     def __init__(self, **kwargs: Unpack[_FieldInfoInputs]) -> None:
@@ -698,6 +700,7 @@ def Field(  # noqa: C901
     min_length: int | None = _Unset,
     max_length: int | None = _Unset,
     union_mode: Literal['smart', 'left_to_right'] = _Unset,
+    fail_fast: bool | None = _Unset,
     **extra: Unpack[_EmptyKwargs],
 ) -> Any:
     """Usage docs: https://docs.pydantic.dev/2.8/concepts/fields
@@ -752,6 +755,7 @@ def Field(  # noqa: C901
         decimal_places: Maximum number of decimal places allowed for numbers.
         union_mode: The strategy to apply when validating a union. Can be `smart` (the default), or `left_to_right`.
             See [Union Mode](../concepts/unions.md#union-modes) for details.
+        fail_fast: If `True`, validation will stop on the first error. If `False`, all validation errors will be collected.
         extra: (Deprecated) Extra fields that will be included in the JSON schema.
 
             !!! warning Deprecated
@@ -859,6 +863,7 @@ def Field(  # noqa: C901
         max_digits=max_digits,
         decimal_places=decimal_places,
         union_mode=union_mode,
+        fail_fast=fail_fast,
     )
 
 
