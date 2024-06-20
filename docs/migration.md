@@ -90,29 +90,29 @@ features, take the following steps:
 from pydantic.<module> import <object>
 ```
 
-to:
+with:
 
 ```python test="skip" lint="skip" upgrade="skip"
 from pydantic.v1.<module> import <object>
 ```
 
-Imports for `pydantic` v1 features for different versions of pydantic.
+Here's how you can import `pydantic`'s v1 features based on your version of `pydantic`:
 
-=== "`pydantic<3`"
+=== "`pydantic>=1.10.17,<3`"
+    As of `1.10.17` the `.v1` namespace is usable, allowing imports as below:
 
     ```python test="skip" lint="skip" upgrade="skip"
-    # Try/except usable for multiple versions of pydantic.
+    from pydantic.v1.fields import ModelField
+    ```
+
+=== "`pydantic<3`"
+    Try/except usable for multiple versions of pydantic:
+
+    ```python test="skip" lint="skip" upgrade="skip"
     try:
         from pydantic.v1.fields import ModelField
     except ImportError:
         from pydantic.fields import ModelField
-    ```
-
-=== "`pydantic>=1.10.17,<3`"
-
-    ```python test="skip" lint="skip" upgrade="skip"
-    # as of `1.10.17` the `.v1` namespace is usable, allowing imports as below
-    from pydantic.v1.fields import ModelField
     ```
 
 !!! note
