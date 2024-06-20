@@ -82,7 +82,7 @@ Because of the potentially surprising results of `union_mode='left_to_right'`, i
 
 In this mode, pydantic attempts to select the best match for the input from the union members. The exact algorithm may change between Pydantic minor releases to allow for improvements in both performance and accuracy.
 
-??? info
+!!! tip
 
     In general, we recommend using [discriminated unions](#discriminated-unions). They are both more performant and more predictable than untagged unions, as they allow you to control which member of the union to validate against.
 
@@ -115,7 +115,7 @@ For `exactness`, Pydantic scores a match of a union member into one of the follo
 
 The union match which produced the highest exactness score will be considered the best match.
 
-!!! details "Smart Mode Algorithm"
+??? info "Smart Mode Algorithm"
 
     In smart mode, the following steps are taken to try to select the best match for the input:
 
