@@ -3012,7 +3012,24 @@ any invalid items are discarded and the valid ones are returned.
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
 class FailFast:
-    """Allow to control behavior of fail-fast feature for sequence types."""
+    """
+    A `FailFast` can be used to specify that validation should stop at the first error.
+
+    This can be useful when you want to validate a large amount of data and you only need to know if it's valid or not.
+
+    ```py
+    from typing_extensions import Annotated
+    from pydantic import BaseModel, FailFast
+
+    class Model(BaseModel):
+        x: Annotated[int, FailFast()]
+
+    # This will raise a single error for the first invalid value and stop validation
+    obj = Model(
+        x=[1, 2, 'a', 4, 5, 'b', 7, 8, 9, 10, 'c']
+    )
+    ```
+    """
 
     fail_fast: bool = True
 
