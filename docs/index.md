@@ -42,6 +42,8 @@ print(m.dimensions)
 
     Combining these elements, "Pydantic" describes our Python library that provides detail-oriented, rigorous data validation.
 
+    We’re aware of the irony that Pydantic V1 was not strict in its validation, so if we're being pedantic, "Pydantic" was a misnomer until V2 😉.
+
 ## Why use Pydantic?
 
 - **Powered by type hints** &mdash; with Pydantic, schema validation and serialization are controlled by type annotations; less to learn, less code to write, and integration with your IDE and static analysis tools. [Learn more…](why.md#type-hints)
