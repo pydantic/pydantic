@@ -998,6 +998,34 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Smart Mode">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#number-of-valid-fields-set" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Number of valid fields set
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exactness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exactness
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -3254,6 +3282,34 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Smart Mode">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#number-of-valid-fields-set" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Number of valid fields set
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exactness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exactness
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -3364,6 +3420,12 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 <li><a href="#smart-mode">smart mode</a> - similar to "left to right mode" members are tried in order; however, validation will proceed past the first match to attempt to find a better match, this is the default mode for most union validation</li>
 <li><a href="#discriminated-unions">discriminated unions</a> - only one member of the union is tried, based on a discriminator</li>
 </ol>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>In general, we recommend using <a href="#discriminated-unions">discriminated unions</a>. They are both more performant and more predictable than untagged unions, as they allow you to control which member of the union to validate against.</p>
+<p>For complex cases, if you're using untagged unions, it's recommended to use <code>union_mode='left_to_right'</code> if you need guarantees about the order of validation attempts against the union members.</p>
+<p>If you're looking for incredibly specialized behavior, you can use a <a href="../validators/#field-validators">custom validator</a>.</p>
+</div>
 <h2 id="union-modes">Union Modes<a class="headerlink" href="#union-modes" title="Permanent link">&para;</a></h2>
 <h3 id="left-to-right-mode">Left to Right Mode<a class="headerlink" href="#left-to-right-mode" title="Permanent link">&para;</a></h3>
 <div class="admonition note">
@@ -3420,22 +3482,63 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
    Since that is tried first, we get the surprising result of <code>id</code> being an <code>int</code> instead of a <code>str</code>.</li>
 </ol>
 <h3 id="smart-mode">Smart Mode<a class="headerlink" href="#smart-mode" title="Permanent link">&para;</a></h3>
-<p>Because of the surprising side effects of <code>union_mode='left_to_right'</code>, in Pydantic &gt;=2 the default mode for <code>Union</code> validation is <code>union_mode='smart'</code>.</p>
-<p>In this mode, pydantic scores a match of a union member into one of the following three groups (from highest score to lowest score):</p>
+<p>Because of the potentially surprising results of <code>union_mode='left_to_right'</code>, in Pydantic &gt;=2 the default mode for <code>Union</code> validation is <code>union_mode='smart'</code>.</p>
+<p>In this mode, pydantic attempts to select the best match for the input from the union members. The exact algorithm may change between Pydantic minor releases to allow for improvements in both performance and accuracy.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>We reserve the right to tweak the internal <code>smart</code> matching algorithm in future versions of Pydantic. If you rely on very specific
+matching behavior, it's recommended to use <code>union_mode='left_to_right'</code> or <a href="#discriminated-unions">discriminated unions</a>.</p>
+</div>
+<details class="info">
+<summary>Smart Mode Algorithm</summary>
+<p>The smart mode algorithm uses two metrics to determine the best match for the input:</p>
+<ol>
+<li>The number of valid fields set (relevant for models, dataclasses, and typed dicts)</li>
+<li>The exactness of the match (relevant for all types)</li>
+</ol>
+<h4 id="number-of-valid-fields-set">Number of valid fields set<a class="headerlink" href="#number-of-valid-fields-set" title="Permanent link">&para;</a></h4>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This metric was introduced in Pydantic v2.8.0. Prior to this version, only exactness was used to determine the best match.</p>
+</div>
+<p>This metric is currently only relevant for models, dataclasses, and typed dicts.</p>
+<p>The greater the number of valid fields set, the better the match. The number of fields set on nested models is also taken into account.
+These counts bubble up to the top-level union, where the union member with the highest count is considered the best match.</p>
+<p>For data types where this metric is relevant, we prioritize this count over exactness. For all other types, we use solely exactness.</p>
+<h4 id="exactness">Exactness<a class="headerlink" href="#exactness" title="Permanent link">&para;</a></h4>
+<p>For <code>exactness</code>, Pydantic scores a match of a union member into one of the following three groups (from highest score to lowest score):</p>
 <ul>
 <li>An exact type match, for example an <code>int</code> input to a <code>float | int</code> union validation is an exact type match for the <code>int</code> member</li>
 <li>Validation would have succeeded in <a href="../strict_mode/"><code>strict</code> mode</a></li>
 <li>Validation would have succeeded in lax mode</li>
 </ul>
-<p>The union match which produced the highest score will be selected as the best match.</p>
-<p>In this mode, the following steps are taken to try to select the best match for the input:</p>
+<p>The union match which produced the highest exactness score will be considered the best match.</p>
+<p>In smart mode, the following steps are taken to try to select the best match for the input:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1"><code>BaseModel</code>, <code>dataclass</code>, and <code>TypedDict</code></label><label for="__tabbed_1_2">All other data types</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <ol>
-<li>Union members are attempted left to right, with any successful matches scored into one of the three categories described above.</li>
+<li>Union members are attempted left to right, with any successful matches scored into one of the three exactness categories described above,
+with the valid fields set count also tallied.</li>
+<li>After all members have been evaluated, the member with the highest "valid fields set" count is returned.</li>
+<li>If there's a tie for the highest "valid fields set" count, the exactness score is used as a tiebreaker, and the member with the highest exactness score is returned.</li>
+<li>If validation failed on all the members, return all the errors.</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<ol>
+<li>Union members are attempted left to right, with any successful matches scored into one of the three exactness categories described above.<ul>
 <li>If validation succeeds with an exact type match, that member is returned immediately and following members will not be attempted.</li>
+</ul>
+</li>
 <li>If validation succeeded on at least one member as a "strict" match, the leftmost of those "strict" matches is returned.</li>
 <li>If validation succeeded on at least one member in "lax" mode, the leftmost match is returned.</li>
 <li>Validation failed on all the members, return all the errors.</li>
 </ol>
+</div>
+</div>
+</div>
+</details>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
 <span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">UUID</span>
 
