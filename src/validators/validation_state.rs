@@ -18,6 +18,10 @@ pub enum Exactness {
 pub struct ValidationState<'a, 'py> {
     pub recursion_guard: &'a mut RecursionState,
     pub exactness: Option<Exactness>,
+    // This is used as a tie-breaking mechanism for union validation.
+    // Note: the count of the fields set is not always equivalent to the length of the
+    // `model_fields_set` attached to a model. `model_fields_set` includes extra fields
+    // when extra='allow', whereas this tally does not.
     pub fields_set_count: Option<usize>,
     // deliberately make Extra readonly
     extra: Extra<'a, 'py>,
