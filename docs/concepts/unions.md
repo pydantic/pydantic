@@ -83,9 +83,9 @@ print(User(id='456'))  # (2)
 
 ### Smart Mode
 
-Because of the surprising side effects of `union_mode='left_to_right'`, in Pydantic >=2 the default mode for `Union` validation is `union_mode='smart'`.
+Because of the potentially surprising results of `union_mode='left_to_right'`, in Pydantic >=2 the default mode for `Union` validation is `union_mode='smart'`.
 
-In this mode, pydantic selects the best match for the input from the union members based on two main factors:
+In this mode, pydantic attempts to select the best match for the input from the union members. The exact algorithm may change between Pydantic minor releases to allow for improvements in both performance and accuracy.
 
 1. The number of valid fields set (relevant for models, dataclasses, and typed dicts)
 2. The exactness of the match (relevant for all types)
