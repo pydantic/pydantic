@@ -35,6 +35,13 @@ print(m.dimensions)
 #> (10, 20)
 ```
 
+!!! question "Why is Pydantic named the way it is?"
+
+    The name "Pydantic" is a portmanteau of "Py" and "pedantic." The "Py" part indicates that the library is associated with Python, and
+    "pedantic" refer's to the library's meticulous approach to data validation and type enforcement.
+
+    Combining these elements, "Pydantic" describes our Python library that provides detail-oriented, rigorous data validation.
+
 ## Why use Pydantic?
 
 - **Powered by type hints** &mdash; with Pydantic, schema validation and serialization are controlled by type annotations; less to learn, less code to write, and integration with your IDE and static analysis tools. [Learn more…](why.md#type-hints)
