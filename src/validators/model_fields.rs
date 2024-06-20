@@ -150,6 +150,7 @@ impl Validator for ModelFieldsValidator {
         let mut model_extra_dict_op: Option<Bound<PyDict>> = None;
         let mut errors: Vec<ValLineError> = Vec::with_capacity(self.fields.len());
         let mut fields_set_vec: Vec<Py<PyString>> = Vec::with_capacity(self.fields.len());
+        let mut fields_set_count: usize = 0;
 
         // we only care about which keys have been used if we're iterating over the object for extra after
         // the first pass
@@ -184,6 +185,7 @@ impl Validator for ModelFieldsValidator {
                         Ok(value) => {
                             model_dict.set_item(&field.name_py, value)?;
                             fields_set_vec.push(field.name_py.clone_ref(py));
+                            fields_set_count += 1;
                         }
                         Err(ValError::Omit) => continue,
                         Err(ValError::LineErrors(line_errors)) => {
@@ -327,6 +329,7 @@ impl Validator for ModelFieldsValidator {
             Err(ValError::LineErrors(errors))
         } else {
             let fields_set = PySet::new_bound(py, &fields_set_vec)?;
+            state.add_fields_set(fields_set_count);
 
             // if we have extra=allow, but we didn't create a dict because we were validating
             // from attributes, set it now so __pydantic_extra__ is always a dict if extra=allow

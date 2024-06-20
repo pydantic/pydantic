@@ -1280,3 +1280,56 @@ def test_nested_unions_bubble_up_field_count() -> None:
             )
             assert isinstance(result, ModelB)
             assert isinstance(result.b, SubModelW)
+
+
+@pytest.mark.parametrize('extra_behavior', ['forbid', 'ignore', 'allow'])
+def test_smart_union_extra_behavior(extra_behavior) -> None:
+    class Foo:
+        foo: str = 'foo'
+
+    class Bar:
+        bar: str = 'bar'
+
+    class Model:
+        x: Union[Foo, Bar]
+
+    validator = SchemaValidator(
+        core_schema.model_schema(
+            Model,
+            core_schema.model_fields_schema(
+                fields={
+                    'x': core_schema.model_field(
+                        core_schema.union_schema(
+                            [
+                                core_schema.model_schema(
+                                    Foo,
+                                    core_schema.model_fields_schema(
+                                        fields={
+                                            'foo': core_schema.model_field(
+                                                core_schema.with_default_schema(core_schema.str_schema(), default='foo')
+                                            )
+                                        }
+                                    ),
+                                    extra_behavior=extra_behavior,
+                                ),
+                                core_schema.model_schema(
+                                    Bar,
+                                    core_schema.model_fields_schema(
+                                        fields={
+                                            'bar': core_schema.model_field(
+                                                core_schema.with_default_schema(core_schema.str_schema(), default='bar')
+                                            )
+                                        }
+                                    ),
+                                    extra_behavior=extra_behavior,
+                                ),
+                            ]
+                        )
+                    )
+                }
+            ),
+        )
+    )
+
+    assert isinstance(validator.validate_python({'x': {'foo': 'foo'}}).x, Foo)
+    assert isinstance(validator.validate_python({'x': {'bar': 'bar'}}).x, Bar)
