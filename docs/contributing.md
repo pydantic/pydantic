@@ -1,8 +1,8 @@
 We'd love you to contribute to Pydantic!
+
 ## Issues
 
-Questions, feature requests and bug reports are all welcome as [discussions or issues](https://github.com/pydantic/pydantic/issues/new/choose). **However, to report a security
-vulnerability, please see our [security policy](https://github.com/pydantic/pydantic/security/policy).**
+Questions, feature requests and bug reports are all welcome as [discussions or issues](https://github.com/pydantic/pydantic/issues/new/choose). **However, to report a security vulnerability, please see our [security policy](https://github.com/pydantic/pydantic/security/policy).**
 
 To make it as simple as possible for us to help you, please include the output of the following call in your issue:
 
@@ -192,6 +192,16 @@ Pydantic's unit test will test all code examples in the documentation, so it's i
 # Run tests and update code examples
 pytest tests/test_docs.py --update-examples
 ```
+
+## Debugging Python and Rust
+
+If you're working with `pydantic` and `pydantic-core`, you might find it helpful to debug Python and Rust code together.
+Here's a quick guide on how to do that. This tutorial is done in VSCode, but you can use similar steps in other IDEs.
+
+<div style="position: relative; padding-bottom: 56.4035546262415%; height: 0;">
+    <iframe src="https://www.loom.com/embed/71019f8b92b04839ae233eb70c23c5b5?sid=1ea39ca9-d0cc-494b-8214-159f7cc26190" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+    </iframe>
+</div>
 
 ## Badges
 
