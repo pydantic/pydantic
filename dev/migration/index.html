@@ -4025,7 +4025,7 @@ Pydantic V2 <code>pydantic.BaseModel</code> class:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic.v1.utils</span> <span class="kn">import</span> <span class="n">lenient_isinstance</span>
 </code></pre></div>
 <p>Pydantic V1 documentation is available at <a href="https://docs.pydantic.dev/1.10/">https://docs.pydantic.dev/1.10/</a>.</p>
-<h4 id="using-pydantic-v1-features-in-a-v1v2-environment">Using Pydantic v1 features in a v1/v2 environment<a class="headerlink" href="#using-pydantic-v1-features-in-a-v1v2-environment" title="Permanent link">&para;</a></h4>
+<h3 id="using-pydantic-v1-features-in-a-v1v2-environment">Using Pydantic v1 features in a v1/v2 environment<a class="headerlink" href="#using-pydantic-v1-features-in-a-v1v2-environment" title="Permanent link">&para;</a></h3>
 <p>As of <code>pydantic&gt;=1.10.17</code>, the <code>pydantic.v1</code> namespace can be used within V1.
 This makes it easier to migrate to V2, which also supports the <code>pydantic.v1</code>
 namespace. In order to unpin a <code>pydantic&lt;2</code> dependency and continue using V1
@@ -4043,12 +4043,13 @@ features, take the following steps:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1"><code>pydantic&gt;=1.10.17,&lt;3</code></label><label for="__tabbed_1_2"><code>pydantic&lt;3</code></label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<p>As of <code>1.10.17</code> the <code>.v1</code> namespace is usable, allowing imports as below:</p>
+<p>As of <code>v1.10.17</code> the <code>.v1</code> namespace is available in V1, allowing imports as below:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic.v1.fields</span> <span class="kn">import</span> <span class="n">ModelField</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<p>Try/except usable for multiple versions of pydantic:</p>
+<p>All versions of Pydantic V1 and V2 support the following import pattern, in case you don't
+know which version of Pydantic you are using:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="k">try</span><span class="p">:</span>
     <span class="kn">from</span> <span class="nn">pydantic.v1.fields</span> <span class="kn">import</span> <span class="n">ModelField</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
@@ -4062,9 +4063,8 @@ features, take the following steps:</p>
 <p>When importing modules using <code>pydantic&gt;=1.10.17,&lt;2</code> with the <code>.v1</code> namespace
 these modules will <em>not</em> be the <strong>same</strong> module as the same import without the <code>.v1</code>
 namespace, but the symbols imported <em>will</em> be. For example <code>pydantic.v1.fields is not pydantic.fields</code>
-but <code>pydantic.v1.fields.ModelField is pydantic.fields.ModelField</code>. However
-this is not likely to be relevant in 99% of cases, and is an unfortunate
-consequence of providing a smoother migration experience.</p>
+but <code>pydantic.v1.fields.ModelField is pydantic.fields.ModelField</code>. Luckily, this is not likely to be relevant
+in the vast majority of cases. It's just an unfortunate consequence of providing a smoother migration experience.</p>
 </div>
 <h2 id="migration-guide">Migration guide<a class="headerlink" href="#migration-guide" title="Permanent link">&para;</a></h2>
 <p>The following sections provide details on the most important changes in Pydantic V2.</p>
