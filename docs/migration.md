@@ -78,9 +78,13 @@ Pydantic V1 documentation is available at [https://docs.pydantic.dev/1.10/](http
 
 #### Using Pydantic v1 features in a v1/v2 environment
 
-As of `pydantic>=1.10.17` the `pydantic.v1` namespace is available to use within v1,
-meaning that in order to unpin a `pydantic<2` dependency to allow using `v1` features,
-simply replace `pydantic<2` with `pydantic>=1.10.17,<3` and find and replace all:
+As of `pydantic>=1.10.17`, the `pydantic.v1` namespace can be used within V1.
+This makes it easier to migrate to V2, which also supports the `pydantic.v1`
+namespace. In order to unpin a `pydantic<2` dependency and continue using V1
+features, take the following steps:
+
+1. Replace `pydantic<2` with `pydantic>=1.10.17`
+2. Find and replace all occurrences of:
 
 ```python test="skip" lint="skip" upgrade="skip"
 from pydantic.<module> import <object>
@@ -94,9 +98,10 @@ from pydantic.v1.<module> import <object>
 
 Imports for `pydantic` v1 features for different versions of pydantic.
 
-=== "`pydantic>2,<3`"
+=== "`pydantic<3`"
 
     ```python test="skip" lint="skip" upgrade="skip"
+    # Try/except usable for multiple versions of pydantic.
     try:
         from pydantic.v1.fields import ModelField
     except ImportError:
@@ -106,14 +111,17 @@ Imports for `pydantic` v1 features for different versions of pydantic.
 === "`pydantic>=1.10.17,<3`"
 
     ```python test="skip" lint="skip" upgrade="skip"
+    # as of `1.10.17` the `.v1` namespace is usable, allowing imports as below
     from pydantic.v1.fields import ModelField
     ```
 
 !!! note
     When importing modules using `pydantic>=1.10.17,<2` with the `.v1` namespace
-    these modules will *not* be the same module as the same import without the `.v1`
+    these modules will *not* be the **same** module as the same import without the `.v1`
     namespace, but the symbols imported *will* be. For example ``pydantic.v1.fields is not pydantic.fields``
-    but ``pydantic.v1.fields.ModelField is pydantic.fields.ModelField``.
+    but ``pydantic.v1.fields.ModelField is pydantic.fields.ModelField``. However
+    this is not likely to be relevant in 99% of cases, and is an unfortunate
+    consequence of providing a smoother migration experience.
 
 
 ## Migration guide
@@ -873,6 +881,33 @@ Read more about it in the [Composing types via `Annotated`](concepts/types.md#co
 docs.
 
 For `ConstrainedStr` you can use [`StringConstraints`][pydantic.types.StringConstraints] instead.
+
+#### Mypy Plugins
+
+Pydantic V2 contains a [mypy](https://mypy.readthedocs.io/en/stable/extending_mypy.html#configuring-mypy-to-use-plugins) plugin in
+`pydantic.mypy`.
+
+When using [V1 features](migration.md#continue-using-pydantic-v1-features) the
+`pydantic.v1.mypy` plugin might need to also be enabled.
+
+To configure the `mypy` plugins:
+
+=== `mypy.ini`
+
+    ```ini
+    [mypy]
+    plugins = pydantic.mypy, pydantic.v1.mypy # include `.v1.mypy` if required.
+    ```
+
+=== `pyproject.toml`
+
+    ```toml
+    [tool.mypy]
+    plugins = [
+        "pydantic.mypy",
+        "pydantic.v1.mypy",
+    ]
+    ```
 
 ## Other changes
 
