@@ -756,6 +756,7 @@ def Field(  # noqa: C901
         union_mode: The strategy to apply when validating a union. Can be `smart` (the default), or `left_to_right`.
             See [Union Mode](../concepts/unions.md#union-modes) for details.
         fail_fast: If `True`, validation will stop on the first error. If `False`, all validation errors will be collected.
+            This option can be applied only to iterable types (list, tuple, set, and frozenset).
         extra: (Deprecated) Extra fields that will be included in the JSON schema.
 
             !!! warning Deprecated

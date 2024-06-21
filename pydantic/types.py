@@ -3019,13 +3019,21 @@ class FailFast:
     ```py
     from typing import List
     from typing_extensions import Annotated
-    from pydantic import BaseModel, FailFast
+    from pydantic import BaseModel, FailFast, ValidationError
 
     class Model(BaseModel):
         x: Annotated[List[int], FailFast()]
 
     # This will raise a single error for the first invalid value and stop validation
-    obj = Model(x=[1, 2, 'a', 4, 5, 'b', 7, 8, 9, 'c'])
+    try:
+        obj = Model(x=[1, 2, 'a', 4, 5, 'b', 7, 8, 9, 'c'])
+    except ValidationError as e:
+        print(e)
+        '''
+        1 validation error for Model
+        x.2
+          Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
+        '''
     ```
     """
 
