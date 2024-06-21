@@ -3010,7 +3010,7 @@ any invalid items are discarded and the valid ones are returned.
 """
 
 
-@_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
+@_dataclasses.dataclass
 class FailFast(_fields.PydanticMetadata, BaseMetadata):
     """A `FailFast` annotation can be used to specify that validation should stop at the first error.
 
