@@ -12,4 +12,13 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/labeler@v5
+      - id: label-PR-by-branch-name
+        uses: actions/labeler@v5
+        with:
+          configuration-path: '.github/labels/first_pass.yml'
+
+      - id: add-default-if-no-labels
+        if: steps.label-PR-by-branch.outputs.all-labels == ''
+        uses: actions/labeler@v5
+        with:
+          configuration-path: '.github/labels/default_pass.yml'
