@@ -256,8 +256,6 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                 _validators.forbid_inf_nan_check,
                 schema,
             )
-        elif constraint == 'fail_fast':
-            schema['fail_fast'] = value
         else:
             raise RuntimeError(f'Unable to apply constraint {constraint} to schema {schema_type}')
 
