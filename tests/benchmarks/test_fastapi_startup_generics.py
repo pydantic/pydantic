@@ -1,4 +1,5 @@
 """https://github.com/pydantic/pydantic/issues/6768"""
+
 from __future__ import annotations
 
 from pathlib import Path

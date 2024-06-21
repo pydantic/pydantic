@@ -2878,6 +2878,34 @@ def test_extra_validator_scalar() -> None:
     }
 
 
+def test_extra_validator_field() -> None:
+    class Model(BaseModel, extra='allow'):
+        # use Field(init=False) to ensure this is not treated as a field by dataclass_transform
+        __pydantic_extra__: Dict[str, int] = Field(init=False)
+
+    m = Model(a='1')
+    assert m.__pydantic_extra__ == {'a': 1}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='a')
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': 'a',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        }
+    ]
+
+    # insert_assert(Child.model_json_schema())
+    assert Model.model_json_schema() == {
+        'additionalProperties': {'type': 'integer'},
+        'properties': {},
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 def test_extra_validator_named() -> None:
     class Foo(BaseModel):
         x: int

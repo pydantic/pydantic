@@ -1,6 +1,7 @@
 """
 Check that all `Usage docs` tags in docstrings link to the latest version of pydantic.
 """
+
 import re
 import sys
 from pathlib import Path

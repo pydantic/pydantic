@@ -5,12 +5,12 @@ from itertools import chain
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Type, Union, overload
 
-from .errors import ConfigError
-from .typing import AnyCallable
-from .utils import ROOT_KEY, in_ipython
+from pydantic.v1.errors import ConfigError
+from pydantic.v1.typing import AnyCallable
+from pydantic.v1.utils import ROOT_KEY, in_ipython
 
 if TYPE_CHECKING:
-    from .typing import AnyClassMethod
+    from pydantic.v1.typing import AnyClassMethod
 
 
 class Validator:
@@ -36,9 +36,9 @@ class Validator:
 if TYPE_CHECKING:
     from inspect import Signature
 
-    from .config import BaseConfig
-    from .fields import ModelField
-    from .types import ModelOrDc
+    from pydantic.v1.config import BaseConfig
+    from pydantic.v1.fields import ModelField
+    from pydantic.v1.types import ModelOrDc
 
     ValidatorCallable = Callable[[Optional[ModelOrDc], Any, Dict[str, Any], ModelField, Type[BaseConfig]], Any]
     ValidatorsList = List[ValidatorCallable]

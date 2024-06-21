@@ -19,6 +19,12 @@ rm -rf ../pydantic/v1
 # Copy new V1 into pydantic/v1
 cp -r pydantic ../pydantic/v1
 
+# Remove the v1 sub directory from v1, it's not needed in the v2 codebase
+rm -rf ../pydantic/v1/v1
+
+# Update imports in pydantic/v1 to use pydantic.v1
+find "../pydantic/v1" -name "*.py" -exec sed -i '' -E 's/from pydantic(\.[a-zA-Z0-9_]*)? import/from pydantic.v1\1 import/g' {} \;
+
 popd
 
 # Remove V1 clone

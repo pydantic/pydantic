@@ -181,8 +181,7 @@ def test_methods_are_inherited():
 
 
 def test_config_is_inherited():
-    class CustomGenericModel(BaseModel, frozen=True):
-        ...
+    class CustomGenericModel(BaseModel, frozen=True): ...
 
     T = TypeVar('T')
 
@@ -993,8 +992,7 @@ def test_generic_model_redefined_without_cache_fail(create_module, monkeypatch):
         class MyGeneric(BaseModel, Generic[t]):
             value: t
 
-        class Model(BaseModel):
-            ...
+        class Model(BaseModel): ...
 
         concrete = MyGeneric[Model]
         _GENERIC_TYPES_CACHE.clear()
@@ -1506,8 +1504,7 @@ def test_generic_with_referenced_generic_type_bound():
     class ReferenceModel(BaseModel, Generic[T]):
         abstract_base_with_type: ModelWithType[T]
 
-    class MyInt(int):
-        ...
+    class MyInt(int): ...
 
     ReferenceModel[MyInt]
 
@@ -1518,11 +1515,9 @@ def test_generic_with_referenced_generic_union_type_bound():
     class ModelWithType(BaseModel, Generic[T]):
         some_type: Type[T]
 
-    class MyInt(int):
-        ...
+    class MyInt(int): ...
 
-    class MyStr(str):
-        ...
+    class MyStr(str): ...
 
     ModelWithType[MyInt]
     ModelWithType[MyStr]
@@ -1974,14 +1969,11 @@ def test_generic_annotated():
 def test_generic_subclass():
     T = TypeVar('T')
 
-    class A(BaseModel, Generic[T]):
-        ...
+    class A(BaseModel, Generic[T]): ...
 
-    class B(A[T], Generic[T]):
-        ...
+    class B(A[T], Generic[T]): ...
 
-    class C(B[T], Generic[T]):
-        ...
+    class C(B[T], Generic[T]): ...
 
     assert B[int].__name__ == 'B[int]'
     assert issubclass(B[int], B)
@@ -1993,11 +1985,9 @@ def test_generic_subclass_with_partial_application():
     T = TypeVar('T')
     S = TypeVar('S')
 
-    class A(BaseModel, Generic[T]):
-        ...
+    class A(BaseModel, Generic[T]): ...
 
-    class B(A[S], Generic[T, S]):
-        ...
+    class B(A[S], Generic[T, S]): ...
 
     PartiallyAppliedB = B[str, T]
     assert issubclass(PartiallyAppliedB[int], A)
@@ -2007,11 +1997,9 @@ def test_multilevel_generic_binding():
     T = TypeVar('T')
     S = TypeVar('S')
 
-    class A(BaseModel, Generic[T, S]):
-        ...
+    class A(BaseModel, Generic[T, S]): ...
 
-    class B(A[str, T], Generic[T]):
-        ...
+    class B(A[str, T], Generic[T]): ...
 
     assert B[int].__name__ == 'B[int]'
     assert issubclass(B[int], A)
@@ -2021,11 +2009,9 @@ def test_generic_subclass_with_extra_type():
     T = TypeVar('T')
     S = TypeVar('S')
 
-    class A(BaseModel, Generic[T]):
-        ...
+    class A(BaseModel, Generic[T]): ...
 
-    class B(A[S], Generic[T, S]):
-        ...
+    class B(A[S], Generic[T, S]): ...
 
     assert B[int, str].__name__ == 'B[int, str]', B[int, str].__name__
     assert issubclass(B[str, int], B)
@@ -2036,8 +2022,7 @@ def test_generic_subclass_with_extra_type_requires_all_params():
     T = TypeVar('T')
     S = TypeVar('S')
 
-    class A(BaseModel, Generic[T]):
-        ...
+    class A(BaseModel, Generic[T]): ...
 
     with pytest.raises(
         TypeError,
@@ -2046,8 +2031,7 @@ def test_generic_subclass_with_extra_type_requires_all_params():
         ),
     ):
 
-        class B(A[T], Generic[S]):
-            ...
+        class B(A[T], Generic[S]): ...
 
 
 def test_generic_subclass_with_extra_type_with_hint_message():
@@ -2076,21 +2060,17 @@ def test_generic_subclass_with_extra_type_with_hint_message():
             match='Classes should inherit from `BaseModel` before generic classes',
         ):
 
-            class ChildGenericClass(BaseGenericClass[E, Dict[str, Any]]):
-                ...
+            class ChildGenericClass(BaseGenericClass[E, Dict[str, Any]]): ...
 
 
 def test_multi_inheritance_generic_binding():
     T = TypeVar('T')
 
-    class A(BaseModel, Generic[T]):
-        ...
+    class A(BaseModel, Generic[T]): ...
 
-    class B(A[int], Generic[T]):
-        ...
+    class B(A[int], Generic[T]): ...
 
-    class C(B[str], Generic[T]):
-        ...
+    class C(B[str], Generic[T]): ...
 
     assert C[float].__name__ == 'C[float]'
     assert issubclass(C[float], B)

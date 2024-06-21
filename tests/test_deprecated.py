@@ -273,9 +273,15 @@ def test_parse_raw_pass():
         x: int
         y: int
 
-    with pytest.warns(PydanticDeprecatedSince20, match='The `parse_raw` method is deprecated'):
+    with pytest.warns(PydanticDeprecatedSince20) as all_warnings:
         model = Model.parse_raw('{"x": 1, "y": 2}')
     assert model.model_dump() == {'x': 1, 'y': 2}
+    assert len(all_warnings) == 2
+    expected_warnings = [
+        'The `parse_raw` method is deprecated; if your data is JSON use `model_validate_json`, otherwise load the data then use `model_validate` instead',
+        '`load_str_bytes` is deprecated',
+    ]
+    assert [w.message.message for w in all_warnings] == expected_warnings
 
 
 @pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='Different error str on PyPy')
@@ -284,9 +290,15 @@ def test_parse_raw_pass_fail():
         x: int
         y: int
 
-    with pytest.warns(PydanticDeprecatedSince20, match='The `parse_raw` method is deprecated'):
+    with pytest.warns(PydanticDeprecatedSince20) as all_warnings:
         with pytest.raises(ValidationError, match='1 validation error for Model') as exc_info:
             Model.parse_raw('invalid')
+    assert len(all_warnings) == 2
+    expected_warnings = [
+        'The `parse_raw` method is deprecated; if your data is JSON use `model_validate_json`, otherwise load the data then use `model_validate` instead',
+        '`load_str_bytes` is deprecated',
+    ]
+    assert [w.message.message for w in all_warnings] == expected_warnings
 
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
@@ -434,11 +446,17 @@ def test_field_const():
 
 
 def test_field_include_deprecation():
-    m = '`include` is deprecated and does nothing. It will be removed, use `exclude` instead'
-    with pytest.warns(PydanticDeprecatedSince20, match=m):
+    with pytest.warns(PydanticDeprecatedSince20) as all_warnings:
 
         class Model(BaseModel):
             x: int = Field(include=True)
+
+    assert len(all_warnings) == 2
+    expected_warnings = [
+        "Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'include')",
+        '`include` is deprecated and does nothing. It will be removed, use `exclude` instead',
+    ]
+    assert [w.message.message for w in all_warnings] == expected_warnings
 
 
 def test_unique_items_items():
@@ -664,10 +682,16 @@ def test_parse_obj():
 def test_parse_file(tmp_path):
     path = tmp_path / 'test.json'
     path.write_text('{"x": 12}')
-    with pytest.warns(
-        PydanticDeprecatedSince20, match='^The `parse_file` method is deprecated; load the data from file,'
-    ):
+    with pytest.warns(PydanticDeprecatedSince20) as all_warnings:
         assert SimpleModel.parse_file(str(path)).model_dump() == {'x': 12}
+    assert len(all_warnings) == 4
+    expected_warnings = [
+        'The `parse_file` method is deprecated; load the data from file, then if your data is JSON use `model_validate_json`, otherwise `model_validate` instead',
+        '`load_file` is deprecated',
+        '`load_str_bytes` is deprecated',
+        'The `parse_obj` method is deprecated; use `model_validate` instead',
+    ]
+    assert [w.message.message for w in all_warnings] == expected_warnings
 
 
 def test_construct():
@@ -736,61 +760,46 @@ def test_deprecated_module(tmp_path: Path) -> None:
     class Model(BaseModel):
         x: int
 
-    assert hasattr(parse_obj_as, '__deprecated__')
-    with pytest.warns(
-        PydanticDeprecatedSince20,
-        match='`parse_obj_as` is deprecated. Use `pydantic.TypeAdapter.validate_python` instead.',
-    ):
+    with pytest.warns(PydanticDeprecatedSince20) as all_warnings:
+        assert hasattr(parse_obj_as, '__deprecated__')
         parse_obj_as(Model, {'x': 1})
-
-    assert hasattr(schema_json_of, '__deprecated__')
-    with pytest.warns(
-        PydanticDeprecatedSince20,
-        match='`schema_json_of` is deprecated. Use `pydantic.TypeAdapter.json_schema` instead.',
-    ):
+        assert hasattr(schema_json_of, '__deprecated__')
         schema_json_of(Model)
-
-    assert hasattr(schema_of, '__deprecated__')
-    with pytest.warns(
-        PydanticDeprecatedSince20, match='`schema_of` is deprecated. Use `pydantic.TypeAdapter.json_schema` instead.'
-    ):
+        assert hasattr(schema_of, '__deprecated__')
         schema_of(Model)
-
-    assert hasattr(load_str_bytes, '__deprecated__')
-    with pytest.warns(PydanticDeprecatedSince20, match='`load_str_bytes` is deprecated.'):
+        assert hasattr(load_str_bytes, '__deprecated__')
         load_str_bytes('{"x": 1}')
-
-    assert hasattr(load_file, '__deprecated__')
-    file = tmp_path / 'main.py'
-    file.write_text('{"x": 1}')
-    with pytest.warns(PydanticDeprecatedSince20, match='`load_file` is deprecated.'):
+        assert hasattr(load_file, '__deprecated__')
+        file = tmp_path / 'main.py'
+        file.write_text('{"x": 1}')
         load_file(file)
-
-    assert hasattr(pydantic_encoder, '__deprecated__')
-    with pytest.warns(
-        PydanticDeprecatedSince20,
-        match='`pydantic_encoder` is deprecated, use `pydantic_core.to_jsonable_python` instead.',
-    ):
+        assert hasattr(pydantic_encoder, '__deprecated__')
         pydantic_encoder(Model(x=1))
-
-    assert hasattr(custom_pydantic_encoder, '__deprecated__')
-    with pytest.warns(
-        PydanticDeprecatedSince20, match='`custom_pydantic_encoder` is deprecated, use `BaseModel.model_dump` instead.'
-    ):
+        assert hasattr(custom_pydantic_encoder, '__deprecated__')
         custom_pydantic_encoder({int: lambda x: str(x)}, Model(x=1))
-
-    assert hasattr(timedelta_isoformat, '__deprecated__')
-    with pytest.warns(PydanticDeprecatedSince20, match='`timedelta_isoformat` is deprecated.'):
+        assert hasattr(timedelta_isoformat, '__deprecated__')
         timedelta_isoformat(timedelta(seconds=1))
-
-    with pytest.warns(
-        PydanticDeprecatedSince20, match='The `validate_arguments` method is deprecated; use `validate_call` instead.'
-    ):
 
         def test(a: int, b: int):
             pass
 
         validate_arguments()(test)
+    assert len(all_warnings) == 12
+    expected_warnings = [
+        '`parse_obj_as` is deprecated. Use `pydantic.TypeAdapter.validate_python` instead',
+        '`schema_json_of` is deprecated. Use `pydantic.TypeAdapter.json_schema` instead',
+        '`schema_of` is deprecated. Use `pydantic.TypeAdapter.json_schema` instead',
+        '`schema_of` is deprecated. Use `pydantic.TypeAdapter.json_schema` instead',
+        '`load_str_bytes` is deprecated',
+        '`load_file` is deprecated',
+        '`load_str_bytes` is deprecated',
+        '`pydantic_encoder` is deprecated, use `pydantic_core.to_jsonable_python` instead',
+        '`custom_pydantic_encoder` is deprecated, use `BaseModel.model_dump` instead',
+        '`pydantic_encoder` is deprecated, use `pydantic_core.to_jsonable_python` instead',
+        '`timedelta_isoformat` is deprecated',
+        'The `validate_arguments` method is deprecated; use `validate_call` instead',
+    ]
+    assert [w.message.message for w in all_warnings] == expected_warnings
 
 
 def test_deprecated_color():

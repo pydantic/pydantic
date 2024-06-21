@@ -645,8 +645,7 @@ def test_model_as_arg() -> None:
 def test_do_not_call_repr_on_validate_call() -> None:
     class Class:
         @validate_call
-        def __init__(self, number: int) -> None:
-            ...
+        def __init__(self, number: int) -> None: ...
 
         def __repr__(self) -> str:
             assert False
