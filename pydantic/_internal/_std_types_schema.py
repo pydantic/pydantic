@@ -317,7 +317,7 @@ class SequenceValidator:
 
         metadata = {'min_length': self.min_length, 'max_length': self.max_length, 'strict': self.strict}
 
-        if self.fail_fast:
+        if self.fail_fast is not None:
             metadata['fail_fast'] = self.fail_fast
 
         if self.mapped_origin in (list, set, frozenset):
