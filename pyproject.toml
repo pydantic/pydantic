@@ -124,7 +124,7 @@ testing = [
     "coverage[toml]",
     "dirty-equals",
     "eval-type-backport",
-    "pytest",
+    "pytest>=8.2.2",
     "pytest-mock",
     "pytest-pretty",
     "pytest-examples",
@@ -169,7 +169,7 @@ addopts = [
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
-assignees = []
+assignees = ['sydney-runkle']
 require_change_file = false
 unconfirmed_label = 'pending'
 

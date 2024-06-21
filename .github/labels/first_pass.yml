@@ -1,13 +1,15 @@
-# Add 'relnotes-fix' label by default
 relnotes-fix:
-- changed-files:
-  - any-glob-to-any-file: '**'
+  - head-branch: ['^fix', 'fix']
 
 relnotes-feature:
  - head-branch: ['^feature', 'feature']
 
 documentation:
  - head-branch: ['^documentation', 'documentation', '^docs', 'docs']
+
+documentation:
+- changed-files:
+  - any-glob-to-any-file: docs/*
 
 relnotes-change:
   - head-branch: ['^change', 'change']
