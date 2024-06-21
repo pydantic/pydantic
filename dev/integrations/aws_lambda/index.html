@@ -3231,6 +3231,34 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#no-module-named-pydantic_core_pydantic_core" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        no module named 'pydantic_core._pydantic_core'
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#no-package-metadata-was-found-for-email-validator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        No package metadata was found for email-validator
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3405,6 +3433,34 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#no-module-named-pydantic_core_pydantic_core" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        no module named 'pydantic_core._pydantic_core'
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#no-package-metadata-was-found-for-email-validator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        No package metadata was found for email-validator
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3559,8 +3615,7 @@ dependency management process.</p>
 <li>The latest version of <code>pydantic</code> will be installed.</li>
 </ol>
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">How to fix the <code>no module named 'pydantic_core._pydantic_core'</code> error</p>
+<h3 id="no-module-named-pydantic_core_pydantic_core"><code>no module named 'pydantic_core._pydantic_core'</code><a class="headerlink" href="#no-module-named-pydantic_core_pydantic_core" title="Permanent link">&para;</a></h3>
 <p>The
 <div class="language-text highlight"><pre><span></span><code>no module named `pydantic_core._pydantic_core`
 </code></pre></div></p>
@@ -3593,7 +3648,21 @@ dependency management process.</p>
 <p>Your Python version is mismatched (e.g. <code>cpython-310</code> vs <code>cpython-312</code>). Try passing correct <code>--python-version</code> argument to <code>pip install</code>, or otherwise change the Python version used on your build.</p>
 </li>
 </ul>
-</div>
+<h3 id="no-package-metadata-was-found-for-email-validator">No package metadata was found for <code>email-validator</code><a class="headerlink" href="#no-package-metadata-was-found-for-email-validator" title="Permanent link">&para;</a></h3>
+<p>Pydantic uses <code>version</code> from <code>importlib.metadata</code> to <a href="https://github.com/pydantic/pydantic/pull/6033">check what version</a> of <code>email-validator</code> is installed.
+This package versioning mechanism is somewhat incompatible with AWS Lambda, even though it's the industry standard for versioning packages in Python. There
+are a few ways to fix this issue:</p>
+<p>If you're deploying your lambda with the serverless framework, it's likely that the appropriate metadata for the <code>email-validator</code> package is not being included in your deployment package. Tools like <a href="https://github.com/serverless/serverless-python-requirements/tree/master"><code>serverless-python-requirements</code></a>
+remove metadata to reduce package size. You can fix this issue by setting the <code>slim</code> setting to false in your <code>serverless.yml</code> file:</p>
+<div class="language-text highlight"><pre><span></span><code>pythonRequirements:
+    dockerizePip: non-linux
+    slim: false
+    fileName: requirements.txt
+</code></pre></div>
+<p>You can read more about this fix, and other <code>slim</code> settings that might be relevant <a href="https://biercoff.com/how-to-fix-package-not-found-error-importlib-metadata/">here</a>.</p>
+<p>If you're using a <code>.zip</code> archive for your code and/or dependencies, make sure that your package contains the required version metadata. To do this, make sure you include the <code>dist-info</code> directory in your <code>.zip</code> archive for the <code>email-validator</code> package.</p>
+<p>This issue has been reported for other popular python libraries like <a href="https://github.com/python-jsonschema/jsonschema/issues/584"><code>jsonschema</code></a>, so you can
+read more about the issue and potential fixes there as well.</p>
 <h2 id="extra-resources">Extra Resources<a class="headerlink" href="#extra-resources" title="Permanent link">&para;</a></h2>
 <h3 id="more-debugging-tips">More Debugging Tips<a class="headerlink" href="#more-debugging-tips" title="Permanent link">&para;</a></h3>
 <p>If you're still struggling with installing <code>pydantic</code> for your AWS Lambda, you might consult with <a href="https://github.com/pydantic/pydantic/issues/6557">this issue</a>, which covers a variety of problems and solutions encountered by other developers.</p>
