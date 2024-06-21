@@ -6716,10 +6716,10 @@ _fail_fast_mark = pytest.mark.xfail(reason='new version of pydantic-core is requ
     [
         pytest.param(True, FailFast(), id='fail-fast-default', marks=_fail_fast_mark),
         pytest.param(True, FailFast(True), id='fail-fast-true', marks=_fail_fast_mark),
-        pytest.param(False, FailFast(False), id='fail-fast-false', marks=_fail_fast_mark),
+        pytest.param(False, FailFast(False), id='fail-fast-false'),
         pytest.param(False, Field(...), id='field-default'),
         pytest.param(True, Field(..., fail_fast=True), id='field-true', marks=_fail_fast_mark),
-        pytest.param(False, Field(..., fail_fast=False), id='field-false', marks=_fail_fast_mark),
+        pytest.param(False, Field(..., fail_fast=False), id='field-false'),
     ],
 )
 def test_fail_fast(tp, fail_fast, decl) -> None:
