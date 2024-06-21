@@ -2418,19 +2418,21 @@ class Examples:
 def _get_all_json_refs(item: Any) -> set[JsonRef]:
     """Get all the definitions references from a JSON schema."""
     refs: set[JsonRef] = set()
-    if isinstance(item, dict):
-        for key, value in item.items():
-            if key == '$ref' and isinstance(value, str):
-                # the isinstance check ensures that '$ref' isn't the name of a property, etc.
-                refs.add(JsonRef(value))
-            elif isinstance(value, dict):
-                refs.update(_get_all_json_refs(value))
-            elif isinstance(value, list):
-                for item in value:
-                    refs.update(_get_all_json_refs(item))
-    elif isinstance(item, list):
-        for item in item:
-            refs.update(_get_all_json_refs(item))
+    stack = [item]
+
+    while stack:
+        current = stack.pop()
+        if isinstance(current, dict):
+            for key, value in current.items():
+                if key == '$ref' and isinstance(value, str):
+                    refs.add(JsonRef(value))
+                elif isinstance(value, dict):
+                    stack.append(value)
+                elif isinstance(value, list):
+                    stack.extend(value)
+        elif isinstance(current, list):
+            stack.extend(current)
+
     return refs
 
 
