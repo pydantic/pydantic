@@ -3012,7 +3012,7 @@ any invalid items are discarded and the valid ones are returned.
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
 class FailFast:
-    """A `FailFast` can be used to specify that validation should stop at the first error.
+    """A `FailFast` annotation can be used to specify that validation should stop at the first error.
 
     This can be useful when you want to validate a large amount of data and you only need to know if it's valid or not.
 
