@@ -12,9 +12,6 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - name: debugging step
-        run: echo "extra step"
-
       - uses: actions/checkout@v4
 
       - id: label-PR-by-branch-name
