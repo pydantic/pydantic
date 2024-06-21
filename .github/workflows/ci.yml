@@ -138,7 +138,6 @@ jobs:
 
     - name: install deps
       run: |
-        echo "PYTHONIOENCODING=utf-8" >> $GITHUB_ENV
         pdm venv create --with-pip --force $PYTHON
         pdm install -G testing -G email
 

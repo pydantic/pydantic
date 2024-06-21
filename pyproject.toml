@@ -124,7 +124,7 @@ testing = [
     "coverage[toml]",
     "dirty-equals",
     "eval-type-backport",
-    "pytest>=8.0.0",
+    "pytest>=8.2.2",
     "pytest-mock",
     "pytest-pretty",
     "pytest-examples",
