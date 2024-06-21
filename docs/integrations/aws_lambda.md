@@ -42,44 +42,66 @@ pip install \
 
 ## Troubleshooting
 
-!!! warning "How to fix the `no module named 'pydantic_core._pydantic_core'` error"
-    The
-    ```
-    no module named `pydantic_core._pydantic_core`
-    ```
+### `no module named 'pydantic_core._pydantic_core'`
 
-    error is a common issue that indicates you have installed `pydantic` incorrectly. To debug this issue, you can try the following steps (before the failing import):
+The
+```
+no module named `pydantic_core._pydantic_core`
+```
 
-    1. Check the contents of the installed `pydantic-core` package. Are the compiled library and its type stubs both present?
+error is a common issue that indicates you have installed `pydantic` incorrectly. To debug this issue, you can try the following steps (before the failing import):
 
-    ```py test="skip" lint="skip"
-    from importlib.metadata import files
-    print([file for file in files('pydantic-core') if file.name.startswith('_pydantic_core')])
-    """
-    [PackagePath('pydantic_core/_pydantic_core.pyi'), PackagePath('pydantic_core/_pydantic_core.cpython-312-x86_64-linux-gnu.so')]
-    """
-    ```
+1. Check the contents of the installed `pydantic-core` package. Are the compiled library and its type stubs both present?
 
-    You should expect to see two files like those printed above. The compile library file will be a .so or .pyd with a name that varies according to the OS and Python version.
+```py test="skip" lint="skip"
+from importlib.metadata import files
+print([file for file in files('pydantic-core') if file.name.startswith('_pydantic_core')])
+"""
+[PackagePath('pydantic_core/_pydantic_core.pyi'), PackagePath('pydantic_core/_pydantic_core.cpython-312-x86_64-linux-gnu.so')]
+"""
+```
 
-    2. Check that your lambda's Python version is compatible with the compiled library version found above.
+You should expect to see two files like those printed above. The compile library file will be a .so or .pyd with a name that varies according to the OS and Python version.
 
-    ```py test="skip" lint="skip"
-    import sysconfig
-    print(sysconfig.get_config_var("EXT_SUFFIX"))
-    #> '.cpython-312-x86_64-linux-gnu.so'
-    ```
+2. Check that your lambda's Python version is compatible with the compiled library version found above.
 
-    You should expect to see the same suffix here as the compiled library, for example here we see this suffix `.cpython-312-x86_64-linux-gnu.so` indeed matches `_pydantic_core.cpython-312-x86_64-linux-gnu.so`.
+```py test="skip" lint="skip"
+import sysconfig
+print(sysconfig.get_config_var("EXT_SUFFIX"))
+#> '.cpython-312-x86_64-linux-gnu.so'
+```
 
-    If these two checks do not match, your build steps have not installed the correct native code for your lambda's target platform. You should adjust your build steps to change the version of the installed library which gets installed.
+You should expect to see the same suffix here as the compiled library, for example here we see this suffix `.cpython-312-x86_64-linux-gnu.so` indeed matches `_pydantic_core.cpython-312-x86_64-linux-gnu.so`.
 
-    Most likely errors:
+If these two checks do not match, your build steps have not installed the correct native code for your lambda's target platform. You should adjust your build steps to change the version of the installed library which gets installed.
 
-    * Your OS or CPU architecture is mismatched (e.g. darwin vs x86_64-linux-gnu). Try passing correct `--platform` argument to `pip install` when installing your lambda dependencies, or build inside a linux docker container for the correct platform. Possible platforms at the moment include `--platform manylinux2014_x86_64` or `--platform manylinux2014_aarch64`, but these may change with a future Pydantic major release.
+Most likely errors:
 
-    * Your Python version is mismatched (e.g. `cpython-310` vs `cpython-312`). Try passing correct `--python-version` argument to `pip install`, or otherwise change the Python version used on your build.
+* Your OS or CPU architecture is mismatched (e.g. darwin vs x86_64-linux-gnu). Try passing correct `--platform` argument to `pip install` when installing your lambda dependencies, or build inside a linux docker container for the correct platform. Possible platforms at the moment include `--platform manylinux2014_x86_64` or `--platform manylinux2014_aarch64`, but these may change with a future Pydantic major release.
 
+* Your Python version is mismatched (e.g. `cpython-310` vs `cpython-312`). Try passing correct `--python-version` argument to `pip install`, or otherwise change the Python version used on your build.
+
+### No package metadata was found for `email-validator`
+
+Pydantic uses `version` from `importlib.metadata` to [check what version](https://github.com/pydantic/pydantic/pull/6033) of `email-validator` is installed.
+This package versioning mechanism is somewhat incompatible with AWS Lambda, even though it's the industry standard for versioning packages in Python. There
+are a few ways to fix this issue:
+
+If you're deploying your lambda with the serverless framework, it's likely that the appropriate metadata for the `email-validator` package is not being included in your deployment package. Tools like `serverless-python-requirements` remove metadata to reduce package size. You can fix this issue by setting the `slim` setting to false in your `serverless.yml` file:
+
+```
+pythonRequirements:
+    dockerizePip: non-linux
+    slim: false
+    fileName: requirements.txt
+```
+
+You can read more about this fix, and other `slim` settings that might be relevant [here](https://biercoff.com/how-to-fix-package-not-found-error-importlib-metadata/).
+
+If you're using a `.zip` archive for your code and/or dependencies, make sure that your package contains the required version metadata. To do this, make sure you include the `dist-info` directory in your `.zip` archive for the `email-validator` package.
+
+This issue has been reported for other popular python libraries like [`jsonschema`](https://github.com/python-jsonschema/jsonschema/issues/584), so you can
+read more about the issue and potential fixes there as well.
 
 ## Extra Resources
 
