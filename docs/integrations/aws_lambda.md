@@ -87,7 +87,8 @@ Pydantic uses `version` from `importlib.metadata` to [check what version](https:
 This package versioning mechanism is somewhat incompatible with AWS Lambda, even though it's the industry standard for versioning packages in Python. There
 are a few ways to fix this issue:
 
-If you're deploying your lambda with the serverless framework, it's likely that the appropriate metadata for the `email-validator` package is not being included in your deployment package. Tools like `serverless-python-requirements` remove metadata to reduce package size. You can fix this issue by setting the `slim` setting to false in your `serverless.yml` file:
+If you're deploying your lambda with the serverless framework, it's likely that the appropriate metadata for the `email-validator` package is not being included in your deployment package. Tools like [`serverless-python-requirements`](https://github.com/serverless/serverless-python-requirements/tree/master)
+remove metadata to reduce package size. You can fix this issue by setting the `slim` setting to false in your `serverless.yml` file:
 
 ```
 pythonRequirements:
