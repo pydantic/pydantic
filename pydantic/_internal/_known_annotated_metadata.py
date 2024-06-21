@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 STRICT = {'strict'}
-SEQUENCE_CONSTRAINTS = {'min_length', 'max_length'}
+SEQUENCE_CONSTRAINTS = {'min_length', 'max_length', 'fail_fast'}
 INEQUALITY = {'le', 'ge', 'lt', 'gt'}
 NUMERIC_CONSTRAINTS = {'multiple_of', 'allow_inf_nan', *INEQUALITY}
 
@@ -256,6 +256,8 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                 _validators.forbid_inf_nan_check,
                 schema,
             )
+        elif constraint == 'fail_fast':
+            schema['fail_fast'] = value
         else:
             raise RuntimeError(f'Unable to apply constraint {constraint} to schema {schema_type}')
 

@@ -3011,7 +3011,7 @@ any invalid items are discarded and the valid ones are returned.
 
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
-class FailFast:
+class FailFast(_fields.PydanticMetadata, BaseMetadata):
     """A `FailFast` annotation can be used to specify that validation should stop at the first error.
 
     This can be useful when you want to validate a large amount of data and you only need to know if it's valid or not.
@@ -3038,9 +3038,3 @@ class FailFast:
     """
 
     fail_fast: bool = True
-
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        schema = handler(source_type)
-        schema['fail_fast'] = self.fail_fast  # type: ignore
-
-        return schema
