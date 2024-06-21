@@ -138,7 +138,7 @@ jobs:
 
     - name: install deps
       run: |
-        set PYTHONIOENCODING=utf-8
+        export PYTHONIOENCODING=utf-8
         pdm venv create --with-pip --force $PYTHON
         pdm install -G testing -G email
 
