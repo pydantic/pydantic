@@ -1,6 +1,5 @@
-import re
-
 """Alias generators for converting between different capitalization conventions."""
+import re
 
 __all__ = ('to_pascal', 'to_camel', 'to_snake')
 
@@ -40,7 +39,11 @@ def to_snake(camel: str) -> str:
     Returns:
         The converted string in snake_case.
     """
-    # Combine all replacements into a single regex pattern
+    # The regex does the following:
+    # Handle the sequence of uppercase letters followed by a lowercase letter.
+    # Insert an underscore between a lowercase letter and an uppercase letter.
+    # Insert an underscore between a digit and an uppercase letter.
+    # Insert an underscore between a lowercase letter and a digit.
     pattern = r'(?<!^)(?:(?<=\d)(?=[A-Z])|(?<=[a-z])(?=[A-Z0-9])|(?<=[A-Z])(?=[A-Z][a-z]))'
     snake = re.sub(pattern, '_', camel)
     return snake.lower()
