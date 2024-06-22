@@ -48,7 +48,7 @@ requires-python = '>=3.8'
 dependencies = [
     'typing-extensions>=4.6.1',
     'annotated-types>=0.4.0',
-    "pydantic-core==2.18.2",
+    "pydantic-core==2.19.0",
 ]
 dynamic = ['version', 'readme']
 
@@ -116,7 +116,7 @@ docs = [
 ]
 linting = [
     "eval-type-backport>=0.1.3",
-    "ruff==0.2.1",
+    "ruff==0.4.8",
     "mypy~=1.1.1",
 ]
 testing = [
@@ -124,7 +124,7 @@ testing = [
     "coverage[toml]",
     "dirty-equals",
     "eval-type-backport",
-    "pytest",
+    "pytest>=8.2.2",
     "pytest-mock",
     "pytest-pretty",
     "pytest-examples",
@@ -169,15 +169,14 @@ addopts = [
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
-assignees = []
-reviewers = ['samuelcolvin', 'adriangb', 'dmontagu', 'hramezani', 'Kludex', 'davidhewitt', 'sydney-runkle', 'alexmojaki']
+assignees = ['sydney-runkle']
 require_change_file = false
 unconfirmed_label = 'pending'
 
 [tool.ruff]
 line-length = 120
 target-version = 'py38'
-extend-exclude = ['pydantic/v1', 'tests/mypy/outputs']
+extend-exclude = ['pydantic/v1', 'tests/mypy/']
 
 [tool.ruff.lint]
 extend-select = ['Q', 'RUF100', 'C90', 'UP', 'I', 'D', 'T']
@@ -232,10 +231,12 @@ source = [
 ]
 
 [tool.pyright]
-include = ['pydantic']
+include = ['pydantic', 'tests/test_pipeline.py']
 exclude = ['pydantic/_hypothesis_plugin.py', 'pydantic/mypy.py', 'pydantic/v1']
 # reportUnnecessaryTypeIgnoreComment can't be set since we run pyright with multiple python versions
-#reportUnnecessaryTypeIgnoreComment = true
+# reportUnnecessaryTypeIgnoreComment = true
+strict = ['tests/test_pipeline.py']
+enableExperimentalFeatures = true
 
 [tool.codespell]
 skip = '.git,env*,pydantic/v1/*'

@@ -4112,15 +4112,8 @@ def test_compiled_pattern_in_field(use_field):
     assert len(field_general_metadata) == 1
     field_metadata_pattern = field_general_metadata[0].pattern
 
-    if use_field:
-        # In Field re.Pattern is converted to str instantly
-        assert field_metadata_pattern == pattern_value
-        assert isinstance(field_metadata_pattern, str)
-
-    else:
-        # In constr re.Pattern is kept as is
-        assert field_metadata_pattern == field_pattern
-        assert isinstance(field_metadata_pattern, re.Pattern)
+    assert field_metadata_pattern == field_pattern
+    assert isinstance(field_metadata_pattern, re.Pattern)
 
     matching_value = 'whatever1'
     f = Foobar(str_regex=matching_value)
@@ -5357,8 +5350,7 @@ def test_default_union_class():
 
 @pytest.mark.parametrize('max_length', [10, None])
 def test_union_subclass(max_length: Union[int, None]):
-    class MyStr(str):
-        ...
+    class MyStr(str): ...
 
     class Model(BaseModel):
         x: Union[int, Annotated[str, Field(max_length=max_length)]]
@@ -6759,3 +6751,22 @@ def test_complex_field():
     # Space between numbers
     with pytest.raises(ValidationError):
         Model(number='\t( -1.23 +4.5J \n')
+
+
+def test_python_re_respects_flags() -> None:
+    class Model(BaseModel):
+        a: Annotated[str, StringConstraints(pattern=re.compile(r'[A-Z]+', re.IGNORECASE))]
+
+        model_config = ConfigDict(regex_engine='python-re')
+
+    # allows lowercase letters, even though the pattern is uppercase only due to the IGNORECASE flag
+    assert Model(a='abc').a == 'abc'
+
+
+def test_constraints_on_str_like() -> None:
+    """See https://github.com/pydantic/pydantic/issues/8577 for motivation."""
+
+    class Foo(BaseModel):
+        baz: Annotated[EmailStr, StringConstraints(to_lower=True, strip_whitespace=True)]
+
+    assert Foo(baz=' uSeR@ExAmPlE.com  ').baz == 'user@example.com'

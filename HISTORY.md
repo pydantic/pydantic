@@ -1,3 +1,49 @@
+## v2.7.4 (2024-06-12)
+
+[Github release](https://github.com/pydantic/pydantic/releases/tag/v2.7.4)
+
+### What's Changed
+
+#### Packaging
+
+* Bump `pydantic.v1` to `v1.10.16` reference by @sydney-runkle in [#9639](https://github.com/pydantic/pydantic/pull/9639)
+
+#### Fixes
+
+* Specify `recursive_guard` as kwarg in `FutureRef._evaluate` by @vfazio in [#9612](https://github.com/pydantic/pydantic/pull/9612)
+
+## v2.7.3 (2024-06-03)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.7.3)
+
+### What's Changed
+
+#### Packaging
+
+* Bump `pydantic-core` to `v2.18.4` by @sydney-runkle in [#9550](https://github.com/pydantic/pydantic/pull/9550)
+
+#### Fixes
+
+* Fix u style unicode strings in python @samuelcolvin in [pydantic/jiter#110](https://github.com/pydantic/jiter/pull/110)
+
+## v2.7.2 (2024-05-28)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.7.2)
+
+### What's Changed
+
+#### Packaging
+
+* Bump `pydantic-core` to `v2.18.3` by @sydney-runkle in [#9515](https://github.com/pydantic/pydantic/pull/9515)
+
+#### Fixes
+
+* Replace `__spec__.parent` with `__package__` by @hramezani in [#9331](https://github.com/pydantic/pydantic/pull/9331)
+* Fix validation of `int`s with leading unary minus by @RajatRajdeep in [pydantic/pydantic-core#1291](https://github.com/pydantic/pydantic-core/pull/1291)
+* Fix `str` subclass validation for enums by @sydney-runkle in [pydantic/pydantic-core#1273](https://github.com/pydantic/pydantic-core/pull/1273)
+* Support `BigInt`s in `Literal`s and `Enum`s by @samuelcolvin in [pydantic/pydantic-core#1297](https://github.com/pydantic/pydantic-core/pull/1297)
+* Fix: uuid - allow `str` subclass as input by @davidhewitt in [pydantic/pydantic-core#1296](https://github.com/pydantic/pydantic-core/pull/1296)
+
 ## v2.7.1 (2024-04-23)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.7.1)
@@ -960,6 +1006,17 @@ See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more deta
 
 <!-- package description limit -->
 
+## v1.10.17 (2024-06-20)
+
+* Advertise Python 3.12 for 1.10.x! Part Deux by @vfazio in https://github.com/pydantic/pydantic/pull/9644
+* Mirrored modules in `v1` namespace to fix typing and object resolution in python>3.11 by @exs-dwoodward in https://github.com/pydantic/pydantic/pull/9660
+* setup: remove upper bound from python_requires by @vfazio in https://github.com/pydantic/pydantic/pull/9685
+
+## v1.10.16 (2024-06-11)
+
+* Specify recursive_guard as kwarg in FutureRef._evaluate by @vfazio in https://github.com/pydantic/pydantic/pull/9612
+* Fix mypy v1 plugin for upcoming mypy release by @ cdce8p in https://github.com/pydantic/pydantic/pull/9586
+* Import modules/objects directly from v1 namespace by @exs-dwoodward in https://github.com/pydantic/pydantic/pull/9162
 
 ## v1.10.15 (2024-04-03)
 

@@ -12,11 +12,11 @@ import re
 from colorsys import hls_to_rgb, rgb_to_hls
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union, cast
 
-from .errors import ColorError
-from .utils import Representation, almost_equal_floats
+from pydantic.v1.errors import ColorError
+from pydantic.v1.utils import Representation, almost_equal_floats
 
 if TYPE_CHECKING:
-    from .typing import CallableGenerator, ReprArgs
+    from pydantic.v1.typing import CallableGenerator, ReprArgs
 
 ColorTuple = Union[Tuple[int, int, int], Tuple[int, int, int, float]]
 ColorType = Union[ColorTuple, str]

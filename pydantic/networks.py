@@ -1,4 +1,5 @@
 """The networks module contains types for common network-related fields."""
+
 from __future__ import annotations as _annotations
 
 import dataclasses as _dataclasses
@@ -113,7 +114,7 @@ AnyHttpUrl = Annotated[Url, UrlConstraints(allowed_schemes=['http', 'https'])]
 HttpUrl = Annotated[Url, UrlConstraints(max_length=2083, allowed_schemes=['http', 'https'])]
 """A type that will accept any http or https URL.
 
-* TLD required
+* TLD not required
 * Host required
 * Max length 2083
 
@@ -196,7 +197,7 @@ AnyWebsocketUrl = Annotated[Url, UrlConstraints(allowed_schemes=['ws', 'wss'])]
 WebsocketUrl = Annotated[Url, UrlConstraints(max_length=2083, allowed_schemes=['ws', 'wss'])]
 """A type that will accept any ws or wss URL.
 
-* TLD required
+* TLD not required
 * Host required
 * Max length 2083
 """
@@ -532,11 +533,11 @@ class NameEmail(_repr.Representation):
 
     @classmethod
     def _validate(cls, input_value: Self | str, /) -> Self:
-        if isinstance(input_value, cls):
-            return input_value
-        else:
+        if isinstance(input_value, str):
             name, email = validate_email(input_value)
             return cls(name, email)
+        else:
+            return input_value
 
     def __str__(self) -> str:
         if '@' in self.name:
@@ -652,46 +653,52 @@ class IPvAnyInterface:
         return cls(input_value)  # type: ignore[return-value]
 
 
-class IPvAnyNetwork:
-    """Validate an IPv4 or IPv6 network."""
+IPvAnyNetworkType: TypeAlias = 'IPv4Network | IPv6Network'
 
-    __slots__ = ()
+if TYPE_CHECKING:
+    IPvAnyNetwork = IPvAnyNetworkType
+else:
 
-    def __new__(cls, value: NetworkType) -> IPv4Network | IPv6Network:
+    class IPvAnyNetwork:
         """Validate an IPv4 or IPv6 network."""
-        # Assume IP Network is defined with a default value for `strict` argument.
-        # Define your own class if you want to specify network address check strictness.
-        try:
-            return IPv4Network(value)
-        except ValueError:
-            pass
 
-        try:
-            return IPv6Network(value)
-        except ValueError:
-            raise PydanticCustomError('ip_any_network', 'value is not a valid IPv4 or IPv6 network')
+        __slots__ = ()
 
-    @classmethod
-    def __get_pydantic_json_schema__(
-        cls, core_schema: core_schema.CoreSchema, handler: _schema_generation_shared.GetJsonSchemaHandler
-    ) -> JsonSchemaValue:
-        field_schema = {}
-        field_schema.update(type='string', format='ipvanynetwork')
-        return field_schema
+        def __new__(cls, value: NetworkType) -> IPvAnyNetworkType:
+            """Validate an IPv4 or IPv6 network."""
+            # Assume IP Network is defined with a default value for `strict` argument.
+            # Define your own class if you want to specify network address check strictness.
+            try:
+                return IPv4Network(value)
+            except ValueError:
+                pass
 
-    @classmethod
-    def __get_pydantic_core_schema__(
-        cls,
-        _source: type[Any],
-        _handler: GetCoreSchemaHandler,
-    ) -> core_schema.CoreSchema:
-        return core_schema.no_info_plain_validator_function(
-            cls._validate, serialization=core_schema.to_string_ser_schema()
-        )
+            try:
+                return IPv6Network(value)
+            except ValueError:
+                raise PydanticCustomError('ip_any_network', 'value is not a valid IPv4 or IPv6 network')
 
-    @classmethod
-    def _validate(cls, input_value: NetworkType, /) -> IPv4Network | IPv6Network:
-        return cls(input_value)  # type: ignore[return-value]
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, core_schema: core_schema.CoreSchema, handler: _schema_generation_shared.GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            field_schema = {}
+            field_schema.update(type='string', format='ipvanynetwork')
+            return field_schema
+
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls,
+            _source: type[Any],
+            _handler: GetCoreSchemaHandler,
+        ) -> core_schema.CoreSchema:
+            return core_schema.no_info_plain_validator_function(
+                cls._validate, serialization=core_schema.to_string_ser_schema()
+            )
+
+        @classmethod
+        def _validate(cls, input_value: NetworkType, /) -> IPvAnyNetworkType:
+            return cls(input_value)  # type: ignore[return-value]
 
 
 def _build_pretty_email_regex() -> re.Pattern[str]:

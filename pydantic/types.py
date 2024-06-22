@@ -1,4 +1,5 @@
 """The types module contains custom types used by pydantic."""
+
 from __future__ import annotations as _annotations
 
 import base64
@@ -117,7 +118,7 @@ T = TypeVar('T')
 
 @_dataclasses.dataclass
 class Strict(_fields.PydanticMetadata, BaseMetadata):
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/strict_mode/#strict-mode-with-annotated-strict
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/strict_mode/#strict-mode-with-annotated-strict
 
     A field metadata class to indicate that a field should be validated in strict mode.
 
@@ -227,7 +228,7 @@ def conint(
     ```
 
     """  # noqa: D212
-    return Annotated[
+    return Annotated[  # pyright: ignore[reportReturnType]
         int,
         Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
@@ -473,7 +474,7 @@ def confloat(
         '''
     ```
     """  # noqa: D212
-    return Annotated[
+    return Annotated[  # pyright: ignore[reportReturnType]
         float,
         Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
@@ -661,7 +662,7 @@ def conbytes(
     Returns:
         The wrapped bytes type.
     """
-    return Annotated[
+    return Annotated[  # pyright: ignore[reportReturnType]
         bytes,
         Strict(strict) if strict is not None else None,
         annotated_types.Len(min_length or 0, max_length),
@@ -677,7 +678,7 @@ StrictBytes = Annotated[bytes, Strict()]
 
 @_dataclasses.dataclass(frozen=True)
 class StringConstraints(annotated_types.GroupedMetadata):
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/fields/#string-constraints
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/fields/#string-constraints
 
     Apply constraints to `str` types.
 
@@ -716,7 +717,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
                 strip_whitespace=self.strip_whitespace,
                 to_upper=self.to_upper,
                 to_lower=self.to_lower,
-                pattern=self.pattern.pattern if isinstance(self.pattern, Pattern) else self.pattern,
+                pattern=self.pattern,
             )
 
 
@@ -784,7 +785,7 @@ def constr(
     Returns:
         The wrapped string type.
     """  # noqa: D212
-    return Annotated[
+    return Annotated[  # pyright: ignore[reportReturnType]
         str,
         StringConstraints(
             strip_whitespace=strip_whitespace,
@@ -819,7 +820,7 @@ def conset(
     Returns:
         The wrapped set type.
     """
-    return Annotated[Set[item_type], annotated_types.Len(min_length or 0, max_length)]
+    return Annotated[Set[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
 
 
 def confrozenset(
@@ -835,7 +836,7 @@ def confrozenset(
     Returns:
         The wrapped frozenset type.
     """
-    return Annotated[FrozenSet[item_type], annotated_types.Len(min_length or 0, max_length)]
+    return Annotated[FrozenSet[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
 
 
 AnyItemType = TypeVar('AnyItemType')
@@ -870,7 +871,7 @@ def conlist(
             ),
             code='removed-kwargs',
         )
-    return Annotated[List[item_type], annotated_types.Len(min_length or 0, max_length)]
+    return Annotated[List[item_type], annotated_types.Len(min_length or 0, max_length)]  # pyright: ignore[reportReturnType]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~ IMPORT STRING TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1095,7 +1096,7 @@ def condecimal(
         '''
     ```
     """  # noqa: D212
-    return Annotated[
+    return Annotated[  # pyright: ignore[reportReturnType]
         Decimal,
         Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
@@ -2069,7 +2070,7 @@ def condate(
     Returns:
         A date type with the specified constraints.
     """
-    return Annotated[
+    return Annotated[  # pyright: ignore[reportReturnType]
         date,
         Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
@@ -2594,7 +2595,7 @@ __getattr__ = getattr_migration(__name__)
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class GetPydanticSchema:
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/types/#using-getpydanticschema-to-reduce-boilerplate
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/types/#using-getpydanticschema-to-reduce-boilerplate
 
     A convenience class for creating an annotation that provides pydantic custom type hooks.
 
@@ -2730,7 +2731,7 @@ class Tag:
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
 class Discriminator:
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/unions/#discriminated-unions-with-callable-discriminator
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/unions/#discriminated-unions-with-callable-discriminator
 
     Provides a way to use a custom callable as the way to extract the value of a union discriminator.
 

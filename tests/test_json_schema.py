@@ -47,6 +47,7 @@ from pydantic import (
     GetJsonSchemaHandler,
     ImportString,
     InstanceOf,
+    PlainSerializer,
     PydanticDeprecatedSince20,
     PydanticUserError,
     RootModel,
@@ -1371,22 +1372,20 @@ def test_non_serializable_default(type_, default_value, properties):
     assert model_schema.get('required') is None
 
 
-@pytest.mark.parametrize(
-    'warning_match',
-    (
-        r'Cannot generate a JsonSchema for core_schema.CallableSchema \[skipped-choice\]',
-        r'Default value .* is not JSON serializable; excluding default from JSON schema \[non-serializable-default\]',
-    ),
-)
-def test_callable_fallback_with_non_serializable_default(warning_match):
+def test_callable_fallback_with_non_serializable_default():
     class Model(BaseModel):
-        callback: Union[int, Callable[[int], int]] = lambda x: x  # noqa E731
+        callback: Union[int, Callable[[int], int]] = lambda x: x
 
     class MyGenerator(GenerateJsonSchema):
         ignored_warning_kinds = ()
 
-    with pytest.warns(PydanticJsonSchemaWarning, match=warning_match):
-        model_schema = Model.model_json_schema(schema_generator=MyGenerator)
+    inner_match = (
+        r'Default value .* is not JSON serializable; excluding default from JSON schema \[non-serializable-default\]'
+    )
+    outer_match = r'Cannot generate a JsonSchema for core_schema.CallableSchema \[skipped-choice\]'
+    with pytest.warns(PydanticJsonSchemaWarning, match=outer_match):
+        with pytest.warns(PydanticJsonSchemaWarning, match=inner_match):
+            model_schema = Model.model_json_schema(schema_generator=MyGenerator)
     assert model_schema == {
         'properties': {'callback': {'title': 'Callback', 'type': 'integer'}},
         'title': 'Model',
@@ -3481,8 +3480,7 @@ def test_nested_generic():
     class Ref(BaseModel, Generic[T]):
         uuid: str
 
-        def resolve(self) -> T:
-            ...
+        def resolve(self) -> T: ...
 
     class Model(BaseModel):
         ref: Ref['Model']
@@ -3543,15 +3541,13 @@ def test_complex_nested_generic():
     class Ref(BaseModel, Generic[T]):
         uuid: str
 
-        def resolve(self) -> T:
-            ...
+        def resolve(self) -> T: ...
 
     class Model(BaseModel):
         uuid: str
         model: Union[Ref['Model'], 'Model']
 
-        def resolve(self) -> 'Model':
-            ...
+        def resolve(self) -> 'Model': ...
 
     Model.model_rebuild()
 
@@ -6243,3 +6239,27 @@ def test_pydantic_types_as_default_values(pydantic_type, expected_json_schema):
         parent: pydantic_type = pydantic_type(name='Jon Doe')
 
     assert Child.model_json_schema() == expected_json_schema
+
+
+def test_str_schema_with_pattern() -> None:
+    assert TypeAdapter(Annotated[str, Field(pattern='abc')]).json_schema() == {'type': 'string', 'pattern': 'abc'}
+    assert TypeAdapter(Annotated[str, Field(pattern=re.compile('abc'))]).json_schema() == {
+        'type': 'string',
+        'pattern': 'abc',
+    }
+
+
+def test_plain_serializer_applies_to_default() -> None:
+    class Model(BaseModel):
+        custom_str: Annotated[str, PlainSerializer(lambda x: f'serialized-{x}', return_type=str)] = 'foo'
+
+    assert Model.model_json_schema(mode='validation') == {
+        'properties': {'custom_str': {'default': 'foo', 'title': 'Custom Str', 'type': 'string'}},
+        'title': 'Model',
+        'type': 'object',
+    }
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': {'custom_str': {'default': 'serialized-foo', 'title': 'Custom Str', 'type': 'string'}},
+        'title': 'Model',
+        'type': 'object',
+    }

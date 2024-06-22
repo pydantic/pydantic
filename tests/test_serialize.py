@@ -1,6 +1,7 @@
 """
 New tests for v2 of serialization logic.
 """
+
 import json
 import re
 import sys
@@ -225,6 +226,10 @@ def test_serialize_valid_signatures():
     def ser_plain(v: Any, info: SerializationInfo) -> Any:
         return f'{v:,}'
 
+    def ser_plain_no_info(v: Any, unrelated_arg: int = 1, other_unrelated_arg: int = 2) -> Any:
+        # Arguments with default values are not treated as info arg.
+        return f'{v:,}'
+
     def ser_wrap(v: Any, nxt: SerializerFunctionWrapHandler, info: SerializationInfo) -> Any:
         return f'{nxt(v):,}'
 
@@ -233,6 +238,7 @@ def test_serialize_valid_signatures():
         f2: int
         f3: int
         f4: int
+        f5: int
 
         @field_serializer('f1')
         def ser_f1(self, v: Any, info: FieldSerializationInfo) -> Any:
@@ -249,7 +255,8 @@ def test_serialize_valid_signatures():
             return f'{nxt(v):,}'
 
         ser_f3 = field_serializer('f3')(ser_plain)
-        ser_f4 = field_serializer('f4', mode='wrap')(ser_wrap)
+        ser_f4 = field_serializer('f4')(ser_plain_no_info)
+        ser_f5 = field_serializer('f5', mode='wrap')(ser_wrap)
 
     m = MyModel(**{f'f{x}': x * 1_000 for x in range(1, 9)})
 
@@ -258,8 +265,9 @@ def test_serialize_valid_signatures():
         'f2': '2,000',
         'f3': '3,000',
         'f4': '4,000',
+        'f5': '5,000',
     }
-    assert m.model_dump_json() == '{"f1":"1,000","f2":"2,000","f3":"3,000","f4":"4,000"}'
+    assert m.model_dump_json() == '{"f1":"1,000","f2":"2,000","f3":"3,000","f4":"4,000","f5":"5,000"}'
 
 
 def test_invalid_signature_no_params() -> None:
@@ -270,8 +278,7 @@ def test_invalid_signature_no_params() -> None:
 
             # caught by type checkers
             @field_serializer('x')
-            def no_args() -> Any:
-                ...
+            def no_args() -> Any: ...
 
 
 def test_invalid_signature_single_params() -> None:
@@ -282,8 +289,7 @@ def test_invalid_signature_single_params() -> None:
 
             # not caught by type checkers
             @field_serializer('x')
-            def no_args(self) -> Any:
-                ...
+            def no_args(self) -> Any: ...
 
 
 def test_invalid_signature_too_many_params_1() -> None:
@@ -294,8 +300,7 @@ def test_invalid_signature_too_many_params_1() -> None:
 
             # caught by type checkers
             @field_serializer('x')
-            def no_args(self, value: Any, nxt: Any, info: Any, extra_param: Any) -> Any:
-                ...
+            def no_args(self, value: Any, nxt: Any, info: Any, extra_param: Any) -> Any: ...
 
 
 def test_invalid_signature_too_many_params_2() -> None:
@@ -307,8 +312,7 @@ def test_invalid_signature_too_many_params_2() -> None:
             # caught by type checkers
             @field_serializer('x')
             @staticmethod
-            def no_args(not_self: Any, value: Any, nxt: Any, info: Any) -> Any:
-                ...
+            def no_args(not_self: Any, value: Any, nxt: Any, info: Any) -> Any: ...
 
 
 def test_invalid_signature_bad_plain_signature() -> None:
@@ -319,8 +323,7 @@ def test_invalid_signature_bad_plain_signature() -> None:
 
             # caught by type checkers
             @field_serializer('x', mode='plain')
-            def no_args(self, value: Any, nxt: Any, info: Any) -> Any:
-                ...
+            def no_args(self, value: Any, nxt: Any, info: Any) -> Any: ...
 
 
 def test_serialize_ignore_info_plain():
@@ -898,6 +901,23 @@ def test_type_adapter_dump_json():
     ta = TypeAdapter(Model)
 
     assert ta.dump_json(Model({'x': 1, 'y': 2.5})) == b'{"x":2,"y":7.5}'
+
+
+def test_type_adapter_dump_with_context():
+    class Model(TypedDict):
+        x: int
+        y: float
+
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info: SerializationInfo):
+            data = handler(self)
+            if info.context and info.context.get('mode') == 'x-only':
+                data.pop('y')
+            return data
+
+    ta = TypeAdapter(Model)
+
+    assert ta.dump_json(Model({'x': 1, 'y': 2.5}), context={'mode': 'x-only'}) == b'{"x":1}'
 
 
 @pytest.mark.parametrize('as_annotation', [True, False])

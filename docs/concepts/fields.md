@@ -145,10 +145,8 @@ print(user.model_dump(by_alias=True))  # (2)!
     the `validation_alias` will have priority over `alias` for validation, and `serialization_alias` will have priority
     over `alias` for serialization.
 
-    You may also set `alias_priority` on a field to change this behavior.
-
-    You can read more about [Alias Precedence](../concepts/alias.md#alias-precedence) in the
-    [Model Config][pydantic.config.ConfigDict] documentation.
+    If you use an `alias_generator` in the [Model Config][pydantic.config.ConfigDict.alias_generator], you can control
+    the order of precedence for specified field vs generated aliases via the `alias_priority` setting. You can read more about alias precedence [here](../concepts/alias.md#alias-precedence).
 
 
 ??? tip "VSCode and Pyright users"
@@ -723,17 +721,27 @@ print(Model.model_json_schema()['properties']['deprecated_field'])
 
 ### `deprecated` via the `warnings.deprecated` decorator
 
+!!! note
+    You can only use the `deprecated` decorator in this way if you have
+    `typing_extensions` >= 4.9.0 installed.
+
 ```py test="skip"
+import importlib.metadata
+
+from packaging.version import Version
 from typing_extensions import Annotated, deprecated
 
 from pydantic import BaseModel, Field
 
+if Version(importlib.metadata.version('typing_extensions')) >= Version('4.9'):
 
-class Model(BaseModel):
-    deprecated_field: Annotated[int, deprecated('This is deprecated')]
+    class Model(BaseModel):
+        deprecated_field: Annotated[int, deprecated('This is deprecated')]
 
-    # Or explicitly using `Field`:
-    alt_form: Annotated[int, Field(deprecated=deprecated('This is deprecated'))]
+        # Or explicitly using `Field`:
+        alt_form: Annotated[
+            int, Field(deprecated=deprecated('This is deprecated'))
+        ]
 ```
 
 ### `deprecated` as a boolean

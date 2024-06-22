@@ -1,4 +1,5 @@
 """Type adapter specification."""
+
 from __future__ import annotations as _annotations
 
 import sys
@@ -147,7 +148,7 @@ def _frame_depth(
 
 @final
 class TypeAdapter(Generic[T]):
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/type_adapter/
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/type_adapter/
 
     Type adapters provide a flexible way to perform validation and serialization based on a Python type.
 
@@ -159,7 +160,7 @@ class TypeAdapter(Generic[T]):
     **Note:** By default, `TypeAdapter` does not respect the
     [`defer_build=True`][pydantic.config.ConfigDict.defer_build] setting in the
     [`model_config`][pydantic.BaseModel.model_config] or in the `TypeAdapter` constructor `config`. You need to also
-    explicitly set [`_defer_build_mode=('model', 'type_adapter')`][pydantic.config.ConfigDict._defer_build_mode] of the
+    explicitly set [`experimental_defer_build_mode=('model', 'type_adapter')`][pydantic.config.ConfigDict.experimental_defer_build_mode] of the
     config to defer the model validator and serializer construction. Thus, this feature is opt-in to ensure backwards
     compatibility.
 
@@ -171,28 +172,26 @@ class TypeAdapter(Generic[T]):
 
     @overload
     def __init__(
-        self: TypeAdapter[T],
+        self,
         type: type[T],
         *,
         config: ConfigDict | None = ...,
         _parent_depth: int = ...,
         module: str | None = ...,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     # This second overload is for unsupported special forms (such as Annotated, Union, etc.)
     # Currently there is no way to type this correctly
     # See https://github.com/python/typing/pull/1618
     @overload
     def __init__(
-        self: TypeAdapter[Any],
+        self,
         type: Any,
         *,
         config: ConfigDict | None = ...,
         _parent_depth: int = ...,
         module: str | None = ...,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def __init__(
         self,
@@ -341,8 +340,10 @@ class TypeAdapter(Generic[T]):
     @staticmethod
     def _is_defer_build_config(config: ConfigDict) -> bool:
         # TODO reevaluate this logic when we have a better understanding of how defer_build should work with TypeAdapter
-        # Should we drop the special _defer_build_mode check?
-        return config.get('defer_build', False) is True and 'type_adapter' in config.get('_defer_build_mode', tuple())
+        # Should we drop the special experimental_defer_build_mode check?
+        return config.get('defer_build', False) is True and 'type_adapter' in config.get(
+            'experimental_defer_build_mode', tuple()
+        )
 
     @_frame_depth(1)
     def validate_python(
@@ -375,7 +376,7 @@ class TypeAdapter(Generic[T]):
     def validate_json(
         self, data: str | bytes, /, *, strict: bool | None = None, context: dict[str, Any] | None = None
     ) -> T:
-        """Usage docs: https://docs.pydantic.dev/2.7/concepts/json/#json-parsing
+        """Usage docs: https://docs.pydantic.dev/2.8/concepts/json/#json-parsing
 
         Validate a JSON string or bytes against the model.
 
@@ -432,6 +433,7 @@ class TypeAdapter(Generic[T]):
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         serialize_as_any: bool = False,
+        context: dict[str, Any] | None = None,
     ) -> Any:
         """Dump an instance of the adapted type to a Python object.
 
@@ -448,6 +450,7 @@ class TypeAdapter(Generic[T]):
             warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
                 "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
+            context: Additional context to pass to the serializer.
 
         Returns:
             The serialized object.
@@ -464,6 +467,7 @@ class TypeAdapter(Generic[T]):
             round_trip=round_trip,
             warnings=warnings,
             serialize_as_any=serialize_as_any,
+            context=context,
         )
 
     @_frame_depth(1)
@@ -482,8 +486,9 @@ class TypeAdapter(Generic[T]):
         round_trip: bool = False,
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         serialize_as_any: bool = False,
+        context: dict[str, Any] | None = None,
     ) -> bytes:
-        """Usage docs: https://docs.pydantic.dev/2.7/concepts/json/#json-serialization
+        """Usage docs: https://docs.pydantic.dev/2.8/concepts/json/#json-serialization
 
         Serialize an instance of the adapted type to JSON.
 
@@ -500,6 +505,7 @@ class TypeAdapter(Generic[T]):
             warnings: How to handle serialization errors. False/"none" ignores them, True/"warn" logs errors,
                 "error" raises a [`PydanticSerializationError`][pydantic_core.PydanticSerializationError].
             serialize_as_any: Whether to serialize fields with duck-typing serialization behavior.
+            context: Additional context to pass to the serializer.
 
         Returns:
             The JSON representation of the given instance as bytes.
@@ -516,6 +522,7 @@ class TypeAdapter(Generic[T]):
             round_trip=round_trip,
             warnings=warnings,
             serialize_as_any=serialize_as_any,
+            context=context,
         )
 
     @_frame_depth(1)

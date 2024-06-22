@@ -1,7 +1,8 @@
-"""Usage docs: https://docs.pydantic.dev/2.7/concepts/plugins#build-a-plugin
+"""Usage docs: https://docs.pydantic.dev/2.8/concepts/plugins#build-a-plugin
 
 Plugin interface for Pydantic plugins, and related types.
 """
+
 from __future__ import annotations
 
 from typing import Any, Callable, NamedTuple

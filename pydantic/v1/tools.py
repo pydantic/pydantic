@@ -3,16 +3,16 @@ from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, Type, TypeVar, Union
 
-from .parse import Protocol, load_file, load_str_bytes
-from .types import StrBytes
-from .typing import display_as_type
+from pydantic.v1.parse import Protocol, load_file, load_str_bytes
+from pydantic.v1.types import StrBytes
+from pydantic.v1.typing import display_as_type
 
 __all__ = ('parse_file_as', 'parse_obj_as', 'parse_raw_as', 'schema_of', 'schema_json_of')
 
 NameFactory = Union[str, Callable[[Type[Any]], str]]
 
 if TYPE_CHECKING:
-    from .typing import DictStrAny
+    from pydantic.v1.typing import DictStrAny
 
 
 def _generate_parsing_type_name(type_: Any) -> str:
@@ -21,7 +21,7 @@ def _generate_parsing_type_name(type_: Any) -> str:
 
 @lru_cache(maxsize=2048)
 def _get_parsing_type(type_: Any, *, type_name: Optional[NameFactory] = None) -> Any:
-    from .main import create_model
+    from pydantic.v1.main import create_model
 
     if type_name is None:
         type_name = _generate_parsing_type_name

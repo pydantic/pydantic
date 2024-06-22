@@ -1,4 +1,5 @@
 """Provide an enhanced dataclass that performs validation."""
+
 from __future__ import annotations as _annotations
 
 import dataclasses
@@ -56,8 +57,7 @@ if sys.version_info >= (3, 10):
         validate_on_init: bool | None = None,
         kw_only: bool = ...,
         slots: bool = ...,
-    ) -> type[PydanticDataclass]:
-        ...
+    ) -> type[PydanticDataclass]: ...
 
 else:
 
@@ -89,8 +89,7 @@ else:
         frozen: bool = False,
         config: ConfigDict | type[object] | None = None,
         validate_on_init: bool | None = None,
-    ) -> type[PydanticDataclass]:
-        ...
+    ) -> type[PydanticDataclass]: ...
 
 
 @dataclass_transform(field_specifiers=(dataclasses.field, Field, PrivateAttr))
@@ -108,7 +107,7 @@ def dataclass(  # noqa: C901
     kw_only: bool = False,
     slots: bool = False,
 ) -> Callable[[type[_T]], type[PydanticDataclass]] | type[PydanticDataclass]:
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/dataclasses/
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/dataclasses/
 
     A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclass`,
     but with added validation.
@@ -333,4 +332,7 @@ def is_pydantic_dataclass(class_: type[Any], /) -> TypeGuard[type[PydanticDatacl
     Returns:
         `True` if the class is a pydantic dataclass, `False` otherwise.
     """
-    return dataclasses.is_dataclass(class_) and '__pydantic_validator__' in class_.__dict__
+    try:
+        return '__pydantic_validator__' in class_.__dict__ and dataclasses.is_dataclass(class_)
+    except AttributeError:
+        return False

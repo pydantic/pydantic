@@ -1710,8 +1710,7 @@ def test_base_dataclasses_annotations_resolving_with_override(create_module, dat
             __pydantic_config__ = {'str_to_lower': False}
 
     @dataclass_decorator
-    class D3(module1.D1, module2.D2):
-        ...
+    class D3(module1.D1, module2.D2): ...
 
     assert TypeAdapter(D3).validate_python({'db_id': 42, 's': 'ABC'}) == D3(db_id=42, s='abc')
 
@@ -1804,8 +1803,7 @@ def test_kw_only_inheritance(decorator1, decorator2):
 
 def test_extra_forbid_list_no_error():
     @pydantic.dataclasses.dataclass(config=dict(extra='forbid'))
-    class Bar:
-        ...
+    class Bar: ...
 
     @pydantic.dataclasses.dataclass
     class Foo:
@@ -1816,8 +1814,7 @@ def test_extra_forbid_list_no_error():
 
 def test_extra_forbid_list_error():
     @pydantic.dataclasses.dataclass(config=ConfigDict(extra='forbid'))
-    class Bar:
-        ...
+    class Bar: ...
 
     with pytest.raises(ValidationError, match=r'a\s+Unexpected keyword argument'):
         Bar(a=1)
@@ -2864,8 +2861,7 @@ def test_annotations_valid_for_field_inheritance() -> None:
         a: int = pydantic.dataclasses.Field()
 
     @pydantic.dataclasses.dataclass()
-    class B(A):
-        ...
+    class B(A): ...
 
     assert B.__pydantic_fields__['a'].annotation is int
 
@@ -2909,8 +2905,7 @@ def test_annotation_with_double_override() -> None:
         d: str = pydantic.dataclasses.Field()
 
     @pydantic.dataclasses.dataclass()
-    class C(B):
-        ...
+    class C(B): ...
 
     for class_ in [B, C]:
         instance = class_(a='a', b='b', c='c', d='d')

@@ -23,8 +23,7 @@ if typing.TYPE_CHECKING:
     # takes priority (at least with pyright). We trick type checkers into thinking we apply dataclass_transform
     # on a new metaclass.
     @dataclass_transform(kw_only_default=False, field_specifiers=(PydanticModelField, PydanticModelPrivateAttr))
-    class _RootModelMetaclass(_model_construction.ModelMetaclass):
-        ...
+    class _RootModelMetaclass(_model_construction.ModelMetaclass): ...
 else:
     _RootModelMetaclass = _model_construction.ModelMetaclass
 
@@ -34,7 +33,7 @@ RootModelRootType = typing.TypeVar('RootModelRootType')
 
 
 class RootModel(BaseModel, typing.Generic[RootModelRootType], metaclass=_RootModelMetaclass):
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/models/#rootmodel-and-custom-root-types
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/models/#rootmodel-and-custom-root-types
 
     A Pydantic `BaseModel` for the root object of the model.
 

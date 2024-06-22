@@ -1,4 +1,5 @@
 """Convert python types to pydantic-core schema."""
+
 from __future__ import annotations as _annotations
 
 import collections.abc
@@ -670,7 +671,7 @@ class GenerateSchema:
         schema = self._unpack_refs_defs(schema)
 
         if is_function_with_inner_schema(schema):
-            ref = schema['schema'].pop('ref', None)  # pyright: ignore[reportGeneralTypeIssues]
+            ref = schema['schema'].pop('ref', None)  # pyright: ignore[reportCallIssue, reportArgumentType]
             if ref:
                 schema['ref'] = ref
         else:
@@ -705,12 +706,10 @@ class GenerateSchema:
         return obj
 
     @overload
-    def _get_args_resolving_forward_refs(self, obj: Any, required: Literal[True]) -> tuple[Any, ...]:
-        ...
+    def _get_args_resolving_forward_refs(self, obj: Any, required: Literal[True]) -> tuple[Any, ...]: ...
 
     @overload
-    def _get_args_resolving_forward_refs(self, obj: Any) -> tuple[Any, ...] | None:
-        ...
+    def _get_args_resolving_forward_refs(self, obj: Any) -> tuple[Any, ...] | None: ...
 
     def _get_args_resolving_forward_refs(self, obj: Any, required: bool = False) -> tuple[Any, ...] | None:
         args = get_args(obj)
@@ -1447,7 +1446,6 @@ class GenerateSchema:
         item_type = self._get_first_arg_or_any(sequence_type)
         item_type_schema = self.generate_schema(item_type)
         list_schema = core_schema.list_schema(item_type_schema)
-        metadata = build_metadata_dict(initial_metadata={'known_metadata_as': typing.Sequence})
 
         python_schema = core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence')
         if item_type != Any:
@@ -1461,7 +1459,7 @@ class GenerateSchema:
             serialize_sequence_via_list, schema=item_type_schema, info_arg=True
         )
         return core_schema.json_or_python_schema(
-            json_schema=list_schema, python_schema=python_schema, serialization=serialization, metadata=metadata
+            json_schema=list_schema, python_schema=python_schema, serialization=serialization
         )
 
     def _iterable_schema(self, type_: Any) -> core_schema.GeneratorSchema:
@@ -1625,7 +1623,7 @@ class GenerateSchema:
 
         for name, p in sig.parameters.items():
             if p.annotation is sig.empty:
-                annotation = Any
+                annotation = typing.cast(Any, Any)
             else:
                 annotation = type_hints[name]
 
@@ -1807,7 +1805,7 @@ class GenerateSchema:
         pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
 
         def inner_handler(obj: Any) -> CoreSchema:
-            from_property = self._generate_schema_from_property(obj, obj)
+            from_property = self._generate_schema_from_property(obj, source_type)
             if from_property is None:
                 schema = self._generate_schema_inner(obj)
             else:

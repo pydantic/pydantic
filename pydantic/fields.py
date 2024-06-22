@@ -1,4 +1,5 @@
 """Defining fields on models."""
+
 from __future__ import annotations as _annotations
 
 import dataclasses
@@ -56,10 +57,10 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     description: str | None
     examples: list[Any] | None
     exclude: bool | None
-    gt: float | None
-    ge: float | None
-    lt: float | None
-    le: float | None
+    gt: annotated_types.SupportsGt | None
+    ge: annotated_types.SupportsGe | None
+    lt: annotated_types.SupportsLt | None
+    le: annotated_types.SupportsLe | None
     multiple_of: float | None
     strict: bool | None
     min_length: int | None
@@ -320,7 +321,7 @@ class FieldInfo(_repr.Representation):
                 new_field_info.metadata = metadata
                 return new_field_info
 
-        return FieldInfo(annotation=annotation, frozen=final or None)
+        return FieldInfo(annotation=annotation, frozen=final or None)  # pyright: ignore[reportArgumentType]
 
     @staticmethod
     def from_annotated_attribute(annotation: type[Any], default: Any) -> FieldInfo:
@@ -361,7 +362,7 @@ class FieldInfo(_repr.Representation):
                 annotation = typing_extensions.get_args(annotation)[0]
 
         if isinstance(default, FieldInfo):
-            default.annotation, annotation_metadata = FieldInfo._extract_metadata(annotation)
+            default.annotation, annotation_metadata = FieldInfo._extract_metadata(annotation)  # pyright: ignore[reportArgumentType]
             default.metadata += annotation_metadata
             default = default.merge_field_infos(
                 *[x for x in annotation_metadata if isinstance(x, FieldInfo)], default, annotation=default.annotation
@@ -372,12 +373,12 @@ class FieldInfo(_repr.Representation):
             init_var = False
             if annotation is dataclasses.InitVar:
                 init_var = True
-                annotation = Any
+                annotation = typing.cast(Any, Any)
             elif isinstance(annotation, dataclasses.InitVar):
                 init_var = True
                 annotation = annotation.type
             pydantic_field = FieldInfo._from_dataclass_field(default)
-            pydantic_field.annotation, annotation_metadata = FieldInfo._extract_metadata(annotation)
+            pydantic_field.annotation, annotation_metadata = FieldInfo._extract_metadata(annotation)  # pyright: ignore[reportArgumentType]
             pydantic_field.metadata += annotation_metadata
             pydantic_field = pydantic_field.merge_field_infos(
                 *[x for x in annotation_metadata if isinstance(x, FieldInfo)],
@@ -405,7 +406,7 @@ class FieldInfo(_repr.Representation):
                 field_info.metadata = metadata
                 return field_info
 
-            return FieldInfo(annotation=annotation, default=default, frozen=final or None)
+            return FieldInfo(annotation=annotation, default=default, frozen=final or None)  # pyright: ignore[reportArgumentType]
 
     @staticmethod
     def merge_field_infos(*field_infos: FieldInfo, **overrides: Any) -> FieldInfo:
@@ -686,10 +687,10 @@ def Field(  # noqa: C901
     pattern: str | typing.Pattern[str] | None = _Unset,
     strict: bool | None = _Unset,
     coerce_numbers_to_str: bool | None = _Unset,
-    gt: float | None = _Unset,
-    ge: float | None = _Unset,
-    lt: float | None = _Unset,
-    le: float | None = _Unset,
+    gt: annotated_types.SupportsGt | None = _Unset,
+    ge: annotated_types.SupportsGe | None = _Unset,
+    lt: annotated_types.SupportsLt | None = _Unset,
+    le: annotated_types.SupportsLe | None = _Unset,
     multiple_of: float | None = _Unset,
     allow_inf_nan: bool | None = _Unset,
     max_digits: int | None = _Unset,
@@ -699,7 +700,7 @@ def Field(  # noqa: C901
     union_mode: Literal['smart', 'left_to_right'] = _Unset,
     **extra: Unpack[_EmptyKwargs],
 ) -> Any:
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/fields
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/fields
 
     Create a field for objects that can be configured.
 
@@ -796,9 +797,6 @@ def Field(  # noqa: C901
     regex = extra.pop('regex', None)  # type: ignore
     if regex is not None:
         raise PydanticUserError('`regex` is removed. use `pattern` instead', code='removed-kwargs')
-
-    if isinstance(pattern, typing.Pattern):
-        pattern = pattern.pattern
 
     if extra:
         warn(
@@ -936,7 +934,7 @@ def PrivateAttr(
     default_factory: typing.Callable[[], Any] | None = None,
     init: Literal[False] = False,
 ) -> Any:
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/models/#private-model-attributes
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/models/#private-model-attributes
 
     Indicates that an attribute is intended for private use and not handled during normal validation/serialization.
 
@@ -1036,13 +1034,11 @@ def computed_field(
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None = None,
     repr: bool = True,
     return_type: Any = PydanticUndefined,
-) -> typing.Callable[[PropertyT], PropertyT]:
-    ...
+) -> typing.Callable[[PropertyT], PropertyT]: ...
 
 
 @typing.overload
-def computed_field(__func: PropertyT) -> PropertyT:
-    ...
+def computed_field(__func: PropertyT) -> PropertyT: ...
 
 
 def computed_field(
@@ -1059,7 +1055,7 @@ def computed_field(
     repr: bool | None = None,
     return_type: Any = PydanticUndefined,
 ) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/fields#the-computed_field-decorator
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/fields#the-computed_field-decorator
 
     Decorator to include `property` and `cached_property` when serializing models or dataclasses.
 

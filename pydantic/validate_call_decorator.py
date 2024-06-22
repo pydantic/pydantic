@@ -1,4 +1,5 @@
 """Decorator for validating function calls."""
+
 from __future__ import annotations as _annotations
 
 import functools
@@ -17,13 +18,11 @@ if TYPE_CHECKING:
 @overload
 def validate_call(
     *, config: ConfigDict | None = None, validate_return: bool = False
-) -> Callable[[AnyCallableT], AnyCallableT]:
-    ...
+) -> Callable[[AnyCallableT], AnyCallableT]: ...
 
 
 @overload
-def validate_call(func: AnyCallableT, /) -> AnyCallableT:
-    ...
+def validate_call(func: AnyCallableT, /) -> AnyCallableT: ...
 
 
 def validate_call(
@@ -33,7 +32,7 @@ def validate_call(
     config: ConfigDict | None = None,
     validate_return: bool = False,
 ) -> AnyCallableT | Callable[[AnyCallableT], AnyCallableT]:
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/validation_decorator/
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/validation_decorator/
 
     Returns a decorated wrapper around the function that validates the arguments and, optionally, the return value.
 

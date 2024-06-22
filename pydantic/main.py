@@ -1,4 +1,5 @@
 """Logic for creating models."""
+
 from __future__ import annotations as _annotations
 
 import operator
@@ -77,7 +78,7 @@ _object_setattr = _model_construction.object_setattr
 
 
 class BaseModel(metaclass=_model_construction.ModelMetaclass):
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/models/
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/models/
 
     A base class for creating Pydantic models.
 
@@ -294,7 +295,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return m
 
     def model_copy(self, *, update: dict[str, Any] | None = None, deep: bool = False) -> Self:
-        """Usage docs: https://docs.pydantic.dev/2.7/concepts/serialization/#model_copy
+        """Usage docs: https://docs.pydantic.dev/2.8/concepts/serialization/#model_copy
 
         Returns a copy of the model.
 
@@ -327,7 +328,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         mode: Literal['json', 'python'] | str = 'python',
         include: IncEx = None,
         exclude: IncEx = None,
-        context: dict[str, Any] | None = None,
+        context: Any | None = None,
         by_alias: bool = False,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
@@ -336,7 +337,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         serialize_as_any: bool = False,
     ) -> dict[str, Any]:
-        """Usage docs: https://docs.pydantic.dev/2.7/concepts/serialization/#modelmodel_dump
+        """Usage docs: https://docs.pydantic.dev/2.8/concepts/serialization/#modelmodel_dump
 
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
 
@@ -380,7 +381,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         indent: int | None = None,
         include: IncEx = None,
         exclude: IncEx = None,
-        context: dict[str, Any] | None = None,
+        context: Any | None = None,
         by_alias: bool = False,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
@@ -389,7 +390,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         serialize_as_any: bool = False,
     ) -> str:
-        """Usage docs: https://docs.pydantic.dev/2.7/concepts/serialization/#modelmodel_dump_json
+        """Usage docs: https://docs.pydantic.dev/2.8/concepts/serialization/#modelmodel_dump_json
 
         Generates a JSON representation of the model using Pydantic's `to_json` method.
 
@@ -545,7 +546,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         *,
         strict: bool | None = None,
         from_attributes: bool | None = None,
-        context: dict[str, Any] | None = None,
+        context: Any | None = None,
     ) -> Self:
         """Validate a pydantic model instance.
 
@@ -573,9 +574,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         json_data: str | bytes | bytearray,
         *,
         strict: bool | None = None,
-        context: dict[str, Any] | None = None,
+        context: Any | None = None,
     ) -> Self:
-        """Usage docs: https://docs.pydantic.dev/2.7/concepts/json/#json-parsing
+        """Usage docs: https://docs.pydantic.dev/2.8/concepts/json/#json-parsing
 
         Validate the given JSON data against the Pydantic model.
 
@@ -600,12 +601,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         obj: Any,
         *,
         strict: bool | None = None,
-        context: dict[str, Any] | None = None,
+        context: Any | None = None,
     ) -> Self:
-        """Validate the given object contains string data against the Pydantic model.
+        """Validate the given object with string data against the Pydantic model.
 
         Args:
-            obj: The object contains string data to validate.
+            obj: The object containing string data to validate.
             strict: Whether to enforce types strictly.
             context: Extra variables to pass to the validator.
 
@@ -920,10 +921,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         }
 
     def __setstate__(self, state: dict[Any, Any]) -> None:
-        _object_setattr(self, '__pydantic_fields_set__', state['__pydantic_fields_set__'])
-        _object_setattr(self, '__pydantic_extra__', state['__pydantic_extra__'])
-        _object_setattr(self, '__pydantic_private__', state['__pydantic_private__'])
-        _object_setattr(self, '__dict__', state['__dict__'])
+        _object_setattr(self, '__pydantic_fields_set__', state.get('__pydantic_fields_set__', {}))
+        _object_setattr(self, '__pydantic_extra__', state.get('__pydantic_extra__', {}))
+        _object_setattr(self, '__pydantic_private__', state.get('__pydantic_private__', {}))
+        _object_setattr(self, '__dict__', state.get('__dict__', {}))
 
     if not TYPE_CHECKING:
 
@@ -1434,11 +1435,10 @@ def create_model(
     __doc__: str | None = None,
     __base__: None = None,
     __module__: str = __name__,
-    __validators__: dict[str, classmethod[Any, ..., Any]] | None = None,
+    __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     **field_definitions: Any,
-) -> type[BaseModel]:
-    ...
+) -> type[BaseModel]: ...
 
 
 @overload
@@ -1450,11 +1450,10 @@ def create_model(
     __doc__: str | None = None,
     __base__: type[ModelT] | tuple[type[ModelT], ...],
     __module__: str = __name__,
-    __validators__: dict[str, classmethod[Any, ..., Any]] | None = None,
+    __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     **field_definitions: Any,
-) -> type[ModelT]:
-    ...
+) -> type[ModelT]: ...
 
 
 def create_model(  # noqa: C901
@@ -1465,12 +1464,12 @@ def create_model(  # noqa: C901
     __doc__: str | None = None,
     __base__: type[ModelT] | tuple[type[ModelT], ...] | None = None,
     __module__: str | None = None,
-    __validators__: dict[str, classmethod[Any, ..., Any]] | None = None,
+    __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __slots__: tuple[str, ...] | None = None,
     **field_definitions: Any,
 ) -> type[ModelT]:
-    """Usage docs: https://docs.pydantic.dev/2.7/concepts/models/#dynamic-model-creation
+    """Usage docs: https://docs.pydantic.dev/2.8/concepts/models/#dynamic-model-creation
 
     Dynamically creates and returns a new Pydantic model, in other words, `create_model` dynamically creates a
     subclass of [`BaseModel`][pydantic.BaseModel].
@@ -1482,7 +1481,9 @@ def create_model(  # noqa: C901
         __base__: The base class or classes for the new model.
         __module__: The name of the module that the model belongs to;
             if `None`, the value is taken from `sys._getframe(1)`
-        __validators__: A dictionary of methods that validate fields.
+        __validators__: A dictionary of methods that validate fields. The keys are the names of the validation methods to
+            be added to the model, and the values are the validation methods themselves. You can read more about functional
+            validators [here](https://docs.pydantic.dev/2.8/concepts/validators/#field-validators).
         __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.
         __slots__: Deprecated. Should not be passed to `create_model`.
         **field_definitions: Attributes of the new model. They should be passed in the format:

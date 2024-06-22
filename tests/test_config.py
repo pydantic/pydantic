@@ -100,11 +100,9 @@ class TestsBaseConfig:
             frozen = True
 
         class MyBaseModel(BaseModel):
-            class Config(MyConfig):
-                ...
+            class Config(MyConfig): ...
 
-        class MyModel(MyBaseModel):
-            ...
+        class MyModel(MyBaseModel): ...
 
         MyModel.model_config['title'] = 'MyTitle'
         MyModel.model_config['frozen'] = True
@@ -349,45 +347,42 @@ class TestsBaseConfig:
         assert m == m.model_copy()
 
     def test_config_class_is_deprecated(self):
-        with pytest.warns(
-            PydanticDeprecatedSince20, match='Support for class-based `config` is deprecated, use ConfigDict instead.'
-        ):
+        with pytest.warns(PydanticDeprecatedSince20) as all_warnings:
 
             class Config(BaseConfig):
                 pass
+
+        # typing-extensions swallows one of the warnings, so we need to support
+        # both ways for now.
+        assert len(all_warnings) in [1, 2]
+        expected_warnings = [
+            'Support for class-based `config` is deprecated, use ConfigDict instead',
+        ]
+        if len(all_warnings) == 2:
+            expected_warnings.insert(0, 'BaseConfig is deprecated. Use the `pydantic.ConfigDict` instead')
+        assert [w.message.message for w in all_warnings] == expected_warnings
 
     def test_config_class_attributes_are_deprecated(self):
-        with pytest.warns(
-            PydanticDeprecatedSince20,
-            match='Support for class-based `config` is deprecated, use ConfigDict instead.',
-        ):
+        with pytest.warns(PydanticDeprecatedSince20) as all_warnings:
             assert BaseConfig.validate_assignment is False
-
-        with pytest.warns(
-            PydanticDeprecatedSince20,
-            match='Support for class-based `config` is deprecated, use ConfigDict instead.',
-        ):
             assert BaseConfig().validate_assignment is False
-
-        with pytest.warns(
-            PydanticDeprecatedSince20,
-            match='Support for class-based `config` is deprecated, use ConfigDict instead.',
-        ):
 
             class Config(BaseConfig):
                 pass
 
-        with pytest.warns(
-            PydanticDeprecatedSince20,
-            match='Support for class-based `config` is deprecated, use ConfigDict instead.',
-        ):
             assert Config.validate_assignment is False
-
-        with pytest.warns(
-            PydanticDeprecatedSince20,
-            match='Support for class-based `config` is deprecated, use ConfigDict instead.',
-        ):
             assert Config().validate_assignment is False
+        assert len(all_warnings) == 7
+        expected_warnings = {
+            'Support for class-based `config` is deprecated, use ConfigDict instead',
+            'BaseConfig is deprecated. Use the `pydantic.ConfigDict` instead',
+            'Support for class-based `config` is deprecated, use ConfigDict instead',
+            'BaseConfig is deprecated. Use the `pydantic.ConfigDict` instead',
+            'Support for class-based `config` is deprecated, use ConfigDict instead',
+            'Support for class-based `config` is deprecated, use ConfigDict instead',
+            'Support for class-based `config` is deprecated, use ConfigDict instead',
+        }
+        assert set(w.message.message for w in all_warnings) <= expected_warnings
 
     @pytest.mark.filterwarnings('ignore:.* is deprecated.*:DeprecationWarning')
     def test_config_class_missing_attributes(self):
@@ -710,7 +705,7 @@ def test_config_model_defer_build(
 ):
     config = ConfigDict(defer_build=True)
     if defer_build_mode is not None:
-        config['_defer_build_mode'] = defer_build_mode
+        config['experimental_defer_build_mode'] = defer_build_mode
 
     class MyModel(BaseModel):
         model_config = config
@@ -719,11 +714,11 @@ def test_config_model_defer_build(
     if defer_build_mode is None or 'model' in defer_build_mode:
         assert isinstance(MyModel.__pydantic_validator__, MockValSer)
         assert isinstance(MyModel.__pydantic_serializer__, MockValSer)
-        assert generate_schema_calls.count == 0, 'Should respect _defer_build_mode'
+        assert generate_schema_calls.count == 0, 'Should respect experimental_defer_build_mode'
     else:
         assert isinstance(MyModel.__pydantic_validator__, SchemaValidator)
         assert isinstance(MyModel.__pydantic_serializer__, SchemaSerializer)
-        assert generate_schema_calls.count == 1, 'Should respect _defer_build_mode'
+        assert generate_schema_calls.count == 1, 'Should respect experimental_defer_build_mode'
 
     m = MyModel(x=1)
     assert m.x == 1
@@ -742,7 +737,7 @@ def test_config_model_type_adapter_defer_build(
 ):
     config = ConfigDict(defer_build=True)
     if defer_build_mode is not None:
-        config['_defer_build_mode'] = defer_build_mode
+        config['experimental_defer_build_mode'] = defer_build_mode
 
     class MyModel(BaseModel):
         model_config = config
@@ -770,7 +765,7 @@ def test_config_plain_type_adapter_defer_build(
 ):
     config = ConfigDict(defer_build=True)
     if defer_build_mode is not None:
-        config['_defer_build_mode'] = defer_build_mode
+        config['experimental_defer_build_mode'] = defer_build_mode
     is_deferred = defer_build_mode is not None and 'type_adapter' in defer_build_mode
 
     ta = TypeAdapter(Dict[str, int], config=config)
@@ -792,7 +787,7 @@ def test_config_model_defer_build_nested(
 ):
     config = ConfigDict(defer_build=True)
     if defer_build_mode:
-        config['_defer_build_mode'] = defer_build_mode
+        config['experimental_defer_build_mode'] = defer_build_mode
 
     assert generate_schema_calls.count == 0
 
@@ -807,7 +802,7 @@ def test_config_model_defer_build_nested(
     assert isinstance(MyModel.__pydantic_serializer__, SchemaSerializer)
 
     expected_schema_count = 1 if defer_build_mode is None or 'model' in defer_build_mode else 2
-    assert generate_schema_calls.count == expected_schema_count, 'Should respect _defer_build_mode'
+    assert generate_schema_calls.count == expected_schema_count, 'Should respect experimental_defer_build_mode'
 
     if defer_build_mode is None or 'model' in defer_build_mode:
         assert isinstance(MyNestedModel.__pydantic_validator__, MockValSer)
