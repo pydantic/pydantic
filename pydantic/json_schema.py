@@ -1850,13 +1850,18 @@ class GenerateJsonSchema:
     def complex_schema(self, schema: core_schema.ComplexSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a complex number.
 
+        JSON has no standard way to represent complex numbers. Complex number is not a numeric
+        type. Here we represent complex number as strings following the rule defined by Python.
+        For instance, '1+2j' is an accepted complex string. Details can be found at
+        https://docs.python.org/3/library/functions.html#complex
+
         Args:
             schema: The core schema.
 
         Returns:
             The generated JSON schema.
         """
-        return {'type': 'complex'}
+        return {'type': 'string'}
 
     # ### Utility methods
 
