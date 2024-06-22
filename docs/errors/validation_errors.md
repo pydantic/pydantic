@@ -177,7 +177,7 @@ except ValidationError as exc:
     #> 'callable_type'
 ```
 
-## `complex_parse`
+## `complex_parsing`
 
 This error is raised when the input value is a string but cannot be parsed as a complex number because
 it does not follow the [rule](https://docs.python.org/3/library/functions.html#complex) in Python:
@@ -194,7 +194,7 @@ try:
     Model(num='foo')
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
-    #> 'complex_parse'
+    #> 'complex_parsing'
 ```
 
 ## `complex_type`
