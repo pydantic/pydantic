@@ -7,7 +7,7 @@ import typing_extensions
 
 import pydantic
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, computed_field
-from pydantic.alias_generators import to_camel, to_pascal, to_snake
+from pydantic.fields import FieldInfo
 from pydantic.json_schema import model_json_schema
 
 from .test_types_typeddict import fixture_typed_dict, fixture_typed_dict_all  # noqa
@@ -27,37 +27,40 @@ def fixture_annotated(request):
         pytest.skip(f'Annotated is not available from {request.param}')
 
 
-def make_title(name: str):
+def make_title(name: str, _):
     def _capitalize(v: str):
         return v[0].upper() + v[1:]
 
     return re.sub(r'(?<=[a-z])([A-Z])', r' \1', _capitalize(name))
 
 
-TITLE_GENERATORS: List[Callable[[str], str]] = [
-    lambda t: t.lower(),
-    lambda t: t * 2,
-    lambda t: 'My Title',
+FIELD_TITLE_GENERATORS: List[Callable[[str, Any], str]] = [
+    lambda t, _: t.lower(),
+    lambda t, _: t * 2,
+    lambda t, _: 'My Title',
     make_title,
-    to_camel,
-    to_snake,
-    to_pascal,
+]
+
+MODEL_TITLE_GENERATORS: List[Callable[[Any], str]] = [
+    lambda m: m.__name__.upper(),
+    lambda m: m.__name__ * 2,
+    lambda m: 'My Model',
 ]
 
 
-@pytest.mark.parametrize('model_title_generator', TITLE_GENERATORS)
+@pytest.mark.parametrize('model_title_generator', MODEL_TITLE_GENERATORS)
 def test_model_model_title_generator(model_title_generator):
     class Model(BaseModel):
         model_config = ConfigDict(model_title_generator=model_title_generator)
 
     assert Model.model_json_schema() == {
         'properties': {},
-        'title': model_title_generator(Model.__name__),
+        'title': model_title_generator(Model),
         'type': 'object',
     }
 
 
-@pytest.mark.parametrize('model_title_generator', TITLE_GENERATORS)
+@pytest.mark.parametrize('model_title_generator', MODEL_TITLE_GENERATORS)
 def test_model_title_generator_in_submodel(model_title_generator):
     class SubModel(BaseModel):
         model_config = ConfigDict(model_title_generator=model_title_generator)
@@ -66,7 +69,7 @@ def test_model_title_generator_in_submodel(model_title_generator):
         sub: SubModel
 
     assert Model.model_json_schema() == {
-        '$defs': {'SubModel': {'properties': {}, 'title': model_title_generator(SubModel.__name__), 'type': 'object'}},
+        '$defs': {'SubModel': {'properties': {}, 'title': model_title_generator(SubModel), 'type': 'object'}},
         'properties': {'sub': {'$ref': '#/$defs/SubModel'}},
         'required': ['sub'],
         'title': 'Model',
@@ -74,7 +77,7 @@ def test_model_title_generator_in_submodel(model_title_generator):
     }
 
 
-@pytest.mark.parametrize('field_title_generator', TITLE_GENERATORS)
+@pytest.mark.parametrize('field_title_generator', FIELD_TITLE_GENERATORS)
 def test_field_title_generator_in_model_fields(field_title_generator):
     class Model(BaseModel):
         field_a: str = Field(field_title_generator=field_title_generator)
@@ -86,9 +89,13 @@ def test_field_title_generator_in_model_fields(field_title_generator):
 
     assert Model.model_json_schema(mode='serialization') == {
         'properties': {
-            'field_a': {'title': field_title_generator('field_a'), 'type': 'string'},
-            'field_b': {'title': field_title_generator('field_b'), 'type': 'integer'},
-            'field_c': {'readOnly': True, 'title': field_title_generator('field_c'), 'type': 'string'},
+            'field_a': {'title': field_title_generator('field_a', Model.model_fields['field_a']), 'type': 'string'},
+            'field_b': {'title': field_title_generator('field_b', Model.model_fields['field_b']), 'type': 'integer'},
+            'field_c': {
+                'readOnly': True,
+                'title': field_title_generator('field_c', Model.model_computed_fields['field_c']),
+                'type': 'string',
+            },
         },
         'required': ['field_a', 'field_b', 'field_c'],
         'title': 'Model',
@@ -96,7 +103,7 @@ def test_field_title_generator_in_model_fields(field_title_generator):
     }
 
 
-@pytest.mark.parametrize('field_title_generator', TITLE_GENERATORS)
+@pytest.mark.parametrize('field_title_generator', FIELD_TITLE_GENERATORS)
 def test_model_config_field_title_generator(field_title_generator):
     class Model(BaseModel):
         model_config = ConfigDict(field_title_generator=field_title_generator)
@@ -111,10 +118,17 @@ def test_model_config_field_title_generator(field_title_generator):
 
     assert Model.model_json_schema(mode='serialization') == {
         'properties': {
-            'field_a': {'title': field_title_generator('field_a'), 'type': 'string'},
-            'field_b': {'title': field_title_generator('field_b'), 'type': 'integer'},
-            'field___c': {'title': field_title_generator('field___c'), 'type': 'boolean'},
-            'field_d': {'readOnly': True, 'title': field_title_generator('field_d'), 'type': 'string'},
+            'field_a': {'title': field_title_generator('field_a', Model.model_fields['field_a']), 'type': 'string'},
+            'field_b': {'title': field_title_generator('field_b', Model.model_fields['field_b']), 'type': 'integer'},
+            'field___c': {
+                'title': field_title_generator('field___c', Model.model_fields['field___c']),
+                'type': 'boolean',
+            },
+            'field_d': {
+                'readOnly': True,
+                'title': field_title_generator('field_d', Model.model_computed_fields['field_d']),
+                'type': 'string',
+            },
         },
         'required': ['field_a', 'field_b', 'field___c', 'field_d'],
         'title': 'Model',
@@ -122,7 +136,7 @@ def test_model_config_field_title_generator(field_title_generator):
     }
 
 
-@pytest.mark.parametrize('model_title_generator', TITLE_GENERATORS)
+@pytest.mark.parametrize('model_title_generator', MODEL_TITLE_GENERATORS)
 def test_dataclass_model_title_generator(model_title_generator):
     @pydantic.dataclasses.dataclass(config=ConfigDict(model_title_generator=model_title_generator))
     class MyDataclass:
@@ -131,12 +145,12 @@ def test_dataclass_model_title_generator(model_title_generator):
     assert model_json_schema(MyDataclass) == {
         'properties': {'field_a': {'title': 'Field A', 'type': 'integer'}},
         'required': ['field_a'],
-        'title': model_title_generator(MyDataclass.__name__),
+        'title': model_title_generator(MyDataclass),
         'type': 'object',
     }
 
 
-@pytest.mark.parametrize('field_title_generator', TITLE_GENERATORS)
+@pytest.mark.parametrize('field_title_generator', FIELD_TITLE_GENERATORS)
 def test_field_title_generator_in_dataclass_fields(field_title_generator):
     @pydantic.dataclasses.dataclass
     class MyDataclass:
@@ -145,8 +159,14 @@ def test_field_title_generator_in_dataclass_fields(field_title_generator):
 
     assert model_json_schema(MyDataclass) == {
         'properties': {
-            'field_a': {'title': field_title_generator('field_a'), 'type': 'string'},
-            'field_b': {'title': field_title_generator('field_b'), 'type': 'integer'},
+            'field_a': {
+                'title': field_title_generator('field_a', MyDataclass.__pydantic_fields__['field_a']),
+                'type': 'string',
+            },
+            'field_b': {
+                'title': field_title_generator('field_b', MyDataclass.__pydantic_fields__['field_b']),
+                'type': 'integer',
+            },
         },
         'required': ['field_a', 'field_b'],
         'title': 'MyDataclass',
@@ -154,7 +174,7 @@ def test_field_title_generator_in_dataclass_fields(field_title_generator):
     }
 
 
-@pytest.mark.parametrize('field_title_generator', TITLE_GENERATORS)
+@pytest.mark.parametrize('field_title_generator', FIELD_TITLE_GENERATORS)
 def test_dataclass_config_field_title_generator(field_title_generator):
     @pydantic.dataclasses.dataclass(config=ConfigDict(field_title_generator=field_title_generator))
     class MyDataclass:
@@ -164,9 +184,18 @@ def test_dataclass_config_field_title_generator(field_title_generator):
 
     assert model_json_schema(MyDataclass) == {
         'properties': {
-            'field_a': {'title': field_title_generator('field_a'), 'type': 'string'},
-            'field_b': {'title': field_title_generator('field_b'), 'type': 'integer'},
-            'field___c': {'title': field_title_generator('field___c'), 'type': 'boolean'},
+            'field_a': {
+                'title': field_title_generator('field_a', MyDataclass.__pydantic_fields__['field_a']),
+                'type': 'string',
+            },
+            'field_b': {
+                'title': field_title_generator('field_b', MyDataclass.__pydantic_fields__['field_b']),
+                'type': 'integer',
+            },
+            'field___c': {
+                'title': field_title_generator('field___c', MyDataclass.__pydantic_fields__['field___c']),
+                'type': 'boolean',
+            },
         },
         'required': ['field_a', 'field_b', 'field___c'],
         'title': 'MyDataclass',
@@ -174,7 +203,7 @@ def test_dataclass_config_field_title_generator(field_title_generator):
     }
 
 
-@pytest.mark.parametrize('model_title_generator', TITLE_GENERATORS)
+@pytest.mark.parametrize('model_title_generator', MODEL_TITLE_GENERATORS)
 def test_typeddict_model_title_generator(model_title_generator, TypedDict):
     class MyTypedDict(TypedDict):
         __pydantic_config__ = ConfigDict(model_title_generator=model_title_generator)
@@ -182,12 +211,12 @@ def test_typeddict_model_title_generator(model_title_generator, TypedDict):
 
     assert TypeAdapter(MyTypedDict).json_schema() == {
         'properties': {},
-        'title': model_title_generator(MyTypedDict.__name__),
+        'title': model_title_generator(MyTypedDict),
         'type': 'object',
     }
 
 
-@pytest.mark.parametrize('field_title_generator', TITLE_GENERATORS)
+@pytest.mark.parametrize('field_title_generator', FIELD_TITLE_GENERATORS)
 def test_field_title_generator_in_typeddict_fields(field_title_generator, TypedDict, Annotated):
     class MyTypedDict(TypedDict):
         field_a: Annotated[str, Field(field_title_generator=field_title_generator)]
@@ -195,8 +224,18 @@ def test_field_title_generator_in_typeddict_fields(field_title_generator, TypedD
 
     assert TypeAdapter(MyTypedDict).json_schema() == {
         'properties': {
-            'field_a': {'title': field_title_generator('field_a'), 'type': 'string'},
-            'field_b': {'title': field_title_generator('field_b'), 'type': 'integer'},
+            'field_a': {
+                'title': field_title_generator(
+                    'field_a', FieldInfo.from_annotation(MyTypedDict.__annotations__['field_a'])
+                ),
+                'type': 'string',
+            },
+            'field_b': {
+                'title': field_title_generator(
+                    'field_b', FieldInfo.from_annotation(MyTypedDict.__annotations__['field_a'])
+                ),
+                'type': 'integer',
+            },
         },
         'required': ['field_a', 'field_b'],
         'title': 'MyTypedDict',
@@ -204,7 +243,7 @@ def test_field_title_generator_in_typeddict_fields(field_title_generator, TypedD
     }
 
 
-@pytest.mark.parametrize('field_title_generator', TITLE_GENERATORS)
+@pytest.mark.parametrize('field_title_generator', FIELD_TITLE_GENERATORS)
 def test_typeddict_config_field_title_generator(field_title_generator, TypedDict):
     class MyTypedDict(TypedDict):
         __pydantic_config__ = ConfigDict(field_title_generator=field_title_generator)
@@ -214,9 +253,24 @@ def test_typeddict_config_field_title_generator(field_title_generator, TypedDict
 
     assert TypeAdapter(MyTypedDict).json_schema() == {
         'properties': {
-            'field_a': {'title': field_title_generator('field_a'), 'type': 'string'},
-            'field_b': {'title': field_title_generator('field_b'), 'type': 'integer'},
-            'field___c': {'title': field_title_generator('field___c'), 'type': 'boolean'},
+            'field_a': {
+                'title': field_title_generator(
+                    'field_a', FieldInfo.from_annotation(MyTypedDict.__annotations__['field_a'])
+                ),
+                'type': 'string',
+            },
+            'field_b': {
+                'title': field_title_generator(
+                    'field_b', FieldInfo.from_annotation(MyTypedDict.__annotations__['field_b'])
+                ),
+                'type': 'integer',
+            },
+            'field___c': {
+                'title': field_title_generator(
+                    'field___c', FieldInfo.from_annotation(MyTypedDict.__annotations__['field___c'])
+                ),
+                'type': 'boolean',
+            },
         },
         'required': ['field_a', 'field_b', 'field___c'],
         'title': 'MyTypedDict',
@@ -226,7 +280,7 @@ def test_typeddict_config_field_title_generator(field_title_generator, TypedDict
 
 @pytest.mark.parametrize(
     'field_level_title_generator,config_level_title_generator',
-    ((lambda f: f.lower(), lambda f: f.upper()), (lambda f: f, make_title)),
+    ((lambda f, _: f.lower(), lambda f, _: f.upper()), (lambda f, _: f, make_title)),
 )
 def test_field_level_field_title_generator_precedence_over_config_level(
     field_level_title_generator, config_level_title_generator, TypedDict, Annotated
@@ -236,7 +290,12 @@ def test_field_level_field_title_generator_precedence_over_config_level(
         field_a: str = Field(field_title_generator=field_level_title_generator)
 
     assert MyModel.model_json_schema() == {
-        'properties': {'field_a': {'title': field_level_title_generator('field_a'), 'type': 'string'}},
+        'properties': {
+            'field_a': {
+                'title': field_level_title_generator('field_a', MyModel.model_fields['field_a']),
+                'type': 'string',
+            }
+        },
         'required': ['field_a'],
         'title': 'MyModel',
         'type': 'object',
@@ -247,7 +306,12 @@ def test_field_level_field_title_generator_precedence_over_config_level(
         field_a: str = Field(field_title_generator=field_level_title_generator)
 
     assert model_json_schema(MyDataclass) == {
-        'properties': {'field_a': {'title': field_level_title_generator('field_a'), 'type': 'string'}},
+        'properties': {
+            'field_a': {
+                'title': field_level_title_generator('field_a', MyDataclass.__pydantic_fields__['field_a']),
+                'type': 'string',
+            }
+        },
         'required': ['field_a'],
         'title': 'MyDataclass',
         'type': 'object',
@@ -258,7 +322,14 @@ def test_field_level_field_title_generator_precedence_over_config_level(
         field_a: Annotated[str, Field(field_title_generator=field_level_title_generator)]
 
     assert TypeAdapter(MyTypedDict).json_schema() == {
-        'properties': {'field_a': {'title': field_level_title_generator('field_a'), 'type': 'string'}},
+        'properties': {
+            'field_a': {
+                'title': field_level_title_generator(
+                    'field_a', FieldInfo.from_annotation(MyTypedDict.__annotations__['field_a'])
+                ),
+                'type': 'string',
+            }
+        },
         'required': ['field_a'],
         'title': 'MyTypedDict',
         'type': 'object',
@@ -267,11 +338,11 @@ def test_field_level_field_title_generator_precedence_over_config_level(
 
 def test_field_title_precedence_over_generators(TypedDict, Annotated):
     class Model(BaseModel):
-        model_config = ConfigDict(field_title_generator=lambda f: f.upper())
+        model_config = ConfigDict(field_title_generator=lambda f, _: f.upper())
 
-        field_a: str = Field(title='MyFieldA', field_title_generator=lambda f: f.upper())
+        field_a: str = Field(title='MyFieldA', field_title_generator=lambda f, _: f.upper())
 
-        @computed_field(title='MyFieldB', field_title_generator=lambda f: f.upper())
+        @computed_field(title='MyFieldB', field_title_generator=lambda f, _: f.upper())
         def field_b(self) -> str:
             return self.field_a
 
@@ -285,9 +356,9 @@ def test_field_title_precedence_over_generators(TypedDict, Annotated):
         'type': 'object',
     }
 
-    @pydantic.dataclasses.dataclass(config=ConfigDict(field_title_generator=lambda f: f.upper()))
+    @pydantic.dataclasses.dataclass(config=ConfigDict(field_title_generator=lambda f, _: f.upper()))
     class MyDataclass:
-        field_a: str = Field(title='MyTitle', field_title_generator=lambda f: f.upper())
+        field_a: str = Field(title='MyTitle', field_title_generator=lambda f, _: f.upper())
 
     assert model_json_schema(MyDataclass) == {
         'properties': {'field_a': {'title': 'MyTitle', 'type': 'string'}},
@@ -297,8 +368,8 @@ def test_field_title_precedence_over_generators(TypedDict, Annotated):
     }
 
     class MyTypedDict(TypedDict):
-        __pydantic_config__ = ConfigDict(field_title_generator=lambda f: f.upper())
-        field_a: Annotated[str, Field(title='MyTitle', field_title_generator=lambda f: f.upper())]
+        __pydantic_config__ = ConfigDict(field_title_generator=lambda f, _: f.upper())
+        field_a: Annotated[str, Field(title='MyTitle', field_title_generator=lambda f, _: f.upper())]
 
     assert TypeAdapter(MyTypedDict).json_schema() == {
         'properties': {'field_a': {'title': 'MyTitle', 'type': 'string'}},
@@ -310,7 +381,7 @@ def test_field_title_precedence_over_generators(TypedDict, Annotated):
 
 def test_class_title_precedence_over_generator():
     class Model(BaseModel):
-        model_config = ConfigDict(title='MyTitle', model_title_generator=lambda c: c.upper())
+        model_config = ConfigDict(title='MyTitle', model_title_generator=lambda m: m.__name__.upper())
 
     assert Model.model_json_schema() == {
         'properties': {},
@@ -318,7 +389,9 @@ def test_class_title_precedence_over_generator():
         'type': 'object',
     }
 
-    @pydantic.dataclasses.dataclass(config=ConfigDict(title='MyTitle', model_title_generator=lambda c: c.upper()))
+    @pydantic.dataclasses.dataclass(
+        config=ConfigDict(title='MyTitle', model_title_generator=lambda m: m.__name__.upper())
+    )
     class MyDataclass:
         pass
 
@@ -364,7 +437,7 @@ def test_config_field_title_generator_returns_invalid_type(invalid_return_value,
     ):
 
         class Model(BaseModel):
-            model_config = ConfigDict(field_title_generator=lambda f: invalid_return_value)
+            model_config = ConfigDict(field_title_generator=lambda f, _: invalid_return_value)
 
             field_a: str
 
@@ -372,7 +445,7 @@ def test_config_field_title_generator_returns_invalid_type(invalid_return_value,
         TypeError, match=f'field_title_generator .* must return str, not {invalid_return_value.__class__}'
     ):
 
-        @pydantic.dataclasses.dataclass(config=ConfigDict(field_title_generator=lambda f: invalid_return_value))
+        @pydantic.dataclasses.dataclass(config=ConfigDict(field_title_generator=lambda f, _: invalid_return_value))
         class MyDataclass:
             field_a: str
 
@@ -381,7 +454,7 @@ def test_config_field_title_generator_returns_invalid_type(invalid_return_value,
     ):
 
         class MyTypedDict(TypedDict):
-            __pydantic_config__ = ConfigDict(field_title_generator=lambda f: invalid_return_value)
+            __pydantic_config__ = ConfigDict(field_title_generator=lambda f, _: invalid_return_value)
             field_a: str
 
         TypeAdapter(MyTypedDict)
@@ -394,7 +467,7 @@ def test_field_title_generator_returns_invalid_type(invalid_return_value, TypedD
     ):
 
         class Model(BaseModel):
-            field_a: Any = Field(field_title_generator=lambda f: invalid_return_value)
+            field_a: Any = Field(field_title_generator=lambda f, _: invalid_return_value)
 
         Model(field_a=invalid_return_value).model_json_schema()
 
@@ -404,7 +477,7 @@ def test_field_title_generator_returns_invalid_type(invalid_return_value, TypedD
 
         @pydantic.dataclasses.dataclass
         class MyDataclass:
-            field_a: Any = Field(field_title_generator=lambda f: invalid_return_value)
+            field_a: Any = Field(field_title_generator=lambda f, _: invalid_return_value)
 
         model_json_schema(MyDataclass)
 
@@ -413,6 +486,6 @@ def test_field_title_generator_returns_invalid_type(invalid_return_value, TypedD
     ):
 
         class MyTypedDict(TypedDict):
-            field_a: Annotated[str, Field(field_title_generator=lambda f: invalid_return_value)]
+            field_a: Annotated[str, Field(field_title_generator=lambda f, _: invalid_return_value)]
 
         TypeAdapter(MyTypedDict)

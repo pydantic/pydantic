@@ -330,7 +330,7 @@ Some field parameters are used exclusively to customize the generated JSON Schem
 * `description`: The description of the field.
 * `examples`: The examples of the field.
 * `json_schema_extra`: Extra JSON Schema properties to be added to the field.
-* `field_title_generator`: A function that programmatically sets the field's title, based on its name.
+* `field_title_generator`: A function that programmatically sets the field's title, based on its name and info.
 
 Here's an example:
 
@@ -484,7 +484,7 @@ print(json.dumps(Foo.model_json_schema(), indent=2))
 
 ### Programmatic field title generation
 
-The `field_title_generator` parameter can be used to programmatically generate the title for a field based on its name.
+The `field_title_generator` parameter can be used to programmatically generate the title for a field based on its name and info.
 
 See the following example:
 
@@ -492,9 +492,10 @@ See the following example:
 import json
 
 from pydantic import BaseModel, Field
+from pydantic.fields import FieldInfo
 
 
-def make_title(field_name: str) -> str:
+def make_title(field_name: str, field_info: FieldInfo) -> str:
     return field_name.upper()
 
 
@@ -1078,7 +1079,7 @@ print(json.dumps(TypeAdapter(Person).json_schema(), indent=2))
 
 ### Using `field_title_generator`
 
-The `field_title_generator` parameter can be used to dynamically generate the title for a field based on its name.
+The `field_title_generator` parameter can be used to programmatically generate the title for a field based on its name and info.
 This is similar to the field level `field_title_generator`, but the `ConfigDict` option will be applied to all fields of the class.
 
 See the following example:
@@ -1090,7 +1091,9 @@ from pydantic import BaseModel, ConfigDict
 
 
 class Person(BaseModel):
-    model_config = ConfigDict(field_title_generator=str.upper)
+    model_config = ConfigDict(
+        field_title_generator=lambda field_name, field_info: field_name.upper()
+    )
     name: str
     age: int
 
@@ -1120,18 +1123,20 @@ print(json.dumps(Person.model_json_schema(), indent=2))
 
 ### Using `model_title_generator`
 
-The `model_title_generator` config option is similar to the `field_title_generator` option, but it applies to the title of the model itself.
+The `model_title_generator` config option is similar to the `field_title_generator` option, but it applies to the title of the model itself,
+and accepts the model class as input.
 
 See the following example:
 
 ```py
 import json
+from typing import Type
 
 from pydantic import BaseModel, ConfigDict
 
 
-def make_title(field_name: str) -> str:
-    return f'Title-{field_name}'
+def make_title(model: Type) -> str:
+    return f'Title-{model.__name__}'
 
 
 class Person(BaseModel):

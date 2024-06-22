@@ -54,7 +54,7 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     validation_alias: str | AliasPath | AliasChoices | None
     serialization_alias: str | None
     title: str | None
-    field_title_generator: typing_extensions.Callable[[str], str] | None
+    field_title_generator: typing_extensions.Callable[[str, FieldInfo], str] | None
     description: str | None
     examples: list[Any] | None
     exclude: bool | None
@@ -133,7 +133,7 @@ class FieldInfo(_repr.Representation):
     validation_alias: str | AliasPath | AliasChoices | None
     serialization_alias: str | None
     title: str | None
-    field_title_generator: typing.Callable[[str], str] | None
+    field_title_generator: typing.Callable[[str, FieldInfo], str] | None
     description: str | None
     examples: list[Any] | None
     exclude: bool | None
@@ -677,7 +677,7 @@ def Field(  # noqa: C901
     validation_alias: str | AliasPath | AliasChoices | None = _Unset,
     serialization_alias: str | None = _Unset,
     title: str | None = _Unset,
-    field_title_generator: typing_extensions.Callable[[str], str] | None = _Unset,
+    field_title_generator: typing_extensions.Callable[[str, FieldInfo], str] | None = _Unset,
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
@@ -998,7 +998,7 @@ class ComputedFieldInfo:
     alias: str | None
     alias_priority: int | None
     title: str | None
-    field_title_generator: typing.Callable[[str], str] | None
+    field_title_generator: typing.Callable[[str, ComputedFieldInfo], str] | None
     description: str | None
     deprecated: Deprecated | str | bool | None
     examples: list[Any] | None
@@ -1038,7 +1038,7 @@ def computed_field(
     alias: str | None = None,
     alias_priority: int | None = None,
     title: str | None = None,
-    field_title_generator: typing.Callable[[str], str] | None = None,
+    field_title_generator: typing.Callable[[str, ComputedFieldInfo], str] | None = None,
     description: str | None = None,
     deprecated: Deprecated | str | bool | None = None,
     examples: list[Any] | None = None,
@@ -1059,7 +1059,7 @@ def computed_field(
     alias: str | None = None,
     alias_priority: int | None = None,
     title: str | None = None,
-    field_title_generator: typing.Callable[[str], str] | None = None,
+    field_title_generator: typing.Callable[[str, ComputedFieldInfo], str] | None = None,
     description: str | None = None,
     deprecated: Deprecated | str | bool | None = None,
     examples: list[Any] | None = None,

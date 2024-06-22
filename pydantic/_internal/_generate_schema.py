@@ -620,7 +620,7 @@ class GenerateSchema:
 
     @staticmethod
     def _get_model_title_from_config(
-        cls: type[BaseModel | StandardDataclass], config_wrapper: ConfigWrapper | None = None
+        model: type[BaseModel | StandardDataclass], config_wrapper: ConfigWrapper | None = None
     ) -> str | None:
         """Get the title of a model if `model_title_generator` or `title` are set in the config, else return None"""
         if config_wrapper is None:
@@ -631,7 +631,7 @@ class GenerateSchema:
 
         model_title_generator = config_wrapper.model_title_generator
         if model_title_generator:
-            title = model_title_generator(cls.__name__)
+            title = model_title_generator(model)
             if not isinstance(title, str):
                 raise TypeError(f'model_title_generator {model_title_generator} must return str, not {title.__class__}')
             return title
@@ -1079,11 +1079,12 @@ class GenerateSchema:
             field_name: The name of the field from which to generate the title.
         """
         field_title_generator = field_info.field_title_generator or config_wrapper.field_title_generator
+
         if field_title_generator is None:
             return
 
         if field_info.title is None:
-            title = field_title_generator(field_name)
+            title = field_title_generator(field_name, field_info)  # type: ignore
             if not isinstance(title, str):
                 raise TypeError(f'field_title_generator {field_title_generator} must return str, not {title.__class__}')
 

@@ -27,6 +27,7 @@ if not TYPE_CHECKING:
 
 if TYPE_CHECKING:
     from .._internal._schema_generation_shared import GenerateSchema
+    from ..fields import ComputedFieldInfo, FieldInfo
 
 DEPRECATION_MESSAGE = 'Support for class-based `config` is deprecated, use ConfigDict instead.'
 
@@ -57,8 +58,8 @@ class ConfigWrapper:
     # to construct error `loc`s, default `True`
     loc_by_alias: bool
     alias_generator: Callable[[str], str] | AliasGenerator | None
-    model_title_generator: Callable[[str], str] | None
-    field_title_generator: Callable[[str], str] | None
+    model_title_generator: Callable[[type], str] | None
+    field_title_generator: Callable[[str, FieldInfo | ComputedFieldInfo], str] | None
     ignored_types: tuple[type, ...]
     allow_inf_nan: bool
     json_schema_extra: JsonDict | JsonSchemaExtraCallable | None
