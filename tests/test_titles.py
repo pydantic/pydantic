@@ -122,56 +122,6 @@ def test_model_config_field_title_generator(field_title_generator):
     }
 
 
-def test_field_title_priority_over_config_field_title_generator():
-    class Model(BaseModel):
-        model_config = ConfigDict(field_title_generator=lambda f: f.replace('_', ''))
-
-        field_a: str = Field(title='Field A', title_priority=2)
-        field_b: int = Field(title='Field B', title_priority=1)
-        field___c: bool = Field(title='Field C', title_priority=10)
-
-        @computed_field(title='Field D', title_priority=2)
-        def field_d(self) -> str:
-            return self.field_a
-
-    assert Model.model_json_schema(mode='serialization') == {
-        'properties': {
-            'field_a': {'title': 'Field A', 'type': 'string'},
-            'field_b': {'title': 'fieldb', 'type': 'integer'},
-            'field___c': {'title': 'Field C', 'type': 'boolean'},
-            'field_d': {'readOnly': True, 'title': 'Field D', 'type': 'string'},
-        },
-        'required': ['field_a', 'field_b', 'field___c', 'field_d'],
-        'title': 'Model',
-        'type': 'object',
-    }
-
-
-def test_field_title_priority_over_field_title_generator():
-    class Model(BaseModel):
-        model_config = ConfigDict()
-
-        field_a: str = Field(title='Field A', title_priority=2, field_title_generator=lambda f: f.replace('_', ''))
-        field_b: int = Field(title='Field B', title_priority=1, field_title_generator=lambda f: f.replace('_', ''))
-        field___c: bool = Field(title='Field C', title_priority=10, field_title_generator=lambda f: f.replace('_', ''))
-
-        @computed_field(title='Field D', title_priority=1, field_title_generator=lambda f: f.replace('_', ''))
-        def field_d(self) -> str:
-            return self.field_a
-
-    assert Model.model_json_schema(mode='serialization') == {
-        'properties': {
-            'field_a': {'title': 'Field A', 'type': 'string'},
-            'field_b': {'title': 'fieldb', 'type': 'integer'},
-            'field___c': {'title': 'Field C', 'type': 'boolean'},
-            'field_d': {'readOnly': True, 'title': 'fieldd', 'type': 'string'},
-        },
-        'required': ['field_a', 'field_b', 'field___c', 'field_d'],
-        'title': 'Model',
-        'type': 'object',
-    }
-
-
 @pytest.mark.parametrize('model_title_generator', TITLE_GENERATORS)
 def test_dataclass_model_title_generator(model_title_generator):
     @pydantic.dataclasses.dataclass(config=ConfigDict(model_title_generator=model_title_generator))

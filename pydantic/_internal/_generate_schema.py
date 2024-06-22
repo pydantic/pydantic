@@ -1082,7 +1082,7 @@ class GenerateSchema:
         if field_title_generator is None:
             return
 
-        if field_info.title_priority is None or field_info.title_priority <= 1 or field_info.title is None:
+        if field_info.title is None:
             title = field_title_generator(field_name)
             if not isinstance(title, str):
                 raise TypeError(f'field_title_generator {field_title_generator} must return str, not {title.__class__}')
