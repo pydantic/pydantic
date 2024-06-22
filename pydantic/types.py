@@ -3016,6 +3016,9 @@ class FailFast(_fields.PydanticMetadata, BaseMetadata):
 
     This can be useful when you want to validate a large amount of data and you only need to know if it's valid or not.
 
+    You might want to enable this setting if you want to validate your data faster (basically, if you use this,
+    validation will be more performant with the caveat that you get less information).
+
     ```py
     from typing import List
     from typing_extensions import Annotated

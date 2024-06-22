@@ -315,10 +315,12 @@ class SequenceValidator:
         else:
             items_schema = handler.generate_schema(self.item_source_type)
 
-        metadata = {'min_length': self.min_length, 'max_length': self.max_length, 'strict': self.strict}
-
-        if self.fail_fast is not None:
-            metadata['fail_fast'] = self.fail_fast
+        metadata = {
+            'min_length': self.min_length,
+            'max_length': self.max_length,
+            'strict': self.strict,
+            'fail_fast': self.fail_fast,
+        }
 
         if self.mapped_origin in (list, set, frozenset):
             if self.mapped_origin is list:
