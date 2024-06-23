@@ -13,6 +13,14 @@ To solve these problems, Pydantic supports three fundamental approaches to valid
 2. [smart mode](#smart-mode) - similar to "left to right mode" members are tried in order; however, validation will proceed past the first match to attempt to find a better match, this is the default mode for most union validation
 3. [discriminated unions](#discriminated-unions) - only one member of the union is tried, based on a discriminator
 
+!!! tip
+
+    In general, we recommend using [discriminated unions](#discriminated-unions). They are both more performant and more predictable than untagged unions, as they allow you to control which member of the union to validate against.
+
+    For complex cases, if you're using untagged unions, it's recommended to use `union_mode='left_to_right'` if you need guarantees about the order of validation attempts against the union members.
+
+    If you're looking for incredibly specialized behavior, you can use a [custom validator](../concepts/validators.md#field-validators).
+
 ## Union Modes
 
 ### Left to Right Mode
@@ -78,23 +86,61 @@ print(User(id='456'))  # (2)
 
 ### Smart Mode
 
-Because of the surprising side effects of `union_mode='left_to_right'`, in Pydantic >=2 the default mode for `Union` validation is `union_mode='smart'`.
+Because of the potentially surprising results of `union_mode='left_to_right'`, in Pydantic >=2 the default mode for `Union` validation is `union_mode='smart'`.
 
-In this mode, pydantic scores a match of a union member into one of the following three groups (from highest score to lowest score):
+In this mode, pydantic attempts to select the best match for the input from the union members. The exact algorithm may change between Pydantic minor releases to allow for improvements in both performance and accuracy.
 
-- An exact type match, for example an `int` input to a `float | int` union validation is an exact type match for the `int` member
-- Validation would have succeeded in [`strict` mode](../concepts/strict_mode.md)
-- Validation would have succeeded in lax mode
+!!! note
 
-The union match which produced the highest score will be selected as the best match.
+    We reserve the right to tweak the internal `smart` matching algorithm in future versions of Pydantic. If you rely on very specific
+    matching behavior, it's recommended to use `union_mode='left_to_right'` or [discriminated unions](#discriminated-unions).
 
-In this mode, the following steps are taken to try to select the best match for the input:
+??? info "Smart Mode Algorithm"
 
-1. Union members are attempted left to right, with any successful matches scored into one of the three categories described above.
-  - If validation succeeds with an exact type match, that member is returned immediately and following members will not be attempted.
-2. If validation succeeded on at least one member as a "strict" match, the leftmost of those "strict" matches is returned.
-3. If validation succeeded on at least one member in "lax" mode, the leftmost match is returned.
-4. Validation failed on all the members, return all the errors.
+    The smart mode algorithm uses two metrics to determine the best match for the input:
+
+    1. The number of valid fields set (relevant for models, dataclasses, and typed dicts)
+    2. The exactness of the match (relevant for all types)
+
+    #### Number of valid fields set
+
+    !!! note
+        This metric was introduced in Pydantic v2.8.0. Prior to this version, only exactness was used to determine the best match.
+
+    This metric is currently only relevant for models, dataclasses, and typed dicts.
+
+    The greater the number of valid fields set, the better the match. The number of fields set on nested models is also taken into account.
+    These counts bubble up to the top-level union, where the union member with the highest count is considered the best match.
+
+    For data types where this metric is relevant, we prioritize this count over exactness. For all other types, we use solely exactness.
+
+    #### Exactness
+
+    For `exactness`, Pydantic scores a match of a union member into one of the following three groups (from highest score to lowest score):
+
+    - An exact type match, for example an `int` input to a `float | int` union validation is an exact type match for the `int` member
+    - Validation would have succeeded in [`strict` mode](../concepts/strict_mode.md)
+    - Validation would have succeeded in lax mode
+
+    The union match which produced the highest exactness score will be considered the best match.
+
+    In smart mode, the following steps are taken to try to select the best match for the input:
+
+    === "`BaseModel`, `dataclass`, and `TypedDict`"
+
+        1. Union members are attempted left to right, with any successful matches scored into one of the three exactness categories described above,
+        with the valid fields set count also tallied.
+        2. After all members have been evaluated, the member with the highest "valid fields set" count is returned.
+        3. If there's a tie for the highest "valid fields set" count, the exactness score is used as a tiebreaker, and the member with the highest exactness score is returned.
+        4. If validation failed on all the members, return all the errors.
+
+    === "All other data types"
+
+        1. Union members are attempted left to right, with any successful matches scored into one of the three exactness categories described above.
+            - If validation succeeds with an exact type match, that member is returned immediately and following members will not be attempted.
+        2. If validation succeeded on at least one member as a "strict" match, the leftmost of those "strict" matches is returned.
+        3. If validation succeeded on at least one member in "lax" mode, the leftmost match is returned.
+        4. Validation failed on all the members, return all the errors.
 
 ```py
 from typing import Union

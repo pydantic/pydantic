@@ -5,7 +5,6 @@ import math
 import re
 import sys
 import typing
-import warnings
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
@@ -1373,25 +1372,19 @@ def test_non_serializable_default(type_, default_value, properties):
     assert model_schema.get('required') is None
 
 
-@pytest.mark.parametrize(
-    'warning_match',
-    (
-        r'Cannot generate a JsonSchema for core_schema.CallableSchema \[skipped-choice\]',
-        r'Default value .* is not JSON serializable; excluding default from JSON schema \[non-serializable-default\]',
-    ),
-)
-def test_callable_fallback_with_non_serializable_default(warning_match):
+def test_callable_fallback_with_non_serializable_default():
     class Model(BaseModel):
         callback: Union[int, Callable[[int], int]] = lambda x: x
 
     class MyGenerator(GenerateJsonSchema):
         ignored_warning_kinds = ()
 
-    with warnings.catch_warnings():
-        # we need to explicitly ignore the other warning in pytest-8
-        # TODO: rewrite it to use two nested pytest.warns() when pytest-7 is no longer supported
-        warnings.simplefilter('ignore')
-        with pytest.warns(PydanticJsonSchemaWarning, match=warning_match):
+    inner_match = (
+        r'Default value .* is not JSON serializable; excluding default from JSON schema \[non-serializable-default\]'
+    )
+    outer_match = r'Cannot generate a JsonSchema for core_schema.CallableSchema \[skipped-choice\]'
+    with pytest.warns(PydanticJsonSchemaWarning, match=outer_match):
+        with pytest.warns(PydanticJsonSchemaWarning, match=inner_match):
             model_schema = Model.model_json_schema(schema_generator=MyGenerator)
     assert model_schema == {
         'properties': {'callback': {'title': 'Callback', 'type': 'integer'}},
