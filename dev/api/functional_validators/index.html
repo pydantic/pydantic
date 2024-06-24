@@ -3783,11 +3783,11 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 
 
 <a id="pydantic.functional_validators"></a>
-  <div class="doc doc-contents first">
-  
+    <div class="doc doc-contents first">
+
       <p>This module contains related classes and functions for validation.</p>
 
-  
+
 
   <div class="doc doc-children">
 
@@ -3802,24 +3802,24 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 
 
 <h2 id="pydantic.functional_validators.ModelAfterValidatorWithoutInfo" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">ModelAfterValidatorWithoutInfo</span>
+            <span class="doc doc-object-name doc-attribute-name">ModelAfterValidatorWithoutInfo</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
   </span>
 
 <a href="#pydantic.functional_validators.ModelAfterValidatorWithoutInfo" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">ModelAfterValidatorWithoutInfo</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">ModelAfterValidatorWithoutInfo</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[</span>
     <span class="p">[</span><span class="n"><span title="pydantic.functional_validators._ModelType">_ModelType</span></span><span class="p">],</span> <span class="n"><span title="pydantic.functional_validators._ModelType">_ModelType</span></span>
 <span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>A <code>@model_validator</code> decorated function signature. This is used when <code>mode='after'</code> and the function does not
 have info argument.</p>
-  </div>
+    </div>
 
 </div>
 
@@ -3828,23 +3828,23 @@ have info argument.</p>
 
 
 <h2 id="pydantic.functional_validators.ModelAfterValidator" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">ModelAfterValidator</span>
+            <span class="doc doc-object-name doc-attribute-name">ModelAfterValidator</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
   </span>
 
 <a href="#pydantic.functional_validators.ModelAfterValidator" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">ModelAfterValidator</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">ModelAfterValidator</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[</span>
     <span class="p">[</span><span class="n"><span title="pydantic.functional_validators._ModelType">_ModelType</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.core_schema.ValidationInfo" href="../pydantic_core_schema/#pydantic_core.core_schema.ValidationInfo">ValidationInfo</a></span><span class="p">],</span> <span class="n"><span title="pydantic.functional_validators._ModelType">_ModelType</span></span>
 <span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>A <code>@model_validator</code> decorated function signature. This is used when <code>mode='after'</code>.</p>
-  </div>
+    </div>
 
 </div>
 
@@ -3854,19 +3854,24 @@ have info argument.</p>
 
 
 <h2 id="pydantic.functional_validators.AfterValidator" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">AfterValidator</span>
+            <span class="doc doc-object-name doc-class-name">AfterValidator</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
   </span>
 
 <a href="#pydantic.functional_validators.AfterValidator" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">AfterValidator</span><span class="p">(</span>
+    <span class="n">func</span><span class="p">:</span> <span class="p">(</span>
+        <span class="n"><span title="pydantic_core.core_schema.NoInfoValidatorFunction">NoInfoValidatorFunction</span></span> <span class="o">|</span> <span class="n"><span title="pydantic_core.core_schema.WithInfoValidatorFunction">WithInfoValidatorFunction</span></span>
+    <span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
 
 
-  <div class="doc doc-contents ">
-
-  
       <div class="admonition abstract">
 <p class="admonition-title">Usage Documentation</p>
 <p><a href="../../concepts/validators/#annotated-validators">Annotated Validators</a></p>
@@ -3874,30 +3879,30 @@ have info argument.</p>
 <p>A metadata class that indicates that a validation should be applied <strong>after</strong> the inner validation logic.</p>
 
 
-
-  <p><strong>Attributes:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code><span title="pydantic.functional_validators.AfterValidator.func">func</span></code></td>
-          <td>
-                <code><span title="pydantic_core.core_schema.NoInfoValidatorFunction">NoInfoValidatorFunction</span> | <span title="pydantic_core.core_schema.WithInfoValidatorFunction">WithInfoValidatorFunction</span></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The validator function.</p>
-            </div>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.functional_validators.AfterValidator.func">func</span></code></td>
+            <td>
+                  <code><span title="pydantic_core.core_schema.NoInfoValidatorFunction">NoInfoValidatorFunction</span> | <span title="pydantic_core.core_schema.WithInfoValidatorFunction">WithInfoValidatorFunction</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The validator function.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
 
 <details class="example" open>
   <summary>Example</summary>
@@ -3933,7 +3938,7 @@ have info argument.</p>
 </code></pre></div>
 </details>
 
-  
+
 
   <div class="doc doc-children">
 
@@ -3949,8 +3954,7 @@ have info argument.</p>
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -3959,19 +3963,24 @@ have info argument.</p>
 
 
 <h2 id="pydantic.functional_validators.BeforeValidator" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">BeforeValidator</span>
+            <span class="doc doc-object-name doc-class-name">BeforeValidator</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
   </span>
 
 <a href="#pydantic.functional_validators.BeforeValidator" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">BeforeValidator</span><span class="p">(</span>
+    <span class="n">func</span><span class="p">:</span> <span class="p">(</span>
+        <span class="n"><span title="pydantic_core.core_schema.NoInfoValidatorFunction">NoInfoValidatorFunction</span></span> <span class="o">|</span> <span class="n"><span title="pydantic_core.core_schema.WithInfoValidatorFunction">WithInfoValidatorFunction</span></span>
+    <span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
 
 
-  <div class="doc doc-contents ">
-
-  
       <div class="admonition abstract">
 <p class="admonition-title">Usage Documentation</p>
 <p><a href="../../concepts/validators/#annotated-validators">Annotated Validators</a></p>
@@ -3979,30 +3988,30 @@ have info argument.</p>
 <p>A metadata class that indicates that a validation should be applied <strong>before</strong> the inner validation logic.</p>
 
 
-
-  <p><strong>Attributes:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code><span title="pydantic.functional_validators.BeforeValidator.func">func</span></code></td>
-          <td>
-                <code><span title="pydantic_core.core_schema.NoInfoValidatorFunction">NoInfoValidatorFunction</span> | <span title="pydantic_core.core_schema.WithInfoValidatorFunction">WithInfoValidatorFunction</span></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The validator function.</p>
-            </div>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.functional_validators.BeforeValidator.func">func</span></code></td>
+            <td>
+                  <code><span title="pydantic_core.core_schema.NoInfoValidatorFunction">NoInfoValidatorFunction</span> | <span title="pydantic_core.core_schema.WithInfoValidatorFunction">WithInfoValidatorFunction</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The validator function.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
 
 <details class="example" open>
   <summary>Example</summary>
@@ -4026,7 +4035,7 @@ have info argument.</p>
 </code></pre></div>
 </details>
 
-  
+
 
   <div class="doc doc-children">
 
@@ -4042,8 +4051,7 @@ have info argument.</p>
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -4052,19 +4060,24 @@ have info argument.</p>
 
 
 <h2 id="pydantic.functional_validators.PlainValidator" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">PlainValidator</span>
+            <span class="doc doc-object-name doc-class-name">PlainValidator</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
   </span>
 
 <a href="#pydantic.functional_validators.PlainValidator" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">PlainValidator</span><span class="p">(</span>
+    <span class="n">func</span><span class="p">:</span> <span class="p">(</span>
+        <span class="n"><span title="pydantic_core.core_schema.NoInfoValidatorFunction">NoInfoValidatorFunction</span></span> <span class="o">|</span> <span class="n"><span title="pydantic_core.core_schema.WithInfoValidatorFunction">WithInfoValidatorFunction</span></span>
+    <span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
 
 
-  <div class="doc doc-contents ">
-
-  
       <div class="admonition abstract">
 <p class="admonition-title">Usage Documentation</p>
 <p><a href="../../concepts/validators/#annotated-validators">Annotated Validators</a></p>
@@ -4072,30 +4085,30 @@ have info argument.</p>
 <p>A metadata class that indicates that a validation should be applied <strong>instead</strong> of the inner validation logic.</p>
 
 
-
-  <p><strong>Attributes:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code><span title="pydantic.functional_validators.PlainValidator.func">func</span></code></td>
-          <td>
-                <code><span title="pydantic_core.core_schema.NoInfoValidatorFunction">NoInfoValidatorFunction</span> | <span title="pydantic_core.core_schema.WithInfoValidatorFunction">WithInfoValidatorFunction</span></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The validator function.</p>
-            </div>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.functional_validators.PlainValidator.func">func</span></code></td>
+            <td>
+                  <code><span title="pydantic_core.core_schema.NoInfoValidatorFunction">NoInfoValidatorFunction</span> | <span title="pydantic_core.core_schema.WithInfoValidatorFunction">WithInfoValidatorFunction</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The validator function.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
 
 <details class="example" open>
   <summary>Example</summary>
@@ -4113,7 +4126,7 @@ have info argument.</p>
 </code></pre></div>
 </details>
 
-  
+
 
   <div class="doc doc-children">
 
@@ -4129,8 +4142,7 @@ have info argument.</p>
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -4139,19 +4151,25 @@ have info argument.</p>
 
 
 <h2 id="pydantic.functional_validators.WrapValidator" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">WrapValidator</span>
+            <span class="doc doc-object-name doc-class-name">WrapValidator</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
   </span>
 
 <a href="#pydantic.functional_validators.WrapValidator" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">WrapValidator</span><span class="p">(</span>
+    <span class="n">func</span><span class="p">:</span> <span class="p">(</span>
+        <span class="n"><span title="pydantic_core.core_schema.NoInfoWrapValidatorFunction">NoInfoWrapValidatorFunction</span></span>
+        <span class="o">|</span> <span class="n"><span title="pydantic_core.core_schema.WithInfoWrapValidatorFunction">WithInfoWrapValidatorFunction</span></span>
+    <span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
 
 
-  <div class="doc doc-contents ">
-
-  
       <div class="admonition abstract">
 <p class="admonition-title">Usage Documentation</p>
 <p><a href="../../concepts/validators/#annotated-validators">Annotated Validators</a></p>
@@ -4159,30 +4177,29 @@ have info argument.</p>
 <p>A metadata class that indicates that a validation should be applied <strong>around</strong> the inner validation logic.</p>
 
 
-
-  <p><strong>Attributes:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code><span title="pydantic.functional_validators.WrapValidator.func">func</span></code></td>
-          <td>
-                <code><span title="pydantic_core.core_schema.NoInfoWrapValidatorFunction">NoInfoWrapValidatorFunction</span> | <span title="pydantic_core.core_schema.WithInfoWrapValidatorFunction">WithInfoWrapValidatorFunction</span></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The validator function.</p>
-            </div>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.functional_validators.WrapValidator.func">func</span></code></td>
+            <td>
+                  <code><span title="pydantic_core.core_schema.NoInfoWrapValidatorFunction">NoInfoWrapValidatorFunction</span> | <span title="pydantic_core.core_schema.WithInfoWrapValidatorFunction">WithInfoWrapValidatorFunction</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The validator function.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
       <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
@@ -4211,7 +4228,7 @@ have info argument.</p>
 </code></pre></div>
 
 
-  
+
 
   <div class="doc doc-children">
 
@@ -4227,8 +4244,7 @@ have info argument.</p>
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -4237,21 +4253,21 @@ have info argument.</p>
 
 
 <h2 id="pydantic.functional_validators.ModelWrapValidatorHandler" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">ModelWrapValidatorHandler</span>
+            <span class="doc doc-object-name doc-class-name">ModelWrapValidatorHandler</span>
 
 
 <a href="#pydantic.functional_validators.ModelWrapValidatorHandler" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><span title="pydantic_core.core_schema.ValidatorFunctionWrapHandler">ValidatorFunctionWrapHandler</span></code>, <code><a class="autorefs autorefs-external" title="typing.Protocol" href="https://docs.python.org/3/library/typing.html#typing.Protocol">Protocol</a>[<span title="pydantic.functional_validators._ModelTypeCo">_ModelTypeCo</span>]</code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="pydantic_core.core_schema.ValidatorFunctionWrapHandler">ValidatorFunctionWrapHandler</span></code>, <code><a class="autorefs autorefs-external" title="typing.Protocol" href="https://docs.python.org/3/library/typing.html#typing.Protocol">Protocol</a>[<span title="pydantic.functional_validators._ModelTypeCo">_ModelTypeCo</span>]</code></p>
 
-  
+
       <p>@model_validator decorated function handler argument type. This is used when <code>mode='wrap'</code>.</p>
 
 
-  
+
 
   <div class="doc doc-children">
 
@@ -4267,8 +4283,7 @@ have info argument.</p>
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -4277,22 +4292,22 @@ have info argument.</p>
 
 
 <h2 id="pydantic.functional_validators.ModelWrapValidatorWithoutInfo" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">ModelWrapValidatorWithoutInfo</span>
+            <span class="doc doc-object-name doc-class-name">ModelWrapValidatorWithoutInfo</span>
 
 
 <a href="#pydantic.functional_validators.ModelWrapValidatorWithoutInfo" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-external" title="typing.Protocol" href="https://docs.python.org/3/library/typing.html#typing.Protocol">Protocol</a>[<span title="pydantic.functional_validators._ModelType">_ModelType</span>]</code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-external" title="typing.Protocol" href="https://docs.python.org/3/library/typing.html#typing.Protocol">Protocol</a>[<span title="pydantic.functional_validators._ModelType">_ModelType</span>]</code></p>
 
-  
+
       <p>A @model_validator decorated function signature.
 This is used when <code>mode='wrap'</code> and the function does not have info argument.</p>
 
 
-  
+
 
   <div class="doc doc-children">
 
@@ -4308,8 +4323,7 @@ This is used when <code>mode='wrap'</code> and the function does not have info a
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -4318,21 +4332,21 @@ This is used when <code>mode='wrap'</code> and the function does not have info a
 
 
 <h2 id="pydantic.functional_validators.ModelWrapValidator" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">ModelWrapValidator</span>
+            <span class="doc doc-object-name doc-class-name">ModelWrapValidator</span>
 
 
 <a href="#pydantic.functional_validators.ModelWrapValidator" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-external" title="typing.Protocol" href="https://docs.python.org/3/library/typing.html#typing.Protocol">Protocol</a>[<span title="pydantic.functional_validators._ModelType">_ModelType</span>]</code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-external" title="typing.Protocol" href="https://docs.python.org/3/library/typing.html#typing.Protocol">Protocol</a>[<span title="pydantic.functional_validators._ModelType">_ModelType</span>]</code></p>
 
-  
+
       <p>A @model_validator decorated function signature. This is used when <code>mode='wrap'</code>.</p>
 
 
-  
+
 
   <div class="doc doc-children">
 
@@ -4348,8 +4362,7 @@ This is used when <code>mode='wrap'</code> and the function does not have info a
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -4358,22 +4371,22 @@ This is used when <code>mode='wrap'</code> and the function does not have info a
 
 
 <h2 id="pydantic.functional_validators.FreeModelBeforeValidatorWithoutInfo" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">FreeModelBeforeValidatorWithoutInfo</span>
+            <span class="doc doc-object-name doc-class-name">FreeModelBeforeValidatorWithoutInfo</span>
 
 
 <a href="#pydantic.functional_validators.FreeModelBeforeValidatorWithoutInfo" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-external" title="typing.Protocol" href="https://docs.python.org/3/library/typing.html#typing.Protocol">Protocol</a></code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-external" title="typing.Protocol" href="https://docs.python.org/3/library/typing.html#typing.Protocol">Protocol</a></code></p>
 
-  
+
       <p>A @model_validator decorated function signature.
 This is used when <code>mode='before'</code> and the function does not have info argument.</p>
 
 
-  
+
 
   <div class="doc doc-children">
 
@@ -4389,8 +4402,7 @@ This is used when <code>mode='before'</code> and the function does not have info
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -4399,22 +4411,22 @@ This is used when <code>mode='before'</code> and the function does not have info
 
 
 <h2 id="pydantic.functional_validators.ModelBeforeValidatorWithoutInfo" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">ModelBeforeValidatorWithoutInfo</span>
+            <span class="doc doc-object-name doc-class-name">ModelBeforeValidatorWithoutInfo</span>
 
 
 <a href="#pydantic.functional_validators.ModelBeforeValidatorWithoutInfo" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-external" title="typing.Protocol" href="https://docs.python.org/3/library/typing.html#typing.Protocol">Protocol</a></code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-external" title="typing.Protocol" href="https://docs.python.org/3/library/typing.html#typing.Protocol">Protocol</a></code></p>
 
-  
+
       <p>A @model_validator decorated function signature.
 This is used when <code>mode='before'</code> and the function does not have info argument.</p>
 
 
-  
+
 
   <div class="doc doc-children">
 
@@ -4430,8 +4442,7 @@ This is used when <code>mode='before'</code> and the function does not have info
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -4440,21 +4451,21 @@ This is used when <code>mode='before'</code> and the function does not have info
 
 
 <h2 id="pydantic.functional_validators.FreeModelBeforeValidator" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">FreeModelBeforeValidator</span>
+            <span class="doc doc-object-name doc-class-name">FreeModelBeforeValidator</span>
 
 
 <a href="#pydantic.functional_validators.FreeModelBeforeValidator" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-external" title="typing.Protocol" href="https://docs.python.org/3/library/typing.html#typing.Protocol">Protocol</a></code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-external" title="typing.Protocol" href="https://docs.python.org/3/library/typing.html#typing.Protocol">Protocol</a></code></p>
 
-  
+
       <p>A <code>@model_validator</code> decorated function signature. This is used when <code>mode='before'</code>.</p>
 
 
-  
+
 
   <div class="doc doc-children">
 
@@ -4470,8 +4481,7 @@ This is used when <code>mode='before'</code> and the function does not have info
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -4480,21 +4490,21 @@ This is used when <code>mode='before'</code> and the function does not have info
 
 
 <h2 id="pydantic.functional_validators.ModelBeforeValidator" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">ModelBeforeValidator</span>
+            <span class="doc doc-object-name doc-class-name">ModelBeforeValidator</span>
 
 
 <a href="#pydantic.functional_validators.ModelBeforeValidator" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-external" title="typing.Protocol" href="https://docs.python.org/3/library/typing.html#typing.Protocol">Protocol</a></code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-external" title="typing.Protocol" href="https://docs.python.org/3/library/typing.html#typing.Protocol">Protocol</a></code></p>
 
-  
+
       <p>A <code>@model_validator</code> decorated function signature. This is used when <code>mode='before'</code>.</p>
 
 
-  
+
 
   <div class="doc doc-children">
 
@@ -4510,8 +4520,7 @@ This is used when <code>mode='before'</code> and the function does not have info
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -4520,20 +4529,22 @@ This is used when <code>mode='before'</code> and the function does not have info
 
 
 <h2 id="pydantic.functional_validators.InstanceOf" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">InstanceOf</span>
+            <span class="doc doc-object-name doc-class-name">InstanceOf</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
   </span>
 
 <a href="#pydantic.functional_validators.InstanceOf" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">InstanceOf</span><span class="p">(</span><span class="fm">__hash__</span><span class="o">=</span><span class="nb">object</span><span class="o">.</span><span class="fm">__hash__</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
 
 
-  <div class="doc doc-contents ">
-
-  
       <p>Generic type for annotating a type that is an instance of a given class.</p>
+
 
 <details class="example" open>
   <summary>Example</summary>
@@ -4565,7 +4576,7 @@ This is used when <code>mode='before'</code> and the function does not have info
 </code></pre></div>
 </details>
 
-  
+
 
   <div class="doc doc-children">
 
@@ -4581,8 +4592,7 @@ This is used when <code>mode='before'</code> and the function does not have info
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -4591,19 +4601,20 @@ This is used when <code>mode='before'</code> and the function does not have info
 
 
 <h2 id="pydantic.functional_validators.SkipValidation" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">SkipValidation</span>
+            <span class="doc doc-object-name doc-class-name">SkipValidation</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
   </span>
 
 <a href="#pydantic.functional_validators.SkipValidation" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">SkipValidation</span><span class="p">(</span><span class="fm">__hash__</span><span class="o">=</span><span class="nb">object</span><span class="o">.</span><span class="fm">__hash__</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
 
 
-  <div class="doc doc-contents ">
-
-  
       <p>If this is applied as an annotation (e.g., via <code>x: Annotated[int, SkipValidation]</code>), validation will be
     skipped. You can also use <code>SkipValidation[int]</code> as a shorthand for <code>Annotated[int, SkipValidation]</code>.</p>
 <p>This can be useful if you want to use a type annotation for documentation/IDE/type-checking purposes,
@@ -4613,7 +4624,7 @@ may not have the expected effects. Therefore, when used, this annotation should 
 annotation applied to a type.</p>
 
 
-  
+
 
   <div class="doc doc-children">
 
@@ -4629,23 +4640,20 @@ annotation applied to a type.</p>
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
-
 
 
 <div class="doc doc-object doc-function">
 
 
-
 <h2 id="pydantic.functional_validators.field_validator" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">field_validator</span>
+            <span class="doc doc-object-name doc-function-name">field_validator</span>
 
 
 <a href="#pydantic.functional_validators.field_validator" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">field_validator</span><span class="p">(</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">field_validator</span><span class="p">(</span>
     <span class="n">field</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
@@ -4654,8 +4662,8 @@ annotation applied to a type.</p>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <div class="admonition abstract">
 <p class="admonition-title">Usage Documentation</p>
 <p><a href="../../concepts/validators/#field-validators">Field validators</a></p>
@@ -4696,133 +4704,130 @@ annotation applied to a type.</p>
 <p>For more in depth examples, see <a href="../../concepts/validators/#field-validators">Field Validators</a>.</p>
 
 
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>field</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The first field the <code>field_validator</code> should be called on; this is separate
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>field</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The first field the <code>field_validator</code> should be called on; this is separate
 from <code>fields</code> to ensure an error is raised if you don't pass at least one.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>*fields</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Additional field(s) the <code>field_validator</code> should be called on.</p>
+              </div>
+            </td>
+            <td>
+                  <code>()</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>mode</code></td>
+            <td>
+                  <code><span title="pydantic.functional_validators.FieldValidatorModes">FieldValidatorModes</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Specifies whether to validate the fields before or after validation.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;after&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>check_fields</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to check that the fields actually exist on the model.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>*fields</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Additional field(s) the <code>field_validator</code> should be called on.</p>
-            </div>
-          </td>
-          <td>
-                <code>()</code>
-          </td>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>], <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A decorator that can be used to decorate a function to be used as a field_validator.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>mode</code></td>
-          <td>
-                <code><span title="pydantic.functional_validators.FieldValidatorModes">FieldValidatorModes</span></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Specifies whether to validate the fields before or after validation.</p>
-            </div>
-          </td>
-          <td>
-                <code>&#39;after&#39;</code>
-          </td>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-        <tr>
-          <td><code>check_fields</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to check that the fields actually exist on the model.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>], <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A decorator that can be used to decorate a function to be used as a field_validator.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-
-
-  <p><strong>Raises:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic.errors.PydanticUserError" href="../errors/#pydantic.errors.PydanticUserError">PydanticUserError</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <ul>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="pydantic.errors.PydanticUserError" href="../errors/#pydantic.errors.PydanticUserError">PydanticUserError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <ul>
 <li>If <code>@field_validator</code> is used bare (with no fields).</li>
 <li>If the args passed to <code>@field_validator</code> as fields are not strings.</li>
 <li>If <code>@field_validator</code> applied to instance methods.</li>
 </ul>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">294</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">294</span>
 <span class="normal">295</span>
 <span class="normal">296</span>
 <span class="normal">297</span>
@@ -5006,28 +5011,26 @@ from <code>fields</code> to ensure an error is raised if you don't pass at least
 
     <span class="k">return</span> <span class="n">dec</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h2 id="pydantic.functional_validators.model_validator" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">model_validator</span>
+            <span class="doc doc-object-name doc-function-name">model_validator</span>
 
 
 <a href="#pydantic.functional_validators.model_validator" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">model_validator</span><span class="p">(</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">model_validator</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span><span class="s2">&quot;wrap&quot;</span><span class="p">,</span> <span class="s2">&quot;before&quot;</span><span class="p">,</span> <span class="s2">&quot;after&quot;</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <div class="admonition abstract">
 <p class="admonition-title">Usage Documentation</p>
 <p><a href="../../concepts/validators/#model-validators">Model validators</a></p>
@@ -5064,63 +5067,61 @@ from <code>fields</code> to ensure an error is raised if you don't pass at least
 <p>For more in depth examples, see <a href="../../concepts/validators/#model-validators">Model Validators</a>.</p>
 
 
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>mode</code></td>
-          <td>
-                <code><span title="typing_extensions.Literal">Literal</span>[&#39;wrap&#39;, &#39;before&#39;, &#39;after&#39;]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A required string literal that specifies the validation mode.
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>mode</code></td>
+            <td>
+                  <code><span title="typing_extensions.Literal">Literal</span>[&#39;wrap&#39;, &#39;before&#39;, &#39;after&#39;]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A required string literal that specifies the validation mode.
 It can be one of the following: 'wrap', 'before', or 'after'.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-    </tbody>
-  </table>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td>
-                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A decorator that can be used to decorate a function to be used as a model validator.</p>
-            </div>
-          </td>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A decorator that can be used to decorate a function to be used as a model validator.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">539</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">539</span>
 <span class="normal">540</span>
 <span class="normal">541</span>
 <span class="normal">542</span>
@@ -5230,8 +5231,8 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 
     <span class="k">return</span> <span class="n">dec</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -5239,7 +5240,7 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 
   </div>
 
-  </div>
+    </div>
 
 </div>
 
@@ -5299,7 +5300,7 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.2"]
     </script>
 
               </article>

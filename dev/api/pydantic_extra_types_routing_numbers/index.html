@@ -3431,12 +3431,12 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 
 
 <a id="pydantic_extra_types.routing_number"></a>
-  <div class="doc doc-contents first">
-  
+    <div class="doc doc-contents first">
+
       <p>The <code>pydantic_extra_types.routing_number</code> module provides the
 <a class="autorefs autorefs-internal" href="#pydantic_extra_types.routing_number.ABARoutingNumber"><code>ABARoutingNumber</code></a> data type.</p>
 
-  
+
 
   <div class="doc doc-children">
 
@@ -3452,18 +3452,18 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 
 
 <h2 id="pydantic_extra_types.routing_number.ABARoutingNumber" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">ABARoutingNumber</span>
+            <span class="doc doc-object-name doc-class-name">ABARoutingNumber</span>
 
 
 <a href="#pydantic_extra_types.routing_number.ABARoutingNumber" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">ABARoutingNumber</span><span class="p">(</span><span class="n">routing_number</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">ABARoutingNumber</span><span class="p">(</span><span class="n">routing_number</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code></p>
 
-  
+
       <p>The <code>ABARoutingNumber</code> data type is a string of 9 digits representing an ABA routing transit number.</p>
 <p>The algorithm used to validate the routing number is described in the
 <a href="https://en.wikipedia.org/wiki/ABA_routing_transit_number#Check_digit">ABA routing transit number</a>
@@ -3480,17 +3480,17 @@ Wikipedia article.</p>
 <span class="c1">#&gt; routing_number=&#39;122105155&#39;</span>
 </code></pre></div>
 
-                <details class="quote">
-                  <summary>Source code in <code>pydantic_extra_types/routing_number.py</code></summary>
-                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">37</span>
+                  <details class="quote">
+                    <summary>Source code in <code>.venv/lib/python3.10/site-packages/pydantic_extra_types/routing_number.py</code></summary>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">37</span>
 <span class="normal">38</span>
 <span class="normal">39</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">routing_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_validate_digits</span><span class="p">(</span><span class="n">routing_number</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_routing_number</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_routing_number</span><span class="p">(</span><span class="n">routing_number</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-                </details>
+                  </details>
 
-  
+
 
   <div class="doc doc-children">
 
@@ -3506,8 +3506,7 @@ Wikipedia article.</p>
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -3516,7 +3515,7 @@ Wikipedia article.</p>
 
   </div>
 
-  </div>
+    </div>
 
 </div>
 
@@ -3576,7 +3575,7 @@ Wikipedia article.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.2"]
     </script>
 
               </article>

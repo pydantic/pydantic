@@ -5200,9 +5200,9 @@ To use them, you can use the same mechanism described <a href="#customise-settin
         <span class="k">return</span> <span class="p">(</span><span class="n">TomlConfigSettingsSource</span><span class="p">(</span><span class="n">settings_cls</span><span class="p">),)</span>
 </code></pre></div>
 <p>This will be able to read the following "config.toml" file, located in your working directory:</p>
-<div class="language-toml highlight"><pre><span></span><code><span class="n">foobar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Hello&quot;</span>
+<div class="language-toml highlight"><pre><span></span><code><span class="n">foobar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Hello&quot;</span>
 <span class="k">[nested]</span>
-<span class="n">nested_field</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;world!&quot;</span>
+<span class="n">nested_field</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;world!&quot;</span>
 </code></pre></div>
 <h3 id="pyprojecttoml">pyproject.toml<a class="headerlink" href="#pyprojecttoml" title="Permanent link">&para;</a></h3>
 <p>"pyproject.toml" is a standardized file for providing configuration values in Python projects.
@@ -5251,13 +5251,13 @@ By default, <code>pyproject_toml_table_header=('tool', 'pydantic-settings')</cod
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">pyproject_toml_table_header</span><span class="o">=</span><span class="p">())</span>
 </code></pre></div>
 <p>This will be able to read the following "pyproject.toml" file, located in your working directory, resulting in <code>Settings(field='default-table')</code>, <code>SomeTableSettings(field='some-table')</code>, &amp; <code>RootSettings(field='root')</code>:</p>
-<div class="language-toml highlight"><pre><span></span><code><span class="n">field</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;root&quot;</span>
+<div class="language-toml highlight"><pre><span></span><code><span class="n">field</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;root&quot;</span>
 
 <span class="k">[tool.pydantic-settings]</span>
-<span class="n">field</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;default-table&quot;</span>
+<span class="n">field</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;default-table&quot;</span>
 
 <span class="k">[tool.some-table]</span>
-<span class="n">field</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;some-table&quot;</span>
+<span class="n">field</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;some-table&quot;</span>
 </code></pre></div>
 <p>By default, <code>PyprojectTomlConfigSettingsSource</code> will only look for a "pyproject.toml" in the your current working directory.
 However, there are two options to change this behavior.</p>
@@ -5568,7 +5568,7 @@ need to add your own custom sources, <code>settings_customise_sources</code> mak
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.2"]
     </script>
 
               </article>

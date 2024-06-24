@@ -3757,7 +3757,7 @@ Python built-ins such as dict.</p>
 primitives and "serialize" when converting to string, for practical purposes, we frequently use the word "serialize"
 to refer to both of these situations, even though it does not always imply conversion to a string or bytes.</p>
 </div>
-<h2 id="modelmodel_dump"><code>model.model_dump(...)</code><a class="headerlink" href="#modelmodel_dump" title="Permanent link">&para;</a></h2>
+<h2 id="modelmodel_dump"><code>model.model_dump(...)</code> <a name="model_dump"></a><a class="headerlink" href="#modelmodel_dump" title="Permanent link">&para;</a></h2>
 <details class="api">
 <summary>API Documentation</summary>
 <p><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump"><code>pydantic.main.BaseModel.model_dump</code></a><br></p>
@@ -3836,7 +3836,7 @@ done recursively.</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;{&quot;a&quot;: 1}&#39;</span><span class="p">,</span> <span class="s1">&#39;[1, 2]&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">round_trip</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 <span class="c1">#&gt; {&#39;x&#39;: [&#39;{&quot;a&quot;:1}&#39;, &#39;[1,2]&#39;]}</span>
 </code></pre></div>
-<h2 id="modelmodel_dump_json"><code>model.model_dump_json(...)</code><a class="headerlink" href="#modelmodel_dump_json" title="Permanent link">&para;</a></h2>
+<h2 id="modelmodel_dump_json"><code>model.model_dump_json(...)</code> <a name="model_dump_json"></a><a class="headerlink" href="#modelmodel_dump_json" title="Permanent link">&para;</a></h2>
 <details class="api">
 <summary>API Documentation</summary>
 <p><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump_json"><code>pydantic.main.BaseModel.model_dump_json</code></a><br></p>
@@ -4058,8 +4058,7 @@ logic, and can modify the resulting value before returning it as the final outpu
             <span class="n">exclude_none</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
             <span class="n">round_trip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
             <span class="n">warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-            <span class="o">...</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span> <span class="o">...</span>
 </code></pre></div>
 <p>This trick is actually used in <a href="../models/#rootmodel-and-custom-root-types"><code>RootModel</code></a> for precisely this purpose.</p>
 <h2 id="serializing-subclasses">Serializing subclasses<a class="headerlink" href="#serializing-subclasses" title="Permanent link">&para;</a></h2>
@@ -4698,7 +4697,7 @@ by context:</p>
 <span class="c1">#&gt; {&#39;text&#39;: &#39;This is an example&#39;}</span>
 </code></pre></div>
 <p>Similarly, you can <a href="../validators/#validation-context">use a context for validation</a>.</p>
-<h2 id="model_copy"><code>model_copy(...)</code><a class="headerlink" href="#model_copy" title="Permanent link">&para;</a></h2>
+<h2 id="model_copy"><code>model_copy(...)</code> <a name="model_copy"><a class="headerlink" href="#model_copy" title="Permanent link">&para;</a></h2>
 <details class="api">
 <summary>API Documentation</summary>
 <p><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_copy"><code>pydantic.main.BaseModel.model_copy</code></a><br></p>
@@ -4786,7 +4785,7 @@ by context:</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.2"]
     </script>
 
               </article>

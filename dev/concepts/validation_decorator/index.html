@@ -3787,9 +3787,9 @@ all possible combinations of these:</p>
 <span class="c1">#&gt; a=1 b=2 c=(3, 4, 5, 6) d=8 e=9 f={&#39;f&#39;: 10, &#39;spam&#39;: 11}</span>
 </code></pre></div>
 <h2 id="using-field-to-describe-function-arguments">Using Field to describe function arguments<a class="headerlink" href="#using-field-to-describe-function-arguments" title="Permanent link">&para;</a></h2>
-<p><a href="../json_schema/#field-customization">Field</a> can also be used with <code>@validate_call</code> to provide extra information about
+<p><a href="../json_schema/#field-level-customization">Field</a> can also be used with <code>@validate_call</code> to provide extra information about
 the field and validations. In general it should be used in a type hint with
-<a href="../json_schema/#typingannotated-fields">Annotated</a>, unless <code>default_factory</code> is specified, in which case it should be
+<a href="../types/#composing-types-via-annotated">Annotated</a>, unless <code>default_factory</code> is specified, in which case it should be
 used as the default value of the field:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
@@ -4047,7 +4047,7 @@ it never will be.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.2"]
     </script>
 
               </article>

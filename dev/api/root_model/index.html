@@ -3487,11 +3487,11 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 
 
 <a id="pydantic.root_model"></a>
-  <div class="doc doc-contents first">
-  
+    <div class="doc doc-contents first">
+
       <p>RootModel class and type definitions.</p>
 
-  
+
 
   <div class="doc doc-children">
 
@@ -3507,20 +3507,20 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 
 
 <h2 id="pydantic.root_model.RootModel" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">RootModel</span>
+            <span class="doc doc-object-name doc-class-name">RootModel</span>
 
 
 <a href="#pydantic.root_model.RootModel" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">RootModel</span><span class="p">(</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">RootModel</span><span class="p">(</span>
     <span class="n">root</span><span class="p">:</span> <span class="n"><span title="pydantic.root_model.RootModelRootType">RootModelRootType</span></span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span>
 <span class="p">)</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-internal" title="pydantic.main.BaseModel" href="../base_model/#pydantic.BaseModel">BaseModel</a></code>, <code><a class="autorefs autorefs-external" title="typing.Generic" href="https://docs.python.org/3/library/typing.html#typing.Generic">Generic</a>[<span title="pydantic.root_model.RootModelRootType">RootModelRootType</span>]</code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="pydantic.main.BaseModel" href="../base_model/#pydantic.BaseModel">BaseModel</a></code>, <code><a class="autorefs autorefs-external" title="typing.Generic" href="https://docs.python.org/3/library/typing.html#typing.Generic">Generic</a>[<span title="pydantic.root_model.RootModelRootType">RootModelRootType</span>]</code></p>
 
-  
+
       <div class="admonition abstract">
 <p class="admonition-title">Usage Documentation</p>
 <p><a href="../../concepts/models/#rootmodel-and-custom-root-types"><code>RootModel</code> and custom root types</a></p>
@@ -3528,64 +3528,63 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 <p>A Pydantic <code>BaseModel</code> for the root object of the model.</p>
 
 
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.root_model.RootModel.root">root</span></code></td>
+            <td>
+                  <code><span title="pydantic.root_model.RootModelRootType">RootModelRootType</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The root object of the model.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.root_model.RootModel.__pydantic_root_model__">__pydantic_root_model__</span></code></td>
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether the model is a RootModel.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.root_model.RootModel.__pydantic_private__">__pydantic_private__</span></code></td>
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Private fields in the model.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.root_model.RootModel.__pydantic_extra__">__pydantic_extra__</span></code></td>
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Extra fields in the model.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-  <p><strong>Attributes:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code><span title="pydantic.root_model.RootModel.root">root</span></code></td>
-          <td>
-                <code><span title="pydantic.root_model.RootModelRootType">RootModelRootType</span></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The root object of the model.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.root_model.RootModel.__pydantic_root_model__">__pydantic_root_model__</span></code></td>
-          <td>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether the model is a RootModel.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.root_model.RootModel.__pydantic_private__">__pydantic_private__</span></code></td>
-          <td>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Private fields in the model.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.root_model.RootModel.__pydantic_extra__">__pydantic_extra__</span></code></td>
-          <td>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Extra fields in the model.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-                <details class="quote">
-                  <summary>Source code in <code>pydantic/root_model.py</code></summary>
-                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">62</span>
+                  <details class="quote">
+                    <summary>Source code in <code>pydantic/root_model.py</code></summary>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">62</span>
 <span class="normal">63</span>
 <span class="normal">64</span>
 <span class="normal">65</span>
@@ -3603,12 +3602,11 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
         <span class="n">root</span> <span class="o">=</span> <span class="n">data</span>  <span class="c1"># type: ignore</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">__pydantic_validator__</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">self_instance</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-                </details>
+                  </details>
 
-  
+
 
   <div class="doc doc-children">
-
 
 
 
@@ -3621,121 +3619,117 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="pydantic.root_model.RootModel.model_construct" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">model_construct</span>
+            <span class="doc doc-object-name doc-function-name">model_construct</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
   </span>
 
 <a href="#pydantic.root_model.RootModel.model_construct" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">model_construct</span><span class="p">(</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">model_construct</span><span class="p">(</span>
     <span class="n">root</span><span class="p">:</span> <span class="n"><span title="pydantic.root_model.RootModelRootType">RootModelRootType</span></span><span class="p">,</span>
     <span class="n">_fields_set</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#set">set</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing_extensions.Self">Self</span></span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Create a new model using the provided root object and update fields set.</p>
 
 
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>root</code></td>
-          <td>
-                <code><span title="pydantic.root_model.RootModelRootType">RootModelRootType</span></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The root object of the model.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
         </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>root</code></td>
+            <td>
+                  <code><span title="pydantic.root_model.RootModelRootType">RootModelRootType</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The root object of the model.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>_fields_set</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#set">set</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The set of fields to be updated.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>_fields_set</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#set">set</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>] | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The set of fields to be updated.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing_extensions.Self">Self</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The new model.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td>
-                <code><span title="typing_extensions.Self">Self</span></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The new model.</p>
-            </div>
-          </td>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/constants.html#NotImplemented">NotImplemented</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If the model is not a subclass of <code>RootModel</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-
-
-  <p><strong>Raises:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/constants.html#NotImplemented">NotImplemented</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>If the model is not a subclass of <code>RootModel</code>.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-          <details class="quote">
-            <summary>Source code in <code>pydantic/root_model.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">74</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/root_model.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">74</span>
 <span class="normal">75</span>
 <span class="normal">76</span>
 <span class="normal">77</span>
@@ -3765,22 +3759,20 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">model_construct</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">root</span><span class="p">,</span> <span class="n">_fields_set</span><span class="o">=</span><span class="n">_fields_set</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="pydantic.root_model.RootModel.model_dump" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">model_dump</span>
+            <span class="doc doc-object-name doc-function-name">model_dump</span>
 
 
 <a href="#pydantic.root_model.RootModel.model_dump" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">model_dump</span><span class="p">(</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">model_dump</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span><span class="s2">&quot;json&quot;</span><span class="p">,</span> <span class="s2">&quot;python&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;python&quot;</span><span class="p">,</span>
     <span class="n">include</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -3791,14 +3783,15 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
     <span class="n">exclude_defaults</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">exclude_none</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">round_trip</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">warnings</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
-    <span class="o">|</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="s2">&quot;warn&quot;</span><span class="p">,</span> <span class="s2">&quot;error&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">warnings</span><span class="p">:</span> <span class="p">(</span>
+        <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="s2">&quot;warn&quot;</span><span class="p">,</span> <span class="s2">&quot;error&quot;</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">serialize_as_any</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>This method is included just to get a more accurate return type for type checkers.
 It is included in this <code>if TYPE_CHECKING:</code> block since no override is actually necessary.</p>
 <p>See the documentation of <code>BaseModel.model_dump</code> for more details about the arguments.</p>
@@ -3808,9 +3801,9 @@ type will likely be <code>dict[str, Any]</code>, as <code>model_dump</code> call
 even be something different, in the case of a custom serializer.
 Thus, <code>Any</code> is used here to catch all of these cases.</p>
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic/root_model.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">120</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/root_model.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">120</span>
 <span class="normal">121</span>
 <span class="normal">122</span>
 <span class="normal">123</span>
@@ -3864,8 +3857,8 @@ Thus, <code>Any</code> is used here to catch all of these cases.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="o">...</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -3873,8 +3866,7 @@ Thus, <code>Any</code> is used here to catch all of these cases.</p>
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -3883,7 +3875,7 @@ Thus, <code>Any</code> is used here to catch all of these cases.</p>
 
   </div>
 
-  </div>
+    </div>
 
 </div>
 
@@ -3943,7 +3935,7 @@ Thus, <code>Any</code> is used here to catch all of these cases.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.2"]
     </script>
 
               </article>

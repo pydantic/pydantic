@@ -3431,14 +3431,13 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 
 
 <a id="pydantic.validate_call_decorator"></a>
-  <div class="doc doc-contents first">
-  
+    <div class="doc doc-contents first">
+
       <p>Decorator for validating function calls.</p>
 
-  
+
 
   <div class="doc doc-children">
-
 
 
 
@@ -3451,13 +3450,12 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 <div class="doc doc-object doc-function">
 
 
-
 <h2 id="pydantic.validate_call_decorator.validate_call" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">validate_call</span>
+            <span class="doc doc-object-name doc-function-name">validate_call</span>
 
 
 <a href="#pydantic.validate_call_decorator.validate_call" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">validate_call</span><span class="p">(</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">validate_call</span><span class="p">(</span>
     <span class="n">func</span><span class="p">:</span> <span class="n"><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -3466,8 +3464,8 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span></span><span class="p">],</span> <span class="n"><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span></span><span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <div class="admonition abstract">
 <p class="admonition-title">Usage Documentation</p>
 <p><a href="../../concepts/validation_decorator/">Validation Decorator</a></p>
@@ -3476,90 +3474,88 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 <p>Usage may be either as a plain decorator <code>@validate_call</code> or with arguments <code>@validate_call(...)</code>.</p>
 
 
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>func</code></td>
-          <td>
-                <code><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The function to be decorated.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
         </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>func</code></td>
+            <td>
+                  <code><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The function to be decorated.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>config</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="pydantic.config.ConfigDict" href="../config/#pydantic.config.ConfigDict">ConfigDict</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The configuration dictionary.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>validate_return</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to validate the return value.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>config</code></td>
-          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic.config.ConfigDict" href="../config/#pydantic.config.ConfigDict">ConfigDict</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The configuration dictionary.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-        <tr>
-          <td><code>validate_return</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to validate the return value.</p>
-            </div>
-          </td>
-          <td>
-                <code>False</code>
-          </td>
-        </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span> | <a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span>], <span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The decorated function.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code><span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span> | <a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span>], <span title="pydantic.validate_call_decorator.AnyCallableT">AnyCallableT</span>]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The decorated function.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-          <details class="quote">
-            <summary>Source code in <code>pydantic/validate_call_decorator.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">28</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/validate_call_decorator.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">28</span>
 <span class="normal">29</span>
 <span class="normal">30</span>
 <span class="normal">31</span>
@@ -3639,8 +3635,8 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">validate</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -3648,7 +3644,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 
   </div>
 
-  </div>
+    </div>
 
 </div>
 
@@ -3708,7 +3704,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.2"]
     </script>
 
               </article>

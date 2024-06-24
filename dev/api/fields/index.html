@@ -3819,14 +3819,13 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 
 
 <a id="pydantic.fields"></a>
-  <div class="doc doc-contents first">
-  
+    <div class="doc doc-contents first">
+
       <p>Defining fields on models.</p>
 
-  
+
 
   <div class="doc doc-children">
-
 
 
 
@@ -3837,22 +3836,20 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 <div class="doc doc-object doc-function">
 
 
-
 <h2 id="pydantic.fields.Field" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">Field</span>
+            <span class="doc doc-object-name doc-function-name">Field</span>
 
 
 <a href="#pydantic.fields.Field" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">Field</span><span class="p">(</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">Field</span><span class="p">(</span>
     <span class="n">default</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">default_factory</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[],</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">_Unset</span><span class="p">,</span>
     <span class="n">alias</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">_Unset</span><span class="p">,</span>
     <span class="n">alias_priority</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">_Unset</span><span class="p">,</span>
-    <span class="n">validation_alias</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
-    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.aliases.AliasPath" href="../aliases/#pydantic.aliases.AliasPath">AliasPath</a></span>
-    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.aliases.AliasChoices" href="../aliases/#pydantic.aliases.AliasChoices">AliasChoices</a></span>
-    <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">_Unset</span><span class="p">,</span>
+    <span class="n">validation_alias</span><span class="p">:</span> <span class="p">(</span>
+        <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.aliases.AliasPath" href="../aliases/#pydantic.aliases.AliasPath">AliasPath</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.aliases.AliasChoices" href="../aliases/#pydantic.aliases.AliasChoices">AliasChoices</a></span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="n">_Unset</span><span class="p">,</span>
     <span class="n">serialization_alias</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">_Unset</span><span class="p">,</span>
     <span class="n">title</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">_Unset</span><span class="p">,</span>
     <span class="n">description</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">_Unset</span><span class="p">,</span>
@@ -3860,9 +3857,9 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
     <span class="n">exclude</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">_Unset</span><span class="p">,</span>
     <span class="n">discriminator</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.types.Discriminator" href="../types/#pydantic.types.Discriminator">Discriminator</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">_Unset</span><span class="p">,</span>
     <span class="n">deprecated</span><span class="p">:</span> <span class="n"><span title="pydantic.fields.Deprecated">Deprecated</span></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">_Unset</span><span class="p">,</span>
-    <span class="n">json_schema_extra</span><span class="p">:</span> <span class="n"><span title="pydantic.config.JsonDict">JsonDict</span></span>
-    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.config.JsonDict">JsonDict</span></span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span>
-    <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">_Unset</span><span class="p">,</span>
+    <span class="n">json_schema_extra</span><span class="p">:</span> <span class="p">(</span>
+        <span class="n"><span title="pydantic.config.JsonDict">JsonDict</span></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.config.JsonDict">JsonDict</span></span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="n">_Unset</span><span class="p">,</span>
     <span class="n">frozen</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">_Unset</span><span class="p">,</span>
     <span class="n">validate_default</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">_Unset</span><span class="p">,</span>
     <span class="nb">repr</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="n">_Unset</span><span class="p">,</span>
@@ -3887,8 +3884,8 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <div class="admonition abstract">
 <p class="admonition-title">Usage Documentation</p>
 <p><a href="../../concepts/fields/">Fields</a></p>
@@ -3897,6 +3894,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 <p>Used to provide extra information about a field, either for the model schema or complex validation. Some arguments
 apply only to number fields (<code>int</code>, <code>float</code>, <code>Decimal</code>) and some apply only to <code>str</code>.</p>
 
+
 <details class="note" open>
   <summary>Note</summary>
   <ul>
@@ -3904,537 +3902,535 @@ apply only to number fields (<code>int</code>, <code>float</code>, <code>Decimal
 </ul>
 </details>
 
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>default</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Default value if the field is not set.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic_core.PydanticUndefined">PydanticUndefined</span></code>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
         </tr>
-        <tr>
-          <td><code>default_factory</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[], <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A callable to generate the default value, such as :func:<code>~datetime.utcnow</code>.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>alias</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The name to use for the attribute when validating or serializing by alias.
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>default</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Default value if the field is not set.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic_core.PydanticUndefined">PydanticUndefined</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>default_factory</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[], <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A callable to generate the default value, such as :func:<code>~datetime.utcnow</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>alias</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The name to use for the attribute when validating or serializing by alias.
 This is often used for things like converting between snake and camel case.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>alias_priority</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Priority of the alias. This affects whether an alias generator is used.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>validation_alias</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="pydantic.aliases.AliasPath" href="../aliases/#pydantic.aliases.AliasPath">AliasPath</a> | <a class="autorefs autorefs-internal" title="pydantic.aliases.AliasChoices" href="../aliases/#pydantic.aliases.AliasChoices">AliasChoices</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Like <code>alias</code>, but only affects validation, not serialization.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>serialization_alias</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Like <code>alias</code>, but only affects serialization, not validation.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>title</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Human-readable title.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>description</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Human-readable description.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>examples</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Example values for this field.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>exclude</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to exclude the field from the model serialization.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>discriminator</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="pydantic.types.Discriminator" href="../types/#pydantic.types.Discriminator">Discriminator</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Field name or Discriminator for discriminating the type in a tagged union.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>deprecated</code></td>
-          <td>
-                <code><span title="pydantic.fields.Deprecated">Deprecated</span> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A deprecation message, an instance of <code>warnings.deprecated</code> or the <code>typing_extensions.deprecated</code> backport,
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>alias_priority</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Priority of the alias. This affects whether an alias generator is used.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>validation_alias</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="pydantic.aliases.AliasPath" href="../aliases/#pydantic.aliases.AliasPath">AliasPath</a> | <a class="autorefs autorefs-internal" title="pydantic.aliases.AliasChoices" href="../aliases/#pydantic.aliases.AliasChoices">AliasChoices</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Like <code>alias</code>, but only affects validation, not serialization.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>serialization_alias</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Like <code>alias</code>, but only affects serialization, not validation.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>title</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Human-readable title.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>description</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Human-readable description.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>examples</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Example values for this field.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>exclude</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to exclude the field from the model serialization.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>discriminator</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="pydantic.types.Discriminator" href="../types/#pydantic.types.Discriminator">Discriminator</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Field name or Discriminator for discriminating the type in a tagged union.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>deprecated</code></td>
+            <td>
+                  <code><span title="pydantic.fields.Deprecated">Deprecated</span> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A deprecation message, an instance of <code>warnings.deprecated</code> or the <code>typing_extensions.deprecated</code> backport,
 or a boolean. If <code>True</code>, a default deprecation message will be emitted when accessing the field.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>json_schema_extra</code></td>
-          <td>
-                <code><span title="pydantic.config.JsonDict">JsonDict</span> | <a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<span title="pydantic.config.JsonDict">JsonDict</span>], None] | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A dict or callable to provide extra JSON schema properties.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>frozen</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether the field is frozen. If true, attempts to change the value on an instance will raise an error.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>validate_default</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>If <code>True</code>, apply validation to the default value every time you create an instance.
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>json_schema_extra</code></td>
+            <td>
+                  <code><span title="pydantic.config.JsonDict">JsonDict</span> | <a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<span title="pydantic.config.JsonDict">JsonDict</span>], None] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A dict or callable to provide extra JSON schema properties.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>frozen</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether the field is frozen. If true, attempts to change the value on an instance will raise an error.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>validate_default</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If <code>True</code>, apply validation to the default value every time you create an instance.
 Otherwise, for performance reasons, the default value of the field is trusted and not validated.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>repr</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A boolean indicating whether to include the field in the <code>__repr__</code> output.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>init</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether the field should be included in the constructor of the dataclass.
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>repr</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A boolean indicating whether to include the field in the <code>__repr__</code> output.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>init</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether the field should be included in the constructor of the dataclass.
 (Only applies to dataclasses.)</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>init_var</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether the field should <em>only</em> be included in the constructor of the dataclass.
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>init_var</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether the field should <em>only</em> be included in the constructor of the dataclass.
 (Only applies to dataclasses.)</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>kw_only</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether the field should be a keyword-only argument in the constructor of the dataclass.
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>kw_only</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether the field should be a keyword-only argument in the constructor of the dataclass.
 (Only applies to dataclasses.)</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>coerce_numbers_to_str</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to enable coercion of any <code>Number</code> type to <code>str</code> (not applicable in <code>strict</code> mode).</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>strict</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>If <code>True</code>, strict validation is applied to the field.
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>coerce_numbers_to_str</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to enable coercion of any <code>Number</code> type to <code>str</code> (not applicable in <code>strict</code> mode).</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>strict</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If <code>True</code>, strict validation is applied to the field.
 See <a href="../../concepts/strict_mode/">Strict Mode</a> for details.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>gt</code></td>
-          <td>
-                <code><span title="annotated_types.SupportsGt">SupportsGt</span> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Greater than. If set, value must be greater than this. Only applicable to numbers.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>ge</code></td>
-          <td>
-                <code><span title="annotated_types.SupportsGe">SupportsGe</span> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Greater than or equal. If set, value must be greater than or equal to this. Only applicable to numbers.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>lt</code></td>
-          <td>
-                <code><span title="annotated_types.SupportsLt">SupportsLt</span> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Less than. If set, value must be less than this. Only applicable to numbers.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>le</code></td>
-          <td>
-                <code><span title="annotated_types.SupportsLe">SupportsLe</span> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Less than or equal. If set, value must be less than or equal to this. Only applicable to numbers.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>multiple_of</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Value must be a multiple of this. Only applicable to numbers.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>min_length</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Minimum length for iterables.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>max_length</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Maximum length for iterables.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>pattern</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="typing.Pattern" href="https://docs.python.org/3/library/typing.html#typing.Pattern">Pattern</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>] | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Pattern for strings (a regular expression).</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>allow_inf_nan</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Allow <code>inf</code>, <code>-inf</code>, <code>nan</code>. Only applicable to numbers.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>max_digits</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Maximum number of allow digits for strings.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>decimal_places</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Maximum number of decimal places allowed for numbers.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>union_mode</code></td>
-          <td>
-                <code><span title="typing_extensions.Literal">Literal</span>[&#39;smart&#39;, &#39;left_to_right&#39;]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The strategy to apply when validating a union. Can be <code>smart</code> (the default), or <code>left_to_right</code>.
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>gt</code></td>
+            <td>
+                  <code><span title="annotated_types.SupportsGt">SupportsGt</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Greater than. If set, value must be greater than this. Only applicable to numbers.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>ge</code></td>
+            <td>
+                  <code><span title="annotated_types.SupportsGe">SupportsGe</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Greater than or equal. If set, value must be greater than or equal to this. Only applicable to numbers.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>lt</code></td>
+            <td>
+                  <code><span title="annotated_types.SupportsLt">SupportsLt</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Less than. If set, value must be less than this. Only applicable to numbers.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>le</code></td>
+            <td>
+                  <code><span title="annotated_types.SupportsLe">SupportsLe</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Less than or equal. If set, value must be less than or equal to this. Only applicable to numbers.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>multiple_of</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Value must be a multiple of this. Only applicable to numbers.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>min_length</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Minimum length for iterables.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>max_length</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Maximum length for iterables.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>pattern</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="typing.Pattern" href="https://docs.python.org/3/library/typing.html#typing.Pattern">Pattern</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Pattern for strings (a regular expression).</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>allow_inf_nan</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Allow <code>inf</code>, <code>-inf</code>, <code>nan</code>. Only applicable to numbers.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>max_digits</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Maximum number of allow digits for strings.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>decimal_places</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Maximum number of decimal places allowed for numbers.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>union_mode</code></td>
+            <td>
+                  <code><span title="typing_extensions.Literal">Literal</span>[&#39;smart&#39;, &#39;left_to_right&#39;]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The strategy to apply when validating a union. Can be <code>smart</code> (the default), or <code>left_to_right</code>.
 See <a href="../../concepts/unions/#union-modes">Union Mode</a> for details.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic.fields._Unset">_Unset</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>extra</code></td>
-          <td>
-                <code><span title="typing_extensions.Unpack">Unpack</span>[<span title="pydantic.fields._EmptyKwargs">_EmptyKwargs</span>]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>(Deprecated) Extra fields that will be included in the JSON schema.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic.fields._Unset">_Unset</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>extra</code></td>
+            <td>
+                  <code><span title="typing_extensions.Unpack">Unpack</span>[<span title="pydantic.fields._EmptyKwargs">_EmptyKwargs</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>(Deprecated) Extra fields that will be included in the JSON schema.</p>
 <div class="admonition warning deprecated">
 <p class="admonition-title">Warning</p>
 <p>The <code>extra</code> kwargs is deprecated. Use <code>json_schema_extra</code> instead.</p>
 </div>
-            </div>
-          </td>
-          <td>
-                <code>{}</code>
-          </td>
-        </tr>
-    </tbody>
-  </table>
+              </div>
+            </td>
+            <td>
+                  <code>{}</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td>
-                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A new <a class="autorefs autorefs-internal" href="#pydantic.fields.FieldInfo"><code>FieldInfo</code></a>. The return annotation is <code>Any</code> so <code>Field</code> can be used on
-type-annotated fields without causing a type error.</p>
-            </div>
-          </td>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A new <a class="autorefs autorefs-internal" href="#pydantic.fields.FieldInfo"><code>FieldInfo</code></a>. The return annotation is <code>Any</code> so <code>Field</code> can be used on
+type-annotated fields without causing a type error.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">666</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/fields.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">666</span>
 <span class="normal">667</span>
 <span class="normal">668</span>
 <span class="normal">669</span>
@@ -4828,8 +4824,8 @@ type-annotated fields without causing a type error.</p>
         <span class="n">union_mode</span><span class="o">=</span><span class="n">union_mode</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -4843,18 +4839,18 @@ type-annotated fields without causing a type error.</p>
 
 
 <h2 id="pydantic.fields.FieldInfo" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">FieldInfo</span>
+            <span class="doc doc-object-name doc-class-name">FieldInfo</span>
 
 
 <a href="#pydantic.fields.FieldInfo" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">FieldInfo</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Unpack">Unpack</span></span><span class="p">[</span><span class="n"><span title="pydantic.fields._FieldInfoInputs">_FieldInfoInputs</span></span><span class="p">])</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">FieldInfo</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Unpack">Unpack</span></span><span class="p">[</span><span class="n"><span title="pydantic.fields._FieldInfoInputs">_FieldInfoInputs</span></span><span class="p">])</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><span title="pydantic._internal._repr.Representation">Representation</span></code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="pydantic._internal._repr.Representation">Representation</span></code></p>
 
-  
+
       <p>This class holds information about a field.</p>
 <p><code>FieldInfo</code> is used for any field definition regardless of whether the <a class="autorefs autorefs-internal" href="#pydantic.fields.Field"><code>Field()</code></a>
 function is explicitly used.</p>
@@ -4865,257 +4861,256 @@ function is explicitly used.</p>
 </div>
 
 
-
-  <p><strong>Attributes:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code><span title="pydantic.fields.FieldInfo.annotation">annotation</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The type annotation of the field.</p>
-            </div>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.FieldInfo.default">default</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The default value of the field.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.FieldInfo.default_factory">default_factory</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[], <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The factory function used to construct the default for the field.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.FieldInfo.alias">alias</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The alias name of the field.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.FieldInfo.alias_priority">alias_priority</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The priority of the field's alias.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.FieldInfo.validation_alias">validation_alias</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="pydantic.aliases.AliasPath" href="../aliases/#pydantic.aliases.AliasPath">AliasPath</a> | <a class="autorefs autorefs-internal" title="pydantic.aliases.AliasChoices" href="../aliases/#pydantic.aliases.AliasChoices">AliasChoices</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The validation alias of the field.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.FieldInfo.serialization_alias">serialization_alias</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The serialization alias of the field.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.FieldInfo.title">title</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The title of the field.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.FieldInfo.description">description</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The description of the field.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.FieldInfo.examples">examples</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>List of examples of the field.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.FieldInfo.exclude">exclude</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to exclude the field from the model serialization.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.FieldInfo.discriminator">discriminator</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="pydantic.types.Discriminator" href="../types/#pydantic.types.Discriminator">Discriminator</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Field name or Discriminator for discriminating the type in a tagged union.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.FieldInfo.deprecated">deprecated</span></code></td>
-          <td>
-                <code><span title="pydantic.fields.Deprecated">Deprecated</span> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A deprecation message, an instance of <code>warnings.deprecated</code> or the <code>typing_extensions.deprecated</code> backport,
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.FieldInfo.annotation">annotation</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The type annotation of the field.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.FieldInfo.default">default</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The default value of the field.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.FieldInfo.default_factory">default_factory</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[], <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The factory function used to construct the default for the field.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.FieldInfo.alias">alias</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The alias name of the field.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.FieldInfo.alias_priority">alias_priority</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The priority of the field's alias.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.FieldInfo.validation_alias">validation_alias</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="pydantic.aliases.AliasPath" href="../aliases/#pydantic.aliases.AliasPath">AliasPath</a> | <a class="autorefs autorefs-internal" title="pydantic.aliases.AliasChoices" href="../aliases/#pydantic.aliases.AliasChoices">AliasChoices</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The validation alias of the field.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.FieldInfo.serialization_alias">serialization_alias</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The serialization alias of the field.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.FieldInfo.title">title</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The title of the field.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.FieldInfo.description">description</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The description of the field.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.FieldInfo.examples">examples</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List of examples of the field.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.FieldInfo.exclude">exclude</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to exclude the field from the model serialization.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.FieldInfo.discriminator">discriminator</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-internal" title="pydantic.types.Discriminator" href="../types/#pydantic.types.Discriminator">Discriminator</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Field name or Discriminator for discriminating the type in a tagged union.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.FieldInfo.deprecated">deprecated</span></code></td>
+            <td>
+                  <code><span title="pydantic.fields.Deprecated">Deprecated</span> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A deprecation message, an instance of <code>warnings.deprecated</code> or the <code>typing_extensions.deprecated</code> backport,
 or a boolean. If <code>True</code>, a default deprecation message will be emitted when accessing the field.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.FieldInfo.json_schema_extra">json_schema_extra</span></code></td>
-          <td>
-                <code><span title="pydantic.config.JsonDict">JsonDict</span> | <a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<span title="pydantic.config.JsonDict">JsonDict</span>], None] | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A dict or callable to provide extra JSON schema properties.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.FieldInfo.frozen">frozen</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether the field is frozen.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.FieldInfo.validate_default">validate_default</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to validate the default value of the field.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.FieldInfo.repr">repr</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to include the field in representation of the model.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.FieldInfo.init">init</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether the field should be included in the constructor of the dataclass.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.FieldInfo.init_var">init_var</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether the field should <em>only</em> be included in the constructor of the dataclass, and not stored.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.FieldInfo.kw_only">kw_only</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether the field should be a keyword-only argument in the constructor of the dataclass.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.FieldInfo.metadata">metadata</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>List of metadata constraints.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-  
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.FieldInfo.json_schema_extra">json_schema_extra</span></code></td>
+            <td>
+                  <code><span title="pydantic.config.JsonDict">JsonDict</span> | <a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<span title="pydantic.config.JsonDict">JsonDict</span>], None] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A dict or callable to provide extra JSON schema properties.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.FieldInfo.frozen">frozen</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether the field is frozen.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.FieldInfo.validate_default">validate_default</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to validate the default value of the field.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.FieldInfo.repr">repr</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to include the field in representation of the model.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.FieldInfo.init">init</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether the field should be included in the constructor of the dataclass.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.FieldInfo.init_var">init_var</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether the field should <em>only</em> be included in the constructor of the dataclass, and not stored.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.FieldInfo.kw_only">kw_only</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether the field should be a keyword-only argument in the constructor of the dataclass.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.FieldInfo.metadata">metadata</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List of metadata constraints.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
       <p>See the signature of <code>pydantic.fields.Field</code> for more details about the expected arguments.</p>
 
-                <details class="quote">
-                  <summary>Source code in <code>pydantic/fields.py</code></summary>
-                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">192</span>
+                  <details class="quote">
+                    <summary>Source code in <code>pydantic/fields.py</code></summary>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">192</span>
 <span class="normal">193</span>
 <span class="normal">194</span>
 <span class="normal">195</span>
@@ -5201,12 +5196,11 @@ or a boolean. If <code>True</code>, a default deprecation message will be emitte
 
     <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collect_metadata</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">+</span> <span class="n">annotation_metadata</span>  <span class="c1"># type: ignore</span>
 </code></pre></div></td></tr></table></div>
-                </details>
+                  </details>
 
-  
+
 
   <div class="doc doc-children">
-
 
 
 
@@ -5217,117 +5211,114 @@ or a boolean. If <code>True</code>, a default deprecation message will be emitte
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="pydantic.fields.FieldInfo.from_field" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">from_field</span>
+            <span class="doc doc-object-name doc-function-name">from_field</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
   </span>
 
 <a href="#pydantic.fields.FieldInfo.from_field" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">from_field</span><span class="p">(</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">from_field</span><span class="p">(</span>
     <span class="n">default</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Unpack">Unpack</span></span><span class="p">[</span><span class="n"><span title="pydantic.fields._FromFieldInfoInputs">_FromFieldInfoInputs</span></span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="#pydantic.fields.FieldInfo">FieldInfo</a></span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Create a new <code>FieldInfo</code> object with the <code>Field</code> function.</p>
 
 
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>default</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The default value for the field. Defaults to Undefined.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic_core.PydanticUndefined">PydanticUndefined</span></code>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
         </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>default</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The default value for the field. Defaults to Undefined.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic_core.PydanticUndefined">PydanticUndefined</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>**kwargs</code></td>
+            <td>
+                  <code><span title="typing_extensions.Unpack">Unpack</span>[<span title="pydantic.fields._FromFieldInfoInputs">_FromFieldInfoInputs</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Additional arguments dictionary.</p>
+              </div>
+            </td>
+            <td>
+                  <code>{}</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>**kwargs</code></td>
-          <td>
-                <code><span title="typing_extensions.Unpack">Unpack</span>[<span title="pydantic.fields._FromFieldInfoInputs">_FromFieldInfoInputs</span>]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Additional arguments dictionary.</p>
-            </div>
-          </td>
-          <td>
-                <code>{}</code>
-          </td>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#TypeError">TypeError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If 'annotation' is passed as a keyword argument.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
-
-  <p><strong>Raises:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#TypeError">TypeError</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>If 'annotation' is passed as a keyword argument.</p>
-            </div>
-          </td>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="#pydantic.fields.FieldInfo">FieldInfo</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A new FieldInfo object with the given parameters.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="#pydantic.fields.FieldInfo">FieldInfo</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A new FieldInfo object with the given parameters.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
 
 <details class="example" open>
   <summary>Example</summary>
@@ -5338,9 +5329,9 @@ or a boolean. If <code>True</code>, a default deprecation message will be emitte
     <span class="n">foo</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">pydantic</span><span class="o">.</span><span class="n">Field</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
 </code></pre></div>
 </details>
-          <details class="quote">
-            <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">236</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/fields.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">236</span>
 <span class="normal">237</span>
 <span class="normal">238</span>
 <span class="normal">239</span>
@@ -5394,11 +5385,10 @@ or a boolean. If <code>True</code>, a default deprecation message will be emitte
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;&quot;annotation&quot; is not permitted as a Field keyword argument&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">FieldInfo</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="n">default</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 
 
@@ -5408,21 +5398,20 @@ or a boolean. If <code>True</code>, a default deprecation message will be emitte
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="pydantic.fields.FieldInfo.from_annotation" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">from_annotation</span>
+            <span class="doc doc-object-name doc-function-name">from_annotation</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
   </span>
 
 <a href="#pydantic.fields.FieldInfo.from_annotation" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">from_annotation</span><span class="p">(</span><span class="n">annotation</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="#pydantic.fields.FieldInfo">FieldInfo</a></span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">from_annotation</span><span class="p">(</span><span class="n">annotation</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="#pydantic.fields.FieldInfo">FieldInfo</a></span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Creates a <code>FieldInfo</code> instance from a bare annotation.</p>
 <p>This function is used internally to create a <code>FieldInfo</code> from a bare annotation like this:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">pydantic</span>
@@ -5443,62 +5432,60 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
 </code></pre></div>
 
 
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>annotation</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>An annotation object.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>annotation</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>An annotation object.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="#pydantic.fields.FieldInfo">FieldInfo</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>An instance of the field metadata.</p>
-            </div>
-          </td>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="#pydantic.fields.FieldInfo">FieldInfo</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>An instance of the field metadata.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">264</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/fields.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">264</span>
 <span class="normal">265</span>
 <span class="normal">266</span>
 <span class="normal">267</span>
@@ -5620,11 +5607,10 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
 
     <span class="k">return</span> <span class="n">FieldInfo</span><span class="p">(</span><span class="n">annotation</span><span class="o">=</span><span class="n">annotation</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="n">final</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">)</span>  <span class="c1"># pyright: ignore[reportArgumentType]</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 
 
@@ -5634,23 +5620,22 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="pydantic.fields.FieldInfo.from_annotated_attribute" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">from_annotated_attribute</span>
+            <span class="doc doc-object-name doc-function-name">from_annotated_attribute</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
   </span>
 
 <a href="#pydantic.fields.FieldInfo.from_annotated_attribute" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">from_annotated_attribute</span><span class="p">(</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">from_annotated_attribute</span><span class="p">(</span>
     <span class="n">annotation</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">],</span> <span class="n">default</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="#pydantic.fields.FieldInfo">FieldInfo</a></span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Create <code>FieldInfo</code> from an annotation with a default value.</p>
 <p>This is used in cases like the following:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">annotated_types</span>
@@ -5665,76 +5650,74 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
 </code></pre></div>
 
 
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>annotation</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The type annotation of the field.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
         </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>annotation</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The type annotation of the field.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>default</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The default value of the field.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>default</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The default value of the field.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="#pydantic.fields.FieldInfo">FieldInfo</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A field object with the passed values.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="#pydantic.fields.FieldInfo">FieldInfo</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A field object with the passed values.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-          <details class="quote">
-            <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">326</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/fields.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">326</span>
 <span class="normal">327</span>
 <span class="normal">328</span>
 <span class="normal">329</span>
@@ -5902,11 +5885,10 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
 
         <span class="k">return</span> <span class="n">FieldInfo</span><span class="p">(</span><span class="n">annotation</span><span class="o">=</span><span class="n">annotation</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">default</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="n">final</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">)</span>  <span class="c1"># pyright: ignore[reportArgumentType]</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 
 
@@ -5916,53 +5898,51 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="pydantic.fields.FieldInfo.merge_field_infos" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">merge_field_infos</span>
+            <span class="doc doc-object-name doc-function-name">merge_field_infos</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
   </span>
 
 <a href="#pydantic.fields.FieldInfo.merge_field_infos" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">merge_field_infos</span><span class="p">(</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">merge_field_infos</span><span class="p">(</span>
     <span class="o">*</span><span class="n">field_infos</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="#pydantic.fields.FieldInfo">FieldInfo</a></span><span class="p">,</span> <span class="o">**</span><span class="n">overrides</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="#pydantic.fields.FieldInfo">FieldInfo</a></span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Merge <code>FieldInfo</code> instances keeping only explicitly set attributes.</p>
 <p>Later <code>FieldInfo</code> instances override earlier ones.</p>
 
 
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-<th>Name</th>        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
         <tr>
-<td><code>FieldInfo</code></td>          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="#pydantic.fields.FieldInfo">FieldInfo</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A merged FieldInfo instance.</p>
-            </div>
-          </td>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>FieldInfo</code></td>            <td>
+                  <code><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="#pydantic.fields.FieldInfo">FieldInfo</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A merged FieldInfo instance.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">411</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/fields.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">411</span>
 <span class="normal">412</span>
 <span class="normal">413</span>
 <span class="normal">414</span>
@@ -6042,8 +6022,8 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
     <span class="n">field_info</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
     <span class="k">return</span> <span class="n">field_info</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -6057,24 +6037,23 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
 
 
 <h3 id="pydantic.fields.FieldInfo.deprecation_message" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">deprecation_message</span>
+            <span class="doc doc-object-name doc-attribute-name">deprecation_message</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-property"><code>property</code></small>
   </span>
 
 <a href="#pydantic.fields.FieldInfo.deprecation_message" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">deprecation_message</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">deprecation_message</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>The deprecation message to be emitted, or <code>None</code> if not set.</p>
-  </div>
+    </div>
 
 </div>
-
 
 
 
@@ -6084,79 +6063,76 @@ one of the (not first) arguments in <code>Annotated</code> is an instance of <co
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="pydantic.fields.FieldInfo.get_default" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">get_default</span>
+            <span class="doc doc-object-name doc-function-name">get_default</span>
 
 
 <a href="#pydantic.fields.FieldInfo.get_default" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">get_default</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">call_default_factory</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_default</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">call_default_factory</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Get the default value.</p>
 <p>We expose an option for whether to call the default_factory (if present), as calling it may
 result in side effects that we want to avoid. However, there are times when it really should
 be called (namely, when instantiating a model via <code>model_construct</code>).</p>
 
 
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>call_default_factory</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to call the default_factory or not. Defaults to <code>False</code>.</p>
-            </div>
-          </td>
-          <td>
-                <code>False</code>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>call_default_factory</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to call the default_factory or not. Defaults to <code>False</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td>
-                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The default value, calling the default factory if requested or <code>None</code> if not set.</p>
-            </div>
-          </td>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The default value, calling the default factory if requested or <code>None</code> if not set.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">533</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/fields.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">533</span>
 <span class="normal">534</span>
 <span class="normal">535</span>
 <span class="normal">536</span>
@@ -6194,11 +6170,10 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 
 
@@ -6208,46 +6183,44 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="pydantic.fields.FieldInfo.is_required" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">is_required</span>
+            <span class="doc doc-object-name doc-function-name">is_required</span>
 
 
 <a href="#pydantic.fields.FieldInfo.is_required" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">is_required</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">is_required</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Check if the field is required (i.e., does not have a default value or factory).</p>
 
 
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p><code>True</code> if the field is required, <code>False</code> otherwise.</p>
-            </div>
-          </td>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>True</code> if the field is required, <code>False</code> otherwise.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">553</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/fields.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">553</span>
 <span class="normal">554</span>
 <span class="normal">555</span>
 <span class="normal">556</span>
@@ -6261,11 +6234,10 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">default</span> <span class="ow">is</span> <span class="n">PydanticUndefined</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_factory</span> <span class="ow">is</span> <span class="kc">None</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 
 
@@ -6275,17 +6247,16 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="pydantic.fields.FieldInfo.rebuild_annotation" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">rebuild_annotation</span>
+            <span class="doc doc-object-name doc-function-name">rebuild_annotation</span>
 
 
 <a href="#pydantic.fields.FieldInfo.rebuild_annotation" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">rebuild_annotation</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">rebuild_annotation</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Attempts to rebuild the original annotation for use in function signatures.</p>
 <p>If metadata is present, it adds it to the original annotation using
 <code>Annotated</code>. Otherwise, it returns the original annotation as-is.</p>
@@ -6294,32 +6265,31 @@ may not be reconstructed exactly as originally provided, e.g. if the original
 type had unrecognized annotations, or was annotated with a call to <code>pydantic.Field</code>.</p>
 
 
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td>
-                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The rebuilt annotation.</p>
-            </div>
-          </td>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The rebuilt annotation.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">561</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/fields.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">561</span>
 <span class="normal">562</span>
 <span class="normal">563</span>
 <span class="normal">564</span>
@@ -6355,11 +6325,10 @@ type had unrecognized annotations, or was annotated with a call to <code>pydanti
         <span class="c1"># Annotated arguments must be a tuple</span>
         <span class="k">return</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">Annotated</span><span class="p">[(</span><span class="bp">self</span><span class="o">.</span><span class="n">annotation</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">)]</span>  <span class="c1"># type: ignore</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 
 
@@ -6369,76 +6338,75 @@ type had unrecognized annotations, or was annotated with a call to <code>pydanti
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="pydantic.fields.FieldInfo.apply_typevars_map" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">apply_typevars_map</span>
+            <span class="doc doc-object-name doc-function-name">apply_typevars_map</span>
 
 
 <a href="#pydantic.fields.FieldInfo.apply_typevars_map" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">apply_typevars_map</span><span class="p">(</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">apply_typevars_map</span><span class="p">(</span>
     <span class="n">typevars_map</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">types_namespace</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Apply a <code>typevars_map</code> to the annotation.</p>
 <p>This method is used when analyzing parametrized generic types to replace typevars with their concrete types.</p>
 <p>This method applies the <code>typevars_map</code> to the annotation in place.</p>
 
 
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>typevars_map</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A dictionary mapping type variables to their concrete types.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>types_namespace</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A dictionary containing related types to the annotated type.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>typevars_map</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A dictionary mapping type variables to their concrete types.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-        <tr>
-          <td><code>types_namespace</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A dictionary containing related types to the annotated type.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-    </tbody>
-  </table>
 
 <details class="see-also" open>
   <summary>See Also</summary>
   <p>pydantic._internal._generics.replace_types is used for replacing the typevars with
     their concrete types.</p>
 </details>
-          <details class="quote">
-            <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">580</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/fields.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">580</span>
 <span class="normal">581</span>
 <span class="normal">582</span>
 <span class="normal">583</span>
@@ -6472,8 +6440,8 @@ type had unrecognized annotations, or was annotated with a call to <code>pydanti
     <span class="n">annotation</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">eval_type_lenient</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">annotation</span><span class="p">,</span> <span class="n">types_namespace</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">annotation</span> <span class="o">=</span> <span class="n">_generics</span><span class="o">.</span><span class="n">replace_types</span><span class="p">(</span><span class="n">annotation</span><span class="p">,</span> <span class="n">typevars_map</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -6482,11 +6450,9 @@ type had unrecognized annotations, or was annotated with a call to <code>pydanti
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
-
 
 
 
@@ -6496,13 +6462,12 @@ type had unrecognized annotations, or was annotated with a call to <code>pydanti
 <div class="doc doc-object doc-function">
 
 
-
 <h2 id="pydantic.fields.PrivateAttr" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">PrivateAttr</span>
+            <span class="doc doc-object-name doc-function-name">PrivateAttr</span>
 
 
 <a href="#pydantic.fields.PrivateAttr" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">PrivateAttr</span><span class="p">(</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">PrivateAttr</span><span class="p">(</span>
     <span class="n">default</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">default_factory</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[],</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -6510,8 +6475,8 @@ type had unrecognized annotations, or was annotated with a call to <code>pydanti
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <div class="admonition abstract">
 <p class="admonition-title">Usage Documentation</p>
 <p><a href="../../concepts/models/#private-model-attributes">Private model attributes</a></p>
@@ -6521,116 +6486,113 @@ type had unrecognized annotations, or was annotated with a call to <code>pydanti
 <p>Private attributes are stored in <code>__private_attributes__</code> on the model.</p>
 
 
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>default</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The attribute's default value. Defaults to Undefined.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic_core.PydanticUndefined">PydanticUndefined</span></code>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
         </tr>
-        <tr>
-          <td><code>default_factory</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[], <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Callable that will be
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>default</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The attribute's default value. Defaults to Undefined.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic_core.PydanticUndefined">PydanticUndefined</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>default_factory</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[], <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Callable that will be
 called when a default value is needed for this attribute.
 If both <code>default</code> and <code>default_factory</code> are set, an error will be raised.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>init</code></td>
+            <td>
+                  <code><span title="typing_extensions.Literal">Literal</span>[False]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether the attribute should be included in the constructor of the dataclass. Always <code>False</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>init</code></td>
-          <td>
-                <code><span title="typing_extensions.Literal">Literal</span>[False]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether the attribute should be included in the constructor of the dataclass. Always <code>False</code>.</p>
-            </div>
-          </td>
-          <td>
-                <code>False</code>
-          </td>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>An instance of <a class="autorefs autorefs-internal" href="#pydantic.fields.ModelPrivateAttr"><code>ModelPrivateAttr</code></a> class.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td>
-                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>An instance of <a class="autorefs autorefs-internal" href="#pydantic.fields.ModelPrivateAttr"><code>ModelPrivateAttr</code></a> class.</p>
-            </div>
-          </td>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError">ValueError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If both <code>default</code> and <code>default_factory</code> are set.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-
-
-  <p><strong>Raises:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError">ValueError</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>If both <code>default</code> and <code>default_factory</code> are set.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-          <details class="quote">
-            <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">931</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/fields.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">931</span>
 <span class="normal">932</span>
 <span class="normal">933</span>
 <span class="normal">934</span>
@@ -6698,8 +6660,8 @@ If both <code>default</code> and <code>default_factory</code> are set, an error 
         <span class="n">default_factory</span><span class="o">=</span><span class="n">default_factory</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -6713,22 +6675,22 @@ If both <code>default</code> and <code>default_factory</code> are set, an error 
 
 
 <h2 id="pydantic.fields.ModelPrivateAttr" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">ModelPrivateAttr</span>
+            <span class="doc doc-object-name doc-class-name">ModelPrivateAttr</span>
 
 
 <a href="#pydantic.fields.ModelPrivateAttr" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">ModelPrivateAttr</span><span class="p">(</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">ModelPrivateAttr</span><span class="p">(</span>
     <span class="n">default</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">default_factory</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[],</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><span title="pydantic._internal._repr.Representation">Representation</span></code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="pydantic._internal._repr.Representation">Representation</span></code></p>
 
-  
+
       <p>A descriptor for private attributes in class models.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -6737,44 +6699,43 @@ If both <code>default</code> and <code>default_factory</code> are set, an error 
 </div>
 
 
-
-  <p><strong>Attributes:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code><span title="pydantic.fields.ModelPrivateAttr.default">default</span></code></td>
-          <td>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The default value of the attribute if not provided.</p>
-            </div>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.ModelPrivateAttr.default_factory">default_factory</span></code></td>
-          <td>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A callable function that generates the default value of the
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.ModelPrivateAttr.default">default</span></code></td>
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The default value of the attribute if not provided.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.ModelPrivateAttr.default_factory">default_factory</span></code></td>
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A callable function that generates the default value of the
 attribute if not provided.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-                <details class="quote">
-                  <summary>Source code in <code>pydantic/fields.py</code></summary>
-                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">884</span>
+                  <details class="quote">
+                    <summary>Source code in <code>pydantic/fields.py</code></summary>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">884</span>
 <span class="normal">885</span>
 <span class="normal">886</span>
 <span class="normal">887</span>
@@ -6784,12 +6745,11 @@ attribute if not provided.</p>
     <span class="bp">self</span><span class="o">.</span><span class="n">default</span> <span class="o">=</span> <span class="n">default</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">default_factory</span> <span class="o">=</span> <span class="n">default_factory</span>
 </code></pre></div></td></tr></table></div>
-                </details>
+                  </details>
 
-  
+
 
   <div class="doc doc-children">
-
 
 
 
@@ -6800,48 +6760,46 @@ attribute if not provided.</p>
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="pydantic.fields.ModelPrivateAttr.get_default" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">get_default</span>
+            <span class="doc doc-object-name doc-function-name">get_default</span>
 
 
 <a href="#pydantic.fields.ModelPrivateAttr.get_default" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">get_default</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_default</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Retrieve the default value of the object.</p>
 <p>If <code>self.default_factory</code> is <code>None</code>, the method will return a deep copy of the <code>self.default</code> object.</p>
 <p>If <code>self.default_factory</code> is not <code>None</code>, it will call <code>self.default_factory</code> and return the value returned.</p>
 
 
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td>
-                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The default value of the object.</p>
-            </div>
-          </td>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The default value of the object.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">912</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/fields.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">912</span>
 <span class="normal">913</span>
 <span class="normal">914</span>
 <span class="normal">915</span>
@@ -6863,8 +6821,8 @@ attribute if not provided.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">_utils</span><span class="o">.</span><span class="n">smart_deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">default</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_factory</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_factory</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -6873,11 +6831,9 @@ attribute if not provided.</p>
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
-
 
 
 
@@ -6887,13 +6843,12 @@ attribute if not provided.</p>
 <div class="doc doc-object doc-function">
 
 
-
 <h2 id="pydantic.fields.computed_field" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">computed_field</span>
+            <span class="doc doc-object-name doc-function-name">computed_field</span>
 
 
 <a href="#pydantic.fields.computed_field" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">computed_field</span><span class="p">(</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">computed_field</span><span class="p">(</span>
     <span class="n">func</span><span class="p">:</span> <span class="n"><span title="pydantic.fields.PropertyT">PropertyT</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -6903,16 +6858,16 @@ attribute if not provided.</p>
     <span class="n">description</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">deprecated</span><span class="p">:</span> <span class="n"><span title="pydantic.fields.Deprecated">Deprecated</span></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">examples</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">json_schema_extra</span><span class="p">:</span> <span class="n"><span title="pydantic.config.JsonDict">JsonDict</span></span>
-    <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.config.JsonDict">JsonDict</span></span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span>
-    <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">json_schema_extra</span><span class="p">:</span> <span class="p">(</span>
+        <span class="n"><span title="pydantic.config.JsonDict">JsonDict</span></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.config.JsonDict">JsonDict</span></span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="nb">repr</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">return_type</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pydantic.fields.PropertyT">PropertyT</span></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.fields.PropertyT">PropertyT</span></span><span class="p">],</span> <span class="n"><span title="pydantic.fields.PropertyT">PropertyT</span></span><span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <div class="admonition abstract">
 <p class="admonition-title">Usage Documentation</p>
 <p><a href="../../concepts/fields/#the-computed_field-decorator">The <code>computed_field</code> decorator</a></p>
@@ -7024,195 +6979,193 @@ See the example below:</p>
 </code></pre></div>
 
 
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>func</code></td>
-          <td>
-                <code><span title="pydantic.fields.PropertyT">PropertyT</span> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>the function to wrap.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
         </tr>
-        <tr>
-          <td><code>alias</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>alias to use when serializing this computed field, only used when <code>by_alias=True</code></p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>alias_priority</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>priority of the alias. This affects whether an alias generator is used</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>title</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Title to use when including this computed field in JSON Schema</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>description</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Description to use when including this computed field in JSON Schema, defaults to the function's
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>func</code></td>
+            <td>
+                  <code><span title="pydantic.fields.PropertyT">PropertyT</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the function to wrap.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>alias</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>alias to use when serializing this computed field, only used when <code>by_alias=True</code></p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>alias_priority</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>priority of the alias. This affects whether an alias generator is used</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>title</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Title to use when including this computed field in JSON Schema</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>description</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Description to use when including this computed field in JSON Schema, defaults to the function's
 docstring</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>deprecated</code></td>
-          <td>
-                <code><span title="pydantic.fields.Deprecated">Deprecated</span> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A deprecation message (or an instance of <code>warnings.deprecated</code> or the <code>typing_extensions.deprecated</code> backport).
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>deprecated</code></td>
+            <td>
+                  <code><span title="pydantic.fields.Deprecated">Deprecated</span> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A deprecation message (or an instance of <code>warnings.deprecated</code> or the <code>typing_extensions.deprecated</code> backport).
 to be emitted when accessing the field. Or a boolean. This will automatically be set if the property is decorated with the
 <code>deprecated</code> decorator.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>examples</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Example values to use when including this computed field in JSON Schema</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>json_schema_extra</code></td>
-          <td>
-                <code><span title="pydantic.config.JsonDict">JsonDict</span> | <a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<span title="pydantic.config.JsonDict">JsonDict</span>], None] | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A dict or callable to provide extra JSON schema properties.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>repr</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>whether to include this computed field in model repr.
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>examples</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Example values to use when including this computed field in JSON Schema</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>json_schema_extra</code></td>
+            <td>
+                  <code><span title="pydantic.config.JsonDict">JsonDict</span> | <a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<span title="pydantic.config.JsonDict">JsonDict</span>], None] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A dict or callable to provide extra JSON schema properties.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>repr</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>whether to include this computed field in model repr.
 Default is <code>False</code> for private properties and <code>True</code> for public properties.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>return_type</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>optional return for serialization logic to expect when serializing to JSON, if included
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>return_type</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>optional return for serialization logic to expect when serializing to JSON, if included
 this must be correct, otherwise a <code>TypeError</code> is raised.
 If you don't include a return type Any is used, which does runtime introspection to handle arbitrary
 objects.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="pydantic_core.PydanticUndefined">PydanticUndefined</span></code>
-          </td>
-        </tr>
-    </tbody>
-  </table>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pydantic_core.PydanticUndefined">PydanticUndefined</span></code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td>
-                <code><span title="pydantic.fields.PropertyT">PropertyT</span> | <a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<span title="pydantic.fields.PropertyT">PropertyT</span>], <span title="pydantic.fields.PropertyT">PropertyT</span>]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A proxy wrapper for the property.</p>
-            </div>
-          </td>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="pydantic.fields.PropertyT">PropertyT</span> | <a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<span title="pydantic.fields.PropertyT">PropertyT</span>], <span title="pydantic.fields.PropertyT">PropertyT</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A proxy wrapper for the property.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1044</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/fields.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1044</span>
 <span class="normal">1045</span>
 <span class="normal">1046</span>
 <span class="normal">1047</span>
@@ -7596,8 +7549,8 @@ objects.</p>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">dec</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -7611,160 +7564,173 @@ objects.</p>
 
 
 <h2 id="pydantic.fields.ComputedFieldInfo" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">ComputedFieldInfo</span>
+            <span class="doc doc-object-name doc-class-name">ComputedFieldInfo</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
   </span>
 
 <a href="#pydantic.fields.ComputedFieldInfo" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">ComputedFieldInfo</span><span class="p">(</span>
+    <span class="n">wrapped_property</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#property">property</a></span><span class="p">,</span>
+    <span class="n">return_type</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">,</span>
+    <span class="n">alias</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">alias_priority</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">description</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">deprecated</span><span class="p">:</span> <span class="n"><span title="pydantic.fields.Deprecated">Deprecated</span></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">examples</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">json_schema_extra</span><span class="p">:</span> <span class="p">(</span>
+        <span class="n"><span title="pydantic.config.JsonDict">JsonDict</span></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="pydantic.config.JsonDict">JsonDict</span></span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="p">),</span>
+    <span class="nb">repr</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
 
 
-  <div class="doc doc-contents ">
-
-  
       <p>A container for data from <code>@computed_field</code> so that we can access it while building the pydantic-core schema.</p>
 
 
-
-  <p><strong>Attributes:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code><span title="pydantic.fields.ComputedFieldInfo.decorator_repr">decorator_repr</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A class variable representing the decorator string, '@computed_field'.</p>
-            </div>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.ComputedFieldInfo.wrapped_property">wrapped_property</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#property">property</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The wrapped computed field property.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.ComputedFieldInfo.return_type">return_type</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The type of the computed field property's return value.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.ComputedFieldInfo.alias">alias</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The alias of the property to be used during serialization.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.ComputedFieldInfo.alias_priority">alias_priority</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The priority of the alias. This affects whether an alias generator is used.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.ComputedFieldInfo.title">title</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Title of the computed field to include in the serialization JSON schema.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.ComputedFieldInfo.description">description</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Description of the computed field to include in the serialization JSON schema.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.ComputedFieldInfo.deprecated">deprecated</span></code></td>
-          <td>
-                <code><span title="pydantic.fields.Deprecated">Deprecated</span> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A deprecation message, an instance of <code>warnings.deprecated</code> or the <code>typing_extensions.deprecated</code> backport,
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.ComputedFieldInfo.decorator_repr">decorator_repr</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A class variable representing the decorator string, '@computed_field'.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.ComputedFieldInfo.wrapped_property">wrapped_property</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#property">property</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The wrapped computed field property.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.ComputedFieldInfo.return_type">return_type</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The type of the computed field property's return value.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.ComputedFieldInfo.alias">alias</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The alias of the property to be used during serialization.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.ComputedFieldInfo.alias_priority">alias_priority</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The priority of the alias. This affects whether an alias generator is used.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.ComputedFieldInfo.title">title</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Title of the computed field to include in the serialization JSON schema.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.ComputedFieldInfo.description">description</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Description of the computed field to include in the serialization JSON schema.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.ComputedFieldInfo.deprecated">deprecated</span></code></td>
+            <td>
+                  <code><span title="pydantic.fields.Deprecated">Deprecated</span> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A deprecation message, an instance of <code>warnings.deprecated</code> or the <code>typing_extensions.deprecated</code> backport,
 or a boolean. If <code>True</code>, a default deprecation message will be emitted when accessing the field.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.ComputedFieldInfo.examples">examples</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Example values of the computed field to include in the serialization JSON schema.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.ComputedFieldInfo.json_schema_extra">json_schema_extra</span></code></td>
-          <td>
-                <code><span title="pydantic.config.JsonDict">JsonDict</span> | <a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<span title="pydantic.config.JsonDict">JsonDict</span>], None] | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A dict or callable to provide extra JSON schema properties.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.fields.ComputedFieldInfo.repr">repr</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A boolean indicating whether to include the field in the <strong>repr</strong> output.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.ComputedFieldInfo.examples">examples</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Example values of the computed field to include in the serialization JSON schema.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.ComputedFieldInfo.json_schema_extra">json_schema_extra</span></code></td>
+            <td>
+                  <code><span title="pydantic.config.JsonDict">JsonDict</span> | <a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a>[[<span title="pydantic.config.JsonDict">JsonDict</span>], None] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A dict or callable to provide extra JSON schema properties.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.fields.ComputedFieldInfo.repr">repr</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A boolean indicating whether to include the field in the <strong>repr</strong> output.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
-  
+
 
   <div class="doc doc-children">
 
@@ -7779,21 +7745,21 @@ or a boolean. If <code>True</code>, a default deprecation message will be emitte
 
 
 <h3 id="pydantic.fields.ComputedFieldInfo.deprecation_message" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">deprecation_message</span>
+            <span class="doc doc-object-name doc-attribute-name">deprecation_message</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-property"><code>property</code></small>
   </span>
 
 <a href="#pydantic.fields.ComputedFieldInfo.deprecation_message" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">deprecation_message</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">deprecation_message</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>The deprecation message to be emitted, or <code>None</code> if not set.</p>
-  </div>
+    </div>
 
 </div>
 
@@ -7802,8 +7768,7 @@ or a boolean. If <code>True</code>, a default deprecation message will be emitte
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -7812,7 +7777,7 @@ or a boolean. If <code>True</code>, a default deprecation message will be emitte
 
   </div>
 
-  </div>
+    </div>
 
 </div>
 
@@ -7872,7 +7837,7 @@ or a boolean. If <code>True</code>, a default deprecation message will be emitte
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.2"]
     </script>
 
               </article>

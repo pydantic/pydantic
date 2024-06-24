@@ -4124,7 +4124,7 @@ This new type can be as simple as a name or have complex validation logic attach
 <span class="sd">      Input is not valid json [type=invalid_json, input_value={&#39;x&#39;: &lt;object object at 0x0123456789ab&gt;}, input_type=dict]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-<h3 id="customizing-validation-with-__get_pydantic_core_schema__">Customizing validation with <code>__get_pydantic_core_schema__</code><a class="headerlink" href="#customizing-validation-with-__get_pydantic_core_schema__" title="Permanent link">&para;</a></h3>
+<h3 id="customizing-validation-with-__get_pydantic_core_schema__">Customizing validation with <code>__get_pydantic_core_schema__</code> <a name="customizing_validation_with_get_pydantic_core_schema"></a><a class="headerlink" href="#customizing-validation-with-__get_pydantic_core_schema__" title="Permanent link">&para;</a></h3>
 <p>To do more extensive customization of how Pydantic handles custom classes, and in particular when you have access to the
 class or can subclass it, you can implement a special <code>__get_pydantic_core_schema__</code> to tell Pydantic how to generate the
 <code>pydantic-core</code> schema.</p>
@@ -4713,7 +4713,7 @@ and thereby set the field name which will be available from <code>info.field_nam
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.2"]
     </script>
 
               </article>

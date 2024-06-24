@@ -4119,11 +4119,11 @@ Models possess the following methods and attributes:</p>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_construct"><code>model_construct()</code></a>: a class method for creating models without running validation. See
     <a href="#creating-models-without-validation">Creating models without validation</a>.</li>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_copy"><code>model_copy()</code></a>: returns a copy (by default, shallow copy) of the model. See
-    <a href="../serialization/#modelcopy">Serialization</a>.</li>
+    <a href="../serialization/#model_copy">Serialization</a>.</li>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump"><code>model_dump()</code></a>: returns a dictionary of the model's fields and values. See
-    <a href="../serialization/#modeldump">Serialization</a>.</li>
+    <a href="../serialization/#model_dump">Serialization</a>.</li>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump_json"><code>model_dump_json()</code></a>: returns a JSON string representation of <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump"><code>model_dump()</code></a>. See
-    <a href="../serialization/#modeldumpjson">Serialization</a>.</li>
+    <a href="../serialization/#model_dump_json">Serialization</a>.</li>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_extra"><code>model_extra</code></a>: get extra fields set during validation.</li>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_fields_set"><code>model_fields_set</code></a>: set of fields which were set when the model instance was initialized.</li>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_json_schema"><code>model_json_schema()</code></a>: returns a jsonable dictionary representing the model as JSON Schema. See <a href="../json_schema/">JSON Schema</a>.</li>
@@ -4509,7 +4509,7 @@ our recommendation for now is to use either use <code>model_validate_json(json.d
 <a href="https://docs.pydantic.dev/latest/api/config/#pydantic.config.ConfigDict.revalidate_instances"><code>revalidate_instances</code></a>
 in the model's config. If you don't set this value, then validation will be skipped on model instances. See the below example:</p>
 </div>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1"><img alt="❌" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/svg/274c.svg" title=":x:" /> <code>revalidate_instances='never'</code></label><label for="__tabbed_1_2"><img alt="✅" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/svg/2705.svg" title=":white_check_mark:" /> <code>revalidate_instances='always'</code></label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1"><img alt="❌" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.0.3/assets/svg/274c.svg" title=":x:" /> <code>revalidate_instances='never'</code></label><label for="__tabbed_1_2"><img alt="✅" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.0.3/assets/svg/2705.svg" title=":white_check_mark:" /> <code>revalidate_instances='always'</code></label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
@@ -5032,8 +5032,7 @@ could cause data loss. See the example below:</p>
 <span class="n">TItem</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;TItem&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s1">&#39;ItemBase&#39;</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">ItemBase</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="o">...</span>
+<span class="k">class</span> <span class="nc">ItemBase</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span> <span class="o">...</span>
 
 
 <span class="k">class</span> <span class="nc">IntItem</span><span class="p">(</span><span class="n">ItemBase</span><span class="p">):</span>
@@ -5298,7 +5297,7 @@ immutability of <code>foobar</code> doesn't stop <code>b</code> from being chang
 <ul>
 <li>field order is preserved in the model <a href="../json_schema/">schema</a></li>
 <li>field order is preserved in <a href="#error-handling">validation errors</a></li>
-<li>field order is preserved by <a href="../serialization/#modelmodeldump"><code>.model_dump()</code> and <code>.model_dump_json()</code> etc.</a></li>
+<li>field order is preserved by <a href="../serialization/#model_dump"><code>.model_dump()</code> and <code>.model_dump_json()</code> etc.</a></li>
 </ul>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -5718,7 +5717,7 @@ being treated as an argument to the model's <code>__init__</code> method by type
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.2"]
     </script>
 
               </article>

@@ -4517,7 +4517,7 @@ dataclasses without having to subclass <code>BaseModel</code>. Pydantic V2 intro
     and improvements.<ul>
 <li>The new <code>@field_validator</code> decorator does not have the <code>each_item</code> keyword argument; validators you want to
     apply to items within a generic container should be added by annotating the type argument. See
-    <a href="../concepts/validators/#generic-validated-collections">validators in Annotated metadata</a> for details.
+    <a href="../concepts/types/#composing-types-via-annotated">validators in Annotated metadata</a> for details.
     This looks like <code>List[Annotated[int, Field(ge=0)]]</code></li>
 <li>Even if you keep using the deprecated <code>@validator</code> decorator, you can no longer add the <code>field</code> or
     <code>config</code> arguments to the signature of validator functions. If you need access to these, you'll need
@@ -4877,9 +4877,9 @@ benefits of Pydantic V2 even when using your own custom types.</p>
 <p>The main changes are:</p>
 <ul>
 <li><code>__get_validators__</code> should be replaced with <code>__get_pydantic_core_schema__</code>.
-  See <a href="../concepts/types/#customizing-validation-with-getpydanticcoreschema">Custom Data Types</a> for more information.</li>
+  See <a href="../concepts/types/#customizing_validation_with_get_pydantic_core_schema">Custom Data Types</a> for more information.</li>
 <li><code>__modify_schema__</code> becomes <code>__get_pydantic_json_schema__</code>.
-  See <a href="../concepts/json_schema/#schema-customization">JSON Schema Customization</a> for more information.</li>
+  See <a href="../concepts/json_schema/#customizing-json-schema">JSON Schema Customization</a> for more information.</li>
 </ul>
 <p>Additionally, you can use <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>typing.Annotated</code></a> to modify or provide the <code>__get_pydantic_core_schema__</code> and
 <code>__get_pydantic_json_schema__</code> functions of a type by annotating it, rather than modifying the type itself.
@@ -5406,7 +5406,7 @@ plugins = [
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.2"]
     </script>
 
               </article>

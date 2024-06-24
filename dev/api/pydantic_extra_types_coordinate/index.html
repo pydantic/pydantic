@@ -3475,13 +3475,13 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 
 
 <a id="pydantic_extra_types.coordinate"></a>
-  <div class="doc doc-contents first">
-  
+    <div class="doc doc-contents first">
+
       <p>The <code>pydantic_extra_types.coordinate</code> module provides the <a class="autorefs autorefs-internal" href="#pydantic_extra_types.coordinate.Latitude"><code>Latitude</code></a>,
 <a class="autorefs autorefs-internal" href="#pydantic_extra_types.coordinate.Longitude"><code>Longitude</code></a>, and
 <a class="autorefs autorefs-internal" href="#pydantic_extra_types.coordinate.Coordinate"><code>Coordinate</code></a> data types.</p>
 
-  
+
 
   <div class="doc doc-children">
 
@@ -3497,17 +3497,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 
 
 <h2 id="pydantic_extra_types.coordinate.Latitude" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">Latitude</span>
+            <span class="doc doc-object-name doc-class-name">Latitude</span>
 
 
 <a href="#pydantic_extra_types.coordinate.Latitude" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code></p>
 
-  
+
       <p>Latitude value should be between -90 and 90, inclusive.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 <span class="kn">from</span> <span class="nn">pydantic_extra_types.coordinate</span> <span class="kn">import</span> <span class="n">Latitude</span>
@@ -3521,7 +3521,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </code></pre></div>
 
 
-  
+
 
   <div class="doc doc-children">
 
@@ -3537,8 +3537,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -3547,17 +3546,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 
 
 <h2 id="pydantic_extra_types.coordinate.Longitude" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">Longitude</span>
+            <span class="doc doc-object-name doc-class-name">Longitude</span>
 
 
 <a href="#pydantic_extra_types.coordinate.Longitude" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code></p>
 
-  
+
       <p>Longitude value should be between -180 and 180, inclusive.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
@@ -3572,7 +3571,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </code></pre></div>
 
 
-  
+
 
   <div class="doc doc-children">
 
@@ -3588,8 +3587,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -3598,21 +3596,22 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 
 
 <h2 id="pydantic_extra_types.coordinate.Coordinate" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">Coordinate</span>
+            <span class="doc doc-object-name doc-class-name">Coordinate</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
   </span>
 
 <a href="#pydantic_extra_types.coordinate.Coordinate" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">Coordinate</span><span class="p">(</span><span class="n">latitude</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_extra_types.coordinate.Latitude" href="#pydantic_extra_types.coordinate.Latitude">Latitude</a></span><span class="p">,</span> <span class="n">longitude</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_extra_types.coordinate.Longitude" href="#pydantic_extra_types.coordinate.Longitude">Longitude</a></span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="pydantic._internal._repr.Representation">Representation</span></code></p>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><span title="pydantic._internal._repr.Representation">Representation</span></code></p>
-
-  
       <p>Coordinate parses Latitude and Longitude.</p>
 <p>You can use the <code>Coordinate</code> data type for storing coordinates. Coordinates can be
 defined using one of the following formats:</p>
@@ -3632,7 +3631,7 @@ defined using one of the following formats:</p>
 </code></pre></div>
 
 
-  
+
 
   <div class="doc doc-children">
 
@@ -3648,8 +3647,7 @@ defined using one of the following formats:</p>
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -3658,7 +3656,7 @@ defined using one of the following formats:</p>
 
   </div>
 
-  </div>
+    </div>
 
 </div>
 
@@ -3718,7 +3716,7 @@ defined using one of the following formats:</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.2"]
     </script>
 
               </article>

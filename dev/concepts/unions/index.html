@@ -3919,7 +3919,7 @@ This is the perfect use case for a callable <code>Discriminator</code>.</p>
 </ol>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Using the <a href="../json_schema/#typingannotated-fields"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>typing.Annotated</code></a> fields syntax</a> can be handy to regroup
+<p>Using the <a href="../types/#composing-types-via-annotated"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>typing.Annotated</code></a> fields syntax</a> can be handy to regroup
 the <code>Union</code> and <code>discriminator</code> information. See the next example for more details.</p>
 <p>There are a few ways to set a discriminator for a field, all varying slightly in syntax.</p>
 <p>For <code>str</code> discriminators:
@@ -4000,7 +4000,7 @@ You can do it by creating nested <code>Annotated</code> types, e.g.:</p>
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>If you want to validate data against a union, and solely a union, you can use pydantic's <a href="../type_adapter/#required-fields"><code>TypeAdapter</code></a> construct instead of inheriting from the standard <code>BaseModel</code>.</p>
+<p>If you want to validate data against a union, and solely a union, you can use pydantic's <a href="../type_adapter/"><code>TypeAdapter</code></a> construct instead of inheriting from the standard <code>BaseModel</code>.</p>
 <p>In the context of the previous example, we have the following:</p>
 <div class="language-python highlight"><pre><span></span><code><span class="n">type_adapter</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Pet</span><span class="p">)</span>
 
@@ -4222,7 +4222,7 @@ This is especially useful when you have complex types like those in this example
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.2"]
     </script>
 
               </article>

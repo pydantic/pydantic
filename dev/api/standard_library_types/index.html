@@ -5524,7 +5524,7 @@ without needing to declare custom validators:</p>
 <h2 id="typingany"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Any"><code>typing.Any</code></a><a class="headerlink" href="#typingany" title="Permanent link">&para;</a></h2>
 <p>Allows any value, including <code>None</code>.</p>
 <h2 id="typingannotated"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>typing.Annotated</code></a><a class="headerlink" href="#typingannotated" title="Permanent link">&para;</a></h2>
-<p>Allows wrapping another type with arbitrary metadata, as per <a href="https://www.python.org/dev/peps/pep-0593/">PEP-593</a>. The <code>Annotated</code> hint may contain a single call to the <a href="../../concepts/json_schema/#typingannotated-fields"><code>Field</code> function</a>, but otherwise the additional metadata is ignored and the root type is used.</p>
+<p>Allows wrapping another type with arbitrary metadata, as per <a href="https://www.python.org/dev/peps/pep-0593/">PEP-593</a>. The <code>Annotated</code> hint may contain a single call to the <a href="../../concepts/types/#composing-types-via-annotated"><code>Field</code> function</a>, but otherwise the additional metadata is ignored and the root type is used.</p>
 <h2 id="typingpattern"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Pattern"><code>typing.Pattern</code></a><a class="headerlink" href="#typingpattern" title="Permanent link">&para;</a></h2>
 <p>Will cause the input value to be passed to <code>re.compile(v)</code> to create a regular expression pattern.</p>
 <h2 id="pathlibpath"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path"><code>pathlib.Path</code></a><a class="headerlink" href="#pathlibpath" title="Permanent link">&para;</a></h2>
@@ -5589,7 +5589,7 @@ without needing to declare custom validators:</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.2"]
     </script>
 
               </article>

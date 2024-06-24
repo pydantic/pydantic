@@ -4133,12 +4133,10 @@ Any other errors (including <code>TypeError</code>) are bubbled up and not wrapp
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
 
 
-<span class="k">class</span> <span class="nc">Banana</span><span class="p">(</span><span class="n">Fruit</span><span class="p">):</span>
-    <span class="o">...</span>
+<span class="k">class</span> <span class="nc">Banana</span><span class="p">(</span><span class="n">Fruit</span><span class="p">):</span> <span class="o">...</span>
 
 
-<span class="k">class</span> <span class="nc">Apple</span><span class="p">(</span><span class="n">Fruit</span><span class="p">):</span>
-    <span class="o">...</span>
+<span class="k">class</span> <span class="nc">Apple</span><span class="p">(</span><span class="n">Fruit</span><span class="p">):</span> <span class="o">...</span>
 
 
 <span class="k">class</span> <span class="nc">Basket</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -4436,7 +4434,7 @@ The following approach demonstrates how you can reuse a validator so that redund
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.2"]
     </script>
 
               </article>

@@ -4313,8 +4313,8 @@ The <a href="#using-json_schema_extra">Using <code>json_schema_extra</code></a> 
 <ol>
 <li><a href="#withjsonschema-annotation"><code>WithJsonSchema</code> annotation</a></li>
 <li><a href="#skipjsonschema-annotation"><code>SkipJsonSchema</code> annotation</a></li>
-<li><a href="#implementing-__get_pydantic_core_schema__">Implementing <code>__get_pydantic_core_schema__</code></a></li>
-<li><a href="#implementing-__get_pydantic_json_schema__">Implementing <code>__get_pydantic_json_schema__</code></a></li>
+<li><a href="#implementing_get_pydantic_core_schema">Implementing <code>__get_pydantic_core_schema__</code></a></li>
+<li><a href="#implementing_get_pydantic_json_schema">Implementing <code>__get_pydantic_json_schema__</code></a></li>
 </ol>
 <h3 id="field-level-customization">Field-Level Customization<a class="headerlink" href="#field-level-customization" title="Permanent link">&para;</a></h3>
 <p>Optionally, the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a> function can be used to provide extra information about the field
@@ -4551,7 +4551,7 @@ You can pass a <code>dict</code> or a <code>Callable</code> to <code>json_schema
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Using <a class="autorefs autorefs-internal" href="../../api/json_schema/#pydantic.json_schema.WithJsonSchema"><code>WithJsonSchema</code></a>] is preferred over
-<a href="#implementing-getpydanticjsonschema">implementing <code>__get_pydantic_json_schema__</code></a> for custom types,
+<a href="#implementing_get_pydantic_json_schema">implementing <code>__get_pydantic_json_schema__</code></a> for custom types,
 as it's more simple and less error-prone.</p>
 </div>
 <p>The <a class="autorefs autorefs-internal" href="../../api/json_schema/#pydantic.json_schema.WithJsonSchema"><code>WithJsonSchema</code></a> annotation can be used to override the generated (base)
@@ -4618,7 +4618,7 @@ but the <a class="autorefs autorefs-internal" href="../../api/json_schema/#pydan
 </details>
 <p>The <a class="autorefs autorefs-internal" href="../../api/json_schema/#pydantic.json_schema.SkipJsonSchema"><code>SkipJsonSchema</code></a> annotation can be used to skip a including field (or part of a field's specifications)
 from the generated JSON schema. See the API docs for more details.</p>
-<h3 id="implementing-__get_pydantic_core_schema__">Implementing <code>__get_pydantic_core_schema__</code><a class="headerlink" href="#implementing-__get_pydantic_core_schema__" title="Permanent link">&para;</a></h3>
+<h3 id="implementing-__get_pydantic_core_schema__">Implementing <code>__get_pydantic_core_schema__</code> <a name="implementing_get_pydantic_core_schema"></a><a class="headerlink" href="#implementing-__get_pydantic_core_schema__" title="Permanent link">&para;</a></h3>
 <p>Custom types (used as <code>field_name: TheType</code> or <code>field_name: Annotated[TheType, ...]</code>) as well as <code>Annotated</code> metadata
 (used as <code>field_name: Annotated[int, SomeMetadata]</code>)
 can modify or override the generated schema by implementing <code>__get_pydantic_core_schema__</code>.
@@ -4899,7 +4899,7 @@ metadata class:</p>
 <span class="sd">}</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
-<h3 id="implementing-__get_pydantic_json_schema__">Implementing <code>__get_pydantic_json_schema__</code><a class="headerlink" href="#implementing-__get_pydantic_json_schema__" title="Permanent link">&para;</a></h3>
+<h3 id="implementing-__get_pydantic_json_schema__">Implementing <code>__get_pydantic_json_schema__</code> <a name="implementing_get_pydantic_json_schema"></a><a class="headerlink" href="#implementing-__get_pydantic_json_schema__" title="Permanent link">&para;</a></h3>
 <p>You can also implement <code>__get_pydantic_json_schema__</code> to modify or override the generated json schema.
 Modifying this method only affects the JSON schema - it doesn't affect the core schema, which is used for validation and serialization.</p>
 <p>Here's an example of modifying the generated JSON schema:</p>
@@ -5261,7 +5261,7 @@ The definitions are always stored under the key <code>$defs</code>, but a specif
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.2"]
     </script>
 
               </article>

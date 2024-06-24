@@ -3399,7 +3399,7 @@ Python Packaging Authority.</p>
 <p>In case you have a project called <code>my-pydantic-plugin</code>, you can create a plugin by adding the following
 to your <code>pyproject.toml</code>:</p>
 <div class="language-toml highlight"><pre><span></span><code><span class="k">[project.entry-points.pydantic]</span>
-<span class="n">my_plugin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_pydantic_plugin:plugin&quot;</span>
+<span class="n">my_plugin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_pydantic_plugin:plugin&quot;</span>
 </code></pre></div>
 <p>The entry point group is <code>pydantic</code>, <code>my_plugin</code> is the name of the plugin, <code>my_pydantic_plugin</code> is the module to load plugin object from, and <code>plugin</code> is the object name to load.</p>
 <p>Plugins are loaded in the order they are found, and the order they are found is not guaranteed.</p>
@@ -3410,8 +3410,7 @@ into their own dedicates keys in a plugin specific key in the <code>plugin_setti
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">plugin_settings</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;my-plugin&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;observe&#39;</span><span class="p">:</span> <span class="s1">&#39;all&#39;</span><span class="p">}}):</span>
-    <span class="o">...</span>
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">plugin_settings</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;my-plugin&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;observe&#39;</span><span class="p">:</span> <span class="s1">&#39;all&#39;</span><span class="p">}}):</span> <span class="o">...</span>
 </code></pre></div>
 <h2 id="build-a-plugin">Build a plugin<a class="headerlink" href="#build-a-plugin" title="Permanent link">&para;</a></h2>
 <details class="api">
@@ -3484,8 +3483,7 @@ into their own dedicates keys in a plugin specific key in the <code>plugin_setti
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">plugin_settings</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;observer&#39;</span><span class="p">:</span> <span class="s1">&#39;all&#39;</span><span class="p">}):</span>
-    <span class="o">...</span>
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">plugin_settings</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;observer&#39;</span><span class="p">:</span> <span class="s1">&#39;all&#39;</span><span class="p">}):</span> <span class="o">...</span>
 </code></pre></div>
 <p>On each validation call, the <code>plugin_settings</code> will be passed to a callable registered for the events.</p>
 <h2 id="disabling-plugins">Disabling Plugins<a class="headerlink" href="#disabling-plugins" title="Permanent link">&para;</a></h2>
@@ -3568,7 +3566,7 @@ into their own dedicates keys in a plugin specific key in the <code>plugin_setti
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.2"]
     </script>
 
               </article>

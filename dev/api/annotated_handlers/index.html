@@ -3565,11 +3565,11 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 
 
 <a id="pydantic.annotated_handlers"></a>
-  <div class="doc doc-contents first">
-  
+    <div class="doc doc-contents first">
+
       <p>Type annotations to use with <code>__get_pydantic_core_schema__</code> and <code>__get_pydantic_json_schema__</code>.</p>
 
-  
+
 
   <div class="doc doc-children">
 
@@ -3585,48 +3585,46 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 
 
 <h2 id="pydantic.annotated_handlers.GetJsonSchemaHandler" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">GetJsonSchemaHandler</span>
+            <span class="doc doc-object-name doc-class-name">GetJsonSchemaHandler</span>
 
 
 <a href="#pydantic.annotated_handlers.GetJsonSchemaHandler" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
-  <div class="doc doc-contents ">
+    <div class="doc doc-contents ">
 
-  
+
       <p>Handler to call into the next JSON schema generation function.</p>
 
 
-
-  <p><strong>Attributes:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code><span title="pydantic.annotated_handlers.GetJsonSchemaHandler.mode">mode</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="../json_schema/#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Json schema mode, can be <code>validation</code> or <code>serialization</code>.</p>
-            </div>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.annotated_handlers.GetJsonSchemaHandler.mode">mode</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="../json_schema/#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Json schema mode, can be <code>validation</code> or <code>serialization</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
-  
+
 
   <div class="doc doc-children">
-
 
 
 
@@ -3639,104 +3637,100 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="pydantic.annotated_handlers.GetJsonSchemaHandler.resolve_ref_schema" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">resolve_ref_schema</span>
+            <span class="doc doc-object-name doc-function-name">resolve_ref_schema</span>
 
 
 <a href="#pydantic.annotated_handlers.GetJsonSchemaHandler.resolve_ref_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">resolve_ref_schema</span><span class="p">(</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">resolve_ref_schema</span><span class="p">(</span>
     <span class="n">maybe_ref_json_schema</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Get the real schema for a <code>{"$ref": ...}</code> schema.
 If the schema given is not a <code>$ref</code> schema, it will be returned as is.
 This means you don't have to check before calling this function.</p>
 
 
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>maybe_ref_json_schema</code></td>
-          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A JsonSchemaValue which may be a <code>$ref</code> schema.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>maybe_ref_json_schema</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A JsonSchemaValue which may be a <code>$ref</code> schema.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
-
-  <p><strong>Raises:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#LookupError">LookupError</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>If the ref is not found.</p>
-            </div>
-          </td>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#LookupError">LookupError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If the ref is not found.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-<th>Name</th>        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
         <tr>
-<td><code>JsonSchemaValue</code></td>          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A JsonSchemaValue that has no <code>$ref</code>.</p>
-            </div>
-          </td>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>JsonSchemaValue</code></td>            <td>
+                  <code><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A JsonSchemaValue that has no <code>$ref</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic/annotated_handlers.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">48</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/annotated_handlers.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">48</span>
 <span class="normal">49</span>
 <span class="normal">50</span>
 <span class="normal">51</span>
@@ -3766,8 +3760,8 @@ This means you don't have to check before calling this function.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -3775,8 +3769,7 @@ This means you don't have to check before calling this function.</p>
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -3785,19 +3778,19 @@ This means you don't have to check before calling this function.</p>
 
 
 <h2 id="pydantic.annotated_handlers.GetCoreSchemaHandler" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">GetCoreSchemaHandler</span>
+            <span class="doc doc-object-name doc-class-name">GetCoreSchemaHandler</span>
 
 
 <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
-  <div class="doc doc-contents ">
+    <div class="doc doc-contents ">
 
-  
+
       <p>Handler to call into the next CoreSchema schema generation function.</p>
 
 
-  
+
 
   <div class="doc doc-children">
 
@@ -3812,41 +3805,39 @@ This means you don't have to check before calling this function.</p>
 
 
 <h3 id="pydantic.annotated_handlers.GetCoreSchemaHandler.field_name" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">field_name</span>
+            <span class="doc doc-object-name doc-attribute-name">field_name</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-property"><code>property</code></small>
   </span>
 
 <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.field_name" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">field_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">field_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Get the name of the closest field to this validator.</p>
-  </div>
+    </div>
 
 </div>
-
 
 
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="pydantic.annotated_handlers.GetCoreSchemaHandler.generate_schema" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">generate_schema</span>
+            <span class="doc doc-object-name doc-function-name">generate_schema</span>
 
 
 <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.generate_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">generate_schema</span><span class="p">(</span><span class="n">source_type</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">generate_schema</span><span class="p">(</span><span class="n">source_type</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Generate a schema unrelated to the current context.
 Use this function if e.g. you are handling schema generation for a sequence
 and want to generate a schema for its items.
@@ -3854,62 +3845,60 @@ Otherwise, you may end up doing something like applying a <code>min_length</code
 that was intended for the sequence itself to its items!</p>
 
 
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>source_type</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The input type.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>source_type</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The input type.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-<th>Name</th>        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
         <tr>
-<td><code>CoreSchema</code></td>          <td>
-                <code><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The <code>pydantic-core</code> CoreSchema generated.</p>
-            </div>
-          </td>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>CoreSchema</code></td>            <td>
+                  <code><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The <code>pydantic-core</code> CoreSchema generated.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic/annotated_handlers.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">83</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/annotated_handlers.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">83</span>
 <span class="normal">84</span>
 <span class="normal">85</span>
 <span class="normal">86</span>
@@ -3937,113 +3926,108 @@ that was intended for the sequence itself to its items!</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="pydantic.annotated_handlers.GetCoreSchemaHandler.resolve_ref_schema" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">resolve_ref_schema</span>
+            <span class="doc doc-object-name doc-function-name">resolve_ref_schema</span>
 
 
 <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.resolve_ref_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">resolve_ref_schema</span><span class="p">(</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">resolve_ref_schema</span><span class="p">(</span>
     <span class="n">maybe_ref_schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Get the real schema for a <code>definition-ref</code> schema.
 If the schema given is not a <code>definition-ref</code> schema, it will be returned as is.
 This means you don't have to check before calling this function.</p>
 
 
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>maybe_ref_schema</code></td>
-          <td>
-                <code><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A <code>CoreSchema</code>, <code>ref</code>-based or not.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>maybe_ref_schema</code></td>
+            <td>
+                  <code><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A <code>CoreSchema</code>, <code>ref</code>-based or not.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
-
-  <p><strong>Raises:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#LookupError">LookupError</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>If the <code>ref</code> is not found.</p>
-            </div>
-          </td>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#LookupError">LookupError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If the <code>ref</code> is not found.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td>
-                <code><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A concrete <code>CoreSchema</code>.</p>
-            </div>
-          </td>
+          <th>Type</th>
+          <th>Description</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A concrete <code>CoreSchema</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic/annotated_handlers.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 98</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/annotated_handlers.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 98</span>
 <span class="normal"> 99</span>
 <span class="normal">100</span>
 <span class="normal">101</span>
@@ -4073,8 +4057,8 @@ This means you don't have to check before calling this function.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -4082,8 +4066,7 @@ This means you don't have to check before calling this function.</p>
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -4092,7 +4075,7 @@ This means you don't have to check before calling this function.</p>
 
   </div>
 
-  </div>
+    </div>
 
 </div>
 
@@ -4152,7 +4135,7 @@ This means you don't have to check before calling this function.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.2"]
     </script>
 
               </article>

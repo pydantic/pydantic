@@ -3784,15 +3784,15 @@ Developing plugins is not recommended until the feature becomes stable.</p>
 
 
 <a id="pydantic.plugin"></a>
-  <div class="doc doc-contents first">
-  
+    <div class="doc doc-contents first">
+
       <div class="admonition abstract">
 <p class="admonition-title">Usage Documentation</p>
 <p><a href="../../concepts/plugins/#build-a-plugin">Build a plugin</a></p>
 </div>
 <p>Plugin interface for Pydantic plugins, and related types.</p>
 
-  
+
 
   <div class="doc doc-children">
 
@@ -3808,21 +3808,21 @@ Developing plugins is not recommended until the feature becomes stable.</p>
 
 
 <h2 id="pydantic.plugin.SchemaTypePath" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">SchemaTypePath</span>
+            <span class="doc doc-object-name doc-class-name">SchemaTypePath</span>
 
 
 <a href="#pydantic.plugin.SchemaTypePath" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-external" title="typing.NamedTuple" href="https://docs.python.org/3/library/typing.html#typing.NamedTuple">NamedTuple</a></code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-external" title="typing.NamedTuple" href="https://docs.python.org/3/library/typing.html#typing.NamedTuple">NamedTuple</a></code></p>
 
-  
+
       <p>Path defining where <code>schema_type</code> was defined, or where <code>TypeAdapter</code> was called.</p>
 
 
-  
+
 
   <div class="doc doc-children">
 
@@ -3838,8 +3838,7 @@ Developing plugins is not recommended until the feature becomes stable.</p>
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -3848,24 +3847,23 @@ Developing plugins is not recommended until the feature becomes stable.</p>
 
 
 <h2 id="pydantic.plugin.PydanticPluginProtocol" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">PydanticPluginProtocol</span>
+            <span class="doc doc-object-name doc-class-name">PydanticPluginProtocol</span>
 
 
 <a href="#pydantic.plugin.PydanticPluginProtocol" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><span title="typing_extensions.Protocol">Protocol</span></code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="typing_extensions.Protocol">Protocol</span></code></p>
 
-  
+
       <p>Protocol defining the interface for Pydantic plugins.</p>
 
 
-  
+
 
   <div class="doc doc-children">
-
 
 
 
@@ -3878,13 +3876,12 @@ Developing plugins is not recommended until the feature becomes stable.</p>
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="pydantic.plugin.PydanticPluginProtocol.new_schema_validator" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">new_schema_validator</span>
+            <span class="doc doc-object-name doc-function-name">new_schema_validator</span>
 
 
 <a href="#pydantic.plugin.PydanticPluginProtocol.new_schema_validator" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">new_schema_validator</span><span class="p">(</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">new_schema_validator</span><span class="p">(</span>
     <span class="n">schema</span><span class="p">:</span> <span class="n"><span title="pydantic_core.CoreSchema">CoreSchema</span></span><span class="p">,</span>
     <span class="n">schema_type</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">,</span>
     <span class="n">schema_type_path</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.plugin.SchemaTypePath" href="#pydantic.plugin.SchemaTypePath">SchemaTypePath</a></span><span class="p">,</span>
@@ -3898,141 +3895,139 @@ Developing plugins is not recommended until the feature becomes stable.</p>
 <span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>This method is called for each plugin every time a new <a class="autorefs autorefs-internal" href="../pydantic_core/#pydantic_core.SchemaValidator"><code>SchemaValidator</code></a>
 is created.</p>
 <p>It should return an event handler for each of the three validation methods, or <code>None</code> if the plugin does not
 implement that method.</p>
 
 
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>schema</code></td>
-          <td>
-                <code><span title="pydantic_core.CoreSchema">CoreSchema</span></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The schema to validate against.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
         </tr>
-        <tr>
-          <td><code>schema_type</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The original type which the schema was created from, e.g. the model class.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-        <tr>
-          <td><code>schema_type_path</code></td>
-          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic.plugin.SchemaTypePath" href="#pydantic.plugin.SchemaTypePath">SchemaTypePath</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Path defining where <code>schema_type</code> was defined, or where <code>TypeAdapter</code> was called.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-        <tr>
-          <td><code>schema_kind</code></td>
-          <td>
-                <code><span title="pydantic.plugin.SchemaKind">SchemaKind</span></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The kind of schema to validate against.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-        <tr>
-          <td><code>config</code></td>
-          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic_core.CoreConfig" href="../pydantic_core_schema/#pydantic_core.core_schema.CoreConfig">CoreConfig</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The config to use for validation.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-        <tr>
-          <td><code>plugin_settings</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#object">object</a>]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Any plugin settings.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>schema</code></td>
+            <td>
+                  <code><span title="pydantic_core.CoreSchema">CoreSchema</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The schema to validate against.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>schema_type</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The original type which the schema was created from, e.g. the model class.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>schema_type_path</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="pydantic.plugin.SchemaTypePath" href="#pydantic.plugin.SchemaTypePath">SchemaTypePath</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Path defining where <code>schema_type</code> was defined, or where <code>TypeAdapter</code> was called.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>schema_kind</code></td>
+            <td>
+                  <code><span title="pydantic.plugin.SchemaKind">SchemaKind</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The kind of schema to validate against.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>config</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="pydantic_core.CoreConfig" href="../pydantic_core_schema/#pydantic_core.core_schema.CoreConfig">CoreConfig</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The config to use for validation.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>plugin_settings</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#object">object</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Any plugin settings.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-internal" title="pydantic.plugin.ValidatePythonHandlerProtocol" href="#pydantic.plugin.ValidatePythonHandlerProtocol">ValidatePythonHandlerProtocol</a> | None, <a class="autorefs autorefs-internal" title="pydantic.plugin.ValidateJsonHandlerProtocol" href="#pydantic.plugin.ValidateJsonHandlerProtocol">ValidateJsonHandlerProtocol</a> | None, <a class="autorefs autorefs-internal" title="pydantic.plugin.ValidateStringsHandlerProtocol" href="#pydantic.plugin.ValidateStringsHandlerProtocol">ValidateStringsHandlerProtocol</a> | None]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A tuple of optional event handlers for each of the three validation methods -
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-internal" title="pydantic.plugin.ValidatePythonHandlerProtocol" href="#pydantic.plugin.ValidatePythonHandlerProtocol">ValidatePythonHandlerProtocol</a> | None, <a class="autorefs autorefs-internal" title="pydantic.plugin.ValidateJsonHandlerProtocol" href="#pydantic.plugin.ValidateJsonHandlerProtocol">ValidateJsonHandlerProtocol</a> | None, <a class="autorefs autorefs-internal" title="pydantic.plugin.ValidateStringsHandlerProtocol" href="#pydantic.plugin.ValidateStringsHandlerProtocol">ValidateStringsHandlerProtocol</a> | None]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A tuple of optional event handlers for each of the three validation methods -
 <code>validate_python</code>, <code>validate_json</code>, <code>validate_strings</code>.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic/plugin/__init__.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">40</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/plugin/__init__.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">40</span>
 <span class="normal">41</span>
 <span class="normal">42</span>
 <span class="normal">43</span>
@@ -4092,8 +4087,8 @@ implement that method.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Pydantic plugins should implement `new_schema_validator`.&#39;</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -4101,8 +4096,7 @@ implement that method.</p>
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -4111,23 +4105,23 @@ implement that method.</p>
 
 
 <h2 id="pydantic.plugin.BaseValidateHandlerProtocol" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">BaseValidateHandlerProtocol</span>
+            <span class="doc doc-object-name doc-class-name">BaseValidateHandlerProtocol</span>
 
 
 <a href="#pydantic.plugin.BaseValidateHandlerProtocol" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><span title="typing_extensions.Protocol">Protocol</span></code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="typing_extensions.Protocol">Protocol</span></code></p>
 
-  
+
       <p>Base class for plugin callbacks protocols.</p>
 <p>You shouldn't implement this protocol directly, instead use one of the subclasses with adds the correctly
 typed <code>on_error</code> method.</p>
 
 
-  
+
 
   <div class="doc doc-children">
 
@@ -4142,76 +4136,73 @@ typed <code>on_error</code> method.</p>
 
 
 <h3 id="pydantic.plugin.BaseValidateHandlerProtocol.on_enter" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">on_enter</span>
+            <span class="doc doc-object-name doc-attribute-name">on_enter</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
 <a href="#pydantic.plugin.BaseValidateHandlerProtocol.on_enter" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">on_enter</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">on_enter</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p><code>on_enter</code> is changed to be more specific on all subclasses</p>
-  </div>
+    </div>
 
 </div>
-
 
 
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="pydantic.plugin.BaseValidateHandlerProtocol.on_success" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">on_success</span>
+            <span class="doc doc-object-name doc-function-name">on_success</span>
 
 
 <a href="#pydantic.plugin.BaseValidateHandlerProtocol.on_success" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">on_success</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">on_success</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Callback to be notified of successful validation.</p>
 
 
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>result</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The result of the validation.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>result</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The result of the validation.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic/plugin/__init__.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">82</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/plugin/__init__.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">82</span>
 <span class="normal">83</span>
 <span class="normal">84</span>
 <span class="normal">85</span>
@@ -4225,61 +4216,58 @@ typed <code>on_error</code> method.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="pydantic.plugin.BaseValidateHandlerProtocol.on_error" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">on_error</span>
+            <span class="doc doc-object-name doc-function-name">on_error</span>
 
 
 <a href="#pydantic.plugin.BaseValidateHandlerProtocol.on_error" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">on_error</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.ValidationError" href="../pydantic_core/#pydantic_core.ValidationError">ValidationError</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">on_error</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.ValidationError" href="../pydantic_core/#pydantic_core.ValidationError">ValidationError</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Callback to be notified of validation errors.</p>
 
 
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>error</code></td>
-          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic_core.ValidationError" href="../pydantic_core/#pydantic_core.ValidationError">ValidationError</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The validation error.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>error</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="pydantic_core.ValidationError" href="../pydantic_core/#pydantic_core.ValidationError">ValidationError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The validation error.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic/plugin/__init__.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">90</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/plugin/__init__.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">90</span>
 <span class="normal">91</span>
 <span class="normal">92</span>
 <span class="normal">93</span>
@@ -4293,61 +4281,58 @@ typed <code>on_error</code> method.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
-
 
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="pydantic.plugin.BaseValidateHandlerProtocol.on_exception" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">on_exception</span>
+            <span class="doc doc-object-name doc-function-name">on_exception</span>
 
 
 <a href="#pydantic.plugin.BaseValidateHandlerProtocol.on_exception" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">on_exception</span><span class="p">(</span><span class="n">exception</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#Exception">Exception</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">on_exception</span><span class="p">(</span><span class="n">exception</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#Exception">Exception</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Callback to be notified of validation exceptions.</p>
 
 
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>exception</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#Exception">Exception</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The exception raised during validation.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
         </tr>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>exception</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#Exception">Exception</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The exception raised during validation.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic/plugin/__init__.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 98</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/plugin/__init__.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 98</span>
 <span class="normal"> 99</span>
 <span class="normal">100</span>
 <span class="normal">101</span>
@@ -4361,8 +4346,8 @@ typed <code>on_error</code> method.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -4370,8 +4355,7 @@ typed <code>on_error</code> method.</p>
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -4380,24 +4364,23 @@ typed <code>on_error</code> method.</p>
 
 
 <h2 id="pydantic.plugin.ValidatePythonHandlerProtocol" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">ValidatePythonHandlerProtocol</span>
+            <span class="doc doc-object-name doc-class-name">ValidatePythonHandlerProtocol</span>
 
 
 <a href="#pydantic.plugin.ValidatePythonHandlerProtocol" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-internal" title="pydantic.plugin.BaseValidateHandlerProtocol" href="#pydantic.plugin.BaseValidateHandlerProtocol">BaseValidateHandlerProtocol</a></code>, <code><span title="typing_extensions.Protocol">Protocol</span></code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="pydantic.plugin.BaseValidateHandlerProtocol" href="#pydantic.plugin.BaseValidateHandlerProtocol">BaseValidateHandlerProtocol</a></code>, <code><span title="typing_extensions.Protocol">Protocol</span></code></p>
 
-  
+
       <p>Event handler for <code>SchemaValidator.validate_python</code>.</p>
 
 
-  
+
 
   <div class="doc doc-children">
-
 
 
 
@@ -4410,13 +4393,12 @@ typed <code>on_error</code> method.</p>
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="pydantic.plugin.ValidatePythonHandlerProtocol.on_enter" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">on_enter</span>
+            <span class="doc doc-object-name doc-function-name">on_enter</span>
 
 
 <a href="#pydantic.plugin.ValidatePythonHandlerProtocol.on_enter" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">on_enter</span><span class="p">(</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">on_enter</span><span class="p">(</span>
     <span class="nb">input</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">strict</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -4426,100 +4408,99 @@ typed <code>on_error</code> method.</p>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Callback to be notified of validation start, and create an instance of the event handler.</p>
 
 
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>input</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The input to be validated.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
         </tr>
-        <tr>
-          <td><code>strict</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to validate the object in strict mode.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>from_attributes</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to validate objects as inputs by extracting attributes.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>context</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The context to use for validation, this is passed to functional validators.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>self_instance</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>An instance of a model to set attributes on from validation, this is used when running
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>input</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The input to be validated.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>strict</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to validate the object in strict mode.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>from_attributes</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to validate objects as inputs by extracting attributes.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>context</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The context to use for validation, this is passed to functional validators.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>self_instance</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>An instance of a model to set attributes on from validation, this is used when running
 validation from the <code>__init__</code> method of a model.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-    </tbody>
-  </table>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic/plugin/__init__.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">110</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/plugin/__init__.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">110</span>
 <span class="normal">111</span>
 <span class="normal">112</span>
 <span class="normal">113</span>
@@ -4559,8 +4540,8 @@ validation from the <code>__init__</code> method of a model.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">pass</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -4568,8 +4549,7 @@ validation from the <code>__init__</code> method of a model.</p>
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -4578,24 +4558,23 @@ validation from the <code>__init__</code> method of a model.</p>
 
 
 <h2 id="pydantic.plugin.ValidateJsonHandlerProtocol" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">ValidateJsonHandlerProtocol</span>
+            <span class="doc doc-object-name doc-class-name">ValidateJsonHandlerProtocol</span>
 
 
 <a href="#pydantic.plugin.ValidateJsonHandlerProtocol" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-internal" title="pydantic.plugin.BaseValidateHandlerProtocol" href="#pydantic.plugin.BaseValidateHandlerProtocol">BaseValidateHandlerProtocol</a></code>, <code><span title="typing_extensions.Protocol">Protocol</span></code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="pydantic.plugin.BaseValidateHandlerProtocol" href="#pydantic.plugin.BaseValidateHandlerProtocol">BaseValidateHandlerProtocol</a></code>, <code><span title="typing_extensions.Protocol">Protocol</span></code></p>
 
-  
+
       <p>Event handler for <code>SchemaValidator.validate_json</code>.</p>
 
 
-  
+
 
   <div class="doc doc-children">
-
 
 
 
@@ -4608,13 +4587,12 @@ validation from the <code>__init__</code> method of a model.</p>
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="pydantic.plugin.ValidateJsonHandlerProtocol.on_enter" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">on_enter</span>
+            <span class="doc doc-object-name doc-function-name">on_enter</span>
 
 
 <a href="#pydantic.plugin.ValidateJsonHandlerProtocol.on_enter" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">on_enter</span><span class="p">(</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">on_enter</span><span class="p">(</span>
     <span class="nb">input</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytearray">bytearray</a></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">strict</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -4623,86 +4601,85 @@ validation from the <code>__init__</code> method of a model.</p>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Callback to be notified of validation start, and create an instance of the event handler.</p>
 
 
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
         <tr>
-          <td><code>input</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytearray">bytearray</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The JSON data to be validated.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
         </tr>
-        <tr>
-          <td><code>strict</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to validate the object in strict mode.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>context</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The context to use for validation, this is passed to functional validators.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>self_instance</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>An instance of a model to set attributes on from validation, this is used when running
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>input</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a> | <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytearray">bytearray</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The JSON data to be validated.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>strict</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to validate the object in strict mode.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>context</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The context to use for validation, this is passed to functional validators.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>self_instance</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>An instance of a model to set attributes on from validation, this is used when running
 validation from the <code>__init__</code> method of a model.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-    </tbody>
-  </table>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic/plugin/__init__.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">135</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/plugin/__init__.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">135</span>
 <span class="normal">136</span>
 <span class="normal">137</span>
 <span class="normal">138</span>
@@ -4738,8 +4715,8 @@ validation from the <code>__init__</code> method of a model.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">pass</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -4747,8 +4724,7 @@ validation from the <code>__init__</code> method of a model.</p>
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -4757,24 +4733,23 @@ validation from the <code>__init__</code> method of a model.</p>
 
 
 <h2 id="pydantic.plugin.ValidateStringsHandlerProtocol" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">ValidateStringsHandlerProtocol</span>
+            <span class="doc doc-object-name doc-class-name">ValidateStringsHandlerProtocol</span>
 
 
 <a href="#pydantic.plugin.ValidateStringsHandlerProtocol" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-internal" title="pydantic.plugin.BaseValidateHandlerProtocol" href="#pydantic.plugin.BaseValidateHandlerProtocol">BaseValidateHandlerProtocol</a></code>, <code><span title="typing_extensions.Protocol">Protocol</span></code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="pydantic.plugin.BaseValidateHandlerProtocol" href="#pydantic.plugin.BaseValidateHandlerProtocol">BaseValidateHandlerProtocol</a></code>, <code><span title="typing_extensions.Protocol">Protocol</span></code></p>
 
-  
+
       <p>Event handler for <code>SchemaValidator.validate_strings</code>.</p>
 
 
-  
+
 
   <div class="doc doc-children">
-
 
 
 
@@ -4787,13 +4762,12 @@ validation from the <code>__init__</code> method of a model.</p>
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="pydantic.plugin.ValidateStringsHandlerProtocol.on_enter" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">on_enter</span>
+            <span class="doc doc-object-name doc-function-name">on_enter</span>
 
 
 <a href="#pydantic.plugin.ValidateStringsHandlerProtocol.on_enter" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">on_enter</span><span class="p">(</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">on_enter</span><span class="p">(</span>
     <span class="nb">input</span><span class="p">:</span> <span class="n"><span title="pydantic.plugin.StringInput">StringInput</span></span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">strict</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -4801,71 +4775,70 @@ validation from the <code>__init__</code> method of a model.</p>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Callback to be notified of validation start, and create an instance of the event handler.</p>
 
 
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>input</code></td>
+            <td>
+                  <code><span title="pydantic.plugin.StringInput">StringInput</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The string data to be validated.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>strict</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to validate the object in strict mode.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>context</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The context to use for validation, this is passed to functional validators.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>input</code></td>
-          <td>
-                <code><span title="pydantic.plugin.StringInput">StringInput</span></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The string data to be validated.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-        <tr>
-          <td><code>strict</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to validate the object in strict mode.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>context</code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a>] | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The context to use for validation, this is passed to functional validators.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-          <details class="quote">
-            <summary>Source code in <code>pydantic/plugin/__init__.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">161</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/plugin/__init__.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">161</span>
 <span class="normal">162</span>
 <span class="normal">163</span>
 <span class="normal">164</span>
@@ -4887,8 +4860,8 @@ validation from the <code>__init__</code> method of a model.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">pass</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -4896,8 +4869,7 @@ validation from the <code>__init__</code> method of a model.</p>
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -4906,7 +4878,7 @@ validation from the <code>__init__</code> method of a model.</p>
 
   </div>
 
-  </div>
+    </div>
 
 </div>
 
@@ -4966,7 +4938,7 @@ validation from the <code>__init__</code> method of a model.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.2"]
     </script>
 
               </article>

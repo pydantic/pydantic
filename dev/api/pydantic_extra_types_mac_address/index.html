@@ -3465,12 +3465,12 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 
 
 <a id="pydantic_extra_types.mac_address"></a>
-  <div class="doc doc-contents first">
-  
+    <div class="doc doc-contents first">
+
       <p>The MAC address module provides functionality to parse and validate MAC addresses in different
 formats, such as IEEE 802 MAC-48, EUI-48, EUI-64, or a 20-octet format.</p>
 
-  
+
 
   <div class="doc doc-children">
 
@@ -3486,17 +3486,17 @@ formats, such as IEEE 802 MAC-48, EUI-48, EUI-64, or a 20-octet format.</p>
 
 
 <h2 id="pydantic_extra_types.mac_address.MacAddress" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">MacAddress</span>
+            <span class="doc doc-object-name doc-class-name">MacAddress</span>
 
 
 <a href="#pydantic_extra_types.mac_address.MacAddress" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code></p>
 
-  
+
       <p>Represents a MAC address and provides methods for conversion, validation, and serialization.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
@@ -3513,10 +3513,9 @@ formats, such as IEEE 802 MAC-48, EUI-48, EUI-64, or a 20-octet format.</p>
 </code></pre></div>
 
 
-  
+
 
   <div class="doc doc-children">
-
 
 
 
@@ -3529,26 +3528,25 @@ formats, such as IEEE 802 MAC-48, EUI-48, EUI-64, or a 20-octet format.</p>
 <div class="doc doc-object doc-function">
 
 
-
 <h3 id="pydantic_extra_types.mac_address.MacAddress.validate_mac_address" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">validate_mac_address</span>
+            <span class="doc doc-object-name doc-function-name">validate_mac_address</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
   </span>
 
 <a href="#pydantic_extra_types.mac_address.MacAddress.validate_mac_address" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">validate_mac_address</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">validate_mac_address</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes">bytes</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Validate a MAC Address from the provided byte value.</p>
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic_extra_types/mac_address.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 66</span>
+            <details class="quote">
+              <summary>Source code in <code>.venv/lib/python3.10/site-packages/pydantic_extra_types/mac_address.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 66</span>
 <span class="normal"> 67</span>
 <span class="normal"> 68</span>
 <span class="normal"> 69</span>
@@ -3668,8 +3666,8 @@ formats, such as IEEE 802 MAC-48, EUI-48, EUI-64, or a 20-octet format.</p>
 
     <span class="k">return</span> <span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">b</span><span class="si">:</span><span class="s1">02x</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">mac_address</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -3677,8 +3675,7 @@ formats, such as IEEE 802 MAC-48, EUI-48, EUI-64, or a 20-octet format.</p>
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -3687,7 +3684,7 @@ formats, such as IEEE 802 MAC-48, EUI-48, EUI-64, or a 20-octet format.</p>
 
   </div>
 
-  </div>
+    </div>
 
 </div>
 
@@ -3747,7 +3744,7 @@ formats, such as IEEE 802 MAC-48, EUI-48, EUI-64, or a 20-octet format.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.2"]
     </script>
 
               </article>

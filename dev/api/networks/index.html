@@ -3959,11 +3959,11 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 
 
 <a id="pydantic.networks"></a>
-  <div class="doc doc-contents first">
-  
+    <div class="doc doc-contents first">
+
       <p>The networks module contains types for common network-related fields.</p>
 
-  
+
 
   <div class="doc doc-children">
 
@@ -3978,19 +3978,19 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 
 
 <h2 id="pydantic.networks.AnyUrl" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">AnyUrl</span>
+            <span class="doc doc-object-name doc-attribute-name">AnyUrl</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
   </span>
 
 <a href="#pydantic.networks.AnyUrl" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">AnyUrl</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">AnyUrl</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Base type for all URLs.</p>
 <ul>
 <li>Any scheme allowed</li>
@@ -4009,7 +4009,7 @@ the types export the following properties:</p>
 <li><code>query</code>: optional URL query (for example, <code>GET</code> arguments or "search string", such as <code>query=here</code>).</li>
 <li><code>fragment</code>: optional fragment (<code>fragment=is;this=bit</code>).</li>
 </ul>
-  </div>
+    </div>
 
 </div>
 
@@ -4018,27 +4018,27 @@ the types export the following properties:</p>
 
 
 <h2 id="pydantic.networks.AnyHttpUrl" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">AnyHttpUrl</span>
+            <span class="doc doc-object-name doc-attribute-name">AnyHttpUrl</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
   </span>
 
 <a href="#pydantic.networks.AnyHttpUrl" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">AnyHttpUrl</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">AnyHttpUrl</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span><span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;http&quot;</span><span class="p">,</span> <span class="s2">&quot;https&quot;</span><span class="p">])</span>
 <span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>A type that will accept any http or https URL.</p>
 <ul>
 <li>TLD not required</li>
 <li>Host required</li>
 </ul>
-  </div>
+    </div>
 
 </div>
 
@@ -4047,15 +4047,15 @@ the types export the following properties:</p>
 
 
 <h2 id="pydantic.networks.HttpUrl" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">HttpUrl</span>
+            <span class="doc doc-object-name doc-attribute-name">HttpUrl</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
   </span>
 
 <a href="#pydantic.networks.HttpUrl" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">HttpUrl</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">HttpUrl</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span>
         <span class="n">max_length</span><span class="o">=</span><span class="mi">2083</span><span class="p">,</span> <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;http&quot;</span><span class="p">,</span> <span class="s2">&quot;https&quot;</span><span class="p">]</span>
@@ -4063,8 +4063,8 @@ the types export the following properties:</p>
 <span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>A type that will accept any http or https URL.</p>
 <ul>
 <li>TLD not required</li>
@@ -4135,7 +4135,7 @@ underscores are allowed, but you can always do further validation in a validator
 <p>Also, Chrome, Firefox, and Safari all currently accept <code>http://exam_ple.com</code> as a URL, so we're in good
 (or at least big) company.</p>
 </div>
-  </div>
+    </div>
 
 </div>
 
@@ -4144,27 +4144,27 @@ underscores are allowed, but you can always do further validation in a validator
 
 
 <h2 id="pydantic.networks.AnyWebsocketUrl" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">AnyWebsocketUrl</span>
+            <span class="doc doc-object-name doc-attribute-name">AnyWebsocketUrl</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
   </span>
 
 <a href="#pydantic.networks.AnyWebsocketUrl" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">AnyWebsocketUrl</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">AnyWebsocketUrl</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span><span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ws&quot;</span><span class="p">,</span> <span class="s2">&quot;wss&quot;</span><span class="p">])</span>
 <span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>A type that will accept any ws or wss URL.</p>
 <ul>
 <li>TLD not required</li>
 <li>Host required</li>
 </ul>
-  </div>
+    </div>
 
 </div>
 
@@ -4173,15 +4173,15 @@ underscores are allowed, but you can always do further validation in a validator
 
 
 <h2 id="pydantic.networks.WebsocketUrl" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">WebsocketUrl</span>
+            <span class="doc doc-object-name doc-attribute-name">WebsocketUrl</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
   </span>
 
 <a href="#pydantic.networks.WebsocketUrl" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">WebsocketUrl</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">WebsocketUrl</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span>
         <span class="n">max_length</span><span class="o">=</span><span class="mi">2083</span><span class="p">,</span> <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ws&quot;</span><span class="p">,</span> <span class="s2">&quot;wss&quot;</span><span class="p">]</span>
@@ -4189,15 +4189,15 @@ underscores are allowed, but you can always do further validation in a validator
 <span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>A type that will accept any ws or wss URL.</p>
 <ul>
 <li>TLD not required</li>
 <li>Host required</li>
 <li>Max length 2083</li>
 </ul>
-  </div>
+    </div>
 
 </div>
 
@@ -4206,26 +4206,26 @@ underscores are allowed, but you can always do further validation in a validator
 
 
 <h2 id="pydantic.networks.FileUrl" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">FileUrl</span>
+            <span class="doc doc-object-name doc-attribute-name">FileUrl</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
   </span>
 
 <a href="#pydantic.networks.FileUrl" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">FileUrl</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">FileUrl</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span><span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;file&quot;</span><span class="p">])</span>
 <span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>A type that will accept any file URL.</p>
 <ul>
 <li>Host not required</li>
 </ul>
-  </div>
+    </div>
 
 </div>
 
@@ -4234,27 +4234,27 @@ underscores are allowed, but you can always do further validation in a validator
 
 
 <h2 id="pydantic.networks.FtpUrl" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">FtpUrl</span>
+            <span class="doc doc-object-name doc-attribute-name">FtpUrl</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
   </span>
 
 <a href="#pydantic.networks.FtpUrl" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">FtpUrl</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">FtpUrl</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span><span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ftp&quot;</span><span class="p">])</span>
 <span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>A type that will accept ftp URL.</p>
 <ul>
 <li>TLD not required</li>
 <li>Host required</li>
 </ul>
-  </div>
+    </div>
 
 </div>
 
@@ -4263,15 +4263,15 @@ underscores are allowed, but you can always do further validation in a validator
 
 
 <h2 id="pydantic.networks.PostgresDsn" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">PostgresDsn</span>
+            <span class="doc doc-object-name doc-attribute-name">PostgresDsn</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
   </span>
 
 <a href="#pydantic.networks.PostgresDsn" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">PostgresDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">PostgresDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.MultiHostUrl" href="../pydantic_core/#pydantic_core.MultiHostUrl">MultiHostUrl</a></span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span>
         <span class="n">host_required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -4290,8 +4290,8 @@ underscores are allowed, but you can always do further validation in a validator
 <span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>A type that will accept any Postgres DSN.</p>
 <ul>
 <li>User info required</li>
@@ -4347,7 +4347,7 @@ underscores are allowed, but you can always do further validation in a validator
 <span class="sd">     +  where None = MultiHostUrl(&#39;postgres://user:pass@localhost:5432&#39;).path [type=assertion_error, input_value=&#39;postgres://user:pass@localhost:5432&#39;, input_type=str]</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 </code></pre></div>
-  </div>
+    </div>
 
 </div>
 
@@ -4356,15 +4356,15 @@ underscores are allowed, but you can always do further validation in a validator
 
 
 <h2 id="pydantic.networks.CockroachDsn" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">CockroachDsn</span>
+            <span class="doc doc-object-name doc-attribute-name">CockroachDsn</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
   </span>
 
 <a href="#pydantic.networks.CockroachDsn" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">CockroachDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">CockroachDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span>
         <span class="n">host_required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -4377,15 +4377,15 @@ underscores are allowed, but you can always do further validation in a validator
 <span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>A type that will accept any Cockroach DSN.</p>
 <ul>
 <li>User info required</li>
 <li>TLD not required</li>
 <li>Host required</li>
 </ul>
-  </div>
+    </div>
 
 </div>
 
@@ -4394,28 +4394,28 @@ underscores are allowed, but you can always do further validation in a validator
 
 
 <h2 id="pydantic.networks.AmqpDsn" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">AmqpDsn</span>
+            <span class="doc doc-object-name doc-attribute-name">AmqpDsn</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
   </span>
 
 <a href="#pydantic.networks.AmqpDsn" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">AmqpDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">AmqpDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span><span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;amqp&quot;</span><span class="p">,</span> <span class="s2">&quot;amqps&quot;</span><span class="p">])</span>
 <span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>A type that will accept any AMQP DSN.</p>
 <ul>
 <li>User info required</li>
 <li>TLD not required</li>
 <li>Host required</li>
 </ul>
-  </div>
+    </div>
 
 </div>
 
@@ -4424,15 +4424,15 @@ underscores are allowed, but you can always do further validation in a validator
 
 
 <h2 id="pydantic.networks.RedisDsn" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">RedisDsn</span>
+            <span class="doc doc-object-name doc-attribute-name">RedisDsn</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
   </span>
 
 <a href="#pydantic.networks.RedisDsn" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">RedisDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">RedisDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span>
         <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;redis&quot;</span><span class="p">,</span> <span class="s2">&quot;rediss&quot;</span><span class="p">],</span>
@@ -4443,15 +4443,15 @@ underscores are allowed, but you can always do further validation in a validator
 <span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>A type that will accept any Redis DSN.</p>
 <ul>
 <li>User info required</li>
 <li>TLD not required</li>
 <li>Host required (e.g., <code>rediss://:pass@localhost</code>)</li>
 </ul>
-  </div>
+    </div>
 
 </div>
 
@@ -4460,15 +4460,15 @@ underscores are allowed, but you can always do further validation in a validator
 
 
 <h2 id="pydantic.networks.MongoDsn" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">MongoDsn</span>
+            <span class="doc doc-object-name doc-attribute-name">MongoDsn</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
   </span>
 
 <a href="#pydantic.networks.MongoDsn" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">MongoDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">MongoDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.MultiHostUrl" href="../pydantic_core/#pydantic_core.MultiHostUrl">MultiHostUrl</a></span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span>
         <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mongodb&quot;</span><span class="p">,</span> <span class="s2">&quot;mongodb+srv&quot;</span><span class="p">],</span>
@@ -4477,8 +4477,8 @@ underscores are allowed, but you can always do further validation in a validator
 <span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>A type that will accept any MongoDB DSN.</p>
 <ul>
 <li>User info not required</li>
@@ -4486,7 +4486,7 @@ underscores are allowed, but you can always do further validation in a validator
 <li>Port not required</li>
 <li>User info may be passed without user part (e.g., <code>mongodb://mongodb0.example.com:27017</code>).</li>
 </ul>
-  </div>
+    </div>
 
 </div>
 
@@ -4495,15 +4495,15 @@ underscores are allowed, but you can always do further validation in a validator
 
 
 <h2 id="pydantic.networks.KafkaDsn" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">KafkaDsn</span>
+            <span class="doc doc-object-name doc-attribute-name">KafkaDsn</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
   </span>
 
 <a href="#pydantic.networks.KafkaDsn" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">KafkaDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">KafkaDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span>
         <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;kafka&quot;</span><span class="p">],</span>
@@ -4513,15 +4513,15 @@ underscores are allowed, but you can always do further validation in a validator
 <span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>A type that will accept any Kafka DSN.</p>
 <ul>
 <li>User info required</li>
 <li>TLD not required</li>
 <li>Host required</li>
 </ul>
-  </div>
+    </div>
 
 </div>
 
@@ -4530,15 +4530,15 @@ underscores are allowed, but you can always do further validation in a validator
 
 
 <h2 id="pydantic.networks.NatsDsn" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">NatsDsn</span>
+            <span class="doc doc-object-name doc-attribute-name">NatsDsn</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
   </span>
 
 <a href="#pydantic.networks.NatsDsn" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">NatsDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">NatsDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.MultiHostUrl" href="../pydantic_core/#pydantic_core.MultiHostUrl">MultiHostUrl</a></span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span>
         <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;nats&quot;</span><span class="p">,</span> <span class="s2">&quot;tls&quot;</span><span class="p">,</span> <span class="s2">&quot;ws&quot;</span><span class="p">],</span>
@@ -4548,14 +4548,14 @@ underscores are allowed, but you can always do further validation in a validator
 <span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>A type that will accept any NATS DSN.</p>
 <p>NATS is a connective technology built for the ever increasingly hyper-connected world.
 It is a single technology that enables applications to securely communicate across
 any combination of cloud vendors, on-premise, edge, web and mobile, and devices.
 More: https://nats.io</p>
-  </div>
+    </div>
 
 </div>
 
@@ -4564,15 +4564,15 @@ More: https://nats.io</p>
 
 
 <h2 id="pydantic.networks.MySQLDsn" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">MySQLDsn</span>
+            <span class="doc doc-object-name doc-attribute-name">MySQLDsn</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
   </span>
 
 <a href="#pydantic.networks.MySQLDsn" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">MySQLDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">MySQLDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span>
         <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span>
@@ -4590,15 +4590,15 @@ More: https://nats.io</p>
 <span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>A type that will accept any MySQL DSN.</p>
 <ul>
 <li>User info required</li>
 <li>TLD not required</li>
 <li>Host required</li>
 </ul>
-  </div>
+    </div>
 
 </div>
 
@@ -4607,15 +4607,15 @@ More: https://nats.io</p>
 
 
 <h2 id="pydantic.networks.MariaDBDsn" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">MariaDBDsn</span>
+            <span class="doc doc-object-name doc-attribute-name">MariaDBDsn</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
   </span>
 
 <a href="#pydantic.networks.MariaDBDsn" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">MariaDBDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">MariaDBDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span>
         <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span>
@@ -4628,15 +4628,15 @@ More: https://nats.io</p>
 <span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>A type that will accept any MariaDB DSN.</p>
 <ul>
 <li>User info required</li>
 <li>TLD not required</li>
 <li>Host required</li>
 </ul>
-  </div>
+    </div>
 
 </div>
 
@@ -4645,15 +4645,15 @@ More: https://nats.io</p>
 
 
 <h2 id="pydantic.networks.ClickHouseDsn" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">ClickHouseDsn</span>
+            <span class="doc doc-object-name doc-attribute-name">ClickHouseDsn</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
   </span>
 
 <a href="#pydantic.networks.ClickHouseDsn" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">ClickHouseDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">ClickHouseDsn</span> <span class="o">=</span> <span class="n"><span title="typing_extensions.Annotated">Annotated</span></span><span class="p">[</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.Url" href="../pydantic_core/#pydantic_core.Url">Url</a></span><span class="p">,</span>
     <span class="n"><a class="autorefs autorefs-internal" title="pydantic.networks.UrlConstraints" href="#pydantic.networks.UrlConstraints">UrlConstraints</a></span><span class="p">(</span>
         <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span>
@@ -4666,15 +4666,15 @@ More: https://nats.io</p>
 <span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>A type that will accept any ClickHouse DSN.</p>
 <ul>
 <li>User info required</li>
 <li>TLD not required</li>
 <li>Host required</li>
 </ul>
-  </div>
+    </div>
 
 </div>
 
@@ -4683,22 +4683,22 @@ More: https://nats.io</p>
 
 
 <h2 id="pydantic.networks.MAX_EMAIL_LENGTH" class="doc doc-heading">
-          <span class="doc doc-object-name doc-attribute-name">MAX_EMAIL_LENGTH</span>
+            <span class="doc doc-object-name doc-attribute-name">MAX_EMAIL_LENGTH</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
   </span>
 
 <a href="#pydantic.networks.MAX_EMAIL_LENGTH" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">MAX_EMAIL_LENGTH</span> <span class="o">=</span> <span class="mi">2048</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">MAX_EMAIL_LENGTH</span> <span class="o">=</span> <span class="mi">2048</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Maximum length for an email.
 A somewhat arbitrary but very generous number compared to what is allowed by most implementations.</p>
-  </div>
+    </div>
 
 </div>
 
@@ -4708,106 +4708,113 @@ A somewhat arbitrary but very generous number compared to what is allowed by mos
 
 
 <h2 id="pydantic.networks.UrlConstraints" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">UrlConstraints</span>
+            <span class="doc doc-object-name doc-class-name">UrlConstraints</span>
 
-  
+
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
   </span>
 
 <a href="#pydantic.networks.UrlConstraints" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">UrlConstraints</span><span class="p">(</span>
+    <span class="n">max_length</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">allowed_schemes</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">host_required</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">default_host</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">default_port</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">default_path</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="pydantic._internal._fields.PydanticMetadata">PydanticMetadata</span></code></p>
 
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><span title="pydantic._internal._fields.PydanticMetadata">PydanticMetadata</span></code></p>
-
-  
       <p>Url constraints.</p>
 
 
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.networks.UrlConstraints.max_length">max_length</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The maximum length of the url. Defaults to <code>None</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.networks.UrlConstraints.allowed_schemes">allowed_schemes</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The allowed schemes. Defaults to <code>None</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.networks.UrlConstraints.host_required">host_required</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether the host is required. Defaults to <code>None</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.networks.UrlConstraints.default_host">default_host</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The default host. Defaults to <code>None</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.networks.UrlConstraints.default_port">default_port</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The default port. Defaults to <code>None</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="pydantic.networks.UrlConstraints.default_path">default_path</span></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The default path. Defaults to <code>None</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-  <p><strong>Attributes:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code><span title="pydantic.networks.UrlConstraints.max_length">max_length</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The maximum length of the url. Defaults to <code>None</code>.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.networks.UrlConstraints.allowed_schemes">allowed_schemes</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>] | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The allowed schemes. Defaults to <code>None</code>.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.networks.UrlConstraints.host_required">host_required</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether the host is required. Defaults to <code>None</code>.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.networks.UrlConstraints.default_host">default_host</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The default host. Defaults to <code>None</code>.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.networks.UrlConstraints.default_port">default_port</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The default port. Defaults to <code>None</code>.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code><span title="pydantic.networks.UrlConstraints.default_path">default_path</span></code></td>
-          <td>
-                <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The default path. Defaults to <code>None</code>.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
 
 
-  
 
   <div class="doc doc-children">
 
@@ -4823,8 +4830,7 @@ A somewhat arbitrary but very generous number compared to what is allowed by mos
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -4833,15 +4839,16 @@ A somewhat arbitrary but very generous number compared to what is allowed by mos
 
 
 <h2 id="pydantic.networks.EmailStr" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">EmailStr</span>
+            <span class="doc doc-object-name doc-class-name">EmailStr</span>
 
 
 <a href="#pydantic.networks.EmailStr" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
-  <div class="doc doc-contents ">
+    <div class="doc doc-contents ">
 
-  
+
+
 
 <details class="info" open>
   <summary>Info</summary>
@@ -4860,7 +4867,7 @@ A somewhat arbitrary but very generous number compared to what is allowed by mos
 </code></pre></div>
 
 
-  
+
 
   <div class="doc doc-children">
 
@@ -4876,8 +4883,7 @@ A somewhat arbitrary but very generous number compared to what is allowed by mos
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -4886,18 +4892,19 @@ A somewhat arbitrary but very generous number compared to what is allowed by mos
 
 
 <h2 id="pydantic.networks.NameEmail" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">NameEmail</span>
+            <span class="doc doc-object-name doc-class-name">NameEmail</span>
 
 
 <a href="#pydantic.networks.NameEmail" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">NameEmail</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">email</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">NameEmail</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">email</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><span title="pydantic._internal._repr.Representation">Representation</span></code></p>
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="pydantic._internal._repr.Representation">Representation</span></code></p>
 
-  
+
+
 
 <details class="info" open>
   <summary>Info</summary>
@@ -4927,17 +4934,17 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 <span class="c1">#&gt; fred.bloggs</span>
 </code></pre></div>
 
-                <details class="quote">
-                  <summary>Source code in <code>pydantic/networks.py</code></summary>
-                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">498</span>
+                  <details class="quote">
+                    <summary>Source code in <code>pydantic/networks.py</code></summary>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">498</span>
 <span class="normal">499</span>
 <span class="normal">500</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">email</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">email</span> <span class="o">=</span> <span class="n">email</span>
 </code></pre></div></td></tr></table></div>
-                </details>
+                  </details>
 
-  
+
 
   <div class="doc doc-children">
 
@@ -4953,8 +4960,7 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -4963,15 +4969,15 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 
 
 <h2 id="pydantic.networks.IPvAnyAddress" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">IPvAnyAddress</span>
+            <span class="doc doc-object-name doc-class-name">IPvAnyAddress</span>
 
 
 <a href="#pydantic.networks.IPvAnyAddress" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
-  <div class="doc doc-contents ">
+    <div class="doc doc-contents ">
 
-  
+
       <p>Validate an IPv4 or IPv6 address.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 <span class="kn">from</span> <span class="nn">pydantic.networks</span> <span class="kn">import</span> <span class="n">IPvAnyAddress</span>
@@ -4999,7 +5005,7 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 </code></pre></div>
 
 
-  
+
 
   <div class="doc doc-children">
 
@@ -5015,8 +5021,7 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -5025,19 +5030,19 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 
 
 <h2 id="pydantic.networks.IPvAnyInterface" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">IPvAnyInterface</span>
+            <span class="doc doc-object-name doc-class-name">IPvAnyInterface</span>
 
 
 <a href="#pydantic.networks.IPvAnyInterface" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
-  <div class="doc doc-contents ">
+    <div class="doc doc-contents ">
 
-  
+
       <p>Validate an IPv4 or IPv6 interface.</p>
 
 
-  
+
 
   <div class="doc doc-children">
 
@@ -5053,8 +5058,7 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
 
@@ -5063,19 +5067,19 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 
 
 <h2 id="pydantic.networks.IPvAnyNetwork" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">IPvAnyNetwork</span>
+            <span class="doc doc-object-name doc-class-name">IPvAnyNetwork</span>
 
 
 <a href="#pydantic.networks.IPvAnyNetwork" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
-  <div class="doc doc-contents ">
+    <div class="doc doc-contents ">
 
-  
+
       <p>Validate an IPv4 or IPv6 network.</p>
 
 
-  
+
 
   <div class="doc doc-children">
 
@@ -5091,28 +5095,26 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 
   </div>
 
-  </div>
-
+    </div>
 
 </div>
-
 
 
 <div class="doc doc-object doc-function">
 
 
-
 <h2 id="pydantic.networks.validate_email" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">validate_email</span>
+            <span class="doc doc-object-name doc-function-name">validate_email</span>
 
 
 <a href="#pydantic.networks.validate_email" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="n">validate_email</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">validate_email</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span>
 </code></pre></div>
 
-  <div class="doc doc-contents ">
-  
+    <div class="doc doc-contents ">
+
       <p>Email address validation using <a href="https://pypi.org/project/email-validator/">email-validator</a>.</p>
+
 
 <details class="note" open>
   <summary>Note</summary>
@@ -5123,9 +5125,9 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 <li>Spaces are striped from the beginning and end of addresses, but no error is raised.</li>
 </ul>
 </details>
-          <details class="quote">
-            <summary>Source code in <code>pydantic/networks.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">720</span>
+            <details class="quote">
+              <summary>Source code in <code>pydantic/networks.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">720</span>
 <span class="normal">721</span>
 <span class="normal">722</span>
 <span class="normal">723</span>
@@ -5203,8 +5205,8 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
     <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="n">parts</span><span class="o">.</span><span class="n">local_part</span>
     <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="n">email</span>
 </code></pre></div></td></tr></table></div>
-          </details>
-  </div>
+            </details>
+    </div>
 
 </div>
 
@@ -5212,7 +5214,7 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 
   </div>
 
-  </div>
+    </div>
 
 </div>
 
@@ -5272,7 +5274,7 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.0a1", "pydantic-core==2.19.0", "pydantic-extra-types==2.8.2"]
     </script>
 
               </article>
