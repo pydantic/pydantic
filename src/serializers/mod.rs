@@ -86,6 +86,7 @@ impl SchemaSerializer {
 #[pymethods]
 impl SchemaSerializer {
     #[new]
+    #[pyo3(signature = (schema, config=None))]
     pub fn py_new(schema: Bound<'_, PyDict>, config: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
         let mut definitions_builder = DefinitionsBuilder::new();
         let serializer = CombinedSerializer::build(schema.downcast()?, config, &mut definitions_builder)?;

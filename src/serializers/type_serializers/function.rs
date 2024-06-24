@@ -476,6 +476,7 @@ impl SerializationCallable {
 
 #[pymethods]
 impl SerializationCallable {
+    #[pyo3(signature = (value, index_key=None))]
     fn __call__(
         &mut self,
         py: Python,

@@ -22,9 +22,8 @@ pub fn get_decimal_type(py: Python) -> &Bound<'_, PyType> {
             py.import_bound("decimal")
                 .and_then(|decimal_module| decimal_module.getattr("Decimal"))
                 .unwrap()
-                .extract::<&PyType>()
+                .extract()
                 .unwrap()
-                .into()
         })
         .bind(py)
 }

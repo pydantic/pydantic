@@ -1,4 +1,5 @@
 import re
+import sys
 from decimal import Decimal
 from numbers import Number
 from typing import Any, Dict, Union
@@ -187,8 +188,9 @@ def test_invalid_regex(engine):
             'error: unclosed group'
         )
     elif engine == 'python-re':
+        prefix = 'PatternError' if sys.version_info >= (3, 13) else 'error'
         assert exc_info.value.args[0] == (
-            'Error building "str" validator:\n  error: missing ), unterminated subpattern at position 0'
+            f'Error building "str" validator:\n  {prefix}: missing ), unterminated subpattern at position 0'
         )
 
 

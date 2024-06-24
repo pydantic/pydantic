@@ -27,7 +27,9 @@ include = [
 rust-version = "1.75"
 
 [dependencies]
-pyo3 = { version = "0.21.2", features = ["generate-import-lib", "num-bigint"] }
+# TODO it would be very nice to remove the "py-clone" feature as it can panic,
+# but needs a bit of work to make sure it's not used in the codebase
+pyo3 = { version = "0.22.0", features = ["generate-import-lib", "num-bigint", "py-clone"] }
 regex = "1.10.4"
 strum = { version = "0.25.0", features = ["derive"] }
 strum_macros = "0.26.1"
@@ -42,9 +44,9 @@ url = "2.5.0"
 idna = "0.5.0"
 base64 = "0.21.7"
 num-bigint = "0.4.4"
-python3-dll-a = "0.2.7"
+python3-dll-a = "0.2.10"
 uuid = "1.8.0"
-jiter = { version = "0.4.1", features = ["python"] }
+jiter = { version = "0.5", features = ["python"] }
 
 [lib]
 name = "_pydantic_core"
@@ -71,12 +73,12 @@ debug = true
 strip = false
 
 [dev-dependencies]
-pyo3 = { version = "0.21.2", features = ["auto-initialize"] }
+pyo3 = { version = "0.22.0", features = ["auto-initialize"] }
 
 [build-dependencies]
 version_check = "0.9.4"
 # used where logic has to be version/distribution specific, e.g. pypy
-pyo3-build-config = { version = "0.21.0" }
+pyo3-build-config = { version = "0.22.0" }
 
 [lints.clippy]
 dbg_macro = "warn"

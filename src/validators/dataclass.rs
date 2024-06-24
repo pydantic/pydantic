@@ -460,7 +460,7 @@ impl BuildValidator for DataclassValidator {
         let config = schema.get_as(intern!(py, "config"))?;
         let config = config.as_ref();
 
-        let class: &PyType = schema.get_as_req(intern!(py, "cls"))?;
+        let class = schema.get_as_req::<Bound<'_, PyType>>(intern!(py, "cls"))?;
         let name = match schema.get_as_req::<String>(intern!(py, "cls_name")) {
             Ok(name) => name,
             Err(_) => class.getattr(intern!(py, "__name__"))?.extract()?,
@@ -474,11 +474,7 @@ impl BuildValidator for DataclassValidator {
             None
         };
 
-        let fields = schema
-            .get_as_req::<&PyList>(intern!(py, "fields"))?
-            .iter()
-            .map(|s| Ok(s.downcast::<PyString>()?.into_py(py)))
-            .collect::<PyResult<Vec<_>>>()?;
+        let fields = schema.get_as_req(intern!(py, "fields"))?;
 
         Ok(Self {
             strict: is_strict(schema, config)?,
@@ -634,7 +630,7 @@ impl DataclassValidator {
                 dc.call_method0(post_init)
             } else {
                 let args = post_init_kwargs.downcast::<PyTuple>()?;
-                dc.call_method1(post_init, args.as_gil_ref())
+                dc.call_method1(post_init, args)
             };
             r.map_err(|e| convert_err(py, e, input))?;
         }

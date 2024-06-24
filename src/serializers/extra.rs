@@ -4,7 +4,7 @@ use std::fmt;
 use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::PyBool;
+use pyo3::types::{PyBool, PyString};
 
 use serde::ser::Error;
 
@@ -423,7 +423,7 @@ impl CollectWarnings {
             let type_name = value
                 .get_type()
                 .qualname()
-                .unwrap_or_else(|_| "<unknown python object>".to_owned());
+                .unwrap_or_else(|_| PyString::new_bound(value.py(), "<unknown python object>"));
             self.add_warning(format!(
                 "Expected `{field_type}` but got `{type_name}` - serialized value may not be as expected"
             ));

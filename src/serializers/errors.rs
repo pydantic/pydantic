@@ -105,6 +105,7 @@ impl PydanticSerializationUnexpectedValue {
 #[pymethods]
 impl PydanticSerializationUnexpectedValue {
     #[new]
+    #[pyo3(signature = (message=None))]
     fn py_new(message: Option<String>) -> Self {
         Self { message }
     }

@@ -578,7 +578,7 @@ trait CopyFromPyUrl {
 }
 
 fn get_allowed_schemas(schema: &Bound<'_, PyDict>, name: &'static str) -> PyResult<(AllowedSchemas, String)> {
-    match schema.get_as::<&PyList>(intern!(schema.py(), "allowed_schemes"))? {
+    match schema.get_as::<Bound<'_, PyList>>(intern!(schema.py(), "allowed_schemes"))? {
         Some(list) => {
             if list.is_empty() {
                 return py_schema_err!("`allowed_schemes` should have length > 0");
