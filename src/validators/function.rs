@@ -36,9 +36,7 @@ fn destructure_function_schema(schema: &Bound<'_, PyDict>) -> PyResult<FunctionI
         "no-info" => false,
         _ => unreachable!(),
     };
-    let field_name = func_dict
-        .get_as::<&PyString>(intern!(schema.py(), "field_name"))?
-        .map(Into::into);
+    let field_name = func_dict.get_as(intern!(schema.py(), "field_name"))?;
     Ok(FunctionInfo {
         function,
         field_name,
@@ -394,6 +392,7 @@ struct ValidatorCallable {
 
 #[pymethods]
 impl ValidatorCallable {
+    #[pyo3(signature = (input_value, outer_location=None))]
     fn __call__(
         &mut self,
         py: Python,
@@ -427,6 +426,7 @@ struct AssignmentValidatorCallable {
 
 #[pymethods]
 impl AssignmentValidatorCallable {
+    #[pyo3(signature = (input_value, outer_location=None))]
     fn __call__(
         &mut self,
         py: Python,

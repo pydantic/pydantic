@@ -318,7 +318,10 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
 
         Err(ValError::new(
             ErrorType::IsInstanceOf {
-                class: decimal_type.qualname().unwrap_or_else(|_| "Decimal".to_owned()),
+                class: decimal_type
+                    .qualname()
+                    .and_then(|name| name.extract())
+                    .unwrap_or_else(|_| "Decimal".to_owned()),
                 context: None,
             },
             self,
@@ -772,7 +775,7 @@ impl<'py> ValidatedDict<'py> for GenericPyMapping<'_, 'py> {
         match self {
             Self::Dict(dict) => Ok(consumer.consume_iterator(dict.iter().map(Ok))),
             Self::Mapping(mapping) => Ok(consumer.consume_iterator(iterate_mapping_items(mapping)?)),
-            Self::GetAttr(obj, _) => Ok(consumer.consume_iterator(iterate_attributes(obj))),
+            Self::GetAttr(obj, _) => Ok(consumer.consume_iterator(iterate_attributes(obj)?)),
         }
     }
 }

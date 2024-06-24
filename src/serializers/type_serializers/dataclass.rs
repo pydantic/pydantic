@@ -82,18 +82,18 @@ impl BuildSerializer for DataclassSerializer {
         // models ignore the parent config and always use the config from this model
         let config = schema.get_as(intern!(py, "config"))?;
 
-        let class: &PyType = schema.get_as_req(intern!(py, "cls"))?;
+        let class: Bound<'_, PyType> = schema.get_as_req(intern!(py, "cls"))?;
         let sub_schema = schema.get_as_req(intern!(py, "schema"))?;
         let serializer = Box::new(CombinedSerializer::build(&sub_schema, config.as_ref(), definitions)?);
 
         let fields = schema
-            .get_as_req::<&PyList>(intern!(py, "fields"))?
+            .get_as_req::<Bound<'_, PyList>>(intern!(py, "fields"))?
             .iter()
             .map(|s| Ok(s.downcast::<PyString>()?.into_py(py)))
             .collect::<PyResult<Vec<_>>>()?;
 
         Ok(Self {
-            class: class.into(),
+            class: class.clone().unbind(),
             serializer,
             fields,
             name: class.getattr(intern!(py, "__name__"))?.extract()?,

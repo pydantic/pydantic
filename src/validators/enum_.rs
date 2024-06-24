@@ -137,7 +137,10 @@ impl<T: EnumValidateValue> Validator for EnumValidator<T> {
             } else if !enum_value.is(&py.None()) {
                 let type_error = PyTypeError::new_err(format!(
                     "error in {}._missing_: returned {} instead of None or a valid member",
-                    class.name().unwrap_or_else(|_| "<Unknown>".into()),
+                    class
+                        .name()
+                        .and_then(|name| name.extract::<String>())
+                        .unwrap_or_else(|_| "<Unknown>".into()),
                     safe_repr(&enum_value)
                 ));
                 return Err(type_error.into());

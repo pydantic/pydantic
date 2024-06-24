@@ -25,7 +25,7 @@ impl BuildValidator for IsSubclassValidator {
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
-        let class: &PyType = schema.get_as_req(intern!(py, "cls"))?;
+        let class = schema.get_as_req::<Bound<'_, PyType>>(intern!(py, "cls"))?;
 
         let class_repr = match schema.get_as(intern!(py, "cls_repr"))? {
             Some(s) => s,
