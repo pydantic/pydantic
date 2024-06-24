@@ -588,10 +588,9 @@ def test_validation_alias_path(value):
 
 def test_search_dict_for_alias_path():
     class Model(BaseModel):
-        x: str = Field(validation_alias=AliasPath('a', 1))
-
-    assert Model.model_fields['x'].validation_alias.search_dict_for_path({'a': ['hello', 'world']}) == 'world'
-    assert Model.model_fields['x'].validation_alias.search_dict_for_path({'a': 'hello'}) is PydanticUndefined
+        ap = AliasPath('a', 1)
+        assert ap.search_dict_for_path({'a': ['hello', 'world']}) == 'world'
+        assert ap.search_dict_for_path({'a': 'hello'}) is PydanticUndefined
 
 
 def test_validation_alias_invalid_value_type():
