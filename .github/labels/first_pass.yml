@@ -7,10 +7,6 @@ relnotes-feature:
 documentation:
  - head-branch: ['^documentation', 'documentation', '^docs', 'docs']
 
-documentation:
-- changed-files:
-  - any-glob-to-any-file: docs/*
-
 relnotes-change:
   - head-branch: ['^change', 'change']
 
