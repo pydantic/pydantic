@@ -4,6 +4,7 @@ from typing import Any, ContextManager, List, Optional
 
 import pytest
 from dirty_equals import IsStr
+from pydantic_core import PydanticUndefined
 
 from pydantic import (
     AliasChoices,
@@ -611,6 +612,10 @@ def test_validation_alias_parse_data():
             'input': {'b': ['hello']},
         }
     ]
+    assert (
+        Model.model_fields['x'].validation_alias.choices[1].search_dict_for_path({'b': ['hello', 'world']}) == 'world'
+    )
+    assert Model.model_fields['x'].validation_alias.choices[1].search_dict_for_path({'b': 'hello'}) is PydanticUndefined
 
 
 def test_alias_generator_class() -> None:
