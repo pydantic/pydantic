@@ -45,7 +45,7 @@ except ValidationError as e:
     """
 ```
 
-1. See the [Extra Attributes](#extra-attributes) section for more details.
+1. See the [Extra Attributes](models.md#extra-fields) section for more details.
 
 Similarly, if using the [`@dataclass`][pydantic.dataclasses] decorator from Pydantic:
 ```py
