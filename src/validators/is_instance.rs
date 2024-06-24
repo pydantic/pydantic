@@ -81,7 +81,7 @@ impl Validator for IsInstanceValidator {
 pub fn class_repr(schema: &Bound<'_, PyDict>, class: &Bound<'_, PyAny>) -> PyResult<String> {
     match schema.get_as(intern!(schema.py(), "cls_repr"))? {
         Some(s) => Ok(s),
-        None => match class.extract::<&PyType>() {
+        None => match class.downcast::<PyType>() {
             Ok(t) => Ok(t.qualname()?.to_string()),
             Err(_) => Ok(class.repr()?.extract()?),
         },

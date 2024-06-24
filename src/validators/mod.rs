@@ -117,6 +117,7 @@ pub struct SchemaValidator {
 #[pymethods]
 impl SchemaValidator {
     #[new]
+    #[pyo3(signature = (schema, config=None))]
     pub fn py_new(py: Python, schema: &Bound<'_, PyAny>, config: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
         let mut definitions_builder = DefinitionsBuilder::new();
 

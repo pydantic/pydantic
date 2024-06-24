@@ -30,6 +30,7 @@ impl ArgsKwargs {
 #[pymethods]
 impl ArgsKwargs {
     #[new]
+    #[pyo3(signature = (args, kwargs = None))]
     fn py_new(py: Python, args: &Bound<'_, PyTuple>, kwargs: Option<&Bound<'_, PyDict>>) -> Self {
         Self {
             args: args.into_py(py),

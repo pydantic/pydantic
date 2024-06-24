@@ -504,7 +504,7 @@ impl PathItem {
 /// wrapper around `getattr` that returns `Ok(None)` for attribute errors, but returns other errors
 /// We don't check `try_from_attributes` because that check was performed on the top level object before we got here
 fn py_get_attrs<'py>(obj: &Bound<'py, PyAny>, attr_name: &Py<PyString>) -> PyResult<Option<Bound<'py, PyAny>>> {
-    match obj.getattr(attr_name.extract::<&PyString>(obj.py())?) {
+    match obj.getattr(attr_name) {
         Ok(attr) => Ok(Some(attr)),
         Err(err) => {
             if err.get_type_bound(obj.py()).is_subclass_of::<PyAttributeError>()? {

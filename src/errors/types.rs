@@ -459,8 +459,8 @@ static ERROR_TYPE_LOOKUP: GILOnceCell<AHashMap<String, ErrorType>> = GILOnceCell
 impl ErrorType {
     pub fn new_custom_error(py: Python, custom_error: PydanticCustomError) -> Self {
         Self::CustomError {
-            error_type: custom_error.error_type(),
-            message_template: custom_error.message_template(),
+            error_type: custom_error.error_type().to_owned(),
+            message_template: custom_error.message_template().to_owned(),
             context: custom_error.context(py),
         }
     }

@@ -292,10 +292,10 @@ const MAPPING_TUPLE_ERROR: &str = "Mapping items must be tuples of (key, value) 
 /// Iterate over attributes of an object
 pub(crate) fn iterate_attributes<'a, 'py>(
     object: &'a Bound<'py, PyAny>,
-) -> impl Iterator<Item = ValResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>> + 'a {
-    let mut attributes_iterator = object.dir().into_iter();
+) -> PyResult<impl Iterator<Item = ValResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)>> + 'a> {
+    let mut attributes_iterator = object.dir()?.into_iter();
 
-    std::iter::from_fn(move || {
+    Ok(std::iter::from_fn(move || {
         // loop until we find an attribute who's name does not start with underscore,
         // or we get to the end of the list of attributes
         let name = attributes_iterator.next()?;
@@ -327,7 +327,7 @@ pub(crate) fn iterate_attributes<'a, 'py>(
             }
         }
         None
-    })
+    }))
 }
 
 #[derive(Debug)]
