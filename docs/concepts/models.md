@@ -1097,8 +1097,7 @@ from pydantic import BaseModel
 TItem = TypeVar('TItem', bound='ItemBase')
 
 
-class ItemBase(BaseModel):
-    ...
+class ItemBase(BaseModel): ...
 
 
 class IntItem(ItemBase):

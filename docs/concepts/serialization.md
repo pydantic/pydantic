@@ -342,8 +342,7 @@ class Model(BaseModel):
             exclude_none: bool = False,
             round_trip: bool = False,
             warnings: bool = True,
-        ) -> str:
-            ...
+        ) -> str: ...
 ```
 
 This trick is actually used in [`RootModel`](models.md#rootmodel-and-custom-root-types) for precisely this purpose.

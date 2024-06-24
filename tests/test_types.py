@@ -1879,20 +1879,16 @@ def test_string_fails():
         {
             'type': 'value_error',
             'loc': ('str_email',),
-            'msg': (
-                'value is not a valid email address: The email address contains invalid '
-                "characters before the @-sign: '<'."
-            ),
+            'msg': 'value is not a valid email address: An open angle bracket at the start of the email address has to be followed by a close angle bracket at the end.',
             'input': 'foobar<@example.com',
-            'ctx': {'reason': "The email address contains invalid characters before the @-sign: '<'."},
+            'ctx': {
+                'reason': 'An open angle bracket at the start of the email address has to be followed by a close angle bracket at the end.'
+            },
         },
         {
             'type': 'value_error',
             'loc': ('name_email',),
-            'msg': (
-                'value is not a valid email address: The email address contains invalid characters '
-                'before the @-sign: SPACE.'
-            ),
+            'msg': 'value is not a valid email address: The email address contains invalid characters before the @-sign: SPACE.',
             'input': 'foobar @example.com',
             'ctx': {'reason': 'The email address contains invalid characters before the @-sign: SPACE.'},
         },
