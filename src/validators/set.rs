@@ -15,6 +15,7 @@ pub struct SetValidator {
     min_length: Option<usize>,
     max_length: Option<usize>,
     name: String,
+    fail_fast: bool,
 }
 
 macro_rules! set_build {
@@ -42,6 +43,7 @@ macro_rules! set_build {
                 min_length: schema.get_as(pyo3::intern!(py, "min_length"))?,
                 max_length,
                 name,
+                fail_fast: schema.get_as(pyo3::intern!(py, "fail_fast"))?.unwrap_or(false),
             }
             .into())
         }
@@ -72,6 +74,7 @@ impl Validator for SetValidator {
             max_length: self.max_length,
             item_validator: &self.item_validator,
             state,
+            fail_fast: self.fail_fast,
         })??;
         min_length_check!(input, "Set", self.min_length, set);
         Ok(set.into_py(py))
@@ -89,6 +92,7 @@ struct ValidateToSet<'a, 's, 'py, I: Input<'py> + ?Sized> {
     max_length: Option<usize>,
     item_validator: &'a CombinedValidator,
     state: &'a mut ValidationState<'s, 'py>,
+    fail_fast: bool,
 }
 
 impl<'py, T, I> ConsumeIterator<PyResult<T>> for ValidateToSet<'_, '_, 'py, I>
@@ -107,6 +111,7 @@ where
             self.max_length,
             self.item_validator,
             self.state,
+            self.fail_fast,
         )
     }
 }

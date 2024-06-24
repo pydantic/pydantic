@@ -58,8 +58,9 @@ def test_tuple_strict_passes_with_tuple(variadic_item_index, items, input_value,
     assert v.validate_python(input_value) == expected
 
 
-def test_empty_positional_tuple():
-    v = SchemaValidator({'type': 'tuple', 'items_schema': []})
+@pytest.mark.parametrize('fail_fast', [True, False])
+def test_empty_positional_tuple(fail_fast):
+    v = SchemaValidator({'type': 'tuple', 'items_schema': [], 'fail_fast': fail_fast})
     assert v.validate_python(()) == ()
     assert v.validate_python([]) == ()
     with pytest.raises(ValidationError) as exc_info:
@@ -493,3 +494,56 @@ def test_length_constraints_omit(input_value, expected):
             v.validate_python(input_value)
     else:
         assert v.validate_python(input_value) == expected
+
+
+@pytest.mark.parametrize(
+    'fail_fast,expected',
+    [
+        pytest.param(
+            True,
+            [
+                {
+                    'type': 'int_parsing',
+                    'loc': (1,),
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                    'input': 'not-num',
+                }
+            ],
+            id='fail_fast',
+        ),
+        pytest.param(
+            False,
+            [
+                {
+                    'type': 'int_parsing',
+                    'loc': (1,),
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                    'input': 'not-num',
+                },
+                {
+                    'type': 'float_parsing',
+                    'loc': (2,),
+                    'msg': 'Input should be a valid number, unable to parse string as a number',
+                    'input': 'again',
+                },
+            ],
+            id='not_fail_fast',
+        ),
+    ],
+)
+def test_tuple_fail_fast(fail_fast, expected):
+    s = core_schema.tuple_schema(
+        [
+            core_schema.str_schema(),
+            core_schema.int_schema(),
+            core_schema.float_schema(),
+        ],
+        variadic_item_index=None,
+        fail_fast=fail_fast,
+    )
+    v = SchemaValidator(s)
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(['str', 'not-num', 'again'])
+
+    assert exc_info.value.errors(include_url=False) == expected
