@@ -586,6 +586,14 @@ def test_validation_alias_path(value):
     assert Model.model_fields['x'].validation_alias == value
 
 
+def test_search_dict_for_alias_path():
+    class Model(BaseModel):
+        x: str = Field(validation_alias=AliasPath('a', 1))
+
+    assert Model.model_fields['x'].validation_alias.search_dict_for_path({'a': ['hello', 'world']}) == 'world'
+    assert Model.model_fields['x'].validation_alias.search_dict_for_path({'a': 'hello'}) is PydanticUndefined
+
+
 def test_validation_alias_invalid_value_type():
     m = 'Invalid `validation_alias` type. it should be `str`, `AliasChoices`, or `AliasPath`'
     with pytest.raises(TypeError, match=m):
@@ -612,10 +620,6 @@ def test_validation_alias_parse_data():
             'input': {'b': ['hello']},
         }
     ]
-    assert (
-        Model.model_fields['x'].validation_alias.choices[1].search_dict_for_path({'b': ['hello', 'world']}) == 'world'
-    )
-    assert Model.model_fields['x'].validation_alias.choices[1].search_dict_for_path({'b': 'hello'}) is PydanticUndefined
 
 
 def test_alias_generator_class() -> None:
