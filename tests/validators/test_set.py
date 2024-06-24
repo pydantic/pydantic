@@ -277,3 +277,47 @@ def test_set_any(input_value, expected):
     output = v.validate_python(input_value)
     assert output == expected
     assert isinstance(output, set)
+
+
+@pytest.mark.parametrize(
+    'fail_fast,expected',
+    [
+        pytest.param(
+            True,
+            [
+                {
+                    'type': 'int_parsing',
+                    'loc': (1,),
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                    'input': 'not-num',
+                },
+            ],
+            id='fail_fast',
+        ),
+        pytest.param(
+            False,
+            [
+                {
+                    'type': 'int_parsing',
+                    'loc': (1,),
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                    'input': 'not-num',
+                },
+                {
+                    'type': 'int_parsing',
+                    'loc': (2,),
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                    'input': 'again',
+                },
+            ],
+            id='not_fail_fast',
+        ),
+    ],
+)
+def test_set_fail_fast(fail_fast, expected):
+    v = SchemaValidator({'type': 'set', 'items_schema': {'type': 'int'}, 'fail_fast': fail_fast})
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python([1, 'not-num', 'again'])
+
+    assert exc_info.value.errors(include_url=False) == expected

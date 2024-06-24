@@ -248,7 +248,8 @@ def test_repr():
         'title="frozenset[any]",'
         'validator=FrozenSet(FrozenSetValidator{'
         'strict:true,item_validator:Any(AnyValidator),min_length:Some(42),max_length:None,'
-        'name:"frozenset[any]"'
+        'name:"frozenset[any]",'
+        'fail_fast:false'
         '}),'
         'definitions=[],'
         'cache_strings=True)'
@@ -296,3 +297,47 @@ def test_frozenset_from_dict_items(input_value, items_schema, expected):
     output = v.validate_python(input_value)
     assert isinstance(output, frozenset)
     assert output == expected
+
+
+@pytest.mark.parametrize(
+    'fail_fast,expected',
+    [
+        pytest.param(
+            True,
+            [
+                {
+                    'type': 'int_parsing',
+                    'loc': (1,),
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                    'input': 'not-num',
+                },
+            ],
+            id='fail_fast',
+        ),
+        pytest.param(
+            False,
+            [
+                {
+                    'type': 'int_parsing',
+                    'loc': (1,),
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                    'input': 'not-num',
+                },
+                {
+                    'type': 'int_parsing',
+                    'loc': (2,),
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                    'input': 'again',
+                },
+            ],
+            id='not_fail_fast',
+        ),
+    ],
+)
+def test_frozenset_fail_fast(fail_fast, expected):
+    v = SchemaValidator({'type': 'frozenset', 'items_schema': {'type': 'int'}, 'fail_fast': fail_fast})
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python([1, 'not-num', 'again'])
+
+    assert exc_info.value.errors(include_url=False) == expected

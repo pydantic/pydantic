@@ -18,6 +18,7 @@ pub struct ListValidator {
     min_length: Option<usize>,
     max_length: Option<usize>,
     name: OnceLock<String>,
+    fail_fast: bool,
 }
 
 pub fn get_items_schema(
@@ -109,6 +110,7 @@ impl BuildValidator for ListValidator {
             min_length: schema.get_as(pyo3::intern!(py, "min_length"))?,
             max_length: schema.get_as(pyo3::intern!(py, "max_length"))?,
             name: OnceLock::new(),
+            fail_fast: schema.get_as(pyo3::intern!(py, "fail_fast"))?.unwrap_or(false),
         }
         .into())
     }
@@ -135,6 +137,7 @@ impl Validator for ListValidator {
                 field_type: "List",
                 item_validator: v,
                 state,
+                fail_fast: self.fail_fast,
             })??,
             None => {
                 if let Some(py_list) = seq.as_py_list() {
@@ -184,6 +187,7 @@ struct ValidateToVec<'a, 's, 'py, I: Input<'py> + ?Sized> {
     field_type: &'static str,
     item_validator: &'a CombinedValidator,
     state: &'a mut ValidationState<'s, 'py>,
+    fail_fast: bool,
 }
 
 // pretty arbitrary default capacity when creating vecs from iteration
@@ -204,6 +208,7 @@ where
             max_length_check,
             self.item_validator,
             self.state,
+            self.fail_fast,
         )
     }
 }

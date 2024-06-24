@@ -17,6 +17,7 @@ pub struct FrozenSetValidator {
     min_length: Option<usize>,
     max_length: Option<usize>,
     name: String,
+    fail_fast: bool,
 }
 
 impl BuildValidator for FrozenSetValidator {
@@ -42,6 +43,7 @@ impl Validator for FrozenSetValidator {
             max_length: self.max_length,
             item_validator: &self.item_validator,
             state,
+            fail_fast: self.fail_fast,
         })??;
         min_length_check!(input, "Frozenset", self.min_length, f_set);
         Ok(f_set.into_py(py))
@@ -59,6 +61,7 @@ struct ValidateToFrozenSet<'a, 's, 'py, I: Input<'py> + ?Sized> {
     max_length: Option<usize>,
     item_validator: &'a CombinedValidator,
     state: &'a mut ValidationState<'s, 'py>,
+    fail_fast: bool,
 }
 
 impl<'py, T, I> ConsumeIterator<PyResult<T>> for ValidateToFrozenSet<'_, '_, 'py, I>
@@ -77,6 +80,7 @@ where
             self.max_length,
             self.item_validator,
             self.state,
+            self.fail_fast,
         )
     }
 }

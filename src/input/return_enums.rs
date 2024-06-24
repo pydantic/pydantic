@@ -124,6 +124,7 @@ pub(crate) fn validate_iter_to_vec<'py>(
     mut max_length_check: MaxLengthCheck<'_, impl Input<'py> + ?Sized>,
     validator: &CombinedValidator,
     state: &mut ValidationState<'_, 'py>,
+    fail_fast: bool,
 ) -> ValResult<Vec<PyObject>> {
     let mut output: Vec<PyObject> = Vec::with_capacity(capacity);
     let mut errors: Vec<ValLineError> = Vec::new();
@@ -137,6 +138,9 @@ pub(crate) fn validate_iter_to_vec<'py>(
             Err(ValError::LineErrors(line_errors)) => {
                 max_length_check.incr()?;
                 errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index)));
+                if fail_fast {
+                    break;
+                }
             }
             Err(ValError::Omit) => (),
             Err(err) => return Err(err),
@@ -190,6 +194,7 @@ pub(crate) fn validate_iter_to_set<'py>(
     max_length: Option<usize>,
     validator: &CombinedValidator,
     state: &mut ValidationState<'_, 'py>,
+    fail_fast: bool,
 ) -> ValResult<()> {
     let mut errors: Vec<ValLineError> = Vec::new();
     for (index, item_result) in iter.enumerate() {
@@ -219,6 +224,9 @@ pub(crate) fn validate_iter_to_set<'py>(
             }
             Err(ValError::Omit) => (),
             Err(err) => return Err(err),
+        }
+        if fail_fast && !errors.is_empty() {
+            break;
         }
     }
 
