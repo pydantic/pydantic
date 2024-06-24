@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
     steps:
       - uses: actions/checkout@v4
 
@@ -99,7 +99,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-13, macos-latest, windows-latest]
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
         include:
           # no pydantic-core binaries for pypy on windows, so tests take absolute ages
           # macos tests with pypy take ages (>10mins) since pypy is very slow
@@ -116,6 +116,8 @@ jobs:
             python-version: '3.11'
           - os: macos-13
             python-version: '3.12'
+          - os: macos-latest
+            python-version: '3.13'
           - os: macos-latest
             python-version: '3.8'
           - os: macos-latest
@@ -234,6 +236,8 @@ jobs:
           # TODO: Once Python 3.7 is removed, and mypy is bumped on the lockfile, we can add 'lockfile' again.
           - mypy-version: '1.5.1'
             python-version: '3.12'
+          - mypy-version: '1.5.1'
+            python-version: '3.13'
 
     steps:
     - uses: actions/checkout@v4
@@ -324,7 +328,7 @@ jobs:
       matrix:
         # test the oldest supported version and main
         typing-extensions-version: ['4.6.1', 'main']
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
 
     steps:
     - uses: actions/checkout@v4
