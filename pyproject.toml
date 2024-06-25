@@ -47,7 +47,8 @@ classifiers = [
 ]
 requires-python = '>=3.8'
 dependencies = [
-    'typing-extensions>=4.6.1',
+    'typing-extensions>=4.6.1; python_version < "3.13"',
+    'typing-extensions>=12.0.0; python_version >= "3.13"',
     'annotated-types>=0.4.0',
     "pydantic-core==2.20.0",
 ]
@@ -131,7 +132,7 @@ testing = [
     "pytest-examples",
     "faker>=18.13.0",
     "pytest-benchmark>=4.0.0",
-    # TODO: remove bound once pytest-codspeed supports 3.13
+    # TODO: remove bound once pytest-codspeed supports 3.13, blocked by `python-cffi`
     "pytest-codspeed~=2.2.0; python_version < '3.13'",
     "packaging>=23.2",
 ]

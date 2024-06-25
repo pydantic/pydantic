@@ -329,6 +329,12 @@ jobs:
         # test the oldest supported version and main
         typing-extensions-version: ['4.6.1', 'main']
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        exclude:
+          - typing-extensions-version: '4.6.1'
+            python-version: '3.13'
+        include:
+          - typing-extensions-version: '4.12.2'
+            python-version: '3.13'
 
     steps:
     - uses: actions/checkout@v4
