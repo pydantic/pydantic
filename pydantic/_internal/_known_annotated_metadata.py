@@ -37,6 +37,7 @@ DICT_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT}
 GENERATOR_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT}
 
 FLOAT_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
+DECIMAL_CONSTRAINTS = {'max_digits', 'decimal_places', *FLOAT_CONSTRAINTS}
 INT_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
 BOOL_CONSTRAINTS = STRICT
 UUID_CONSTRAINTS = STRICT
@@ -100,6 +101,8 @@ for constraint in LAX_OR_STRICT_CONSTRAINTS:
     CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('lax-or-strict',))
 for constraint in ENUM_CONSTRAINTS:
     CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('enum',))
+for constraint in DECIMAL_CONSTRAINTS:
+    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('decimal',))
 
 
 def add_js_update_schema(s: cs.CoreSchema, f: Callable[[], dict[str, Any]]) -> None:
