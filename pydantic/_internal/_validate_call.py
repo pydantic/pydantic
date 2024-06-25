@@ -37,6 +37,11 @@ class ValidateCallWrapper:
             self.__module__ = function.__module__
 
         namespace = _typing_extra.add_module_globals(function, None)
+        # TODO: this is a bit of a hack, we should probably have a better way to handle this
+        # specifically, we shouldn't be pumping the namespace full of type_params
+        # when we take namespace and type_params arguments in eval_type_backport
+        type_params = getattr(schema_type, '__type_params__', ())
+        namespace = {**{param.__name__: param for param in type_params}, **namespace}
         config_wrapper = ConfigWrapper(config)
         gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
         schema = gen_schema.clean_schema(gen_schema.generate_schema(function))
