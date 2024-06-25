@@ -199,6 +199,7 @@ __all__ = (
     'Tag',
     'Discriminator',
     'JsonValue',
+    'FailFast',
     # type_adapter
     'TypeAdapter',
     # version
@@ -354,6 +355,7 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'Discriminator': (__spec__.parent, '.types'),
     'JsonValue': (__spec__.parent, '.types'),
     'OnErrorOmit': (__spec__.parent, '.types'),
+    'FailFast': (__spec__.parent, '.types'),
     # type_adapter
     'TypeAdapter': (__spec__.parent, '.type_adapter'),
     # warnings
