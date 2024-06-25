@@ -3390,12 +3390,17 @@ ANY_THING = object()
         ),
     ],
 )
-@pytest.mark.parametrize('mode', ['Field', 'condecimal'])
+@pytest.mark.parametrize('mode', ['Field', 'condecimal', 'optional'])
 def test_decimal_validation(mode, type_args, value, result):
     if mode == 'Field':
 
         class Model(BaseModel):
             foo: Decimal = Field(**type_args)
+
+    elif mode == 'optional':
+
+        class Model(BaseModel):
+            foo: Optional[Decimal] = Field(**type_args)
 
     else:
 
