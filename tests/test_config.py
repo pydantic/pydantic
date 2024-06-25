@@ -1,7 +1,6 @@
 import json
 import re
 import sys
-import warnings
 from contextlib import nullcontext as does_not_raise
 from decimal import Decimal
 from inspect import signature
@@ -348,54 +347,42 @@ class TestsBaseConfig:
         assert m == m.model_copy()
 
     def test_config_class_is_deprecated(self):
-        with warnings.catch_warnings():
-            # we need to explicitly ignore the other warning in pytest-8
-            # TODO: rewrite it to use two nested pytest.warns() when pytest-7 is no longer supported
-            warnings.simplefilter('ignore')
-            with pytest.warns(
-                PydanticDeprecatedSince20,
-                match='Support for class-based `config` is deprecated, use ConfigDict instead.',
-            ):
+        with pytest.warns(PydanticDeprecatedSince20) as all_warnings:
 
-                class Config(BaseConfig):
-                    pass
+            class Config(BaseConfig):
+                pass
+
+        # typing-extensions swallows one of the warnings, so we need to support
+        # both ways for now.
+        assert len(all_warnings) in [1, 2]
+        expected_warnings = [
+            'Support for class-based `config` is deprecated, use ConfigDict instead',
+        ]
+        if len(all_warnings) == 2:
+            expected_warnings.insert(0, 'BaseConfig is deprecated. Use the `pydantic.ConfigDict` instead')
+        assert [w.message.message for w in all_warnings] == expected_warnings
 
     def test_config_class_attributes_are_deprecated(self):
-        with warnings.catch_warnings():
-            # we need to explicitly ignore the other warning in pytest-8
-            # TODO: rewrite it to use two nested pytest.warns() when pytest-7 is no longer supported
-            warnings.simplefilter('ignore')
-            with pytest.warns(
-                PydanticDeprecatedSince20,
-                match='Support for class-based `config` is deprecated, use ConfigDict instead.',
-            ):
-                assert BaseConfig.validate_assignment is False
+        with pytest.warns(PydanticDeprecatedSince20) as all_warnings:
+            assert BaseConfig.validate_assignment is False
+            assert BaseConfig().validate_assignment is False
 
-            with pytest.warns(
-                PydanticDeprecatedSince20,
-                match='Support for class-based `config` is deprecated, use ConfigDict instead.',
-            ):
-                assert BaseConfig().validate_assignment is False
+            class Config(BaseConfig):
+                pass
 
-            with pytest.warns(
-                PydanticDeprecatedSince20,
-                match='Support for class-based `config` is deprecated, use ConfigDict instead.',
-            ):
-
-                class Config(BaseConfig):
-                    pass
-
-            with pytest.warns(
-                PydanticDeprecatedSince20,
-                match='Support for class-based `config` is deprecated, use ConfigDict instead.',
-            ):
-                assert Config.validate_assignment is False
-
-            with pytest.warns(
-                PydanticDeprecatedSince20,
-                match='Support for class-based `config` is deprecated, use ConfigDict instead.',
-            ):
-                assert Config().validate_assignment is False
+            assert Config.validate_assignment is False
+            assert Config().validate_assignment is False
+        assert len(all_warnings) == 7
+        expected_warnings = {
+            'Support for class-based `config` is deprecated, use ConfigDict instead',
+            'BaseConfig is deprecated. Use the `pydantic.ConfigDict` instead',
+            'Support for class-based `config` is deprecated, use ConfigDict instead',
+            'BaseConfig is deprecated. Use the `pydantic.ConfigDict` instead',
+            'Support for class-based `config` is deprecated, use ConfigDict instead',
+            'Support for class-based `config` is deprecated, use ConfigDict instead',
+            'Support for class-based `config` is deprecated, use ConfigDict instead',
+        }
+        assert set(w.message.message for w in all_warnings) <= expected_warnings
 
     @pytest.mark.filterwarnings('ignore:.* is deprecated.*:DeprecationWarning')
     def test_config_class_missing_attributes(self):

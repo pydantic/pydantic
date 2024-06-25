@@ -316,8 +316,8 @@ For custom types, Pydantic offers other tools for customizing JSON schema genera
 
 1. [`WithJsonSchema` annotation](#withjsonschema-annotation)
 2. [`SkipJsonSchema` annotation](#skipjsonschema-annotation)
-3. [Implementing `__get_pydantic_core_schema__`](#implementing-__get_pydantic_core_schema__)
-4. [Implementing `__get_pydantic_json_schema__`](#implementing-__get_pydantic_json_schema__)
+3. [Implementing `__get_pydantic_core_schema__`](#implementing_get_pydantic_core_schema)
+4. [Implementing `__get_pydantic_json_schema__`](#implementing_get_pydantic_json_schema)
 
 ### Field-Level Customization
 
@@ -624,7 +624,7 @@ print(json.dumps(Model.model_json_schema(), indent=2))
 
 !!! tip
     Using [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema]] is preferred over
-    [implementing `__get_pydantic_json_schema__`](#implementing-getpydanticjsonschema) for custom types,
+    [implementing `__get_pydantic_json_schema__`](#implementing_get_pydantic_json_schema) for custom types,
     as it's more simple and less error-prone.
 
 The [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema] annotation can be used to override the generated (base)
@@ -696,7 +696,7 @@ print(json.dumps(Model.model_json_schema(), indent=2))
 The [`SkipJsonSchema`][pydantic.json_schema.SkipJsonSchema] annotation can be used to skip a including field (or part of a field's specifications)
 from the generated JSON schema. See the API docs for more details.
 
-### Implementing `__get_pydantic_core_schema__`
+### Implementing `__get_pydantic_core_schema__` <a name="implementing_get_pydantic_core_schema"></a>
 
 Custom types (used as `field_name: TheType` or `field_name: Annotated[TheType, ...]`) as well as `Annotated` metadata
 (used as `field_name: Annotated[int, SomeMetadata]`)
@@ -995,7 +995,7 @@ print(m.model_fields)
 """
 ```
 
-### Implementing `__get_pydantic_json_schema__`
+### Implementing `__get_pydantic_json_schema__` <a name="implementing_get_pydantic_json_schema"></a>
 
 You can also implement `__get_pydantic_json_schema__` to modify or override the generated json schema.
 Modifying this method only affects the JSON schema - it doesn't affect the core schema, which is used for validation and serialization.

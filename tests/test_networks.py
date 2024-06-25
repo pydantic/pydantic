@@ -923,7 +923,7 @@ def test_address_valid(value, name, email):
     [
         ('@example.com', 'There must be something before the @-sign.'),
         ('f oo.bar@example.com', 'The email address contains invalid characters before the @-sign'),
-        ('foobar', 'The email address is not valid. It must have exactly one @-sign.'),
+        ('foobar', 'An email address must have an @-sign.'),
         ('foobar@localhost', 'The part after the @-sign is not valid. It should have a period.'),
         ('foobar@127.0.0.1', 'The part after the @-sign is not valid. It is not within a valid top-level domain.'),
         ('foo.bar@exam\nple.com ', None),

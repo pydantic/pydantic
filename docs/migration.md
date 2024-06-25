@@ -48,7 +48,8 @@ See more about it on the [Bump Pydantic](https://github.com/pydantic/bump-pydant
 
 ## Continue using Pydantic V1 features
 
-Pydantic V1 is still available when you need it, though we recommend migrating to Pydantic V2 for its improvements and new features.
+Pydantic V1 is still available when you need it, though we recommend migrating to
+Pydantic V2 for its improvements and new features.
 
 If you need to use latest Pydantic V1, you can install it with:
 
@@ -56,8 +57,11 @@ If you need to use latest Pydantic V1, you can install it with:
 pip install "pydantic==1.*"
 ```
 
-The Pydantic V2 package also continues to provide access to the Pydantic V1 API by importing through `pydantic.v1`.
-For example, you can use the `BaseModel` class from Pydantic V1 instead of the Pydantic V2 `pydantic.BaseModel` class:
+The Pydantic V2 package also continues to provide access to the Pydantic V1 API
+by importing through `pydantic.v1`.
+
+For example, you can use the `BaseModel` class from Pydantic V1 instead of the
+Pydantic V2 `pydantic.BaseModel` class:
 
 ```python test="skip" lint="skip" upgrade="skip"
 from pydantic.v1 import BaseModel
@@ -70,6 +74,53 @@ from pydantic.v1.utils import lenient_isinstance
 ```
 
 Pydantic V1 documentation is available at [https://docs.pydantic.dev/1.10/](https://docs.pydantic.dev/1.10/).
+
+### Using Pydantic v1 features in a v1/v2 environment
+
+As of `pydantic>=1.10.17`, the `pydantic.v1` namespace can be used within V1.
+This makes it easier to migrate to V2, which also supports the `pydantic.v1`
+namespace. In order to unpin a `pydantic<2` dependency and continue using V1
+features, take the following steps:
+
+1. Replace `pydantic<2` with `pydantic>=1.10.17`
+2. Find and replace all occurrences of:
+
+```python test="skip" lint="skip" upgrade="skip"
+from pydantic.<module> import <object>
+```
+
+with:
+
+```python test="skip" lint="skip" upgrade="skip"
+from pydantic.v1.<module> import <object>
+```
+
+Here's how you can import `pydantic`'s v1 features based on your version of `pydantic`:
+
+=== "`pydantic>=1.10.17,<3`"
+    As of `v1.10.17` the `.v1` namespace is available in V1, allowing imports as below:
+
+    ```python test="skip" lint="skip" upgrade="skip"
+    from pydantic.v1.fields import ModelField
+    ```
+
+=== "`pydantic<3`"
+    All versions of Pydantic V1 and V2 support the following import pattern, in case you don't
+    know which version of Pydantic you are using:
+
+    ```python test="skip" lint="skip" upgrade="skip"
+    try:
+        from pydantic.v1.fields import ModelField
+    except ImportError:
+        from pydantic.fields import ModelField
+    ```
+
+!!! note
+    When importing modules using `pydantic>=1.10.17,<2` with the `.v1` namespace
+    these modules will *not* be the **same** module as the same import without the `.v1`
+    namespace, but the symbols imported *will* be. For example `pydantic.v1.fields is not pydantic.fields`
+    but `pydantic.v1.fields.ModelField is pydantic.fields.ModelField`. Luckily, this is not likely to be relevant
+    in the vast majority of cases. It's just an unfortunate consequence of providing a smoother migration experience.
 
 ## Migration guide
 
@@ -312,7 +363,7 @@ See the [`ConfigDict` API reference][pydantic.config.ConfigDict] for more detail
     and improvements.
     * The new `@field_validator` decorator does not have the `each_item` keyword argument; validators you want to
         apply to items within a generic container should be added by annotating the type argument. See
-        [validators in Annotated metadata](concepts/validators.md#generic-validated-collections) for details.
+        [validators in Annotated metadata](concepts/types.md#composing-types-via-annotated) for details.
         This looks like `List[Annotated[int, Field(ge=0)]]`
     * Even if you keep using the deprecated `@validator` decorator, you can no longer add the `field` or
         `config` arguments to the signature of validator functions. If you need access to these, you'll need
@@ -705,9 +756,9 @@ We have also introduced ways to use [`typing.Annotated`][] to add custom validat
 The main changes are:
 
 * `__get_validators__` should be replaced with `__get_pydantic_core_schema__`.
-  See [Custom Data Types](concepts/types.md#customizing-validation-with-getpydanticcoreschema) for more information.
+  See [Custom Data Types](concepts/types.md#customizing_validation_with_get_pydantic_core_schema) for more information.
 * `__modify_schema__` becomes `__get_pydantic_json_schema__`.
-  See [JSON Schema Customization](concepts/json_schema.md#schema-customization) for more information.
+  See [JSON Schema Customization](concepts/json_schema.md#customizing-json-schema) for more information.
 
 Additionally, you can use [`typing.Annotated`][] to modify or provide the `__get_pydantic_core_schema__` and
 `__get_pydantic_json_schema__` functions of a type by annotating it, rather than modifying the type itself.
@@ -828,6 +879,33 @@ Read more about it in the [Composing types via `Annotated`](concepts/types.md#co
 docs.
 
 For `ConstrainedStr` you can use [`StringConstraints`][pydantic.types.StringConstraints] instead.
+
+#### Mypy Plugins
+
+Pydantic V2 contains a [mypy](https://mypy.readthedocs.io/en/stable/extending_mypy.html#configuring-mypy-to-use-plugins) plugin in
+`pydantic.mypy`.
+
+When using [V1 features](migration.md#continue-using-pydantic-v1-features) the
+`pydantic.v1.mypy` plugin might need to also be enabled.
+
+To configure the `mypy` plugins:
+
+=== `mypy.ini`
+
+    ```ini
+    [mypy]
+    plugins = pydantic.mypy, pydantic.v1.mypy # include `.v1.mypy` if required.
+    ```
+
+=== `pyproject.toml`
+
+    ```toml
+    [tool.mypy]
+    plugins = [
+        "pydantic.mypy",
+        "pydantic.v1.mypy",
+    ]
+    ```
 
 ## Other changes
 

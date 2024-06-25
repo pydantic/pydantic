@@ -119,11 +119,11 @@ Models possess the following methods and attributes:
 * [`model_construct()`][pydantic.main.BaseModel.model_construct]: a class method for creating models without running validation. See
     [Creating models without validation](#creating-models-without-validation).
 * [`model_copy()`][pydantic.main.BaseModel.model_copy]: returns a copy (by default, shallow copy) of the model. See
-    [Serialization](serialization.md#modelcopy).
+    [Serialization](serialization.md#model_copy).
 * [`model_dump()`][pydantic.main.BaseModel.model_dump]: returns a dictionary of the model's fields and values. See
-    [Serialization](serialization.md#modeldump).
+    [Serialization](serialization.md#model_dump).
 * [`model_dump_json()`][pydantic.main.BaseModel.model_dump_json]: returns a JSON string representation of [`model_dump()`][pydantic.main.BaseModel.model_dump]. See
-    [Serialization](serialization.md#modeldumpjson).
+    [Serialization](serialization.md#model_dump_json).
 * [`model_extra`][pydantic.main.BaseModel.model_extra]: get extra fields set during validation.
 * [`model_fields_set`][pydantic.main.BaseModel.model_fields_set]: set of fields which were set when the model instance was initialized.
 * [`model_json_schema()`][pydantic.main.BaseModel.model_json_schema]: returns a jsonable dictionary representing the model as JSON Schema. See [JSON Schema](json_schema.md).
@@ -1097,8 +1097,7 @@ from pydantic import BaseModel
 TItem = TypeVar('TItem', bound='ItemBase')
 
 
-class ItemBase(BaseModel):
-    ...
+class ItemBase(BaseModel): ...
 
 
 class IntItem(ItemBase):
@@ -1154,14 +1153,18 @@ Fields are defined by one of the following tuple forms:
 * `typing.Annotated[<type>, Field(...)]`
 
 Using a `Field(...)` call as the second argument in the tuple (the default value)
-allows for more advanced field configuration. It's analogous to doing the following
-with a standard `BaseModel`:
+allows for more advanced field configuration. Thus, the following are analogous:
 
 ```py
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, create_model
+
+DynamicModel = create_model(
+    'DynamicModel',
+    foo=(str, Field(..., description='foo description', alias='FOO')),
+)
 
 
-class Model(BaseModel):
+class StaticModel(BaseModel):
     foo: str = Field(..., description='foo description', alias='FOO')
 ```
 
@@ -1390,7 +1393,7 @@ Field order affects models in the following ways:
 
 * field order is preserved in the model [schema](json_schema.md)
 * field order is preserved in [validation errors](#error-handling)
-* field order is preserved by [`.model_dump()` and `.model_dump_json()` etc.](serialization.md#modelmodeldump)
+* field order is preserved by [`.model_dump()` and `.model_dump_json()` etc.](serialization.md#model_dump)
 
 ```py
 from pydantic import BaseModel, ValidationError
@@ -1783,11 +1786,11 @@ the type annotation for `__pydantic_extra__`:
 ```py
 from typing import Dict
 
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 
 class Model(BaseModel):
-    __pydantic_extra__: Dict[str, int]
+    __pydantic_extra__: Dict[str, int] = Field(init=False)  # (1)!
 
     x: int
 
@@ -1810,6 +1813,9 @@ assert m.y == 2
 assert m.model_dump() == {'x': 1, 'y': 2}
 assert m.__pydantic_extra__ == {'y': 2}
 ```
+
+1. The `= Field(init=False)` does not have any effect at runtime, but prevents the `__pydantic_extra__` field from
+being treated as an argument to the model's `__init__` method by type-checkers.
 
 The same configurations apply to `TypedDict` and `dataclass`' except the config is controlled by setting the
 `__pydantic_config__` attribute of the class to a valid `ConfigDict`.

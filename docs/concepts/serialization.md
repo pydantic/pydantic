@@ -14,7 +14,7 @@ serialized, and exported in a number of ways.
     primitives and "serialize" when converting to string, for practical purposes, we frequently use the word "serialize"
     to refer to both of these situations, even though it does not always imply conversion to a string or bytes.
 
-## `model.model_dump(...)`
+## `model.model_dump(...)` <a name="model_dump"></a>
 
 ??? api "API Documentation"
     [`pydantic.main.BaseModel.model_dump`][pydantic.main.BaseModel.model_dump]<br>
@@ -96,7 +96,7 @@ print(Model(x=['{"a": 1}', '[1, 2]']).model_dump(round_trip=True))
 #> {'x': ['{"a":1}', '[1,2]']}
 ```
 
-## `model.model_dump_json(...)`
+## `model.model_dump_json(...)` <a name="model_dump_json"></a>
 
 ??? api "API Documentation"
     [`pydantic.main.BaseModel.model_dump_json`][pydantic.main.BaseModel.model_dump_json]<br>
@@ -342,8 +342,7 @@ class Model(BaseModel):
             exclude_none: bool = False,
             round_trip: bool = False,
             warnings: bool = True,
-        ) -> str:
-            ...
+        ) -> str: ...
 ```
 
 This trick is actually used in [`RootModel`](models.md#rootmodel-and-custom-root-types) for precisely this purpose.
@@ -909,7 +908,7 @@ print(model.model_dump(context={'stopwords': ['document']}))
 
 Similarly, you can [use a context for validation](../concepts/validators.md#validation-context).
 
-## `model_copy(...)`
+## `model_copy(...)` <a name="model_copy">
 
 ??? api "API Documentation"
     [`pydantic.main.BaseModel.model_copy`][pydantic.main.BaseModel.model_copy]<br>

@@ -1,0 +1,4 @@
+# add relnotes-fix by default
+relnotes-fix:
+- changed-files:
+  - any-glob-to-any-file: '**'

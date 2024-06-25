@@ -326,7 +326,7 @@ class FieldInfo(_repr.Representation):
                 new_field_info.metadata = metadata
                 return new_field_info
 
-        return FieldInfo(annotation=annotation, frozen=final or None)
+        return FieldInfo(annotation=annotation, frozen=final or None)  # pyright: ignore[reportArgumentType]
 
     @staticmethod
     def from_annotated_attribute(annotation: type[Any], default: Any) -> FieldInfo:
@@ -367,7 +367,7 @@ class FieldInfo(_repr.Representation):
                 annotation = typing_extensions.get_args(annotation)[0]
 
         if isinstance(default, FieldInfo):
-            default.annotation, annotation_metadata = FieldInfo._extract_metadata(annotation)
+            default.annotation, annotation_metadata = FieldInfo._extract_metadata(annotation)  # pyright: ignore[reportArgumentType]
             default.metadata += annotation_metadata
             default = default.merge_field_infos(
                 *[x for x in annotation_metadata if isinstance(x, FieldInfo)], default, annotation=default.annotation
@@ -378,12 +378,12 @@ class FieldInfo(_repr.Representation):
             init_var = False
             if annotation is dataclasses.InitVar:
                 init_var = True
-                annotation = Any
+                annotation = typing.cast(Any, Any)
             elif isinstance(annotation, dataclasses.InitVar):
                 init_var = True
                 annotation = annotation.type
             pydantic_field = FieldInfo._from_dataclass_field(default)
-            pydantic_field.annotation, annotation_metadata = FieldInfo._extract_metadata(annotation)
+            pydantic_field.annotation, annotation_metadata = FieldInfo._extract_metadata(annotation)  # pyright: ignore[reportArgumentType]
             pydantic_field.metadata += annotation_metadata
             pydantic_field = pydantic_field.merge_field_infos(
                 *[x for x in annotation_metadata if isinstance(x, FieldInfo)],
@@ -411,7 +411,7 @@ class FieldInfo(_repr.Representation):
                 field_info.metadata = metadata
                 return field_info
 
-            return FieldInfo(annotation=annotation, default=default, frozen=final or None)
+            return FieldInfo(annotation=annotation, default=default, frozen=final or None)  # pyright: ignore[reportArgumentType]
 
     @staticmethod
     def merge_field_infos(*field_infos: FieldInfo, **overrides: Any) -> FieldInfo:

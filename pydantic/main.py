@@ -1435,7 +1435,7 @@ def create_model(
     __doc__: str | None = None,
     __base__: None = None,
     __module__: str = __name__,
-    __validators__: dict[str, classmethod[Any, ..., Any]] | None = None,
+    __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     **field_definitions: Any,
 ) -> type[BaseModel]: ...
@@ -1450,7 +1450,7 @@ def create_model(
     __doc__: str | None = None,
     __base__: type[ModelT] | tuple[type[ModelT], ...],
     __module__: str = __name__,
-    __validators__: dict[str, classmethod[Any, ..., Any]] | None = None,
+    __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     **field_definitions: Any,
 ) -> type[ModelT]: ...
@@ -1464,7 +1464,7 @@ def create_model(  # noqa: C901
     __doc__: str | None = None,
     __base__: type[ModelT] | tuple[type[ModelT], ...] | None = None,
     __module__: str | None = None,
-    __validators__: dict[str, classmethod[Any, ..., Any]] | None = None,
+    __validators__: dict[str, Callable[..., Any]] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __slots__: tuple[str, ...] | None = None,
     **field_definitions: Any,
@@ -1481,7 +1481,9 @@ def create_model(  # noqa: C901
         __base__: The base class or classes for the new model.
         __module__: The name of the module that the model belongs to;
             if `None`, the value is taken from `sys._getframe(1)`
-        __validators__: A dictionary of methods that validate fields.
+        __validators__: A dictionary of methods that validate fields. The keys are the names of the validation methods to
+            be added to the model, and the values are the validation methods themselves. You can read more about functional
+            validators [here](https://docs.pydantic.dev/2.8/concepts/validators/#field-validators).
         __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.
         __slots__: Deprecated. Should not be passed to `create_model`.
         **field_definitions: Attributes of the new model. They should be passed in the format:

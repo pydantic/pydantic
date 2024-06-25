@@ -700,7 +700,7 @@ class GenerateSchema:
         schema = self._unpack_refs_defs(schema)
 
         if is_function_with_inner_schema(schema):
-            ref = schema['schema'].pop('ref', None)  # pyright: ignore[reportGeneralTypeIssues]
+            ref = schema['schema'].pop('ref', None)  # pyright: ignore[reportCallIssue, reportArgumentType]
             if ref:
                 schema['ref'] = ref
         else:
@@ -1683,7 +1683,7 @@ class GenerateSchema:
 
         for name, p in sig.parameters.items():
             if p.annotation is sig.empty:
-                annotation = Any
+                annotation = typing.cast(Any, Any)
             else:
                 annotation = type_hints[name]
 
