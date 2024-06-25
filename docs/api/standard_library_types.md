@@ -1060,7 +1060,7 @@ Allows any value, including `None`.
 
 ## [`typing.Annotated`][]
 
-Allows wrapping another type with arbitrary metadata, as per [PEP-593](https://www.python.org/dev/peps/pep-0593/). The `Annotated` hint may contain a single call to the [`Field` function](../concepts/json_schema.md#typingannotated-fields), but otherwise the additional metadata is ignored and the root type is used.
+Allows wrapping another type with arbitrary metadata, as per [PEP-593](https://www.python.org/dev/peps/pep-0593/). The `Annotated` hint may contain a single call to the [`Field` function](../concepts/types.md#composing-types-via-annotated), but otherwise the additional metadata is ignored and the root type is used.
 
 
 ## [`typing.Pattern`][]

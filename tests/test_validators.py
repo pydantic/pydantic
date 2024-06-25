@@ -6,6 +6,7 @@ from datetime import date, datetime
 from enum import Enum
 from functools import partial, partialmethod
 from itertools import product
+from os.path import normcase
 from typing import Any, Callable, Deque, Dict, FrozenSet, List, NamedTuple, Optional, Tuple, Union
 from unittest.mock import MagicMock
 
@@ -1960,7 +1961,7 @@ def test_v1_validator_deprecated():
     # check that we got stacklevel correct
     # if this fails you need to edit the stacklevel
     # parameter to warnings.warn in _decorators.py
-    assert w.filename == __file__
+    assert normcase(w.filename) == normcase(__file__)
     source = _get_source_line(w.filename, w.lineno)
     assert "@validator('x')" in source
 

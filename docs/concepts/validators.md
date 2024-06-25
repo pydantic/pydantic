@@ -534,12 +534,10 @@ class Fruit:
         return self.__class__.__name__
 
 
-class Banana(Fruit):
-    ...
+class Banana(Fruit): ...
 
 
-class Apple(Fruit):
-    ...
+class Apple(Fruit): ...
 
 
 class Basket(BaseModel):
