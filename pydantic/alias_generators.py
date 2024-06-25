@@ -2,7 +2,7 @@
 
 import re
 
-__all__ = ("to_pascal", "to_camel", "to_snake")
+__all__ = ('to_pascal', 'to_camel', 'to_snake')
 
 # TODO: in V3, change the argument names to be more descriptive
 # Generally, don't only convert from snake_case, or name the functions
@@ -19,7 +19,7 @@ def to_pascal(snake: str) -> str:
         The PascalCase string.
     """
     camel = snake.title()
-    return re.sub("([0-9A-Za-z])_(?=[0-9A-Z])", lambda m: m.group(1), camel)
+    return re.sub('([0-9A-Za-z])_(?=[0-9A-Z])', lambda m: m.group(1), camel)
 
 
 def to_camel(snake: str) -> str:
@@ -33,11 +33,11 @@ def to_camel(snake: str) -> str:
     """
     # If the string is already in camelCase and does not contain a digit followed
     # by a lowercase letter, return it as it is
-    if re.match("^[a-z]+[A-Za-z0-9]*$", snake) and not re.search(r"\d[a-z]", snake):
+    if re.match('^[a-z]+[A-Za-z0-9]*$', snake) and not re.search(r'\d[a-z]', snake):
         return snake
 
     camel = to_pascal(snake)
-    return re.sub("(^_*[A-Z])", lambda m: m.group(1).lower(), camel)
+    return re.sub('(^_*[A-Z])', lambda m: m.group(1).lower(), camel)
 
 
 def to_snake(camel: str) -> str:
@@ -49,10 +49,10 @@ def to_snake(camel: str) -> str:
     Returns:
         The converted string in snake_case.
     """
-    # Combine all regular expressions into a single pass
-    camel = re.sub(
-        r"(?<=[a-zA-Z])(?=[0-9])|(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|-",
-        "_",
+    # Use the regex to split and join parts by underscore, then lower the case
+    snake = re.sub(
+        r'(?<=[a-zA-Z])(?=[0-9])|(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|-',
+        '_',
         camel,
     )
-    return camel.lower()
+    return snake.lower()
