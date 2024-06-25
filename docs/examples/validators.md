@@ -179,31 +179,30 @@ In this example, we construct a validator that chooses a single value from a lis
 One way to do this is to place the validator in the parent model, with the field data from the nested model being accessible via a parameter of the validator.
 
 ```py
-from pydantic import BaseModel, field_validator, ValidationInfo
+from pydantic import BaseModel, ValidationInfo, field_validator
+
 
 class Foo(BaseModel):
     field1: str
     field2: int | None = None
 
+
 class Item(BaseModel):
     idx: int
     foo_fields: Foo
 
-    @field_validator("foo_fields", mode='before')
+    @field_validator('foo_fields', mode='before')
     def select_single_value(cls, fields: dict, info: ValidationInfo) -> dict:
         """Choose single value from space separated list based on specified index."""
-        index = info.data.get("idx")
+        index = info.data.get('idx')
         field2_val_lst = fields['field2'].split()
-        fields['field2'] = field2_val_lst[index] # select value and update field
+        fields['field2'] = field2_val_lst[
+            index  # select value and update field
+        ]
         return fields
 
-data = {
-    "idx": 1,
-    "foo_fields": {
-        "field1": "woohoo",
-        "field2": "74 97 29"
-    }
-}
+
+data = {'idx': 1, 'foo_fields': {'field1': 'woohoo', 'field2': '74 97 29'}}
 print(Item.model_validate(data))
 #> idx=1 foo_fields=Foo(field1='woohoo', field2=97)
 ```
@@ -213,39 +212,38 @@ If multiple fields in the ```Foo``` class need the single-value selection valida
 Alternatively, a validator can be placed in the nested model class (```Foo```), with the index data from the parent model being passed in via context from ```ValidationInfo```. This is demonstrated below.
 
 ```py
-from pydantic import BaseModel, field_validator, ValidationInfo
+from pydantic import BaseModel, ValidationInfo, field_validator
+
 
 class Foo(BaseModel):
     field1: str
     field2: int | None = None
 
-    @field_validator("field2", mode='before')
+    @field_validator('field2', mode='before')
     def select_single_value(cls, field2_val: str, info: ValidationInfo) -> dict:
         """Choose single value from space separated list based on specified index."""
-        index = info.context.get("idx") # obtain index from validation context
+        index = info.context.get('idx')  # obtain index from validation context
         field2_val_lst = field2_val.split()
         return field2_val_lst[index]
+
 
 class Item(BaseModel):
     idx: int
     foo_fields: Foo
 
-    @field_validator("idx", mode='after')
+    @field_validator('idx', mode='after')
     def add_context(cls, v: int, info: ValidationInfo):
-        info.context.update({"idx": v}) # update the initially empty context with the idx
+        info.context.update(
+            {'idx': v}  # update the initially empty context with the idx
+        )
         return v
 
-data = {
-    "idx": 1,
-    "foo_fields": {
-        "field1": "woohoo",
-        "field2": "74 97 29"
-    }
-}
+
+data = {'idx': 1, 'foo_fields': {'field1': 'woohoo', 'field2': '74 97 29'}}
 print(Item.model_validate(data, context={}))
 #> idx=1 foo_fields=Foo(field1='woohoo', field2=97)
 ```
 
-Note that the context property must be initialized with ```model_validate``` in order to be used during the validation process.
+Note that the context property must be initialized with `model_validate` in order to be used during the validation process.
 
 More details about [field validators](https://docs.pydantic.dev/latest/concepts/validators/#field-validators) and [validation context](https://docs.pydantic.dev/latest/concepts/validators/#validation-context) can be found on the validators page.
