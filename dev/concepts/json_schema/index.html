@@ -967,6 +967,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </li>
         
           <li class="md-nav__item">
+  <a href="#programmatic-field-title-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Programmatic field title generation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#model-level-customization" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1054,6 +1065,28 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
     <span class="md-ellipsis">
       
         Implementing __get_pydantic_json_schema__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-field_title_generator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using field_title_generator
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-model_title_generator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using model_title_generator
       
     </span>
   </a>
@@ -3583,6 +3616,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </li>
         
           <li class="md-nav__item">
+  <a href="#programmatic-field-title-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Programmatic field title generation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#model-level-customization" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3670,6 +3714,28 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
     <span class="md-ellipsis">
       
         Implementing __get_pydantic_json_schema__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-field_title_generator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using field_title_generator
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-model_title_generator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using model_title_generator
       
     </span>
   </a>
@@ -4325,6 +4391,7 @@ and validations.</p>
 <li><code>description</code>: The description of the field.</li>
 <li><code>examples</code>: The examples of the field.</li>
 <li><code>json_schema_extra</code>: Extra JSON Schema properties to be added to the field.</li>
+<li><code>field_title_generator</code>: A function that programmatically sets the field's title, based on its name and info.</li>
 </ul>
 <p>Here's an example:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
@@ -4466,6 +4533,46 @@ to <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields
 <span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span>
 <span class="p">}</span>
 </code></pre></div>
+<h3 id="programmatic-field-title-generation">Programmatic field title generation<a class="headerlink" href="#programmatic-field-title-generation" title="Permanent link">&para;</a></h3>
+<p>The <code>field_title_generator</code> parameter can be used to programmatically generate the title for a field based on its name and info.</p>
+<p>See the following example:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<span class="kn">from</span> <span class="nn">pydantic.fields</span> <span class="kn">import</span> <span class="n">FieldInfo</span>
+
+
+<span class="k">def</span> <span class="nf">make_title</span><span class="p">(</span><span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">field_info</span><span class="p">:</span> <span class="n">FieldInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">field_name</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">field_title_generator</span><span class="o">=</span><span class="n">make_title</span><span class="p">)</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">field_title_generator</span><span class="o">=</span><span class="n">make_title</span><span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">Person</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">(),</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">  &quot;properties&quot;: {</span>
+<span class="sd">    &quot;name&quot;: {</span>
+<span class="sd">      &quot;title&quot;: &quot;NAME&quot;,</span>
+<span class="sd">      &quot;type&quot;: &quot;string&quot;</span>
+<span class="sd">    },</span>
+<span class="sd">    &quot;age&quot;: {</span>
+<span class="sd">      &quot;title&quot;: &quot;AGE&quot;,</span>
+<span class="sd">      &quot;type&quot;: &quot;integer&quot;</span>
+<span class="sd">    }</span>
+<span class="sd">  },</span>
+<span class="sd">  &quot;required&quot;: [</span>
+<span class="sd">    &quot;name&quot;,</span>
+<span class="sd">    &quot;age&quot;</span>
+<span class="sd">  ],</span>
+<span class="sd">  &quot;title&quot;: &quot;Person&quot;,</span>
+<span class="sd">  &quot;type&quot;: &quot;object&quot;</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
 <h3 id="model-level-customization">Model-Level Customization<a class="headerlink" href="#model-level-customization" title="Permanent link">&para;</a></h3>
 <p>You can also use <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict">model config</a> to customize JSON schema generation on a model.
 Specifically, the following config options are relevant:</p>
@@ -4474,6 +4581,8 @@ Specifically, the following config options are relevant:</p>
 <li><a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.json_schema_extra"><code>json_schema_extra</code></a></li>
 <li><a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.schema_generator"><code>schema_generator</code></a></li>
 <li><a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.json_schema_mode_override"><code>json_schema_mode_override</code></a></li>
+<li><a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.field_title_generator"><code>field_title_generator</code></a></li>
+<li><a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.model_title_generator"><code>model_title_generator</code></a></li>
 </ul>
 <h3 id="using-json_schema_extra">Using <code>json_schema_extra</code><a class="headerlink" href="#using-json_schema_extra" title="Permanent link">&para;</a></h3>
 <p>The <code>json_schema_extra</code> option can be used to add extra information to the JSON schema, either at the
@@ -4974,6 +5083,87 @@ Modifying this method only affects the JSON schema - it doesn't affect the core 
 <span class="w">  </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Person&quot;</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span>
 <span class="p">}</span>
+</code></pre></div>
+<h3 id="using-field_title_generator">Using <code>field_title_generator</code><a class="headerlink" href="#using-field_title_generator" title="Permanent link">&para;</a></h3>
+<p>The <code>field_title_generator</code> parameter can be used to programmatically generate the title for a field based on its name and info.
+This is similar to the field level <code>field_title_generator</code>, but the <code>ConfigDict</code> option will be applied to all fields of the class.</p>
+<p>See the following example:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+
+
+<span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span>
+        <span class="n">field_title_generator</span><span class="o">=</span><span class="k">lambda</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">field_info</span><span class="p">:</span> <span class="n">field_name</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+    <span class="p">)</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">Person</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">(),</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">  &quot;properties&quot;: {</span>
+<span class="sd">    &quot;name&quot;: {</span>
+<span class="sd">      &quot;title&quot;: &quot;NAME&quot;,</span>
+<span class="sd">      &quot;type&quot;: &quot;string&quot;</span>
+<span class="sd">    },</span>
+<span class="sd">    &quot;age&quot;: {</span>
+<span class="sd">      &quot;title&quot;: &quot;AGE&quot;,</span>
+<span class="sd">      &quot;type&quot;: &quot;integer&quot;</span>
+<span class="sd">    }</span>
+<span class="sd">  },</span>
+<span class="sd">  &quot;required&quot;: [</span>
+<span class="sd">    &quot;name&quot;,</span>
+<span class="sd">    &quot;age&quot;</span>
+<span class="sd">  ],</span>
+<span class="sd">  &quot;title&quot;: &quot;Person&quot;,</span>
+<span class="sd">  &quot;type&quot;: &quot;object&quot;</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+<h3 id="using-model_title_generator">Using <code>model_title_generator</code><a class="headerlink" href="#using-model_title_generator" title="Permanent link">&para;</a></h3>
+<p>The <code>model_title_generator</code> config option is similar to the <code>field_title_generator</code> option, but it applies to the title of the model itself,
+and accepts the model class as input.</p>
+<p>See the following example:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Type</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+
+
+<span class="k">def</span> <span class="nf">make_title</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">Type</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;Title-</span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">model_title_generator</span><span class="o">=</span><span class="n">make_title</span><span class="p">)</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">Person</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">(),</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">  &quot;properties&quot;: {</span>
+<span class="sd">    &quot;name&quot;: {</span>
+<span class="sd">      &quot;title&quot;: &quot;Name&quot;,</span>
+<span class="sd">      &quot;type&quot;: &quot;string&quot;</span>
+<span class="sd">    },</span>
+<span class="sd">    &quot;age&quot;: {</span>
+<span class="sd">      &quot;title&quot;: &quot;Age&quot;,</span>
+<span class="sd">      &quot;type&quot;: &quot;integer&quot;</span>
+<span class="sd">    }</span>
+<span class="sd">  },</span>
+<span class="sd">  &quot;required&quot;: [</span>
+<span class="sd">    &quot;name&quot;,</span>
+<span class="sd">    &quot;age&quot;</span>
+<span class="sd">  ],</span>
+<span class="sd">  &quot;title&quot;: &quot;Title-Person&quot;,</span>
+<span class="sd">  &quot;type&quot;: &quot;object&quot;</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 <h2 id="json-schema-types">JSON schema types<a class="headerlink" href="#json-schema-types" title="Permanent link">&para;</a></h2>
 <p>Types, custom field types, and constraints (like <code>max_length</code>) are mapped to the corresponding spec formats in the
