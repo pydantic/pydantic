@@ -185,6 +185,7 @@ def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path
 
 
 @pytest.mark.skipif(bool(skip_reason), reason=skip_reason or 'not skipping')
+@pytest.mark.skipif(sys.version_info >= (3, 13), reason='python-devtools does not yet support python 3.13')
 @pytest.mark.parametrize(
     'example', find_examples(str(DOCS_ROOT / 'integrations/devtools.md'), skip=sys.platform == 'win32'), ids=str
 )
