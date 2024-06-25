@@ -3399,7 +3399,7 @@ def test_decimal_validation(mode, type_args, value, result):
     elif mode == 'optional':
 
         class Model(BaseModel):
-            foo: Annotated[Decimal | None, Field(None, **type_args)]
+            foo: Optional[Decimal] = Field(**type_args)
 
     else:
 
