@@ -256,9 +256,14 @@ def eval_type_backport(
     if the original syntax is not supported in the current Python version.
     """
     try:
-        return typing._eval_type(  # type: ignore
-            value, globalns, localns
-        )
+        if sys.version_info > (3, 13):
+            return typing._eval_type(  # type: ignore
+                value, globalns, localns, type_params=()
+            )
+        else:
+            return typing._eval_type(  # type: ignore
+                value, globalns, localns
+            )
     except TypeError as e:
         if not (isinstance(value, typing.ForwardRef) and is_backport_fixable_error(e)):
             raise
