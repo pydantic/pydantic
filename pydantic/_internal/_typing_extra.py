@@ -109,8 +109,7 @@ def all_literal_values(type_: type[Any]) -> list[Any]:
 
 
 def is_annotated(ann_type: Any) -> bool:
-    origin = get_origin(ann_type)
-    return origin is Annotated
+    return get_origin(ann_type) is Annotated
 
 
 def annotated_type(type_: Any) -> Any | None:
@@ -308,7 +307,6 @@ def get_function_type_hints(
 
     globalns = add_module_globals(function)
     type_hints = {}
-    type_params: tuple[Any] = getattr(function, '__type_params__', ())  # type: ignore
     for name, value in annotations.items():
         if include_keys is not None and name not in include_keys:
             continue
@@ -317,7 +315,7 @@ def get_function_type_hints(
         elif isinstance(value, str):
             value = _make_forward_ref(value)
 
-        type_hints[name] = eval_type_backport(value, globalns, types_namespace, type_params)
+        type_hints[name] = eval_type_backport(value, globalns, types_namespace)
 
     return type_hints
 
