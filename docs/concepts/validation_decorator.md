@@ -180,9 +180,9 @@ print(armageddon(1, 2, 3, 4, 5, 6, d=8, e=9, f=10, spam=11))
 
 ## Using Field to describe function arguments
 
-[Field](json_schema.md#field-customization) can also be used with `@validate_call` to provide extra information about
+[Field](json_schema.md#field-level-customization) can also be used with `@validate_call` to provide extra information about
 the field and validations. In general it should be used in a type hint with
-[Annotated](json_schema.md#typingannotated-fields), unless `default_factory` is specified, in which case it should be
+[Annotated](types.md#composing-types-via-annotated), unless `default_factory` is specified, in which case it should be
 used as the default value of the field:
 
 ```py
