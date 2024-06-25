@@ -31,6 +31,7 @@ classifiers = [
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
     'Intended Audience :: Developers',
     'Intended Audience :: Information Technology',
     'Intended Audience :: System Administrators',
@@ -46,7 +47,8 @@ classifiers = [
 ]
 requires-python = '>=3.8'
 dependencies = [
-    'typing-extensions>=4.6.1',
+    'typing-extensions>=4.6.1; python_version < "3.13"',
+    'typing-extensions>=4.12.2; python_version >= "3.13"',
     'annotated-types>=0.4.0',
     "pydantic-core==2.20.0",
 ]
@@ -130,7 +132,8 @@ testing = [
     "pytest-examples",
     "faker>=18.13.0",
     "pytest-benchmark>=4.0.0",
-    "pytest-codspeed~=2.2.0",
+    # TODO: remove bound once pytest-codspeed supports 3.13, blocked by `python-cffi`
+    "pytest-codspeed~=2.2.0; python_version < '3.13'",
     "packaging>=23.2",
 ]
 testing-extra = [
@@ -138,16 +141,16 @@ testing-extra = [
     "ansi2html",
     "devtools",
     # used in docs tests
-    "sqlalchemy>=2.0,<3.0",
-    "greenlet>=3.0.0rc3",
+    # TODO: remove bound once sqlalchemy supports 3.13
+    "sqlalchemy>=2.0,<3.0; python_version < '3.13'",
+    "greenlet>=3.0.0rc3; python_version < '3.13'",
 ]
 mypy = [
     "mypy",
     "pydantic-settings>=2.0.0",
 ]
-memray = [
-    "pytest-memray; platform_system != 'Windows'",
-]
+# TODO: remove once memray supports 3.13
+memray = ["pytest-memray; python_version < '3.13' and platform_system != 'Windows'"]
 
 [tool.pytest.ini_options]
 testpaths = 'tests'
