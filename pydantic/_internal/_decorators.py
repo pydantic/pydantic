@@ -731,19 +731,21 @@ def unwrap_wrapped_function(
     # Define the types we want to check against as a single tuple.
     unwrap_types = (
         (property, cached_property)
-        + (partial, partialmethod if unwrap_partial else ())
-        + (staticmethod, classmethod if unwrap_class_static_method else ())
+        + ((partial, partialmethod) if unwrap_partial else ())
+        + ((staticmethod, classmethod) if unwrap_class_static_method else ())
     )
 
     while isinstance(func, unwrap_types):
-        if isinstance(func, (partial, partialmethod)):
+        if unwrap_class_static_method and isinstance(func, (classmethod, staticmethod)):
+            func = func.__func__
+        elif isinstance(func, (partial, partialmethod)):
             func = func.func
         elif isinstance(func, property):
             func = func.fget  # arbitrary choice, convenient for computed fields
-        elif isinstance(func, cached_property):
+        else:
+            # Make coverage happy as it can only get here in the last possible case
+            assert isinstance(func, cached_property)
             func = func.func  # type: ignore
-        elif unwrap_class_static_method and isinstance(func, (classmethod, staticmethod)):
-            func = func.__func__
 
     return func
 
