@@ -617,6 +617,51 @@ print(json.dumps(Model.model_json_schema(), indent=2))
 """
 ```
 
+
+You can also use `dict` json_schema_extra along side with `Callable` to `json_schema_extra` to modify the JSON schema:
+
+```py output="json"
+import json
+from typing import Annotated
+
+from pydantic import BaseModel, Field
+
+
+def remove_key_1_and_add_key_2(s):
+    s.pop('key1')
+    s['key2'] = 'value2'
+
+
+class Model(BaseModel):
+    a: Annotated[
+        int,
+        Field(json_schema_extra={'key1': 'value1'}),
+        Field(
+            json_schema_extra=remove_key_1_and_add_key_2
+        ),  # <- this called after the key1 is set.
+    ]
+
+
+print(json.dumps(Model.model_json_schema(), indent=2))
+"""
+{
+  "properties": {
+    "a": {
+      "key2": "value2",
+      "title": "A",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "a"
+  ],
+  "title": "Model",
+  "type": "object"
+}
+"""
+```
+
+
 ### `WithJsonSchema` annotation
 
 ??? api "API Documentation"
