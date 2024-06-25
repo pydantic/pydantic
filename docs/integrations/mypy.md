@@ -183,3 +183,23 @@ init_forbid_extra = true
 init_typed = true
 warn_required_dynamic_aliases = true
 ```
+
+#### Note on `--disallow-any-explicit`
+
+If you're using the `--disallow-any-explicit` mypy config setting (or other settings that ban `Any`), you may encounter `no-any-explicit` errors when extending `BaseModel`. This is because by default, Pydantic adds an `__init__` method with a signature like `def __init__(self, field_1: Any, field_2: Any, **kwargs: Any):`.
+
+To resolve this issue, you need to enable strict mode settings for the Pydantic mypy plugin. Specifically, add these options to your `[pydantic-mypy]` section:
+
+```toml
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+```
+
+With `init_forbid_extra = True`, the `**kwargs` are removed from the generated `__init__` signature. With `init_typed = True`, the `Any` types for fields are replaced with their actual type hints.
+
+This configuration allows you to use `--disallow-any-explicit` without getting errors on your Pydantic models. However, be aware that this stricter checking might flag some valid Pydantic use cases (like passing a string for a datetime field) as type errors.
+
+```
+This addition explains the issue with `--disallow-any-explicit` and provides the solution, giving users the information they need to resolve this common problem.
+```
