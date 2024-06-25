@@ -1,5 +1,5 @@
 # Pydantic
-[![pydantic Downloads Last Month](https://assets.piptrends.com/get-last-month-downloads-badge/pydantic.svg 'pydantic Downloads Last Month by pip Trends')](https://piptrends.com/package/pydantic)
+[![downloads/month](https://assets.piptrends.com/get-last-month-downloads-badge/pydantic.svg 'pydantic Downloads Last Month by pip Trends')](https://piptrends.com/package/pydantic)
 [![CI](https://img.shields.io/github/actions/workflow/status/pydantic/pydantic/ci.yml?branch=main&logo=github&label=CI)](https://github.com/pydantic/pydantic/actions?query=event%3Apush+branch%3Amain+workflow%3ACI)
 [![Coverage](https://coverage-badge.samuelcolvin.workers.dev/pydantic/pydantic.svg)](https://coverage-badge.samuelcolvin.workers.dev/redirect/pydantic/pydantic)
 [![pypi](https://img.shields.io/pypi/v/pydantic.svg)](https://pypi.python.org/pypi/pydantic)
