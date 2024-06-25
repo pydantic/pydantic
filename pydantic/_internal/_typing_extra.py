@@ -256,7 +256,7 @@ def eval_type_backport(
     if the original syntax is not supported in the current Python version.
     """
     try:
-        if sys.version_info > (3, 13):
+        if sys.version_info >= (3, 13):
             return typing._eval_type(  # type: ignore
                 value, globalns, localns, type_params=()
             )
