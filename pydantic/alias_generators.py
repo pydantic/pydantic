@@ -52,7 +52,7 @@ def to_snake(camel: str) -> str:
     # `(?<=[a-zA-Z])(?=[0-9])` matches the space between a letter and a digit
     # `(?<=[a-z0-9])(?=[A-Z])` matches the space between a lowercase letter / digit and uppercase letter
     # `(?<=[A-Z])(?=[A-Z][a-z])` matches the space between two uppercase letters when the latter is followed by a lowercase letter
-    # `-` matches a hyphen in order to convert kebab case strings 
+    # `-` matches a hyphen in order to convert kebab case strings
     snake = re.sub(
         r'(?<=[a-zA-Z])(?=[0-9])|(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|-',
         '_',
