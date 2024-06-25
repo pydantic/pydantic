@@ -438,25 +438,19 @@ jobs:
           # macos;
           # all versions x86_64
           # arm pypy and older pythons which can't be run on the arm hardware for PGO
-          #
-          # FIXME https://github.com/PyO3/maturin-action/issues/275
-          # cffi prevents `maturin-action` working on macOS 3.13 for now for the optimized build
           - os: macos
             target: x86_64
           - os: macos
             target: aarch64
-            interpreter: 3.8 3.9 pypy3.9 pypy3.10 # 3.13
+            interpreter: 3.8 3.9 pypy3.9 pypy3.10
 
           # windows;
           # x86_64 pypy builds are not PGO optimized
           # i686 not supported by pypy
           # aarch64 only 3.11 and up, also not PGO optimized
-          #
-          # FIXME https://github.com/PyO3/maturin-action/issues/275
-          # cffi prevents `maturin-action` working on Windows 3.13 for now for the optimized build
           - os: windows
             target: x86_64
-            interpreter: pypy3.9 pypy3.10 3.13
+            interpreter: pypy3.9 pypy3.10
           - os: windows
             target: i686
             python-architecture: x86
@@ -528,12 +522,6 @@ jobs:
             interpreter: '3.8'
           - os: macos
             interpreter: '3.9'
-          # https://github.com/PyO3/maturin-action/issues/275
-          # cffi prevents `maturin-action` working on Windows & macOS 3.13 for now
-          - os: windows
-            interpreter: '3.13'
-          - os: macos
-            interpreter: '3.13'
 
     runs-on: ${{ matrix.runs-on }}
     steps:
