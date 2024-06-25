@@ -29,7 +29,7 @@ from pydantic._internal._typing_extra import get_type_hints
 from pydantic.config import ConfigDict, JsonValue
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
-from pydantic.fields import FieldInfo
+from pydantic.fields import ComputedFieldInfo, FieldInfo
 from pydantic.type_adapter import TypeAdapter
 from pydantic.warnings import PydanticDeprecationWarning
 
@@ -523,7 +523,13 @@ def test_multiple_inheritance_config():
 
 
 def test_config_wrapper_match():
-    localns = {'_GenerateSchema': GenerateSchema, 'GenerateSchema': GenerateSchema, 'JsonValue': JsonValue}
+    localns = {
+        '_GenerateSchema': GenerateSchema,
+        'GenerateSchema': GenerateSchema,
+        'JsonValue': JsonValue,
+        'FieldInfo': FieldInfo,
+        'ComputedFieldInfo': ComputedFieldInfo,
+    }
     config_dict_annotations = [(k, str(v)) for k, v in get_type_hints(ConfigDict, localns=localns).items()]
     config_dict_annotations.sort()
     # remove config
@@ -566,7 +572,12 @@ def test_config_validation_error_cause():
 
 
 def test_config_defaults_match():
-    localns = {'_GenerateSchema': GenerateSchema, 'GenerateSchema': GenerateSchema}
+    localns = {
+        '_GenerateSchema': GenerateSchema,
+        'GenerateSchema': GenerateSchema,
+        'FieldInfo': FieldInfo,
+        'ComputedFieldInfo': ComputedFieldInfo,
+    }
     config_dict_keys = sorted(list(get_type_hints(ConfigDict, localns=localns).keys()))
     config_defaults_keys = sorted(list(config_defaults.keys()))
 
