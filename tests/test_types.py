@@ -59,6 +59,7 @@ from pydantic import (
     ConfigDict,
     DirectoryPath,
     EmailStr,
+    FailFast,
     Field,
     FilePath,
     FiniteFloat,
@@ -1879,20 +1880,16 @@ def test_string_fails():
         {
             'type': 'value_error',
             'loc': ('str_email',),
-            'msg': (
-                'value is not a valid email address: The email address contains invalid '
-                "characters before the @-sign: '<'."
-            ),
+            'msg': 'value is not a valid email address: An open angle bracket at the start of the email address has to be followed by a close angle bracket at the end.',
             'input': 'foobar<@example.com',
-            'ctx': {'reason': "The email address contains invalid characters before the @-sign: '<'."},
+            'ctx': {
+                'reason': 'An open angle bracket at the start of the email address has to be followed by a close angle bracket at the end.'
+            },
         },
         {
             'type': 'value_error',
             'loc': ('name_email',),
-            'msg': (
-                'value is not a valid email address: The email address contains invalid characters '
-                'before the @-sign: SPACE.'
-            ),
+            'msg': 'value is not a valid email address: The email address contains invalid characters before the @-sign: SPACE.',
             'input': 'foobar @example.com',
             'ctx': {'reason': 'The email address contains invalid characters before the @-sign: SPACE.'},
         },
@@ -3393,12 +3390,17 @@ ANY_THING = object()
         ),
     ],
 )
-@pytest.mark.parametrize('mode', ['Field', 'condecimal'])
+@pytest.mark.parametrize('mode', ['Field', 'condecimal', 'optional'])
 def test_decimal_validation(mode, type_args, value, result):
     if mode == 'Field':
 
         class Model(BaseModel):
             foo: Decimal = Field(**type_args)
+
+    elif mode == 'optional':
+
+        class Model(BaseModel):
+            foo: Optional[Decimal] = Field(**type_args)
 
     else:
 
@@ -6696,3 +6698,52 @@ def test_constraints_on_str_like() -> None:
         baz: Annotated[EmailStr, StringConstraints(to_lower=True, strip_whitespace=True)]
 
     assert Foo(baz=' uSeR@ExAmPlE.com  ').baz == 'user@example.com'
+
+
+@pytest.mark.parametrize(
+    'tp',
+    [
+        pytest.param(List[int], id='list'),
+        pytest.param(Tuple[int, ...], id='tuple'),
+        pytest.param(Set[int], id='set'),
+        pytest.param(FrozenSet[int], id='frozenset'),
+    ],
+)
+@pytest.mark.parametrize(
+    ['fail_fast', 'decl'],
+    [
+        pytest.param(True, FailFast(), id='fail-fast-default'),
+        pytest.param(True, FailFast(True), id='fail-fast-true'),
+        pytest.param(False, FailFast(False), id='fail-fast-false'),
+        pytest.param(False, Field(...), id='field-default'),
+        pytest.param(True, Field(..., fail_fast=True), id='field-true'),
+        pytest.param(False, Field(..., fail_fast=False), id='field-false'),
+    ],
+)
+def test_fail_fast(tp, fail_fast, decl) -> None:
+    class Foo(BaseModel):
+        a: Annotated[tp, decl]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Foo(a=[1, 'a', 'c'])
+
+    errors = [
+        {
+            'input': 'a',
+            'loc': ('a', 1),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'type': 'int_parsing',
+        },
+    ]
+
+    if not fail_fast:
+        errors.append(
+            {
+                'input': 'c',
+                'loc': ('a', 2),
+                'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                'type': 'int_parsing',
+            },
+        )
+
+    assert exc_info.value.errors(include_url=False) == errors

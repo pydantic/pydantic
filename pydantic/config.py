@@ -12,6 +12,7 @@ from .errors import PydanticUserError
 
 if TYPE_CHECKING:
     from ._internal._generate_schema import GenerateSchema as _GenerateSchema
+    from .fields import ComputedFieldInfo, FieldInfo
 
 __all__ = ('ConfigDict', 'with_config')
 
@@ -35,11 +36,18 @@ class ConfigDict(TypedDict, total=False):
     title: str | None
     """The title for the generated JSON schema, defaults to the model's name"""
 
+    model_title_generator: Callable[[type], str] | None
+    """A callable that takes a model class and returns the title for it. Defaults to `None`."""
+
+    field_title_generator: Callable[[str, FieldInfo | ComputedFieldInfo], str] | None
+    """A callable that takes a field's name and info and returns title for it. Defaults to `None`."""
+
     str_to_lower: bool
     """Whether to convert all characters to lowercase for str types. Defaults to `False`."""
 
     str_to_upper: bool
     """Whether to convert all characters to uppercase for str types. Defaults to `False`."""
+
     str_strip_whitespace: bool
     """Whether to strip leading and trailing whitespace for str types."""
 
