@@ -6915,7 +6915,11 @@ especially with <code>TypedDict</code>.</p>
 <span class="normal">54</span>
 <span class="normal">55</span>
 <span class="normal">56</span>
-<span class="normal">57</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_snake</span><span class="p">(</span><span class="n">camel</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_snake</span><span class="p">(</span><span class="n">camel</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a PascalCase, camelCase, or kebab-case string to snake_case.</span>
 
 <span class="sd">    Args:</span>
@@ -6924,11 +6928,15 @@ especially with <code>TypedDict</code>.</p>
 <span class="sd">    Returns:</span>
 <span class="sd">        The converted string in snake_case.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">snake</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;([a-zA-Z])([0-9])&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">camel</span><span class="p">)</span>
-    <span class="n">snake</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;([a-z0-9])([A-Z])&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">snake</span><span class="p">)</span>
-    <span class="n">snake</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;([A-Z]+)([A-Z][a-z])&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">snake</span><span class="p">)</span>
-    <span class="c1"># Replace hyphens with underscores to handle kebab-case</span>
-    <span class="n">snake</span> <span class="o">=</span> <span class="n">snake</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+    <span class="c1"># `(?&lt;=[a-zA-Z])(?=[0-9])` matches the space between a letter and a digit</span>
+    <span class="c1"># `(?&lt;=[a-z0-9])(?=[A-Z])` matches the space between a lowercase letter / digit and uppercase letter</span>
+    <span class="c1"># `(?&lt;=[A-Z])(?=[A-Z][a-z])` matches the space between two uppercase letters when the latter is followed by a lowercase letter</span>
+    <span class="c1"># `-` matches a hyphen in order to convert kebab case strings</span>
+    <span class="n">snake</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span>
+        <span class="sa">r</span><span class="s1">&#39;(?&lt;=[a-zA-Z])(?=[0-9])|(?&lt;=[a-z0-9])(?=[A-Z])|(?&lt;=[A-Z])(?=[A-Z][a-z])|-&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;_&#39;</span><span class="p">,</span>
+        <span class="n">camel</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">return</span> <span class="n">snake</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
             </details>
