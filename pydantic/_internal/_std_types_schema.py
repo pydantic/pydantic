@@ -307,6 +307,7 @@ class SequenceValidator:
     min_length: int | None = None
     max_length: int | None = None
     strict: bool | None = None
+    fail_fast: bool | None = None
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         if self.item_source_type is Any:
@@ -314,7 +315,12 @@ class SequenceValidator:
         else:
             items_schema = handler.generate_schema(self.item_source_type)
 
-        metadata = {'min_length': self.min_length, 'max_length': self.max_length, 'strict': self.strict}
+        metadata = {
+            'min_length': self.min_length,
+            'max_length': self.max_length,
+            'strict': self.strict,
+            'fail_fast': self.fail_fast,
+        }
 
         if self.mapped_origin in (list, set, frozenset):
             if self.mapped_origin is list:
