@@ -104,7 +104,6 @@ AnyFieldDecorator = Union[
 ModifyCoreSchemaWrapHandler = GetCoreSchemaHandler
 GetCoreSchemaFunction = Callable[[Any, ModifyCoreSchemaWrapHandler], core_schema.CoreSchema]
 
-
 TUPLE_TYPES: list[type] = [tuple, typing.Tuple]
 LIST_TYPES: list[type] = [list, typing.List, collections.abc.MutableSequence]
 SET_TYPES: list[type] = [set, typing.Set, collections.abc.MutableSet]
@@ -204,7 +203,11 @@ def apply_each_item_validators(
 
 
 def modify_model_json_schema(
-    schema_or_field: CoreSchemaOrField, handler: GetJsonSchemaHandler, *, cls: Any
+    schema_or_field: CoreSchemaOrField,
+    handler: GetJsonSchemaHandler,
+    *,
+    cls: Any,
+    title: str | None = None,
 ) -> JsonSchemaValue:
     """Add title and description for model-like classes' JSON schema.
 
@@ -212,12 +215,15 @@ def modify_model_json_schema(
         schema_or_field: The schema data to generate a JSON schema from.
         handler: The `GetCoreSchemaHandler` instance.
         cls: The model-like class.
+        title: The title to set for the model's schema, defaults to the model's name
 
     Returns:
         JsonSchemaValue: The updated JSON schema.
     """
+    from ..dataclasses import is_pydantic_dataclass
     from ..main import BaseModel
     from ..root_model import RootModel
+    from ._dataclasses import is_builtin_dataclass
 
     json_schema = handler(schema_or_field)
     original_schema = handler.resolve_ref_schema(json_schema)
@@ -226,10 +232,12 @@ def modify_model_json_schema(
         ref = original_schema['$ref']
         original_schema.clear()
         original_schema['allOf'] = [{'$ref': ref}]
-    if 'title' not in original_schema:
+    if title is not None:
+        original_schema['title'] = title
+    elif 'title' not in original_schema:
         original_schema['title'] = cls.__name__
-    # BaseModel; don't use cls.__doc__ as it will contain the verbose class signature by default
-    docstring = None if cls is BaseModel else cls.__doc__
+    # BaseModel + Dataclass; don't use cls.__doc__ as it will contain the verbose class signature by default
+    docstring = None if cls is BaseModel or is_builtin_dataclass(cls) or is_pydantic_dataclass(cls) else cls.__doc__
     if docstring and 'description' not in original_schema:
         original_schema['description'] = inspect.cleandoc(docstring)
     elif issubclass(cls, RootModel) and cls.model_fields['root'].description:
@@ -532,7 +540,8 @@ class GenerateSchema:
             )
             config_wrapper = ConfigWrapper(cls.model_config, check=False)
             core_config = config_wrapper.core_config(cls)
-            metadata = build_metadata_dict(js_functions=[partial(modify_model_json_schema, cls=cls)])
+            title = self._get_model_title_from_config(cls, config_wrapper)
+            metadata = build_metadata_dict(js_functions=[partial(modify_model_json_schema, cls=cls, title=title)])
 
             model_validators = decorators.model_validators.values()
 
@@ -608,6 +617,26 @@ class GenerateSchema:
                 schema = apply_model_validators(schema, model_validators, 'outer')
                 self.defs.definitions[model_ref] = schema
                 return core_schema.definition_reference_schema(model_ref)
+
+    @staticmethod
+    def _get_model_title_from_config(
+        model: type[BaseModel | StandardDataclass], config_wrapper: ConfigWrapper | None = None
+    ) -> str | None:
+        """Get the title of a model if `model_title_generator` or `title` are set in the config, else return None"""
+        if config_wrapper is None:
+            return None
+
+        if config_wrapper.title:
+            return config_wrapper.title
+
+        model_title_generator = config_wrapper.model_title_generator
+        if model_title_generator:
+            title = model_title_generator(model)
+            if not isinstance(title, str):
+                raise TypeError(f'model_title_generator {model_title_generator} must return str, not {title.__class__}')
+            return title
+
+        return None
 
     def _unpack_refs_defs(self, schema: CoreSchema) -> CoreSchema:
         """Unpack all 'definitions' schemas into `GenerateSchema.defs.definitions`
@@ -1039,6 +1068,28 @@ class GenerateSchema:
             if computed_field_info.alias_priority == 1:
                 computed_field_info.alias = _get_first_non_null(serialization_alias, alias)
 
+    @staticmethod
+    def _apply_field_title_generator_to_field_info(
+        config_wrapper: ConfigWrapper, field_info: FieldInfo | ComputedFieldInfo, field_name: str
+    ) -> None:
+        """Apply a field_title_generator on a FieldInfo or ComputedFieldInfo instance if appropriate
+        Args:
+            config_wrapper: The config of the model
+            field_info: The FieldInfo or ComputedField instance to which the title_generator is (maybe) applied.
+            field_name: The name of the field from which to generate the title.
+        """
+        field_title_generator = field_info.field_title_generator or config_wrapper.field_title_generator
+
+        if field_title_generator is None:
+            return
+
+        if field_info.title is None:
+            title = field_title_generator(field_name, field_info)  # type: ignore
+            if not isinstance(title, str):
+                raise TypeError(f'field_title_generator {field_title_generator} must return str, not {title.__class__}')
+
+            field_info.title = title
+
     def _common_field_schema(  # C901
         self, name: str, field_info: FieldInfo, decorators: DecoratorInfos
     ) -> _CommonField:
@@ -1110,6 +1161,8 @@ class GenerateSchema:
         schema = self._apply_field_serializers(
             schema, filter_field_decorator_info_by_field(decorators.field_serializers.values(), name)
         )
+        self._apply_field_title_generator_to_field_info(self._config_wrapper, field_info, name)
+
         json_schema_updates = {
             'title': field_info.title,
             'description': field_info.description,
@@ -1279,14 +1332,16 @@ class GenerateSchema:
                         and field_name in field_docstrings
                     ):
                         field_info.description = field_docstrings[field_name]
+                    self._apply_field_title_generator_to_field_info(self._config_wrapper, field_info, field_name)
                     fields[field_name] = self._generate_td_field_schema(
                         field_name, field_info, decorators, required=required
                     )
 
+                title = self._get_model_title_from_config(typed_dict_cls, ConfigWrapper(config))
                 metadata = build_metadata_dict(
-                    js_functions=[partial(modify_model_json_schema, cls=typed_dict_cls)], typed_dict_cls=typed_dict_cls
+                    js_functions=[partial(modify_model_json_schema, cls=typed_dict_cls, title=title)],
+                    typed_dict_cls=typed_dict_cls,
                 )
-
                 td_schema = core_schema.typed_dict_schema(
                     fields,
                     computed_fields=[
@@ -1523,6 +1578,7 @@ class GenerateSchema:
                         dataclass_bases_stack.enter_context(self._types_namespace_stack.push(dataclass_base))
 
                 # Pushing a config overwrites the previous config, so iterate though the MRO backwards
+                config = None
                 for dataclass_base in reversed(dataclass.__mro__):
                     if dataclasses.is_dataclass(dataclass_base):
                         config = getattr(dataclass_base, '__pydantic_config__', None)
@@ -1582,6 +1638,11 @@ class GenerateSchema:
                 model_validators = decorators.model_validators.values()
                 inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
 
+                title = self._get_model_title_from_config(dataclass, ConfigWrapper(config))
+                metadata = build_metadata_dict(
+                    js_functions=[partial(modify_model_json_schema, cls=dataclass, title=title)]
+                )
+
                 dc_schema = core_schema.dataclass_schema(
                     dataclass,
                     inner_schema,
@@ -1590,6 +1651,7 @@ class GenerateSchema:
                     fields=[field.name for field in dataclasses.fields(dataclass)],
                     slots=has_slots,
                     config=core_config,
+                    metadata=metadata,
                 )
                 schema = self._apply_model_serializers(dc_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, model_validators, 'outer')
@@ -1716,6 +1778,7 @@ class GenerateSchema:
             self._apply_alias_generator_to_computed_field_info(
                 alias_generator=alias_generator, computed_field_info=d.info, computed_field_name=d.cls_var_name
             )
+        self._apply_field_title_generator_to_field_info(self._config_wrapper, d.info, d.cls_var_name)
 
         def set_computed_field_metadata(schema: CoreSchemaOrField, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
             json_schema = handler(schema)

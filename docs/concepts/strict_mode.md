@@ -478,7 +478,7 @@ except ValidationError as exc:
 ### `TypeAdapter`
 
 You can also get strict mode through the use of the config keyword argument to the
-[`TypeAdapter`](../api/types.md#pydantic.types.TypeAdapter) class:
+[`TypeAdapter`](../api/type_adapter.md) class:
 
 ```python
 from pydantic import ConfigDict, TypeAdapter, ValidationError
