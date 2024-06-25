@@ -110,7 +110,7 @@ def all_literal_values(type_: type[Any]) -> list[Any]:
 
 def is_annotated(ann_type: Any) -> bool:
     origin = get_origin(ann_type)
-    return (origin is not None) and (origin is Annotated)
+    return origin is Annotated
 
 
 def annotated_type(type_: Any) -> Any | None:
