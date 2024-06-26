@@ -140,7 +140,6 @@ jobs:
 
     - name: install deps
       run: |
-        pdm cache clear
         pdm venv create --with-pip --force $PYTHON
         pdm install -G testing -G email
 
