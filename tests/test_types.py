@@ -3494,6 +3494,32 @@ def test_path_like():
     }
 
 
+def test_path_like_extra_subtype():
+    class Model(BaseModel):
+        str_type: os.PathLike[str]
+        byte_type: os.PathLike[bytes]
+        any_type: os.PathLike[Any]
+
+    m = Model(
+        str_type='/foo/bar',
+        byte_type=b'/foo/bar',
+        any_type='/foo/bar',
+    )
+    assert m.str_type == Path('/foo/bar')
+    assert m.byte_type == Path('/foo/bar')
+    assert m.any_type == Path('/foo/bar')
+    assert Model.model_json_schema() == {
+        'properties': {
+            'str_type': {'format': 'path', 'title': 'Str Type', 'type': 'string'},
+            'byte_type': {'format': 'path', 'title': 'Byte Type', 'type': 'string'},
+            'any_type': {'format': 'path', 'title': 'Any Type', 'type': 'string'},
+        },
+        'required': ['str_type', 'byte_type', 'any_type'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 def test_path_like_strict():
     class Model(BaseModel):
         model_config = dict(strict=True)

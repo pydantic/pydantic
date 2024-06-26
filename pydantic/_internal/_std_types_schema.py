@@ -208,6 +208,9 @@ def path_schema_prepare_pydantic_annotations(
     import pathlib
 
     if source_type not in {
+        os.PathLike[bytes],
+        os.PathLike[str],
+        os.PathLike[Any],
         os.PathLike,
         pathlib.Path,
         pathlib.PurePath,
@@ -220,19 +223,31 @@ def path_schema_prepare_pydantic_annotations(
     metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
     _known_annotated_metadata.check_metadata(metadata, _known_annotated_metadata.STR_CONSTRAINTS, source_type)
 
-    construct_path = pathlib.PurePath if source_type is os.PathLike else source_type
+    python_schema = core_schema.is_instance_schema(source_type)
+    construct_path = source_type
+    constrained_schema = core_schema.str_schema(**metadata)
 
-    def path_validator(input_value: str) -> os.PathLike[Any]:
+    if source_type in {os.PathLike, os.PathLike[str], os.PathLike[bytes], os.PathLike[Any]}:
+        python_schema = core_schema.is_instance_schema(os.PathLike)
+        construct_path = pathlib.PurePath
+
+        if source_type == os.PathLike[bytes]:
+            constrained_schema = core_schema.bytes_schema(**metadata)
+
+    def path_validator(input_value: str | bytes) -> os.PathLike[Any]:  # type: ignore
         try:
-            return construct_path(input_value)
+            if source_type == os.PathLike[bytes]:
+                if isinstance(input_value, bytes):
+                    input_value = input_value.decode()
+                else:
+                    raise PydanticCustomError('byte_type', 'Input is not bytes type yy')
+            return construct_path(input_value)  # type: ignore
         except TypeError as e:
             raise PydanticCustomError('path_type', 'Input is not a valid path') from e
 
-    constrained_str_schema = core_schema.str_schema(**metadata)
-
     instance_schema = core_schema.json_or_python_schema(
-        json_schema=core_schema.no_info_after_validator_function(path_validator, constrained_str_schema),
-        python_schema=core_schema.is_instance_schema(source_type),
+        json_schema=core_schema.no_info_after_validator_function(path_validator, constrained_schema),
+        python_schema=python_schema,
     )
 
     strict: bool | None = None
@@ -244,7 +259,7 @@ def path_schema_prepare_pydantic_annotations(
         lax_schema=core_schema.union_schema(
             [
                 instance_schema,
-                core_schema.no_info_after_validator_function(path_validator, constrained_str_schema),
+                core_schema.no_info_after_validator_function(path_validator, constrained_schema),
             ],
             custom_error_type='path_type',
             custom_error_message='Input is not a valid path',
@@ -258,7 +273,7 @@ def path_schema_prepare_pydantic_annotations(
     return (
         source_type,
         [
-            InnerSchemaValidator(schema, js_core_schema=constrained_str_schema, js_schema_update={'format': 'path'}),
+            InnerSchemaValidator(schema, js_core_schema=constrained_schema, js_schema_update={'format': 'path'}),
             *remaining_annotations,
         ],
     )
