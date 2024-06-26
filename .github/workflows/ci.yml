@@ -134,15 +134,15 @@ jobs:
 
     - uses: pdm-project/setup-pdm@v4
       with:
+        version: '2.16.1'
         python-version: ${{ matrix.python-version }}
-        cache: true
+        cache: false
         allow-python-prereleases: true
 
     - name: install deps
       run: |
         pdm cache clear
         pdm venv create --with-pip --force $PYTHON
-        pdm install importlib_metadata==7.2.1
         pdm install -G testing -G email
 
     - run: pdm info && pdm list
