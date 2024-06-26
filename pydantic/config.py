@@ -572,13 +572,24 @@ class ConfigDict(TypedDict, total=False):
     - `'float'` will serialize timedeltas to the total number of seconds.
     """
 
-    ser_json_bytes: Literal['utf8', 'base64']
+    ser_json_bytes: Literal['utf8', 'base64', 'hex']
     """
-    The encoding of JSON serialized bytes. Accepts the string values of `'utf8'` and `'base64'`.
-    Defaults to `'utf8'`.
+    The encoding of JSON serialized bytes. Defaults to `'utf8'`.
+    Set equal to `val_json_bytes` to get back an equal value after serialization round trip.
 
     - `'utf8'` will serialize bytes to UTF-8 strings.
     - `'base64'` will serialize bytes to URL safe base64 strings.
+    - `'hex'` will serialize bytes to hexadecimal strings.
+    """
+
+    val_json_bytes: Literal['utf8', 'base64', 'hex']
+    """
+    The encoding of JSON serialized bytes to decode. Defaults to `'utf8'`.
+    Set equal to `ser_json_bytes` to get back an equal value after serialization round trip.
+
+    - `'utf8'` will deserialize UTF-8 strings to bytes.
+    - `'base64'` will deserialize URL safe base64 strings to bytes.
+    - `'hex'` will deserialize hexadecimal strings to bytes.
     """
 
     ser_json_inf_nan: Literal['null', 'constants']

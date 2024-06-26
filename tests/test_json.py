@@ -22,6 +22,7 @@ from pydantic import (
     GetJsonSchemaHandler,
     NameEmail,
     PlainSerializer,
+    RootModel,
 )
 from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._generate_schema import GenerateSchema
@@ -500,3 +501,45 @@ def test_json_encoders_types() -> None:
     m = A(a=MyEnum.A, b=[1, 2, 3], c=Decimal('0'))
     assert m.model_dump_json() == '{"a":"A","b":"list!","c":"decimal!"}'
     assert m.model_dump() == {'a': MyEnum.A, 'b': [1, 2, 3], 'c': Decimal('0')}
+
+
+# Expect failure until pydantic-core is upgraded to include pydantic/pydantic-core#1308.
+@pytest.mark.xfail
+def test_json_bytes_base64_round_trip():
+    class R(RootModel[bytes]):
+        model_config = ConfigDict(ser_json_bytes='base64', val_json_bytes='base64')
+
+    r = R(b'hello')
+    r_encoded = '"aGVsbG8="'
+    assert r.model_dump_json() == r_encoded
+    assert R.model_validate_json(r_encoded) == r
+
+    class M(BaseModel):
+        key: bytes
+        model_config = R.model_config
+
+    m = M(key=b'hello')
+    m_encoded = f'{{"key":{r_encoded}}}'
+    assert m.model_dump_json() == m_encoded
+    assert M.model_validate_json(m_encoded) == m
+
+
+# Expect failure until pydantic-core is upgraded to include pydantic/pydantic-core#1308.
+@pytest.mark.xfail
+def test_json_bytes_hex_round_trip():
+    class R(RootModel[bytes]):
+        model_config = ConfigDict(ser_json_bytes='hex', val_json_bytes='hex')
+
+    r = R(b'hello')
+    r_encoded = '"68656c6c6f"'
+    assert r.model_dump_json() == r_encoded
+    assert R.model_validate_json(r_encoded) == r
+
+    class M(BaseModel):
+        key: bytes
+        model_config = R.model_config
+
+    m = M(key=b'hello')
+    m_encoded = f'{{"key":{r_encoded}}}'
+    assert m.model_dump_json() == m_encoded
+    assert M.model_validate_json(m_encoded) == m
