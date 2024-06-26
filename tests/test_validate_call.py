@@ -1,9 +1,10 @@
 import asyncio
 import inspect
 import re
+import sys
 from datetime import datetime, timezone
 from functools import partial
-from typing import Any, List, Tuple
+from typing import Any, Iterable, List, Tuple
 
 import pytest
 from pydantic_core import ArgsKwargs
@@ -803,3 +804,15 @@ def test_eval_type_backport():
             'input': {'not a str or int'},
         },
     ]
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='PEP 695 syntax is only available in Python 3.12+')
+def test_validate_call_with_pep_695_syntax() -> None:
+    @validate_call
+    def max[T](args: Iterable[T]) -> T:
+        return sorted(args, reverse=True)[0]
+
+    assert max([1, 2, 10, 5]) == 10
+
+    with pytest.raises(ValidationError):
+        max(1)
