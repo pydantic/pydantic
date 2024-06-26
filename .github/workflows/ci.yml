@@ -134,9 +134,8 @@ jobs:
 
     - uses: pdm-project/setup-pdm@v4
       with:
-        version: '2.16.1'
         python-version: ${{ matrix.python-version }}
-        cache: false
+        cache: true
         allow-python-prereleases: true
 
     - name: install deps
