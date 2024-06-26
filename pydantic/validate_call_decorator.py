@@ -5,7 +5,7 @@ from __future__ import annotations as _annotations
 import functools
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
 
-from ._internal import _validate_call
+from ._internal import _typing_extra, _validate_call
 
 __all__ = ('validate_call',)
 
@@ -46,12 +46,14 @@ def validate_call(
     Returns:
         The decorated function.
     """
+    local_ns = _typing_extra.parent_frame_namespace()
 
     def validate(function: AnyCallableT) -> AnyCallableT:
         if isinstance(function, (classmethod, staticmethod)):
             name = type(function).__name__
             raise TypeError(f'The `@{name}` decorator should be applied after `@validate_call` (put `@{name}` on top)')
-        validate_call_wrapper = _validate_call.ValidateCallWrapper(function, config, validate_return)
+
+        validate_call_wrapper = _validate_call.ValidateCallWrapper(function, config, validate_return, local_ns)
 
         @functools.wraps(function)
         def wrapper_function(*args, **kwargs):

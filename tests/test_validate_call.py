@@ -818,3 +818,22 @@ def test_validate_call_with_pep_695_syntax() -> None:
 
     with pytest.raises(ValidationError):
         max(1)
+
+
+def test_uses_local_ns():
+    class M1(BaseModel):
+        x: int
+
+    M = M1  # noqa: F841
+
+    def foo():
+        class M2(BaseModel):
+            y: str
+
+        M = M2
+
+        @validate_call
+        def bar(m: M) -> M:
+            return m
+
+        assert bar({'y': 'using m2'}) == M2(y='using m2')
