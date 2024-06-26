@@ -23,7 +23,13 @@ class ValidateCallWrapper:
         '__dict__',  # required for __module__
     )
 
-    def __init__(self, function: Callable[..., Any], config: ConfigDict | None, validate_return: bool):
+    def __init__(
+        self,
+        function: Callable[..., Any],
+        config: ConfigDict | None,
+        validate_return: bool,
+        namespace: dict[str, Any] | None,
+    ):
         if isinstance(function, partial):
             func = function.func
             schema_type = func
@@ -36,7 +42,16 @@ class ValidateCallWrapper:
             self.__qualname__ = function.__qualname__
             self.__module__ = function.__module__
 
-        namespace = _typing_extra.add_module_globals(function, None)
+        global_ns = _typing_extra.add_module_globals(function, None)
+        # TODO: this is a bit of a hack, we should probably have a better way to handle this
+        # specifically, we shouldn't be pumping the namespace full of type_params
+        # when we take namespace and type_params arguments in eval_type_backport
+        type_params = getattr(schema_type, '__type_params__', ())
+        namespace = {
+            **{param.__name__: param for param in type_params},
+            **(global_ns or {}),
+            **(namespace or {}),
+        }
         config_wrapper = ConfigWrapper(config)
         gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
         schema = gen_schema.clean_schema(gen_schema.generate_schema(function))
