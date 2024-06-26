@@ -1,4 +1,5 @@
 import json
+import math
 import re
 import sys
 from dataclasses import dataclass as vanilla_dataclass
@@ -22,6 +23,7 @@ from pydantic import (
     GetJsonSchemaHandler,
     NameEmail,
     PlainSerializer,
+    RootModel,
 )
 from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._generate_schema import GenerateSchema
@@ -500,3 +502,36 @@ def test_json_encoders_types() -> None:
     m = A(a=MyEnum.A, b=[1, 2, 3], c=Decimal('0'))
     assert m.model_dump_json() == '{"a":"A","b":"list!","c":"decimal!"}'
     assert m.model_dump() == {'a': MyEnum.A, 'b': [1, 2, 3], 'c': Decimal('0')}
+
+
+@pytest.mark.parametrize(
+    'float_value,encoded_str',
+    [
+        (float('inf'), 'Infinity'),
+        (float('-inf'), '-Infinity'),
+        (float('nan'), 'NaN'),
+    ],
+)
+def test_json_inf_nan_allow(float_value, encoded_str):
+    class R(RootModel[float]):
+        model_config = ConfigDict(ser_json_inf_nan='strings')
+
+    r = R(float_value)
+    r_encoded = f'"{encoded_str}"'
+    assert r.model_dump_json() == r_encoded
+    if math.isnan(float_value):
+        assert math.isnan(R.model_validate_json(r_encoded).root)
+    else:
+        assert R.model_validate_json(r_encoded) == r
+
+    class M(BaseModel):
+        f: float
+        model_config = R.model_config
+
+    m = M(f=float_value)
+    m_encoded = f'{{"f":{r_encoded}}}'
+    assert m.model_dump_json() == m_encoded
+    if math.isnan(float_value):
+        assert math.isnan(M.model_validate_json(m_encoded).f)
+    else:
+        assert M.model_validate_json(m_encoded) == m
