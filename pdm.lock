@@ -4,8 +4,8 @@
 [metadata]
 groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "testing-extra"]
 strategy = ["cross_platform"]
-lock_version = "4.4.1"
-content_hash = "sha256:6488993d0f8bae7b51589fb1a98dee114d43141a025c944881eab893db841cb6"
+lock_version = "4.4.2"
+content_hash = "sha256:ccb717f97b454f58d18ca5e982d3c22f5a9cb5c464096367fca281ddb14cdabf"
 
 [[package]]
 name = "annotated-types"
@@ -521,15 +521,15 @@ files = [
 
 [[package]]
 name = "faker"
-version = "25.9.1"
+version = "25.9.2"
 requires_python = ">=3.8"
 summary = "Faker is a Python package that generates fake data for you."
 dependencies = [
     "python-dateutil>=2.4",
 ]
 files = [
-    {file = "Faker-25.9.1-py3-none-any.whl", hash = "sha256:f1dc27dc8035cb7e97e96afbb5fe1305eed6aeea53374702cbac96acfe851626"},
-    {file = "Faker-25.9.1.tar.gz", hash = "sha256:0e1cf7a8d3c94de91a65ab1e9cf7050903efae1e97901f8e5924a9f45147ae44"},
+    {file = "Faker-25.9.2-py3-none-any.whl", hash = "sha256:7f8cbd179a7351648bea31f53d021a2bdfdeb59e9b830e121a635916615e0ecd"},
+    {file = "Faker-25.9.2.tar.gz", hash = "sha256:ca94843600a4089a91394023fef014bb41fee509f8c4beef1530018373e770fb"},
 ]
 
 [[package]]
