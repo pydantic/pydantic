@@ -808,16 +808,19 @@ def test_eval_type_backport():
     ]
 
 
-@pytest.mark.skipif(sys.version_info < (3, 12), reason='PEP 695 syntax is only available in Python 3.12+')
-def test_validate_call_with_pep_695_syntax() -> None:
-    @validate_call
-    def max[T](args: Iterable[T]) -> T:
-        return sorted(args, reverse=True)[0]
+# PEP 695 syntax is only available in Python 3.12+
+# and xfail still results in test failures for lower Python versions
+if sys.version_info >= (3, 12):
 
-    assert max([1, 2, 10, 5]) == 10
+    def test_validate_call_with_pep_695_syntax() -> None:
+        @validate_call
+        def max[T](args: Iterable[T]) -> T:
+            return sorted(args, reverse=True)[0]
 
-    with pytest.raises(ValidationError):
-        max(1)
+        assert max([1, 2, 10, 5]) == 10
+
+        with pytest.raises(ValidationError):
+            max(1)
 
 
 def test_uses_local_ns():
