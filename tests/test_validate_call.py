@@ -808,6 +808,9 @@ def test_eval_type_backport():
 
 @pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+ for PEP 695 syntax with generics')
 def test_validate_call_with_pep_695_syntax() -> None:
+    """Note: validate_call still doesn't work properly with generics, see https://github.com/pydantic/pydantic/issues/7796.
+
+    This test is just to ensure that the syntax is accepted and doesn't raise a NameError."""
     globs = {}
     exec(
         """
@@ -815,28 +818,40 @@ from typing import Iterable
 from pydantic import validate_call
 
 @validate_call
-def max[T](args: Iterable[T]) -> T:
+def find_max_no_validate_return[T](args: Iterable[T]) -> T:
+    return sorted(args, reverse=True)[0]
+
+@validate_call(validate_return=True)
+def find_max_validate_return[T](args: Iterable[T]) -> T:
     return sorted(args, reverse=True)[0]
         """,
         globs,
     )
-    max = globs['max']
-    assert len(max.__type_params__) == 1
-    assert max([1, 2, 10, 5]) == 10
+    functions = [globs['find_max_no_validate_return'], globs['find_max_validate_return']]
+    for find_max in functions:
+        assert len(find_max.__type_params__) == 1
+        assert find_max([1, 2, 10, 5]) == 10
 
-    with pytest.raises(ValidationError):
-        max(1)
+        with pytest.raises(ValidationError):
+            find_max(1)
+
+
+class M0(BaseModel):
+    z: int
+
+
+M = M0
 
 
 def test_uses_local_ns():
     class M1(BaseModel):
-        x: int
+        y: int
 
     M = M1  # noqa: F841
 
     def foo():
         class M2(BaseModel):
-            y: str
+            z: int
 
         M = M2
 
@@ -844,4 +859,4 @@ def test_uses_local_ns():
         def bar(m: M) -> M:
             return m
 
-        assert bar({'y': 'using m2'}) == M2(y='using m2')
+        assert bar({'z': 1}) == M2(z=1)
