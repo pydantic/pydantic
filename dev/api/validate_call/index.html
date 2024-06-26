@@ -3594,7 +3594,9 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 <span class="normal">64</span>
 <span class="normal">65</span>
 <span class="normal">66</span>
-<span class="normal">67</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_call</span><span class="p">(</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_call</span><span class="p">(</span>
     <span class="n">func</span><span class="p">:</span> <span class="n">AnyCallableT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -3615,12 +3617,14 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 <span class="sd">    Returns:</span>
 <span class="sd">        The decorated function.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">local_ns</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">parent_frame_namespace</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="n">function</span><span class="p">:</span> <span class="n">AnyCallableT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnyCallableT</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">function</span><span class="p">,</span> <span class="p">(</span><span class="nb">classmethod</span><span class="p">,</span> <span class="nb">staticmethod</span><span class="p">)):</span>
             <span class="n">name</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">function</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The `@</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">` decorator should be applied after `@validate_call` (put `@</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">` on top)&#39;</span><span class="p">)</span>
-        <span class="n">validate_call_wrapper</span> <span class="o">=</span> <span class="n">_validate_call</span><span class="o">.</span><span class="n">ValidateCallWrapper</span><span class="p">(</span><span class="n">function</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">validate_return</span><span class="p">)</span>
+
+        <span class="n">validate_call_wrapper</span> <span class="o">=</span> <span class="n">_validate_call</span><span class="o">.</span><span class="n">ValidateCallWrapper</span><span class="p">(</span><span class="n">function</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">validate_return</span><span class="p">,</span> <span class="n">local_ns</span><span class="p">)</span>
 
         <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">function</span><span class="p">)</span>
         <span class="k">def</span> <span class="nf">wrapper_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
