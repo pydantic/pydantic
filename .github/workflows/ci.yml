@@ -142,12 +142,10 @@ jobs:
       run: |
         pdm cache clear
         pdm venv create --with-pip --force $PYTHON
+        pdm install importlib_metadata==7.2.1
         pdm install -G testing -G email
 
-    # TODO: remove this once `pdm` fixes issue erroring on lack of homepage for some packages
-    # See https://github.com/pydantic/pydantic/actions/runs/9670225358/job/26678544555?pr=9743
-    # For an example
-    - run: pdm info && pdm list -v || true
+    - run: pdm info && pdm list
 
     - run: 'pdm run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
