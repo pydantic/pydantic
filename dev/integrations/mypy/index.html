@@ -3094,6 +3094,23 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Configuring the Plugin">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#note-on-disallow-any-explicit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Note on --disallow-any-explicit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -3651,6 +3668,23 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Configuring the Plugin">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#note-on-disallow-any-explicit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Note on --disallow-any-explicit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -3894,6 +3928,15 @@ The same configuration as above would be:</p>
 <span class="n">init_typed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
 <span class="n">warn_required_dynamic_aliases</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
 </code></pre></div>
+<h4 id="note-on-disallow-any-explicit">Note on <code>--disallow-any-explicit</code><a class="headerlink" href="#note-on-disallow-any-explicit" title="Permanent link">&para;</a></h4>
+<p>If you're using the <code>--disallow-any-explicit</code> mypy config setting (or other settings that ban <code>Any</code>), you may encounter <code>no-any-explicit</code> errors when extending <code>BaseModel</code>. This is because by default, Pydantic adds an <code>__init__</code> method with a signature like <code>def __init__(self, field_1: Any, field_2: Any, **kwargs: Any):</code>.</p>
+<p>To resolve this issue, you need to enable strict mode settings for the Pydantic mypy plugin. Specifically, add these options to your <code>[pydantic-mypy]</code> section:</p>
+<div class="language-toml highlight"><pre><span></span><code><span class="k">[tool.pydantic-mypy]</span>
+<span class="n">init_forbid_extra</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<span class="n">init_typed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+</code></pre></div>
+<p>With <code>init_forbid_extra = True</code>, the <code>**kwargs</code> are removed from the generated <code>__init__</code> signature. With <code>init_typed = True</code>, the <code>Any</code> types for fields are replaced with their actual type hints.</p>
+<p>This configuration allows you to use <code>--disallow-any-explicit</code> without getting errors on your Pydantic models. However, be aware that this stricter checking might flag some valid Pydantic use cases (like passing a string for a datetime field) as type errors.</p>
 
 
 
