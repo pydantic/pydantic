@@ -199,4 +199,3 @@ init_typed = true
 With `init_forbid_extra = True`, the `**kwargs` are removed from the generated `__init__` signature. With `init_typed = True`, the `Any` types for fields are replaced with their actual type hints.
 
 This configuration allows you to use `--disallow-any-explicit` without getting errors on your Pydantic models. However, be aware that this stricter checking might flag some valid Pydantic use cases (like passing a string for a datetime field) as type errors.
-
