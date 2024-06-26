@@ -772,7 +772,7 @@ def test_validate_call_with_slots() -> None:
 
 def test_eval_type_backport():
     @validate_call
-    def foo(bar: List[int | str]) -> List[int | str]:
+    def foo(bar: 'list[int | str]') -> 'list[int | str]':
         return bar
 
     assert foo([1, '2']) == [1, '2']
