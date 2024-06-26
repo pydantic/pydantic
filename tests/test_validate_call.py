@@ -6,7 +6,7 @@ import re
 import sys
 from datetime import datetime, timezone
 from functools import partial
-from typing import Any, Iterable, List
+from typing import Any, List
 
 import pytest
 from pydantic_core import ArgsKwargs
@@ -808,19 +808,26 @@ def test_eval_type_backport():
     ]
 
 
-# PEP 695 syntax is only available in Python 3.12+
-# and xfail isn't enough to prevent compilation failures in older versions
-if sys.version_info >= (3, 12):
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+ for PEP 695 syntax with generics')
+def test_validate_call_with_pep_695_syntax() -> None:
+    globs = {}
+    exec(
+        """
+from typing import Iterable
+from pydantic import validate_call
 
-    def test_validate_call_with_pep_695_syntax() -> None:
-        @validate_call
-        def max[T](args: Iterable[T]) -> T:
-            return sorted(args, reverse=True)[0]
+@validate_call
+def max[T](args: Iterable[T]) -> T:
+    return sorted(args, reverse=True)[0]
+        """,
+        globs,
+    )
+    max = globs['max']
+    assert len(max.__type_params__) == 1
+    assert max([1, 2, 10, 5]) == 10
 
-        assert max([1, 2, 10, 5]) == 10
-
-        with pytest.raises(ValidationError):
-            max(1)
+    with pytest.raises(ValidationError):
+        max(1)
 
 
 def test_uses_local_ns():
