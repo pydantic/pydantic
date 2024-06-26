@@ -140,7 +140,7 @@ jobs:
 
     - name: install deps
       run: |
-        pdm venv create --with-pip --force $PYTHON
+        pdm venv create --no-cache --with-pip --force $PYTHON
         pdm install -G testing -G email
 
     # TODO: remove this once `pdm` fixes issue erroring on lack of homepage for some packages
