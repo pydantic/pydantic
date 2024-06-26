@@ -303,7 +303,7 @@ def test_async():
 
 def test_string_annotation():
     @validate_call
-    def foo(a: List[int], b: float):
+    def foo(a: 'List[int]', b: 'float'):
         return f'a={a!r} b={b!r}'
 
     assert foo([1, 2, 3], 22) == 'a=[1, 2, 3] b=22.0'
