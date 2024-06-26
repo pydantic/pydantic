@@ -200,6 +200,3 @@ With `init_forbid_extra = True`, the `**kwargs` are removed from the generated `
 
 This configuration allows you to use `--disallow-any-explicit` without getting errors on your Pydantic models. However, be aware that this stricter checking might flag some valid Pydantic use cases (like passing a string for a datetime field) as type errors.
 
-```
-This addition explains the issue with `--disallow-any-explicit` and provides the solution, giving users the information they need to resolve this common problem.
-```
