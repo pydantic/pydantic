@@ -125,6 +125,8 @@ There are many alternative patterns to use depending on the scenario.
 Just as an example, consider the `UserIn` and `UserOut` pattern mentioned above:
 
 ```python
+from __future__ import annotations
+
 from pydantic import BaseModel
 
 
