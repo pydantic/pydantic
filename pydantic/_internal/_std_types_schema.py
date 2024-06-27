@@ -207,10 +207,11 @@ def path_schema_prepare_pydantic_annotations(
 ) -> tuple[Any, list[Any]] | None:
     import pathlib
 
-    if source_type not in {
-        os.PathLike[bytes],
-        os.PathLike[str],
-        os.PathLike[Any],
+    orig_source_type = get_origin(source_type) or source_type
+    orig_source_type_arg = get_args(source_type)
+    orig_source_type_arg = orig_source_type_arg[0] if orig_source_type_arg else None
+
+    if orig_source_type not in {
         os.PathLike,
         pathlib.Path,
         pathlib.PurePath,
@@ -220,23 +221,35 @@ def path_schema_prepare_pydantic_annotations(
     }:
         return None
 
-    metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
-    _known_annotated_metadata.check_metadata(metadata, _known_annotated_metadata.STR_CONSTRAINTS, source_type)
+    is_path_like_subtype_invalid = (
+        orig_source_type == os.PathLike
+        and orig_source_type_arg
+        and orig_source_type_arg
+        not in {
+            str,
+            bytes,
+            Any,
+        }
+    )
 
-    python_schema = core_schema.is_instance_schema(source_type)
-    construct_path = source_type
+    if is_path_like_subtype_invalid:
+        return None
+
+    metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
+    _known_annotated_metadata.check_metadata(metadata, _known_annotated_metadata.STR_CONSTRAINTS, orig_source_type)
+
+    construct_path = orig_source_type
     constrained_schema = core_schema.str_schema(**metadata)
 
-    if source_type in {os.PathLike, os.PathLike[str], os.PathLike[bytes], os.PathLike[Any]}:
-        python_schema = core_schema.is_instance_schema(os.PathLike)
+    if orig_source_type == os.PathLike:
         construct_path = pathlib.PurePath
 
-        if source_type == os.PathLike[bytes]:
+        if orig_source_type_arg == bytes:
             constrained_schema = core_schema.bytes_schema(**metadata)
 
     def path_validator(input_value: str | bytes) -> os.PathLike[Any]:  # type: ignore
         try:
-            if source_type == os.PathLike[bytes]:
+            if orig_source_type_arg == bytes:
                 if isinstance(input_value, bytes):
                     input_value = input_value.decode()
                 else:
@@ -247,7 +260,7 @@ def path_schema_prepare_pydantic_annotations(
 
     instance_schema = core_schema.json_or_python_schema(
         json_schema=core_schema.no_info_after_validator_function(path_validator, constrained_schema),
-        python_schema=python_schema,
+        python_schema=core_schema.is_instance_schema(orig_source_type),
     )
 
     strict: bool | None = None
@@ -271,7 +284,7 @@ def path_schema_prepare_pydantic_annotations(
     )
 
     return (
-        source_type,
+        orig_source_type,
         [
             InnerSchemaValidator(schema, js_core_schema=constrained_schema, js_schema_update={'format': 'path'}),
             *remaining_annotations,

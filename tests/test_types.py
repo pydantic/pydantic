@@ -3519,6 +3519,18 @@ def test_path_like_extra_subtype():
         'type': 'object',
     }
 
+    with pytest.raises(ValidationError) as exc_info:
+        Model(
+            str_type=b'/foo/bar',
+            byte_type='/foo/bar',
+            any_type=111,
+        )
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'path_type', 'loc': ('str_type',), 'msg': 'Input is not a valid path', 'input': b'/foo/bar'},
+        {'type': 'path_type', 'loc': ('byte_type',), 'msg': 'Input is not a valid path', 'input': '/foo/bar'},
+        {'type': 'path_type', 'loc': ('any_type',), 'msg': 'Input is not a valid path', 'input': 111},
+    ]
+
 
 def test_path_like_strict():
     class Model(BaseModel):
