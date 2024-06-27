@@ -142,6 +142,8 @@ def my_api(user: UserIn) -> UserOut:
         favorite_number = int(user.favorite_number.strip())
 
     return UserOut(favorite_number=favorite_number)
+
+assert my_api(UserIn(favorite_number=' 1 ')).favorite_number == 1
 ```
 
 This example uses plain idiomatic Python code that may be easier to understand, type-check, etc. than the examples above.
