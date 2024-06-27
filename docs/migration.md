@@ -327,6 +327,11 @@ dataclasses without having to subclass `BaseModel`. Pydantic V2 introduces the f
   with the key/value pairs you want to be used as the config. The Pydantic V1 behavior to create a class called `Config`
   in the namespace of the parent `BaseModel` subclass is now deprecated.
 
+* When subclassing a model, the `model_config` attribute is inherited. This is helpful in the case where you'd like to use
+a base class with a given configuration for many models. Note, if you inherit from multiple `BaseModel` subclasses,
+like `class MyModel(Model1, Model2)`, the non-default settings in the `model_config` attribute from the two models
+will be merged, and for any settings defined in both, those from `Model2` will override those from `Model1`.
+
 * The following config settings have been removed:
     * `allow_mutation` — this has been removed. You should be able to use [frozen](api/config.md#pydantic.config.ConfigDict) equivalently (inverse of current use).
     * `error_msg_templates`
