@@ -198,16 +198,18 @@ trading off visibility for performance.
 ```py
 from typing import Annotated, List
 
-from pydantic import FailFast, TypeAdapter
+from pydantic import FailFast, TypeAdapter, ValidationError
 
 ta = TypeAdapter(Annotated[List[bool], FailFast()])
-print(ta.validate_python([True, 'invalid', False, 'also invalid']))
-"""
-pydantic_core._pydantic_core.ValidationError: 1 validation error for list[bool]
-1
-  Input should be a valid boolean, unable to interpret input [type=bool_parsing, input_value='invalid', input_type=str]
-    For further information visit https://errors.pydantic.dev/2.8/v/bool_parsing
-"""
+try:
+    ta.validate_python([True, 'invalid', False, 'also invalid'])
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for list[bool]
+    1
+      Input should be a valid boolean, unable to interpret input [type=bool_parsing, input_value='invalid', input_type=str]
+    """
 ```
 
 Read more about `FailFast` [here][pydantic.types.FailFast].
