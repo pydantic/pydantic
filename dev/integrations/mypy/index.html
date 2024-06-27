@@ -3929,7 +3929,14 @@ The same configuration as above would be:</p>
 <span class="n">warn_required_dynamic_aliases</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
 </code></pre></div>
 <h4 id="note-on-disallow-any-explicit">Note on <code>--disallow-any-explicit</code><a class="headerlink" href="#note-on-disallow-any-explicit" title="Permanent link">&para;</a></h4>
-<p>If you're using the <code>--disallow-any-explicit</code> mypy config setting (or other settings that ban <code>Any</code>), you may encounter <code>no-any-explicit</code> errors when extending <code>BaseModel</code>. This is because by default, Pydantic adds an <code>__init__</code> method with a signature like <code>def __init__(self, field_1: Any, field_2: Any, **kwargs: Any):</code>.</p>
+<p>If you're using the <code>--disallow-any-explicit</code> mypy config setting (or other settings that ban <code>Any</code>), you may encounter <code>no-any-explicit</code> errors when extending <code>BaseModel</code>. This is because by default, Pydantic's <code>mypy</code> plugin adds an <code>__init__</code> method with a signature like <code>def __init__(self, field_1: Any, field_2: Any, **kwargs: Any):</code></p>
+<div class="admonition note">
+<p class="admonition-title">Why the extra signature?</p>
+<p>The Pydantic <code>mypy</code> plugin adds an <code>__init__</code> method with a signature like <code>def __init__(self, field_1: Any, field_2: Any, **kwargs: Any):</code> in
+order to avoid type errors when initializing models with types that don't match the field annotations.
+For example <code>Model(date='2024-01-01')</code> would raise a type error without this <code>Any</code> signature, but Pydantic has the ability to parse the string
+<code>'2024-01-01'</code> into a <code>datetime.date</code> type.</p>
+</div>
 <p>To resolve this issue, you need to enable strict mode settings for the Pydantic mypy plugin. Specifically, add these options to your <code>[pydantic-mypy]</code> section:</p>
 <div class="language-toml highlight"><pre><span></span><code><span class="k">[tool.pydantic-mypy]</span>
 <span class="n">init_forbid_extra</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>

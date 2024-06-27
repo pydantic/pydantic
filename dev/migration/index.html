@@ -4477,6 +4477,12 @@ dataclasses without having to subclass <code>BaseModel</code>. Pydantic V2 intro
   in the namespace of the parent <code>BaseModel</code> subclass is now deprecated.</p>
 </li>
 <li>
+<p>When subclassing a model, the <code>model_config</code> attribute is inherited. This is helpful in the case where you'd like to use
+a base class with a given configuration for many models. Note, if you inherit from multiple <code>BaseModel</code> subclasses,
+like <code>class MyModel(Model1, Model2)</code>, the non-default settings in the <code>model_config</code> attribute from the two models
+will be merged, and for any settings defined in both, those from <code>Model2</code> will override those from <code>Model1</code>.</p>
+</li>
+<li>
 <p>The following config settings have been removed:</p>
 <ul>
 <li><code>allow_mutation</code> — this has been removed. You should be able to use <a href="../api/config/#pydantic.config.ConfigDict">frozen</a> equivalently (inverse of current use).</li>

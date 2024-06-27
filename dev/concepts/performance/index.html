@@ -1395,6 +1395,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#failing-early-with-failfast" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Failing early with FailFast
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3474,6 +3485,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#failing-early-with-failfast" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Failing early with FailFast
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3663,7 +3685,31 @@ If you know the value is a <code>dict</code>, use <code>dict</code> instead of <
 </code></pre></div>
 </details>
 <h2 id="avoid-wrap-validators-if-you-really-care-about-performance">Avoid wrap validators if you really care about performance<a class="headerlink" href="#avoid-wrap-validators-if-you-really-care-about-performance" title="Permanent link">&para;</a></h2>
-<!-- TODO: I need help on this one. -->
+<p>Wrap validators are generally slower than other validators. This is because they require
+that data is materialized in Python during validation. Wrap validators can be incredibly useful
+for complex validation logic, but if you're looking for the best performance, you should avoid them.</p>
+<h2 id="failing-early-with-failfast">Failing early with <code>FailFast</code><a class="headerlink" href="#failing-early-with-failfast" title="Permanent link">&para;</a></h2>
+<p>Starting in v2.8+, you can apply the <code>FailFast</code> annotation to sequence types to fail early if any item in the sequence fails validation.
+If you use this annotation, you won't get validation errors for the rest of the items in the sequence if one fails, so you're effectively
+trading off visibility for performance.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">FailFast</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Annotated</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span> <span class="n">FailFast</span><span class="p">()])</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;invalid&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;also invalid&#39;</span><span class="p">])</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for list[bool]</span>
+<span class="sd">    1</span>
+<span class="sd">      Input should be a valid boolean, unable to interpret input [type=bool_parsing, input_value=&#39;invalid&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<p>Read more about <code>FailFast</code> <a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.FailFast">here</a>.</p>
 
 
 
