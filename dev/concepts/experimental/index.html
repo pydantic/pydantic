@@ -3468,11 +3468,13 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 <p><a class="autorefs autorefs-internal" href="../../api/experimental/#pydantic.experimental.pipeline"><code>pydantic.experimental.pipeline</code></a><br></p>
 </details>
 <p>Generally, the pipeline API is used to define a sequence of steps to apply to incoming data during validation. The pipeline API is designed to be more type-safe and composable than the existing Pydantic API.</p>
-<p>Each step in the pipeline can be:
-* A validation step that runs pydantic validation on the provided type
-* A transformation step that modifies the data
-* A constraint step that checks the data against a condition
-* A predicate step that checks the data against a condition and raises an error if it returns <code>False</code></p>
+<p>Each step in the pipeline can be:</p>
+<ul>
+<li>A validation step that runs pydantic validation on the provided type</li>
+<li>A transformation step that modifies the data</li>
+<li>A constraint step that checks the data against a condition</li>
+<li>A predicate step that checks the data against a condition and raises an error if it returns <code>False</code></li>
+</ul>
 <!-- TODO: (@sydney-runkle) add more documentation once we solidify the API during the experimental phase -->
 
 <p>Note that the following example attempts to be exhaustive at the cost of complexity: if you find yourself writing this many transformations in type annotations you may want to consider having a <code>UserIn</code> and <code>UserOut</code> model (example below) or similar where you make the transformations via idomatic plain Python code.
