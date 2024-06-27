@@ -39,6 +39,9 @@ Each step in the pipeline can be:
 
 <!-- TODO: (@sydney-runkle) add more documentation once we solidify the API during the experimental phase -->
 
+Note that the following example attempts to be exhaustive at the cost of complexity: if you find yourself writing this many transformations in type annotations you may want to consider having a `UserIn` and `UserOut` model (example below) or similar where you make the transformations via idomatic plain Python code.
+These APIs are meant for situations where the code savings are significant and the added complexity is relatively small.
+
 ```python
 from __future__ import annotations
 
@@ -114,3 +117,39 @@ Annotated[
 1. Strip whitespace from a string before parsing it as an integer.
 2. Multiply an integer by 2 after parsing it.
 3. Strip whitespace from a string, validate it as an integer, then multiply it by 2.
+
+
+### Alternative patterns
+
+There are many alternative patterns to use depending on the scenario.
+Just as an example, consider the `UserIn` and `UserOut` pattern mentioned above:
+
+```python
+from __future__ import annotations
+
+from pydantic import BaseModel
+
+
+class UserIn(BaseModel):
+    favorite_number: int | str
+
+
+class UserOut(BaseModel):
+    favorite_number: int
+
+
+def my_api(user: UserIn) -> UserOut:
+    favorite_number = user.favorite_number
+    if isinstance(favorite_number, str):
+        favorite_number = int(user.favorite_number.strip())
+
+    return UserOut(favorite_number=favorite_number)
+
+
+assert my_api(UserIn(favorite_number=' 1 ')).favorite_number == 1
+```
+
+This example uses plain idiomatic Python code that may be easier to understand, type-check, etc. than the examples above.
+The approach you choose should really depend on your use case.
+You will have to compare verbosity, performance, ease of returning meaningful errors to your users, etc. to choose the right pattern.
+Just be mindful of abusing advanced patterns like the pipeline API just because you can.
