@@ -32,6 +32,7 @@ Pydantic v2.8.0 introduced an experimental "pipeline" API that allows composing 
 Generally, the pipeline API is used to define a sequence of steps to apply to incoming data during validation. The pipeline API is designed to be more type-safe and composable than the existing Pydantic API.
 
 Each step in the pipeline can be:
+
 * A validation step that runs pydantic validation on the provided type
 * A transformation step that modifies the data
 * A constraint step that checks the data against a condition
