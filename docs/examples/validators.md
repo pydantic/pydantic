@@ -176,7 +176,7 @@ Here, we demonstrate two ways to validate a field of a nested model, where the v
 
 In this example, we construct a validator that checks that each user's password is not in a list of forbidden passwords specified by the parent model.
 
-One way to do this is to place the validator in the parent model, with the field data from the nested model being accessible via a parameter.
+One way to do this is to place a custom validator on the outer model:
 
 ```py
 from typing import List
@@ -224,7 +224,7 @@ except ValidationError as e:
     """
 ```
 
-Alternatively, a validator can be placed in the nested model class (```User```), with the forbidden passwords data from the parent model being passed in via context from ```ValidationInfo```. This is demonstrated below.
+Alternatively, a custom validator can be used in the nested model class (`User`), with the forbidden passwords data from the parent model being passed in via validation context:
 
 ```py
 from typing import List
@@ -237,6 +237,7 @@ class User(BaseModel):
     password: str
 
     @field_validator('password', mode='after')
+    @classmethod
     def validate_user_passwords(
         cls, password: str, info: ValidationInfo
     ) -> str:
@@ -282,4 +283,4 @@ except ValidationError as e:
 
 Note that if the context property is not included in `model_validate`, then `info.context` will be `None` and the forbidden passwords list will not get added to the context in the above implementation. As such, `validate_user_passwords` would not carry out the desired password validation.
 
-More details about validation context can be found on [here](https://docs.pydantic.dev/latest/concepts/validators/#validation-context).
+More details about validation context can be found [here](../concepts/validators.md#validation-context).
