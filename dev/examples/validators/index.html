@@ -2655,6 +2655,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#validating-nested-model-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validating Nested Model Fields
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3314,6 +3325,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#validating-nested-model-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validating Nested Model Fields
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3687,6 +3709,114 @@ that ensures a <a class="autorefs autorefs-external" href="https://docs.python.o
 <span class="sd">    &#39;url&#39;: &#39;https://errors.pydantic.dev/2.8/v/assertion_error&#39;}]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+<h2 id="validating-nested-model-fields">Validating Nested Model Fields<a class="headerlink" href="#validating-nested-model-fields" title="Permanent link">&para;</a></h2>
+<p>Here, we demonstrate two ways to validate a field of a nested model, where the validator utilizes data from the parent model.</p>
+<p>In this example, we construct a validator that checks that each user's password is not in a list of forbidden passwords specified by the parent model.</p>
+<p>One way to do this is to place a custom validator on the outer model:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Self</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">model_validator</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">username</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">password</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">Organization</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">forbidden_passwords</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">users</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">User</span><span class="p">]</span>
+
+    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;after&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">validate_user_passwords</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check that user password is not in forbidden list. Raise a validation error if a forbidden password is encountered.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">users</span><span class="p">:</span>
+            <span class="n">current_pw</span> <span class="o">=</span> <span class="n">user</span><span class="o">.</span><span class="n">password</span>
+            <span class="k">if</span> <span class="n">current_pw</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">forbidden_passwords</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s1">&#39;Password </span><span class="si">{</span><span class="n">current_pw</span><span class="si">}</span><span class="s1"> is forbidden. Please choose another password for user </span><span class="si">{</span><span class="n">user</span><span class="o">.</span><span class="n">username</span><span class="si">}</span><span class="s1">.&#39;</span>
+                <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+
+<span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;forbidden_passwords&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;123&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;users&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s1">&#39;username&#39;</span><span class="p">:</span> <span class="s1">&#39;Spartacat&#39;</span><span class="p">,</span> <span class="s1">&#39;password&#39;</span><span class="p">:</span> <span class="s1">&#39;123&#39;</span><span class="p">},</span>
+        <span class="p">{</span><span class="s1">&#39;username&#39;</span><span class="p">:</span> <span class="s1">&#39;Iceburgh&#39;</span><span class="p">,</span> <span class="s1">&#39;password&#39;</span><span class="p">:</span> <span class="s1">&#39;87&#39;</span><span class="p">},</span>
+    <span class="p">],</span>
+<span class="p">}</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">org</span> <span class="o">=</span> <span class="n">Organization</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Organization</span>
+<span class="sd">      Value error, Password 123 is forbidden. Please choose another password for user Spartacat. [type=value_error, input_value={&#39;forbidden_passwords&#39;: [...gh&#39;, &#39;password&#39;: &#39;87&#39;}]}, input_type=dict]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<p>Alternatively, a custom validator can be used in the nested model class (<code>User</code>), with the forbidden passwords data from the parent model being passed in via validation context.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The ability to mutate the context within a validator adds a lot of power to nested validation, but can also lead to confusing or hard-to-debug code. Use this approach at your own risk!</p>
+</div>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">ValidationInfo</span><span class="p">,</span> <span class="n">field_validator</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">username</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">password</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;after&#39;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">validate_user_passwords</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">password</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">ValidationInfo</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check that user password is not in forbidden list.&quot;&quot;&quot;</span>
+        <span class="n">forbidden_passwords</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;forbidden_passwords&#39;</span><span class="p">,</span> <span class="p">[])</span> <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">context</span> <span class="k">else</span> <span class="p">[]</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">password</span> <span class="ow">in</span> <span class="n">forbidden_passwords</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Password </span><span class="si">{</span><span class="n">password</span><span class="si">}</span><span class="s1"> is forbidden.&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">password</span>
+
+
+<span class="k">class</span> <span class="nc">Organization</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">forbidden_passwords</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">users</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">User</span><span class="p">]</span>
+
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;forbidden_passwords&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;after&#39;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">add_context</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">info</span><span class="p">:</span> <span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;forbidden_passwords&#39;</span><span class="p">:</span> <span class="n">v</span><span class="p">})</span>
+        <span class="k">return</span> <span class="n">v</span>
+
+
+<span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;forbidden_passwords&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;123&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;users&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s1">&#39;username&#39;</span><span class="p">:</span> <span class="s1">&#39;Spartacat&#39;</span><span class="p">,</span> <span class="s1">&#39;password&#39;</span><span class="p">:</span> <span class="s1">&#39;123&#39;</span><span class="p">},</span>
+        <span class="p">{</span><span class="s1">&#39;username&#39;</span><span class="p">:</span> <span class="s1">&#39;Iceburgh&#39;</span><span class="p">,</span> <span class="s1">&#39;password&#39;</span><span class="p">:</span> <span class="s1">&#39;87&#39;</span><span class="p">},</span>
+    <span class="p">],</span>
+<span class="p">}</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">org</span> <span class="o">=</span> <span class="n">Organization</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="p">{})</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Organization</span>
+<span class="sd">    users.0.password</span>
+<span class="sd">      Value error, Password 123 is forbidden. [type=value_error, input_value=&#39;123&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<p>Note that if the context property is not included in <code>model_validate</code>, then <code>info.context</code> will be <code>None</code> and the forbidden passwords list will not get added to the context in the above implementation. As such, <code>validate_user_passwords</code> would not carry out the desired password validation.</p>
+<p>More details about validation context can be found <a href="../../concepts/validators/#validation-context">here</a>.</p>
 
 
 
