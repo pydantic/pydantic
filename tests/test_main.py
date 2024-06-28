@@ -747,11 +747,11 @@ def test_validating_assignment_fail(ValidateAssignmentModel):
 
 
 class Foo(Enum):
-    foo = 'foo'
-    bar = 'bar'
+    FOO = 'foo'
+    BAR = 'bar'
 
 
-@pytest.mark.parametrize('value', [Foo.foo, Foo.foo.value, 'foo'])
+@pytest.mark.parametrize('value', [Foo.FOO, Foo.FOO.value, 'foo'])
 def test_enum_values(value: Any) -> None:
     class Model(BaseModel):
         foo: Foo
@@ -768,32 +768,58 @@ def test_enum_values(value: Any) -> None:
     assert foo == 'foo'
 
 
-def test_literal_enum_values():
-    FooEnum = Enum('FooEnum', {'foo': 'foo_value', 'bar': 'bar_value'})
+class StrFoo(str, Enum):
+    FOO = 'foo'
+    BAR = 'bar'
 
+
+def test_literal_use_enum_values():
     class Model(BaseModel):
-        baz: Literal[FooEnum.foo]
+        baz: Literal[StrFoo.FOO]
         boo: str = 'hoo'
         model_config = ConfigDict(use_enum_values=True)
 
-    m = Model(baz=FooEnum.foo)
-    assert m.model_dump() == {'baz': FooEnum.foo, 'boo': 'hoo'}
-    assert m.model_dump(mode='json') == {'baz': 'foo_value', 'boo': 'hoo'}
-    assert m.baz.value == 'foo_value'
+    m = Model(baz=StrFoo.FOO)
+    assert isinstance(m.baz, str)
+    assert m.model_dump() == {'baz': 'foo', 'boo': 'hoo'}
+    assert m.model_dump(mode='json') == {'baz': 'foo', 'boo': 'hoo'}
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(baz=FooEnum.bar)
+        Model(baz=StrFoo.BAR)
 
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'literal_error',
             'loc': ('baz',),
-            'msg': "Input should be <FooEnum.foo: 'foo_value'>",
-            'input': FooEnum.bar,
-            'ctx': {'expected': "<FooEnum.foo: 'foo_value'>"},
+            'msg': "Input should be <StrFoo.FOO: 'foo'>",
+            'input': StrFoo.BAR,
+            'ctx': {'expected': "<StrFoo.FOO: 'foo'>"},
         }
     ]
+
+    validated = Model.model_validate_json('{"baz": "foo"}')
+    assert isinstance(validated.baz, str)
+
+    validated = Model.model_validate({'baz': StrFoo.FOO})
+    assert isinstance(validated.baz, str)
+
+
+@pytest.mark.parametrize('value', [StrFoo.FOO, StrFoo.FOO.value, 'foo', 'hello'])
+def test_literal_use_enum_values_multi_type(value):
+    class Model(BaseModel):
+        baz: Literal[StrFoo.FOO, 'hello']
+        model_config = ConfigDict(use_enum_values=True)
+
+    assert isinstance(Model(baz=value).baz, str)
+
+
+def test_literal_use_enum_values_with_default():
+    class Model(BaseModel):
+        baz: Literal[StrFoo.FOO] = Field(default=StrFoo.FOO)
+        model_config = ConfigDict(use_enum_values=True)
+
+    assert isinstance(Model().baz, str)
 
 
 def test_strict_enum_values():

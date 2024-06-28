@@ -111,13 +111,6 @@ FROZEN_SET_TYPES: list[type] = [frozenset, typing.FrozenSet, collections.abc.Set
 DICT_TYPES: list[type] = [dict, typing.Dict, collections.abc.MutableMapping, collections.abc.Mapping]
 
 
-def enum_or_var_gettr(obj):
-    if isinstance(obj, Enum):
-        return obj.value
-
-    return obj
-
-
 def check_validator_fields_against_field_name(
     info: FieldDecoratorInfo,
     field: str,
