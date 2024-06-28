@@ -326,6 +326,8 @@ jobs:
       - name: generate coverage comment
         id: coverage-comment
         uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: store coverage comment
         uses: actions/upload-artifact@v4
