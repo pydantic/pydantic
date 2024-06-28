@@ -170,80 +170,116 @@ except ValidationError as e:
     """
 ```
 
-## Validating Nested Model Fields with [`ValidationInfo`][pydantic_core.core_schema.ValidationInfo]
+## Validating Nested Model Fields
 
-Here, we demonstrate two ways to validate a field in a nested model, where the validator utilizes field data from the parent model.
+Here, we demonstrate two ways to validate a field of a nested model, where the validator utilizes data from the parent model.
 
-In this example, we construct a validator that chooses a single value from a list-like field, where the chosen value is determined by the index data specified by the parent model.
+In this example, we construct a validator that checks that each user's password is not in a list of forbidden passwords specified by the parent model.
 
-One way to do this is to place the validator in the parent model, with the field data from the nested model being accessible via a parameter of the validator.
+One way to do this is to place the validator in the parent model, with the field data from the nested model being accessible via a parameter.
 
 ```py
-from pydantic import BaseModel, ValidationInfo, field_validator
+from typing import List
+
+from typing_extensions import Self
+
+from pydantic import BaseModel, ValidationError, model_validator
 
 
-class Foo(BaseModel):
-    field1: str
-    field2: int | None = None
+class User(BaseModel):
+    username: str
+    password: str
 
 
-class Item(BaseModel):
-    idx: int
-    foo_fields: Foo
+class Organization(BaseModel):
+    forbidden_passwords: List[str]
+    users: List[User]
 
-    @field_validator('foo_fields', mode='before')
-    def select_single_value(cls, fields: dict, info: ValidationInfo) -> dict:
-        """Choose single value from space separated list based on specified index."""
-        index = info.data.get('idx')
-        field2_val_lst = fields['field2'].split()
-        fields['field2'] = field2_val_lst[
-            index  # select value and update field
-        ]
-        return fields
+    @model_validator(mode='after')
+    def validate_user_passwords(self) -> Self:
+        """Check that user password is not in forbidden list. Raise a validation error if a forbidden password is encountered."""
+        for user in self.users:
+            current_pw = user.password
+            if current_pw in self.forbidden_passwords:
+                raise ValueError(
+                    f'Password {current_pw} is forbidden. Please choose another password for user {user.username}.'
+                )
+        return self
 
 
-data = {'idx': 1, 'foo_fields': {'field1': 'woohoo', 'field2': '74 97 29'}}
-print(Item.model_validate(data))
-#> idx=1 foo_fields=Foo(field1='woohoo', field2=97)
+data = {
+    'forbidden_passwords': ['123'],
+    'users': [
+        {'username': 'Spartacat', 'password': '123'},
+        {'username': 'Iceburgh', 'password': '87'},
+    ],
+}
+try:
+    org = Organization(**data)
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Organization
+      Value error, Password 123 is forbidden. Please choose another password for user Spartacat. [type=value_error, input_value={'forbidden_passwords': [...gh', 'password': '87'}]}, input_type=dict]
+    """
 ```
 
-If multiple fields in the ```Foo``` class need the single-value selection validation, then the above implementation can be tweaked in the ```select_single_value``` function to loop through all the relevant fields and apply the updates.
-
-Alternatively, a validator can be placed in the nested model class (```Foo```), with the index data from the parent model being passed in via context from ```ValidationInfo```. This is demonstrated below.
+Alternatively, a validator can be placed in the nested model class (```User```), with the forbidden passwords data from the parent model being passed in via context from ```ValidationInfo```. This is demonstrated below.
 
 ```py
-from pydantic import BaseModel, ValidationInfo, field_validator
+from typing import List
+
+from pydantic import BaseModel, ValidationError, ValidationInfo, field_validator
 
 
-class Foo(BaseModel):
-    field1: str
-    field2: int | None = None
+class User(BaseModel):
+    username: str
+    password: str
 
-    @field_validator('field2', mode='before')
-    def select_single_value(cls, field2_val: str, info: ValidationInfo) -> dict:
-        """Choose single value from space separated list based on specified index."""
-        index = info.context.get('idx')  # obtain index from validation context
-        field2_val_lst = field2_val.split()
-        return field2_val_lst[index]
-
-
-class Item(BaseModel):
-    idx: int
-    foo_fields: Foo
-
-    @field_validator('idx', mode='after')
-    def add_context(cls, v: int, info: ValidationInfo):
-        info.context.update(
-            {'idx': v}  # update the initially empty context with the idx
+    @field_validator('password', mode='after')
+    def validate_user_passwords(
+        cls, password: str, info: ValidationInfo
+    ) -> str:
+        """Check that user password is not in forbidden list."""
+        forbidden_passwords = (
+            info.context.get('forbidden_passwords', []) if info.context else []
         )
+        if password in forbidden_passwords:
+            raise ValueError(f'Password {password} is forbidden.')
+        return password
+
+
+class Organization(BaseModel):
+    forbidden_passwords: List[str]
+    users: List[User]
+
+    @field_validator('forbidden_passwords', mode='after')
+    @classmethod
+    def add_context(cls, v: List[str], info: ValidationInfo) -> List[str]:
+        if info.context is not None:
+            info.context.update({'forbidden_passwords': v})
         return v
 
 
-data = {'idx': 1, 'foo_fields': {'field1': 'woohoo', 'field2': '74 97 29'}}
-print(Item.model_validate(data, context={}))
-#> idx=1 foo_fields=Foo(field1='woohoo', field2=97)
+data = {
+    'forbidden_passwords': ['123'],
+    'users': [
+        {'username': 'Spartacat', 'password': '123'},
+        {'username': 'Iceburgh', 'password': '87'},
+    ],
+}
+
+try:
+    org = Organization.model_validate(data, context={})
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Organization
+    users.0.password
+      Value error, Password 123 is forbidden. [type=value_error, input_value='123', input_type=str]
+    """
 ```
 
-Note that the context property must be initialized with `model_validate` in order to be used during the validation process.
+Note that if the context property is not included in `model_validate`, then `info.context` will be `None` and the forbidden passwords list will not get added to the context in the above implementation. As such, `validate_user_passwords` would not carry out the desired password validation.
 
-More details about [field validators](https://docs.pydantic.dev/latest/concepts/validators/#field-validators) and [validation context](https://docs.pydantic.dev/latest/concepts/validators/#validation-context) can be found on the validators page.
+More details about validation context can be found on [here](https://docs.pydantic.dev/latest/concepts/validators/#validation-context).
