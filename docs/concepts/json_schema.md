@@ -617,6 +617,64 @@ print(json.dumps(Model.model_json_schema(), indent=2))
 """
 ```
 
+#### Merging `json_schema_extra`
+
+Starting in v2.9, Pydantic merges `json_schema_extra` dictionaries from annotated types:
+
+```py
+import json
+from typing import TypeAlias
+
+from typing_extensions import Annotated
+
+from pydantic import Field, TypeAdapter
+
+ExternalType: TypeAlias = Annotated[int, Field(..., json_schema_extra={'key1': 'value1'})]
+
+ta = TypeAdapter(Annotated[ExternalType, Field(..., json_schema_extra={'key2': 'value2'})])
+print(json.dumps(ta.json_schema(), indent=2))
+"""
+{
+  "key1": "value1",
+  "key2": "value2",
+  "type": "integer"
+}
+"""
+```
+
+If you would prefer for the last of your `json_schema_extra` specifications to override the previous ones,
+you can use a `callable` to make more significant changes, including adding or removing keys, or modifying values:
+
+```py
+import json
+from typing import TypeAlias
+
+from typing_extensions import Annotated
+
+from pydantic import Field, TypeAdapter
+from pydantic.json_schema import JsonDict
+
+ExternalType: TypeAlias = Annotated[int, Field(..., json_schema_extra={'key1': 'value1', 'key2': 'value2'})]
+
+
+def finalize_schema(s: JsonDict) -> None:
+    s.pop('key1')
+    s['key2'] = s['key2'] + '-final'
+    s['key3'] = 'value3-final'
+
+
+ta = TypeAdapter(Annotated[ExternalType, Field(..., json_schema_extra=finalize_schema)])
+print(json.dumps(ta.json_schema(), indent=2))
+"""
+{
+  "key2": "value2-final",
+  "key3": "value3-final"
+  "type": "integer"
+}
+"""
+```
+
+
 ### `WithJsonSchema` annotation
 
 ??? api "API Documentation"
