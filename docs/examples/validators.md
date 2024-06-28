@@ -224,7 +224,7 @@ except ValidationError as e:
     """
 ```
 
-Alternatively, a custom validator can be used in the nested model class (`User`), with the forbidden passwords data from the parent model being passed in via validation context:
+Alternatively, a custom validator can be used in the nested model class (`User`), with the forbidden passwords data from the parent model being passed in via validation context. In general, we recommend the approach above over the context-based approach because it's better practice to use `info.context` in a read-only manner.
 
 ```py
 from typing import List
