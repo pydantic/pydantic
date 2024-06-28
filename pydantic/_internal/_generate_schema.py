@@ -1248,7 +1248,28 @@ class GenerateSchema:
         """Generate schema for a Literal."""
         expected = _typing_extra.all_literal_values(literal_type)
         assert expected, f'literal "expected" cannot be empty, obj={literal_type}'
-        return core_schema.literal_schema(expected)
+
+        use_enum_values = self._config_wrapper.use_enum_values
+
+        if use_enum_values and all(isinstance(value, Enum) for value in expected):
+            enum_type = type(next(iter(expected)))
+            expected_values = [value.value for value in expected]
+
+            def validate_enum(v):
+                if isinstance(v, enum_type):
+                    return v.value if v in expected else None
+                if v in expected_values:
+                    return v
+                raise ValueError(f'Invalid value: {v}')
+
+            return core_schema.chain_schema(
+                [
+                    core_schema.no_info_plain_validator_function(validate_enum),
+                    core_schema.literal_schema(expected_values),
+                ]
+            )
+        else:
+            return core_schema.literal_schema(expected)
 
     def _typed_dict_schema(self, typed_dict_cls: Any, origin: Any) -> core_schema.CoreSchema:
         """Generate schema for a TypedDict.
