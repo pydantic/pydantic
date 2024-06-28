@@ -6263,3 +6263,44 @@ def test_plain_serializer_applies_to_default() -> None:
         'title': 'Model',
         'type': 'object',
     }
+
+
+def test_merge_json_schema_extra_from_field_infos() -> None:
+    class Model(BaseModel):
+        f: Annotated[str, Field(json_schema_extra={'a': 1, 'b': 2})]
+        f_with_overwrite: Annotated[str, Field('bar', json_schema_extra={'a': 1}), Field(json_schema_extra={'a': 2})]
+        f_with_additional: Annotated[str, Field('bar', json_schema_extra={'a': 1}), Field(json_schema_extra={'b': 2})]
+
+    # insert_assert(Model.model_json_schema())
+    assert Model.model_json_schema() == {
+        'properties': {
+            'f': {'a': 1, 'b': 2, 'title': 'F', 'type': 'string'},
+            'f_with_overwrite': {
+                'a': 2,
+                'default': 'bar',
+                'title': 'F With Overwrite',
+                'type': 'string',
+            },
+            'f_with_additional': {
+                'a': 1,
+                'b': 2,
+                'default': 'bar',
+                'title': 'F With Additional',
+                'type': 'string',
+            },
+        },
+        'required': ['f'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_remove_key_from_like_parent_annotation() -> None:
+    class Model(BaseModel):
+        a: Annotated[
+            int,
+            Field(json_schema_extra={'key_to_remove': 'value'}),
+            Field(json_schema_extra=lambda _: None),
+        ]
+
+    assert Model.model_json_schema()['properties']['a'] == {'title': 'A', 'type': 'integer'}
