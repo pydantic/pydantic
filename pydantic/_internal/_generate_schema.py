@@ -111,6 +111,13 @@ FROZEN_SET_TYPES: list[type] = [frozenset, typing.FrozenSet, collections.abc.Set
 DICT_TYPES: list[type] = [dict, typing.Dict, collections.abc.MutableMapping, collections.abc.Mapping]
 
 
+def enum_or_var_gettr(obj):
+    if isinstance(obj, Enum):
+        return obj.value
+
+    return obj
+
+
 def check_validator_fields_against_field_name(
     info: FieldDecoratorInfo,
     field: str,
@@ -1248,7 +1255,12 @@ class GenerateSchema:
         """Generate schema for a Literal."""
         expected = _typing_extra.all_literal_values(literal_type)
         assert expected, f'literal "expected" cannot be empty, obj={literal_type}'
-        return core_schema.literal_schema(expected)
+        schema = core_schema.literal_schema(expected)
+
+        if self._config_wrapper.use_enum_values:
+            schema = core_schema.no_info_after_validator_function(enum_or_var_gettr, schema)
+
+        return schema
 
     def _typed_dict_schema(self, typed_dict_cls: Any, origin: Any) -> core_schema.CoreSchema:
         """Generate schema for a TypedDict.
