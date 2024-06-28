@@ -229,7 +229,6 @@ Alternatively, a custom validator can be used in the nested model class (`User`)
 !!! warning
     The ability to mutate the context within a validator adds a lot of power to nested validation, but can also lead to confusing or hard-to-debug code. Use this approach at your own risk!
 
-
 ```py
 from typing import List
 
