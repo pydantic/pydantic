@@ -1258,7 +1258,9 @@ class GenerateSchema:
         schema = core_schema.literal_schema(expected)
 
         if self._config_wrapper.use_enum_values:
-            schema = core_schema.no_info_after_validator_function(enum_or_var_gettr, schema)
+            schema = core_schema.no_info_after_validator_function(
+                lambda v: v.value if isinstance(v, Enum) else v, schema
+            )
 
         return schema
 
