@@ -320,6 +320,17 @@ jobs:
           name: coverage-html
           path: htmlcov
 
+      - name: generate coverage comment
+        id: coverage-comment
+        uses: py-cov-action/python-coverage-comment-action@v3
+
+      - name: store coverage comment
+        uses: actions/upload-artifact@v4
+        if: steps.coverage-comment.outputs.COMMENT_FILE_WRITTEN == 'true'
+        with:
+          name: python-coverage-comment-action
+          path: python-coverage-comment-action.txt
+
   test-typing-extensions:
     name: test typing-extensions ${{ matrix.typing-extensions-version }} on Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
