@@ -643,7 +643,9 @@ print(json.dumps(ta.json_schema(), indent=2))
 ```
 
 If you would prefer for the last of your `json_schema_extra` specifications to override the previous ones,
-you can use a `callable` to make more significant changes, including adding or removing keys, or modifying values:
+you can use a `callable` to make more significant changes, including adding or removing keys, or modifying values.
+You can use this pattern if you'd like to mimic the behavior of the `json_schema_extra` overrides present
+in Pydantic v2.8 and earlier:
 
 ```py
 import json
