@@ -3526,9 +3526,24 @@ def test_path_like_extra_subtype():
             any_type=111,
         )
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'path_type', 'loc': ('str_type',), 'msg': 'Input is not a valid path', 'input': b'/foo/bar'},
-        {'type': 'path_type', 'loc': ('byte_type',), 'msg': 'Input is not a valid path', 'input': '/foo/bar'},
-        {'type': 'path_type', 'loc': ('any_type',), 'msg': 'Input is not a valid path', 'input': 111},
+        {
+            'type': 'path_type',
+            'loc': ('str_type',),
+            'msg': "Input is not a valid path for <class 'os.PathLike'>",
+            'input': b'/foo/bar',
+        },
+        {
+            'type': 'path_type',
+            'loc': ('byte_type',),
+            'msg': "Input is not a valid path for <class 'os.PathLike'>",
+            'input': '/foo/bar',
+        },
+        {
+            'type': 'path_type',
+            'loc': ('any_type',),
+            'msg': "Input is not a valid path for <class 'os.PathLike'>",
+            'input': 111,
+        },
     ]
 
 
@@ -3569,14 +3584,24 @@ def test_path_validation_fails():
         Model(foo=123)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'path_type', 'loc': ('foo',), 'msg': 'Input is not a valid path', 'input': 123}
+        {
+            'type': 'path_type',
+            'loc': ('foo',),
+            'msg': "Input is not a valid path for <class 'pathlib.Path'>",
+            'input': 123,
+        }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=None)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'path_type', 'loc': ('foo',), 'msg': 'Input is not a valid path', 'input': None}
+        {
+            'type': 'path_type',
+            'loc': ('foo',),
+            'msg': "Input is not a valid path for <class 'pathlib.Path'>",
+            'input': None,
+        }
     ]
 
 
