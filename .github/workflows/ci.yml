@@ -348,7 +348,7 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: store coverage comment
+      - name: Store coverage comment
         uses: actions/upload-artifact@v4
         if: steps.coverage-comment.outputs.COMMENT_FILE_WRITTEN == 'true'
         with:

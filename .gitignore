@@ -31,7 +31,6 @@ _build/
 /codecov.sh
 /coverage.lcov
 .coverage
-python-coverage-comment-action.txt
 test.py
 run_mypy_on_file.py
 
