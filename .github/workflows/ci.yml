@@ -292,9 +292,6 @@ jobs:
   coverage-combine:
     needs: [test, test-mypy]
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -317,13 +314,35 @@ jobs:
       - run: coverage report
       - run: coverage html --show-contexts --title "pydantic coverage for ${{ github.sha }}"
 
+      - name: Store coverage data
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-data
+          path: .coverage
+
       - name: Store coverage html
         uses: actions/upload-artifact@v4
         with:
           name: coverage-html
           path: htmlcov
 
-      - name: generate coverage comment
+  coverage-pr-comment:
+    needs: coverage-combine
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      pull-requests: write
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download coverage data
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-data
+
+      - name: Generate coverage comment
         id: coverage-comment
         uses: py-cov-action/python-coverage-comment-action@v3
         with:
