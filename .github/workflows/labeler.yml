@@ -23,7 +23,7 @@ jobs:
         run: echo "${{ steps.label-PR-by-branch-name.outputs.all-labels }}"
 
       - id: add-default-if-no-labels
-        if: ${{ !contains(steps.label-PR-by-branch-name.outputs.all-labels, 'relnotes') || !contains(steps.label-PR-by-branch-name.outputs.all-labels, 'documentation') }}
+        if: ${{ !contains(steps.label-PR-by-branch-name.outputs.all-labels, 'relnotes-fix') && !contains(steps.label-PR-by-branch-name.outputs.all-labels, 'documentation') }}
         uses: actions/labeler@v5
         with:
           configuration-path: '.github/labels/default_pass.yml'
