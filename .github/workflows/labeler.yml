@@ -19,6 +19,9 @@ jobs:
         with:
           configuration-path: '.github/labels/first_pass.yml'
 
+      - id: test
+        run: echo "${{ steps.label-PR-by-branch-name.outputs.all-labels }}"
+
       - id: add-default-if-no-labels
         if: ${{ !contains(steps.label-PR-by-branch-name.outputs.all-labels, 'relnotes') || !contains(steps.label-PR-by-branch-name.outputs.all-labels, 'documentation') }}
         uses: actions/labeler@v5
