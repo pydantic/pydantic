@@ -1,6 +1,8 @@
-## v2.8.0b1 (2024-06-27)
+## v2.8.0 (2024-07-01)
 
-[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.8.0b1)
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.8.0)
+
+The code released in v2.8.0 is functionally identical to that of v2.8.0b1.
 
 ### What's Changed
 
@@ -111,6 +113,10 @@ is desired, you can switch to `left-to-right` mode and change the order of your 
 * @mylapallilavanyaa made their first contribution in [#9746](https://github.com/pydantic/pydantic/pull/9746)
 * @lazyhope made their first contribution in [#9754](https://github.com/pydantic/pydantic/pull/9754)
 * @YassinNouh21 made their first contribution in [#9759](https://github.com/pydantic/pydantic/pull/9759)
+
+## v2.8.0b1 (2024-06-27)
+
+Pre-release, see [the GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.8.0b1) for details.
 
 ## v2.7.4 (2024-06-12)
 
