@@ -172,7 +172,7 @@ addopts = [
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
-assignees = ['sydney-runkle']
+reviewers = ['sydney-runkle']
 require_change_file = false
 unconfirmed_label = 'pending'
 
