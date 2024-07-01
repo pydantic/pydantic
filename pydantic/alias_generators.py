@@ -49,13 +49,14 @@ def to_snake(camel: str) -> str:
     Returns:
         The converted string in snake_case.
     """
-    # `(?<=[a-zA-Z])(?=[0-9])` matches the space between a letter and a digit
-    # `(?<=[a-z0-9])(?=[A-Z])` matches the space between a lowercase letter / digit and uppercase letter
-    # `(?<=[A-Z])(?=[A-Z][a-z])` matches the space between two uppercase letters when the latter is followed by a lowercase letter
-    # `-` matches a hyphen in order to convert kebab case strings
-    snake = re.sub(
-        r'(?<=[a-zA-Z])(?=[0-9])|(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|-',
-        '_',
-        camel,
-    )
+    # Handle the sequence of uppercase letters followed by a lowercase letter
+    snake = re.sub(r'([A-Z]+)([A-Z][a-z])', lambda m: f'{m.group(1)}_{m.group(2)}', camel)
+    # Insert an underscore between a lowercase letter and an uppercase letter
+    snake = re.sub(r'([a-z])([A-Z])', lambda m: f'{m.group(1)}_{m.group(2)}', snake)
+    # Insert an underscore between a digit and an uppercase letter
+    snake = re.sub(r'([0-9])([A-Z])', lambda m: f'{m.group(1)}_{m.group(2)}', snake)
+    # Insert an underscore between a lowercase letter and a digit
+    snake = re.sub(r'([a-z])([0-9])', lambda m: f'{m.group(1)}_{m.group(2)}', snake)
+    # Replace hyphens with underscores to handle kebab-case
+    snake = snake.replace('-', '_')
     return snake.lower()
