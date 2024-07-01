@@ -5,7 +5,7 @@
 groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "testing-extra"]
 strategy = ["cross_platform"]
 lock_version = "4.4.2"
-content_hash = "sha256:ea58ebcc809975615ae5ec03d7fb3cd01696005817e5bc8f89f20a8900f5ac08"
+content_hash = "sha256:af34c4be99e738c25ac9278bac85636dd3aab4b25e618ad049481e6e1c423ee9"
 
 [[package]]
 name = "annotated-types"
@@ -1400,7 +1400,7 @@ files = [
 
 [[package]]
 name = "pytest-examples"
-version = "0.0.10"
+version = "0.0.11"
 requires_python = ">=3.7"
 summary = "Pytest plugin for testing examples in docstrings and markdown files."
 dependencies = [
@@ -1409,8 +1409,8 @@ dependencies = [
     "ruff>=0.0.258",
 ]
 files = [
-    {file = "pytest_examples-0.0.10-py3-none-any.whl", hash = "sha256:3d0b52424e454846beed8621a12b85db88c6c17049f65c2f417211372c20dc9e"},
-    {file = "pytest_examples-0.0.10.tar.gz", hash = "sha256:5d34d22e689aca2bbad8dd6b7cdcc9d0107e2942853b3154f3a3c68d145d91c5"},
+    {file = "pytest_examples-0.0.11-py3-none-any.whl", hash = "sha256:9c098a4b9463969d195b18cc6a1af8674163023f090b7deccd5099c5df6d70fb"},
+    {file = "pytest_examples-0.0.11.tar.gz", hash = "sha256:d5ab3c88b724b141c5b7b9f172f6cb1940d0e56f8d04efb6b01c909b13a7fa77"},
 ]
 
 [[package]]

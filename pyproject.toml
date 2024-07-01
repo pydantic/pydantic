@@ -112,7 +112,7 @@ docs = [
     "pyupgrade",
     "mike @ git+https://github.com/jimporter/mike.git",
     "mkdocs-embed-external-markdown>=2.3.0",
-    "pytest-examples>=0.0.10",
+    "pytest-examples>=0.0.11",
     "pydantic-settings>=2.0b1",
     "pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main"
 ]
