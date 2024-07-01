@@ -39,6 +39,7 @@ def to_camel(snake: str) -> str:
     camel = to_pascal(snake)
     return re.sub('(^_*[A-Z])', lambda m: m.group(1).lower(), camel)
 
+# random change
 
 def to_snake(camel: str) -> str:
     """Convert a PascalCase, camelCase, or kebab-case string to snake_case.
