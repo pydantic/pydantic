@@ -283,7 +283,7 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                     )
                 return v
 
-            schema = cs.no_info_after_validator_function(val_func, schema)
+            return cs.no_info_after_validator_function(val_func, schema)
 
         # ignore any other unknown metadata
         return None
