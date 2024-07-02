@@ -802,7 +802,7 @@ class StrFoo(str, Enum):
 
 
 @pytest.mark.parametrize('value', [StrFoo.FOO, StrFoo.FOO.value, 'foo', 'hello'])
-def test_literal_use_enum_values_multi_type(value):
+def test_literal_use_enum_values_multi_type(value) -> None:
     class Model(BaseModel):
         baz: Literal[StrFoo.FOO, 'hello']
         model_config = ConfigDict(use_enum_values=True)
@@ -810,18 +810,22 @@ def test_literal_use_enum_values_multi_type(value):
     assert isinstance(Model(baz=value).baz, str)
 
 
-def test_literal_use_enum_values_with_default():
+def test_literal_use_enum_values_with_default() -> None:
     class Model(BaseModel):
         baz: Literal[StrFoo.FOO] = Field(default=StrFoo.FOO)
-        model_config = ConfigDict(use_enum_values=True)
+        model_config = ConfigDict(use_enum_values=True, validate_default=True)
 
-    assert isinstance(Model().baz, str)
+    validated = Model()
+    assert type(validated.baz) is str
+    assert type(validated.model_dump()['baz']) is str
 
     validated = Model.model_validate_json('{"baz": "foo"}')
-    assert isinstance(validated.baz, str)
+    assert type(validated.baz) is str
+    assert type(validated.model_dump()['baz']) is str
 
     validated = Model.model_validate({'baz': StrFoo.FOO})
-    assert isinstance(validated.baz, str)
+    assert type(validated.baz) is str
+    assert type(validated.model_dump()['baz']) is str
 
 
 def test_strict_enum_values():
