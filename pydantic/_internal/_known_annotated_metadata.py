@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from copy import copy
-from functools import partial
+from functools import lru_cache, partial
 from typing import TYPE_CHECKING, Any, Callable, Iterable
 
 from pydantic_core import CoreSchema, PydanticCustomError, to_jsonable_python
@@ -65,46 +65,34 @@ SEQUENCE_SCHEMA_TYPES = ('list', 'tuple', 'set', 'frozenset', 'generator', *TEXT
 NUMERIC_SCHEMA_TYPES = ('float', 'int', 'date', 'time', 'timedelta', 'datetime')
 
 CONSTRAINTS_TO_ALLOWED_SCHEMAS: dict[str, set[str]] = defaultdict(set)
-for constraint in STR_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(TEXT_SCHEMA_TYPES)
-for constraint in BYTES_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('bytes',))
-for constraint in LIST_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('list',))
-for constraint in TUPLE_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('tuple',))
-for constraint in SET_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('set', 'frozenset'))
-for constraint in DICT_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('dict',))
-for constraint in GENERATOR_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('generator',))
-for constraint in FLOAT_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('float',))
-for constraint in INT_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('int',))
-for constraint in DATE_TIME_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('date', 'time', 'datetime'))
-for constraint in TIMEDELTA_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('timedelta',))
-for constraint in TIME_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('time',))
-for schema_type in (*TEXT_SCHEMA_TYPES, *SEQUENCE_SCHEMA_TYPES, *NUMERIC_SCHEMA_TYPES, 'typed-dict', 'model'):
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS['strict'].add(schema_type)
-for constraint in UNION_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('union',))
-for constraint in URL_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('url', 'multi-host-url'))
-for constraint in BOOL_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('bool',))
-for constraint in UUID_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('uuid',))
-for constraint in LAX_OR_STRICT_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('lax-or-strict',))
-for constraint in ENUM_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('enum',))
-for constraint in DECIMAL_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('decimal',))
+
+constraint_schema_pairings: list[tuple[set[str], tuple[str, ...]]] = [
+    (STR_CONSTRAINTS, TEXT_SCHEMA_TYPES),
+    (BYTES_CONSTRAINTS, ('bytes',)),
+    (LIST_CONSTRAINTS, ('list',)),
+    (TUPLE_CONSTRAINTS, ('tuple',)),
+    (SET_CONSTRAINTS, ('set', 'frozenset')),
+    (DICT_CONSTRAINTS, ('dict',)),
+    (GENERATOR_CONSTRAINTS, ('generator',)),
+    (FLOAT_CONSTRAINTS, ('float',)),
+    (INT_CONSTRAINTS, ('int',)),
+    (DATE_TIME_CONSTRAINTS, ('date', 'time', 'datetime')),
+    (TIMEDELTA_CONSTRAINTS, ('timedelta',)),
+    (TIME_CONSTRAINTS, ('time',)),
+    # TODO: this is a bit redundant, we could probably avoid some of these
+    (STRICT, (*TEXT_SCHEMA_TYPES, *SEQUENCE_SCHEMA_TYPES, *NUMERIC_SCHEMA_TYPES, 'typed-dict', 'model')),
+    (UNION_CONSTRAINTS, ('union',)),
+    (URL_CONSTRAINTS, ('url', 'multi-host-url')),
+    (BOOL_CONSTRAINTS, ('bool',)),
+    (UUID_CONSTRAINTS, ('uuid',)),
+    (LAX_OR_STRICT_CONSTRAINTS, ('lax-or-strict',)),
+    (ENUM_CONSTRAINTS, ('enum',)),
+    (DECIMAL_CONSTRAINTS, ('decimal',)),
+]
+
+for constraints, schemas in constraint_schema_pairings:
+    for c in constraints:
+        CONSTRAINTS_TO_ALLOWED_SCHEMAS[c].update(schemas)
 
 
 def add_js_update_schema(s: cs.CoreSchema, f: Callable[[], dict[str, Any]]) -> None:
@@ -169,6 +157,25 @@ def expand_grouped_metadata(annotations: Iterable[Any]) -> Iterable[Any]:
             yield annotation
 
 
+@lru_cache
+def _get_at_to_constraint_map() -> dict[type, str]:
+    """Return a mapping of annotated types to constraints.
+
+    Stored in this function because we don't allow global imports of annotated types, but we cache for performance.
+    """
+    import annotated_types as at
+
+    return {
+        at.Gt: 'gt',
+        at.Ge: 'ge',
+        at.Lt: 'lt',
+        at.Le: 'le',
+        at.MultipleOf: 'multiple_of',
+        at.MinLen: 'min_length',
+        at.MaxLen: 'max_length',
+    }
+
+
 def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | None:  # noqa: C901
     """Apply `annotation` to `schema` if it is an annotation we know about (Gt, Le, etc.).
     Otherwise return `None`.
@@ -191,16 +198,6 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
     import annotated_types as at
 
     from ._validators import forbid_inf_nan_check, get_constraint_validator
-
-    ANNOTATED_TYPE_TO_CONSTRAINT_MAP = {
-        at.Gt: 'gt',
-        at.Ge: 'ge',
-        at.Lt: 'lt',
-        at.Le: 'le',
-        at.MultipleOf: 'multiple_of',
-        at.MinLen: 'min_length',
-        at.MaxLen: 'max_length',
-    }
 
     schema = schema.copy()
     schema_update, other_metadata = collect_known_metadata([annotation])
@@ -265,8 +262,8 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             raise RuntimeError(f'Unable to apply constraint {constraint} to schema {schema_type}')
 
     for annotation in other_metadata:
-        if type(annotation) in ANNOTATED_TYPE_TO_CONSTRAINT_MAP:
-            constraint = ANNOTATED_TYPE_TO_CONSTRAINT_MAP[type(annotation)]
+        if type(annotation) in (at_to_constraint_map := _get_at_to_constraint_map()):
+            constraint = at_to_constraint_map[type(annotation)]
             schema = cs.no_info_after_validator_function(
                 partial(get_constraint_validator(constraint), {constraint: getattr(annotation, constraint)}), schema
             )
@@ -312,19 +309,7 @@ def collect_known_metadata(annotations: Iterable[Any]) -> tuple[dict[str, Any], 
         #> ({'gt': 1, 'min_length': 42}, [Ellipsis])
         ```
     """
-    import annotated_types as at
-
     annotations = expand_grouped_metadata(annotations)
-
-    ANNOTATED_TYPE_TO_CONSTRAINT_MAP = {
-        at.Gt: 'gt',
-        at.Ge: 'ge',
-        at.Lt: 'lt',
-        at.Le: 'le',
-        at.MultipleOf: 'multiple_of',
-        at.MinLen: 'min_length',
-        at.MaxLen: 'max_length',
-    }
 
     res: dict[str, Any] = {}
     remaining: list[Any] = []
@@ -334,8 +319,8 @@ def collect_known_metadata(annotations: Iterable[Any]) -> tuple[dict[str, Any], 
         if isinstance(annotation, PydanticMetadata):
             res.update(annotation.__dict__)
         # we don't use dataclasses.asdict because that recursively calls asdict on the field values
-        elif type(annotation) in ANNOTATED_TYPE_TO_CONSTRAINT_MAP:
-            constraint = ANNOTATED_TYPE_TO_CONSTRAINT_MAP[type(annotation)]
+        elif type(annotation) in (at_to_constraint_map := _get_at_to_constraint_map()):
+            constraint = at_to_constraint_map[type(annotation)]
             res[constraint] = getattr(annotation, constraint)
         elif isinstance(annotation, type) and issubclass(annotation, PydanticMetadata):
             # also support PydanticMetadata classes being used without initialisation,

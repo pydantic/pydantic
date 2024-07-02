@@ -9,11 +9,10 @@ import math
 import re
 import typing
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import Any, Callable, Literal
+from typing import Any, Callable
 
 from pydantic_core import PydanticCustomError, core_schema
 from pydantic_core._pydantic_core import PydanticKnownError
-from typing_extensions import TypeAlias
 
 
 def sequence_validator(
@@ -290,9 +289,7 @@ def forbid_inf_nan_check(x: Any) -> Any:
     return x
 
 
-BasicConstraint: TypeAlias = Literal['gt', 'ge', 'lt', 'le', 'multiple_of', 'min_length', 'max_length']
-
-_CONSTRAINT_TO_VALIDATOR_MAP: dict[BasicConstraint, Callable] = {
+_CONSTRAINT_TO_VALIDATOR_MAP: dict[str, Callable] = {
     'gt': greater_than_validator,
     'ge': greater_than_or_equal_validator,
     'lt': less_than_validator,
@@ -303,7 +300,7 @@ _CONSTRAINT_TO_VALIDATOR_MAP: dict[BasicConstraint, Callable] = {
 }
 
 
-def get_constraint_validator(constraint: BasicConstraint) -> Callable:
+def get_constraint_validator(constraint: str) -> Callable:
     """Fetch the validator function for the given constraint."""
     try:
         return _CONSTRAINT_TO_VALIDATOR_MAP[constraint]
