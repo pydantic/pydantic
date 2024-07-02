@@ -631,7 +631,7 @@ class OuterModel(MyBaseModel):
 
 u = OuterModel(user=UserInfo(name='John', password='secret_pw'))
 print(u.model_dump_json())  # (1)!
-#> {"user":{"name":"John","password":"**********"}}
+#> {"user":{"name":"John","password":""}}
 ```
 
 1. By default, `model_dump_json` will use duck-typing serialization behavior, which means that the `password` field is included in the output.

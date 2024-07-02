@@ -8,10 +8,13 @@ secret values are kept as `Secret` objects.
 
 ```py
 from pydantic import BaseModel, Secret
+
+
 class Foo(BaseModel):
     secret_bool: Secret[bool]
     secret_str: Secret[str]
     secret_float: Secret[float]
+
 
 foo = Foo(secret_bool=True, secret_str='secret', secret_float=3.14)
 print(foo)
@@ -32,10 +35,12 @@ secret str is always serialized to empty string, etc.
 ```py
 from pydantic import BaseModel, Secret
 
+
 class Foo(BaseModel):
     secret_bool: Secret[bool]
     secret_str: Secret[str]
     secret_float: Secret[float]
+
 
 foo = Foo(secret_bool=True, secret_str='secret', secret_float=3.14)
 print(foo)
