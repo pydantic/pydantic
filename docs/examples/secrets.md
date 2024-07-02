@@ -18,10 +18,18 @@ class Foo(BaseModel):
 
 foo = Foo(secret_bool=True, secret_str='secret', secret_float=3.14)
 print(foo)
-#> secret_bool=Secret('**********') secret_str=Secret('**********') secret_float=Secret('**********')
+"""
+secret_bool=Secret('**********') secret_str=Secret('**********') secret_float=Secret('**********')
+"""
 
 print(foo.model_dump())
-#> {'secret_bool': Secret('**********'), 'secret_str': Secret('**********'), 'secret_float': Secret('**********')}
+"""
+{
+    'secret_bool': Secret('**********'),
+    'secret_str': Secret('**********'),
+    'secret_float': Secret('**********')
+}
+"""
 ```
 
 ## Default serialization to json
@@ -44,7 +52,9 @@ class Foo(BaseModel):
 
 foo = Foo(secret_bool=True, secret_str='secret', secret_float=3.14)
 print(foo)
-#> secret_bool=Secret('**********') secret_str=Secret('**********') secret_float=Secret('**********')
+"""
+secret_bool=Secret('**********') secret_str=Secret('**********') secret_float=Secret('**********')
+"""
 
 print(foo.model_dump(mode='json'))
 #> {'secret_bool': 'false', 'secret_str': '', 'secret_float': '0.0'}
