@@ -4,7 +4,7 @@ from __future__ import annotations as _annotations
 
 __all__ = 'VERSION', 'version_info'
 
-VERSION = '2.8.0b1'
+VERSION = '2.8.0'
 """The version of Pydantic."""
 
 

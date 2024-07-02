@@ -827,7 +827,7 @@ class GenerateSchema:
             return self._dict_schema(obj, *self._get_first_two_args_or_any(obj))
         elif isinstance(obj, TypeAliasType):
             return self._type_alias_type_schema(obj)
-        elif obj == type:
+        elif obj is type:
             return self._type_schema()
         elif _typing_extra.is_callable_type(obj):
             return core_schema.callable_schema()
@@ -1248,7 +1248,14 @@ class GenerateSchema:
         """Generate schema for a Literal."""
         expected = _typing_extra.all_literal_values(literal_type)
         assert expected, f'literal "expected" cannot be empty, obj={literal_type}'
-        return core_schema.literal_schema(expected)
+        schema = core_schema.literal_schema(expected)
+
+        if self._config_wrapper.use_enum_values and any(isinstance(v, Enum) for v in expected):
+            schema = core_schema.no_info_after_validator_function(
+                lambda v: v.value if isinstance(v, Enum) else v, schema
+            )
+
+        return schema
 
     def _typed_dict_schema(self, typed_dict_cls: Any, origin: Any) -> core_schema.CoreSchema:
         """Generate schema for a TypedDict.
@@ -1538,11 +1545,11 @@ class GenerateSchema:
             pattern_type,
             required=True,
         )[0]
-        if param == str:
+        if param is str:
             return core_schema.no_info_plain_validator_function(
                 _validators.pattern_str_validator, serialization=ser, metadata=metadata
             )
-        elif param == bytes:
+        elif param is bytes:
             return core_schema.no_info_plain_validator_function(
                 _validators.pattern_bytes_validator, serialization=ser, metadata=metadata
             )
