@@ -244,6 +244,8 @@ class PydanticTypes(BaseModel):
     my_future_datetime: FutureDatetime = datetime.now() + timedelta(1)
     my_aware_datetime: AwareDatetime = datetime.now(tz=timezone.utc)
     my_naive_datetime: NaiveDatetime = datetime.now()
+    # Complex
+    my_complex: complex = complex(1.0, 2.0)
 
 
 validated = PydanticTypes()
