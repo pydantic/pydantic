@@ -629,9 +629,8 @@ for more details.
 
 ```py
 import json
-from typing import TypeAlias
 
-from typing_extensions import Annotated
+from typing_extensions import Annotated, TypeAlias
 
 from pydantic import Field, TypeAdapter
 
@@ -659,9 +658,8 @@ in Pydantic v2.8 and earlier:
 
 ```py
 import json
-from typing import TypeAlias
 
-from typing_extensions import Annotated
+from typing_extensions import Annotated, TypeAlias
 
 from pydantic import Field, TypeAdapter
 from pydantic.json_schema import JsonDict
