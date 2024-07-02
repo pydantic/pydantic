@@ -265,16 +265,13 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             raise RuntimeError(f'Unable to apply constraint {constraint} to schema {schema_type}')
 
     for annotation in other_metadata:
-        try:
-            constraint = _get_at_to_constraint_map()[type(annotation)]
+        if (annotation_type := type(annotation)) in (at_to_constraint_map := _get_at_to_constraint_map()):
+            constraint = at_to_constraint_map[annotation_type]
             schema = cs.no_info_after_validator_function(
                 partial(get_constraint_validator(constraint), {constraint: getattr(annotation, constraint)}), schema
             )
             continue
-        except KeyError:
-            pass
-
-        if isinstance(annotation, at.Predicate):
+        elif isinstance(annotation, at.Predicate):
             predicate_name = f'{annotation.func.__qualname__} ' if hasattr(annotation.func, '__qualname__') else ''
 
             def val_func(v: Any) -> Any:
@@ -286,10 +283,10 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                     )
                 return v
 
-            return cs.no_info_after_validator_function(val_func, schema)
-
-        # ignore any other unknown metadata
-        return None
+            schema = cs.no_info_after_validator_function(val_func, schema)
+        else:
+            # ignore any other unknown metadata
+            return None
 
     if chain_schema_steps:
         chain_schema_steps = [schema] + chain_schema_steps
