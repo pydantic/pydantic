@@ -210,6 +210,7 @@ quote-style = 'single'
 source = ['pydantic']
 omit = ['pydantic/deprecated/*', 'pydantic/v1/*']
 branch = true
+relative_files = true
 context = '${CONTEXT}'
 
 [tool.coverage.report]

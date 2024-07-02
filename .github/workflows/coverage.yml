@@ -1,0 +1,25 @@
+name: Post coverage comment
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+jobs:
+  post-coverage-comment:
+    name: Push coverage comment
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success'
+    permissions:
+      pull-requests: write
+      contents: write
+      actions: read
+    steps:
+      # DO NOT run actions/checkout here, for security reasons
+      # For details, refer to https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+      - name: Post comment
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_PR_RUN_ID: ${{ github.event.workflow_run.id }}
