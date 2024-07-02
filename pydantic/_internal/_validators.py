@@ -9,7 +9,7 @@ import math
 import re
 import typing
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import Any
+from typing import Any, Callable
 
 from pydantic_core import PydanticCustomError, core_schema
 from pydantic_core._pydantic_core import PydanticKnownError
@@ -287,3 +287,22 @@ def forbid_inf_nan_check(x: Any) -> Any:
     if not math.isfinite(x):
         raise PydanticKnownError('finite_number')
     return x
+
+
+_CONSTRAINT_TO_VALIDATOR_MAP: dict[str, Callable] = {
+    'gt': greater_than_validator,
+    'ge': greater_than_or_equal_validator,
+    'lt': less_than_validator,
+    'le': less_than_or_equal_validator,
+    'multiple_of': multiple_of_validator,
+    'min_length': min_length_validator,
+    'max_length': max_length_validator,
+}
+
+
+def get_constraint_validator(constraint: str) -> Callable:
+    """Fetch the validator function for the given constraint."""
+    try:
+        return _CONSTRAINT_TO_VALIDATOR_MAP[constraint]
+    except KeyError:
+        raise TypeError(f'Unknown constraint {constraint}')
