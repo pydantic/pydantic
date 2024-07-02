@@ -128,6 +128,48 @@ class ConfigDict(TypedDict, total=False):
     ```
     """
 
+    extra_repr: bool
+    """
+    Whether to include the `model_extra` in the model repr. Defaults to `True`.
+    If `extra = 'allow'` and `extra_repr = True`, all extra values will be included in the model's repr.
+
+    ```py
+    from pydantic import BaseModel, ConfigDict
+
+
+    class User(BaseModel):
+        model_config = ConfigDict(extra='allow', extra_repr=True)
+
+        name: str
+
+
+    user = User(name='John Doe', age=20)  # (1)!
+    print(user)
+    #> name='John Doe' age=20
+    ```
+
+    But, if `extra_repr = False`, none of the extra values will be included in the model's repr.
+
+    ```py
+    from pydantic import BaseModel, ConfigDict
+
+
+    class User(BaseModel):
+        model_config = ConfigDict(extra='allow', extra_repr=False)
+
+        name: str
+
+
+    user = User(name='John Doe', age=20)  # (1)!
+    print(user)
+    #> name='John Doe'
+    print(user.model_extra)  # Still present, but hidden from repr.
+    #> {'age': 20}
+    ```
+
+    There is no effect if `extra` is set to anything besides `"allow"`.
+    """
+
     frozen: bool
     """
     Whether models are faux-immutable, i.e. whether `__setattr__` is allowed, and also generates

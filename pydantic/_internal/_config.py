@@ -48,6 +48,7 @@ class ConfigWrapper:
     str_min_length: int
     str_max_length: int | None
     extra: ExtraValues | None
+    extra_repr: bool
     frozen: bool
     populate_by_name: bool
     use_enum_values: bool
@@ -238,6 +239,7 @@ config_defaults = ConfigDict(
     str_max_length=None,
     # let the model / dataclass decide how to handle it
     extra=None,
+    extra_repr=True,
     frozen=False,
     populate_by_name=False,
     use_enum_values=False,

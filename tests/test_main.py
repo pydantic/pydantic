@@ -269,6 +269,18 @@ def test_allow_extra_repr():
     assert str(Model(a='10.2', b=12)) == 'a=10.2 b=12'
 
 
+@pytest.mark.parametrize('extra_repr,expected', [(True, "Model(a=1.0, foo='bar')"), (False, 'Model(a=1.0)')])
+def test_allow_extra_no_repr(extra_repr: bool, expected: str):
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow', extra_repr=extra_repr)
+        a: float = ...
+
+    extra = {'foo': 'bar'}
+    actual = Model(a=1.0, **extra)
+    assert repr(actual) == expected
+    assert actual.model_extra == extra
+
+
 def test_forbidden_extra_success():
     class ForbiddenExtra(BaseModel):
         model_config = ConfigDict(extra='forbid')
