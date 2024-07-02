@@ -13,15 +13,15 @@ from ._fields import PydanticMetadata
 if TYPE_CHECKING:
     from ..annotated_handlers import GetJsonSchemaHandler
 
-
 STRICT = {'strict'}
 FAIL_FAST = {'fail_fast'}
-SEQUENCE_CONSTRAINTS = {'min_length', 'max_length', *FAIL_FAST}
+LENGTH_CONSTRAINTS = {'min_length', 'max_length'}
 INEQUALITY = {'le', 'ge', 'lt', 'gt'}
-NUMERIC_CONSTRAINTS = {'multiple_of', 'allow_inf_nan', *INEQUALITY}
+NUMERIC_CONSTRAINTS = {'multiple_of', *INEQUALITY}
+ALLOW_INF_NAN = {'allow_inf_nan'}
 
 STR_CONSTRAINTS = {
-    *SEQUENCE_CONSTRAINTS,
+    *LENGTH_CONSTRAINTS,
     *STRICT,
     'strip_whitespace',
     'to_lower',
@@ -29,17 +29,18 @@ STR_CONSTRAINTS = {
     'pattern',
     'coerce_numbers_to_str',
 }
-BYTES_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT}
+BYTES_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *STRICT}
 
-LIST_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT, *FAIL_FAST}
-TUPLE_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT, *FAIL_FAST}
-SET_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT, *FAIL_FAST}
-DICT_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT}
-GENERATOR_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT}
+LIST_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *STRICT, *FAIL_FAST}
+TUPLE_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *STRICT, *FAIL_FAST}
+SET_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *STRICT, *FAIL_FAST}
+DICT_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *STRICT}
+GENERATOR_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *STRICT}
+SEQUENCE_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *FAIL_FAST}
 
-FLOAT_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
+FLOAT_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *ALLOW_INF_NAN, *STRICT}
 DECIMAL_CONSTRAINTS = {'max_digits', 'decimal_places', *FLOAT_CONSTRAINTS}
-INT_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
+INT_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *ALLOW_INF_NAN, *STRICT}
 BOOL_CONSTRAINTS = STRICT
 UUID_CONSTRAINTS = STRICT
 
@@ -189,19 +190,9 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
     """
     import annotated_types as at
 
-    from . import _validators
+    from ._validators import forbid_inf_nan_check, get_constraint_validator
 
-    COMPARISON_VALIDATORS = {
-        'gt': _validators.greater_than_validator,
-        'ge': _validators.greater_than_or_equal_validator,
-        'lt': _validators.less_than_validator,
-        'le': _validators.less_than_or_equal_validator,
-        'multiple_of': _validators.multiple_of_validator,
-        'min_length': _validators.min_length_validator,
-        'max_length': _validators.max_length_validator,
-    }
-
-    CONSTRAINT_STR_FROM_ANNOTATED_TYPE = {
+    ANNOTATED_TYPE_TO_CONSTRAINT_MAP = {
         at.Gt: 'gt',
         at.Ge: 'ge',
         at.Lt: 'lt',
@@ -215,6 +206,13 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
     schema_update, other_metadata = collect_known_metadata([annotation])
     schema_type = schema['type']
 
+    chain_schema_constraints: set[str] = {
+        'pattern',
+        'strip_whitespace',
+        'to_lower',
+        'to_upper',
+        'coerce_numbers_to_str',
+    }
     chain_schema_steps: list[CoreSchema] = []
 
     for constraint, value in schema_update.items():
@@ -224,9 +222,11 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
 
         # if it becomes necessary to handle more than one constraint
         # in this recursive case with function-after or function-wrap, we should refactor
+        # this is a bit challenging because we sometimes want to apply constraints to the inner schema,
+        # whereas other times we want to wrap the existing schema with a new one that enforces a new constraint.
         if schema_type in {'function-before', 'function-wrap', 'function-after'} and constraint == 'strict':
             schema['schema'] = apply_known_metadata(annotation, schema['schema'])  # type: ignore  # schema is function-after schema
-            continue
+            return schema
 
         if schema_type in allowed_schemas:
             if constraint == 'union_mode' and schema_type == 'union':
@@ -235,45 +235,40 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                 schema[constraint] = value
             continue
 
-        if constraint in {'pattern', 'strip_whitespace', 'to_lower', 'to_upper', 'coerce_numbers_to_str'}:
+        if constraint in chain_schema_constraints:
             chain_schema_steps.append(cs.str_schema(**{constraint: value}))
-        elif constraint in {'gt', 'ge', 'lt', 'le', 'multiple_of', 'min_length', 'max_length'}:
-            if constraint == 'multiple_of':
-                json_schema_constraint = 'multiple_of'
-            elif constraint in {'min_length', 'max_length'}:
-                inner_schema = (
-                    schema['schema']  # type: ignore
-                    if schema_type in {'function-before', 'function-wrap', 'function-after'}
-                    else schema
-                )
-                inner_schema_type = inner_schema['type']  # type: ignore
+        elif constraint in {*NUMERIC_CONSTRAINTS, *LENGTH_CONSTRAINTS}:
+            if constraint in NUMERIC_CONSTRAINTS:
+                json_schema_constraint = constraint
+            elif constraint in LENGTH_CONSTRAINTS:
+                inner_schema = schema
+                while inner_schema['type'] in {'function-before', 'function-wrap', 'function-after'}:
+                    inner_schema = inner_schema['schema']  # type: ignore
+                inner_schema_type = inner_schema['type']
                 if inner_schema_type == 'list' or (
                     inner_schema_type == 'json-or-python' and inner_schema['json_schema']['type'] == 'list'  # type: ignore
                 ):
                     json_schema_constraint = 'minItems' if constraint == 'min_length' else 'maxItems'
                 else:
                     json_schema_constraint = 'minLength' if constraint == 'min_length' else 'maxLength'
-            else:
-                json_schema_constraint = constraint
 
             schema = cs.no_info_after_validator_function(
-                partial(COMPARISON_VALIDATORS[constraint], **{constraint: value}), schema
+                partial(get_constraint_validator(constraint), **{constraint: value}), schema
             )
-
             add_js_update_schema(schema, lambda: {json_schema_constraint: as_jsonable_value(value)})
         elif constraint == 'allow_inf_nan' and value is False:
             schema = cs.no_info_after_validator_function(
-                _validators.forbid_inf_nan_check,
+                forbid_inf_nan_check,
                 schema,
             )
         else:
             raise RuntimeError(f'Unable to apply constraint {constraint} to schema {schema_type}')
 
     for annotation in other_metadata:
-        if isinstance(annotation, (at.Gt, at.Ge, at.Lt, at.Le, at.MultipleOf, at.MinLen, at.MaxLen)):
-            constraint = CONSTRAINT_STR_FROM_ANNOTATED_TYPE[type(annotation)]
+        if type(annotation) in ANNOTATED_TYPE_TO_CONSTRAINT_MAP:
+            constraint = ANNOTATED_TYPE_TO_CONSTRAINT_MAP[type(annotation)]
             schema = cs.no_info_after_validator_function(
-                partial(COMPARISON_VALIDATORS[constraint], {constraint: getattr(annotation, constraint)}), schema
+                partial(get_constraint_validator(constraint), {constraint: getattr(annotation, constraint)}), schema
             )
         elif isinstance(annotation, at.Predicate):
             predicate_name = f'{annotation.func.__qualname__} ' if hasattr(annotation.func, '__qualname__') else ''
@@ -321,27 +316,27 @@ def collect_known_metadata(annotations: Iterable[Any]) -> tuple[dict[str, Any], 
 
     annotations = expand_grouped_metadata(annotations)
 
+    ANNOTATED_TYPE_TO_CONSTRAINT_MAP = {
+        at.Gt: 'gt',
+        at.Ge: 'ge',
+        at.Lt: 'lt',
+        at.Le: 'le',
+        at.MultipleOf: 'multiple_of',
+        at.MinLen: 'min_length',
+        at.MaxLen: 'max_length',
+    }
+
     res: dict[str, Any] = {}
     remaining: list[Any] = []
+
     for annotation in annotations:
         # isinstance(annotation, PydanticMetadata) also covers ._fields:_PydanticGeneralMetadata
         if isinstance(annotation, PydanticMetadata):
             res.update(annotation.__dict__)
         # we don't use dataclasses.asdict because that recursively calls asdict on the field values
-        elif isinstance(annotation, at.MinLen):
-            res.update({'min_length': annotation.min_length})
-        elif isinstance(annotation, at.MaxLen):
-            res.update({'max_length': annotation.max_length})
-        elif isinstance(annotation, at.Gt):
-            res.update({'gt': annotation.gt})
-        elif isinstance(annotation, at.Ge):
-            res.update({'ge': annotation.ge})
-        elif isinstance(annotation, at.Lt):
-            res.update({'lt': annotation.lt})
-        elif isinstance(annotation, at.Le):
-            res.update({'le': annotation.le})
-        elif isinstance(annotation, at.MultipleOf):
-            res.update({'multiple_of': annotation.multiple_of})
+        elif type(annotation) in ANNOTATED_TYPE_TO_CONSTRAINT_MAP:
+            constraint = ANNOTATED_TYPE_TO_CONSTRAINT_MAP[type(annotation)]
+            res[constraint] = getattr(annotation, constraint)
         elif isinstance(annotation, type) and issubclass(annotation, PydanticMetadata):
             # also support PydanticMetadata classes being used without initialisation,
             # e.g. `Annotated[int, Strict]` as well as `Annotated[int, Strict()]`
