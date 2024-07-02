@@ -226,7 +226,7 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
         # in this recursive case with function-after or function-wrap, we should refactor
         if schema_type in {'function-before', 'function-wrap', 'function-after'} and constraint == 'strict':
             schema['schema'] = apply_known_metadata(annotation, schema['schema'])  # type: ignore  # schema is function-after schema
-            return schema
+            continue
 
         if schema_type in allowed_schemas:
             if constraint == 'union_mode' and schema_type == 'union':
@@ -241,8 +241,10 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             if constraint == 'multiple_of':
                 json_schema_constraint = 'multiple_of'
             elif constraint in {'min_length', 'max_length'}:
-                if schema['type'] == 'list' or (
-                    schema['type'] == 'json-or-python' and schema['json_schema']['type'] == 'list'
+                inner_schema = schema['schema'] if schema_type in {'function-before', 'function-wrap', 'function-after'} else schema  # type: ignore
+                inner_schema_type = inner_schema['type']  # type: ignore
+                if inner_schema_type == 'list' or (
+                    inner_schema_type == 'json-or-python' and inner_schema['json_schema']['type'] == 'list'
                 ):
                     json_schema_constraint = 'minItems' if constraint == 'min_length' else 'maxItems'
                 else:
