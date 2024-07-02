@@ -1250,7 +1250,7 @@ class GenerateSchema:
         assert expected, f'literal "expected" cannot be empty, obj={literal_type}'
         schema = core_schema.literal_schema(expected)
 
-        if self._config_wrapper.use_enum_values:
+        if self._config_wrapper.use_enum_values and any(isinstance(v, Enum) for v in expected):
             schema = core_schema.no_info_after_validator_function(
                 lambda v: v.value if isinstance(v, Enum) else v, schema
             )
