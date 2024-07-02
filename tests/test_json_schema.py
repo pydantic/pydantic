@@ -6265,6 +6265,59 @@ def test_plain_serializer_applies_to_default() -> None:
     }
 
 
+def test_merge_json_schema_extra_from_field_infos() -> None:
+    class Model(BaseModel):
+        f: Annotated[str, Field(json_schema_extra={'a': 1, 'b': 2})]
+        f_with_overwrite: Annotated[str, Field('bar', json_schema_extra={'a': 1}), Field(json_schema_extra={'a': 2})]
+        f_with_additional: Annotated[str, Field('bar', json_schema_extra={'a': 1}), Field(json_schema_extra={'b': 2})]
+
+    # insert_assert(Model.model_json_schema())
+    assert Model.model_json_schema() == {
+        'properties': {
+            'f': {'a': 1, 'b': 2, 'title': 'F', 'type': 'string'},
+            'f_with_overwrite': {
+                'a': 2,
+                'default': 'bar',
+                'title': 'F With Overwrite',
+                'type': 'string',
+            },
+            'f_with_additional': {
+                'a': 1,
+                'b': 2,
+                'default': 'bar',
+                'title': 'F With Additional',
+                'type': 'string',
+            },
+        },
+        'required': ['f'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_remove_key_from_like_parent_annotation() -> None:
+    class Model(BaseModel):
+        a: Annotated[
+            int,
+            Field(json_schema_extra={'key_to_remove': 'value'}),
+            Field(json_schema_extra=lambda _: None),
+        ]
+
+    assert Model.model_json_schema()['properties']['a'] == {'title': 'A', 'type': 'integer'}
+
+
+def test_ta_and_bm_same_json_schema() -> None:
+    MyStr = Annotated[str, Field(json_schema_extra={'key1': 'value1'}), Field(json_schema_extra={'key2': 'value2'})]
+
+    class Foo(BaseModel):
+        v: MyStr
+
+    ta_json_schema = TypeAdapter(MyStr).json_schema()
+    bm_json_schema = Foo.model_json_schema()['properties']['v']
+    bm_json_schema.pop('title')
+    assert ta_json_schema == bm_json_schema
+
+
 def test_min_and_max_in_schema() -> None:
     TSeq = TypeAdapter(Annotated[Sequence[int], Field(min_length=2, max_length=5)])
     assert TSeq.json_schema() == {'items': {'type': 'integer'}, 'maxItems': 5, 'minItems': 2, 'type': 'array'}
