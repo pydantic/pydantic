@@ -27,7 +27,7 @@ print(foo.model_dump())
 {
     'secret_bool': Secret('**********'),
     'secret_str': Secret('**********'),
-    'secret_float': Secret('**********')
+    'secret_float': Secret('**********'),
 }
 """
 ```
