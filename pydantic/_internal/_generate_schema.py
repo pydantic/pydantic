@@ -827,7 +827,7 @@ class GenerateSchema:
             return self._dict_schema(obj, *self._get_first_two_args_or_any(obj))
         elif isinstance(obj, TypeAliasType):
             return self._type_alias_type_schema(obj)
-        elif obj == type:
+        elif obj is type:
             return self._type_schema()
         elif _typing_extra.is_callable_type(obj):
             return core_schema.callable_schema()
@@ -1538,11 +1538,11 @@ class GenerateSchema:
             pattern_type,
             required=True,
         )[0]
-        if param == str:
+        if param is str:
             return core_schema.no_info_plain_validator_function(
                 _validators.pattern_str_validator, serialization=ser, metadata=metadata
             )
-        elif param == bytes:
+        elif param is bytes:
             return core_schema.no_info_plain_validator_function(
                 _validators.pattern_bytes_validator, serialization=ser, metadata=metadata
             )
