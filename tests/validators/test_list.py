@@ -43,7 +43,7 @@ def test_list_strict():
 
 def test_list_no_copy():
     v = SchemaValidator({'type': 'list'})
-    assert v.validate_python([1, 2, 3]) is not [1, 2, 3]
+    assert v.validate_python([1, 2, 3]) is not [1, 2, 3]  # noqa: F632
 
 
 def gen_ints():
