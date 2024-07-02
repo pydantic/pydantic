@@ -6307,11 +6307,7 @@ def test_remove_key_from_like_parent_annotation() -> None:
 
 
 def test_ta_and_bm_same_json_schema() -> None:
-    MyStr = Annotated[
-        str, 
-        Field(json_schema_extra={'key1': 'value1'}), 
-        Field(json_schema_extra={'key2': 'value2'})
-    ]
+    MyStr = Annotated[str, Field(json_schema_extra={'key1': 'value1'}), Field(json_schema_extra={'key2': 'value2'})]
 
     class Foo(BaseModel):
         v: MyStr
