@@ -262,12 +262,16 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             raise RuntimeError(f'Unable to apply constraint {constraint} to schema {schema_type}')
 
     for annotation in other_metadata:
-        if type(annotation) in (at_to_constraint_map := _get_at_to_constraint_map()):
-            constraint = at_to_constraint_map[type(annotation)]
+        try:
+            constraint = _get_at_to_constraint_map()[type(annotation)]
             schema = cs.no_info_after_validator_function(
                 partial(get_constraint_validator(constraint), {constraint: getattr(annotation, constraint)}), schema
             )
-        elif isinstance(annotation, at.Predicate):
+            continue
+        except KeyError:
+            pass
+
+        if isinstance(annotation, at.Predicate):
             predicate_name = f'{annotation.func.__qualname__} ' if hasattr(annotation.func, '__qualname__') else ''
 
             def val_func(v: Any) -> Any:
@@ -279,7 +283,8 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                     )
                 return v
 
-            return cs.no_info_after_validator_function(val_func, schema)
+            schema = cs.no_info_after_validator_function(val_func, schema)
+
         # ignore any other unknown metadata
         return None
 
@@ -319,8 +324,8 @@ def collect_known_metadata(annotations: Iterable[Any]) -> tuple[dict[str, Any], 
         if isinstance(annotation, PydanticMetadata):
             res.update(annotation.__dict__)
         # we don't use dataclasses.asdict because that recursively calls asdict on the field values
-        elif type(annotation) in (at_to_constraint_map := _get_at_to_constraint_map()):
-            constraint = at_to_constraint_map[type(annotation)]
+        elif (annotation_type := type(annotation)) in (at_to_constraint_map := _get_at_to_constraint_map()):
+            constraint = at_to_constraint_map[annotation_type]
             res[constraint] = getattr(annotation, constraint)
         elif isinstance(annotation, type) and issubclass(annotation, PydanticMetadata):
             # also support PydanticMetadata classes being used without initialisation,
