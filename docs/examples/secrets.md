@@ -1,10 +1,57 @@
 !!! warning "🚧 Work in Progress"
     This page is a work in progress.
 
+## Default serialization to python
+
+By default, when serializing [`Secret`][pydatic.types.Secret] to python,
+secret values are kept as `Secret` objects.
+
+```py
+from pydantic import BaseModel, Secret
+class Foo(BaseModel):
+    secret_bool: Secret[bool]
+    secret_str: Secret[str]
+    secret_float: Secret[float]
+
+foo = Foo(secret_bool=True, secret_str='secret', secret_float=3.14)
+print(foo)
+#> secret_bool=Secret('**********') secret_str=Secret('**********') secret_float=Secret('**********')
+
+print(foo.model_dump())
+#> {'secret_bool': Secret('**********'), 'secret_str': Secret('**********'), 'secret_float': Secret('**********')}
+```
+
+## Default serialization to json
+
+By default, when serializing [`Secret`][pydatic.types.Secret] to JSON,
+secret values are always serialized to their 'nullable' value.
+
+For example, secret bool is always serialized to `false`,
+secret str is always serialized to empty string, etc.
+
+```py
+from pydantic import BaseModel, Secret
+
+class Foo(BaseModel):
+    secret_bool: Secret[bool]
+    secret_str: Secret[str]
+    secret_float: Secret[float]
+
+foo = Foo(secret_bool=True, secret_str='secret', secret_float=3.14)
+print(foo)
+#> secret_bool=Secret('**********') secret_str=Secret('**********') secret_float=Secret('**********')
+
+print(foo.model_dump(mode='json'))
+#> {'secret_bool': 'false', 'secret_str': '', 'secret_float': '0.0'}
+
+print(foo.model_dump_json())
+#> {"secret_bool":"false","secret_str":"","secret_float":"0.0"}
+```
+
 ## Serialize `SecretStr` and `SecretBytes` as plain-text
 
 By default, [`SecretStr`][pydantic.types.SecretStr] and [`SecretBytes`][pydantic.types.SecretBytes]
-will be serialized as `**********` when serializing to json.
+will be serialized as empty string when serializing to json.
 
 You can use the [`field_serializer`][pydantic.functional_serializers.field_serializer] to dump the
 secret as plain-text when serializing to json.

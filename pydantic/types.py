@@ -4,6 +4,7 @@ from __future__ import annotations as _annotations
 
 import base64
 import dataclasses as _dataclasses
+import json
 import re
 from datetime import date, datetime
 from decimal import Decimal
@@ -33,7 +34,7 @@ from uuid import UUID
 
 import annotated_types
 from annotated_types import BaseMetadata, MaxLen, MinLen
-from pydantic_core import CoreSchema, PydanticCustomError, core_schema
+from pydantic_core import CoreSchema, PydanticCustomError, core_schema, to_jsonable_python
 from typing_extensions import Annotated, Literal, Protocol, TypeAlias, TypeAliasType, deprecated
 
 from ._internal import (
@@ -1477,16 +1478,55 @@ class _SecretBase(Generic[SecretType]):
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self._display()!r})'
 
+    def __bool__(self) -> bool:
+        return bool(self.get_secret_value())
+
     def _display(self) -> str | bytes:
         raise NotImplementedError
+
+
+JsonType = TypeAliasType('JsonType', Union[List['JsonType'], Dict[str, 'JsonType'], str, int, float, bool, None])
+JsonTypeT = TypeVar('JsonTypeT', bound=JsonType)
+
+
+def _annul_jsonable(value: JsonTypeT) -> JsonTypeT:
+    """Annul JSON-compatible value to its default value."""
+    types_defaults: dict[type, JsonType] = {
+        bool: False,
+        dict: {},
+        list: [],
+        str: '',
+        float: 0.0,
+        int: 0,
+        type(None): None,
+    }
+    if type(value) in types_defaults:
+        return types_defaults[type(value)]  # type: ignore
+    msg = 'Unknown JSON type'
+    raise ValueError(msg)
+
+
+def _serialize_secret_to_json(value: _SecretBase[Any]) -> str:
+    """Serialize a secret value to str JSON-compatible value."""
+    secret_value = value.get_secret_value()
+    json_value = to_jsonable_python(secret_value)
+    nullified_value = _annul_jsonable(json_value)
+    if isinstance(nullified_value, str):
+        return nullified_value
+    return json.dumps(nullified_value)
 
 
 class Secret(_SecretBase[SecretType]):
     """A generic base class used for defining a field with sensitive information that you do not want to be visible in logging or tracebacks.
 
+    By default, when serializing [`Secret`][pydatic.types.Secret] to JSON, secret values are replaced to its 'nullable' state.
+    For example, secret bool is always serialized to `false`, secret str is always serialized to empty string, etc.
+
     You may either directly parametrize `Secret` with a type, or subclass from `Secret` with a parametrized type. The benefit of subclassing
-    is that you can define a custom `_display` method, which will be used for `repr()` and `str()` methods. The examples below demonstrate both
-    ways of using `Secret` to create a new secret type.
+    is that you can define a custom `_display` method, which will be used for `repr()` and `str()` methods.
+    Please note that when serializing to JSON, the secret values are serialized to its 'nullable' value.
+    For example, secret bool is always replaced with `false`, secret str is always replaced with empty string, etc.
+    The examples below demonstrate both ways of using `Secret` to create a new secret type.
 
     1. Directly parametrizing `Secret` with a type:
 
@@ -1502,8 +1542,11 @@ class Secret(_SecretBase[SecretType]):
     print(m.model_dump())
     #> {'secret_bool': Secret('**********')}
 
+    print(m.model_dump(mode='json'))
+    #> {'secret_bool': 'false'}
+
     print(m.model_dump_json())
-    #> {"secret_bool":"**********"}
+    #> {"secret_bool":"false"}
 
     print(m.secret_bool.get_secret_value())
     #> True
@@ -1528,17 +1571,15 @@ class Secret(_SecretBase[SecretType]):
     #> {'secret_date': SecretDate('****/**/**')}
 
     print(m.model_dump_json())
-    #> {"secret_date":"****/**/**"}
+    #> {"secret_date":""}
 
     print(m.secret_date.get_secret_value())
     #> 2022-01-01
     ```
-
-    The value returned by the `_display` method will be used for `repr()` and `str()`.
     """
 
     def _display(self) -> str | bytes:
-        return '**********' if self.get_secret_value() else ''
+        return '**********' if bool(self) else ''
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -1568,10 +1609,11 @@ class Secret(_SecretBase[SecretType]):
             return cls(validated_inner)
 
         def serialize(value: Secret[SecretType], info: core_schema.SerializationInfo) -> str | Secret[SecretType]:
-            if info.mode == 'json':
-                return str(value)
-            else:
+            if info.mode == 'python':
                 return value
+
+            # return str(value)
+            return _serialize_secret_to_json(value)
 
         return core_schema.json_or_python_schema(
             python_schema=core_schema.no_info_wrap_validator_function(
@@ -1600,12 +1642,13 @@ class _SecretField(_SecretBase[SecretType]):
         def serialize(
             value: _SecretField[SecretType], info: core_schema.SerializationInfo
         ) -> str | _SecretField[SecretType]:
-            if info.mode == 'json':
-                # we want the output to always be string without the `b'` prefix for bytes,
-                # hence we just use `secret_display`
-                return _secret_display(value.get_secret_value())
-            else:
+            if info.mode == 'python':
                 return value
+
+            # # we want the output to always be string without the `b'` prefix for bytes,
+            # # hence we just use `secret_display`
+            # return _secret_display(value.get_secret_value())
+            return _serialize_secret_to_json(value)
 
         def get_json_schema(_core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
             json_schema = handler(cls._inner_schema)
@@ -1653,6 +1696,7 @@ class SecretStr(_SecretField[str]):
 
     When the secret value is nonempty, it is displayed as `'**********'` instead of the underlying value in
     calls to `repr()` and `str()`. If the value _is_ empty, it is displayed as `''`.
+    Please note that when serializing specifically to JSON, value will always be replaced with empty string.
 
     ```py
     from pydantic import BaseModel, SecretStr
@@ -1688,6 +1732,7 @@ class SecretBytes(_SecretField[bytes]):
     It displays `b'**********'` instead of the string value on `repr()` and `str()` calls.
     When the secret value is nonempty, it is displayed as `b'**********'` instead of the underlying value in
     calls to `repr()` and `str()`. If the value _is_ empty, it is displayed as `b''`.
+    Please note that when serializing specifically to JSON, value will always be replaced with empty string.
 
     ```py
     from pydantic import BaseModel, SecretBytes
@@ -1697,6 +1742,7 @@ class SecretBytes(_SecretField[bytes]):
         password: SecretBytes
 
     user = User(username='scolvin', password=b'password1')
+    print(user)
     #> username='scolvin' password=SecretBytes(b'**********')
     print(user.password.get_secret_value())
     #> b'password1'

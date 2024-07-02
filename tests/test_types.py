@@ -4466,7 +4466,7 @@ def test_secret_union_serializable() -> None:
 
     model = Base(x=1)
     assert model.model_dump() == {'x': Secret[int](1)}
-    assert model.model_dump_json() == '{"x":"**********"}'
+    assert model.model_dump_json() == '{"x":"0"}'
 
 
 @pytest.mark.parametrize(
@@ -4525,6 +4525,99 @@ def test_model_contain_hashable_type():
         v: Union[str, StrictStr]
 
     assert MyModel(v='test').v == 'test'
+
+
+def test_secret_bool():
+    class Foo(BaseModel):
+        secret_str: Secret[str]
+        secret_float: Secret[float]
+
+    foo = Foo(secret_str='bar', secret_float=0.0)
+    assert bool(foo.secret_str) is True
+    assert bool(foo.secret_float) is False
+
+
+def test_secret_json_serialization():
+    class SecretDict(Secret[Dict[str, str]]):
+        pass
+
+    class SecretList(Secret[List[Any]]):
+        pass
+
+    class SecretBool(Secret[bool]):
+        pass
+
+    class SecretNone(Secret[None]):
+        pass
+
+    class Bar(BaseModel):
+        bar_field: str
+
+    class Foo(BaseModel):
+        # json: Object
+        secret_dict_type: Secret[Dict[str, str]]
+        secret_dict_class: SecretDict
+        nested_bar: Secret[Bar]
+
+        # json: Array
+        secret_list_type: Secret[List[Any]]
+        secret_list_class: SecretList
+
+        # json: String
+        secret_str: SecretStr
+        secret_bytes: SecretBytes
+
+        # json: Boolean
+        secret_bool_type: Secret[bool]
+        secret_bool_class: SecretBool
+
+        # Null
+        secret_none_type: Secret[None]
+        secret_none_class: SecretNone
+
+    foo = Foo(
+        secret_dict_type={'foo': 'bar'},
+        secret_dict_class={'foo': 'bar'},
+        nested_bar=Bar(bar_field='baz'),
+        secret_list_type=['foo', 'bar'],
+        secret_list_class=['foo', 'bar'],
+        secret_str='foo',
+        secret_bytes=b'foo',
+        secret_bool_type=True,
+        secret_bool_class=True,
+        secret_none_type=None,
+        secret_none_class=None,
+    )
+
+    assert foo.model_dump(mode='json') == {
+        'nested_bar': '{}',
+        'secret_bool_class': 'false',
+        'secret_bool_type': 'false',
+        'secret_bytes': '',
+        'secret_dict_class': '{}',
+        'secret_dict_type': '{}',
+        'secret_list_class': '[]',
+        'secret_list_type': '[]',
+        'secret_none_class': 'null',
+        'secret_none_type': 'null',
+        'secret_str': '',
+    }
+
+    assert foo.model_dump_json() == (
+        '{'
+        '"secret_dict_type":"{}",'
+        '"secret_dict_class":"{}",'
+        '"nested_bar":"{}",'
+        '"secret_list_type":"[]",'
+        '"secret_list_class":"[]",'
+        '"secret_str":"",'
+        '"secret_bytes":"",'
+        '"secret_bool_type":"false",'
+        '"secret_bool_class":"false",'
+        '"secret_none_type":"null",'
+        '"secret_none_class":"null"'
+        '}'
+    )
 
 
 def test_secretstr_error():
@@ -4592,7 +4685,7 @@ def test_secretbytes_json():
     class Foobar(BaseModel):
         password: SecretBytes
 
-    assert Foobar(password='foo').model_dump_json() == '{"password":"**********"}'
+    assert Foobar(password='foo').model_dump_json() == '{"password":""}'
 
 
 def test_secretbytes():
