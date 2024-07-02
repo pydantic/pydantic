@@ -241,7 +241,11 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             if constraint == 'multiple_of':
                 json_schema_constraint = 'multiple_of'
             elif constraint in {'min_length', 'max_length'}:
-                inner_schema = schema['schema'] if schema_type in {'function-before', 'function-wrap', 'function-after'} else schema  # type: ignore
+                inner_schema = (
+                    schema['schema']
+                    if schema_type in {'function-before', 'function-wrap', 'function-after'}
+                    else schema
+                )  # type: ignore
                 inner_schema_type = inner_schema['type']  # type: ignore
                 if inner_schema_type == 'list' or (
                     inner_schema_type == 'json-or-python' and inner_schema['json_schema']['type'] == 'list'
