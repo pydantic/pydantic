@@ -37,18 +37,18 @@ def sequence_validator(
     # Additionally, we should be able to remove one of either this validator or the
     # SequenceValidator in _std_types_schema.py (preferably this one, while porting over some logic).
     # Effectively, a refactor for sequence validation is needed.
-    if value_type == tuple:
+    if value_type is tuple:
         input_value = list(input_value)
 
     v_list = validator(input_value)
 
     # the rest of the logic is just re-creating the original type from `v_list`
-    if value_type == list:
+    if value_type is list:
         return v_list
     elif issubclass(value_type, range):
         # return the list as we probably can't re-create the range
         return v_list
-    elif value_type == tuple:
+    elif value_type is tuple:
         return tuple(v_list)
     else:
         # best guess at how to re-create the original type, more custom construction logic might be required
