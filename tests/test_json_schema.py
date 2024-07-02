@@ -6304,3 +6304,19 @@ def test_remove_key_from_like_parent_annotation() -> None:
         ]
 
     assert Model.model_json_schema()['properties']['a'] == {'title': 'A', 'type': 'integer'}
+
+
+def test_ta_and_bm_same_json_schema() -> None:
+    MyStr = Annotated[
+        str, 
+        Field(json_schema_extra={'key1': 'value1'}), 
+        Field(json_schema_extra={'key2': 'value2'})
+    ]
+
+    class Foo(BaseModel):
+        v: MyStr
+
+    ta_json_schema = TypeAdapter(MyStr).json_schema()
+    bm_json_schema = Foo.model_json_schema()['properties']['v']
+    bm_json_schema.pop('title')
+    assert ta_json_schema == bm_json_schema
