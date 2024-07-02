@@ -768,41 +768,37 @@ def test_enum_values(value: Any) -> None:
     assert foo == 'foo'
 
 
-class StrFoo(str, Enum):
-    FOO = 'foo'
-    BAR = 'bar'
+def test_literal_enum_values():
+    FooEnum = Enum('FooEnum', {'foo': 'foo_value', 'bar': 'bar_value'})
 
-
-def test_literal_use_enum_values():
     class Model(BaseModel):
-        baz: Literal[StrFoo.FOO]
+        baz: Literal[FooEnum.foo]
         boo: str = 'hoo'
         model_config = ConfigDict(use_enum_values=True)
 
-    m = Model(baz=StrFoo.FOO)
-    assert isinstance(m.baz, str)
-    assert m.model_dump() == {'baz': 'foo', 'boo': 'hoo'}
-    assert m.model_dump(mode='json') == {'baz': 'foo', 'boo': 'hoo'}
+    m = Model(baz=FooEnum.foo)
+    assert m.model_dump() == {'baz': 'foo_value', 'boo': 'hoo'}
+    assert m.model_dump(mode='json') == {'baz': 'foo_value', 'boo': 'hoo'}
+    assert m.baz == 'foo_value'
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(baz=StrFoo.BAR)
+        Model(baz=FooEnum.bar)
 
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'literal_error',
             'loc': ('baz',),
-            'msg': "Input should be <StrFoo.FOO: 'foo'>",
-            'input': StrFoo.BAR,
-            'ctx': {'expected': "<StrFoo.FOO: 'foo'>"},
+            'msg': "Input should be <FooEnum.foo: 'foo_value'>",
+            'input': FooEnum.bar,
+            'ctx': {'expected': "<FooEnum.foo: 'foo_value'>"},
         }
     ]
 
-    validated = Model.model_validate_json('{"baz": "foo"}')
-    assert isinstance(validated.baz, str)
 
-    validated = Model.model_validate({'baz': StrFoo.FOO})
-    assert isinstance(validated.baz, str)
+class StrFoo(str, Enum):
+    FOO = 'foo'
+    BAR = 'bar'
 
 
 @pytest.mark.parametrize('value', [StrFoo.FOO, StrFoo.FOO.value, 'foo', 'hello'])
@@ -820,6 +816,12 @@ def test_literal_use_enum_values_with_default():
         model_config = ConfigDict(use_enum_values=True)
 
     assert isinstance(Model().baz, str)
+
+    validated = Model.model_validate_json('{"baz": "foo"}')
+    assert isinstance(validated.baz, str)
+
+    validated = Model.model_validate({'baz': StrFoo.FOO})
+    assert isinstance(validated.baz, str)
 
 
 def test_strict_enum_values():
