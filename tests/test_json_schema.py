@@ -6317,7 +6317,7 @@ def test_ta_and_bm_same_json_schema() -> None:
     bm_json_schema.pop('title')
     assert ta_json_schema == bm_json_schema
 
- 
+
 def test_min_and_max_in_schema() -> None:
     TSeq = TypeAdapter(Annotated[Sequence[int], Field(min_length=2, max_length=5)])
     assert TSeq.json_schema() == {'items': {'type': 'integer'}, 'maxItems': 5, 'minItems': 2, 'type': 'array'}
