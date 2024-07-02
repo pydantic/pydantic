@@ -1022,6 +1022,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#merging-json_schema_extra" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merging json_schema_extra
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3671,6 +3682,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#merging-json_schema_extra" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merging json_schema_extra
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4651,6 +4673,69 @@ You can pass a <code>dict</code> or a <code>Callable</code> to <code>json_schema
 <span class="w">  </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Model&quot;</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span>
 <span class="p">}</span>
+</code></pre></div>
+<h4 id="merging-json_schema_extra">Merging <code>json_schema_extra</code><a class="headerlink" href="#merging-json_schema_extra" title="Permanent link">&para;</a></h4>
+<p>Starting in v2.9, Pydantic merges <code>json_schema_extra</code> dictionaries from annotated types.
+This pattern offers a more additive approach to merging rather than the previous override behavior.
+This can be quite helpful for cases of reusing json schema extra information across multiple types.</p>
+<p>We viewed this change largely as a bug fix, as it resolves unintentional differences in the <code>json_schema_extra</code> merging behavior
+between <code>BaseModel</code> and <code>TypeAdapter</code> instances - see <a href="https://github.com/pydantic/pydantic/issues/9210">this issue</a>
+for more details.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
+
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">TypeAlias</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span>
+
+<span class="n">ExternalType</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
+    <span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">json_schema_extra</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;key1&#39;</span><span class="p">:</span> <span class="s1">&#39;value1&#39;</span><span class="p">})</span>
+<span class="p">]</span>
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span>
+    <span class="n">Annotated</span><span class="p">[</span><span class="n">ExternalType</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">json_schema_extra</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;key2&#39;</span><span class="p">:</span> <span class="s1">&#39;value2&#39;</span><span class="p">})]</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">json_schema</span><span class="p">(),</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">  &quot;key1&quot;: &quot;value1&quot;,</span>
+<span class="sd">  &quot;key2&quot;: &quot;value2&quot;,</span>
+<span class="sd">  &quot;type&quot;: &quot;integer&quot;</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+<p>If you would prefer for the last of your <code>json_schema_extra</code> specifications to override the previous ones,
+you can use a <code>callable</code> to make more significant changes, including adding or removing keys, or modifying values.
+You can use this pattern if you'd like to mimic the behavior of the <code>json_schema_extra</code> overrides present
+in Pydantic v2.8 and earlier:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
+
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">TypeAlias</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span>
+<span class="kn">from</span> <span class="nn">pydantic.json_schema</span> <span class="kn">import</span> <span class="n">JsonDict</span>
+
+<span class="n">ExternalType</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
+    <span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">json_schema_extra</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;key1&#39;</span><span class="p">:</span> <span class="s1">&#39;value1&#39;</span><span class="p">,</span> <span class="s1">&#39;key2&#39;</span><span class="p">:</span> <span class="s1">&#39;value2&#39;</span><span class="p">})</span>
+<span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">finalize_schema</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n">JsonDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;key1&#39;</span><span class="p">)</span>
+    <span class="n">s</span><span class="p">[</span><span class="s1">&#39;key2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s1">&#39;key2&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;-final&#39;</span>
+    <span class="n">s</span><span class="p">[</span><span class="s1">&#39;key3&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;value3-final&#39;</span>
+
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span>
+    <span class="n">Annotated</span><span class="p">[</span><span class="n">ExternalType</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">json_schema_extra</span><span class="o">=</span><span class="n">finalize_schema</span><span class="p">)]</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">json_schema</span><span class="p">(),</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">  &quot;key2&quot;: &quot;value2-final&quot;,</span>
+<span class="sd">  &quot;key3&quot;: &quot;value3-final&quot;,</span>
+<span class="sd">  &quot;type&quot;: &quot;integer&quot;</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 <h3 id="withjsonschema-annotation"><code>WithJsonSchema</code> annotation<a class="headerlink" href="#withjsonschema-annotation" title="Permanent link">&para;</a></h3>
 <details class="api">
