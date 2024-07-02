@@ -1519,9 +1519,6 @@ def _serialize_secret_to_json(value: _SecretBase[Any]) -> str:
 class Secret(_SecretBase[SecretType]):
     """A generic base class used for defining a field with sensitive information that you do not want to be visible in logging or tracebacks.
 
-    By default, when serializing [`Secret`][pydatic.types.Secret] to JSON, secret values are replaced to its 'nullable' state.
-    For example, secret bool is always serialized to `false`, secret str is always serialized to empty string, etc.
-
     You may either directly parametrize `Secret` with a type, or subclass from `Secret` with a parametrized type. The benefit of subclassing
     is that you can define a custom `_display` method, which will be used for `repr()` and `str()` methods.
     Please note that when serializing to JSON, the secret values are serialized to its 'nullable' value.

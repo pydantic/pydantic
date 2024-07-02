@@ -3,7 +3,7 @@
 
 ## Default serialization to python
 
-By default, when serializing [`Secret`][pydatic.types.Secret] to python,
+By default, when serializing [`Secret`][pydantic.types.Secret] to python,
 secret values are kept as `Secret` objects.
 
 ```py
@@ -23,7 +23,7 @@ print(foo.model_dump())
 
 ## Default serialization to json
 
-By default, when serializing [`Secret`][pydatic.types.Secret] to JSON,
+By default, when serializing [`Secret`][pydantic.types.Secret] to JSON,
 secret values are always serialized to their 'nullable' value.
 
 For example, secret bool is always serialized to `false`,

@@ -29,8 +29,8 @@ def test_serialize_as_any_annotation() -> None:
 
     # insert_assert(json.loads(OuterModel(as_any=user, without=user).model_dump_json()))
     assert json.loads(OuterModel(maybe_as_any=user_login, as_any=user_login, without=user_login).model_dump_json()) == {
-        'maybe_as_any': {'name': 'pydantic', 'password': '**********'},
-        'as_any': {'name': 'pydantic', 'password': '**********'},
+        'maybe_as_any': {'name': 'pydantic', 'password': ''},
+        'as_any': {'name': 'pydantic', 'password': ''},
         'without': {'name': 'pydantic'},
     }
 
@@ -43,7 +43,7 @@ def test_serialize_as_any_runtime() -> None:
         'user': {'name': 'pydantic'}
     }
     assert json.loads(OuterModel(user=user_login).model_dump_json(serialize_as_any=True)) == {
-        'user': {'name': 'pydantic', 'password': '**********'}
+        'user': {'name': 'pydantic', 'password': ''}
     }
 
 
@@ -71,8 +71,8 @@ def test_serialize_as_any_runtime_recursive() -> None:
     assert json.loads(OuterModel(user=user).model_dump_json(serialize_as_any=True)) == {
         'user': {
             'name': 'pydantic',
-            'password': '**********',
-            'friends': [{'name': 'pydantic', 'password': '**********', 'friends': []}],
+            'password': '',
+            'friends': [{'name': 'pydantic', 'password': '', 'friends': []}],
         },
     }
 
@@ -82,14 +82,14 @@ def test_serialize_as_any_with_rootmodel() -> None:
     assert json.loads(UserRoot(root=user_login).model_dump_json(serialize_as_any=False)) == {'name': 'pydantic'}
     assert json.loads(UserRoot(root=user_login).model_dump_json(serialize_as_any=True)) == {
         'name': 'pydantic',
-        'password': '**********',
+        'password': '',
     }
 
 
 def test_serialize_as_any_type_adapter() -> None:
     ta = TypeAdapter(User)
     assert json.loads(ta.dump_json(user_login, serialize_as_any=False)) == {'name': 'pydantic'}
-    assert json.loads(ta.dump_json(user_login, serialize_as_any=True)) == {'name': 'pydantic', 'password': '**********'}
+    assert json.loads(ta.dump_json(user_login, serialize_as_any=True)) == {'name': 'pydantic', 'password': ''}
 
 
 @pytest.mark.parametrize('dataclass_constructor', [dataclass, pydantic_dataclass])
