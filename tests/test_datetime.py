@@ -174,8 +174,8 @@ def datetime_model_fixture():
         ('1494012444.883309', datetime(2017, 5, 5, 19, 27, 24, 883309, tzinfo=timezone.utc)),
         ('1494012444', datetime(2017, 5, 5, 19, 27, 24, tzinfo=timezone.utc)),
         (b'1494012444', datetime(2017, 5, 5, 19, 27, 24, tzinfo=timezone.utc)),
-        ('1494012444000.883309', datetime(2017, 5, 5, 19, 27, 24, 883301, tzinfo=timezone.utc)),
-        ('-1494012444000.883309', datetime(1922, 8, 29, 4, 32, 35, 999000, tzinfo=timezone.utc)),
+        ('1494012444000.883309', datetime(2017, 5, 5, 19, 27, 24, 883, tzinfo=timezone.utc)),
+        ('-1494012444000.883309', datetime(1922, 8, 29, 4, 32, 35, 999117, tzinfo=timezone.utc)),
         (19_999_999_999, datetime(2603, 10, 11, 11, 33, 19, tzinfo=timezone.utc)),  # just before watershed
         (20_000_000_001, datetime(1970, 8, 20, 11, 33, 20, 1000, tzinfo=timezone.utc)),  # just after watershed
         (1_549_316_052, datetime(2019, 2, 4, 21, 34, 12, 0, tzinfo=timezone.utc)),  # nowish in s
