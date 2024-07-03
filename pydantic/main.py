@@ -47,6 +47,7 @@ from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .config import ConfigDict
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema
+from .plugin._schema_validator import PluggableSchemaValidator
 from .warnings import PydanticDeprecatedSince20
 
 # Always define certain types that are needed to resolve method type hints/annotations
@@ -142,7 +143,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_post_init__: ClassVar[None | Literal['model_post_init']]
         __pydantic_root_model__: ClassVar[bool]
         __pydantic_serializer__: ClassVar[SchemaSerializer]
-        __pydantic_validator__: ClassVar[SchemaValidator]
+        __pydantic_validator__: ClassVar[SchemaValidator | PluggableSchemaValidator]
 
         # Instance attributes
         __pydantic_extra__: dict[str, Any] | None = _PrivateAttr()
