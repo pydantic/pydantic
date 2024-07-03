@@ -314,6 +314,19 @@ jobs:
       - run: coverage report
       - run: coverage html --show-contexts --title "pydantic coverage for ${{ github.sha }}"
 
+      - name: Coverage comment
+        id: coverage_comment
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Store Pull Request comment to be posted
+        uses: actions/upload-artifact@v4
+        if: steps.coverage_comment.outputs.COMMENT_FILE_WRITTEN == 'true'
+        with:
+          name: python-coverage-comment-action
+          path: python-coverage-comment-action.txt
+
       - name: Store coverage html
         uses: actions/upload-artifact@v4
         with:
