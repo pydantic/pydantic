@@ -1,6 +1,6 @@
 [package]
 name = "pydantic-core"
-version = "2.20.0"
+version = "2.20.1"
 edition = "2021"
 license = "MIT"
 homepage = "https://github.com/pydantic/pydantic-core"
@@ -31,12 +31,12 @@ rust-version = "1.75"
 # but needs a bit of work to make sure it's not used in the codebase
 pyo3 = { version = "0.22.0", features = ["generate-import-lib", "num-bigint", "py-clone"] }
 regex = "1.10.4"
-strum = { version = "0.25.0", features = ["derive"] }
-strum_macros = "0.26.1"
+strum = { version = "0.26.3", features = ["derive"] }
+strum_macros = "0.26.4"
 serde_json = {version = "1.0.116", features = ["arbitrary_precision", "preserve_order"]}
 enum_dispatch = "0.3.13"
 serde = { version = "1.0.203", features = ["derive"] }
-speedate = "0.14.0"
+speedate = "0.14.4"
 smallvec = "1.13.2"
 ahash = "0.8.10"
 url = "2.5.0"
