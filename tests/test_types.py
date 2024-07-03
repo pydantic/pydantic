@@ -3494,6 +3494,7 @@ def test_path_like():
     }
 
 
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='requires python 3.9 or higher to parametrize os.PathLike')
 def test_path_like_extra_subtype():
     class Model(BaseModel):
         str_type: os.PathLike[str]
