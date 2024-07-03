@@ -1286,7 +1286,7 @@ version = "2.8.2"
 requires_python = ">=3.8"
 git = "https://github.com/pydantic/pydantic-extra-types.git"
 ref = "main"
-revision = "7a2d650a4a7b4d04635d711a9c6e42f41d1e0aaf"
+revision = "6133cbecd9840d9d2e47edfa364903b0aec7fbe4"
 summary = "Extra Pydantic types."
 dependencies = [
     "pydantic>=2.5.2",
