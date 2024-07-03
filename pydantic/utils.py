@@ -66,6 +66,7 @@ __all__ = (
     'almost_equal_floats',
     'get_model',
     'to_camel',
+    'to_lower_camel',
     'is_valid_field',
     'smart_deepcopy',
     'PyObjectStr',
