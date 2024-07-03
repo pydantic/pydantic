@@ -208,7 +208,12 @@ def path_schema_prepare_pydantic_annotations(
     import pathlib
 
     orig_source_type: Any = get_origin(source_type) or source_type
-    source_type_args: Any = get_args(source_type)
+    if (
+        (source_type_args := get_args(source_type))
+        and orig_source_type is os.PathLike
+        and source_type_args[0] not in {str, bytes, Any}
+    ):
+        return None
 
     if orig_source_type not in {
         os.PathLike,
@@ -218,20 +223,6 @@ def path_schema_prepare_pydantic_annotations(
         pathlib.PurePosixPath,
         pathlib.PureWindowsPath,
     }:
-        return None
-
-    is_path_like_subtype_invalid = (
-        orig_source_type == os.PathLike
-        and source_type_args
-        and source_type_args[0]
-        not in {
-            str,
-            bytes,
-            Any,
-        }
-    )
-
-    if is_path_like_subtype_invalid:
         return None
 
     metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
