@@ -181,6 +181,16 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_semantic_version/</loc>
+         <lastmod>2024-07-03</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_timezone_name/</loc>
+         <lastmod>2024-07-03</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_ulid/</loc>
          <lastmod>2024-07-03</lastmod>
          <changefreq>daily</changefreq>
