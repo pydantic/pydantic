@@ -195,10 +195,16 @@ def test_timedelta_kwargs_strict():
 
 
 def test_invalid_constraint():
-    with pytest.raises(SchemaError, match='timedelta.gt\n  Input should be a valid timedelta, invalid digit in'):
+    with pytest.raises(
+        SchemaError,
+        match='Invalid Schema:\ntimedelta.gt\n  Input should be a valid timedelta, invalid character in hour',
+    ):
         validate_core_schema({'type': 'timedelta', 'gt': 'foobar'})
 
-    with pytest.raises(SchemaError, match='timedelta.le\n  Input should be a valid timedelta, invalid digit in'):
+    with pytest.raises(
+        SchemaError,
+        match='Invalid Schema:\ntimedelta.le\n  Input should be a valid timedelta, invalid character in hour',
+    ):
         validate_core_schema({'type': 'timedelta', 'le': 'foobar'})
 
 
