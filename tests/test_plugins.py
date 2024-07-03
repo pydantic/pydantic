@@ -341,7 +341,8 @@ def test_plugin_path_type_adapter() -> None:
 
     plugin = Plugin()
     with install_plugin(plugin):
-        TypeAdapter(List[str])
+        adapter = TypeAdapter(List[str])
+        adapter.validate_python(['a', 'b'])
 
 
 def test_plugin_path_type_adapter_with_module() -> None:

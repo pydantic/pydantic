@@ -1,18 +1,19 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Generic, Iterator, Mapping, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Generic, Iterator, Mapping, TypeVar, Union
 
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
 from typing_extensions import Literal
 
 from ..errors import PydanticErrorCodes, PydanticUserError
+from ..plugin._schema_validator import PluggableSchemaValidator
 
 if TYPE_CHECKING:
     from ..dataclasses import PydanticDataclass
     from ..main import BaseModel
 
 
-ValSer = TypeVar('ValSer', SchemaValidator, SchemaSerializer)
+ValSer = TypeVar('ValSer', bound=Union[SchemaValidator, PluggableSchemaValidator, SchemaSerializer])
 T = TypeVar('T')
 
 
