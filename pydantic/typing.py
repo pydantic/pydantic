@@ -399,7 +399,10 @@ def resolve_annotations(raw_annotations: Dict[str, Type[Any]], module_name: Opti
             else:
                 value = ForwardRef(value, is_argument=False)
         try:
-            value = _eval_type(value, base_globals, None)
+            if sys.version_info >= (3, 13):
+                value = _eval_type(value, base_globals, None, type_params=())
+            else:
+                value = _eval_type(value, base_globals, None)
         except NameError:
             # this is ok, it can be fixed with update_forward_refs
             pass
