@@ -3966,7 +3966,7 @@ annotate your variable:</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">_module_name</span> <span class="o">=</span> <span class="n">module</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">_core_schema</span><span class="p">:</span> <span class="n">CoreSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="p">:</span> <span class="n">SchemaValidator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="p">:</span> <span class="n">SchemaValidator</span> <span class="o">|</span> <span class="n">PluggableSchemaValidator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_serializer</span><span class="p">:</span> <span class="n">SchemaSerializer</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_defer_build</span><span class="p">():</span>
@@ -4026,7 +4026,7 @@ annotate your variable:</p>
   </span>
 
 <a href="#pydantic.type_adapter.TypeAdapter.validator" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">validator</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.SchemaValidator" href="../pydantic_core/#pydantic_core.SchemaValidator">SchemaValidator</a></span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">validator</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.SchemaValidator" href="../pydantic_core/#pydantic_core.SchemaValidator">SchemaValidator</a></span> <span class="o">|</span> <span class="n"><span title="pydantic.plugin._schema_validator.PluggableSchemaValidator">PluggableSchemaValidator</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -5858,7 +5858,7 @@ definitions in the output JSON schema.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.8.1", "pydantic-core==2.20.1", "pydantic-extra-types==2.9.0"]
+    window.mkdocs_run_deps = ["pydantic==2.8.2", "pydantic-core==2.20.1", "pydantic-extra-types==2.9.0"]
     </script>
 
               </article>
