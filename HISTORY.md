@@ -1,3 +1,13 @@
+## v2.8.2 (2024-07-03)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.8.2)
+
+### What's Changed
+
+#### Fixes
+
+* Fix issue with assertion caused by pluggable schema validator by @dmontagu in https://github.com/pydantic/pydantic/pull/9838
+
 ## v2.8.1 (2024-07-03)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.8.1)
@@ -11,7 +21,6 @@
 #### Fixes
 * Fix breaking change in `to_snake` from v2.7 -> v2.8 by @sydney-runkle in https://github.com/pydantic/pydantic/pull/9812
 * Fix list constraint json schema application by @sydney-runkle in https://github.com/pydantic/pydantic/pull/9818
-* Fix issue with assertion caused by pluggable schema validator by @dmontagu in https://github.com/pydantic/pydantic/pull/9838
 
 ## v2.8.0 (2024-07-01)
 
