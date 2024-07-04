@@ -1,8 +1,7 @@
 import importlib
 import typing
 
-from pydantic._migration import getattr_migration
-
+from ._migration import getattr_migration
 from .version import VERSION
 
 if typing.TYPE_CHECKING:
