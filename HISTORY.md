@@ -1,3 +1,30 @@
+## v2.8.2 (2024-07-03)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.8.2)
+
+### What's Changed
+
+#### Fixes
+
+* Fix issue with assertion caused by pluggable schema validator by @dmontagu in [#9838](https://github.com/pydantic/pydantic/pull/9838)
+
+## v2.8.1 (2024-07-03)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.8.1)
+
+### What's Changed
+
+#### Packaging
+* Bump `ruff` to `v0.5.0` and `pyright` to `v1.1.369` by @sydney-runkle in [#9801](https://github.com/pydantic/pydantic/pull/9801)
+* Bump `pydantic-core` to `v2.20.1`, `pydantic-extra-types` to `v2.9.0` by @sydney-runkle in [#9832](https://github.com/pydantic/pydantic/pull/9832)
+
+#### Fixes
+* Fix breaking change in `to_snake` from v2.7 -> v2.8 by @sydney-runkle in [#9812](https://github.com/pydantic/pydantic/pull/9812)
+* Fix list constraint json schema application by @sydney-runkle in [#9818](https://github.com/pydantic/pydantic/pull/9818)
+* Support time duration more than 23 by @nix010 in [pydantic/speedate#64](https://github.com/pydantic/speedate/pull/64)
+* Fix millisecond fraction being handled with the wrong scale by @davidhewitt in [pydantic/speedate#65](https://github.com/pydantic/speedate/pull/65)
+* Handle negative fractional durations correctly by @sydney-runkle in [pydantic/speedate#71](https://github.com/pydantic/speedate/pull/71)
+
 ## v2.8.0 (2024-07-01)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.8.0)
