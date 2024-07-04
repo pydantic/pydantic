@@ -239,7 +239,7 @@ def field_serializer(
         courses: Set[str]
 
         @field_serializer('courses', when_used='json')
-        def serialize_courses_in_order(courses: Set[str]):
+        def serialize_courses_in_order(self, courses: Set[str]):
             return sorted(courses)
 
     student = StudentModel(courses={'Math', 'Chemistry', 'English'})
