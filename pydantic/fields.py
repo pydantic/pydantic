@@ -647,6 +647,14 @@ class FieldInfo(_repr.Representation):
                 if value is not None and value is not PydanticUndefined:
                     yield s, value
 
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, FieldInfo):
+            return self._attributes_set == other._attributes_set
+        return False
+
+    def __hash__(self) -> int:
+        return hash(frozenset(self._attributes_set))
+
 
 class _EmptyKwargs(typing_extensions.TypedDict):
     """This class exists solely to ensure that type checking warns about passing `**extra` in `Field`."""

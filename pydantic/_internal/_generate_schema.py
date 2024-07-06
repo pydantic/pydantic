@@ -314,6 +314,9 @@ def _get_first_non_null(a: Any, b: Any) -> Any:
     return a if a is not None else b
 
 
+schema_cache = {}
+
+
 class GenerateSchema:
     """Generate core schema for a Pydantic model, dataclass and types like `str`, `datetime`, ... ."""
 
@@ -861,14 +864,18 @@ class GenerateSchema:
 
         if _typing_extra.is_dataclass(obj):
             return self._dataclass_schema(obj, None)
+
+        # NOTE: this needs to be here, or else we use sequence validators for all generic lists :(
+        # so moving this here results in a significant performance improvement
+        # I'll remove this comment soon, just documenting changes ad hoc
+        origin = get_origin(obj)
+        if origin is not None:
+            return self._match_generic_type(obj, origin)
+
         res = self._get_prepare_pydantic_annotations_for_known_type(obj, ())
         if res is not None:
             source_type, annotations = res
             return self._apply_annotations(source_type, annotations)
-
-        origin = get_origin(obj)
-        if origin is not None:
-            return self._match_generic_type(obj, origin)
 
         if self._arbitrary_types:
             return self._arbitrary_type_schema(obj)
@@ -944,7 +951,14 @@ class GenerateSchema:
         decorators: DecoratorInfos,
     ) -> core_schema.ModelField:
         """Prepare a ModelField to represent a model field."""
-        common_field = self._common_field_schema(name, field_info, decorators)
+        try:
+            field_info_hash = hash(field_info)
+            common_field = schema_cache.get(field_info_hash) or self._common_field_schema(name, field_info, decorators)
+            if common_field and field_info_hash not in schema_cache:
+                schema_cache[field_info_hash] = common_field
+        except TypeError:
+            common_field = self._common_field_schema(name, field_info, decorators)
+
         return core_schema.model_field(
             common_field['schema'],
             serialization_exclude=common_field['serialization_exclude'],
