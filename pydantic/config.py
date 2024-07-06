@@ -592,13 +592,13 @@ class ConfigDict(TypedDict, total=False):
     - `'hex'` will deserialize hexadecimal strings to bytes.
     """
 
-    ser_json_inf_nan: Literal['null', 'constants']
+    ser_json_inf_nan: Literal['null', 'constants', 'strings']
     """
-    The encoding of JSON serialized infinity and NaN float values. Accepts the string values of `'null'` and `'constants'`.
-    Defaults to `'null'`.
+    The encoding of JSON serialized infinity and NaN float values. Defaults to `'null'`.
 
     - `'null'` will serialize infinity and NaN values as `null`.
     - `'constants'` will serialize infinity and NaN values as `Infinity` and `NaN`.
+    - `'strings'` will serialize infinity as string `"Infinity"` and NaN as string `"NaN"`.
     """
 
     # whether to validate default values during validation, default False
@@ -1019,7 +1019,7 @@ _TypeT = TypeVar('_TypeT', bound=type)
 
 
 def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
-    """Usage docs: https://docs.pydantic.dev/2.8/concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict
+    """Usage docs: https://docs.pydantic.dev/2.9/concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict
 
     A convenience decorator to set a [Pydantic configuration](config.md) on a `TypedDict` or a `dataclass` from the standard library.
 

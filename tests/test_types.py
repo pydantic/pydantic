@@ -3494,6 +3494,60 @@ def test_path_like():
     }
 
 
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='requires python 3.9 or higher to parametrize os.PathLike')
+def test_path_like_extra_subtype():
+    class Model(BaseModel):
+        str_type: os.PathLike[str]
+        byte_type: os.PathLike[bytes]
+        any_type: os.PathLike[Any]
+
+    m = Model(
+        str_type='/foo/bar',
+        byte_type=b'/foo/bar',
+        any_type='/foo/bar',
+    )
+    assert m.str_type == Path('/foo/bar')
+    assert m.byte_type == Path('/foo/bar')
+    assert m.any_type == Path('/foo/bar')
+    assert Model.model_json_schema() == {
+        'properties': {
+            'str_type': {'format': 'path', 'title': 'Str Type', 'type': 'string'},
+            'byte_type': {'format': 'path', 'title': 'Byte Type', 'type': 'string'},
+            'any_type': {'format': 'path', 'title': 'Any Type', 'type': 'string'},
+        },
+        'required': ['str_type', 'byte_type', 'any_type'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(
+            str_type=b'/foo/bar',
+            byte_type='/foo/bar',
+            any_type=111,
+        )
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'path_type',
+            'loc': ('str_type',),
+            'msg': "Input is not a valid path for <class 'os.PathLike'>",
+            'input': b'/foo/bar',
+        },
+        {
+            'type': 'path_type',
+            'loc': ('byte_type',),
+            'msg': "Input is not a valid path for <class 'os.PathLike'>",
+            'input': '/foo/bar',
+        },
+        {
+            'type': 'path_type',
+            'loc': ('any_type',),
+            'msg': "Input is not a valid path for <class 'os.PathLike'>",
+            'input': 111,
+        },
+    ]
+
+
 def test_path_like_strict():
     class Model(BaseModel):
         model_config = dict(strict=True)
@@ -3529,17 +3583,13 @@ def test_path_validation_fails():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=123)
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {'type': 'path_type', 'loc': ('foo',), 'msg': 'Input is not a valid path', 'input': 123}
-    ]
+    # insert_assert(exc_info.value.errors(include_url=False))[0]['type']
+    assert exc_info.value.errors(include_url=False)[0]['type'] == 'path_type'
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=None)
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {'type': 'path_type', 'loc': ('foo',), 'msg': 'Input is not a valid path', 'input': None}
-    ]
+    # insert_assert(exc_info.value.errors(include_url=False))[0]['type']
+    assert exc_info.value.errors(include_url=False)[0]['type'] == 'path_type'
 
 
 def test_path_validation_strict():

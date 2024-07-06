@@ -9,7 +9,7 @@ import math
 import re
 import typing
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import Any
+from typing import Any, Callable
 
 from pydantic_core import PydanticCustomError, core_schema
 from pydantic_core._pydantic_core import PydanticKnownError
@@ -37,18 +37,18 @@ def sequence_validator(
     # Additionally, we should be able to remove one of either this validator or the
     # SequenceValidator in _std_types_schema.py (preferably this one, while porting over some logic).
     # Effectively, a refactor for sequence validation is needed.
-    if value_type == tuple:
+    if value_type is tuple:
         input_value = list(input_value)
 
     v_list = validator(input_value)
 
     # the rest of the logic is just re-creating the original type from `v_list`
-    if value_type == list:
+    if value_type is list:
         return v_list
     elif issubclass(value_type, range):
         # return the list as we probably can't re-create the range
         return v_list
-    elif value_type == tuple:
+    elif value_type is tuple:
         return tuple(v_list)
     else:
         # best guess at how to re-create the original type, more custom construction logic might be required
@@ -287,3 +287,22 @@ def forbid_inf_nan_check(x: Any) -> Any:
     if not math.isfinite(x):
         raise PydanticKnownError('finite_number')
     return x
+
+
+_CONSTRAINT_TO_VALIDATOR_MAP: dict[str, Callable] = {
+    'gt': greater_than_validator,
+    'ge': greater_than_or_equal_validator,
+    'lt': less_than_validator,
+    'le': less_than_or_equal_validator,
+    'multiple_of': multiple_of_validator,
+    'min_length': min_length_validator,
+    'max_length': max_length_validator,
+}
+
+
+def get_constraint_validator(constraint: str) -> Callable:
+    """Fetch the validator function for the given constraint."""
+    try:
+        return _CONSTRAINT_TO_VALIDATOR_MAP[constraint]
+    except KeyError:
+        raise TypeError(f'Unknown constraint {constraint}')

@@ -183,3 +183,25 @@ init_forbid_extra = true
 init_typed = true
 warn_required_dynamic_aliases = true
 ```
+
+#### Note on `--disallow-any-explicit`
+
+If you're using the `--disallow-any-explicit` mypy config setting (or other settings that ban `Any`), you may encounter `no-any-explicit` errors when extending `BaseModel`. This is because by default, Pydantic's `mypy` plugin adds an `__init__` method with a signature like `def __init__(self, field_1: Any, field_2: Any, **kwargs: Any):`
+
+!!! note "Why the extra signature?"
+    The Pydantic `mypy` plugin adds an `__init__` method with a signature like `def __init__(self, field_1: Any, field_2: Any, **kwargs: Any):` in
+    order to avoid type errors when initializing models with types that don't match the field annotations.
+    For example `Model(date='2024-01-01')` would raise a type error without this `Any` signature, but Pydantic has the ability to parse the string
+    `'2024-01-01'` into a `datetime.date` type.
+
+To resolve this issue, you need to enable strict mode settings for the Pydantic mypy plugin. Specifically, add these options to your `[pydantic-mypy]` section:
+
+```toml
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+```
+
+With `init_forbid_extra = True`, the `**kwargs` are removed from the generated `__init__` signature. With `init_typed = True`, the `Any` types for fields are replaced with their actual type hints.
+
+This configuration allows you to use `--disallow-any-explicit` without getting errors on your Pydantic models. However, be aware that this stricter checking might flag some valid Pydantic use cases (like passing a string for a datetime field) as type errors.

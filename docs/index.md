@@ -38,7 +38,7 @@ print(m.dimensions)
 !!! question "Why is Pydantic named the way it is?"
 
     The name "Pydantic" is a portmanteau of "Py" and "pedantic." The "Py" part indicates that the library is associated with Python, and
-    "pedantic" refer's to the library's meticulous approach to data validation and type enforcement.
+    "pedantic" refers to the library's meticulous approach to data validation and type enforcement.
 
     Combining these elements, "Pydantic" describes our Python library that provides detail-oriented, rigorous data validation.
 

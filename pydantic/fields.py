@@ -444,15 +444,32 @@ class FieldInfo(_repr.Representation):
                 setattr(field_info, k, v)
             return field_info  # type: ignore
 
-        new_kwargs: dict[str, Any] = {}
+        merged_field_info_kwargs: dict[str, Any] = {}
         metadata = {}
         for field_info in field_infos:
-            new_kwargs.update(field_info._attributes_set)
+            attributes_set = field_info._attributes_set.copy()
+
+            try:
+                json_schema_extra = attributes_set.pop('json_schema_extra')
+                existing_json_schema_extra = merged_field_info_kwargs.get('json_schema_extra', {})
+
+                if isinstance(existing_json_schema_extra, dict) and isinstance(json_schema_extra, dict):
+                    merged_field_info_kwargs['json_schema_extra'] = {**existing_json_schema_extra, **json_schema_extra}
+                else:
+                    # if ever there's a case of a callable, we'll just keep the last json schema extra spec
+                    merged_field_info_kwargs['json_schema_extra'] = json_schema_extra
+            except KeyError:
+                pass
+
+            # later FieldInfo instances override everything except json_schema_extra from earlier FieldInfo instances
+            merged_field_info_kwargs.update(attributes_set)
+
             for x in field_info.metadata:
                 if not isinstance(x, FieldInfo):
                     metadata[type(x)] = x
-        new_kwargs.update(overrides)
-        field_info = FieldInfo(**new_kwargs)
+
+        merged_field_info_kwargs.update(overrides)
+        field_info = FieldInfo(**merged_field_info_kwargs)
         field_info.metadata = list(metadata.values())
         return field_info
 
@@ -709,7 +726,7 @@ def Field(  # noqa: C901
     fail_fast: bool | None = _Unset,
     **extra: Unpack[_EmptyKwargs],
 ) -> Any:
-    """Usage docs: https://docs.pydantic.dev/2.8/concepts/fields
+    """Usage docs: https://docs.pydantic.dev/2.9/concepts/fields
 
     Create a field for objects that can be configured.
 
@@ -948,7 +965,7 @@ def PrivateAttr(
     default_factory: typing.Callable[[], Any] | None = None,
     init: Literal[False] = False,
 ) -> Any:
-    """Usage docs: https://docs.pydantic.dev/2.8/concepts/models/#private-model-attributes
+    """Usage docs: https://docs.pydantic.dev/2.9/concepts/models/#private-model-attributes
 
     Indicates that an attribute is intended for private use and not handled during normal validation/serialization.
 
@@ -1073,7 +1090,7 @@ def computed_field(
     repr: bool | None = None,
     return_type: Any = PydanticUndefined,
 ) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
-    """Usage docs: https://docs.pydantic.dev/2.8/concepts/fields#the-computed_field-decorator
+    """Usage docs: https://docs.pydantic.dev/2.9/concepts/fields#the-computed_field-decorator
 
     Decorator to include `property` and `cached_property` when serializing models or dataclasses.
 

@@ -26,7 +26,7 @@ def create_schema_validator(
     schema_kind: SchemaKind,
     config: CoreConfig | None = None,
     plugin_settings: dict[str, Any] | None = None,
-) -> SchemaValidator:
+) -> SchemaValidator | PluggableSchemaValidator:
     """Create a `SchemaValidator` or `PluggableSchemaValidator` if plugins are installed.
 
     Returns:
@@ -45,7 +45,7 @@ def create_schema_validator(
             config,
             plugins,
             plugin_settings or {},
-        )  # type: ignore
+        )
     else:
         return SchemaValidator(schema, config)
 

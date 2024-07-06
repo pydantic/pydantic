@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
     steps:
       - uses: actions/checkout@v4
 
@@ -99,7 +99,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-13, macos-latest, windows-latest]
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
         include:
           # no pydantic-core binaries for pypy on windows, so tests take absolute ages
           # macos tests with pypy take ages (>10mins) since pypy is very slow
@@ -116,6 +116,8 @@ jobs:
             python-version: '3.11'
           - os: macos-13
             python-version: '3.12'
+          - os: macos-latest
+            python-version: '3.13'
           - os: macos-latest
             python-version: '3.8'
           - os: macos-latest
@@ -234,6 +236,8 @@ jobs:
           # TODO: Once Python 3.7 is removed, and mypy is bumped on the lockfile, we can add 'lockfile' again.
           - mypy-version: '1.5.1'
             python-version: '3.12'
+          - mypy-version: '1.5.1'
+            python-version: '3.13'
 
     steps:
     - uses: actions/checkout@v4
@@ -271,7 +275,7 @@ jobs:
         node-version: '18'
 
     - name: install pyright
-      run: npm install -g pyright@1.1.367  # try to keep this in sync with .pre-commit-config.yaml
+      run: npm install -g pyright@1.1.369  # try to keep this in sync with .pre-commit-config.yaml
 
     - name: run pyright tests
       run: make test-pyright
@@ -310,11 +314,46 @@ jobs:
       - run: coverage report
       - run: coverage html --show-contexts --title "pydantic coverage for ${{ github.sha }}"
 
+      - name: Store coverage data
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-data
+          path: .coverage
+
       - name: Store coverage html
         uses: actions/upload-artifact@v4
         with:
           name: coverage-html
           path: htmlcov
+
+  coverage-pr-comment:
+    needs: coverage-combine
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      pull-requests: write
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download coverage data
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-data
+
+      - name: Generate coverage comment
+        id: coverage-comment
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Store coverage comment
+        uses: actions/upload-artifact@v4
+        if: steps.coverage-comment.outputs.COMMENT_FILE_WRITTEN == 'true'
+        with:
+          name: python-coverage-comment-action
+          path: python-coverage-comment-action.txt
 
   test-typing-extensions:
     name: test typing-extensions ${{ matrix.typing-extensions-version }} on Python ${{ matrix.python-version }}
@@ -324,7 +363,13 @@ jobs:
       matrix:
         # test the oldest supported version and main
         typing-extensions-version: ['4.6.1', 'main']
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        exclude:
+          - typing-extensions-version: '4.6.1'
+            python-version: '3.13'
+        include:
+          - typing-extensions-version: '4.12.2'
+            python-version: '3.13'
 
     steps:
     - uses: actions/checkout@v4

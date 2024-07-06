@@ -72,7 +72,7 @@ class ConfigWrapper:
     ser_json_timedelta: Literal['iso8601', 'float']
     ser_json_bytes: Literal['utf8', 'base64', 'hex']
     val_json_bytes: Literal['utf8', 'base64', 'hex']
-    ser_json_inf_nan: Literal['null', 'constants']
+    ser_json_inf_nan: Literal['null', 'constants', 'strings']
     # whether to validate default values during validation, default False
     validate_default: bool
     validate_return: bool

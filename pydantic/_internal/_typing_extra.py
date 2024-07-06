@@ -109,10 +109,7 @@ def all_literal_values(type_: type[Any]) -> list[Any]:
 
 
 def is_annotated(ann_type: Any) -> bool:
-    from ._utils import lenient_issubclass
-
-    origin = get_origin(ann_type)
-    return origin is not None and lenient_issubclass(origin, Annotated)
+    return get_origin(ann_type) is Annotated
 
 
 def annotated_type(type_: Any) -> Any | None:
@@ -247,7 +244,10 @@ def eval_type_lenient(value: Any, globalns: dict[str, Any] | None = None, localn
 
 
 def eval_type_backport(
-    value: Any, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None
+    value: Any,
+    globalns: dict[str, Any] | None = None,
+    localns: dict[str, Any] | None = None,
+    type_params: tuple[Any] | None = None,
 ) -> Any:
     """Like `typing._eval_type`, but falls back to the `eval_type_backport` package if it's
     installed to let older Python versions use newer typing features.
@@ -256,9 +256,14 @@ def eval_type_backport(
     if the original syntax is not supported in the current Python version.
     """
     try:
-        return typing._eval_type(  # type: ignore
-            value, globalns, localns
-        )
+        if sys.version_info >= (3, 13):
+            return typing._eval_type(  # type: ignore
+                value, globalns, localns, type_params=type_params
+            )
+        else:
+            return typing._eval_type(  # type: ignore
+                value, globalns, localns
+            )
     except TypeError as e:
         if not (isinstance(value, typing.ForwardRef) and is_backport_fixable_error(e)):
             raise
@@ -302,6 +307,7 @@ def get_function_type_hints(
 
     globalns = add_module_globals(function)
     type_hints = {}
+    type_params: tuple[Any] = getattr(function, '__type_params__', ())  # type: ignore
     for name, value in annotations.items():
         if include_keys is not None and name not in include_keys:
             continue
@@ -310,7 +316,7 @@ def get_function_type_hints(
         elif isinstance(value, str):
             value = _make_forward_ref(value)
 
-        type_hints[name] = eval_type_backport(value, globalns, types_namespace)
+        type_hints[name] = eval_type_backport(value, globalns, types_namespace, type_params)
 
     return type_hints
 

@@ -1087,7 +1087,10 @@ def test_computed_field_custom_serializer_bad_signature():
                 return f'The double of x is {v}'
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason='@computed_field @classmethod @property only works in 3.9+')
+@pytest.mark.skipif(
+    sys.version_info < (3, 9) or sys.version_info >= (3, 13),
+    reason='@computed_field @classmethod @property only works in 3.9-3.12',
+)
 def test_forward_ref_for_classmethod_computed_fields():
     class Model(BaseModel):
         y: ClassVar[int] = 4

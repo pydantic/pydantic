@@ -31,6 +31,7 @@ classifiers = [
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
     'Intended Audience :: Developers',
     'Intended Audience :: Information Technology',
     'Intended Audience :: System Administrators',
@@ -46,9 +47,10 @@ classifiers = [
 ]
 requires-python = '>=3.8'
 dependencies = [
-    'typing-extensions>=4.6.1',
+    'typing-extensions>=4.6.1; python_version < "3.13"',
+    'typing-extensions>=4.12.2; python_version >= "3.13"',
     'annotated-types>=0.4.0',
-    "pydantic-core==2.20.0",
+    "pydantic-core==2.20.1",
 ]
 dynamic = ['version', 'readme']
 
@@ -110,13 +112,13 @@ docs = [
     "pyupgrade",
     "mike @ git+https://github.com/jimporter/mike.git",
     "mkdocs-embed-external-markdown>=2.3.0",
-    "pytest-examples>=0.0.10",
+    "pytest-examples>=0.0.11",
     "pydantic-settings>=2.0b1",
     "pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main"
 ]
 linting = [
     "eval-type-backport>=0.1.3",
-    "ruff==0.4.8",
+    "ruff==0.5.0",
     "mypy~=1.1.1",
 ]
 testing = [
@@ -130,7 +132,8 @@ testing = [
     "pytest-examples",
     "faker>=18.13.0",
     "pytest-benchmark>=4.0.0",
-    "pytest-codspeed~=2.2.0",
+    # TODO: remove bound once pytest-codspeed supports 3.13, blocked by `python-cffi`
+    "pytest-codspeed~=2.2.0; python_version < '3.13'",
     "packaging>=23.2",
 ]
 testing-extra = [
@@ -138,16 +141,16 @@ testing-extra = [
     "ansi2html",
     "devtools",
     # used in docs tests
-    "sqlalchemy>=2.0,<3.0",
-    "greenlet>=3.0.0rc3",
+    # TODO: remove bound once sqlalchemy supports 3.13
+    "sqlalchemy>=2.0,<3.0; python_version < '3.13'",
+    "greenlet>=3.0.0rc3; python_version < '3.13'",
 ]
 mypy = [
     "mypy",
     "pydantic-settings>=2.0.0",
 ]
-memray = [
-    "pytest-memray; platform_system != 'Windows'",
-]
+# TODO: remove once memray supports 3.13
+memray = ["pytest-memray; python_version < '3.13' and platform_system != 'Windows'"]
 
 [tool.pytest.ini_options]
 testpaths = 'tests'
@@ -169,7 +172,7 @@ addopts = [
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
-assignees = ['sydney-runkle']
+reviewers = ['sydney-runkle']
 require_change_file = false
 unconfirmed_label = 'pending'
 
@@ -207,6 +210,7 @@ quote-style = 'single'
 source = ['pydantic']
 omit = ['pydantic/deprecated/*', 'pydantic/v1/*']
 branch = true
+relative_files = true
 context = '${CONTEXT}'
 
 [tool.coverage.report]
@@ -243,3 +247,10 @@ skip = '.git,env*,pydantic/v1/*'
 # `ser` - abbreviation for "ser"ialisation
 # `crate` - a rust crate
 ignore-words-list = 'gir,ser,crate'
+
+[tool.codeflash]
+module-root = "pydantic"
+tests-root = "tests"
+test-framework = "pytest"
+ignore-paths = []
+formatter-cmd = ["ruff check --exit-zero --fix $file", "ruff format $file"]

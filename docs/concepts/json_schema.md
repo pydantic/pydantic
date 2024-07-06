@@ -617,6 +617,78 @@ print(json.dumps(Model.model_json_schema(), indent=2))
 """
 ```
 
+#### Merging `json_schema_extra`
+
+Starting in v2.9, Pydantic merges `json_schema_extra` dictionaries from annotated types.
+This pattern offers a more additive approach to merging rather than the previous override behavior.
+This can be quite helpful for cases of reusing json schema extra information across multiple types.
+
+We viewed this change largely as a bug fix, as it resolves unintentional differences in the `json_schema_extra` merging behavior
+between `BaseModel` and `TypeAdapter` instances - see [this issue](https://github.com/pydantic/pydantic/issues/9210)
+for more details.
+
+```py
+import json
+
+from typing_extensions import Annotated, TypeAlias
+
+from pydantic import Field, TypeAdapter
+
+ExternalType: TypeAlias = Annotated[
+    int, Field(..., json_schema_extra={'key1': 'value1'})
+]
+
+ta = TypeAdapter(
+    Annotated[ExternalType, Field(..., json_schema_extra={'key2': 'value2'})]
+)
+print(json.dumps(ta.json_schema(), indent=2))
+"""
+{
+  "key1": "value1",
+  "key2": "value2",
+  "type": "integer"
+}
+"""
+```
+
+If you would prefer for the last of your `json_schema_extra` specifications to override the previous ones,
+you can use a `callable` to make more significant changes, including adding or removing keys, or modifying values.
+You can use this pattern if you'd like to mimic the behavior of the `json_schema_extra` overrides present
+in Pydantic v2.8 and earlier:
+
+```py
+import json
+
+from typing_extensions import Annotated, TypeAlias
+
+from pydantic import Field, TypeAdapter
+from pydantic.json_schema import JsonDict
+
+ExternalType: TypeAlias = Annotated[
+    int, Field(..., json_schema_extra={'key1': 'value1', 'key2': 'value2'})
+]
+
+
+def finalize_schema(s: JsonDict) -> None:
+    s.pop('key1')
+    s['key2'] = s['key2'] + '-final'
+    s['key3'] = 'value3-final'
+
+
+ta = TypeAdapter(
+    Annotated[ExternalType, Field(..., json_schema_extra=finalize_schema)]
+)
+print(json.dumps(ta.json_schema(), indent=2))
+"""
+{
+  "key2": "value2-final",
+  "key3": "value3-final",
+  "type": "integer"
+}
+"""
+```
+
+
 ### `WithJsonSchema` annotation
 
 ??? api "API Documentation"
