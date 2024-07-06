@@ -181,6 +181,9 @@ def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path
     if example.path.name == 'devtools.md':
         pytest.skip('tested below')
 
+    if 'bytes_invalid_encoding' in example.source:
+        pytest.xfail('waiting for pydantic-core support: pydantic/pydantic-core#1308')
+
     run_example(example, eval_example, mocker)
 
 
