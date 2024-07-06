@@ -536,8 +536,8 @@ def test_json_inf_nan_allow(float_value, encoded_str):
     else:
         assert M.model_validate_json(m_encoded) == m
 
-# Expect failure until pydantic-core is upgraded to include pydantic/pydantic-core#1308.
-@pytest.mark.xfail
+
+@pytest.mark.xfail(reason='waiting for pydantic-core support: pydantic/pydantic-core#1308')
 def test_json_bytes_base64_round_trip():
     class R(RootModel[bytes]):
         model_config = ConfigDict(ser_json_bytes='base64', val_json_bytes='base64')
