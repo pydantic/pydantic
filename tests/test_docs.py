@@ -253,6 +253,9 @@ def test_validation_error_codes():
             if error_code_section is not None and printed_error_code != error_code_section:
                 test_failures.append(f'Error code {error_code_section!r} is not printed in its example')
             error_code_section = section_match.group(1)
+            if error_code_section == 'bytes_invalid_encoding':
+                # Waiting for pydantic-core support: pydantic/pydantic-core#1308
+                continue
             if error_code_section not in expected_validation_error_codes:
                 test_failures.append(f'Documented error code {error_code_section!r} is not a member of ErrorType')
             documented_validation_error_codes.append(error_code_section)
