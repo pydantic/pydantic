@@ -20,6 +20,7 @@ from collections import defaultdict
 from copy import deepcopy
 from dataclasses import is_dataclass
 from enum import Enum
+from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -517,7 +518,16 @@ class GenerateJsonSchema:
 
         current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, handler_func)
 
-        for js_modify_function in metadata_handler.metadata.get('pydantic_js_functions', ()):
+        pydantic_js_functions = list(metadata_handler.metadata.get('pydantic_js_functions', ()))
+
+        if 'pydantic_js_title' in metadata_handler.metadata:
+            from ._internal._generate_schema import modify_model_json_schema
+
+            title = metadata_handler.metadata['pydantic_js_title']
+            cls = schema.get('cls') or metadata_handler.metadata['pydantic_typed_dict_cls']
+            pydantic_js_functions.insert(0, partial(modify_model_json_schema, cls=cls, title=title))
+
+        for js_modify_function in pydantic_js_functions:
 
             def new_handler_func(
                 schema_or_field: CoreSchemaOrField,

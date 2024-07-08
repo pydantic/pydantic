@@ -30,6 +30,9 @@ class CoreMetadata(typing_extensions.TypedDict, total=False):
     # prefer positional over keyword arguments for an 'arguments' schema.
     pydantic_js_prefer_positional_arguments: bool | None
 
+    pydantic_js_title: str | None
+    """JSON schema title."""
+
     pydantic_typed_dict_cls: type[Any] | None  # TODO: Consider moving this into the pydantic-core TypedDictSchema
 
 

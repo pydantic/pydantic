@@ -541,7 +541,7 @@ class GenerateSchema:
             config_wrapper = ConfigWrapper(cls.model_config, check=False)
             core_config = config_wrapper.core_config(cls)
             title = self._get_model_title_from_config(cls, config_wrapper)
-            metadata = build_metadata_dict(js_functions=[partial(modify_model_json_schema, cls=cls, title=title)])
+            metadata = {'pydantic_js_title': title}
 
             model_validators = decorators.model_validators.values()
 
@@ -1346,7 +1346,7 @@ class GenerateSchema:
 
                 title = self._get_model_title_from_config(typed_dict_cls, ConfigWrapper(config))
                 metadata = build_metadata_dict(
-                    js_functions=[partial(modify_model_json_schema, cls=typed_dict_cls, title=title)],
+                    initial_metadata={'pydantic_js_title': title},
                     typed_dict_cls=typed_dict_cls,
                 )
                 td_schema = core_schema.typed_dict_schema(
@@ -1646,9 +1646,7 @@ class GenerateSchema:
                 inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
 
                 title = self._get_model_title_from_config(dataclass, ConfigWrapper(config))
-                metadata = build_metadata_dict(
-                    js_functions=[partial(modify_model_json_schema, cls=dataclass, title=title)]
-                )
+                metadata = {'pydantic_js_title': title}
 
                 dc_schema = core_schema.dataclass_schema(
                     dataclass,
