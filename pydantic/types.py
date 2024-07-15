@@ -36,14 +36,7 @@ from annotated_types import BaseMetadata, MaxLen, MinLen
 from pydantic_core import CoreSchema, PydanticCustomError, core_schema
 from typing_extensions import Annotated, Literal, Protocol, TypeAlias, TypeAliasType, deprecated
 
-from ._internal import (
-    _core_utils,
-    _fields,
-    _internal_dataclass,
-    _typing_extra,
-    _utils,
-    _validators,
-)
+from ._internal import _core_utils, _fields, _internal_dataclass, _typing_extra, _utils, _validators
 from ._migration import getattr_migration
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .errors import PydanticUserError
