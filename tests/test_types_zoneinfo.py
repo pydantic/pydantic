@@ -1,27 +1,28 @@
 import pytest
-from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, ValidationError
 
+zoneinfo = pytest.importorskip('zoneinfo', reason='zoneinfo requires >=3.9')
+
 
 class ZoneInfoModel(BaseModel):
-    tz: ZoneInfo
+    tz: zoneinfo.ZoneInfo
 
 
 @pytest.mark.parametrize(
     'tz',
     [
-        pytest.param(ZoneInfo('America/Los_Angeles'), id='ZoneInfoObject'),
+        pytest.param(zoneinfo.ZoneInfo('America/Los_Angeles'), id='ZoneInfoObject'),
         pytest.param('America/Los_Angeles', id='IanaTimezoneStr'),
     ],
 )
 def test_zoneinfo_valid_inputs(tz):
     model = ZoneInfoModel(tz=tz)
-    assert model.tz == ZoneInfo('America/Los_Angeles')
+    assert model.tz == zoneinfo.ZoneInfo('America/Los_Angeles')
 
 
 def test_zoneinfo_serialization():
-    model = ZoneInfoModel(tz=ZoneInfo('America/Los_Angeles'))
+    model = ZoneInfoModel(tz=zoneinfo.ZoneInfo('America/Los_Angeles'))
     assert model.model_dump_json() == '{"tz":"America/Los_Angeles"}'
 
 
