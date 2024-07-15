@@ -144,6 +144,8 @@ testing-extra = [
     # TODO: remove bound once sqlalchemy supports 3.13
     "sqlalchemy>=2.0,<3.0; python_version < '3.13'",
     "greenlet>=3.0.0rc3; python_version < '3.13'",
+    # See: https://docs.python.org/3/library/zoneinfo.html#data-sources
+    'tzdata; platform_system = "Windows"',
 ]
 mypy = [
     "mypy",
