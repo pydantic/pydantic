@@ -286,7 +286,7 @@ jobs:
     - name: store coverage files
       uses: actions/upload-artifact@v4
       with:
-        name: coverage-${{ matrix.os }}-${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
+        name: coverage-${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
         path: coverage
 
   coverage-combine:
