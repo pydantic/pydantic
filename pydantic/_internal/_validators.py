@@ -260,7 +260,7 @@ def less_than_or_equal_validator(x: Any, le: Any) -> Any:
 
 
 def multiple_of_validator(x: Any, multiple_of: Any) -> Any:
-    if not (x % multiple_of == 0):
+    if x % multiple_of:
         raise PydanticKnownError('multiple_of', {'multiple_of': multiple_of})
     return x
 
