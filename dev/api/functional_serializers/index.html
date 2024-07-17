@@ -3861,7 +3861,7 @@ logic, and can modify the resulting value before returning it as the final outpu
     <span class="n">courses</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 
     <span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;courses&#39;</span><span class="p">,</span> <span class="n">when_used</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">serialize_courses_in_order</span><span class="p">(</span><span class="n">courses</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+    <span class="k">def</span> <span class="nf">serialize_courses_in_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">courses</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
         <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">courses</span><span class="p">)</span>
 
 <span class="n">student</span> <span class="o">=</span> <span class="n">StudentModel</span><span class="p">(</span><span class="n">courses</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Math&#39;</span><span class="p">,</span> <span class="s1">&#39;Chemistry&#39;</span><span class="p">,</span> <span class="s1">&#39;English&#39;</span><span class="p">})</span>
@@ -4078,7 +4078,7 @@ logic, and can modify the resulting value before returning it as the final outpu
 <span class="sd">        courses: Set[str]</span>
 
 <span class="sd">        @field_serializer(&#39;courses&#39;, when_used=&#39;json&#39;)</span>
-<span class="sd">        def serialize_courses_in_order(courses: Set[str]):</span>
+<span class="sd">        def serialize_courses_in_order(self, courses: Set[str]):</span>
 <span class="sd">            return sorted(courses)</span>
 
 <span class="sd">    student = StudentModel(courses={&#39;Math&#39;, &#39;Chemistry&#39;, &#39;English&#39;})</span>
