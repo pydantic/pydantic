@@ -9,7 +9,7 @@ import typing
 from copy import copy
 from dataclasses import Field as DataclassField
 from functools import cached_property
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Sequence
 from warnings import warn
 
 import annotated_types
@@ -1013,6 +1013,7 @@ class ComputedFieldInfo:
         examples: Example values of the computed field to include in the serialization JSON schema.
         json_schema_extra: A dict or callable to provide extra JSON schema properties.
         repr: A boolean indicating whether to include the field in the __repr__ output.
+        dependencies: A list of field names that the computed field depends on for its value.
     """
 
     decorator_repr: ClassVar[str] = '@computed_field'
@@ -1027,6 +1028,7 @@ class ComputedFieldInfo:
     examples: list[Any] | None
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
     repr: bool
+    dependencies: list[str]
 
     @property
     def deprecation_message(self) -> str | None:
@@ -1068,6 +1070,7 @@ def computed_field(
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None = None,
     repr: bool = True,
     return_type: Any = PydanticUndefined,
+    dependencies: Sequence[str] | None = None,
 ) -> typing.Callable[[PropertyT], PropertyT]: ...
 
 
@@ -1089,6 +1092,7 @@ def computed_field(
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None = None,
     repr: bool | None = None,
     return_type: Any = PydanticUndefined,
+    dependencies: Sequence[str] | None = None,
 ) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
     """Usage docs: https://docs.pydantic.dev/2.9/concepts/fields#the-computed_field-decorator
 
@@ -1227,6 +1231,8 @@ def computed_field(
             this must be correct, otherwise a `TypeError` is raised.
             If you don't include a return type Any is used, which does runtime introspection to handle arbitrary
             objects.
+        dependencies: optional list of field names that this computed field depends on. This is only used
+            in the JSON Schema, and as a hint for model consumers.
 
     Returns:
         A proxy wrapper for the property.
@@ -1245,6 +1251,7 @@ def computed_field(
         # if the function isn't already decorated with `@property` (or another descriptor), then we wrap it now
         f = _decorators.ensure_property(f)
         alias_priority = (alias_priority or 2) if alias is not None else None
+        dependencies_ = list(dependencies) if dependencies is not None else []
 
         if repr is None:
             repr_: bool = not _wrapped_property_is_private(property_=f)
@@ -1263,6 +1270,7 @@ def computed_field(
             examples,
             json_schema_extra,
             repr_,
+            dependencies_,
         )
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 

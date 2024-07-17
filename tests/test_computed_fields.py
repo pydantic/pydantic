@@ -795,3 +795,16 @@ def test_computed_field_excluded_from_model_dump_recursive() -> None:
 
     m = Model(bar=42)
     assert m.model_dump() == {'bar': 42, 'id': 'id: {"bar":42}'}
+
+
+def test_computed_field_dependencies():
+    class Model(BaseModel):
+        width: float
+        height: float
+
+        @computed_field(dependencies=['width', 'height'])
+        @property
+        def area(self) -> float:
+            return self.width * self.height
+
+    assert Model.model_computed_fields['area'].dependencies == ['width', 'height']
