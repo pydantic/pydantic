@@ -327,3 +327,21 @@ class Square(BaseModel):
     height: float
 
     free_validator = model_validator(mode='before')(two_dim_shape_validator)
+
+
+class SomeModel(BaseModel):
+    field: int
+
+    @field_validator("field")
+    @classmethod
+    def validate_field(cls, v: int) -> int:
+        return v
+
+
+class OtherModel(BaseModel):
+    field: int
+
+    @field_validator("field")
+    @classmethod
+    def validate_field(cls, v: int) -> int:
+        return SomeModel.validate_field(v)
