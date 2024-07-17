@@ -345,6 +345,7 @@ class PydanticModelField:
         use_alias: bool,
         api: SemanticAnalyzerPluginInterface,
         force_typevars_invariant: bool,
+        is_root_model_root: bool,
     ) -> Argument:
         """Based on mypy.plugins.dataclasses.DataclassAttribute.to_argument."""
         variable = self.to_var(current_info, api, use_alias, force_typevars_invariant)
@@ -353,7 +354,9 @@ class PydanticModelField:
             variable=variable,
             type_annotation=type_annotation,
             initializer=None,
-            kind=ARG_NAMED_OPT if force_optional or self.has_default else ARG_NAMED,
+            kind=ARG_OPT
+            if is_root_model_root
+            else (ARG_NAMED_OPT if force_optional or self.has_default else ARG_NAMED),
         )
 
     def expand_type(
@@ -505,7 +508,7 @@ class PydanticModelTransformer:
 
         is_settings = any(base.fullname == BASESETTINGS_FULLNAME for base in info.mro[:-1])
         self.add_initializer(fields, config, is_settings, is_root_model)
-        self.add_model_construct_method(fields, config, is_settings)
+        self.add_model_construct_method(fields, config, is_settings, is_root_model)
         self.set_frozen(fields, self._api, frozen=config.frozen is True)
 
         self.adjust_decorator_signatures()
@@ -882,6 +885,7 @@ class PydanticModelTransformer:
             requires_dynamic_aliases=requires_dynamic_aliases,
             use_alias=use_alias,
             is_settings=is_settings,
+            is_root_model=is_root_model,
             force_typevars_invariant=True,
         )
 
@@ -910,7 +914,11 @@ class PydanticModelTransformer:
         add_method(self._api, self._cls, '__init__', args=args, return_type=NoneType())
 
     def add_model_construct_method(
-        self, fields: list[PydanticModelField], config: ModelConfigData, is_settings: bool
+        self,
+        fields: list[PydanticModelField],
+        config: ModelConfigData,
+        is_settings: bool,
+        is_root_model: bool,
     ) -> None:
         """Adds a fully typed `model_construct` classmethod to the class.
 
@@ -922,13 +930,18 @@ class PydanticModelTransformer:
         fields_set_argument = Argument(Var('_fields_set', optional_set_str), optional_set_str, None, ARG_OPT)
         with state.strict_optional_set(self._api.options.strict_optional):
             args = self.get_field_arguments(
-                fields, typed=True, requires_dynamic_aliases=False, use_alias=False, is_settings=is_settings
+                fields,
+                typed=True,
+                requires_dynamic_aliases=False,
+                use_alias=False,
+                is_settings=is_settings,
+                is_root_model=is_root_model,
             )
         if not self.should_init_forbid_extra(fields, config):
             var = Var('kwargs')
             args.append(Argument(var, AnyType(TypeOfAny.explicit), None, ARG_STAR2))
 
-        args = [fields_set_argument] + args
+        args = args + [fields_set_argument] if is_root_model else [fields_set_argument] + args
 
         add_method(
             self._api,
@@ -1062,6 +1075,7 @@ class PydanticModelTransformer:
         use_alias: bool,
         requires_dynamic_aliases: bool,
         is_settings: bool,
+        is_root_model: bool,
         force_typevars_invariant: bool = False,
     ) -> list[Argument]:
         """Helper function used during the construction of the `__init__` and `model_construct` method signatures.
@@ -1077,6 +1091,7 @@ class PydanticModelTransformer:
                 use_alias=use_alias,
                 api=self._api,
                 force_typevars_invariant=force_typevars_invariant,
+                is_root_model_root=is_root_model and field.name == 'root',
             )
             for field in fields
             if not (use_alias and field.has_dynamic_alias)
