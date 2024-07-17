@@ -1645,6 +1645,23 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Adding sources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#accesing-the-result-of-previous-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Accesing the result of previous sources
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -4111,6 +4128,23 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Adding sources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#accesing-the-result-of-previous-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Accesing the result of previous sources
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -4639,7 +4673,7 @@ variables</a> but using a Pydantic settings CLI:</p>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 <p>To enable CLI parsing, we simply set the <code>cli_parse_args</code> flag to a valid value, which retains similar conotations as
-defined in <code>argparse</code>. Alternatively, we can also directly provided the args to parse at time of instantiation:</p>
+defined in <code>argparse</code>. Alternatively, we can also directly provide the args to parse at time of instantiation:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
 
 
@@ -4722,7 +4756,7 @@ is customised</a>:</p>
 </ul>
 <p>These can be used in conjunction with list forms as well, e.g:</p>
 <ul>
-<li><code>--field k1=1,k2=2 --field k3=3 --field '{"k4: 4}'</code> etc.</li>
+<li><code>--field k1=1,k2=2 --field k3=3 --field '{"k4": 4}'</code> etc.</li>
 </ul>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
@@ -4767,7 +4801,7 @@ is customised</a>:</p>
 <span class="c1">#&gt; {&#39;fruit&#39;: &lt;Fruit.lime: 2&gt;, &#39;pet&#39;: &#39;cat&#39;}</span>
 </code></pre></div>
 <h4 id="aliases">Aliases<a class="headerlink" href="#aliases" title="Permanent link">&para;</a></h4>
-<p>Pydantic field aliases are added as CLI argument aliases.</p>
+<p>Pydantic field aliases are added as CLI argument aliases. Aliases of length one are converted into short options.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">sys</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AliasChoices</span><span class="p">,</span> <span class="n">AliasPath</span><span class="p">,</span> <span class="n">Field</span>
@@ -4777,12 +4811,18 @@ is customised</a>:</p>
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">,</span> <span class="n">cli_parse_args</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
     <span class="n">first_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;fname&#39;</span><span class="p">,</span> <span class="n">AliasPath</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="s1">&#39;fname&#39;</span><span class="p">,</span> <span class="n">AliasPath</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
     <span class="p">)</span>
-    <span class="n">last_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;lname&#39;</span><span class="p">,</span> <span class="n">AliasPath</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+    <span class="n">last_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;l&#39;</span><span class="p">,</span> <span class="s1">&#39;lname&#39;</span><span class="p">,</span> <span class="n">AliasPath</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="p">)</span>
 
 
 <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;--fname&#39;</span><span class="p">,</span> <span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="s1">&#39;--lname&#39;</span><span class="p">,</span> <span class="s1">&#39;Doe&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">User</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;first_name&#39;: &#39;John&#39;, &#39;last_name&#39;: &#39;Doe&#39;}</span>
+
+<span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;-f&#39;</span><span class="p">,</span> <span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="s1">&#39;-l&#39;</span><span class="p">,</span> <span class="s1">&#39;Doe&#39;</span><span class="p">]</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">User</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="c1">#&gt; {&#39;first_name&#39;: &#39;John&#39;, &#39;last_name&#39;: &#39;Doe&#39;}</span>
 
@@ -5494,6 +5534,32 @@ need to add your own custom sources, <code>settings_customise_sources</code> mak
 
 <span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">())</span>
 <span class="c1">#&gt; foobar=&#39;test&#39;</span>
+</code></pre></div>
+<h4 id="accesing-the-result-of-previous-sources">Accesing the result of previous sources<a class="headerlink" href="#accesing-the-result-of-previous-sources" title="Permanent link">&para;</a></h4>
+<p>Each source of settings can access the output of the previous ones.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">from</span> <span class="nn">pydantic.fields</span> <span class="kn">import</span> <span class="n">FieldInfo</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">PydanticBaseSettingsSource</span>
+
+
+<span class="k">class</span> <span class="nc">MyCustomSource</span><span class="p">(</span><span class="n">PydanticBaseSettingsSource</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_field_value</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="n">FieldInfo</span><span class="p">,</span> <span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span> <span class="o">...</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="c1"># Retrieve the aggregated settings from previous sources</span>
+        <span class="n">current_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_state</span>
+        <span class="n">current_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;some_setting&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Retrive settings from all sources individually</span>
+        <span class="c1"># self.settings_sources_data[&quot;SettingsSourceName&quot;]: Dict[str, Any]</span>
+        <span class="n">settings_sources_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings_sources_data</span>
+        <span class="n">settings_sources_data</span><span class="p">[</span><span class="s1">&#39;SomeSettingsSource&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;some_setting&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Your code here...</span>
 </code></pre></div>
 <h3 id="removing-sources">Removing sources<a class="headerlink" href="#removing-sources" title="Permanent link">&para;</a></h3>
 <p>You might also want to disable a source:</p>

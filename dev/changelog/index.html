@@ -9129,6 +9129,7 @@ is desired, you can switch to <code>left-to-right</code> mode and change the ord
 <li>Fix usage of <code>PlainSerializer</code> with builtin types by <a href="https://github.com/Viicos">@Viicos</a> in <a href="https://github.com/pydantic/pydantic/pull/9450">#9450</a></li>
 <li>Add more robust custom validation examples by <a href="https://github.com/ChrisPappalardo">@ChrisPappalardo</a> in <a href="https://github.com/pydantic/pydantic/pull/9468">#9468</a></li>
 <li>Fix ignored <code>strict</code> specification for <code>StringConstraint(strict=False)</code> by <a href="https://github.com/vbmendes">@vbmendes</a> in <a href="https://github.com/pydantic/pydantic/pull/9476">#9476</a></li>
+<li><strong>Breaking Change:</strong> Use PEP 570 syntax by <a href="https://github.com/Viicos">@Viicos</a> in <a href="https://github.com/pydantic/pydantic/pull/9479">#9479</a></li>
 <li>Use <code>Self</code> where possible by <a href="https://github.com/Viicos">@Viicos</a> in <a href="https://github.com/pydantic/pydantic/pull/9479">#9479</a></li>
 <li>Do not alter <code>RootModel.model_construct</code> signature in the <code>mypy</code> plugin by <a href="https://github.com/Viicos">@Viicos</a> in <a href="https://github.com/pydantic/pydantic/pull/9480">#9480</a></li>
 <li>Fixed type hint of <code>validation_context</code> by <a href="https://github.com/OhioDschungel6">@OhioDschungel6</a> in <a href="https://github.com/pydantic/pydantic/pull/9508">#9508</a></li>
@@ -9304,7 +9305,7 @@ is desired, you can switch to <code>left-to-right</code> mode and change the ord
 <ul>
 <li>Correct docs, logic for <code>model_construct</code> behavior with <code>extra</code> by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in <a href="https://github.com/pydantic/pydantic/pull/8807">#8807</a></li>
 <li>Improve error message for improper <code>RootModel</code> subclasses by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in <a href="https://github.com/pydantic/pydantic/pull/8857">#8857</a></li>
-<li>Use <code>PEP570</code> syntax by <a href="https://github.com/Viicos">@Viicos</a> in <a href="https://github.com/pydantic/pydantic/pull/8940">#8940</a></li>
+<li><strong>Breaking Change:</strong> Use <code>PEP570</code> syntax by <a href="https://github.com/Viicos">@Viicos</a> in <a href="https://github.com/pydantic/pydantic/pull/8940">#8940</a></li>
 <li>Add <code>enum</code> and <code>type</code> to the JSON schema for single item literals by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/8944">#8944</a></li>
 <li>Deprecate <code>update_json_schema</code> internal function by <a href="https://github.com/sydney-runkle">@sydney-runkle</a> in <a href="https://github.com/pydantic/pydantic/pull/9125">#9125</a></li>
 <li>Serialize duration to hour minute second, instead of just seconds by <a href="https://github.com/kakilangit">@kakilangit</a> in <a href="https://github.com/pydantic/speedate/pull/50">pydantic/speedate#50</a></li>
