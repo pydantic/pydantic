@@ -1,3 +1,7 @@
+from dataclasses import dataclass
+from enum import Enum
+from typing import Literal, Union
+
 import pytest
 
 from pydantic_core import SchemaError, SchemaSerializer, core_schema
@@ -71,3 +75,75 @@ def test_bool_literal():
     assert s.to_python(False, mode='json') is False
     assert s.to_python(True) is True
     assert s.to_json(False) == b'false'
+
+
+def test_literal_with_enum() -> None:
+    class SomeEnum(str, Enum):
+        CAT = 'cat'
+        DOG = 'dog'
+
+    @dataclass
+    class Dog:
+        name: str
+        type: Literal[SomeEnum.DOG] = SomeEnum.DOG
+
+    @dataclass
+    class Cat:
+        name: str
+        type: Literal[SomeEnum.CAT] = SomeEnum.CAT
+
+    @dataclass
+    class Yard:
+        pet: Union[Dog, Cat]
+
+    serializer = SchemaSerializer(
+        core_schema.model_schema(
+            cls=Yard,
+            schema=core_schema.model_fields_schema(
+                fields={
+                    'pet': core_schema.model_field(
+                        schema=core_schema.tagged_union_schema(
+                            choices={
+                                SomeEnum.DOG: core_schema.model_schema(
+                                    cls=Dog,
+                                    schema=core_schema.model_fields_schema(
+                                        fields={
+                                            'type': core_schema.model_field(
+                                                schema=core_schema.with_default_schema(
+                                                    schema=core_schema.literal_schema([SomeEnum.DOG]),
+                                                    default=SomeEnum.DOG,
+                                                )
+                                            ),
+                                            'name': core_schema.model_field(schema=core_schema.str_schema()),
+                                        },
+                                        model_name='Dog',
+                                    ),
+                                ),
+                                SomeEnum.CAT: core_schema.model_schema(
+                                    cls=Cat,
+                                    schema=core_schema.model_fields_schema(
+                                        fields={
+                                            'type': core_schema.model_field(
+                                                schema=core_schema.with_default_schema(
+                                                    schema=core_schema.literal_schema([SomeEnum.CAT]),
+                                                    default=SomeEnum.CAT,
+                                                )
+                                            ),
+                                            'name': core_schema.model_field(schema=core_schema.str_schema()),
+                                        },
+                                        model_name='Cat',
+                                    ),
+                                ),
+                            },
+                            discriminator='type',
+                            strict=False,
+                            from_attributes=True,
+                        )
+                    )
+                }
+            ),
+        )
+    )
+
+    yard = Yard(pet=Dog(name='Rex'))
+    assert serializer.to_python(yard, mode='json') == {'pet': {'type': 'dog', 'name': 'Rex'}}
