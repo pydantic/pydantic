@@ -262,10 +262,9 @@ if TYPE_CHECKING:
 
     _V2BeforeAfterOrPlainValidatorType = TypeVar(
         '_V2BeforeAfterOrPlainValidatorType',
-        _V2Validator,
-        _PartialClsOrStaticMethod,
+        bound=Union[_V2Validator, _PartialClsOrStaticMethod],
     )
-    _V2WrapValidatorType = TypeVar('_V2WrapValidatorType', _V2WrapValidator, _PartialClsOrStaticMethod)
+    _V2WrapValidatorType = TypeVar('_V2WrapValidatorType', bound=Union[_V2WrapValidator, _PartialClsOrStaticMethod])
 
 
 @overload
