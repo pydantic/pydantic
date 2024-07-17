@@ -310,5 +310,5 @@ class Foo(BaseModel):
     pass
 
 
-class Bar(Foo, RootModel):
+class Bar(Foo, RootModel[int]):
     pass
