@@ -5,7 +5,6 @@ import dataclasses
 import sys
 import types
 from typing import TYPE_CHECKING, Any, Callable, Generic, NoReturn, TypeVar, overload
-
 from typing_extensions import Literal, TypeGuard, dataclass_transform
 
 from ._internal import _config, _decorators, _typing_extra
@@ -142,7 +141,10 @@ def dataclass(  # noqa: C901
     assert init is False, 'pydantic.dataclasses.dataclass only supports init=False'
     assert validate_on_init is not False, 'validate_on_init=False is no longer supported'
 
-    kwargs = {'kw_only': kw_only, 'slots': slots} if sys.version_info >= (3, 10) else {}
+    if sys.version_info >= (3, 10):
+        kwargs = dict(kw_only=kw_only, slots=slots)
+    else:
+        kwargs = {}
 
     def make_pydantic_fields_compatible(cls: type[Any]) -> None:
         """Make sure that stdlib `dataclasses` understands `Field` kwargs like `kw_only`
