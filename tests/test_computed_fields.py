@@ -151,6 +151,7 @@ def test_computed_fields_set():
     assert s.model_dump() == {'side': 10.0, 'area': 100.0, 'area_string': '100.0 SQUARE UNITS'}
     s.area = 64
     assert s.model_dump() == {'side': 8.0, 'area': 64.0, 'area_string': '64.0 SQUARE UNITS'}
+    assert Square.model_computed_fields['area'].wrapped_property is Square.area
 
 
 def test_computed_fields_del():
