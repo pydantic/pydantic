@@ -277,7 +277,7 @@ impl Pattern {
         match &self.engine {
             RegexEngine::RustRegex(regex) => Ok(regex.is_match(target)),
             RegexEngine::PythonRe(py_regex) => {
-                Ok(!py_regex.call_method1(py, intern!(py, "match"), (target,))?.is_none(py))
+                Ok(!py_regex.call_method1(py, intern!(py, "search"), (target,))?.is_none(py))
             }
         }
     }
