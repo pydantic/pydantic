@@ -3,7 +3,7 @@ from typing import Any, ClassVar, Generic, List, Optional, TypeVar, Union
 
 from typing_extensions import Self
 
-from pydantic import BaseModel, ConfigDict, Field, create_model, field_validator, model_validator, validator
+from pydantic import BaseModel, ConfigDict, Field, RootModel, create_model, field_validator, model_validator, validator
 from pydantic.dataclasses import dataclass
 
 
@@ -311,3 +311,11 @@ m = OuterModel()
 if m.my_var is None:
     # In https://github.com/pydantic/pydantic/issues/7399, this was unreachable
     print('not unreachable')
+
+
+class Foo(BaseModel):
+    pass
+
+
+class Bar(Foo, RootModel[int]):
+    pass
