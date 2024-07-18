@@ -18,7 +18,8 @@ from pydantic_core import PydanticUndefined
 from typing_extensions import Literal, TypeAlias, Unpack, deprecated
 
 from . import types
-from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils
+from ._internal import (_decorators, _fields, _generics, _internal_dataclass,
+                        _repr, _typing_extra, _utils)
 from .aliases import AliasChoices, AliasPath
 from .config import JsonDict
 from .errors import PydanticUserError
@@ -31,7 +32,7 @@ else:
     # and https://youtrack.jetbrains.com/issue/PY-51428
     DeprecationWarning = PydanticDeprecatedSince20
 
-__all__ = 'Field', 'PrivateAttr', 'computed_field'
+__all__ = "Field", "PrivateAttr", "computed_field"
 
 
 _Unset: Any = PydanticUndefined
@@ -70,7 +71,7 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     allow_inf_nan: bool | None
     max_digits: int | None
     decimal_places: int | None
-    union_mode: Literal['smart', 'left_to_right'] | None
+    union_mode: Literal["smart", "left_to_right"] | None
     discriminator: str | types.Discriminator | None
     deprecated: Deprecated | str | bool | None
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
@@ -150,49 +151,49 @@ class FieldInfo(_repr.Representation):
     metadata: list[Any]
 
     __slots__ = (
-        'annotation',
-        'default',
-        'default_factory',
-        'alias',
-        'alias_priority',
-        'validation_alias',
-        'serialization_alias',
-        'title',
-        'field_title_generator',
-        'description',
-        'examples',
-        'exclude',
-        'discriminator',
-        'deprecated',
-        'json_schema_extra',
-        'frozen',
-        'validate_default',
-        'repr',
-        'init',
-        'init_var',
-        'kw_only',
-        'metadata',
-        '_attributes_set',
+        "annotation",
+        "default",
+        "default_factory",
+        "alias",
+        "alias_priority",
+        "validation_alias",
+        "serialization_alias",
+        "title",
+        "field_title_generator",
+        "description",
+        "examples",
+        "exclude",
+        "discriminator",
+        "deprecated",
+        "json_schema_extra",
+        "frozen",
+        "validate_default",
+        "repr",
+        "init",
+        "init_var",
+        "kw_only",
+        "metadata",
+        "_attributes_set",
     )
 
     # used to convert kwargs to metadata/constraints,
     # None has a special meaning - these items are collected into a `PydanticGeneralMetadata`
     metadata_lookup: ClassVar[dict[str, typing.Callable[[Any], Any] | None]] = {
-        'strict': types.Strict,
-        'gt': annotated_types.Gt,
-        'ge': annotated_types.Ge,
-        'lt': annotated_types.Lt,
-        'le': annotated_types.Le,
-        'multiple_of': annotated_types.MultipleOf,
-        'min_length': annotated_types.MinLen,
-        'max_length': annotated_types.MaxLen,
-        'pattern': None,
-        'allow_inf_nan': None,
-        'max_digits': None,
-        'decimal_places': None,
-        'union_mode': None,
-        'coerce_numbers_to_str': None,
-        'fail_fast': types.FailFast,
+        "strict": types.Strict,
+        "gt": annotated_types.Gt,
+        "ge": annotated_types.Ge,
+        "lt": annotated_types.Lt,
+        "le": annotated_types.Le,
+        "multiple_of": annotated_types.MultipleOf,
+        "min_length": annotated_types.MinLen,
+        "max_length": annotated_types.MaxLen,
+        "pattern": None,
+        "allow_inf_nan": None,
+        "max_digits": None,
+        "decimal_places": None,
+        "union_mode": None,
+        "coerce_numbers_to_str": None,
+        "fail_fast": types.FailFast,
     }
 
     def __init__(self, **kwargs: Unpack[_FieldInfoInputs]) -> None:
@@ -203,45 +204,54 @@ class FieldInfo(_repr.Representation):
         """
         self._attributes_set = {k: v for k, v in kwargs.items() if v is not _Unset}
         kwargs = {k: _DefaultValues.get(k) if v is _Unset else v for k, v in kwargs.items()}  # type: ignore
-        self.annotation, annotation_metadata = self._extract_metadata(kwargs.get('annotation'))
+        self.annotation, annotation_metadata = self._extract_metadata(
+            kwargs.get("annotation")
+        )
 
-        default = kwargs.pop('default', PydanticUndefined)
+        default = kwargs.pop("default", PydanticUndefined)
         if default is Ellipsis:
             self.default = PydanticUndefined
         else:
             self.default = default
 
-        self.default_factory = kwargs.pop('default_factory', None)
+        self.default_factory = kwargs.pop("default_factory", None)
 
         if self.default is not PydanticUndefined and self.default_factory is not None:
-            raise TypeError('cannot specify both default and default_factory')
+            raise TypeError("cannot specify both default and default_factory")
 
-        self.alias = kwargs.pop('alias', None)
-        self.validation_alias = kwargs.pop('validation_alias', None)
-        self.serialization_alias = kwargs.pop('serialization_alias', None)
-        alias_is_set = any(alias is not None for alias in (self.alias, self.validation_alias, self.serialization_alias))
-        self.alias_priority = kwargs.pop('alias_priority', None) or 2 if alias_is_set else None
-        self.title = kwargs.pop('title', None)
-        self.field_title_generator = kwargs.pop('field_title_generator', None)
-        self.description = kwargs.pop('description', None)
-        self.examples = kwargs.pop('examples', None)
-        self.exclude = kwargs.pop('exclude', None)
-        self.discriminator = kwargs.pop('discriminator', None)
+        self.alias = kwargs.pop("alias", None)
+        self.validation_alias = kwargs.pop("validation_alias", None)
+        self.serialization_alias = kwargs.pop("serialization_alias", None)
+        alias_is_set = any(
+            alias is not None
+            for alias in (self.alias, self.validation_alias, self.serialization_alias)
+        )
+        self.alias_priority = (
+            kwargs.pop("alias_priority", None) or 2 if alias_is_set else None
+        )
+        self.title = kwargs.pop("title", None)
+        self.field_title_generator = kwargs.pop("field_title_generator", None)
+        self.description = kwargs.pop("description", None)
+        self.examples = kwargs.pop("examples", None)
+        self.exclude = kwargs.pop("exclude", None)
+        self.discriminator = kwargs.pop("discriminator", None)
         # For compatibility with FastAPI<=0.110.0, we preserve the existing value if it is not overridden
-        self.deprecated = kwargs.pop('deprecated', getattr(self, 'deprecated', None))
-        self.repr = kwargs.pop('repr', True)
-        self.json_schema_extra = kwargs.pop('json_schema_extra', None)
-        self.validate_default = kwargs.pop('validate_default', None)
-        self.frozen = kwargs.pop('frozen', None)
+        self.deprecated = kwargs.pop("deprecated", getattr(self, "deprecated", None))
+        self.repr = kwargs.pop("repr", True)
+        self.json_schema_extra = kwargs.pop("json_schema_extra", None)
+        self.validate_default = kwargs.pop("validate_default", None)
+        self.frozen = kwargs.pop("frozen", None)
         # currently only used on dataclasses
-        self.init = kwargs.pop('init', None)
-        self.init_var = kwargs.pop('init_var', None)
-        self.kw_only = kwargs.pop('kw_only', None)
+        self.init = kwargs.pop("init", None)
+        self.init_var = kwargs.pop("init_var", None)
+        self.kw_only = kwargs.pop("kw_only", None)
 
         self.metadata = self._collect_metadata(kwargs) + annotation_metadata  # type: ignore
 
     @staticmethod
-    def from_field(default: Any = PydanticUndefined, **kwargs: Unpack[_FromFieldInfoInputs]) -> FieldInfo:
+    def from_field(
+        default: Any = PydanticUndefined, **kwargs: Unpack[_FromFieldInfoInputs]
+    ) -> FieldInfo:
         """Create a new `FieldInfo` object with the `Field` function.
 
         Args:
@@ -264,7 +274,7 @@ class FieldInfo(_repr.Representation):
                 foo: int = pydantic.Field(4)
             ```
         """
-        if 'annotation' in kwargs:
+        if "annotation" in kwargs:
             raise TypeError('"annotation" is not permitted as a Field keyword argument')
         return FieldInfo(default=default, **kwargs)
 
@@ -312,7 +322,9 @@ class FieldInfo(_repr.Representation):
             if _typing_extra.is_finalvar(first_arg):
                 final = True
             field_info_annotations = [a for a in extra_args if isinstance(a, FieldInfo)]
-            field_info = FieldInfo.merge_field_infos(*field_info_annotations, annotation=first_arg)
+            field_info = FieldInfo.merge_field_infos(
+                *field_info_annotations, annotation=first_arg
+            )
             if field_info:
                 new_field_info = copy(field_info)
                 new_field_info.annotation = first_arg
@@ -328,7 +340,9 @@ class FieldInfo(_repr.Representation):
                 new_field_info.metadata = metadata
                 return new_field_info
 
-        return FieldInfo(annotation=annotation, frozen=final or None)  # pyright: ignore[reportArgumentType]
+        return FieldInfo(
+            annotation=annotation, frozen=final or None
+        )  # pyright: ignore[reportArgumentType]
 
     @staticmethod
     def from_annotated_attribute(annotation: type[Any], default: Any) -> FieldInfo:
@@ -357,9 +371,9 @@ class FieldInfo(_repr.Representation):
         """
         if annotation is default:
             raise PydanticUserError(
-                'Error when building FieldInfo from annotated attribute. '
+                "Error when building FieldInfo from annotated attribute. "
                 "Make sure you don't have any field name clashing with a type annotation ",
-                code='unevaluable-type-annotation',
+                code="unevaluable-type-annotation",
             )
 
         final = False
@@ -369,10 +383,14 @@ class FieldInfo(_repr.Representation):
                 annotation = typing_extensions.get_args(annotation)[0]
 
         if isinstance(default, FieldInfo):
-            default.annotation, annotation_metadata = FieldInfo._extract_metadata(annotation)  # pyright: ignore[reportArgumentType]
+            default.annotation, annotation_metadata = FieldInfo._extract_metadata(
+                annotation
+            )  # pyright: ignore[reportArgumentType]
             default.metadata += annotation_metadata
             default = default.merge_field_infos(
-                *[x for x in annotation_metadata if isinstance(x, FieldInfo)], default, annotation=default.annotation
+                *[x for x in annotation_metadata if isinstance(x, FieldInfo)],
+                default,
+                annotation=default.annotation,
             )
             default.frozen = final or default.frozen
             return default
@@ -385,7 +403,9 @@ class FieldInfo(_repr.Representation):
                 init_var = True
                 annotation = annotation.type
             pydantic_field = FieldInfo._from_dataclass_field(default)
-            pydantic_field.annotation, annotation_metadata = FieldInfo._extract_metadata(annotation)  # pyright: ignore[reportArgumentType]
+            pydantic_field.annotation, annotation_metadata = (
+                FieldInfo._extract_metadata(annotation)
+            )  # pyright: ignore[reportArgumentType]
             pydantic_field.metadata += annotation_metadata
             pydantic_field = pydantic_field.merge_field_infos(
                 *[x for x in annotation_metadata if isinstance(x, FieldInfo)],
@@ -394,14 +414,16 @@ class FieldInfo(_repr.Representation):
             )
             pydantic_field.frozen = final or pydantic_field.frozen
             pydantic_field.init_var = init_var
-            pydantic_field.init = getattr(default, 'init', None)
-            pydantic_field.kw_only = getattr(default, 'kw_only', None)
+            pydantic_field.init = getattr(default, "init", None)
+            pydantic_field.kw_only = getattr(default, "kw_only", None)
             return pydantic_field
         else:
             if _typing_extra.is_annotated(annotation):
                 first_arg, *extra_args = typing_extensions.get_args(annotation)
                 field_infos = [a for a in extra_args if isinstance(a, FieldInfo)]
-                field_info = FieldInfo.merge_field_infos(*field_infos, annotation=first_arg, default=default)
+                field_info = FieldInfo.merge_field_infos(
+                    *field_infos, annotation=first_arg, default=default
+                )
                 metadata: list[Any] = []
                 for a in extra_args:
                     if _typing_extra.is_deprecated_instance(a):
@@ -413,7 +435,9 @@ class FieldInfo(_repr.Representation):
                 field_info.metadata = metadata
                 return field_info
 
-            return FieldInfo(annotation=annotation, default=default, frozen=final or None)  # pyright: ignore[reportArgumentType]
+            return FieldInfo(
+                annotation=annotation, default=default, frozen=final or None
+            )  # pyright: ignore[reportArgumentType]
 
     @staticmethod
     def merge_field_infos(*field_infos: FieldInfo, **overrides: Any) -> FieldInfo:
@@ -426,7 +450,9 @@ class FieldInfo(_repr.Representation):
         """
         flattened_field_infos: list[FieldInfo] = []
         for field_info in field_infos:
-            flattened_field_infos.extend(x for x in field_info.metadata if isinstance(x, FieldInfo))
+            flattened_field_infos.extend(
+                x for x in field_info.metadata if isinstance(x, FieldInfo)
+            )
             flattened_field_infos.append(field_info)
         field_infos = tuple(flattened_field_infos)
         if len(field_infos) == 1:
@@ -434,7 +460,7 @@ class FieldInfo(_repr.Representation):
             field_info = copy(field_infos[0])
             field_info._attributes_set.update(overrides)
 
-            default_override = overrides.pop('default', PydanticUndefined)
+            default_override = overrides.pop("default", PydanticUndefined)
             if default_override is Ellipsis:
                 default_override = PydanticUndefined
             if default_override is not PydanticUndefined:
@@ -450,14 +476,21 @@ class FieldInfo(_repr.Representation):
             attributes_set = field_info._attributes_set.copy()
 
             try:
-                json_schema_extra = attributes_set.pop('json_schema_extra')
-                existing_json_schema_extra = merged_field_info_kwargs.get('json_schema_extra', {})
+                json_schema_extra = attributes_set.pop("json_schema_extra")
+                existing_json_schema_extra = merged_field_info_kwargs.get(
+                    "json_schema_extra", {}
+                )
 
-                if isinstance(existing_json_schema_extra, dict) and isinstance(json_schema_extra, dict):
-                    merged_field_info_kwargs['json_schema_extra'] = {**existing_json_schema_extra, **json_schema_extra}
+                if isinstance(existing_json_schema_extra, dict) and isinstance(
+                    json_schema_extra, dict
+                ):
+                    merged_field_info_kwargs["json_schema_extra"] = {
+                        **existing_json_schema_extra,
+                        **json_schema_extra,
+                    }
                 else:
                     # if ever there's a case of a callable, we'll just keep the last json schema extra spec
-                    merged_field_info_kwargs['json_schema_extra'] = json_schema_extra
+                    merged_field_info_kwargs["json_schema_extra"] = json_schema_extra
             except KeyError:
                 pass
 
@@ -496,11 +529,20 @@ class FieldInfo(_repr.Representation):
             default_factory = dc_field.default_factory
 
         # use the `Field` function so in correct kwargs raise the correct `TypeError`
-        dc_field_metadata = {k: v for k, v in dc_field.metadata.items() if k in _FIELD_ARG_NAMES}
-        return Field(default=default, default_factory=default_factory, repr=dc_field.repr, **dc_field_metadata)
+        dc_field_metadata = {
+            k: v for k, v in dc_field.metadata.items() if k in _FIELD_ARG_NAMES
+        }
+        return Field(
+            default=default,
+            default_factory=default_factory,
+            repr=dc_field.repr,
+            **dc_field_metadata,
+        )
 
     @staticmethod
-    def _extract_metadata(annotation: type[Any] | None) -> tuple[type[Any] | None, list[Any]]:
+    def _extract_metadata(
+        annotation: type[Any] | None,
+    ) -> tuple[type[Any] | None, list[Any]]:
         """Tries to extract metadata/constraints from an annotation if it uses `Annotated`.
 
         Args:
@@ -551,8 +593,12 @@ class FieldInfo(_repr.Representation):
         if self.deprecated is None:
             return None
         if isinstance(self.deprecated, bool):
-            return 'deprecated' if self.deprecated else None
-        return self.deprecated if isinstance(self.deprecated, str) else self.deprecated.message
+            return "deprecated" if self.deprecated else None
+        return (
+            self.deprecated
+            if isinstance(self.deprecated, str)
+            else self.deprecated.message
+        )
 
     def get_default(self, *, call_default_factory: bool = False) -> Any:
         """Get the default value.
@@ -601,7 +647,11 @@ class FieldInfo(_repr.Representation):
             # Annotated arguments must be a tuple
             return typing_extensions.Annotated[(self.annotation, *self.metadata)]  # type: ignore
 
-    def apply_typevars_map(self, typevars_map: dict[Any, Any] | None, types_namespace: dict[str, Any] | None) -> None:
+    def apply_typevars_map(
+        self,
+        typevars_map: dict[Any, Any] | None,
+        types_namespace: dict[str, Any] | None,
+    ) -> None:
         """Apply a `typevars_map` to the annotation.
 
         This method is used when analyzing parametrized generic types to replace typevars with their concrete types.
@@ -620,28 +670,30 @@ class FieldInfo(_repr.Representation):
         self.annotation = _generics.replace_types(annotation, typevars_map)
 
     def __repr_args__(self) -> ReprArgs:
-        yield 'annotation', _repr.PlainRepr(_repr.display_as_type(self.annotation))
-        yield 'required', self.is_required()
+        yield "annotation", _repr.PlainRepr(_repr.display_as_type(self.annotation))
+        yield "required", self.is_required()
 
         for s in self.__slots__:
-            if s == '_attributes_set':
+            if s == "_attributes_set":
                 continue
-            if s == 'annotation':
+            if s == "annotation":
                 continue
-            elif s == 'metadata' and not self.metadata:
+            elif s == "metadata" and not self.metadata:
                 continue
-            elif s == 'repr' and self.repr is True:
+            elif s == "repr" and self.repr is True:
                 continue
-            if s == 'frozen' and self.frozen is False:
+            if s == "frozen" and self.frozen is False:
                 continue
-            if s == 'validation_alias' and self.validation_alias == self.alias:
+            if s == "validation_alias" and self.validation_alias == self.alias:
                 continue
-            if s == 'serialization_alias' and self.serialization_alias == self.alias:
+            if s == "serialization_alias" and self.serialization_alias == self.alias:
                 continue
-            if s == 'default' and self.default is not PydanticUndefined:
-                yield 'default', self.default
-            elif s == 'default_factory' and self.default_factory is not None:
-                yield 'default_factory', _repr.PlainRepr(_repr.display_as_type(self.default_factory))
+            if s == "default" and self.default is not PydanticUndefined:
+                yield "default", self.default
+            elif s == "default_factory" and self.default_factory is not None:
+                yield "default_factory", _repr.PlainRepr(
+                    _repr.display_as_type(self.default_factory)
+                )
             else:
                 value = getattr(self, s)
                 if value is not None and value is not PydanticUndefined:
@@ -696,7 +748,9 @@ def Field(  # noqa: C901
     validation_alias: str | AliasPath | AliasChoices | None = _Unset,
     serialization_alias: str | None = _Unset,
     title: str | None = _Unset,
-    field_title_generator: typing_extensions.Callable[[str, FieldInfo], str] | None = _Unset,
+    field_title_generator: (
+        typing_extensions.Callable[[str, FieldInfo], str] | None
+    ) = _Unset,
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
@@ -722,7 +776,7 @@ def Field(  # noqa: C901
     decimal_places: int | None = _Unset,
     min_length: int | None = _Unset,
     max_length: int | None = _Unset,
-    union_mode: Literal['smart', 'left_to_right'] = _Unset,
+    union_mode: Literal["smart", "left_to_right"] = _Unset,
     fail_fast: bool | None = _Unset,
     **extra: Unpack[_EmptyKwargs],
 ) -> Any:
@@ -791,46 +845,59 @@ def Field(  # noqa: C901
             type-annotated fields without causing a type error.
     """
     # Check deprecated and removed params from V1. This logic should eventually be removed.
-    const = extra.pop('const', None)  # type: ignore
+    const = extra.pop("const", None)  # type: ignore
     if const is not None:
-        raise PydanticUserError('`const` is removed, use `Literal` instead', code='removed-kwargs')
+        raise PydanticUserError(
+            "`const` is removed, use `Literal` instead", code="removed-kwargs"
+        )
 
-    min_items = extra.pop('min_items', None)  # type: ignore
+    min_items = extra.pop("min_items", None)  # type: ignore
     if min_items is not None:
-        warn('`min_items` is deprecated and will be removed, use `min_length` instead', DeprecationWarning)
+        warn(
+            "`min_items` is deprecated and will be removed, use `min_length` instead",
+            DeprecationWarning,
+        )
         if min_length in (None, _Unset):
             min_length = min_items  # type: ignore
 
-    max_items = extra.pop('max_items', None)  # type: ignore
+    max_items = extra.pop("max_items", None)  # type: ignore
     if max_items is not None:
-        warn('`max_items` is deprecated and will be removed, use `max_length` instead', DeprecationWarning)
+        warn(
+            "`max_items` is deprecated and will be removed, use `max_length` instead",
+            DeprecationWarning,
+        )
         if max_length in (None, _Unset):
             max_length = max_items  # type: ignore
 
-    unique_items = extra.pop('unique_items', None)  # type: ignore
+    unique_items = extra.pop("unique_items", None)  # type: ignore
     if unique_items is not None:
         raise PydanticUserError(
             (
-                '`unique_items` is removed, use `Set` instead'
-                '(this feature is discussed in https://github.com/pydantic/pydantic-core/issues/296)'
+                "`unique_items` is removed, use `Set` instead"
+                "(this feature is discussed in https://github.com/pydantic/pydantic-core/issues/296)"
             ),
-            code='removed-kwargs',
+            code="removed-kwargs",
         )
 
-    allow_mutation = extra.pop('allow_mutation', None)  # type: ignore
+    allow_mutation = extra.pop("allow_mutation", None)  # type: ignore
     if allow_mutation is not None:
-        warn('`allow_mutation` is deprecated and will be removed. use `frozen` instead', DeprecationWarning)
+        warn(
+            "`allow_mutation` is deprecated and will be removed. use `frozen` instead",
+            DeprecationWarning,
+        )
         if allow_mutation is False:
             frozen = True
 
-    regex = extra.pop('regex', None)  # type: ignore
+    regex = extra.pop("regex", None)  # type: ignore
     if regex is not None:
-        raise PydanticUserError('`regex` is removed. use `pattern` instead', code='removed-kwargs')
+        raise PydanticUserError(
+            "`regex` is removed. use `pattern` instead", code="removed-kwargs"
+        )
 
     if extra:
         warn(
-            'Using extra keyword arguments on `Field` is deprecated and will be removed.'
-            ' Use `json_schema_extra` instead.'
+            "Using extra keyword arguments on `Field` is deprecated and will be removed."
+            " Use `json_schema_extra` instead."
             f' (Extra keys: {", ".join(k.__repr__() for k in extra.keys())})',
             DeprecationWarning,
         )
@@ -842,7 +909,9 @@ def Field(  # noqa: C901
         and validation_alias is not _Unset
         and not isinstance(validation_alias, (str, AliasChoices, AliasPath))
     ):
-        raise TypeError('Invalid `validation_alias` type. it should be `str`, `AliasChoices`, or `AliasPath`')
+        raise TypeError(
+            "Invalid `validation_alias` type. it should be `str`, `AliasChoices`, or `AliasPath`"
+        )
 
     if serialization_alias in (_Unset, None) and isinstance(alias, str):
         serialization_alias = alias
@@ -850,9 +919,12 @@ def Field(  # noqa: C901
     if validation_alias in (_Unset, None):
         validation_alias = alias
 
-    include = extra.pop('include', None)  # type: ignore
+    include = extra.pop("include", None)  # type: ignore
     if include is not None:
-        warn('`include` is deprecated and does nothing. It will be removed, use `exclude` instead', DeprecationWarning)
+        warn(
+            "`include` is deprecated and does nothing. It will be removed, use `exclude` instead",
+            DeprecationWarning,
+        )
 
     return FieldInfo.from_field(
         default,
@@ -894,7 +966,7 @@ def Field(  # noqa: C901
 
 
 _FIELD_ARG_NAMES = set(inspect.signature(Field).parameters)
-_FIELD_ARG_NAMES.remove('extra')  # do not include the varkwargs parameter
+_FIELD_ARG_NAMES.remove("extra")  # do not include the varkwargs parameter
 
 
 class ModelPrivateAttr(_repr.Representation):
@@ -910,10 +982,13 @@ class ModelPrivateAttr(_repr.Representation):
             attribute if not provided.
     """
 
-    __slots__ = 'default', 'default_factory'
+    __slots__ = "default", "default_factory"
 
     def __init__(
-        self, default: Any = PydanticUndefined, *, default_factory: typing.Callable[[], Any] | None = None
+        self,
+        default: Any = PydanticUndefined,
+        *,
+        default_factory: typing.Callable[[], Any] | None = None,
     ) -> None:
         self.default = default
         self.default_factory = default_factory
@@ -925,16 +1000,18 @@ class ModelPrivateAttr(_repr.Representation):
             """This function improves compatibility with custom descriptors by ensuring delegation happens
             as expected when the default value of a private attribute is a descriptor.
             """
-            if item in {'__get__', '__set__', '__delete__'}:
+            if item in {"__get__", "__set__", "__delete__"}:
                 if hasattr(self.default, item):
                     return getattr(self.default, item)
-            raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+            raise AttributeError(
+                f"{type(self).__name__!r} object has no attribute {item!r}"
+            )
 
     def __set_name__(self, cls: type[Any], name: str) -> None:
         """Preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487."""
         if self.default is PydanticUndefined:
             return
-        if not hasattr(self.default, '__set_name__'):
+        if not hasattr(self.default, "__set_name__"):
             return
         set_name = self.default.__set_name__
         if callable(set_name):
@@ -950,10 +1027,17 @@ class ModelPrivateAttr(_repr.Representation):
         Returns:
             The default value of the object.
         """
-        return _utils.smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
+        return (
+            _utils.smart_deepcopy(self.default)
+            if self.default_factory is None
+            else self.default_factory()
+        )
 
     def __eq__(self, other: Any) -> bool:
-        return isinstance(other, self.__class__) and (self.default, self.default_factory) == (
+        return isinstance(other, self.__class__) and (
+            self.default,
+            self.default_factory,
+        ) == (
             other.default,
             other.default_factory,
         )
@@ -987,7 +1071,7 @@ def PrivateAttr(
         ValueError: If both `default` and `default_factory` are set.
     """
     if default is not PydanticUndefined and default_factory is not None:
-        raise TypeError('cannot specify both default and default_factory')
+        raise TypeError("cannot specify both default and default_factory")
 
     return ModelPrivateAttr(
         default,
@@ -1015,7 +1099,7 @@ class ComputedFieldInfo:
         repr: A boolean indicating whether to include the field in the __repr__ output.
     """
 
-    decorator_repr: ClassVar[str] = '@computed_field'
+    decorator_repr: ClassVar[str] = "@computed_field"
     wrapped_property: property
     return_type: Any
     alias: str | None
@@ -1034,25 +1118,29 @@ class ComputedFieldInfo:
         if self.deprecated is None:
             return None
         if isinstance(self.deprecated, bool):
-            return 'deprecated' if self.deprecated else None
-        return self.deprecated if isinstance(self.deprecated, str) else self.deprecated.message
+            return "deprecated" if self.deprecated else None
+        return (
+            self.deprecated
+            if isinstance(self.deprecated, str)
+            else self.deprecated.message
+        )
 
 
 def _wrapped_property_is_private(property_: cached_property | property) -> bool:  # type: ignore
     """Returns true if provided property is private, False otherwise."""
-    wrapped_name: str = ''
+    wrapped_name: str = ""
 
     if isinstance(property_, property):
-        wrapped_name = getattr(property_.fget, '__name__', '')
+        wrapped_name = getattr(property_.fget, "__name__", "")
     elif isinstance(property_, cached_property):  # type: ignore
-        wrapped_name = getattr(property_.func, '__name__', '')  # type: ignore
+        wrapped_name = getattr(property_.func, "__name__", "")  # type: ignore
 
-    return wrapped_name.startswith('_') and not wrapped_name.startswith('__')
+    return wrapped_name.startswith("_") and not wrapped_name.startswith("__")
 
 
 # this should really be `property[T], cached_property[T]` but property is not generic unlike cached_property
 # See https://github.com/python/typing/issues/985 and linked issues
-PropertyT = typing.TypeVar('PropertyT')
+PropertyT = typing.TypeVar("PropertyT")
 
 
 @typing.overload
@@ -1239,7 +1327,7 @@ def computed_field(
         if description is None and unwrapped.__doc__:
             description = inspect.cleandoc(unwrapped.__doc__)
 
-        if deprecated is None and hasattr(unwrapped, '__deprecated__'):
+        if deprecated is None and hasattr(unwrapped, "__deprecated__"):
             deprecated = unwrapped.__deprecated__
 
         # if the function isn't already decorated with `@property` (or another descriptor), then we wrap it now
