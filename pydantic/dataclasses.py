@@ -201,7 +201,7 @@ def dataclass(  # noqa: C901
 
         original_cls = cls
 
-        config_dict = config or getattr(cls, '__pydantic_config__', None)
+        config_dict = config if config is not None else getattr(cls, '__pydantic_config__', None)
         config_wrapper = _config.ConfigWrapper(config_dict)
         decorators = _decorators.DecoratorInfos.build(cls)
 
