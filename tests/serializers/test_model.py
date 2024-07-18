@@ -565,6 +565,42 @@ def test_function_plain_field_serializer_to_json():
     assert json.loads(s.to_json(Model(x=1000))) == {'x': '1_000'}
 
 
+def test_function_plain_field_serializer_with_computed_field():
+    @dataclasses.dataclass
+    class Model:
+        x: int
+
+        @property
+        def computed_field_x(self) -> int:
+            return self.x + 200
+
+        def ser_func(self, v: Any, info: core_schema.FieldSerializationInfo) -> str:
+            return info.field_name + '_' + str(v * 2)
+
+    field_str_with_field_serializer = core_schema.str_schema(
+        serialization=core_schema.plain_serializer_function_ser_schema(
+            Model.ser_func,
+            is_field_serializer=True,
+            info_arg=True,
+            return_schema=core_schema.any_schema(),
+        )
+    )
+
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            Model,
+            core_schema.model_fields_schema(
+                {'x': core_schema.model_field(field_str_with_field_serializer)},
+                computed_fields=[
+                    core_schema.computed_field('computed_field_x', field_str_with_field_serializer),
+                ],
+            ),
+        )
+    )
+    assert json.loads(s.to_json(Model(x=1000))) == {'x': 'x_2000', 'computed_field_x': 'computed_field_x_2400'}
+    assert s.to_python(Model(x=2000)) == {'x': 'x_4000', 'computed_field_x': 'computed_field_x_4400'}
+
+
 def test_function_wrap_field_serializer_to_json():
     @dataclasses.dataclass
     class Model:
