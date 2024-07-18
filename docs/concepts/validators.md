@@ -155,7 +155,7 @@ class Context(TypedDict):
     logs: List[str]
 
 
-def make_validator(label: str) -> Callable[[str, ValidationInfo], str]:
+def make_validator(label: str) -> Callable[[Any, ValidationInfo], Any]:
     def validator(v: Any, info: ValidationInfo) -> Any:
         context = cast(Context, info.context)
         context['logs'].append(label)
@@ -166,7 +166,7 @@ def make_validator(label: str) -> Callable[[str, ValidationInfo], str]:
 
 def make_wrap_validator(
     label: str,
-) -> Callable[[str, ValidatorFunctionWrapHandler, ValidationInfo], str]:
+) -> Callable[[Any, ValidatorFunctionWrapHandler, ValidationInfo], Any]:
     def validator(
         v: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo
     ) -> Any:
