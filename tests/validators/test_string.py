@@ -80,6 +80,8 @@ def test_str_not_json(input_value, expected):
         ({'pattern': r'^\d+$'}, '12345', '12345'),
         ({'pattern': r'\d+$'}, 'foobar 123', 'foobar 123'),
         ({'pattern': r'^\d+$'}, '12345a', Err("String should match pattern '^\\d+$' [type=string_pattern_mismatch")),
+        ({'pattern': r'[a-z]'}, 'Abc', 'Abc'),
+        ({'pattern': re.compile(r'[a-z]')}, 'Abc', 'Abc'),
         # strip comes after length check
         ({'max_length': 5, 'strip_whitespace': True}, '1234  ', '1234'),
         # to_upper and strip comes after pattern check
