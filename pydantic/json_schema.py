@@ -2048,7 +2048,7 @@ class GenerateJsonSchema:
                 raise self._core_defs_invalid_for_json_schema[def_ref]
             return self.definitions.get(def_ref, None)
         except KeyError as e:
-            if json_ref.startswith('http://') or json_ref.startswith('https://'):
+            if json_ref.startswith(('http://', 'https://')):
                 return None
             else:
                 raise e
@@ -2167,7 +2167,7 @@ class GenerateJsonSchema:
                             raise self._core_defs_invalid_for_json_schema[defs_ref]
                         _add_json_refs(self.definitions[defs_ref])
                     except KeyError as e:
-                        if not (json_ref.startswith('http://') or json_ref.startswith('https://')):
+                        if not json_ref.startswith(('http://', 'https://')):
                             raise e
 
                 for v in schema.values():
@@ -2232,7 +2232,7 @@ class GenerateJsonSchema:
                 visited_defs_refs.add(next_defs_ref)
                 unvisited_json_refs.update(_get_all_json_refs(self.definitions[next_defs_ref]))
             except KeyError as e:
-                if not (next_json_ref.startswith('http://') or next_json_ref.startswith('https://')):
+                if not next_json_ref.startswith(('http://', 'https://')):
                     raise e
 
         self.definitions = {k: v for k, v in self.definitions.items() if k in visited_defs_refs}
