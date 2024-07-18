@@ -94,7 +94,7 @@ else:
 
 
 @dataclass_transform(field_specifiers=(dataclasses.field, Field, PrivateAttr))
-def dataclass(  # noqa: C901
+def dataclass(
     _cls: type[_T] | None = None,
     *,
     init: Literal[False] = False,
