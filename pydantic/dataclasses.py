@@ -201,6 +201,7 @@ def dataclass(
 
         original_cls = cls
 
+        # if config is not explicitly provided, try to read it from the type
         config_dict = config if config is not None else getattr(cls, '__pydantic_config__', None)
         config_wrapper = _config.ConfigWrapper(config_dict)
         decorators = _decorators.DecoratorInfos.build(cls)
