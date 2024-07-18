@@ -52,8 +52,12 @@ impl ComputedFields {
             // Do not serialize computed fields
             return Ok(());
         }
-        for computed_fields in &self.0 {
-            computed_fields.to_python(model, output_dict, filter, include, exclude, extra)?;
+        for computed_field in &self.0 {
+            let field_extra = Extra {
+                field_name: Some(computed_field.property_name.as_str()),
+                ..*extra
+            };
+            computed_field.to_python(model, output_dict, filter, include, exclude, &field_extra)?;
         }
         Ok(())
     }
@@ -83,12 +87,16 @@ impl ComputedFields {
                 if extra.exclude_none && value.is_none() {
                     continue;
                 }
+                let field_extra = Extra {
+                    field_name: Some(computed_field.property_name.as_str()),
+                    ..*extra
+                };
                 let cfs = ComputedFieldSerializer {
                     model,
                     computed_field,
                     include: next_include.as_ref(),
                     exclude: next_exclude.as_ref(),
-                    extra,
+                    extra: &field_extra,
                 };
                 let key = match extra.by_alias {
                     true => computed_field.alias.as_str(),
