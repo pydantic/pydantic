@@ -26,6 +26,7 @@ from .warnings import PydanticDeprecatedSince20
 
 if typing.TYPE_CHECKING:
     from ._internal._repr import ReprArgs
+    from .main import IncEx
 else:
     # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
     # and https://youtrack.jetbrains.com/issue/PY-51428
@@ -1013,7 +1014,10 @@ class ComputedFieldInfo:
         examples: Example values of the computed field to include in the serialization JSON schema.
         json_schema_extra: A dict or callable to provide extra JSON schema properties.
         repr: A boolean indicating whether to include the field in the __repr__ output.
-        dependencies: A list of field names that the computed field depends on for its value.
+        dependencies: Field(s) that this computed field depends on for its value, used only as a hint for model consumers.
+            This field follows the same typing as `include/exclude` in [`model_dump`][pydantic.main.BaseModel.model_dump]:
+            either a set of `str|int` or a recursive dict of `str|int` to `dict|set` of `str|int`, which can
+            be used for nested fields.
     """
 
     decorator_repr: ClassVar[str] = '@computed_field'
@@ -1028,7 +1032,7 @@ class ComputedFieldInfo:
     examples: list[Any] | None
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
     repr: bool
-    dependencies: list[str]
+    dependencies: IncEx | None
 
     @property
     def deprecation_message(self) -> str | None:
@@ -1070,7 +1074,7 @@ def computed_field(
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None = None,
     repr: bool = True,
     return_type: Any = PydanticUndefined,
-    dependencies: Sequence[str] | None = None,
+    dependencies: IncEx | None = None,
 ) -> typing.Callable[[PropertyT], PropertyT]: ...
 
 
@@ -1092,7 +1096,7 @@ def computed_field(
     json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None = None,
     repr: bool | None = None,
     return_type: Any = PydanticUndefined,
-    dependencies: Sequence[str] | None = None,
+    dependencies: IncEx | None = None,
 ) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
     """Usage docs: https://docs.pydantic.dev/2.9/concepts/fields#the-computed_field-decorator
 
@@ -1231,8 +1235,10 @@ def computed_field(
             this must be correct, otherwise a `TypeError` is raised.
             If you don't include a return type Any is used, which does runtime introspection to handle arbitrary
             objects.
-        dependencies: optional list of field names that this computed field depends on. This is only used
-            in the JSON Schema, and as a hint for model consumers.
+        dependencies: Field(s) that this computed field depends on for its value, used only as a hint for model consumers.
+            This field follows the same typing as `include/exclude` in [`model_dump`][pydantic.main.BaseModel.model_dump]:
+            either a set of `str|int` or a recursive dict of `str|int` to `dict|set` of `str|int`, which can
+            be used for nested fields.
 
     Returns:
         A proxy wrapper for the property.
@@ -1251,7 +1257,6 @@ def computed_field(
         # if the function isn't already decorated with `@property` (or another descriptor), then we wrap it now
         f = _decorators.ensure_property(f)
         alias_priority = (alias_priority or 2) if alias is not None else None
-        dependencies_ = list(dependencies) if dependencies is not None else []
 
         if repr is None:
             repr_: bool = not _wrapped_property_is_private(property_=f)
@@ -1270,7 +1275,7 @@ def computed_field(
             examples,
             json_schema_extra,
             repr_,
-            dependencies_,
+            dependencies,
         )
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
