@@ -439,6 +439,9 @@ def sequence_like_prepare_pydantic_annotations(
     metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
     _known_annotated_metadata.check_metadata(metadata, _known_annotated_metadata.SEQUENCE_CONSTRAINTS, source_type)
 
+    if not metadata and not remaining_annotations:
+        return None
+
     return (source_type, [SequenceValidator(mapped_origin, item_source_type, **metadata), *remaining_annotations])
 
 
