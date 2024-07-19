@@ -54,8 +54,7 @@ from .warnings import PydanticDeprecatedSince20
 # (even when not type checking) via typing.get_type_hints.
 ModelT = TypeVar('ModelT', bound='BaseModel')
 TupleGenerator = Generator[Tuple[str, Any], None, None]
-# should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
-IncEx: TypeAlias = Union[Set[int], Set[str], Dict[int, Any], Dict[str, Any], None]
+IncEx: TypeAlias = Union[Set[int], Set[str], Dict[int, 'IncEx'], Dict[str, 'IncEx'], None]
 
 
 if TYPE_CHECKING:
