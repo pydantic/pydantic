@@ -9,7 +9,7 @@ import typing
 from copy import copy
 from dataclasses import Field as DataclassField
 from functools import cached_property
-from typing import Any, ClassVar, Sequence
+from typing import Any, ClassVar
 from warnings import warn
 
 import annotated_types
