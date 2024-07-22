@@ -1,4 +1,4 @@
-from typing import Annotated, Dict, Generic, List, Literal, Optional, TypeVar, Union
+from typing import Dict, Generic, List, Literal, Optional, TypeVar, Union
 
 import pytest
 from typing_extensions import Annotated
