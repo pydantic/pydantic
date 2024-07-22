@@ -106,6 +106,7 @@ cases = (
         ('mypy-plugin.ini', 'custom_constructor.py'),
         ('mypy-plugin.ini', 'config_conditional_extra.py'),
         ('mypy-plugin.ini', 'covariant_typevar.py'),
+        ('mypy-plugin.ini', 'frozen_field.py'),
         ('mypy-plugin.ini', 'plugin_optional_inheritance.py'),
         ('mypy-plugin.ini', 'generics.py'),
         ('mypy-plugin.ini', 'root_models.py'),
