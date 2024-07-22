@@ -1,4 +1,4 @@
-from typing import Dict, Generic, List, Literal, Optional, TypeVar, Union
+from typing import Dict, Generic, List, Literal, Optional, TypeVar, Union, get_origin
 
 import pytest
 from typing_extensions import Annotated
@@ -99,7 +99,7 @@ def test_lots_of_models_with_lots_of_fields():
 
         for j in range(100):
             field_type = field_types[j % len(field_types)]
-            if isinstance(field_type, Annotated):
+            if get_origin(field_type) is Annotated:
                 model_fields[f'field_{j}'] = field_type
             else:
                 model_fields[f'field_{j}'] = (field_type, ...)
