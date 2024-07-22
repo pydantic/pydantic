@@ -956,7 +956,7 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'multiple-field-serializers'
 ```
 
-## Invalid annotated type {#invalid_annotated_type}
+## Invalid annotated type {#invalid-annotated-type}
 
 This error is raised when an annotation cannot annotate a type.
 
@@ -971,7 +971,7 @@ try:
         foo: Annotated[str, FutureDate()]
 
 except PydanticUserError as exc_info:
-    assert exc_info.code == 'invalid_annotated_type'
+    assert exc_info.code == 'invalid-annotated-type'
 ```
 
 ## `config` is unused with `TypeAdapter` {#type-adapter-config-unused}

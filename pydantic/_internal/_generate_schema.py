@@ -592,11 +592,6 @@ class GenerateSchema:
                 metadata={'pydantic_js_functions': [get_json_schema_no_cases]},
             )
 
-    def _decimal_schema(self) -> CoreSchema:
-        # TODO: where do we need to be applying the metadata checks?
-        # TODO: we might not even need to set allow inf nan here, I presume it should be handled in `pydantic-core`, tbd
-        return core_schema.decimal_schema(allow_inf_nan=self._config_wrapper.allow_inf_nan)
-
     # TODO: should we be handling the generic case here as well, doesn't play well with the rest of the generic type stuff
     # should probably refactor so that we call path_schema directly from the generic case
     def _path_schema(self, source_type: Any, path_type: Any) -> CoreSchema:
@@ -674,29 +669,17 @@ class GenerateSchema:
 
     # TODO - maybe handle generics differently? Similar to paths...
     def _deque_schema(self, tp: Any, items_type: Any) -> CoreSchema:
-        def _deque_validator(
-            input_value: Any, handler: core_schema.ValidatorFunctionWrapHandler, maxlen: None | int
-        ) -> collections.deque[Any]:
-            if isinstance(input_value, collections.deque):
-                try:
-                    maxlen = min([v for v in (input_value.maxlen, maxlen) if v is not None])
-                except ValueError:
-                    ...
-                return collections.deque(handler(input_value), maxlen=maxlen)
-            else:
-                return collections.deque(handler(input_value), maxlen=maxlen)
-
         items_schema = self.generate_schema(items_type)
 
         check_instance = core_schema.json_or_python_schema(
-            json_schema=core_schema.list_schema(),
-            python_schema=core_schema.is_instance_schema(tp),
+            json_schema=core_schema.list_schema(items_schema),
+            python_schema=core_schema.is_instance_schema(collections.deque),
         )
 
         return core_schema.lax_or_strict_schema(
-            lax_schema=core_schema.no_info_after_validator_function(tp, core_schema.list_schema()),
+            lax_schema=core_schema.no_info_after_validator_function(lambda v: collections.deque(v), core_schema.list_schema(items_schema=items_schema)),
             strict_schema=core_schema.chain_schema(
-                [check_instance, core_schema.no_info_after_validator_function(tp, items_schema)]
+                [check_instance, core_schema.no_info_after_validator_function(lambda v: collections.deque(v), items_schema)]
             ),
             serialization=core_schema.wrap_serializer_function_ser_schema(
                 self._serialize_sequence_via_list,
@@ -1245,7 +1228,7 @@ class GenerateSchema:
         elif obj in DICT_TYPES:
             return self._dict_schema(obj, Any, Any)
         elif obj in MAPPING_TYPES:
-            return self._mapping_schema(obj, *self._get_first_two_args_or_any(obj))
+            return self._mapping_schema(obj, Any, Any)
         elif obj is Url:
             return core_schema.url_schema()
         elif obj is MultiHostUrl:
@@ -1255,7 +1238,7 @@ class GenerateSchema:
         elif obj in PATH_TYPES:
             return self._path_schema(obj, self._get_first_arg_or_any(obj))
         elif obj is Decimal:
-            return self._decimal_schema()
+            return core_schema.decimal_schema()
         elif obj is date:
             return core_schema.date_schema()
         elif obj is datetime:
@@ -1335,14 +1318,18 @@ class GenerateSchema:
             return self._set_schema(obj, self._get_first_arg_or_any(obj))
         elif origin in FROZEN_SET_TYPES:
             return self._frozenset_schema(obj, self._get_first_arg_or_any(obj))
+        elif origin in DEQUE_TYPES:
+            return self._deque_schema(obj, self._get_first_arg_or_any(obj))
+        elif origin in SEQUENCE_TYPES:
+            return self._sequence_schema(obj)
         elif origin in DICT_TYPES:
             return self._dict_schema(obj, *self._get_first_two_args_or_any(obj))
+        elif origin in MAPPING_TYPES:
+            return self._mapping_schema(obj, *self._get_first_two_args_or_any(obj))
         elif is_typeddict(origin):
             return self._typed_dict_schema(obj, origin)
         elif origin in (typing.Type, type):
             return self._subclass_schema(obj)
-        elif origin in {typing.Sequence, collections.abc.Sequence}:
-            return self._sequence_schema(obj)
         elif origin in {typing.Iterable, collections.abc.Iterable, typing.Generator, collections.abc.Generator}:
             return self._iterable_schema(obj)
         elif origin in (re.Pattern, typing.Pattern):
