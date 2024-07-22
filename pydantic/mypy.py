@@ -1071,13 +1071,13 @@ class PydanticModelTransformer:
         expr = stmt.rvalue
         if isinstance(expr, TempNode):
             # TempNode means annotation-only
-            return None, False
+            return False
 
         if not (
             isinstance(expr, CallExpr) and isinstance(expr.callee, RefExpr) and expr.callee.fullname == FIELD_FULLNAME
         ):
             # Assigned value is not a call to pydantic.fields.Field
-            return None, False
+            return False
 
         for i, arg_name in enumerate(expr.arg_names):
             if arg_name == 'frozen':
