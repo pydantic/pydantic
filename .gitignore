@@ -32,8 +32,6 @@ _build/
 /coverage.lcov
 .coverage
 test*.py
-test*.prof
-test*.svg
 run_mypy_on_file.py
 
 # Documentation files
