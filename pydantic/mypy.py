@@ -408,6 +408,7 @@ class PydanticModelField:
         return {
             'name': self.name,
             'alias': self.alias,
+            'is_frozen': self.is_frozen,
             'has_dynamic_alias': self.has_dynamic_alias,
             'has_default': self.has_default,
             'line': self.line,
