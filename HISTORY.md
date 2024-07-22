@@ -83,6 +83,7 @@ is desired, you can switch to `left-to-right` mode and change the order of your 
 * Fix usage of `PlainSerializer` with builtin types by @Viicos in [#9450](https://github.com/pydantic/pydantic/pull/9450)
 * Add more robust custom validation examples by @ChrisPappalardo in [#9468](https://github.com/pydantic/pydantic/pull/9468)
 * Fix ignored `strict` specification for `StringConstraint(strict=False)` by @vbmendes in [#9476](https://github.com/pydantic/pydantic/pull/9476)
+* **Breaking Change:** Use PEP 570 syntax by @Viicos in [#9479](https://github.com/pydantic/pydantic/pull/9479)
 * Use `Self` where possible by @Viicos in [#9479](https://github.com/pydantic/pydantic/pull/9479)
 * Do not alter `RootModel.model_construct` signature in the `mypy` plugin by @Viicos in [#9480](https://github.com/pydantic/pydantic/pull/9480)
 * Fixed type hint of `validation_context` by @OhioDschungel6 in [#9508](https://github.com/pydantic/pydantic/pull/9508)
@@ -277,7 +278,7 @@ The code released in v2.7.0 is practically identical to that of v2.7.0b1.
 
 * Correct docs, logic for `model_construct` behavior with `extra` by @sydney-runkle in [#8807](https://github.com/pydantic/pydantic/pull/8807)
 * Improve error message for improper `RootModel` subclasses by @sydney-runkle in [#8857](https://github.com/pydantic/pydantic/pull/8857)
-* Use `PEP570` syntax by @Viicos in [#8940](https://github.com/pydantic/pydantic/pull/8940)
+* **Breaking Change:** Use `PEP570` syntax by @Viicos in [#8940](https://github.com/pydantic/pydantic/pull/8940)
 * Add `enum` and `type` to the JSON schema for single item literals by @dmontagu in [#8944](https://github.com/pydantic/pydantic/pull/8944)
 * Deprecate `update_json_schema` internal function by @sydney-runkle in [#9125](https://github.com/pydantic/pydantic/pull/9125)
 * Serialize duration to hour minute second, instead of just seconds by @kakilangit in [pydantic/speedate#50](https://github.com/pydantic/speedate/pull/50)

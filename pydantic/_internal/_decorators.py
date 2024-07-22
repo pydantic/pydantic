@@ -178,6 +178,12 @@ class PydanticDescriptorProxy(Generic[ReturnType]):
 
     def _call_wrapped_attr(self, func: Callable[[Any], None], *, name: str) -> PydanticDescriptorProxy[ReturnType]:
         self.wrapped = getattr(self.wrapped, name)(func)
+        if isinstance(self.wrapped, property):
+            # update ComputedFieldInfo.wrapped_property
+            from ..fields import ComputedFieldInfo
+
+            if isinstance(self.decorator_info, ComputedFieldInfo):
+                self.decorator_info.wrapped_property = self.wrapped
         return self
 
     def __get__(self, obj: object | None, obj_type: type[object] | None = None) -> PydanticDescriptorProxy[ReturnType]:

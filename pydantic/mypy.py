@@ -321,6 +321,7 @@ class PydanticModelField:
         self,
         name: str,
         alias: str | None,
+        is_frozen: bool,
         has_dynamic_alias: bool,
         has_default: bool,
         line: int,
@@ -330,6 +331,7 @@ class PydanticModelField:
     ):
         self.name = name
         self.alias = alias
+        self.is_frozen = is_frozen
         self.has_dynamic_alias = has_dynamic_alias
         self.has_default = has_default
         self.line = line
@@ -345,6 +347,7 @@ class PydanticModelField:
         use_alias: bool,
         api: SemanticAnalyzerPluginInterface,
         force_typevars_invariant: bool,
+        is_root_model_root: bool,
     ) -> Argument:
         """Based on mypy.plugins.dataclasses.DataclassAttribute.to_argument."""
         variable = self.to_var(current_info, api, use_alias, force_typevars_invariant)
@@ -353,7 +356,9 @@ class PydanticModelField:
             variable=variable,
             type_annotation=type_annotation,
             initializer=None,
-            kind=ARG_NAMED_OPT if force_optional or self.has_default else ARG_NAMED,
+            kind=ARG_OPT
+            if is_root_model_root
+            else (ARG_NAMED_OPT if force_optional or self.has_default else ARG_NAMED),
         )
 
     def expand_type(
@@ -406,6 +411,7 @@ class PydanticModelField:
         return {
             'name': self.name,
             'alias': self.alias,
+            'is_frozen': self.is_frozen,
             'has_dynamic_alias': self.has_dynamic_alias,
             'has_default': self.has_default,
             'line': self.line,
@@ -505,8 +511,7 @@ class PydanticModelTransformer:
 
         is_settings = any(base.fullname == BASESETTINGS_FULLNAME for base in info.mro[:-1])
         self.add_initializer(fields, config, is_settings, is_root_model)
-        if not is_root_model:
-            self.add_model_construct_method(fields, config, is_settings)
+        self.add_model_construct_method(fields, config, is_settings, is_root_model)
         self.set_frozen(fields, self._api, frozen=config.frozen is True)
 
         self.adjust_decorator_signatures()
@@ -813,6 +818,7 @@ class PydanticModelTransformer:
         alias, has_dynamic_alias = self.get_alias_info(stmt)
         if has_dynamic_alias and not model_config.populate_by_name and self.plugin_config.warn_required_dynamic_aliases:
             error_required_dynamic_aliases(self._api, stmt)
+        is_frozen = self.is_field_frozen(stmt)
 
         init_type = self._infer_dataclass_attr_init_type(sym, lhs.name, stmt)
         return PydanticModelField(
@@ -820,6 +826,7 @@ class PydanticModelTransformer:
             has_dynamic_alias=has_dynamic_alias,
             has_default=has_default,
             alias=alias,
+            is_frozen=is_frozen,
             line=stmt.line,
             column=stmt.column,
             type=init_type,
@@ -883,6 +890,7 @@ class PydanticModelTransformer:
             requires_dynamic_aliases=requires_dynamic_aliases,
             use_alias=use_alias,
             is_settings=is_settings,
+            is_root_model=is_root_model,
             force_typevars_invariant=True,
         )
 
@@ -911,7 +919,11 @@ class PydanticModelTransformer:
         add_method(self._api, self._cls, '__init__', args=args, return_type=NoneType())
 
     def add_model_construct_method(
-        self, fields: list[PydanticModelField], config: ModelConfigData, is_settings: bool
+        self,
+        fields: list[PydanticModelField],
+        config: ModelConfigData,
+        is_settings: bool,
+        is_root_model: bool,
     ) -> None:
         """Adds a fully typed `model_construct` classmethod to the class.
 
@@ -923,13 +935,18 @@ class PydanticModelTransformer:
         fields_set_argument = Argument(Var('_fields_set', optional_set_str), optional_set_str, None, ARG_OPT)
         with state.strict_optional_set(self._api.options.strict_optional):
             args = self.get_field_arguments(
-                fields, typed=True, requires_dynamic_aliases=False, use_alias=False, is_settings=is_settings
+                fields,
+                typed=True,
+                requires_dynamic_aliases=False,
+                use_alias=False,
+                is_settings=is_settings,
+                is_root_model=is_root_model,
             )
         if not self.should_init_forbid_extra(fields, config):
             var = Var('kwargs')
             args.append(Argument(var, AnyType(TypeOfAny.explicit), None, ARG_STAR2))
 
-        args = [fields_set_argument] + args
+        args = args + [fields_set_argument] if is_root_model else [fields_set_argument] + args
 
         add_method(
             self._api,
@@ -951,7 +968,7 @@ class PydanticModelTransformer:
             if sym_node is not None:
                 var = sym_node.node
                 if isinstance(var, Var):
-                    var.is_property = frozen
+                    var.is_property = frozen or field.is_frozen
                 elif isinstance(var, PlaceholderNode) and not self._api.final_iteration:
                     # See https://github.com/pydantic/pydantic/issues/5191 to hit this branch for test coverage
                     self._api.defer()
@@ -1056,6 +1073,31 @@ class PydanticModelTransformer:
                 return None, True
         return None, False
 
+    @staticmethod
+    def is_field_frozen(stmt: AssignmentStmt) -> bool:
+        """Returns whether the field is frozen, extracted from the declaration of the field defined in `stmt`.
+
+        Note that this is only whether the field was declared to be frozen in a `<field_name> = Field(frozen=True)`
+        sense; this does not determine whether the field is frozen because the entire model is frozen; that is
+        handled separately.
+        """
+        expr = stmt.rvalue
+        if isinstance(expr, TempNode):
+            # TempNode means annotation-only
+            return False
+
+        if not (
+            isinstance(expr, CallExpr) and isinstance(expr.callee, RefExpr) and expr.callee.fullname == FIELD_FULLNAME
+        ):
+            # Assigned value is not a call to pydantic.fields.Field
+            return False
+
+        for i, arg_name in enumerate(expr.arg_names):
+            if arg_name == 'frozen':
+                arg = expr.args[i]
+                return isinstance(arg, NameExpr) and arg.fullname == 'builtins.True'
+        return False
+
     def get_field_arguments(
         self,
         fields: list[PydanticModelField],
@@ -1063,6 +1105,7 @@ class PydanticModelTransformer:
         use_alias: bool,
         requires_dynamic_aliases: bool,
         is_settings: bool,
+        is_root_model: bool,
         force_typevars_invariant: bool = False,
     ) -> list[Argument]:
         """Helper function used during the construction of the `__init__` and `model_construct` method signatures.
@@ -1078,6 +1121,7 @@ class PydanticModelTransformer:
                 use_alias=use_alias,
                 api=self._api,
                 force_typevars_invariant=force_typevars_invariant,
+                is_root_model_root=is_root_model and field.name == 'root',
             )
             for field in fields
             if not (use_alias and field.has_dynamic_alias)

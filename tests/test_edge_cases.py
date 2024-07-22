@@ -1387,6 +1387,26 @@ def test_type_on_annotation():
     assert Model.model_fields.keys() == set('abcdefg')
 
 
+def test_annotated_inside_type():
+    class Model(BaseModel):
+        a: Type[Annotated[int, ...]]
+
+    Model(a=int)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=str)
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'is_subclass_of',
+            'loc': ('a',),
+            'msg': 'Input should be a subclass of int',
+            'input': str,
+            'ctx': {'class': 'int'},
+        }
+    ]
+
+
 def test_assign_type():
     class Parent:
         def echo(self):
