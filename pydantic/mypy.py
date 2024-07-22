@@ -1062,10 +1062,11 @@ class PydanticModelTransformer:
 
     @staticmethod
     def is_field_frozen(stmt: AssignmentStmt) -> bool:
-        """Returns a pair (alias, has_dynamic_alias), extracted from the declaration of the field defined in `stmt`.
+        """Returns whether the field is frozen, extracted from the declaration of the field defined in `stmt`.
 
-        `has_dynamic_alias` is True if and only if an alias is provided, but not as a string literal.
-        If `has_dynamic_alias` is True, `alias` will be None.
+        Note that this is only whether the field was declared to be frozen in a `<field_name> = Field(frozen=True)`
+        sense; this does not determine whether the field is frozen because the entire model is frozen; that is
+        handled separately.
         """
         expr = stmt.rvalue
         if isinstance(expr, TempNode):
