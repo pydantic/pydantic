@@ -321,6 +321,7 @@ class PydanticModelField:
         self,
         name: str,
         alias: str | None,
+        is_frozen: bool,
         has_dynamic_alias: bool,
         has_default: bool,
         line: int,
@@ -330,6 +331,7 @@ class PydanticModelField:
     ):
         self.name = name
         self.alias = alias
+        self.is_frozen = is_frozen
         self.has_dynamic_alias = has_dynamic_alias
         self.has_default = has_default
         self.line = line
@@ -409,6 +411,7 @@ class PydanticModelField:
         return {
             'name': self.name,
             'alias': self.alias,
+            'is_frozen': self.is_frozen,
             'has_dynamic_alias': self.has_dynamic_alias,
             'has_default': self.has_default,
             'line': self.line,
@@ -815,6 +818,7 @@ class PydanticModelTransformer:
         alias, has_dynamic_alias = self.get_alias_info(stmt)
         if has_dynamic_alias and not model_config.populate_by_name and self.plugin_config.warn_required_dynamic_aliases:
             error_required_dynamic_aliases(self._api, stmt)
+        is_frozen = self.is_field_frozen(stmt)
 
         init_type = self._infer_dataclass_attr_init_type(sym, lhs.name, stmt)
         return PydanticModelField(
@@ -822,6 +826,7 @@ class PydanticModelTransformer:
             has_dynamic_alias=has_dynamic_alias,
             has_default=has_default,
             alias=alias,
+            is_frozen=is_frozen,
             line=stmt.line,
             column=stmt.column,
             type=init_type,
@@ -963,7 +968,7 @@ class PydanticModelTransformer:
             if sym_node is not None:
                 var = sym_node.node
                 if isinstance(var, Var):
-                    var.is_property = frozen
+                    var.is_property = frozen or field.is_frozen
                 elif isinstance(var, PlaceholderNode) and not self._api.final_iteration:
                     # See https://github.com/pydantic/pydantic/issues/5191 to hit this branch for test coverage
                     self._api.defer()
@@ -1067,6 +1072,31 @@ class PydanticModelTransformer:
             else:
                 return None, True
         return None, False
+
+    @staticmethod
+    def is_field_frozen(stmt: AssignmentStmt) -> bool:
+        """Returns whether the field is frozen, extracted from the declaration of the field defined in `stmt`.
+
+        Note that this is only whether the field was declared to be frozen in a `<field_name> = Field(frozen=True)`
+        sense; this does not determine whether the field is frozen because the entire model is frozen; that is
+        handled separately.
+        """
+        expr = stmt.rvalue
+        if isinstance(expr, TempNode):
+            # TempNode means annotation-only
+            return False
+
+        if not (
+            isinstance(expr, CallExpr) and isinstance(expr.callee, RefExpr) and expr.callee.fullname == FIELD_FULLNAME
+        ):
+            # Assigned value is not a call to pydantic.fields.Field
+            return False
+
+        for i, arg_name in enumerate(expr.arg_names):
+            if arg_name == 'frozen':
+                arg = expr.args[i]
+                return isinstance(arg, NameExpr) and arg.fullname == 'builtins.True'
+        return False
 
     def get_field_arguments(
         self,
