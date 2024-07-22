@@ -116,6 +116,7 @@ cases = (
         ('pyproject-default.toml', 'with_config_decorator.py'),
         ('pyproject-plugin-no-strict-optional.toml', 'no_strict_optional.py'),
         ('pyproject-plugin-strict-equality.toml', 'strict_equality.py'),
+        ('pyproject-plugin.toml', 'from_orm_v1_noconflict.py'),
     ]
 )
 
