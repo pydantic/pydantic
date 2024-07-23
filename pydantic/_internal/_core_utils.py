@@ -65,12 +65,7 @@ def is_core_schema_field(
 def is_function_with_inner_schema(
     schema: CoreSchemaOrField,
 ) -> TypeGuard[FunctionSchemaWithInnerSchema]:
-    try:
-        # Localize the lookup of 'type' to enhance access speed
-        schema_type = schema['type']
-    except KeyError:
-        return False
-    return schema_type in _FUNCTION_WITH_INNER_SCHEMA_TYPES
+    return schema['type'] in _FUNCTION_WITH_INNER_SCHEMA_TYPES
 
 
 def is_list_like_schema_with_items_schema(
