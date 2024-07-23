@@ -459,7 +459,7 @@ except ValidationError as e:
     Methods decorated with `@model_validator` should return the self instance at the end of the method.
     For type checking purposes, you can use `Self` from either `typing` or the `typing_extensions` backport as the
     return type of the decorated method.
-    In the context of the above example, you could also use `def check_passwords_match(self: 'UserModel)' -> 'UserModel'` to indicate that
+    In the context of the above example, you could also use `def check_passwords_match(self: 'UserModel') -> 'UserModel'` to indicate that
     the method returns an instance of the model.
 
 !!! note "On Inheritance"
