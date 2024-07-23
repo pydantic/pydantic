@@ -593,15 +593,17 @@ class GenerateSchema:
 
     # Sydney TODO: should we be handling the generic case here as well, doesn't play well with the rest of the generic type stuff
     # should probably refactor so that we call path_schema directly from the generic case
+    # Sydney TODO: better typing here - can be different types of paths, which we know all options for
     def _path_schema(self, source_type: Any, path_type: Any) -> CoreSchema:
-        orig_source_type: Any = get_origin(source_type) or source_type
-        if orig_source_type is os.PathLike and path_type not in {str, bytes, Any}:
+        source_type_origin = get_origin(source_type) or source_type
+
+        if source_type is os.PathLike and path_type not in {str, bytes, Any}:
             raise PydanticUserError(
                 'os.PathLike parameter must be `str`, `bytes`, or `Any`', code='schema-for-unknown-type'
             )
 
         is_byte_path = path_type is bytes
-        construct_path = pathlib.PurePath if orig_source_type is os.PathLike else orig_source_type
+        construct_path = pathlib.PurePath if source_type_origin is os.PathLike else source_type_origin
         constrained_schema = core_schema.bytes_schema() if is_byte_path else core_schema.str_schema()
 
         def path_validator(input_value: str | bytes) -> os.PathLike[Any]:  # type: ignore
@@ -623,7 +625,7 @@ class GenerateSchema:
 
         instance_schema = core_schema.json_or_python_schema(
             json_schema=core_schema.no_info_after_validator_function(path_validator, constrained_schema),
-            python_schema=core_schema.is_instance_schema(orig_source_type),
+            python_schema=core_schema.is_instance_schema(source_type_origin),
         )
 
         return core_schema.lax_or_strict_schema(
@@ -633,7 +635,7 @@ class GenerateSchema:
                     core_schema.no_info_after_validator_function(path_validator, constrained_schema),
                 ],
                 custom_error_type='path_type',
-                custom_error_message=f'Input is not a valid path for {orig_source_type}',
+                custom_error_message=f'Input is not a valid path for {source_type}',
                 strict=True,
             ),
             strict_schema=instance_schema,
@@ -1257,7 +1259,7 @@ class GenerateSchema:
         elif obj in IP_TYPES:
             return self._ip_schema(obj)
         elif obj in PATH_TYPES:
-            return self._path_schema(obj, self._get_first_arg_or_any(obj))
+            return self._path_schema(obj, Any)
         elif obj is Decimal:
             return core_schema.decimal_schema()
         elif obj is date:
@@ -1349,6 +1351,8 @@ class GenerateSchema:
             return self._mapping_schema(obj, self._get_first_arg_or_any(obj), int)
         elif origin in MAPPING_TYPES:
             return self._mapping_schema(obj, *self._get_first_two_args_or_any(obj))
+        elif origin in PATH_TYPES:
+            return self._path_schema(obj, self._get_first_arg_or_any(obj))
         elif is_typeddict(origin):
             return self._typed_dict_schema(obj, origin)
         elif origin in (typing.Type, type):

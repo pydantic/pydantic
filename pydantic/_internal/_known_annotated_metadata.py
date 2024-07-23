@@ -179,11 +179,14 @@ def _get_at_to_constraint_map() -> dict[type, str]:
     }
 
 
-# TODO: note, I have a bit of a problem with how we mutate schemas in the function below, given
+# Sydney TODO: note, I have a bit of a problem with how we mutate schemas in the function below, given
 # that we use core_schema.x_schema(...) earlier with arguments and then patch them in this hacky way
 # later. Also, some of these constraints we apply as custom ones from _validators, but
 # pydantic-core has the ability to enforce them directly, which is definitely faster and cleaner...
 # Probably not within the scope of this PR though
+
+# Sydney TODO: note, this function is not raising all of the errors it needs to when we try to apply constraints to
+# to schemas that don't support them.
 
 
 def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | None:  # noqa: C901
@@ -231,10 +234,10 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
         # in this recursive case with function-after or function-wrap, we should refactor
         # this is a bit challenging because we sometimes want to apply constraints to the inner schema,
         # whereas other times we want to wrap the existing schema with a new one that enforces a new constraint.
+        # Sydney TODO: this is absolutely necessary at this point, oof
         if schema_type in {'function-before', 'function-wrap', 'function-after'} and constraint == 'strict':
             schema['schema'] = apply_known_metadata(annotation, schema['schema'])  # type: ignore  # schema is function-after schema
             return schema
-
         if schema_type in allowed_schemas:
             if constraint == 'union_mode' and schema_type == 'union':
                 schema['mode'] = value  # type: ignore  # schema is UnionSchema
@@ -345,22 +348,3 @@ def collect_known_metadata(annotations: Iterable[Any]) -> tuple[dict[str, Any], 
     # but this is simple enough to kick that can down the road
     res = {k: v for k, v in res.items() if v is not None}
     return res, remaining
-
-
-def check_metadata(metadata: dict[str, Any], allowed: Iterable[str], source_type: Any) -> None:
-    """A small utility function to validate that the given metadata can be applied to the target.
-    More than saving lines of code, this gives us a consistent error message for all of our internal implementations.
-
-    Args:
-        metadata: A dict of metadata.
-        allowed: An iterable of allowed metadata.
-        source_type: The source type.
-
-    Raises:
-        TypeError: If there is metadatas that can't be applied on source type.
-    """
-    unknown = metadata.keys() - set(allowed)
-    if unknown:
-        raise TypeError(
-            f'The following constraints cannot be applied to {source_type!r}: {", ".join([f"{k!r}" for k in unknown])}'
-        )

@@ -1808,7 +1808,7 @@ def test_invalid_schema_constraints(kwargs, type_):
 
 def test_invalid_decimal_constraint():
     with pytest.raises(
-        TypeError, match="The following constraints cannot be applied to <class 'decimal.Decimal'>: 'max_length'"
+        ValueError, match="Unable to apply constraint max_length to schema decimal"
     ):
 
         class Foo(BaseModel):
@@ -3526,26 +3526,10 @@ def test_path_like_extra_subtype():
             byte_type='/foo/bar',
             any_type=111,
         )
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'path_type',
-            'loc': ('str_type',),
-            'msg': "Input is not a valid path for <class 'os.PathLike'>",
-            'input': b'/foo/bar',
-        },
-        {
-            'type': 'path_type',
-            'loc': ('byte_type',),
-            'msg': "Input is not a valid path for <class 'os.PathLike'>",
-            'input': '/foo/bar',
-        },
-        {
-            'type': 'path_type',
-            'loc': ('any_type',),
-            'msg': "Input is not a valid path for <class 'os.PathLike'>",
-            'input': 111,
-        },
-    ]
+    for e in exc_info.value.errors(include_url=False):
+        assert e['type'] == 'path_type'
+        # formats for parametrized generics are different for diff Python versions, so we just match the start
+        assert e['msg'].startswith('Input is not a valid path for os.PathLike[')
 
 
 def test_path_like_strict():
