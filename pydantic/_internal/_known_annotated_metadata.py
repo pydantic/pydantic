@@ -179,6 +179,13 @@ def _get_at_to_constraint_map() -> dict[type, str]:
     }
 
 
+# TODO: note, I have a bit of a problem with how we mutate schemas in the function below, given
+# that we use core_schema.x_schema(...) earlier with arguments and then patch them in this hacky way
+# later. Also, some of these constraints we apply as custom ones from _validators, but
+# pydantic-core has the ability to enforce them directly, which is definitely faster and cleaner...
+# Probably not within the scope of this PR though
+
+
 def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | None:  # noqa: C901
     """Apply `annotation` to `schema` if it is an annotation we know about (Gt, Le, etc.).
     Otherwise return `None`.

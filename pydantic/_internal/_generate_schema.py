@@ -1,5 +1,5 @@
 """Convert python types to pydantic-core schema."""
-# TODO: how can we further defer some of these imports...
+# Sydney TODO: how can we further defer some of these imports...
 
 from __future__ import annotations as _annotations
 
@@ -152,14 +152,13 @@ PATH_TYPES: list[type] = [
 ]
 SEQUENCE_TYPES = [typing.Sequence, collections.abc.Sequence, typing.MutableSequence, collections.abc.MutableSequence]
 DICT_TYPES: list[type] = [dict, typing.Dict]
-# TODO: break these up - mapping, counter, ordereddict, defaultdict
+# Sydney TODO: break these up - mapping, counter, ordereddict, defaultdict
+COUNTER_TYPES = [collections.Counter, typing.Counter]
 MAPPING_TYPES = [
     typing.Mapping,
     typing.MutableMapping,
     collections.abc.Mapping,
     collections.abc.MutableMapping,
-    collections.Counter,
-    typing.Counter,
     collections.OrderedDict,
     typing_extensions.OrderedDict,
     typing.DefaultDict,
@@ -487,7 +486,7 @@ class GenerateSchema:
     def _frozenset_schema(self, tp: Any, items_type: Any) -> CoreSchema:
         return core_schema.frozenset_schema(self.generate_schema(items_type))
 
-    # TODO: where to move this reused type to? Can also use it for the mapping in this function, if we repurpose it (note, shared with _validators)
+    # Sydney TODO: where to move this reused type to? Can also use it for the mapping in this function, if we repurpose it (note, shared with _validators)
     def _ip_schema(
         self,
         tp: type[IPv4Address]
@@ -592,7 +591,7 @@ class GenerateSchema:
                 metadata={'pydantic_js_functions': [get_json_schema_no_cases]},
             )
 
-    # TODO: should we be handling the generic case here as well, doesn't play well with the rest of the generic type stuff
+    # Sydney TODO: should we be handling the generic case here as well, doesn't play well with the rest of the generic type stuff
     # should probably refactor so that we call path_schema directly from the generic case
     def _path_schema(self, source_type: Any, path_type: Any) -> CoreSchema:
         orig_source_type: Any = get_origin(source_type) or source_type
@@ -639,16 +638,19 @@ class GenerateSchema:
             ),
             strict_schema=instance_schema,
             serialization=core_schema.to_string_ser_schema(),
-            metadata=build_metadata_dict(js_functions=[lambda _schema, _handler: {'format': 'path'}]),
+            metadata=build_metadata_dict(
+                js_annotation_functions=[get_json_schema_update_func({'format': 'path'}, None)]
+            ),
         )
 
-    # TODO: should this even be a staticmethod or should we just not attach it to the class at all?
+    # Sydney TODO: should this even be a staticmethod or should we just not attach it to the class at all?
     @staticmethod
     def _serialize_sequence_via_list(
         v: Any, handler: core_schema.SerializerFunctionWrapHandler, info: core_schema.SerializationInfo
     ) -> Any:
         items: list[Any] = []
 
+        # TODO: need to handle generics more carefully
         mapped_origin = SEQUENCE_ORIGIN_MAP.get(type(v), None)
         if mapped_origin is None:
             # we shouldn't hit this branch, should probably add a serialization error or something
@@ -669,6 +671,20 @@ class GenerateSchema:
 
     # TODO - maybe handle generics differently? Similar to paths...
     def _deque_schema(self, tp: Any, items_type: Any) -> CoreSchema:
+        # Sydney TODO: missing - patch maxlen from max_length attached to the type - but this is more of an annotation application thing
+        # so it's questionable whether or not this custom validator should be here -- maybe in _validators?
+        def _deque_validator(
+            input_value: Any, handler: core_schema.ValidatorFunctionWrapHandler, maxlen: None | int = None
+        ) -> collections.deque[items_type]:
+            if isinstance(input_value, collections.deque):
+                try:
+                    maxlen = min([v for v in (input_value.maxlen, maxlen) if v is not None])
+                except ValueError:
+                    ...
+                return collections.deque(handler(input_value), maxlen=maxlen)
+            else:
+                return collections.deque(handler(input_value), maxlen=maxlen)
+
         items_schema = self.generate_schema(items_type)
 
         check_instance = core_schema.json_or_python_schema(
@@ -676,11 +692,15 @@ class GenerateSchema:
             python_schema=core_schema.is_instance_schema(collections.deque),
         )
 
+        # we have to use a lax list schema here, because we need to validate the deque's
+        # items via a list schema, but it's ok if the deque itself is not a list
+        lax_schema = core_schema.no_info_wrap_validator_function(
+            _deque_validator, core_schema.list_schema(items_schema=items_schema, strict=False)
+        )
+
         return core_schema.lax_or_strict_schema(
-            lax_schema=core_schema.no_info_after_validator_function(lambda v: collections.deque(v), core_schema.list_schema(items_schema=items_schema)),
-            strict_schema=core_schema.chain_schema(
-                [check_instance, core_schema.no_info_after_validator_function(lambda v: collections.deque(v), items_schema)]
-            ),
+            lax_schema=lax_schema,
+            strict_schema=core_schema.chain_schema([check_instance, lax_schema]),
             serialization=core_schema.wrap_serializer_function_ser_schema(
                 self._serialize_sequence_via_list,
                 schema=self.generate_schema(items_type) or core_schema.any_schema(),
@@ -689,7 +709,7 @@ class GenerateSchema:
         )
 
     def _mapping_schema(self, tp: Any, keys_type: Any, values_type: Any) -> CoreSchema:
-        # TODO: handle arg behavior:
+        # Sydney TODO: handle arg behavior:
         #     elif mapped_origin is collections.Counter:
         #     # a single generic
         #     if len(args) != 1:
@@ -755,6 +775,7 @@ class GenerateSchema:
                 return allowed_default_types[values_type_origin]
 
             # Assume Annotated[..., Field(...)]
+            # Sydney TODO: this probably won't work re default factory
             if _typing_extra.is_annotated(values_source_type):
                 field_info = next((v for v in get_args(values_source_type) if isinstance(v, FieldInfo)), None)
             else:
@@ -765,8 +786,8 @@ class GenerateSchema:
                 default_default_factory = infer_default()
             return default_default_factory
 
-        # TODO: mapped origin thing for sequences (maybe paths) as well
-        mapped_origin = MAPPING_ORIGIN_MAP.get(tp, None)
+        # Sydney TODO: mapped origin thing for sequences (maybe paths) as well
+        mapped_origin = MAPPING_ORIGIN_MAP.get(get_origin(tp) or tp, None)
 
         keys_schema = self.generate_schema(keys_type)
         values_schema = self.generate_schema(values_type)
@@ -1324,6 +1345,8 @@ class GenerateSchema:
             return self._sequence_schema(obj)
         elif origin in DICT_TYPES:
             return self._dict_schema(obj, *self._get_first_two_args_or_any(obj))
+        elif origin in COUNTER_TYPES:
+            return self._mapping_schema(obj, self._get_first_arg_or_any(obj), int)
         elif origin in MAPPING_TYPES:
             return self._mapping_schema(obj, *self._get_first_two_args_or_any(obj))
         elif is_typeddict(origin):
@@ -1924,7 +1947,7 @@ class GenerateSchema:
 
     def _sequence_schema(self, sequence_type: Any) -> core_schema.CoreSchema:
         """Generate schema for a Sequence, e.g. `Sequence[int]`."""
-        # TODO: move get first arg or any, also raise error if things aren't right
+        # Sydney TODO: move get first arg or any, also raise error if things aren't right
         # if not args:
         #     args = typing.cast(Tuple[Any], (Any,))
         # elif len(args) != 1:
