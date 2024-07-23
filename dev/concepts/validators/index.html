@@ -4121,7 +4121,7 @@ However, in most cases where you want to perform validation using multiple field
 <p>Methods decorated with <code>@model_validator</code> should return the self instance at the end of the method.
 For type checking purposes, you can use <code>Self</code> from either <code>typing</code> or the <code>typing_extensions</code> backport as the
 return type of the decorated method.
-In the context of the above example, you could also use <code>def check_passwords_match(self: 'UserModel)' -&gt; 'UserModel'</code> to indicate that
+In the context of the above example, you could also use <code>def check_passwords_match(self: 'UserModel') -&gt; 'UserModel'</code> to indicate that
 the method returns an instance of the model.</p>
 </div>
 <div class="admonition note">
