@@ -32,24 +32,12 @@ FunctionSchemaWithInnerSchema = Union[
 ]
 
 CoreSchemaField = Union[
-    core_schema.ModelField,
-    core_schema.DataclassField,
-    core_schema.TypedDictField,
-    core_schema.ComputedField,
+    core_schema.ModelField, core_schema.DataclassField, core_schema.TypedDictField, core_schema.ComputedField
 ]
 CoreSchemaOrField = Union[core_schema.CoreSchema, CoreSchemaField]
 
-_CORE_SCHEMA_FIELD_TYPES = {
-    'typed-dict-field',
-    'dataclass-field',
-    'model-field',
-    'computed-field',
-}
-_FUNCTION_WITH_INNER_SCHEMA_TYPES = {
-    'function-before',
-    'function-after',
-    'function-wrap',
-}
+_CORE_SCHEMA_FIELD_TYPES = {'typed-dict-field', 'dataclass-field', 'model-field', 'computed-field'}
+_FUNCTION_WITH_INNER_SCHEMA_TYPES = {'function-before', 'function-after', 'function-wrap'}
 _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'set', 'frozenset'}
 
 TAGGED_UNION_TAG_KEY = 'pydantic.internal.tagged_union_tag'
@@ -136,9 +124,7 @@ def get_ref(s: core_schema.CoreSchema) -> None | str:
     return s.get('ref', None)
 
 
-def collect_definitions(
-    schema: core_schema.CoreSchema,
-) -> dict[str, core_schema.CoreSchema]:
+def collect_definitions(schema: core_schema.CoreSchema) -> dict[str, core_schema.CoreSchema]:
     defs: dict[str, CoreSchema] = {}
 
     def _record_valid_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
@@ -433,9 +419,7 @@ def walk_core_schema(schema: core_schema.CoreSchema, f: Walk) -> core_schema.Cor
     return f(schema.copy(), _dispatch)
 
 
-def simplify_schema_references(
-    schema: core_schema.CoreSchema,
-) -> core_schema.CoreSchema:
+def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:  # noqa: C901
     definitions: dict[str, core_schema.CoreSchema] = {}
     ref_counts: dict[str, int] = defaultdict(int)
     involved_in_recursion: dict[str, bool] = {}

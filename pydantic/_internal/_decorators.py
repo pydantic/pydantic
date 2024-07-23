@@ -5,24 +5,9 @@ from __future__ import annotations as _annotations
 from collections import deque
 from dataclasses import dataclass, field
 from functools import cached_property, partial, partialmethod
-from inspect import (
-    Parameter,
-    Signature,
-    isdatadescriptor,
-    ismethoddescriptor,
-    signature,
-)
+from inspect import Parameter, Signature, isdatadescriptor, ismethoddescriptor, signature
 from itertools import islice
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    ClassVar,
-    Generic,
-    Iterable,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Iterable, TypeVar, Union
 
 from pydantic_core import PydanticUndefined, core_schema
 from typing_extensions import Literal, TypeAlias, is_typeddict
@@ -541,11 +526,7 @@ def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) 
         elif n_positional == 2:
             return False
     else:
-        assert mode in {
-            'before',
-            'after',
-            'plain',
-        }, f"invalid mode: {mode!r}, expected 'before', 'after' or 'plain"
+        assert mode in {'before', 'after', 'plain'}, f"invalid mode: {mode!r}, expected 'before', 'after' or 'plain"
         if n_positional == 2:
             return True
         elif n_positional == 1:
@@ -558,9 +539,7 @@ def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) 
 
 
 def inspect_field_serializer(
-    serializer: Callable[..., Any],
-    mode: Literal['plain', 'wrap'],
-    computed_field: bool = False,
+    serializer: Callable[..., Any], mode: Literal['plain', 'wrap'], computed_field: bool = False
 ) -> tuple[bool, bool]:
     """Look at a field serializer function and determine if it is a field serializer,
     and whether it takes an info argument.
@@ -600,8 +579,7 @@ def inspect_field_serializer(
         )
     if info_arg and computed_field:
         raise PydanticUserError(
-            'field_serializer on computed_field does not use info signature',
-            code='field-serializer-signature',
+            'field_serializer on computed_field does not use info signature', code='field-serializer-signature'
         )
 
     else:
@@ -650,8 +628,7 @@ def inspect_model_serializer(serializer: Callable[..., Any], mode: Literal['plai
     """
     if isinstance(serializer, (staticmethod, classmethod)) or not is_instance_method_from_sig(serializer):
         raise PydanticUserError(
-            '`@model_serializer` must be applied to instance methods',
-            code='model-serializer-instance-method',
+            '`@model_serializer` must be applied to instance methods', code='model-serializer-instance-method'
         )
 
     sig = signature(serializer)
@@ -792,9 +769,7 @@ def get_function_return_type(
     if explicit_return_type is PydanticUndefined:
         # try to get it from the type annotation
         hints = get_function_type_hints(
-            unwrap_wrapped_function(func),
-            include_keys={'return'},
-            types_namespace=types_namespace,
+            unwrap_wrapped_function(func), include_keys={'return'}, types_namespace=types_namespace
         )
         return hints.get('return', PydanticUndefined)
     else:
