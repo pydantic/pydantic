@@ -3469,6 +3469,7 @@ def test_path_validation_success(value, result):
     assert Model.model_validate_json(json.dumps({'foo': str(value)})).foo == result
 
 
+# Sydney TODO: need to fix metadata application for this case
 def test_path_validation_constrained():
     ta = TypeAdapter(Annotated[Path, Field(min_length=9, max_length=20)])
     with pytest.raises(ValidationError):
@@ -5117,6 +5118,7 @@ def test_deque_typed_maxlen():
     assert DequeModel3(field=deque(maxlen=8)).field.maxlen == 8
 
 
+# Sydney TODO: need to fix metadata application here
 def test_deque_set_maxlen():
     class DequeModel1(BaseModel):
         field: Annotated[Deque[int], Field(max_length=10)]
