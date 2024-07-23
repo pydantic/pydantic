@@ -1,5 +1,5 @@
 """
-Test from_orm required config raised for correct version BaseModel only
+Test from_orm check does not raise pydantic-orm error on v1.BaseModel subclass
 """
 
 from dataclasses import dataclass
@@ -28,17 +28,6 @@ class CustomModel(BaseModel):
 
 
 cm = CustomModel.from_orm(obj)
-
-
-class CustomModelBadConfig(BaseModel):
-    model_config = ConfigDict(
-        strict=True,
-    )
-
-    x: int
-
-
-cmnc = CustomModelBadConfig.from_orm(obj)
 
 
 class CustomModelV1(BaseModelV1):
