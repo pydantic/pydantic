@@ -27,7 +27,6 @@ def _field_name_for_signature(field_name: str, field_info: FieldInfo) -> str:
         The correct name to use when generating a signature.
     """
 
-    # Directly check for alias and validation_alias without the helper function
     if isinstance(field_info.alias, str) and is_valid_identifier(field_info.alias):
         return field_info.alias
     if isinstance(field_info.validation_alias, str) and is_valid_identifier(
