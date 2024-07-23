@@ -55,7 +55,7 @@ def _process_param_defaults(param: Parameter) -> Parameter:
         # Replace the annotation if appropriate
         # inspect does "clever" things to show annotations as strings because we have
         # `from __future__ import annotations` in main, we don't want that
-        if annotation == "Any":
+        if annotation == 'Any':
             annotation = Any
 
         # Replace the field default
@@ -67,9 +67,7 @@ def _process_param_defaults(param: Parameter) -> Parameter:
                 # this is used by dataclasses to indicate a factory exists:
                 default = dataclasses._HAS_DEFAULT_FACTORY  # type: ignore
         return param.replace(
-            annotation=annotation,
-            name=_field_name_for_signature(param.name, param_default),
-            default=default,
+            annotation=annotation, name=_field_name_for_signature(param.name, param_default), default=default
         )
     return param
 
@@ -92,21 +90,17 @@ def _generate_signature_parameters(  # noqa: C901 (ignore complexity, could use 
         # `from __future__ import annotations` in main, we don't want that
         if fields.get(param.name):
             # exclude params with init=False
-            if getattr(fields[param.name], "init", True) is False:
+            if getattr(fields[param.name], 'init', True) is False:
                 continue
-            param = param.replace(
-                name=_field_name_for_signature(param.name, fields[param.name])
-            )
-        if param.annotation == "Any":
+            param = param.replace(name=_field_name_for_signature(param.name, fields[param.name]))
+        if param.annotation == 'Any':
             param = param.replace(annotation=Any)
         if param.kind is param.VAR_KEYWORD:
             var_kw = param
             continue
         merged_params[param.name] = param
 
-    if (
-        var_kw
-    ):  # if custom init has no var_kw, fields which are not declared in it cannot be passed through
+    if var_kw:  # if custom init has no var_kw, fields which are not declared in it cannot be passed through
         allow_names = config_wrapper.populate_by_name
         for field_name, field in fields.items():
             # when alias is a str it should be used for signature generation
@@ -122,48 +116,38 @@ def _generate_signature_parameters(  # noqa: C901 (ignore complexity, could use 
                     use_var_kw = True
                     continue
 
-            kwargs = (
-                {}
-                if field.is_required()
-                else {"default": field.get_default(call_default_factory=False)}
-            )
+            kwargs = {} if field.is_required() else {'default': field.get_default(call_default_factory=False)}
             merged_params[param_name] = Parameter(
-                param_name,
-                Parameter.KEYWORD_ONLY,
-                annotation=field.rebuild_annotation(),
-                **kwargs,
+                param_name, Parameter.KEYWORD_ONLY, annotation=field.rebuild_annotation(), **kwargs
             )
 
-    if config_wrapper.extra == "allow":
+    if config_wrapper.extra == 'allow':
         use_var_kw = True
 
     if var_kw and use_var_kw:
         # Make sure the parameter for extra kwargs
         # does not have the same name as a field
         default_model_signature = [
-            ("self", Parameter.POSITIONAL_ONLY),
-            ("data", Parameter.VAR_KEYWORD),
+            ('self', Parameter.POSITIONAL_ONLY),
+            ('data', Parameter.VAR_KEYWORD),
         ]
         if [(p.name, p.kind) for p in present_params] == default_model_signature:
             # if this is the standard model signature, use extra_data as the extra args name
-            var_kw_name = "extra_data"
+            var_kw_name = 'extra_data'
         else:
             # else start from var_kw
             var_kw_name = var_kw.name
 
         # generate a name that's definitely unique
         while var_kw_name in fields:
-            var_kw_name += "_"
+            var_kw_name += '_'
         merged_params[var_kw_name] = var_kw.replace(name=var_kw_name)
 
     return merged_params
 
 
 def generate_pydantic_signature(
-    init: Callable[..., None],
-    fields: dict[str, FieldInfo],
-    config_wrapper: ConfigWrapper,
-    is_dataclass: bool = False,
+    init: Callable[..., None], fields: dict[str, FieldInfo], config_wrapper: ConfigWrapper, is_dataclass: bool = False
 ) -> Signature:
     """Generate signature for a pydantic BaseModel or dataclass.
 
@@ -179,8 +163,6 @@ def generate_pydantic_signature(
     merged_params = _generate_signature_parameters(init, fields, config_wrapper)
 
     if is_dataclass:
-        merged_params = {
-            k: _process_param_defaults(v) for k, v in merged_params.items()
-        }
+        merged_params = {k: _process_param_defaults(v) for k, v in merged_params.items()}
 
     return Signature(parameters=list(merged_params.values()), return_annotation=None)
