@@ -40,23 +40,23 @@ CoreSchemaField = Union[
 CoreSchemaOrField = Union[core_schema.CoreSchema, CoreSchemaField]
 
 _CORE_SCHEMA_FIELD_TYPES = {
-    "typed-dict-field",
-    "dataclass-field",
-    "model-field",
-    "computed-field",
+    'typed-dict-field',
+    'dataclass-field',
+    'model-field',
+    'computed-field',
 }
 _FUNCTION_WITH_INNER_SCHEMA_TYPES = {
-    "function-before",
-    "function-after",
-    "function-wrap",
+    'function-before',
+    'function-after',
+    'function-wrap',
 }
-_LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {"list", "set", "frozenset"}
+_LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'set', 'frozenset'}
 
-TAGGED_UNION_TAG_KEY = "pydantic.internal.tagged_union_tag"
+TAGGED_UNION_TAG_KEY = 'pydantic.internal.tagged_union_tag'
 """
 Used in a `Tag` schema to specify the tag used for a discriminated union.
 """
-HAS_INVALID_SCHEMAS_METADATA_KEY = "pydantic.internal.invalid"
+HAS_INVALID_SCHEMAS_METADATA_KEY = 'pydantic.internal.invalid'
 """Used to mark a schema that is invalid because it refers to a definition that was not yet defined when the
 schema was first encountered.
 """
@@ -65,13 +65,13 @@ schema was first encountered.
 def is_core_schema(
     schema: CoreSchemaOrField,
 ) -> TypeGuard[CoreSchema]:
-    return schema["type"] not in _CORE_SCHEMA_FIELD_TYPES
+    return schema['type'] not in _CORE_SCHEMA_FIELD_TYPES
 
 
 def is_core_schema_field(
     schema: CoreSchemaOrField,
 ) -> TypeGuard[CoreSchemaField]:
-    return schema["type"] in _CORE_SCHEMA_FIELD_TYPES
+    return schema['type'] in _CORE_SCHEMA_FIELD_TYPES
 
 
 def is_function_with_inner_schema(
@@ -79,7 +79,7 @@ def is_function_with_inner_schema(
 ) -> TypeGuard[FunctionSchemaWithInnerSchema]:
     try:
         # Localize the lookup of 'type' to enhance access speed
-        schema_type = schema["type"]
+        schema_type = schema['type']
     except KeyError:
         return False
     return schema_type in _FUNCTION_WITH_INNER_SCHEMA_TYPES
@@ -87,15 +87,11 @@ def is_function_with_inner_schema(
 
 def is_list_like_schema_with_items_schema(
     schema: CoreSchema,
-) -> TypeGuard[
-    core_schema.ListSchema | core_schema.SetSchema | core_schema.FrozenSetSchema
-]:
-    return schema["type"] in _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES
+) -> TypeGuard[core_schema.ListSchema | core_schema.SetSchema | core_schema.FrozenSetSchema]:
+    return schema['type'] in _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES
 
 
-def get_type_ref(
-    type_: type[Any], args_override: tuple[type[Any], ...] | None = None
-) -> str:
+def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None = None) -> str:
     """Produces the ref to be used for this type by pydantic_core's core schemas.
 
     This `args_override` argument was added for the purpose of creating valid recursive references
@@ -104,29 +100,29 @@ def get_type_ref(
     origin = get_origin(type_) or type_
 
     args = get_args(type_) if is_generic_alias(type_) else (args_override or ())
-    generic_metadata = getattr(type_, "__pydantic_generic_metadata__", None)
+    generic_metadata = getattr(type_, '__pydantic_generic_metadata__', None)
     if generic_metadata:
-        origin = generic_metadata["origin"] or origin
-        args = generic_metadata["args"] or args
+        origin = generic_metadata['origin'] or origin
+        args = generic_metadata['args'] or args
 
-    module_name = getattr(origin, "__module__", "<No __module__>")
+    module_name = getattr(origin, '__module__', '<No __module__>')
     if isinstance(origin, TypeAliasType):
-        type_ref = f"{module_name}.{origin.__name__}:{id(origin)}"
+        type_ref = f'{module_name}.{origin.__name__}:{id(origin)}'
     else:
         try:
-            qualname = getattr(origin, "__qualname__", f"<No __qualname__: {origin}>")
+            qualname = getattr(origin, '__qualname__', f'<No __qualname__: {origin}>')
         except Exception:
-            qualname = getattr(origin, "__qualname__", "<No __qualname__>")
-        type_ref = f"{module_name}.{qualname}:{id(origin)}"
+            qualname = getattr(origin, '__qualname__', '<No __qualname__>')
+        type_ref = f'{module_name}.{qualname}:{id(origin)}'
 
     arg_refs: list[str] = []
     for arg in args:
         if isinstance(arg, str):
             # Handle string literals as a special case; we may be able to remove this special handling if we
             # wrap them in a ForwardRef at some point.
-            arg_ref = f"{arg}:str-{id(arg)}"
+            arg_ref = f'{arg}:str-{id(arg)}'
         else:
-            arg_ref = f"{_repr.display_as_type(arg)}:{id(arg)}"
+            arg_ref = f'{_repr.display_as_type(arg)}:{id(arg)}'
         arg_refs.append(arg_ref)
     if arg_refs:
         type_ref = f'{type_ref}[{",".join(arg_refs)}]'
@@ -137,7 +133,7 @@ def get_ref(s: core_schema.CoreSchema) -> None | str:
     """Get the ref from the schema if it has one.
     This exists just for type checking to work correctly.
     """
-    return s.get("ref", None)
+    return s.get('ref', None)
 
 
 def collect_definitions(
@@ -145,9 +141,7 @@ def collect_definitions(
 ) -> dict[str, core_schema.CoreSchema]:
     defs: dict[str, CoreSchema] = {}
 
-    def _record_valid_refs(
-        s: core_schema.CoreSchema, recurse: Recurse
-    ) -> core_schema.CoreSchema:
+    def _record_valid_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
         ref = get_ref(s)
         if ref:
             defs[ref] = s
@@ -173,9 +167,7 @@ def define_expected_missing_refs(
         definitions: list[core_schema.CoreSchema] = [
             # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
             #   Issue: https://github.com/pydantic/pydantic-core/issues/619
-            core_schema.none_schema(
-                ref=ref, metadata={HAS_INVALID_SCHEMAS_METADATA_KEY: True}
-            )
+            core_schema.none_schema(ref=ref, metadata={HAS_INVALID_SCHEMAS_METADATA_KEY: True})
             for ref in expected_missing_refs
         ]
         return core_schema.definitions_schema(schema, definitions)
@@ -185,12 +177,10 @@ def define_expected_missing_refs(
 def collect_invalid_schemas(schema: core_schema.CoreSchema) -> bool:
     invalid = False
 
-    def _is_schema_valid(
-        s: core_schema.CoreSchema, recurse: Recurse
-    ) -> core_schema.CoreSchema:
+    def _is_schema_valid(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
         nonlocal invalid
-        if "metadata" in s:
-            metadata = s["metadata"]
+        if 'metadata' in s:
+            metadata = s['metadata']
             if HAS_INVALID_SCHEMAS_METADATA_KEY in metadata:
                 invalid = metadata[HAS_INVALID_SCHEMAS_METADATA_KEY]
                 return s
@@ -200,10 +190,10 @@ def collect_invalid_schemas(schema: core_schema.CoreSchema) -> bool:
     return invalid
 
 
-T = TypeVar("T")
+T = TypeVar('T')
 
 
-Recurse = Callable[[core_schema.CoreSchema, "Walk"], core_schema.CoreSchema]
+Recurse = Callable[[core_schema.CoreSchema, 'Walk'], core_schema.CoreSchema]
 Walk = Callable[[core_schema.CoreSchema, Recurse], core_schema.CoreSchema]
 
 # TODO: Should we move _WalkCoreSchema into pydantic_core proper?
@@ -226,39 +216,31 @@ class _WalkCoreSchema:
         return f(schema, self._walk)
 
     def _walk(self, schema: core_schema.CoreSchema, f: Walk) -> core_schema.CoreSchema:
-        schema = self._schema_type_to_method[schema["type"]](schema.copy(), f)
-        ser_schema: core_schema.SerSchema | None = schema.get("serialization")  # type: ignore
+        schema = self._schema_type_to_method[schema['type']](schema.copy(), f)
+        ser_schema: core_schema.SerSchema | None = schema.get('serialization')  # type: ignore
         if ser_schema:
-            schema["serialization"] = self._handle_ser_schemas(ser_schema, f)
+            schema['serialization'] = self._handle_ser_schemas(ser_schema, f)
         return schema
 
-    def _handle_other_schemas(
-        self, schema: core_schema.CoreSchema, f: Walk
-    ) -> core_schema.CoreSchema:
-        sub_schema = schema.get("schema", None)
+    def _handle_other_schemas(self, schema: core_schema.CoreSchema, f: Walk) -> core_schema.CoreSchema:
+        sub_schema = schema.get('schema', None)
         if sub_schema is not None:
-            schema["schema"] = self.walk(sub_schema, f)  # type: ignore
+            schema['schema'] = self.walk(sub_schema, f)  # type: ignore
         return schema
 
-    def _handle_ser_schemas(
-        self, ser_schema: core_schema.SerSchema, f: Walk
-    ) -> core_schema.SerSchema:
-        schema: core_schema.CoreSchema | None = ser_schema.get("schema", None)
+    def _handle_ser_schemas(self, ser_schema: core_schema.SerSchema, f: Walk) -> core_schema.SerSchema:
+        schema: core_schema.CoreSchema | None = ser_schema.get('schema', None)
         if schema is not None:
-            ser_schema["schema"] = self.walk(schema, f)  # type: ignore
-        return_schema: core_schema.CoreSchema | None = ser_schema.get(
-            "return_schema", None
-        )
+            ser_schema['schema'] = self.walk(schema, f)  # type: ignore
+        return_schema: core_schema.CoreSchema | None = ser_schema.get('return_schema', None)
         if return_schema is not None:
-            ser_schema["return_schema"] = self.walk(return_schema, f)  # type: ignore
+            ser_schema['return_schema'] = self.walk(return_schema, f)  # type: ignore
         return ser_schema
 
-    def handle_definitions_schema(
-        self, schema: core_schema.DefinitionsSchema, f: Walk
-    ) -> core_schema.CoreSchema:
+    def handle_definitions_schema(self, schema: core_schema.DefinitionsSchema, f: Walk) -> core_schema.CoreSchema:
         new_definitions: list[core_schema.CoreSchema] = []
-        for definition in schema["definitions"]:
-            if "schema_ref" in definition and "ref" in definition:
+        for definition in schema['definitions']:
+            if 'schema_ref' in definition and 'ref' in definition:
                 # This indicates a purposely indirect reference
                 # We want to keep such references around for implications related to JSON schema, etc.:
                 new_definitions.append(definition)
@@ -267,207 +249,167 @@ class _WalkCoreSchema:
                 continue
 
             updated_definition = self.walk(definition, f)
-            if "ref" in updated_definition:
+            if 'ref' in updated_definition:
                 # If the updated definition schema doesn't have a 'ref', it shouldn't go in the definitions
                 # This is most likely to happen due to replacing something with a definition reference, in
                 # which case it should certainly not go in the definitions list
                 new_definitions.append(updated_definition)
-        new_inner_schema = self.walk(schema["schema"], f)
+        new_inner_schema = self.walk(schema['schema'], f)
 
         if not new_definitions and len(schema) == 3:
             # This means we'd be returning a "trivial" definitions schema that just wrapped the inner schema
             return new_inner_schema
 
         new_schema = schema.copy()
-        new_schema["schema"] = new_inner_schema
-        new_schema["definitions"] = new_definitions
+        new_schema['schema'] = new_inner_schema
+        new_schema['definitions'] = new_definitions
         return new_schema
 
-    def handle_list_schema(
-        self, schema: core_schema.ListSchema, f: Walk
-    ) -> core_schema.CoreSchema:
-        items_schema = schema.get("items_schema")
+    def handle_list_schema(self, schema: core_schema.ListSchema, f: Walk) -> core_schema.CoreSchema:
+        items_schema = schema.get('items_schema')
         if items_schema is not None:
-            schema["items_schema"] = self.walk(items_schema, f)
+            schema['items_schema'] = self.walk(items_schema, f)
         return schema
 
-    def handle_set_schema(
-        self, schema: core_schema.SetSchema, f: Walk
-    ) -> core_schema.CoreSchema:
-        items_schema = schema.get("items_schema")
+    def handle_set_schema(self, schema: core_schema.SetSchema, f: Walk) -> core_schema.CoreSchema:
+        items_schema = schema.get('items_schema')
         if items_schema is not None:
-            schema["items_schema"] = self.walk(items_schema, f)
+            schema['items_schema'] = self.walk(items_schema, f)
         return schema
 
-    def handle_frozenset_schema(
-        self, schema: core_schema.FrozenSetSchema, f: Walk
-    ) -> core_schema.CoreSchema:
-        items_schema = schema.get("items_schema")
+    def handle_frozenset_schema(self, schema: core_schema.FrozenSetSchema, f: Walk) -> core_schema.CoreSchema:
+        items_schema = schema.get('items_schema')
         if items_schema is not None:
-            schema["items_schema"] = self.walk(items_schema, f)
+            schema['items_schema'] = self.walk(items_schema, f)
         return schema
 
-    def handle_generator_schema(
-        self, schema: core_schema.GeneratorSchema, f: Walk
-    ) -> core_schema.CoreSchema:
-        items_schema = schema.get("items_schema")
+    def handle_generator_schema(self, schema: core_schema.GeneratorSchema, f: Walk) -> core_schema.CoreSchema:
+        items_schema = schema.get('items_schema')
         if items_schema is not None:
-            schema["items_schema"] = self.walk(items_schema, f)
+            schema['items_schema'] = self.walk(items_schema, f)
         return schema
 
-    def handle_tuple_schema(
-        self, schema: core_schema.TupleSchema, f: Walk
-    ) -> core_schema.CoreSchema:
-        schema["items_schema"] = [self.walk(v, f) for v in schema["items_schema"]]
+    def handle_tuple_schema(self, schema: core_schema.TupleSchema, f: Walk) -> core_schema.CoreSchema:
+        schema['items_schema'] = [self.walk(v, f) for v in schema['items_schema']]
         return schema
 
-    def handle_dict_schema(
-        self, schema: core_schema.DictSchema, f: Walk
-    ) -> core_schema.CoreSchema:
-        keys_schema = schema.get("keys_schema")
+    def handle_dict_schema(self, schema: core_schema.DictSchema, f: Walk) -> core_schema.CoreSchema:
+        keys_schema = schema.get('keys_schema')
         if keys_schema is not None:
-            schema["keys_schema"] = self.walk(keys_schema, f)
-        values_schema = schema.get("values_schema")
+            schema['keys_schema'] = self.walk(keys_schema, f)
+        values_schema = schema.get('values_schema')
         if values_schema:
-            schema["values_schema"] = self.walk(values_schema, f)
+            schema['values_schema'] = self.walk(values_schema, f)
         return schema
 
-    def handle_function_schema(
-        self, schema: AnyFunctionSchema, f: Walk
-    ) -> core_schema.CoreSchema:
+    def handle_function_schema(self, schema: AnyFunctionSchema, f: Walk) -> core_schema.CoreSchema:
         if not is_function_with_inner_schema(schema):
             return schema
-        schema["schema"] = self.walk(schema["schema"], f)
+        schema['schema'] = self.walk(schema['schema'], f)
         return schema
 
-    def handle_union_schema(
-        self, schema: core_schema.UnionSchema, f: Walk
-    ) -> core_schema.CoreSchema:
+    def handle_union_schema(self, schema: core_schema.UnionSchema, f: Walk) -> core_schema.CoreSchema:
         new_choices: list[CoreSchema | tuple[CoreSchema, str]] = []
-        for v in schema["choices"]:
+        for v in schema['choices']:
             if isinstance(v, tuple):
                 new_choices.append((self.walk(v[0], f), v[1]))
             else:
                 new_choices.append(self.walk(v, f))
-        schema["choices"] = new_choices
+        schema['choices'] = new_choices
         return schema
 
-    def handle_tagged_union_schema(
-        self, schema: core_schema.TaggedUnionSchema, f: Walk
-    ) -> core_schema.CoreSchema:
+    def handle_tagged_union_schema(self, schema: core_schema.TaggedUnionSchema, f: Walk) -> core_schema.CoreSchema:
         new_choices: dict[Hashable, core_schema.CoreSchema] = {}
-        for k, v in schema["choices"].items():
+        for k, v in schema['choices'].items():
             new_choices[k] = v if isinstance(v, (str, int)) else self.walk(v, f)
-        schema["choices"] = new_choices
+        schema['choices'] = new_choices
         return schema
 
-    def handle_chain_schema(
-        self, schema: core_schema.ChainSchema, f: Walk
-    ) -> core_schema.CoreSchema:
-        schema["steps"] = [self.walk(v, f) for v in schema["steps"]]
+    def handle_chain_schema(self, schema: core_schema.ChainSchema, f: Walk) -> core_schema.CoreSchema:
+        schema['steps'] = [self.walk(v, f) for v in schema['steps']]
         return schema
 
-    def handle_lax_or_strict_schema(
-        self, schema: core_schema.LaxOrStrictSchema, f: Walk
-    ) -> core_schema.CoreSchema:
-        schema["lax_schema"] = self.walk(schema["lax_schema"], f)
-        schema["strict_schema"] = self.walk(schema["strict_schema"], f)
+    def handle_lax_or_strict_schema(self, schema: core_schema.LaxOrStrictSchema, f: Walk) -> core_schema.CoreSchema:
+        schema['lax_schema'] = self.walk(schema['lax_schema'], f)
+        schema['strict_schema'] = self.walk(schema['strict_schema'], f)
         return schema
 
-    def handle_json_or_python_schema(
-        self, schema: core_schema.JsonOrPythonSchema, f: Walk
-    ) -> core_schema.CoreSchema:
-        schema["json_schema"] = self.walk(schema["json_schema"], f)
-        schema["python_schema"] = self.walk(schema["python_schema"], f)
+    def handle_json_or_python_schema(self, schema: core_schema.JsonOrPythonSchema, f: Walk) -> core_schema.CoreSchema:
+        schema['json_schema'] = self.walk(schema['json_schema'], f)
+        schema['python_schema'] = self.walk(schema['python_schema'], f)
         return schema
 
-    def handle_model_fields_schema(
-        self, schema: core_schema.ModelFieldsSchema, f: Walk
-    ) -> core_schema.CoreSchema:
-        extras_schema = schema.get("extras_schema")
+    def handle_model_fields_schema(self, schema: core_schema.ModelFieldsSchema, f: Walk) -> core_schema.CoreSchema:
+        extras_schema = schema.get('extras_schema')
         if extras_schema is not None:
-            schema["extras_schema"] = self.walk(extras_schema, f)
+            schema['extras_schema'] = self.walk(extras_schema, f)
         replaced_fields: dict[str, core_schema.ModelField] = {}
         replaced_computed_fields: list[core_schema.ComputedField] = []
-        for computed_field in schema.get("computed_fields", ()):
+        for computed_field in schema.get('computed_fields', ()):
             replaced_field = computed_field.copy()
-            replaced_field["return_schema"] = self.walk(
-                computed_field["return_schema"], f
-            )
+            replaced_field['return_schema'] = self.walk(computed_field['return_schema'], f)
             replaced_computed_fields.append(replaced_field)
         if replaced_computed_fields:
-            schema["computed_fields"] = replaced_computed_fields
-        for k, v in schema["fields"].items():
+            schema['computed_fields'] = replaced_computed_fields
+        for k, v in schema['fields'].items():
             replaced_field = v.copy()
-            replaced_field["schema"] = self.walk(v["schema"], f)
+            replaced_field['schema'] = self.walk(v['schema'], f)
             replaced_fields[k] = replaced_field
-        schema["fields"] = replaced_fields
+        schema['fields'] = replaced_fields
         return schema
 
-    def handle_typed_dict_schema(
-        self, schema: core_schema.TypedDictSchema, f: Walk
-    ) -> core_schema.CoreSchema:
-        extras_schema = schema.get("extras_schema")
+    def handle_typed_dict_schema(self, schema: core_schema.TypedDictSchema, f: Walk) -> core_schema.CoreSchema:
+        extras_schema = schema.get('extras_schema')
         if extras_schema is not None:
-            schema["extras_schema"] = self.walk(extras_schema, f)
+            schema['extras_schema'] = self.walk(extras_schema, f)
         replaced_computed_fields: list[core_schema.ComputedField] = []
-        for computed_field in schema.get("computed_fields", ()):
+        for computed_field in schema.get('computed_fields', ()):
             replaced_field = computed_field.copy()
-            replaced_field["return_schema"] = self.walk(
-                computed_field["return_schema"], f
-            )
+            replaced_field['return_schema'] = self.walk(computed_field['return_schema'], f)
             replaced_computed_fields.append(replaced_field)
         if replaced_computed_fields:
-            schema["computed_fields"] = replaced_computed_fields
+            schema['computed_fields'] = replaced_computed_fields
         replaced_fields: dict[str, core_schema.TypedDictField] = {}
-        for k, v in schema["fields"].items():
+        for k, v in schema['fields'].items():
             replaced_field = v.copy()
-            replaced_field["schema"] = self.walk(v["schema"], f)
+            replaced_field['schema'] = self.walk(v['schema'], f)
             replaced_fields[k] = replaced_field
-        schema["fields"] = replaced_fields
+        schema['fields'] = replaced_fields
         return schema
 
-    def handle_dataclass_args_schema(
-        self, schema: core_schema.DataclassArgsSchema, f: Walk
-    ) -> core_schema.CoreSchema:
+    def handle_dataclass_args_schema(self, schema: core_schema.DataclassArgsSchema, f: Walk) -> core_schema.CoreSchema:
         replaced_fields: list[core_schema.DataclassField] = []
         replaced_computed_fields: list[core_schema.ComputedField] = []
-        for computed_field in schema.get("computed_fields", ()):
+        for computed_field in schema.get('computed_fields', ()):
             replaced_field = computed_field.copy()
-            replaced_field["return_schema"] = self.walk(
-                computed_field["return_schema"], f
-            )
+            replaced_field['return_schema'] = self.walk(computed_field['return_schema'], f)
             replaced_computed_fields.append(replaced_field)
         if replaced_computed_fields:
-            schema["computed_fields"] = replaced_computed_fields
-        for field in schema["fields"]:
+            schema['computed_fields'] = replaced_computed_fields
+        for field in schema['fields']:
             replaced_field = field.copy()
-            replaced_field["schema"] = self.walk(field["schema"], f)
+            replaced_field['schema'] = self.walk(field['schema'], f)
             replaced_fields.append(replaced_field)
-        schema["fields"] = replaced_fields
+        schema['fields'] = replaced_fields
         return schema
 
-    def handle_arguments_schema(
-        self, schema: core_schema.ArgumentsSchema, f: Walk
-    ) -> core_schema.CoreSchema:
+    def handle_arguments_schema(self, schema: core_schema.ArgumentsSchema, f: Walk) -> core_schema.CoreSchema:
         replaced_arguments_schema: list[core_schema.ArgumentsParameter] = []
-        for param in schema["arguments_schema"]:
+        for param in schema['arguments_schema']:
             replaced_param = param.copy()
-            replaced_param["schema"] = self.walk(param["schema"], f)
+            replaced_param['schema'] = self.walk(param['schema'], f)
             replaced_arguments_schema.append(replaced_param)
-        schema["arguments_schema"] = replaced_arguments_schema
-        if "var_args_schema" in schema:
-            schema["var_args_schema"] = self.walk(schema["var_args_schema"], f)
-        if "var_kwargs_schema" in schema:
-            schema["var_kwargs_schema"] = self.walk(schema["var_kwargs_schema"], f)
+        schema['arguments_schema'] = replaced_arguments_schema
+        if 'var_args_schema' in schema:
+            schema['var_args_schema'] = self.walk(schema['var_args_schema'], f)
+        if 'var_kwargs_schema' in schema:
+            schema['var_kwargs_schema'] = self.walk(schema['var_kwargs_schema'], f)
         return schema
 
-    def handle_call_schema(
-        self, schema: core_schema.CallSchema, f: Walk
-    ) -> core_schema.CoreSchema:
-        schema["arguments_schema"] = self.walk(schema["arguments_schema"], f)
-        if "return_schema" in schema:
-            schema["return_schema"] = self.walk(schema["return_schema"], f)
+    def handle_call_schema(self, schema: core_schema.CallSchema, f: Walk) -> core_schema.CoreSchema:
+        schema['arguments_schema'] = self.walk(schema['arguments_schema'], f)
+        if 'return_schema' in schema:
+            schema['return_schema'] = self.walk(schema['return_schema'], f)
         return schema
 
 
@@ -493,23 +435,21 @@ def walk_core_schema(schema: core_schema.CoreSchema, f: Walk) -> core_schema.Cor
 
 def simplify_schema_references(
     schema: core_schema.CoreSchema,
-) -> core_schema.CoreSchema:  # noqa: C901
+) -> core_schema.CoreSchema:
     definitions: dict[str, core_schema.CoreSchema] = {}
     ref_counts: dict[str, int] = defaultdict(int)
     involved_in_recursion: dict[str, bool] = {}
     current_recursion_ref_count: dict[str, int] = defaultdict(int)
 
-    def collect_refs(
-        s: core_schema.CoreSchema, recurse: Recurse
-    ) -> core_schema.CoreSchema:
-        if s["type"] == "definitions":
-            for definition in s["definitions"]:
+    def collect_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
+        if s['type'] == 'definitions':
+            for definition in s['definitions']:
                 ref = get_ref(definition)
                 assert ref is not None
                 if ref not in definitions:
                     definitions[ref] = definition
                 recurse(definition, collect_refs)
-            return recurse(s["schema"], collect_refs)
+            return recurse(s['schema'], collect_refs)
         else:
             ref = get_ref(s)
             if ref is not None:
@@ -523,12 +463,10 @@ def simplify_schema_references(
 
     schema = walk_core_schema(schema, collect_refs)
 
-    def count_refs(
-        s: core_schema.CoreSchema, recurse: Recurse
-    ) -> core_schema.CoreSchema:
-        if s["type"] != "definition-ref":
+    def count_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
+        if s['type'] != 'definition-ref':
             return recurse(s, count_refs)
-        ref = s["schema_ref"]
+        ref = s['schema_ref']
         ref_counts[ref] += 1
 
         if ref_counts[ref] >= 2:
@@ -545,34 +483,30 @@ def simplify_schema_references(
 
     schema = walk_core_schema(schema, count_refs)
 
-    assert all(
-        c == 0 for c in current_recursion_ref_count.values()
-    ), "this is a bug! please report it"
+    assert all(c == 0 for c in current_recursion_ref_count.values()), 'this is a bug! please report it'
 
     def can_be_inlined(s: core_schema.DefinitionReferenceSchema, ref: str) -> bool:
         if ref_counts[ref] > 1:
             return False
         if involved_in_recursion.get(ref, False):
             return False
-        if "serialization" in s:
+        if 'serialization' in s:
             return False
-        if "metadata" in s:
-            metadata = s["metadata"]
+        if 'metadata' in s:
+            metadata = s['metadata']
             for k in (
-                "pydantic_js_functions",
-                "pydantic_js_annotation_functions",
-                "pydantic.internal.union_discriminator",
+                'pydantic_js_functions',
+                'pydantic_js_annotation_functions',
+                'pydantic.internal.union_discriminator',
             ):
                 if k in metadata:
                     # we need to keep this as a ref
                     return False
         return True
 
-    def inline_refs(
-        s: core_schema.CoreSchema, recurse: Recurse
-    ) -> core_schema.CoreSchema:
-        if s["type"] == "definition-ref":
-            ref = s["schema_ref"]
+    def inline_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
+        if s['type'] == 'definition-ref':
+            ref = s['schema_ref']
             # Check if the reference is only used once, not involved in recursion and does not have
             # any extra keys (like 'serialization')
             if can_be_inlined(s, ref):
@@ -581,8 +515,8 @@ def simplify_schema_references(
                 ref_counts[ref] -= 1  # because we just replaced it!
                 # put all other keys that were on the def-ref schema into the inlined version
                 # in particular this is needed for `serialization`
-                if "serialization" in s:
-                    new["serialization"] = s["serialization"]
+                if 'serialization' in s:
+                    new['serialization'] = s['serialization']
                 s = recurse(new, inline_refs)
                 return s
             else:
@@ -592,7 +526,7 @@ def simplify_schema_references(
 
     schema = walk_core_schema(schema, inline_refs)
 
-    def_values = [v for v in definitions.values() if ref_counts[v["ref"]] > 0]  # type: ignore
+    def_values = [v for v in definitions.values() if ref_counts[v['ref']] > 0]  # type: ignore
 
     if def_values:
         schema = core_schema.definitions_schema(schema=schema, definitions=def_values)
@@ -602,28 +536,28 @@ def simplify_schema_references(
 def _strip_metadata(schema: CoreSchema) -> CoreSchema:
     def strip_metadata(s: CoreSchema, recurse: Recurse) -> CoreSchema:
         s = s.copy()
-        s.pop("metadata", None)
-        if s["type"] == "model-fields":
+        s.pop('metadata', None)
+        if s['type'] == 'model-fields':
             s = s.copy()
-            s["fields"] = {k: v.copy() for k, v in s["fields"].items()}
-            for field_name, field_schema in s["fields"].items():
-                field_schema.pop("metadata", None)
-                s["fields"][field_name] = field_schema
-            computed_fields = s.get("computed_fields", None)
+            s['fields'] = {k: v.copy() for k, v in s['fields'].items()}
+            for field_name, field_schema in s['fields'].items():
+                field_schema.pop('metadata', None)
+                s['fields'][field_name] = field_schema
+            computed_fields = s.get('computed_fields', None)
             if computed_fields:
-                s["computed_fields"] = [cf.copy() for cf in computed_fields]
+                s['computed_fields'] = [cf.copy() for cf in computed_fields]
                 for cf in computed_fields:
-                    cf.pop("metadata", None)
+                    cf.pop('metadata', None)
             else:
-                s.pop("computed_fields", None)
-        elif s["type"] == "model":
+                s.pop('computed_fields', None)
+        elif s['type'] == 'model':
             # remove some defaults
-            if s.get("custom_init", True) is False:
-                s.pop("custom_init")
-            if s.get("root_model", True) is False:
-                s.pop("root_model")
-            if {"title"}.issuperset(s.get("config", {}).keys()):
-                s.pop("config", None)
+            if s.get('custom_init', True) is False:
+                s.pop('custom_init')
+            if s.get('root_model', True) is False:
+                s.pop('root_model')
+            if {'title'}.issuperset(s.get('config', {}).keys()):
+                s.pop('config', None)
 
         return recurse(s, strip_metadata)
 
@@ -650,6 +584,6 @@ def pretty_print_core_schema(
 
 
 def validate_core_schema(schema: CoreSchema) -> CoreSchema:
-    if "PYDANTIC_SKIP_VALIDATING_CORE_SCHEMAS" in os.environ:
+    if 'PYDANTIC_SKIP_VALIDATING_CORE_SCHEMAS' in os.environ:
         return schema
     return _validate_core_schema(schema)
