@@ -1492,11 +1492,10 @@ class GenerateSchema:
             except (ZoneInfoNotFoundError, ValueError):
                 raise PydanticCustomError('zoneinfo_str', 'invalid timezone: {value}', {'value': value})
 
-        ser = core_schema.plain_serializer_function_ser_schema(lambda instance: str(instance), when_used='json')
         metadata = build_metadata_dict(js_functions=[lambda _1, _2: {'type': 'string', 'format': 'zoneinfo'}])
         return core_schema.no_info_plain_validator_function(
             validate_str_is_valid_iana_tz,
-            serialization=ser,
+            serialization=core_schema.to_string_ser_schema(),
             metadata=metadata,
         )
 
