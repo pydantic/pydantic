@@ -289,7 +289,7 @@ def forbid_inf_nan_check(x: Any) -> Any:
     return x
 
 
-_CONSTRAINT_TO_VALIDATOR_MAP: dict[str, Callable] = {
+_CONSTRAINT_TO_VALIDATOR_LOOKUP: dict[str, Callable] = {
     'gt': greater_than_validator,
     'ge': greater_than_or_equal_validator,
     'lt': less_than_validator,
@@ -303,6 +303,29 @@ _CONSTRAINT_TO_VALIDATOR_MAP: dict[str, Callable] = {
 def get_constraint_validator(constraint: str) -> Callable:
     """Fetch the validator function for the given constraint."""
     try:
-        return _CONSTRAINT_TO_VALIDATOR_MAP[constraint]
+        return _CONSTRAINT_TO_VALIDATOR_LOOKUP[constraint]
     except KeyError:
         raise TypeError(f'Unknown constraint {constraint}')
+
+
+IP_TYPES = (
+    type[IPv4Address]
+    | type[IPv6Address]
+    | type[IPv4Network]
+    | type[IPv6Network]
+    | type[IPv4Interface]
+    | type[IPv6Interface]
+)
+
+_IP_VALIDATOR_LOOKUP: dict[IP_TYPES, Callable] = {
+    IPv4Address: ip_v4_address_validator,
+    IPv6Address: ip_v6_address_validator,
+    IPv4Network: ip_v4_network_validator,
+    IPv6Network: ip_v6_network_validator,
+    IPv4Interface: ip_v4_interface_validator,
+    IPv6Interface: ip_v6_interface_validator,
+}
+
+
+def ip_validator(tp: IP_TYPES) -> Callable:
+    return _IP_VALIDATOR_LOOKUP[tp]
