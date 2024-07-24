@@ -5838,7 +5838,7 @@ namespacing them with the prefix <code>model_</code>.</p>
 <span class="k">except</span> <span class="ne">UserWarning</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">    Field &quot;model_prefixed_field&quot; has conflict with protected namespace &quot;model_&quot;.</span>
+<span class="sd">    Field &quot;model_prefixed_field&quot; in Model has conflict with protected namespace &quot;model_&quot;.</span>
 
 <span class="sd">    You may be able to resolve this warning by setting `model_config[&#39;protected_namespaces&#39;] = ()`.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
@@ -5863,7 +5863,7 @@ namespacing them with the prefix <code>model_</code>.</p>
 <span class="k">except</span> <span class="ne">UserWarning</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">    Field &quot;also_protect_field&quot; has conflict with protected namespace &quot;also_protect_&quot;.</span>
+<span class="sd">    Field &quot;also_protect_field&quot; in Model has conflict with protected namespace &quot;also_protect_&quot;.</span>
 
 <span class="sd">    You may be able to resolve this warning by setting `model_config[&#39;protected_namespaces&#39;] = (&#39;protect_me_&#39;,)`.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
