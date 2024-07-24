@@ -818,13 +818,13 @@ class GenerateSchema:
         elif obj in TUPLE_TYPES:
             return self._tuple_schema(obj)
         elif obj in LIST_TYPES:
-            return self._list_schema(obj, self._get_first_arg_or_any(obj))
+            return self._list_schema(obj, Any)
         elif obj in SET_TYPES:
-            return self._set_schema(obj, self._get_first_arg_or_any(obj))
+            return self._set_schema(obj, Any)
         elif obj in FROZEN_SET_TYPES:
-            return self._frozenset_schema(obj, self._get_first_arg_or_any(obj))
+            return self._frozenset_schema(obj, Any)
         elif obj in DICT_TYPES:
-            return self._dict_schema(obj, *self._get_first_two_args_or_any(obj))
+            return self._dict_schema(obj, Any, Any)
         elif isinstance(obj, TypeAliasType):
             return self._type_alias_type_schema(obj)
         elif obj is type:
