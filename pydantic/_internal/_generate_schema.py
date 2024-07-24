@@ -645,7 +645,7 @@ class GenerateSchema:
         if schema['type'] == 'definitions':
             definitions = self.defs.definitions
             for s in schema['definitions']:
-                definitions[s['ref']] = s
+                definitions[s['ref']] = s  # type: ignore
             return schema['schema']
         return schema
 
