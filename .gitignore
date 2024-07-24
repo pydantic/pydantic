@@ -31,7 +31,7 @@ _build/
 /codecov.sh
 /coverage.lcov
 .coverage
-test.py
+test*.py
 run_mypy_on_file.py
 
 # Documentation files
