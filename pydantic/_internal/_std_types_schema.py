@@ -355,7 +355,7 @@ class SequenceValidator:
             schema = constrained_schema
         else:
             # safety check in case we forget to add a case
-            assert self.mapped_origin in (collections.deque, collections.Counter)
+            assert self.mapped_origin is collections.deque
 
             if self.mapped_origin is collections.deque:
                 # if we have a MaxLen annotation might as well set that as the default maxlen on the deque
@@ -369,7 +369,7 @@ class SequenceValidator:
                 coerce_instance_wrap = partial(core_schema.no_info_after_validator_function, self.mapped_origin)
 
             # we have to use a lax list schema here, because we need to validate the deque's
-            # items via a list schema, but it's ok if the deque itself is not a list (same for Counter)
+            # items via a list schema, but it's ok if the deque itself is not a list
             metadata_with_strict_override = {**metadata, 'strict': False}
             constrained_schema = core_schema.list_schema(items_schema, **metadata_with_strict_override)
 
