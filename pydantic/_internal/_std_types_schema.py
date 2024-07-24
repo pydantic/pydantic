@@ -627,7 +627,7 @@ def mapping_like_prepare_pydantic_annotations(
 def ip_prepare_pydantic_annotations(
     source_type: Any, annotations: Iterable[Any], _config: ConfigDict
 ) -> tuple[Any, list[Any]] | None:
-    from ._validators import ip_validator
+    from ._validators import IP_VALIDATOR_LOOKUP
 
     if source_type not in [IPv4Address, IPv4Network, IPv4Interface, IPv6Address, IPv6Network, IPv6Interface]:
         return None
@@ -644,7 +644,7 @@ def ip_prepare_pydantic_annotations(
     return source_type, [
         SchemaTransformer(
             lambda _1, _2: core_schema.lax_or_strict_schema(
-                lax_schema=core_schema.no_info_plain_validator_function(ip_validator(source_type)),
+                lax_schema=core_schema.no_info_plain_validator_function(IP_VALIDATOR_LOOKUP[source_type]),
                 strict_schema=core_schema.json_or_python_schema(
                     json_schema=core_schema.no_info_after_validator_function(source_type, core_schema.str_schema()),
                     python_schema=core_schema.is_instance_schema(source_type),

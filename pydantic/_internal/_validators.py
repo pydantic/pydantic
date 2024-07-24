@@ -308,16 +308,7 @@ def get_constraint_validator(constraint: str) -> Callable:
         raise TypeError(f'Unknown constraint {constraint}')
 
 
-IP_TYPES = (
-    type[IPv4Address]
-    | type[IPv6Address]
-    | type[IPv4Network]
-    | type[IPv6Network]
-    | type[IPv4Interface]
-    | type[IPv6Interface]
-)
-
-_IP_VALIDATOR_LOOKUP: dict[IP_TYPES, Callable] = {
+IP_VALIDATOR_LOOKUP: dict[type, Callable] = {
     IPv4Address: ip_v4_address_validator,
     IPv6Address: ip_v6_address_validator,
     IPv4Network: ip_v4_network_validator,
@@ -325,7 +316,3 @@ _IP_VALIDATOR_LOOKUP: dict[IP_TYPES, Callable] = {
     IPv4Interface: ip_v4_interface_validator,
     IPv6Interface: ip_v6_interface_validator,
 }
-
-
-def ip_validator(tp: IP_TYPES) -> Callable:
-    return _IP_VALIDATOR_LOOKUP[tp]
