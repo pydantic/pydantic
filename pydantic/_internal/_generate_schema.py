@@ -381,10 +381,6 @@ class GenerateSchema:
     def _arbitrary_types(self) -> bool:
         return self._config_wrapper.arbitrary_types_allowed
 
-    def str_schema(self) -> CoreSchema:
-        """Generate a CoreSchema for `str`"""
-        return core_schema.str_schema()
-
     # the following methods can be overridden but should be considered
     # unstable / private APIs
     def _list_schema(self, tp: Any, items_type: Any) -> CoreSchema:
@@ -802,7 +798,7 @@ class GenerateSchema:
         as they get requested and we figure out what the right API for them is.
         """
         if obj is str:
-            return self.str_schema()
+            return core_schema.str_schema()
         elif obj is bytes:
             return core_schema.bytes_schema()
         elif obj is int:
