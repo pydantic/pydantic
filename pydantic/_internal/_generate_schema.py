@@ -35,7 +35,7 @@ from typing import (
 )
 from warnings import warn
 
-from pydantic_core import CoreSchema, PydanticUndefined, core_schema, to_jsonable_python
+from pydantic_core import CoreSchema, PydanticCustomError, PydanticUndefined, core_schema, to_jsonable_python
 from typing_extensions import Annotated, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
 from ..aliases import AliasGenerator
@@ -79,7 +79,7 @@ from ._forward_ref import PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, has_instance_in_type, recursively_defined_type_refs, replace_types
 from ._mock_val_ser import MockCoreSchema
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
-from ._typing_extra import is_finalvar, is_self_type
+from ._typing_extra import is_finalvar, is_self_type, is_zoneinfo_type
 from ._utils import lenient_issubclass
 
 if TYPE_CHECKING:
@@ -858,6 +858,8 @@ class GenerateSchema:
             from ._std_types_schema import get_enum_core_schema
 
             return get_enum_core_schema(obj, self._config_wrapper.config_dict)
+        elif is_zoneinfo_type(obj):
+            return self._zoneinfo_schema()
 
         if _typing_extra.is_dataclass(obj):
             return self._dataclass_schema(obj, None)
@@ -1471,6 +1473,30 @@ class GenerateSchema:
             core_schema.is_instance_schema(type),
             custom_error_type='is_type',
             custom_error_message='Input should be a type',
+        )
+
+    def _zoneinfo_schema(self) -> core_schema.CoreSchema:
+        """Generate schema for a zone_info.ZoneInfo object"""
+        # we're def >=py3.9 if ZoneInfo was included in input
+        if sys.version_info < (3, 9):
+            assert False, 'Unreachable'
+
+        # import in this path is safe
+        from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+        def validate_str_is_valid_iana_tz(value: Any, /) -> ZoneInfo:
+            if isinstance(value, ZoneInfo):
+                return value
+            try:
+                return ZoneInfo(value)
+            except (ZoneInfoNotFoundError, ValueError):
+                raise PydanticCustomError('zoneinfo_str', 'invalid timezone: {value}', {'value': value})
+
+        metadata = build_metadata_dict(js_functions=[lambda _1, _2: {'type': 'string', 'format': 'zoneinfo'}])
+        return core_schema.no_info_plain_validator_function(
+            validate_str_is_valid_iana_tz,
+            serialization=core_schema.to_string_ser_schema(),
+            metadata=metadata,
         )
 
     def _union_is_subclass_schema(self, union_type: Any) -> core_schema.CoreSchema:

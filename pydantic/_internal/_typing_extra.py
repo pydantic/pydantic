@@ -506,3 +506,16 @@ else:
 def is_self_type(tp: Any) -> bool:
     """Check if a given class is a Self type (from `typing` or `typing_extensions`)"""
     return isinstance(tp, typing_base) and getattr(tp, '_name', None) == 'Self'
+
+
+if sys.version_info >= (3, 9):
+    from zoneinfo import ZoneInfo
+
+    def is_zoneinfo_type(tp: Any) -> bool:
+        """Check if a give class is a zone_info.ZoneInfo type"""
+        return tp is ZoneInfo
+
+else:
+
+    def is_zoneinfo_type(tp: Any) -> bool:
+        return False
