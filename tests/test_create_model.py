@@ -557,7 +557,9 @@ def test_create_model_tuple_3():
 
 
 def test_create_model_protected_namespace_default():
-    with pytest.warns(UserWarning, match='Field "model_prefixed_field" has conflict with protected namespace "model_"'):
+    with pytest.warns(
+        UserWarning, match='Field "model_prefixed_field" in Model has conflict with protected namespace "model_"'
+    ):
         create_model('Model', model_prefixed_field=(str, ...))
 
 
@@ -567,7 +569,7 @@ def test_create_model_protected_namespace_real_conflict():
 
 
 def test_create_model_custom_protected_namespace():
-    with pytest.warns(UserWarning, match='Field "test_field" has conflict with protected namespace "test_"'):
+    with pytest.warns(UserWarning, match='Field "test_field" in Model has conflict with protected namespace "test_"'):
         create_model(
             'Model',
             __config__=ConfigDict(protected_namespaces=('test_',)),
@@ -578,7 +580,7 @@ def test_create_model_custom_protected_namespace():
 
 def test_create_model_multiple_protected_namespace():
     with pytest.warns(
-        UserWarning, match='Field "also_protect_field" has conflict with protected namespace "also_protect_"'
+        UserWarning, match='Field "also_protect_field" in Model has conflict with protected namespace "also_protect_"'
     ):
         create_model(
             'Model',

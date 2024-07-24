@@ -620,7 +620,7 @@ class ConfigDict(TypedDict, total=False):
     except UserWarning as e:
         print(e)
         '''
-        Field "model_prefixed_field" has conflict with protected namespace "model_".
+        Field "model_prefixed_field" in Model has conflict with protected namespace "model_".
 
         You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ()`.
         '''
@@ -648,7 +648,7 @@ class ConfigDict(TypedDict, total=False):
     except UserWarning as e:
         print(e)
         '''
-        Field "also_protect_field" has conflict with protected namespace "also_protect_".
+        Field "also_protect_field" in Model has conflict with protected namespace "also_protect_".
 
         You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_',)`.
         '''
