@@ -35,7 +35,7 @@ from pydantic.types import Strict
 
 from ..config import ConfigDict
 from ..json_schema import JsonSchemaValue
-from . import _known_annotated_metadata, _typing_extra, _validators
+from . import _known_annotated_metadata, _typing_extra
 from ._core_utils import get_type_ref
 from ._internal_dataclass import slots_true
 from ._schema_generation_shared import GetCoreSchemaHandler, GetJsonSchemaHandler
@@ -627,87 +627,34 @@ def mapping_like_prepare_pydantic_annotations(
 def ip_prepare_pydantic_annotations(
     source_type: Any, annotations: Iterable[Any], _config: ConfigDict
 ) -> tuple[Any, list[Any]] | None:
-    def make_strict_ip_schema(tp: type[Any]) -> CoreSchema:
-        return core_schema.json_or_python_schema(
-            json_schema=core_schema.no_info_after_validator_function(tp, core_schema.str_schema()),
-            python_schema=core_schema.is_instance_schema(tp),
-        )
+    from ._validators import IP_VALIDATOR_LOOKUP
 
-    if source_type is IPv4Address:
-        return source_type, [
-            SchemaTransformer(
-                lambda _1, _2: core_schema.lax_or_strict_schema(
-                    lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v4_address_validator),
-                    strict_schema=make_strict_ip_schema(IPv4Address),
-                    serialization=core_schema.to_string_ser_schema(),
-                ),
-                lambda _1, _2: {'type': 'string', 'format': 'ipv4'},
-            ),
-            *annotations,
-        ]
-    if source_type is IPv4Network:
-        return source_type, [
-            SchemaTransformer(
-                lambda _1, _2: core_schema.lax_or_strict_schema(
-                    lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v4_network_validator),
-                    strict_schema=make_strict_ip_schema(IPv4Network),
-                    serialization=core_schema.to_string_ser_schema(),
-                ),
-                lambda _1, _2: {'type': 'string', 'format': 'ipv4network'},
-            ),
-            *annotations,
-        ]
-    if source_type is IPv4Interface:
-        return source_type, [
-            SchemaTransformer(
-                lambda _1, _2: core_schema.lax_or_strict_schema(
-                    lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v4_interface_validator),
-                    strict_schema=make_strict_ip_schema(IPv4Interface),
-                    serialization=core_schema.to_string_ser_schema(),
-                ),
-                lambda _1, _2: {'type': 'string', 'format': 'ipv4interface'},
-            ),
-            *annotations,
-        ]
+    if source_type not in [IPv4Address, IPv4Network, IPv4Interface, IPv6Address, IPv6Network, IPv6Interface]:
+        return None
 
-    if source_type is IPv6Address:
-        return source_type, [
-            SchemaTransformer(
-                lambda _1, _2: core_schema.lax_or_strict_schema(
-                    lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v6_address_validator),
-                    strict_schema=make_strict_ip_schema(IPv6Address),
-                    serialization=core_schema.to_string_ser_schema(),
-                ),
-                lambda _1, _2: {'type': 'string', 'format': 'ipv6'},
-            ),
-            *annotations,
-        ]
-    if source_type is IPv6Network:
-        return source_type, [
-            SchemaTransformer(
-                lambda _1, _2: core_schema.lax_or_strict_schema(
-                    lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v6_network_validator),
-                    strict_schema=make_strict_ip_schema(IPv6Network),
-                    serialization=core_schema.to_string_ser_schema(),
-                ),
-                lambda _1, _2: {'type': 'string', 'format': 'ipv6network'},
-            ),
-            *annotations,
-        ]
-    if source_type is IPv6Interface:
-        return source_type, [
-            SchemaTransformer(
-                lambda _1, _2: core_schema.lax_or_strict_schema(
-                    lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v6_interface_validator),
-                    strict_schema=make_strict_ip_schema(IPv6Interface),
-                    serialization=core_schema.to_string_ser_schema(),
-                ),
-                lambda _1, _2: {'type': 'string', 'format': 'ipv6interface'},
-            ),
-            *annotations,
-        ]
+    ip_type_json_schema_format = {
+        IPv4Address: 'ipv4',
+        IPv4Network: 'ipv4network',
+        IPv4Interface: 'ipv4interface',
+        IPv6Address: 'ipv6',
+        IPv6Network: 'ipv6network',
+        IPv6Interface: 'ipv6interface',
+    }
 
-    return None
+    return source_type, [
+        SchemaTransformer(
+            lambda _1, _2: core_schema.lax_or_strict_schema(
+                lax_schema=core_schema.no_info_plain_validator_function(IP_VALIDATOR_LOOKUP[source_type]),
+                strict_schema=core_schema.json_or_python_schema(
+                    json_schema=core_schema.no_info_after_validator_function(source_type, core_schema.str_schema()),
+                    python_schema=core_schema.is_instance_schema(source_type),
+                ),
+                serialization=core_schema.to_string_ser_schema(),
+            ),
+            lambda _1, _2: {'type': 'string', 'format': ip_type_json_schema_format[source_type]},
+        ),
+        *annotations,
+    ]
 
 
 def url_prepare_pydantic_annotations(
