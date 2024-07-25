@@ -2946,28 +2946,35 @@ def test_validation_works_for_cyclical_forward_refs() -> None:
     assert Y(x={'y': None}).x.y is None
 
 
-@pytest.mark.parametrize('field_fn_unset', [Field, dataclasses.field])
-@pytest.mark.parametrize('field_fn2', [Field, dataclasses.field])
-def test_annotated_with_field_default_factory(field_fn_unset, field_fn2) -> None:
+def test_annotated_with_field_default_factory() -> None:
     """
     https://github.com/pydantic/pydantic/issues/9947
     """
 
-    # wrap in lambda to create new instance for different fields
-    field1 = lambda: pydantic.Field(default_factory=lambda: 1)  # `Annotated` only works with pydantic field
-    field2 = lambda: field_fn2(default_factory=lambda: 2)
+    field = dataclasses.field
 
     @pydantic.dataclasses.dataclass()
     class A:
-        a: Annotated[int, field1()]
-        b: Annotated[int, field1()] = field_fn_unset()
-        c: Annotated[int, field2(), field1()] = field_fn_unset()
-        d: Annotated[int, field_fn_unset] = field2()
-        e: int = field2()
-        f: Annotated[int, field1()] = field2()
+        a: Annotated[int, Field(default_factory=lambda: 1)]
+        b: Annotated[int, Field(default_factory=lambda: 1)] = Field()
+        c: Annotated[int, Field(default_factory=lambda: 2), Field(default_factory=lambda: 1)] = Field()
+        d: Annotated[int, Field] = Field(default_factory=lambda: 2)
+        e: int = Field(default_factory=lambda: 2)
+        f: Annotated[int, Field(default_factory=lambda: 1)] = Field(default_factory=lambda: 2)
 
-    instance = A()
-    field_names = ('a', 'b', 'c', 'd', 'e', 'f')
-    results = (1, 1, 1, 2, 2, 2)
-    for field_name, result in zip(field_names, results):
-        assert getattr(instance, field_name) == result
+    # check the same tests for dataclasses.field
+    @pydantic.dataclasses.dataclass()
+    class B:
+        a: Annotated[int, Field(default_factory=lambda: 1)]
+        b: Annotated[int, Field(default_factory=lambda: 1)] = field()
+        c: Annotated[int, field(default_factory=lambda: 2), Field(default_factory=lambda: 1)] = field()
+        d: Annotated[int, field] = Field(default_factory=lambda: 2)
+        e: int = field(default_factory=lambda: 2)
+        f: Annotated[int, Field(default_factory=lambda: 1)] = field(default_factory=lambda: 2)
+
+    for cls in (A, B):
+        instance = cls()  # type: ignore
+        field_names = ('a', 'b', 'c', 'd', 'e', 'f')
+        results = (1, 1, 1, 2, 2, 2)
+        for field_name, result in zip(field_names, results):
+            assert getattr(instance, field_name) == result
