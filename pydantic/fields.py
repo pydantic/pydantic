@@ -488,7 +488,7 @@ class FieldInfo(_repr.Representation):
         """
         default = dc_field.default
         if default is dataclasses.MISSING:
-            default = PydanticUndefined
+            default = _Unset
 
         if dc_field.default_factory is dataclasses.MISSING:
             default_factory: typing.Callable[[], Any] | None = _Unset
