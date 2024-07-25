@@ -95,7 +95,8 @@ except ValidationError as exc:
 
 ## `bytes_invalid_encoding`
 
-This error is raised when a `bytes` value is valid under the configured encoding:
+This error is raised when a `bytes` value is invalid under the configured encoding.
+In the following example, `b'a'` is invalid hex (odd number of digits).
 
 ```py
 from pydantic import BaseModel, ValidationError
