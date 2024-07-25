@@ -122,6 +122,7 @@ SET_TYPES: list[type] = [set, typing.Set, collections.abc.MutableSet]
 FROZEN_SET_TYPES: list[type] = [frozenset, typing.FrozenSet, collections.abc.Set]
 DICT_TYPES: list[type] = [dict, typing.Dict, collections.abc.MutableMapping, collections.abc.Mapping]
 IP_TYPES: list[type] = [IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network]
+SEQUENCE_TYPES: list[type] = [typing.Sequence, collections.abc.Sequence]
 
 
 def check_validator_fields_against_field_name(
@@ -948,6 +949,8 @@ class GenerateSchema:
             return self._set_schema(obj, Any)
         elif obj in FROZEN_SET_TYPES:
             return self._frozenset_schema(obj, Any)
+        elif obj in SEQUENCE_TYPES:
+            return self._sequence_schema(Any)
         elif obj in DICT_TYPES:
             return self._dict_schema(obj, Any, Any)
         elif isinstance(obj, TypeAliasType):
@@ -1032,8 +1035,8 @@ class GenerateSchema:
             return self._typed_dict_schema(obj, origin)
         elif origin in (typing.Type, type):
             return self._subclass_schema(obj)
-        elif origin in {typing.Sequence, collections.abc.Sequence}:
-            return self._sequence_schema(obj)
+        elif origin in SEQUENCE_TYPES:
+            return self._sequence_schema(self._get_first_arg_or_any(obj))
         elif origin in {typing.Iterable, collections.abc.Iterable, typing.Generator, collections.abc.Generator}:
             return self._iterable_schema(obj)
         elif origin in (re.Pattern, typing.Pattern):
@@ -1650,16 +1653,15 @@ class GenerateSchema:
         else:
             return core_schema.is_subclass_schema(type_param)
 
-    def _sequence_schema(self, sequence_type: Any) -> core_schema.CoreSchema:
+    def _sequence_schema(self, items_type: Any) -> core_schema.CoreSchema:
         """Generate schema for a Sequence, e.g. `Sequence[int]`."""
         from ._std_types_schema import serialize_sequence_via_list
 
-        item_type = self._get_first_arg_or_any(sequence_type)
-        item_type_schema = self.generate_schema(item_type)
+        item_type_schema = self.generate_schema(items_type)
         list_schema = core_schema.list_schema(item_type_schema)
 
         python_schema = core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence')
-        if item_type != Any:
+        if items_type != Any:
             from ._validators import sequence_validator
 
             python_schema = core_schema.chain_schema(
