@@ -2944,3 +2944,37 @@ def test_validation_works_for_cyclical_forward_refs() -> None:
         x: Union[X, None]
 
     assert Y(x={'y': None}).x.y is None
+
+
+def test_annotated_with_field_default_factory() -> None:
+    """
+    https://github.com/pydantic/pydantic/issues/9947
+    """
+
+    field = dataclasses.field
+
+    @pydantic.dataclasses.dataclass()
+    class A:
+        a: Annotated[int, Field(default_factory=lambda: 1)]
+        b: Annotated[int, Field(default_factory=lambda: 1)] = Field()
+        c: Annotated[int, Field(default_factory=lambda: 2), Field(default_factory=lambda: 1)] = Field()
+        d: Annotated[int, Field] = Field(default_factory=lambda: 2)
+        e: int = Field(default_factory=lambda: 2)
+        f: Annotated[int, Field(default_factory=lambda: 1)] = Field(default_factory=lambda: 2)
+
+    # check the same tests for dataclasses.field
+    @pydantic.dataclasses.dataclass()
+    class B:
+        a: Annotated[int, Field(default_factory=lambda: 1)]
+        b: Annotated[int, Field(default_factory=lambda: 1)] = field()
+        c: Annotated[int, field(default_factory=lambda: 2), Field(default_factory=lambda: 1)] = field()
+        d: Annotated[int, field] = Field(default_factory=lambda: 2)
+        e: int = field(default_factory=lambda: 2)
+        f: Annotated[int, Field(default_factory=lambda: 1)] = field(default_factory=lambda: 2)
+
+    for cls in (A, B):
+        instance = cls()  # type: ignore
+        field_names = ('a', 'b', 'c', 'd', 'e', 'f')
+        results = (1, 1, 1, 2, 2, 2)
+        for field_name, result in zip(field_names, results):
+            assert getattr(instance, field_name) == result
