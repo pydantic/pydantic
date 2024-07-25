@@ -8,7 +8,6 @@ from __future__ import annotations as _annotations
 import collections
 import collections.abc
 import dataclasses
-import decimal
 import os
 import typing
 from functools import partial
@@ -58,24 +57,6 @@ class InnerSchemaValidator:
 
     def __get_pydantic_core_schema__(self, _source_type: Any, _handler: GetCoreSchemaHandler) -> CoreSchema:
         return self.core_schema
-
-
-def decimal_prepare_pydantic_annotations(
-    source: Any, annotations: Iterable[Any], config: ConfigDict
-) -> tuple[Any, list[Any]] | None:
-    if source is not decimal.Decimal:
-        return None
-
-    metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
-
-    config_allow_inf_nan = config.get('allow_inf_nan')
-    if config_allow_inf_nan is not None:
-        metadata.setdefault('allow_inf_nan', config_allow_inf_nan)
-
-    _known_annotated_metadata.check_metadata(
-        metadata, {*_known_annotated_metadata.FLOAT_CONSTRAINTS, 'max_digits', 'decimal_places'}, decimal.Decimal
-    )
-    return source, [InnerSchemaValidator(core_schema.decimal_schema(**metadata)), *remaining_annotations]
 
 
 def path_schema_prepare_pydantic_annotations(
@@ -497,8 +478,7 @@ def mapping_like_prepare_pydantic_annotations(
 
 
 PREPARE_METHODS: tuple[Callable[[Any, Iterable[Any], ConfigDict], tuple[Any, list[Any]] | None], ...] = (
-    decimal_prepare_pydantic_annotations,
     sequence_like_prepare_pydantic_annotations,
-    path_schema_prepare_pydantic_annotations,
     mapping_like_prepare_pydantic_annotations,
+    path_schema_prepare_pydantic_annotations,
 )

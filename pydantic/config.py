@@ -393,7 +393,7 @@ class ConfigDict(TypedDict, total=False):
     """
 
     allow_inf_nan: bool
-    """Whether to allow infinity (`+inf` an `-inf`) and NaN values to float fields. Defaults to `True`."""
+    """Whether to allow infinity (`+inf` an `-inf`) and NaN values to float and decimal fields. Defaults to `True`."""
 
     json_schema_extra: JsonDict | JsonSchemaExtraCallable | None
     """A dict or callable to provide extra JSON schema properties. Defaults to `None`."""
