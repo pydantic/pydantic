@@ -401,16 +401,16 @@ class GenerateSchema:
 
     # the following methods can be overridden but should be considered
     # unstable / private APIs
-    def _list_schema(self, tp: Any, items_type: Any) -> CoreSchema:
+    def _list_schema(self, items_type: Any) -> CoreSchema:
         return core_schema.list_schema(self.generate_schema(items_type))
 
-    def _dict_schema(self, tp: Any, keys_type: Any, values_type: Any) -> CoreSchema:
+    def _dict_schema(self, keys_type: Any, values_type: Any) -> CoreSchema:
         return core_schema.dict_schema(self.generate_schema(keys_type), self.generate_schema(values_type))
 
-    def _set_schema(self, tp: Any, items_type: Any) -> CoreSchema:
+    def _set_schema(self, items_type: Any) -> CoreSchema:
         return core_schema.set_schema(self.generate_schema(items_type))
 
-    def _frozenset_schema(self, tp: Any, items_type: Any) -> CoreSchema:
+    def _frozenset_schema(self, items_type: Any) -> CoreSchema:
         return core_schema.frozenset_schema(self.generate_schema(items_type))
 
     def _enum_schema(self, enum_type: type[Enum]) -> CoreSchema:
@@ -944,15 +944,15 @@ class GenerateSchema:
         elif obj in TUPLE_TYPES:
             return self._tuple_schema(obj)
         elif obj in LIST_TYPES:
-            return self._list_schema(obj, Any)
+            return self._list_schema(Any)
         elif obj in SET_TYPES:
-            return self._set_schema(obj, Any)
+            return self._set_schema(Any)
         elif obj in FROZEN_SET_TYPES:
-            return self._frozenset_schema(obj, Any)
+            return self._frozenset_schema(Any)
         elif obj in SEQUENCE_TYPES:
             return self._sequence_schema(Any)
         elif obj in DICT_TYPES:
-            return self._dict_schema(obj, Any, Any)
+            return self._dict_schema(Any, Any)
         elif isinstance(obj, TypeAliasType):
             return self._type_alias_type_schema(obj)
         elif obj is type:
@@ -1024,13 +1024,13 @@ class GenerateSchema:
         elif origin in TUPLE_TYPES:
             return self._tuple_schema(obj)
         elif origin in LIST_TYPES:
-            return self._list_schema(obj, self._get_first_arg_or_any(obj))
+            return self._list_schema(self._get_first_arg_or_any(obj))
         elif origin in SET_TYPES:
-            return self._set_schema(obj, self._get_first_arg_or_any(obj))
+            return self._set_schema(self._get_first_arg_or_any(obj))
         elif origin in FROZEN_SET_TYPES:
-            return self._frozenset_schema(obj, self._get_first_arg_or_any(obj))
+            return self._frozenset_schema(self._get_first_arg_or_any(obj))
         elif origin in DICT_TYPES:
-            return self._dict_schema(obj, *self._get_first_two_args_or_any(obj))
+            return self._dict_schema(*self._get_first_two_args_or_any(obj))
         elif is_typeddict(origin):
             return self._typed_dict_schema(obj, origin)
         elif origin in (typing.Type, type):
