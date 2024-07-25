@@ -14,6 +14,7 @@ from copy import copy, deepcopy
 from enum import Enum
 from functools import partial
 from inspect import Parameter, _ParameterKind, signature
+from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
 from operator import attrgetter
 from types import FunctionType, LambdaType, MethodType
@@ -33,9 +34,18 @@ from typing import (
     cast,
     overload,
 )
+from uuid import UUID
 from warnings import warn
 
-from pydantic_core import CoreSchema, PydanticCustomError, PydanticUndefined, core_schema, to_jsonable_python
+from pydantic_core import (
+    CoreSchema,
+    MultiHostUrl,
+    PydanticCustomError,
+    PydanticUndefined,
+    Url,
+    core_schema,
+    to_jsonable_python,
+)
 from typing_extensions import Annotated, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
 from ..aliases import AliasGenerator
@@ -109,6 +119,7 @@ LIST_TYPES: list[type] = [list, typing.List, collections.abc.MutableSequence]
 SET_TYPES: list[type] = [set, typing.Set, collections.abc.MutableSet]
 FROZEN_SET_TYPES: list[type] = [frozenset, typing.FrozenSet, collections.abc.Set]
 DICT_TYPES: list[type] = [dict, typing.Dict, collections.abc.MutableMapping, collections.abc.Mapping]
+IP_TYPES: list[type] = [IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network]
 
 
 def check_validator_fields_against_field_name(
@@ -470,6 +481,30 @@ class GenerateSchema:
                 enum_type,
                 metadata={'pydantic_js_functions': [get_json_schema_no_cases]},
             )
+
+    def _ip_schema(self, tp: Any) -> CoreSchema:
+        from ._validators import IP_VALIDATOR_LOOKUP
+
+        ip_type_json_schema_format = {
+            IPv4Address: 'ipv4',
+            IPv4Network: 'ipv4network',
+            IPv4Interface: 'ipv4interface',
+            IPv6Address: 'ipv6',
+            IPv6Network: 'ipv6network',
+            IPv6Interface: 'ipv6interface',
+        }
+
+        return core_schema.lax_or_strict_schema(
+            lax_schema=core_schema.no_info_plain_validator_function(IP_VALIDATOR_LOOKUP[tp]),
+            strict_schema=core_schema.json_or_python_schema(
+                json_schema=core_schema.no_info_after_validator_function(tp, core_schema.str_schema()),
+                python_schema=core_schema.is_instance_schema(tp),
+            ),
+            serialization=core_schema.to_string_ser_schema(),
+            metadata=build_metadata_dict(
+                js_functions=[lambda _1, _2: {'type': 'string', 'format': ip_type_json_schema_format[tp]}]
+            ),
+        )
 
     def _arbitrary_type_schema(self, tp: Any) -> CoreSchema:
         if not isinstance(tp, type):
@@ -883,8 +918,16 @@ class GenerateSchema:
             return core_schema.bool_schema()
         elif obj is Any or obj is object:
             return core_schema.any_schema()
+        elif obj is UUID:
+            return core_schema.uuid_schema()
+        elif obj is Url:
+            return core_schema.url_schema()
+        elif obj is MultiHostUrl:
+            return core_schema.multi_host_url_schema()
         elif obj is None or obj is _typing_extra.NoneType:
             return core_schema.none_schema()
+        elif obj in IP_TYPES:
+            return self._ip_schema(obj)
         elif obj in TUPLE_TYPES:
             return self._tuple_schema(obj)
         elif obj in LIST_TYPES:
