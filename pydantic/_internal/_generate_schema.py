@@ -714,13 +714,11 @@ class GenerateSchema:
         """Unpack all 'definitions' schemas into `GenerateSchema.defs.definitions`
         and return the inner schema.
         """
-
-        def get_ref(s: CoreSchema) -> str:
-            return s['ref']  # type: ignore
-
         if schema['type'] == 'definitions':
-            self.defs.definitions.update({get_ref(s): s for s in schema['definitions']})
-            schema = schema['schema']
+            definitions = self.defs.definitions
+            for s in schema['definitions']:
+                definitions[s['ref']] = s  # type: ignore
+            return schema['schema']
         return schema
 
     def _generate_schema_from_property(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
