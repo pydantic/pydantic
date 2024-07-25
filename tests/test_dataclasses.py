@@ -2945,16 +2945,17 @@ def test_validation_works_for_cyclical_forward_refs() -> None:
 
     assert Y(x={'y': None}).x.y is None
 
-@pytest.mark.parametrize("field_fn_unset", [Field, dataclasses.field])
-@pytest.mark.parametrize("field_fn2", [Field, dataclasses.field])
-def test_annotated_with_field_default_factory( field_fn_unset, field_fn2) -> None:
+
+@pytest.mark.parametrize('field_fn_unset', [Field, dataclasses.field])
+@pytest.mark.parametrize('field_fn2', [Field, dataclasses.field])
+def test_annotated_with_field_default_factory(field_fn_unset, field_fn2) -> None:
     """
     https://github.com/pydantic/pydantic/issues/9947
     """
 
     # wrap in lambda to create new instance for different fields
-    field1 =lambda: pydantic.Field(default_factory=lambda: 1)  # `Annotated` only works with pydantic field
-    field2 = lambda:field_fn2(default_factory=lambda: 2)
+    field1 = lambda: pydantic.Field(default_factory=lambda: 1)  # `Annotated` only works with pydantic field
+    field2 = lambda: field_fn2(default_factory=lambda: 2)
 
     @pydantic.dataclasses.dataclass()
     class A:
@@ -2966,7 +2967,7 @@ def test_annotated_with_field_default_factory( field_fn_unset, field_fn2) -> Non
         f: Annotated[int, field1()] = field2()
 
     instance = A()
-    field_names = ("a", "b", "c", "d", "e", "f")
+    field_names = ('a', 'b', 'c', 'd', 'e', 'f')
     results = (1, 1, 1, 2, 2, 2)
-    for field_name,result in zip(field_names, results):
+    for field_name, result in zip(field_names, results):
         assert getattr(instance, field_name) == result
