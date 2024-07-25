@@ -93,27 +93,6 @@ def decimal_prepare_pydantic_annotations(
     return source, [InnerSchemaValidator(core_schema.decimal_schema(**metadata)), *remaining_annotations]
 
 
-def datetime_prepare_pydantic_annotations(
-    source_type: Any, annotations: Iterable[Any], _config: ConfigDict
-) -> tuple[Any, list[Any]] | None:
-    import datetime
-
-    metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
-    if source_type is datetime.date:
-        sv = InnerSchemaValidator(core_schema.date_schema(**metadata))
-    elif source_type is datetime.datetime:
-        sv = InnerSchemaValidator(core_schema.datetime_schema(**metadata))
-    elif source_type is datetime.time:
-        sv = InnerSchemaValidator(core_schema.time_schema(**metadata))
-    elif source_type is datetime.timedelta:
-        sv = InnerSchemaValidator(core_schema.timedelta_schema(**metadata))
-    else:
-        return None
-    # check now that we know the source type is correct
-    _known_annotated_metadata.check_metadata(metadata, _known_annotated_metadata.DATE_TIME_CONSTRAINTS, source_type)
-    return (source_type, [sv, *remaining_annotations])
-
-
 def uuid_prepare_pydantic_annotations(
     source_type: Any, annotations: Iterable[Any], _config: ConfigDict
 ) -> tuple[Any, list[Any]] | None:
@@ -602,7 +581,6 @@ def url_prepare_pydantic_annotations(
 PREPARE_METHODS: tuple[Callable[[Any, Iterable[Any], ConfigDict], tuple[Any, list[Any]] | None], ...] = (
     decimal_prepare_pydantic_annotations,
     sequence_like_prepare_pydantic_annotations,
-    datetime_prepare_pydantic_annotations,
     uuid_prepare_pydantic_annotations,
     path_schema_prepare_pydantic_annotations,
     mapping_like_prepare_pydantic_annotations,

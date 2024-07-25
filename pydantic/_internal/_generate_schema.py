@@ -11,6 +11,7 @@ import typing
 import warnings
 from contextlib import ExitStack, contextmanager
 from copy import copy, deepcopy
+from datetime import date, datetime, time, timedelta
 from enum import Enum
 from functools import partial
 from inspect import Parameter, _ParameterKind, signature
@@ -883,6 +884,14 @@ class GenerateSchema:
             return core_schema.bool_schema()
         elif obj is Any or obj is object:
             return core_schema.any_schema()
+        elif obj is date:
+            return core_schema.date_schema()
+        elif obj is datetime:
+            return core_schema.datetime_schema()
+        elif obj is time:
+            return core_schema.time_schema()
+        elif obj is timedelta:
+            return core_schema.timedelta_schema()
         elif obj is None or obj is _typing_extra.NoneType:
             return core_schema.none_schema()
         elif obj in TUPLE_TYPES:
