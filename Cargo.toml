@@ -41,7 +41,7 @@ smallvec = "1.13.2"
 ahash = "0.8.10"
 url = "2.5.0"
 # idna is already required by url, added here to be explicit
-idna = "0.5.0"
+idna = "1.0.1"
 base64 = "0.21.7"
 num-bigint = "0.4.6"
 python3-dll-a = "0.2.10"
