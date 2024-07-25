@@ -4,6 +4,7 @@ from __future__ import annotations as _annotations
 
 import collections.abc
 import dataclasses
+import datetime
 import inspect
 import re
 import sys
@@ -11,9 +12,11 @@ import typing
 import warnings
 from contextlib import ExitStack, contextmanager
 from copy import copy, deepcopy
+from decimal import Decimal
 from enum import Enum
 from functools import partial
 from inspect import Parameter, _ParameterKind, signature
+from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
 from operator import attrgetter
 from types import FunctionType, LambdaType, MethodType
@@ -33,9 +36,18 @@ from typing import (
     cast,
     overload,
 )
+from uuid import UUID
 from warnings import warn
 
-from pydantic_core import CoreSchema, PydanticUndefined, core_schema, to_jsonable_python
+from pydantic_core import (
+    CoreSchema,
+    MultiHostUrl,
+    PydanticCustomError,
+    PydanticUndefined,
+    Url,
+    core_schema,
+    to_jsonable_python,
+)
 from typing_extensions import Annotated, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
 from ..aliases import AliasGenerator
@@ -79,7 +91,7 @@ from ._forward_ref import PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, has_instance_in_type, recursively_defined_type_refs, replace_types
 from ._mock_val_ser import MockCoreSchema
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
-from ._typing_extra import is_finalvar, is_self_type
+from ._typing_extra import is_finalvar, is_self_type, is_zoneinfo_type
 from ._utils import lenient_issubclass
 
 if TYPE_CHECKING:
@@ -109,6 +121,7 @@ LIST_TYPES: list[type] = [list, typing.List, collections.abc.MutableSequence]
 SET_TYPES: list[type] = [set, typing.Set, collections.abc.MutableSet]
 FROZEN_SET_TYPES: list[type] = [frozenset, typing.FrozenSet, collections.abc.Set]
 DICT_TYPES: list[type] = [dict, typing.Dict, collections.abc.MutableMapping, collections.abc.Mapping]
+IP_TYPES: list[type] = [IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network]
 
 
 def check_validator_fields_against_field_name(
@@ -399,6 +412,102 @@ class GenerateSchema:
     def _frozenset_schema(self, tp: Any, items_type: Any) -> CoreSchema:
         return core_schema.frozenset_schema(self.generate_schema(items_type))
 
+    def _enum_schema(self, enum_type: type[Enum]) -> CoreSchema:
+        cases: list[Any] = list(enum_type.__members__.values())
+
+        enum_ref = get_type_ref(enum_type)
+        description = None if not enum_type.__doc__ else inspect.cleandoc(enum_type.__doc__)
+        if (
+            description == 'An enumeration.'
+        ):  # This is the default value provided by enum.EnumMeta.__new__; don't use it
+            description = None
+        js_updates = {'title': enum_type.__name__, 'description': description}
+        js_updates = {k: v for k, v in js_updates.items() if v is not None}
+
+        sub_type: Literal['str', 'int', 'float'] | None = None
+        if issubclass(enum_type, int):
+            sub_type = 'int'
+            value_ser_type: core_schema.SerSchema = core_schema.simple_ser_schema('int')
+        elif issubclass(enum_type, str):
+            # this handles `StrEnum` (3.11 only), and also `Foobar(str, Enum)`
+            sub_type = 'str'
+            value_ser_type = core_schema.simple_ser_schema('str')
+        elif issubclass(enum_type, float):
+            sub_type = 'float'
+            value_ser_type = core_schema.simple_ser_schema('float')
+        else:
+            # TODO this is an ugly hack, how do we trigger an Any schema for serialization?
+            value_ser_type = core_schema.plain_serializer_function_ser_schema(lambda x: x)
+
+        if cases:
+
+            def get_json_schema(schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+                json_schema = handler(schema)
+                original_schema = handler.resolve_ref_schema(json_schema)
+                original_schema.update(js_updates)
+                return json_schema
+
+            # we don't want to add the missing to the schema if it's the default one
+            default_missing = getattr(enum_type._missing_, '__func__', None) == Enum._missing_.__func__  # type: ignore
+            enum_schema = core_schema.enum_schema(
+                enum_type,
+                cases,
+                sub_type=sub_type,
+                missing=None if default_missing else enum_type._missing_,
+                ref=enum_ref,
+                metadata={'pydantic_js_functions': [get_json_schema]},
+            )
+
+            if self._config_wrapper.use_enum_values:
+                enum_schema = core_schema.no_info_after_validator_function(
+                    attrgetter('value'), enum_schema, serialization=value_ser_type
+                )
+
+            return enum_schema
+
+        else:
+
+            def get_json_schema_no_cases(_, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+                json_schema = handler(core_schema.enum_schema(enum_type, cases, sub_type=sub_type, ref=enum_ref))
+                original_schema = handler.resolve_ref_schema(json_schema)
+                original_schema.update(js_updates)
+                return json_schema
+
+            # Use an isinstance check for enums with no cases.
+            # The most important use case for this is creating TypeVar bounds for generics that should
+            # be restricted to enums. This is more consistent than it might seem at first, since you can only
+            # subclass enum.Enum (or subclasses of enum.Enum) if all parent classes have no cases.
+            # We use the get_json_schema function when an Enum subclass has been declared with no cases
+            # so that we can still generate a valid json schema.
+            return core_schema.is_instance_schema(
+                enum_type,
+                metadata={'pydantic_js_functions': [get_json_schema_no_cases]},
+            )
+
+    def _ip_schema(self, tp: Any) -> CoreSchema:
+        from ._validators import IP_VALIDATOR_LOOKUP
+
+        ip_type_json_schema_format = {
+            IPv4Address: 'ipv4',
+            IPv4Network: 'ipv4network',
+            IPv4Interface: 'ipv4interface',
+            IPv6Address: 'ipv6',
+            IPv6Network: 'ipv6network',
+            IPv6Interface: 'ipv6interface',
+        }
+
+        return core_schema.lax_or_strict_schema(
+            lax_schema=core_schema.no_info_plain_validator_function(IP_VALIDATOR_LOOKUP[tp]),
+            strict_schema=core_schema.json_or_python_schema(
+                json_schema=core_schema.no_info_after_validator_function(tp, core_schema.str_schema()),
+                python_schema=core_schema.is_instance_schema(tp),
+            ),
+            serialization=core_schema.to_string_ser_schema(),
+            metadata=build_metadata_dict(
+                js_functions=[lambda _1, _2: {'type': 'string', 'format': ip_type_json_schema_format[tp]}]
+            ),
+        )
+
     def _arbitrary_type_schema(self, tp: Any) -> CoreSchema:
         if not isinstance(tp, type):
             warn(
@@ -642,13 +751,11 @@ class GenerateSchema:
         """Unpack all 'definitions' schemas into `GenerateSchema.defs.definitions`
         and return the inner schema.
         """
-
-        def get_ref(s: CoreSchema) -> str:
-            return s['ref']  # type: ignore
-
         if schema['type'] == 'definitions':
-            self.defs.definitions.update({get_ref(s): s for s in schema['definitions']})
-            schema = schema['schema']
+            definitions = self.defs.definitions
+            for s in schema['definitions']:
+                definitions[s['ref']] = s  # type: ignore
+            return schema['schema']
         return schema
 
     def _generate_schema_from_property(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
@@ -813,18 +920,36 @@ class GenerateSchema:
             return core_schema.bool_schema()
         elif obj is Any or obj is object:
             return core_schema.any_schema()
+        elif obj is datetime.date:
+            return core_schema.date_schema()
+        elif obj is datetime.datetime:
+            return core_schema.datetime_schema()
+        elif obj is datetime.time:
+            return core_schema.time_schema()
+        elif obj is datetime.timedelta:
+            return core_schema.timedelta_schema()
+        elif obj is Decimal:
+            return core_schema.decimal_schema()
+        elif obj is UUID:
+            return core_schema.uuid_schema()
+        elif obj is Url:
+            return core_schema.url_schema()
+        elif obj is MultiHostUrl:
+            return core_schema.multi_host_url_schema()
         elif obj is None or obj is _typing_extra.NoneType:
             return core_schema.none_schema()
+        elif obj in IP_TYPES:
+            return self._ip_schema(obj)
         elif obj in TUPLE_TYPES:
             return self._tuple_schema(obj)
         elif obj in LIST_TYPES:
-            return self._list_schema(obj, self._get_first_arg_or_any(obj))
+            return self._list_schema(obj, Any)
         elif obj in SET_TYPES:
-            return self._set_schema(obj, self._get_first_arg_or_any(obj))
+            return self._set_schema(obj, Any)
         elif obj in FROZEN_SET_TYPES:
-            return self._frozenset_schema(obj, self._get_first_arg_or_any(obj))
+            return self._frozenset_schema(obj, Any)
         elif obj in DICT_TYPES:
-            return self._dict_schema(obj, *self._get_first_two_args_or_any(obj))
+            return self._dict_schema(obj, Any, Any)
         elif isinstance(obj, TypeAliasType):
             return self._type_alias_type_schema(obj)
         elif obj is type:
@@ -855,9 +980,9 @@ class GenerateSchema:
         elif isinstance(obj, (FunctionType, LambdaType, MethodType, partial)):
             return self._callable_schema(obj)
         elif inspect.isclass(obj) and issubclass(obj, Enum):
-            from ._std_types_schema import get_enum_core_schema
-
-            return get_enum_core_schema(obj, self._config_wrapper.config_dict)
+            return self._enum_schema(obj)
+        elif is_zoneinfo_type(obj):
+            return self._zoneinfo_schema()
 
         if _typing_extra.is_dataclass(obj):
             return self._dataclass_schema(obj, None)
@@ -1473,6 +1598,30 @@ class GenerateSchema:
             custom_error_message='Input should be a type',
         )
 
+    def _zoneinfo_schema(self) -> core_schema.CoreSchema:
+        """Generate schema for a zone_info.ZoneInfo object"""
+        # we're def >=py3.9 if ZoneInfo was included in input
+        if sys.version_info < (3, 9):
+            assert False, 'Unreachable'
+
+        # import in this path is safe
+        from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+        def validate_str_is_valid_iana_tz(value: Any, /) -> ZoneInfo:
+            if isinstance(value, ZoneInfo):
+                return value
+            try:
+                return ZoneInfo(value)
+            except (ZoneInfoNotFoundError, ValueError):
+                raise PydanticCustomError('zoneinfo_str', 'invalid timezone: {value}', {'value': value})
+
+        metadata = build_metadata_dict(js_functions=[lambda _1, _2: {'type': 'string', 'format': 'zoneinfo'}])
+        return core_schema.no_info_plain_validator_function(
+            validate_str_is_valid_iana_tz,
+            serialization=core_schema.to_string_ser_schema(),
+            metadata=metadata,
+        )
+
     def _union_is_subclass_schema(self, union_type: Any) -> core_schema.CoreSchema:
         """Generate schema for `Type[Union[X, ...]]`."""
         args = self._get_args_resolving_forward_refs(union_type, required=True)
@@ -1481,6 +1630,8 @@ class GenerateSchema:
     def _subclass_schema(self, type_: Any) -> core_schema.CoreSchema:
         """Generate schema for a Type, e.g. `Type[int]`."""
         type_param = self._get_first_arg_or_any(type_)
+        # Assume `type[Annotated[<typ>, ...]]` is equivalent to `type[<typ>]`:
+        type_param = _typing_extra.annotated_type(type_param) or type_param
         if type_param == Any:
             return self._type_schema()
         elif isinstance(type_param, typing.TypeVar):

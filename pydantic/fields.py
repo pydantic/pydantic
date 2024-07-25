@@ -488,10 +488,10 @@ class FieldInfo(_repr.Representation):
         """
         default = dc_field.default
         if default is dataclasses.MISSING:
-            default = PydanticUndefined
+            default = _Unset
 
         if dc_field.default_factory is dataclasses.MISSING:
-            default_factory: typing.Callable[[], Any] | None = None
+            default_factory: typing.Callable[[], Any] | None = _Unset
         else:
             default_factory = dc_field.default_factory
 
@@ -932,11 +932,10 @@ class ModelPrivateAttr(_repr.Representation):
 
     def __set_name__(self, cls: type[Any], name: str) -> None:
         """Preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487."""
-        if self.default is PydanticUndefined:
+        default = self.default
+        if default is PydanticUndefined:
             return
-        if not hasattr(self.default, '__set_name__'):
-            return
-        set_name = self.default.__set_name__
+        set_name = getattr(default, '__set_name__', None)
         if callable(set_name):
             set_name(cls, name)
 

@@ -8,23 +8,16 @@ from __future__ import annotations as _annotations
 import collections
 import collections.abc
 import dataclasses
-import decimal
-import inspect
 import os
 import typing
-from enum import Enum
 from functools import partial
-from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from operator import attrgetter
-from typing import Any, Callable, Iterable, Literal, Tuple, TypeVar
+from typing import Any, Callable, Iterable, Tuple, TypeVar
 
 import typing_extensions
 from pydantic_core import (
     CoreSchema,
-    MultiHostUrl,
     PydanticCustomError,
     PydanticOmit,
-    Url,
     core_schema,
 )
 from typing_extensions import get_args, get_origin
@@ -35,8 +28,7 @@ from pydantic.types import Strict
 
 from ..config import ConfigDict
 from ..json_schema import JsonSchemaValue
-from . import _known_annotated_metadata, _typing_extra, _validators
-from ._core_utils import get_type_ref
+from . import _known_annotated_metadata, _typing_extra
 from ._internal_dataclass import slots_true
 from ._schema_generation_shared import GetCoreSchemaHandler, GetJsonSchemaHandler
 
@@ -44,89 +36,6 @@ if typing.TYPE_CHECKING:
     from ._generate_schema import GenerateSchema
 
     StdSchemaFunction = Callable[[GenerateSchema, type[Any]], core_schema.CoreSchema]
-
-
-@dataclasses.dataclass(**slots_true)
-class SchemaTransformer:
-    get_core_schema: Callable[[Any, GetCoreSchemaHandler], CoreSchema]
-    get_json_schema: Callable[[CoreSchema, GetJsonSchemaHandler], JsonSchemaValue]
-
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        return self.get_core_schema(source_type, handler)
-
-    def __get_pydantic_json_schema__(self, schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-        return self.get_json_schema(schema, handler)
-
-
-def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchema:
-    cases: list[Any] = list(enum_type.__members__.values())
-
-    enum_ref = get_type_ref(enum_type)
-    description = None if not enum_type.__doc__ else inspect.cleandoc(enum_type.__doc__)
-    if description == 'An enumeration.':  # This is the default value provided by enum.EnumMeta.__new__; don't use it
-        description = None
-    js_updates = {'title': enum_type.__name__, 'description': description}
-    js_updates = {k: v for k, v in js_updates.items() if v is not None}
-
-    sub_type: Literal['str', 'int', 'float'] | None = None
-    if issubclass(enum_type, int):
-        sub_type = 'int'
-        value_ser_type: core_schema.SerSchema = core_schema.simple_ser_schema('int')
-    elif issubclass(enum_type, str):
-        # this handles `StrEnum` (3.11 only), and also `Foobar(str, Enum)`
-        sub_type = 'str'
-        value_ser_type = core_schema.simple_ser_schema('str')
-    elif issubclass(enum_type, float):
-        sub_type = 'float'
-        value_ser_type = core_schema.simple_ser_schema('float')
-    else:
-        # TODO this is an ugly hack, how do we trigger an Any schema for serialization?
-        value_ser_type = core_schema.plain_serializer_function_ser_schema(lambda x: x)
-
-    if cases:
-
-        def get_json_schema(schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-            json_schema = handler(schema)
-            original_schema = handler.resolve_ref_schema(json_schema)
-            original_schema.update(js_updates)
-            return json_schema
-
-        # we don't want to add the missing to the schema if it's the default one
-        default_missing = getattr(enum_type._missing_, '__func__', None) == Enum._missing_.__func__  # type: ignore
-        enum_schema = core_schema.enum_schema(
-            enum_type,
-            cases,
-            sub_type=sub_type,
-            missing=None if default_missing else enum_type._missing_,
-            ref=enum_ref,
-            metadata={'pydantic_js_functions': [get_json_schema]},
-        )
-
-        if config.get('use_enum_values', False):
-            enum_schema = core_schema.no_info_after_validator_function(
-                attrgetter('value'), enum_schema, serialization=value_ser_type
-            )
-
-        return enum_schema
-
-    else:
-
-        def get_json_schema_no_cases(_, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-            json_schema = handler(core_schema.enum_schema(enum_type, cases, sub_type=sub_type, ref=enum_ref))
-            original_schema = handler.resolve_ref_schema(json_schema)
-            original_schema.update(js_updates)
-            return json_schema
-
-        # Use an isinstance check for enums with no cases.
-        # The most important use case for this is creating TypeVar bounds for generics that should
-        # be restricted to enums. This is more consistent than it might seem at first, since you can only
-        # subclass enum.Enum (or subclasses of enum.Enum) if all parent classes have no cases.
-        # We use the get_json_schema function when an Enum subclass has been declared with no cases
-        # so that we can still generate a valid json schema.
-        return core_schema.is_instance_schema(
-            enum_type,
-            metadata={'pydantic_js_functions': [get_json_schema_no_cases]},
-        )
 
 
 @dataclasses.dataclass(**slots_true)
@@ -148,58 +57,6 @@ class InnerSchemaValidator:
 
     def __get_pydantic_core_schema__(self, _source_type: Any, _handler: GetCoreSchemaHandler) -> CoreSchema:
         return self.core_schema
-
-
-def decimal_prepare_pydantic_annotations(
-    source: Any, annotations: Iterable[Any], config: ConfigDict
-) -> tuple[Any, list[Any]] | None:
-    if source is not decimal.Decimal:
-        return None
-
-    metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
-
-    config_allow_inf_nan = config.get('allow_inf_nan')
-    if config_allow_inf_nan is not None:
-        metadata.setdefault('allow_inf_nan', config_allow_inf_nan)
-
-    _known_annotated_metadata.check_metadata(
-        metadata, {*_known_annotated_metadata.FLOAT_CONSTRAINTS, 'max_digits', 'decimal_places'}, decimal.Decimal
-    )
-    return source, [InnerSchemaValidator(core_schema.decimal_schema(**metadata)), *remaining_annotations]
-
-
-def datetime_prepare_pydantic_annotations(
-    source_type: Any, annotations: Iterable[Any], _config: ConfigDict
-) -> tuple[Any, list[Any]] | None:
-    import datetime
-
-    metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
-    if source_type is datetime.date:
-        sv = InnerSchemaValidator(core_schema.date_schema(**metadata))
-    elif source_type is datetime.datetime:
-        sv = InnerSchemaValidator(core_schema.datetime_schema(**metadata))
-    elif source_type is datetime.time:
-        sv = InnerSchemaValidator(core_schema.time_schema(**metadata))
-    elif source_type is datetime.timedelta:
-        sv = InnerSchemaValidator(core_schema.timedelta_schema(**metadata))
-    else:
-        return None
-    # check now that we know the source type is correct
-    _known_annotated_metadata.check_metadata(metadata, _known_annotated_metadata.DATE_TIME_CONSTRAINTS, source_type)
-    return (source_type, [sv, *remaining_annotations])
-
-
-def uuid_prepare_pydantic_annotations(
-    source_type: Any, annotations: Iterable[Any], _config: ConfigDict
-) -> tuple[Any, list[Any]] | None:
-    # UUIDs have no constraints - they are fixed length, constructing a UUID instance checks the length
-
-    from uuid import UUID
-
-    if source_type is not UUID:
-        return None
-
-    return (source_type, [InnerSchemaValidator(core_schema.uuid_schema()), *annotations])
 
 
 def path_schema_prepare_pydantic_annotations(
@@ -355,7 +212,7 @@ class SequenceValidator:
             schema = constrained_schema
         else:
             # safety check in case we forget to add a case
-            assert self.mapped_origin in (collections.deque, collections.Counter)
+            assert self.mapped_origin is collections.deque
 
             if self.mapped_origin is collections.deque:
                 # if we have a MaxLen annotation might as well set that as the default maxlen on the deque
@@ -369,7 +226,7 @@ class SequenceValidator:
                 coerce_instance_wrap = partial(core_schema.no_info_after_validator_function, self.mapped_origin)
 
             # we have to use a lax list schema here, because we need to validate the deque's
-            # items via a list schema, but it's ok if the deque itself is not a list (same for Counter)
+            # items via a list schema, but it's ok if the deque itself is not a list
             metadata_with_strict_override = {**metadata, 'strict': False}
             constrained_schema = core_schema.list_schema(items_schema, **metadata_with_strict_override)
 
@@ -412,10 +269,6 @@ SEQUENCE_ORIGIN_MAP: dict[Any, Any] = {
     collections.abc.MutableSet: set,
     collections.abc.Set: frozenset,
 }
-
-
-def identity(s: CoreSchema) -> CoreSchema:
-    return s
 
 
 def sequence_like_prepare_pydantic_annotations(
@@ -624,120 +477,8 @@ def mapping_like_prepare_pydantic_annotations(
     )
 
 
-def ip_prepare_pydantic_annotations(
-    source_type: Any, annotations: Iterable[Any], _config: ConfigDict
-) -> tuple[Any, list[Any]] | None:
-    def make_strict_ip_schema(tp: type[Any]) -> CoreSchema:
-        return core_schema.json_or_python_schema(
-            json_schema=core_schema.no_info_after_validator_function(tp, core_schema.str_schema()),
-            python_schema=core_schema.is_instance_schema(tp),
-        )
-
-    if source_type is IPv4Address:
-        return source_type, [
-            SchemaTransformer(
-                lambda _1, _2: core_schema.lax_or_strict_schema(
-                    lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v4_address_validator),
-                    strict_schema=make_strict_ip_schema(IPv4Address),
-                    serialization=core_schema.to_string_ser_schema(),
-                ),
-                lambda _1, _2: {'type': 'string', 'format': 'ipv4'},
-            ),
-            *annotations,
-        ]
-    if source_type is IPv4Network:
-        return source_type, [
-            SchemaTransformer(
-                lambda _1, _2: core_schema.lax_or_strict_schema(
-                    lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v4_network_validator),
-                    strict_schema=make_strict_ip_schema(IPv4Network),
-                    serialization=core_schema.to_string_ser_schema(),
-                ),
-                lambda _1, _2: {'type': 'string', 'format': 'ipv4network'},
-            ),
-            *annotations,
-        ]
-    if source_type is IPv4Interface:
-        return source_type, [
-            SchemaTransformer(
-                lambda _1, _2: core_schema.lax_or_strict_schema(
-                    lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v4_interface_validator),
-                    strict_schema=make_strict_ip_schema(IPv4Interface),
-                    serialization=core_schema.to_string_ser_schema(),
-                ),
-                lambda _1, _2: {'type': 'string', 'format': 'ipv4interface'},
-            ),
-            *annotations,
-        ]
-
-    if source_type is IPv6Address:
-        return source_type, [
-            SchemaTransformer(
-                lambda _1, _2: core_schema.lax_or_strict_schema(
-                    lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v6_address_validator),
-                    strict_schema=make_strict_ip_schema(IPv6Address),
-                    serialization=core_schema.to_string_ser_schema(),
-                ),
-                lambda _1, _2: {'type': 'string', 'format': 'ipv6'},
-            ),
-            *annotations,
-        ]
-    if source_type is IPv6Network:
-        return source_type, [
-            SchemaTransformer(
-                lambda _1, _2: core_schema.lax_or_strict_schema(
-                    lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v6_network_validator),
-                    strict_schema=make_strict_ip_schema(IPv6Network),
-                    serialization=core_schema.to_string_ser_schema(),
-                ),
-                lambda _1, _2: {'type': 'string', 'format': 'ipv6network'},
-            ),
-            *annotations,
-        ]
-    if source_type is IPv6Interface:
-        return source_type, [
-            SchemaTransformer(
-                lambda _1, _2: core_schema.lax_or_strict_schema(
-                    lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v6_interface_validator),
-                    strict_schema=make_strict_ip_schema(IPv6Interface),
-                    serialization=core_schema.to_string_ser_schema(),
-                ),
-                lambda _1, _2: {'type': 'string', 'format': 'ipv6interface'},
-            ),
-            *annotations,
-        ]
-
-    return None
-
-
-def url_prepare_pydantic_annotations(
-    source_type: Any, annotations: Iterable[Any], _config: ConfigDict
-) -> tuple[Any, list[Any]] | None:
-    if source_type is Url:
-        return source_type, [
-            SchemaTransformer(
-                lambda _1, _2: core_schema.url_schema(),
-                lambda cs, handler: handler(cs),
-            ),
-            *annotations,
-        ]
-    if source_type is MultiHostUrl:
-        return source_type, [
-            SchemaTransformer(
-                lambda _1, _2: core_schema.multi_host_url_schema(),
-                lambda cs, handler: handler(cs),
-            ),
-            *annotations,
-        ]
-
-
 PREPARE_METHODS: tuple[Callable[[Any, Iterable[Any], ConfigDict], tuple[Any, list[Any]] | None], ...] = (
-    decimal_prepare_pydantic_annotations,
     sequence_like_prepare_pydantic_annotations,
-    datetime_prepare_pydantic_annotations,
-    uuid_prepare_pydantic_annotations,
-    path_schema_prepare_pydantic_annotations,
     mapping_like_prepare_pydantic_annotations,
-    ip_prepare_pydantic_annotations,
-    url_prepare_pydantic_annotations,
+    path_schema_prepare_pydantic_annotations,
 )

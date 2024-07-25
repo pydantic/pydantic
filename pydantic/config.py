@@ -393,7 +393,7 @@ class ConfigDict(TypedDict, total=False):
     """
 
     allow_inf_nan: bool
-    """Whether to allow infinity (`+inf` an `-inf`) and NaN values to float fields. Defaults to `True`."""
+    """Whether to allow infinity (`+inf` an `-inf`) and NaN values to float and decimal fields. Defaults to `True`."""
 
     json_schema_extra: JsonDict | JsonSchemaExtraCallable | None
     """A dict or callable to provide extra JSON schema properties. Defaults to `None`."""
@@ -631,7 +631,7 @@ class ConfigDict(TypedDict, total=False):
     except UserWarning as e:
         print(e)
         '''
-        Field "model_prefixed_field" has conflict with protected namespace "model_".
+        Field "model_prefixed_field" in Model has conflict with protected namespace "model_".
 
         You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ()`.
         '''
@@ -659,7 +659,7 @@ class ConfigDict(TypedDict, total=False):
     except UserWarning as e:
         print(e)
         '''
-        Field "also_protect_field" has conflict with protected namespace "also_protect_".
+        Field "also_protect_field" in Model has conflict with protected namespace "also_protect_".
 
         You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_',)`.
         '''
