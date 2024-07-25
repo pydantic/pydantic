@@ -12,16 +12,13 @@ import decimal
 import os
 import typing
 from functools import partial
-from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import Any, Callable, Iterable, Tuple, TypeVar
 
 import typing_extensions
 from pydantic_core import (
     CoreSchema,
-    MultiHostUrl,
     PydanticCustomError,
     PydanticOmit,
-    Url,
     core_schema,
 )
 from typing_extensions import get_args, get_origin
@@ -40,18 +37,6 @@ if typing.TYPE_CHECKING:
     from ._generate_schema import GenerateSchema
 
     StdSchemaFunction = Callable[[GenerateSchema, type[Any]], core_schema.CoreSchema]
-
-
-@dataclasses.dataclass(**slots_true)
-class SchemaTransformer:
-    get_core_schema: Callable[[Any, GetCoreSchemaHandler], CoreSchema]
-    get_json_schema: Callable[[CoreSchema, GetJsonSchemaHandler], JsonSchemaValue]
-
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        return self.get_core_schema(source_type, handler)
-
-    def __get_pydantic_json_schema__(self, schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-        return self.get_json_schema(schema, handler)
 
 
 @dataclasses.dataclass(**slots_true)
@@ -91,19 +76,6 @@ def decimal_prepare_pydantic_annotations(
         metadata, {*_known_annotated_metadata.FLOAT_CONSTRAINTS, 'max_digits', 'decimal_places'}, decimal.Decimal
     )
     return source, [InnerSchemaValidator(core_schema.decimal_schema(**metadata)), *remaining_annotations]
-
-
-def uuid_prepare_pydantic_annotations(
-    source_type: Any, annotations: Iterable[Any], _config: ConfigDict
-) -> tuple[Any, list[Any]] | None:
-    # UUIDs have no constraints - they are fixed length, constructing a UUID instance checks the length
-
-    from uuid import UUID
-
-    if source_type is not UUID:
-        return None
-
-    return (source_type, [InnerSchemaValidator(core_schema.uuid_schema()), *annotations])
 
 
 def path_schema_prepare_pydantic_annotations(
@@ -524,66 +496,9 @@ def mapping_like_prepare_pydantic_annotations(
     )
 
 
-def ip_prepare_pydantic_annotations(
-    source_type: Any, annotations: Iterable[Any], _config: ConfigDict
-) -> tuple[Any, list[Any]] | None:
-    from ._validators import IP_VALIDATOR_LOOKUP
-
-    if source_type not in [IPv4Address, IPv4Network, IPv4Interface, IPv6Address, IPv6Network, IPv6Interface]:
-        return None
-
-    ip_type_json_schema_format = {
-        IPv4Address: 'ipv4',
-        IPv4Network: 'ipv4network',
-        IPv4Interface: 'ipv4interface',
-        IPv6Address: 'ipv6',
-        IPv6Network: 'ipv6network',
-        IPv6Interface: 'ipv6interface',
-    }
-
-    return source_type, [
-        SchemaTransformer(
-            lambda _1, _2: core_schema.lax_or_strict_schema(
-                lax_schema=core_schema.no_info_plain_validator_function(IP_VALIDATOR_LOOKUP[source_type]),
-                strict_schema=core_schema.json_or_python_schema(
-                    json_schema=core_schema.no_info_after_validator_function(source_type, core_schema.str_schema()),
-                    python_schema=core_schema.is_instance_schema(source_type),
-                ),
-                serialization=core_schema.to_string_ser_schema(),
-            ),
-            lambda _1, _2: {'type': 'string', 'format': ip_type_json_schema_format[source_type]},
-        ),
-        *annotations,
-    ]
-
-
-def url_prepare_pydantic_annotations(
-    source_type: Any, annotations: Iterable[Any], _config: ConfigDict
-) -> tuple[Any, list[Any]] | None:
-    if source_type is Url:
-        return source_type, [
-            SchemaTransformer(
-                lambda _1, _2: core_schema.url_schema(),
-                lambda cs, handler: handler(cs),
-            ),
-            *annotations,
-        ]
-    if source_type is MultiHostUrl:
-        return source_type, [
-            SchemaTransformer(
-                lambda _1, _2: core_schema.multi_host_url_schema(),
-                lambda cs, handler: handler(cs),
-            ),
-            *annotations,
-        ]
-
-
 PREPARE_METHODS: tuple[Callable[[Any, Iterable[Any], ConfigDict], tuple[Any, list[Any]] | None], ...] = (
     decimal_prepare_pydantic_annotations,
     sequence_like_prepare_pydantic_annotations,
-    uuid_prepare_pydantic_annotations,
     path_schema_prepare_pydantic_annotations,
     mapping_like_prepare_pydantic_annotations,
-    ip_prepare_pydantic_annotations,
-    url_prepare_pydantic_annotations,
 )
