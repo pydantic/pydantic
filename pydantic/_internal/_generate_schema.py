@@ -4,6 +4,7 @@ from __future__ import annotations as _annotations
 
 import collections.abc
 import dataclasses
+import datetime
 import inspect
 import re
 import sys
@@ -11,7 +12,6 @@ import typing
 import warnings
 from contextlib import ExitStack, contextmanager
 from copy import copy, deepcopy
-from datetime import date, datetime, time, timedelta
 from enum import Enum
 from functools import partial
 from inspect import Parameter, _ParameterKind, signature
@@ -884,13 +884,13 @@ class GenerateSchema:
             return core_schema.bool_schema()
         elif obj is Any or obj is object:
             return core_schema.any_schema()
-        elif obj is date:
+        elif obj is datetime.date:
             return core_schema.date_schema()
-        elif obj is datetime:
+        elif obj is datetime.datetime:
             return core_schema.datetime_schema()
-        elif obj is time:
+        elif obj is datetime.time:
             return core_schema.time_schema()
-        elif obj is timedelta:
+        elif obj is datetime.timedelta:
             return core_schema.timedelta_schema()
         elif obj is None or obj is _typing_extra.NoneType:
             return core_schema.none_schema()
