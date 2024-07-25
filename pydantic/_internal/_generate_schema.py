@@ -1014,14 +1014,14 @@ class GenerateSchema:
         if _typing_extra.is_dataclass(obj):
             return self._dataclass_schema(obj, None)
 
+        origin = get_origin(obj)
+        if origin is not None:
+            return self._match_generic_type(obj, origin)
+
         res = self._get_prepare_pydantic_annotations_for_known_type(obj, ())
         if res is not None:
             source_type, annotations = res
             return self._apply_annotations(source_type, annotations)
-
-        origin = get_origin(obj)
-        if origin is not None:
-            return self._match_generic_type(obj, origin)
 
         if self._arbitrary_types:
             return self._arbitrary_type_schema(obj)
@@ -1066,6 +1066,11 @@ class GenerateSchema:
             return self._iterable_schema(obj)
         elif origin in (re.Pattern, typing.Pattern):
             return self._pattern_schema(obj)
+
+        res = self._get_prepare_pydantic_annotations_for_known_type(obj, ())
+        if res is not None:
+            source_type, annotations = res
+            return self._apply_annotations(source_type, annotations)
 
         if self._arbitrary_types:
             return self._arbitrary_type_schema(origin)
