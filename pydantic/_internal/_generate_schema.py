@@ -4,6 +4,7 @@ from __future__ import annotations as _annotations
 
 import collections.abc
 import dataclasses
+import datetime
 import inspect
 import re
 import sys
@@ -918,6 +919,14 @@ class GenerateSchema:
             return core_schema.bool_schema()
         elif obj is Any or obj is object:
             return core_schema.any_schema()
+        elif obj is datetime.date:
+            return core_schema.date_schema()
+        elif obj is datetime.datetime:
+            return core_schema.datetime_schema()
+        elif obj is datetime.time:
+            return core_schema.time_schema()
+        elif obj is datetime.timedelta:
+            return core_schema.timedelta_schema()
         elif obj is UUID:
             return core_schema.uuid_schema()
         elif obj is Url:
