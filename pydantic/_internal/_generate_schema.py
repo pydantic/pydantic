@@ -6,6 +6,8 @@ import collections.abc
 import dataclasses
 import datetime
 import inspect
+import os
+import pathlib
 import re
 import sys
 import typing
@@ -39,6 +41,7 @@ from typing import (
 from uuid import UUID
 from warnings import warn
 
+import typing_extensions
 from pydantic_core import (
     CoreSchema,
     MultiHostUrl,
@@ -123,6 +126,27 @@ FROZEN_SET_TYPES: list[type] = [frozenset, typing.FrozenSet, collections.abc.Set
 DICT_TYPES: list[type] = [dict, typing.Dict, collections.abc.MutableMapping, collections.abc.Mapping]
 IP_TYPES: list[type] = [IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network]
 SEQUENCE_TYPES: list[type] = [typing.Sequence, collections.abc.Sequence]
+PATH_TYPES: list[type] = [
+    os.PathLike,
+    pathlib.Path,
+    pathlib.PurePath,
+    pathlib.PosixPath,
+    pathlib.PurePosixPath,
+    pathlib.PureWindowsPath,
+]
+MAPPING_TYPES = [
+    typing.Mapping,
+    typing.MutableMapping,
+    collections.abc.Mapping,
+    collections.abc.MutableMapping,
+    collections.OrderedDict,
+    typing_extensions.OrderedDict,
+    typing.DefaultDict,
+    collections.defaultdict,
+    collections.Counter,
+    typing.Counter,
+]
+DEQUE_TYPES: list[type] = [collections.deque, typing.Deque]
 
 
 def check_validator_fields_against_field_name(
@@ -989,6 +1013,7 @@ class GenerateSchema:
 
         if _typing_extra.is_dataclass(obj):
             return self._dataclass_schema(obj, None)
+
         res = self._get_prepare_pydantic_annotations_for_known_type(obj, ())
         if res is not None:
             source_type, annotations = res
@@ -1990,7 +2015,11 @@ class GenerateSchema:
     def _get_prepare_pydantic_annotations_for_known_type(
         self, obj: Any, annotations: tuple[Any, ...]
     ) -> tuple[Any, list[Any]] | None:
-        from ._std_types_schema import PREPARE_METHODS
+        from ._std_types_schema import (
+            mapping_like_prepare_pydantic_annotations,
+            path_schema_prepare_pydantic_annotations,
+            sequence_like_prepare_pydantic_annotations,
+        )
 
         # Check for hashability
         try:
@@ -1999,12 +2028,19 @@ class GenerateSchema:
             # obj is definitely not a known type if this fails
             return None
 
-        for gen in PREPARE_METHODS:
-            res = gen(obj, annotations)
-            if res is not None:
-                return res
+        # TODO: I'd rather we didn't handle the generic nature in the annotations prep, but the same way we do other
+        # generic types like list[str] via _match_generic_type, but I'm not sure if we can do that because this is
+        # not always called from match_type, but sometimes from _apply_annotations
+        obj_origin = get_origin(obj) or obj
 
-        return None
+        if obj_origin in PATH_TYPES:
+            return path_schema_prepare_pydantic_annotations(obj, annotations)
+        elif obj_origin in DEQUE_TYPES:
+            return sequence_like_prepare_pydantic_annotations(obj, annotations)
+        elif obj_origin in MAPPING_TYPES:
+            return mapping_like_prepare_pydantic_annotations(obj, annotations)
+        else:
+            return None
 
     def _apply_annotations(
         self,
