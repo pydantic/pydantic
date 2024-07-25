@@ -12,6 +12,7 @@ import typing
 import warnings
 from contextlib import ExitStack, contextmanager
 from copy import copy, deepcopy
+from decimal import Decimal
 from enum import Enum
 from functools import partial
 from inspect import Parameter, _ParameterKind, signature
@@ -927,6 +928,8 @@ class GenerateSchema:
             return core_schema.time_schema()
         elif obj is datetime.timedelta:
             return core_schema.timedelta_schema()
+        elif obj is Decimal:
+            return core_schema.decimal_schema()
         elif obj is UUID:
             return core_schema.uuid_schema()
         elif obj is Url:
