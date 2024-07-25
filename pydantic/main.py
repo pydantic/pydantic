@@ -589,7 +589,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             The validated Pydantic model.
 
         Raises:
-            ValueError: If `json_data` is not a JSON string.
+            ValidationError: If `json_data` is not a JSON string or the object could not be validated.
         """
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
