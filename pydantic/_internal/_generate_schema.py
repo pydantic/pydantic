@@ -1998,7 +1998,7 @@ class GenerateSchema:
             return None
 
         for gen in PREPARE_METHODS:
-            res = gen(obj, annotations, self._config_wrapper.config_dict)
+            res = gen(obj, annotations)
             if res is not None:
                 return res
 
