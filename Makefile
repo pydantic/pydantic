@@ -97,6 +97,10 @@ test-pydantic-extra-types: .pdm
 	git clone https://github.com/pydantic/pydantic-extra-types.git --single-branch
 	bash ./tests/test_pydantic_extra_types.sh
 
+.PHONY: test-no-docs  # Run all tests except the docs tests
+test-no-docs: .pdm
+	pdm run pytest tests --ignore=tests/test_docs.py
+
 .PHONY: all  ## Run the standard set of checks performed in CI
 all: lint typecheck codespell testcov
 
