@@ -5964,7 +5964,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
 <span class="sd">            The validated Pydantic model.</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            ValueError: If `json_data` is not a JSON string.</span>
+<span class="sd">            ValidationError: If `json_data` is not a JSON string or the object could not be validated.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks</span>
         <span class="n">__tracebackhide__</span> <span class="o">=</span> <span class="kc">True</span>
@@ -9125,11 +9125,11 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError">ValueError</a></code>
+                  <code><span title="pydantic.ValidationError">ValidationError</span></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>If <code>json_data</code> is not a JSON string.</p>
+                <p>If <code>json_data</code> is not a JSON string or the object could not be validated.</p>
               </div>
             </td>
           </tr>
@@ -9184,7 +9184,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <span class="sd">        The validated Pydantic model.</span>
 
 <span class="sd">    Raises:</span>
-<span class="sd">        ValueError: If `json_data` is not a JSON string.</span>
+<span class="sd">        ValidationError: If `json_data` is not a JSON string or the object could not be validated.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks</span>
     <span class="n">__tracebackhide__</span> <span class="o">=</span> <span class="kc">True</span>
