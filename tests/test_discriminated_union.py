@@ -2,7 +2,7 @@ import re
 import sys
 from enum import Enum, IntEnum
 from types import SimpleNamespace
-from typing import Any, Callable, Generic, List, Optional, Sequence, TypeVar, Union
+from typing import Any, Callable, Generic, List, Optional, Self, Sequence, TypeVar, Union
 
 import pytest
 from dirty_equals import HasRepr, IsStr
@@ -14,6 +14,7 @@ from pydantic._internal._discriminated_union import apply_discriminator
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
 from pydantic.fields import FieldInfo
+from pydantic.functional_validators import model_validator
 from pydantic.json_schema import GenerateJsonSchema
 from pydantic.types import Tag
 
@@ -1377,6 +1378,90 @@ def test_sequence_discriminated_union():
         'title': 'Model',
         'type': 'object',
     }
+
+
+def test_sequence_discriminated_union_validation():
+    """
+    Related issue: https://github.com/pydantic/pydantic/issues/9872
+    """
+
+    class A(BaseModel):
+        type: Literal['a']
+        a_field: str
+
+    class B(BaseModel):
+        type: Literal['b']
+        b_field: str
+
+    class Model(BaseModel):
+        items: Sequence[Annotated[Union[A, B], Field(discriminator='type')]]
+
+    import json
+
+    data_json = '{"items": [{"type": "b"}]}'
+    data_dict = json.loads(data_json)
+
+    expected_error = {
+        'type': 'missing',
+        'loc': ('items', 0, 'b', 'b_field'),
+        'msg': 'Field required',
+        'input': {'type': 'b'},
+    }
+
+    # missing field should be `b_field` only, not including `a_field`
+    # also `literal_error` should not be reported on `type`
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate(data_dict)
+    assert exc_info.value.errors(include_url=False) == [expected_error]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate_json(data_json)
+    assert exc_info.value.errors(include_url=False) == [expected_error]
+
+
+def test_sequence_discriminated_union_validation_with_validator():
+    """
+    This is the same as the previous test, but add validators to both class.
+    """
+
+    class A(BaseModel):
+        type: Literal['a']
+        a_field: str
+
+        @model_validator(mode='after')
+        def check_a(self) -> Self:
+            return self
+
+    class B(BaseModel):
+        type: Literal['b']
+        b_field: str
+
+        @model_validator(mode='after')
+        def check_b(self) -> Self:
+            return self
+
+    class Model(BaseModel):
+        items: Sequence[Annotated[Union[A, B], Field(discriminator='type')]]
+
+    import json
+
+    data_json = '{"items": [{"type": "b"}]}'
+    data_dict = json.loads(data_json)
+
+    expected_error = {
+        'type': 'missing',
+        'loc': ('items', 0, 'b', 'b_field'),
+        'msg': 'Field required',
+        'input': {'type': 'b'},
+    }
+
+    # missing field should be `b_field` only, not including `a_field`
+    # also `literal_error` should not be reported on `type`
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate(data_dict)
+    assert exc_info.value.errors(include_url=False) == [expected_error]
 
 
 @pytest.fixture(scope='session', name='animals')
