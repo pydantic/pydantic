@@ -2,7 +2,7 @@ import re
 import sys
 from enum import Enum, IntEnum
 from types import SimpleNamespace
-from typing import Any, Callable, Generic, List, Optional, Self, Sequence, TypeVar, Union
+from typing import Any, Callable, Generic, List, Optional, Sequence, TypeVar, Union
 
 import pytest
 from dirty_equals import HasRepr, IsStr
@@ -1430,7 +1430,7 @@ def test_sequence_discriminated_union_validation_with_validator():
         a_field: str
 
         @model_validator(mode='after')
-        def check_a(self) -> Self:
+        def check_a(self):
             return self
 
     class B(BaseModel):
@@ -1438,7 +1438,7 @@ def test_sequence_discriminated_union_validation_with_validator():
         b_field: str
 
         @model_validator(mode='after')
-        def check_b(self) -> Self:
+        def check_b(self):
             return self
 
     class Model(BaseModel):
