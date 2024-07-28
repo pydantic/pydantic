@@ -127,7 +127,7 @@ class ModelValidatorDecoratorInfo:
     while building the pydantic-core schema.
 
     Attributes:
-        decorator_repr: A class variable representing the decorator string, '@model_serializer'.
+        decorator_repr: A class variable representing the decorator string, '@model_validator'.
         mode: The proposed serializer mode.
     """
 
