@@ -171,6 +171,8 @@ def apply_each_item_validators(
     field_name: str | None,
 ) -> core_schema.CoreSchema:
     # This V1 compatibility shim should eventually be removed
+
+    # fail early if each_item_validators is empty
     if not each_item_validators:
         return schema
 
