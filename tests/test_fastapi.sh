@@ -3,14 +3,13 @@
 set -x
 set -e
 
+# waiting on a fix for a bug introduced in v72.0.0, see https://github.com/pypa/setuptools/issues/4519
+echo "PIP_CONSTRAINT=setuptools<72.0.0" >> $GITHUB_ENV
+
 cd fastapi
 git fetch --tags
 
-# waiting on a fix for a bug introduced in v72.0.0, see https://github.com/pypa/setuptools/issues/4519
-# problem lies in sqlalchemy
-python -m pip install 'setuptools<72.0.0'
-
-pip install --no-build-isolation -r requirements.txt
+pip install -r requirements.txt
 # Install the version of pydantic from the current branch, not the released version used by fastapi
 pip uninstall -y pydantic
 cd .. && pip install . && cd fastapi
