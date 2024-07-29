@@ -167,10 +167,9 @@ class ConfigWrapper:
             A `CoreConfig` object created from config.
         """
         config = self.config_dict
-        title = config.get('title') or (obj and obj.__name__)
 
         core_config_values = {
-            'title': title,
+            'title': config.get('title') or (obj and obj.__name__),
             'extra_fields_behavior': config.get('extra'),
             'allow_inf_nan': config.get('allow_inf_nan'),
             'populate_by_name': config.get('populate_by_name'),
@@ -194,10 +193,7 @@ class ConfigWrapper:
             'cache_strings': config.get('cache_strings'),
         }
 
-        # Create dictionary excluding None values
-        non_none_config = {k: v for k, v in core_config_values.items() if v is not None}
-
-        return core_schema.CoreConfig(**non_none_config)
+        return core_schema.CoreConfig(**{k: v for k, v in core_config_values.items() if v is not None})
 
     def __repr__(self):
         c = ', '.join(f'{k}={v!r}' for k, v in self.config_dict.items())
