@@ -99,7 +99,8 @@ class WrapSerializer:
         end: datetime
 
     def convert_to_utc(value: Any, handler, info) -> Dict[str, datetime]:
-        # Note that `helper` can actually help serialize the `value` for further custom serialization in case it's a subclass.
+        # Note that `handler` can actually help serialize the `value` for
+        # further custom serialization in case it's a subclass.
         partial_result = handler(value, info)
         if info.mode == 'json':
             return {
