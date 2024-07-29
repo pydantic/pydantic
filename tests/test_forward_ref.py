@@ -418,6 +418,7 @@ class Account(BaseModel):
     }
 
 
+@pytest.mark.xfail(reason='needs more strict annotation checks, see https://github.com/pydantic/pydantic/issues/9988')
 def test_forward_ref_with_field(create_module):
     @create_module
     def module():

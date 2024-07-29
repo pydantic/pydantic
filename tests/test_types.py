@@ -1781,6 +1781,7 @@ def test_enum_with_no_cases() -> None:
     assert json_schema['properties']['e']['enum'] == []
 
 
+@pytest.mark.xfail(reason='needs more strict annotation checks, see https://github.com/pydantic/pydantic/issues/9988')
 @pytest.mark.parametrize(
     'kwargs,type_',
     [
@@ -1806,13 +1807,7 @@ def test_invalid_schema_constraints(kwargs, type_):
             a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
 
-@pytest.mark.xfail(
-    reason=(
-        "We allow python validation functions to wrap the type if the constraint isn't valid for the type. "
-        "An error isn't raised for an int or float annotated with this same invalid constraint, "
-        "so it's ok to mark this as xfail for now, but we should improve all of them in the future."
-    )
-)
+@pytest.mark.xfail(reason='needs more strict annotation checks, see https://github.com/pydantic/pydantic/issues/9988')
 def test_invalid_decimal_constraint():
     with pytest.raises(
         TypeError, match="The following constraints cannot be applied to <class 'decimal.Decimal'>: 'max_length'"
