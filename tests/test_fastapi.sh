@@ -6,6 +6,10 @@ set -e
 cd fastapi
 git fetch --tags
 
+# waiting on a fix for a bug introduced in v72.0.0, see https://github.com/pypa/setuptools/issues/4520
+# problem lies in sqlalchemy
+python -m pip install 'setuptools<72.0.0'
+
 pip install -r requirements.txt
 # Install the version of pydantic from the current branch, not the released version used by fastapi
 pip uninstall -y pydantic
