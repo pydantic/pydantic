@@ -6,6 +6,8 @@ import collections.abc
 import dataclasses
 import datetime
 import inspect
+import os
+import pathlib
 import re
 import sys
 import typing
@@ -39,6 +41,7 @@ from typing import (
 from uuid import UUID
 from warnings import warn
 
+import typing_extensions
 from pydantic_core import (
     CoreSchema,
     MultiHostUrl,
@@ -122,6 +125,28 @@ SET_TYPES: list[type] = [set, typing.Set, collections.abc.MutableSet]
 FROZEN_SET_TYPES: list[type] = [frozenset, typing.FrozenSet, collections.abc.Set]
 DICT_TYPES: list[type] = [dict, typing.Dict, collections.abc.MutableMapping, collections.abc.Mapping]
 IP_TYPES: list[type] = [IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network]
+SEQUENCE_TYPES: list[type] = [typing.Sequence, collections.abc.Sequence]
+PATH_TYPES: list[type] = [
+    os.PathLike,
+    pathlib.Path,
+    pathlib.PurePath,
+    pathlib.PosixPath,
+    pathlib.PurePosixPath,
+    pathlib.PureWindowsPath,
+]
+MAPPING_TYPES = [
+    typing.Mapping,
+    typing.MutableMapping,
+    collections.abc.Mapping,
+    collections.abc.MutableMapping,
+    collections.OrderedDict,
+    typing_extensions.OrderedDict,
+    typing.DefaultDict,
+    collections.defaultdict,
+    collections.Counter,
+    typing.Counter,
+]
+DEQUE_TYPES: list[type] = [collections.deque, typing.Deque]
 
 
 def check_validator_fields_against_field_name(
@@ -400,16 +425,16 @@ class GenerateSchema:
 
     # the following methods can be overridden but should be considered
     # unstable / private APIs
-    def _list_schema(self, tp: Any, items_type: Any) -> CoreSchema:
+    def _list_schema(self, items_type: Any) -> CoreSchema:
         return core_schema.list_schema(self.generate_schema(items_type))
 
-    def _dict_schema(self, tp: Any, keys_type: Any, values_type: Any) -> CoreSchema:
+    def _dict_schema(self, keys_type: Any, values_type: Any) -> CoreSchema:
         return core_schema.dict_schema(self.generate_schema(keys_type), self.generate_schema(values_type))
 
-    def _set_schema(self, tp: Any, items_type: Any) -> CoreSchema:
+    def _set_schema(self, items_type: Any) -> CoreSchema:
         return core_schema.set_schema(self.generate_schema(items_type))
 
-    def _frozenset_schema(self, tp: Any, items_type: Any) -> CoreSchema:
+    def _frozenset_schema(self, items_type: Any) -> CoreSchema:
         return core_schema.frozenset_schema(self.generate_schema(items_type))
 
     def _enum_schema(self, enum_type: type[Enum]) -> CoreSchema:
@@ -943,13 +968,15 @@ class GenerateSchema:
         elif obj in TUPLE_TYPES:
             return self._tuple_schema(obj)
         elif obj in LIST_TYPES:
-            return self._list_schema(obj, Any)
+            return self._list_schema(Any)
         elif obj in SET_TYPES:
-            return self._set_schema(obj, Any)
+            return self._set_schema(Any)
         elif obj in FROZEN_SET_TYPES:
-            return self._frozenset_schema(obj, Any)
+            return self._frozenset_schema(Any)
+        elif obj in SEQUENCE_TYPES:
+            return self._sequence_schema(Any)
         elif obj in DICT_TYPES:
-            return self._dict_schema(obj, Any, Any)
+            return self._dict_schema(Any, Any)
         elif isinstance(obj, TypeAliasType):
             return self._type_alias_type_schema(obj)
         elif obj is type:
@@ -986,14 +1013,15 @@ class GenerateSchema:
 
         if _typing_extra.is_dataclass(obj):
             return self._dataclass_schema(obj, None)
-        res = self._get_prepare_pydantic_annotations_for_known_type(obj, ())
-        if res is not None:
-            source_type, annotations = res
-            return self._apply_annotations(source_type, annotations)
 
         origin = get_origin(obj)
         if origin is not None:
             return self._match_generic_type(obj, origin)
+
+        res = self._get_prepare_pydantic_annotations_for_known_type(obj, ())
+        if res is not None:
+            source_type, annotations = res
+            return self._apply_annotations(source_type, annotations)
 
         if self._arbitrary_types:
             return self._arbitrary_type_schema(obj)
@@ -1021,23 +1049,28 @@ class GenerateSchema:
         elif origin in TUPLE_TYPES:
             return self._tuple_schema(obj)
         elif origin in LIST_TYPES:
-            return self._list_schema(obj, self._get_first_arg_or_any(obj))
+            return self._list_schema(self._get_first_arg_or_any(obj))
         elif origin in SET_TYPES:
-            return self._set_schema(obj, self._get_first_arg_or_any(obj))
+            return self._set_schema(self._get_first_arg_or_any(obj))
         elif origin in FROZEN_SET_TYPES:
-            return self._frozenset_schema(obj, self._get_first_arg_or_any(obj))
+            return self._frozenset_schema(self._get_first_arg_or_any(obj))
         elif origin in DICT_TYPES:
-            return self._dict_schema(obj, *self._get_first_two_args_or_any(obj))
+            return self._dict_schema(*self._get_first_two_args_or_any(obj))
         elif is_typeddict(origin):
             return self._typed_dict_schema(obj, origin)
         elif origin in (typing.Type, type):
             return self._subclass_schema(obj)
-        elif origin in {typing.Sequence, collections.abc.Sequence}:
-            return self._sequence_schema(obj)
+        elif origin in SEQUENCE_TYPES:
+            return self._sequence_schema(self._get_first_arg_or_any(obj))
         elif origin in {typing.Iterable, collections.abc.Iterable, typing.Generator, collections.abc.Generator}:
             return self._iterable_schema(obj)
         elif origin in (re.Pattern, typing.Pattern):
             return self._pattern_schema(obj)
+
+        res = self._get_prepare_pydantic_annotations_for_known_type(obj, ())
+        if res is not None:
+            source_type, annotations = res
+            return self._apply_annotations(source_type, annotations)
 
         if self._arbitrary_types:
             return self._arbitrary_type_schema(origin)
@@ -1650,17 +1683,16 @@ class GenerateSchema:
         else:
             return core_schema.is_subclass_schema(type_param)
 
-    def _sequence_schema(self, sequence_type: Any) -> core_schema.CoreSchema:
+    def _sequence_schema(self, items_type: Any) -> core_schema.CoreSchema:
         """Generate schema for a Sequence, e.g. `Sequence[int]`."""
         from ._std_types_schema import serialize_sequence_via_list
 
-        item_type = self._get_first_arg_or_any(sequence_type)
-        item_type_schema = self.generate_schema(item_type)
+        item_type_schema = self.generate_schema(items_type)
         list_schema = core_schema.list_schema(item_type_schema)
 
         json_schema = smart_deepcopy(list_schema)
         python_schema = core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence')
-        if item_type != Any:
+        if items_type != Any:
             from ._validators import sequence_validator
 
             python_schema = core_schema.chain_schema(
@@ -1989,7 +2021,11 @@ class GenerateSchema:
     def _get_prepare_pydantic_annotations_for_known_type(
         self, obj: Any, annotations: tuple[Any, ...]
     ) -> tuple[Any, list[Any]] | None:
-        from ._std_types_schema import PREPARE_METHODS
+        from ._std_types_schema import (
+            mapping_like_prepare_pydantic_annotations,
+            path_schema_prepare_pydantic_annotations,
+            sequence_like_prepare_pydantic_annotations,
+        )
 
         # Check for hashability
         try:
@@ -1998,12 +2034,19 @@ class GenerateSchema:
             # obj is definitely not a known type if this fails
             return None
 
-        for gen in PREPARE_METHODS:
-            res = gen(obj, annotations, self._config_wrapper.config_dict)
-            if res is not None:
-                return res
+        # TODO: I'd rather we didn't handle the generic nature in the annotations prep, but the same way we do other
+        # generic types like list[str] via _match_generic_type, but I'm not sure if we can do that because this is
+        # not always called from match_type, but sometimes from _apply_annotations
+        obj_origin = get_origin(obj) or obj
 
-        return None
+        if obj_origin in PATH_TYPES:
+            return path_schema_prepare_pydantic_annotations(obj, annotations)
+        elif obj_origin in DEQUE_TYPES:
+            return sequence_like_prepare_pydantic_annotations(obj, annotations)
+        elif obj_origin in MAPPING_TYPES:
+            return mapping_like_prepare_pydantic_annotations(obj, annotations)
+        else:
+            return None
 
     def _apply_annotations(
         self,
