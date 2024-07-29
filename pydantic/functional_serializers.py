@@ -339,6 +339,16 @@ def model_serializer(
 
     See [Custom serializers](../concepts/serialization.md#custom-serializers) for more information.
 
+    Two signatures are supported for `mode='plain'`, which is the default:
+
+    - `(self)`
+    - `(self, info: SerializationInfo)`
+
+    And two other signatures for `mode='wrap'`:
+
+    - `(self, nxt: SerializerFunctionWrapHandler)`
+    - `(self, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)`
+
     Args:
         f: The function to be decorated.
         mode: The serialization mode.
