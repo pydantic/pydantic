@@ -113,7 +113,7 @@ class ConfigWrapper:
             A `ConfigWrapper` instance for `BaseModel`.
         """
         config_new = ConfigDict()
-        for base in bases:
+        for base in bases[::-1]:
             config = getattr(base, 'model_config', None)
             if config:
                 config_new.update(config.copy())
