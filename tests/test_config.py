@@ -493,33 +493,43 @@ def test_invalid_config_keys():
 
 def test_multiple_inheritance_config():
     class Parent(BaseModel):
-        model_config = ConfigDict(frozen=True, extra='forbid')
+        model_config = ConfigDict(frozen=True, extra='forbid', title='parent_title', revalidate_instances='always')
 
     class Mixin(BaseModel):
-        model_config = ConfigDict(use_enum_values=True)
+        model_config = ConfigDict(
+            use_enum_values=True, title='this_should_be_the_childs_title_due_mro', revalidate_instances='never'
+        )
 
     class Child(Mixin, Parent):
-        model_config = ConfigDict(populate_by_name=True)
+        model_config = ConfigDict(populate_by_name=True, revalidate_instances='subclass-instances')
 
     assert BaseModel.model_config.get('frozen') is None
     assert BaseModel.model_config.get('populate_by_name') is None
     assert BaseModel.model_config.get('extra') is None
     assert BaseModel.model_config.get('use_enum_values') is None
+    assert BaseModel.model_config.get('title') is None
+    assert BaseModel.model_config.get('revalidate_instances') is None
 
     assert Parent.model_config.get('frozen') is True
     assert Parent.model_config.get('populate_by_name') is None
     assert Parent.model_config.get('extra') == 'forbid'
     assert Parent.model_config.get('use_enum_values') is None
+    assert Parent.model_config.get('title') == 'parent_title'
+    assert Parent.model_config.get('revalidate_instances') == 'always'
 
     assert Mixin.model_config.get('frozen') is None
     assert Mixin.model_config.get('populate_by_name') is None
     assert Mixin.model_config.get('extra') is None
     assert Mixin.model_config.get('use_enum_values') is True
+    assert Mixin.model_config.get('title') == 'this_should_be_the_childs_title_due_mro'
+    assert Mixin.model_config.get('revalidate_instances') == 'never'
 
     assert Child.model_config.get('frozen') is True
     assert Child.model_config.get('populate_by_name') is True
     assert Child.model_config.get('extra') == 'forbid'
     assert Child.model_config.get('use_enum_values') is True
+    assert Child.model_config.get('title') == 'this_should_be_the_childs_title_due_mro'
+    assert Child.model_config.get('revalidate_instances') == 'subclass-instances'
 
 
 def test_config_wrapper_match():
