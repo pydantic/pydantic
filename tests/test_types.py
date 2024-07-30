@@ -1782,37 +1782,40 @@ def test_enum_with_no_cases() -> None:
 
 
 @pytest.mark.parametrize(
-    'kwargs,type_,schema_type',
+    'kwargs,type_,a',
     [
         pytest.param(
             {'pattern': '^foo$'},
             int,
-            'int',
+            1,
             marks=pytest.mark.xfail(
                 reason='int cannot be used with pattern but we do not currently validate that at schema build time'
             ),
         ),
-        ({'gt': 0}, conlist(int, min_length=4), 'list'),
-        ({'gt': 0}, conset(int, min_length=4), 'set'),
-        ({'gt': 0}, confrozenset(int, min_length=4), 'frozenset'),
+        ({'gt': 0}, conlist(int, min_length=4), [1, 2, 3, 4, 5]),
+        ({'gt': 0}, conset(int, min_length=4), {1, 2, 3, 4, 5}),
+        ({'gt': 0}, confrozenset(int, min_length=4), frozenset({1, 2, 3, 4, 5})),
     ],
 )
-def test_invalid_schema_constraints(kwargs, type_, schema_type):
-    match = rf"Unable to apply constraint 'gt' to schema of type '{schema_type}'"
-    with pytest.raises((SchemaError, TypeError), match=match):
+def test_invalid_schema_constraints(kwargs, type_, a):
+    class Foo(BaseModel):
+        a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
-        class Foo(BaseModel):
-            a: type_ = Field('foo', title='A title', description='A description', **kwargs)
+    constraint_name = list(kwargs.keys())[0]
+    with pytest.raises(
+        TypeError, match=re.escape(f"Unable to apply constraint '{constraint_name}' to supplied value {a}")
+    ):
+        Foo(a=a)
 
 
 def test_invalid_decimal_constraint():
-    with pytest.raises(TypeError, match="Unable to apply constraint 'max_length' to schema of type 'decimal'"):
+    class Foo(BaseModel):
+        a: Decimal = Field('foo', title='A title', description='A description', max_length=5)
 
-        class Foo(BaseModel):
-            a: Decimal = Field('foo', title='A title', description='A description', max_length=5)
+    with pytest.raises(TypeError, match="Unable to apply constraint 'max_length' to supplied value 1.0"):
+        Foo(a=1.0)
 
 
-@pytest.mark.xfail(reason='should we allow gt on str?')
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_string_success():
     class MoreStringsModel(BaseModel):
@@ -6009,7 +6012,6 @@ def test_transform_schema_for_first_party_class():
     ]
 
 
-@pytest.mark.xfail(reason='currently raising a TypeError for constraints on dataclasses')
 def test_constraint_dataclass() -> None:
     @dataclass(order=True)
     # need to make it inherit from int so that
@@ -6224,7 +6226,6 @@ def test_instanceof_serialization():
     }
 
 
-@pytest.mark.xfail(reason='hmm, we should probably allow this - do we check for corresponding functions like __lt__?')
 def test_constraints_arbitrary_type() -> None:
     class CustomType:
         def __init__(self, v: Any) -> None:

@@ -13,6 +13,7 @@ from typing import Any, Callable
 
 from pydantic_core import PydanticCustomError, core_schema
 from pydantic_core._pydantic_core import PydanticKnownError
+from pydantic_core.core_schema import ErrorType
 
 
 def sequence_validator(
@@ -235,51 +236,46 @@ def ip_v6_interface_validator(input_value: Any, /) -> IPv6Interface:
         raise PydanticCustomError('ip_v6_interface', 'Input is not a valid IPv6 interface')
 
 
-def greater_than_validator(x: Any, gt: Any) -> Any:
-    if not (x > gt):
-        raise PydanticKnownError('greater_than', {'gt': gt})
+_InputType = typing.TypeVar('_InputType')
+
+
+def create_constraint_validator(
+    constraint_id: str, predicate: Callable[[_InputType, Any], bool], error_type: ErrorType
+) -> Callable[[_InputType, Any], _InputType]:
+    def validator(x: _InputType, constraint_value: Any) -> _InputType:
+        try:
+            if not predicate(x, constraint_value):
+                raise PydanticKnownError(error_type, {constraint_id: constraint_value})
+        except TypeError:
+            raise TypeError(f"Unable to apply constraint '{constraint_id}' to supplied value {x}")
+        return x
+
+    return validator
+
+
+def min_length_validator(x: Any, constraint_value: Any) -> Any:
+    min_length = constraint_value
+    try:
+        if not (len(x) >= min_length):
+            raise PydanticKnownError(
+                'too_short',
+                {'field_type': 'Value', 'min_length': min_length, 'actual_length': len(x)},
+            )
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'min_length' to supplied value {x}")
     return x
 
 
-def greater_than_or_equal_validator(x: Any, ge: Any) -> Any:
-    if not (x >= ge):
-        raise PydanticKnownError('greater_than_equal', {'ge': ge})
-    return x
-
-
-def less_than_validator(x: Any, lt: Any) -> Any:
-    if not (x < lt):
-        raise PydanticKnownError('less_than', {'lt': lt})
-    return x
-
-
-def less_than_or_equal_validator(x: Any, le: Any) -> Any:
-    if not (x <= le):
-        raise PydanticKnownError('less_than_equal', {'le': le})
-    return x
-
-
-def multiple_of_validator(x: Any, multiple_of: Any) -> Any:
-    if x % multiple_of:
-        raise PydanticKnownError('multiple_of', {'multiple_of': multiple_of})
-    return x
-
-
-def min_length_validator(x: Any, min_length: Any) -> Any:
-    if not (len(x) >= min_length):
-        raise PydanticKnownError(
-            'too_short',
-            {'field_type': 'Value', 'min_length': min_length, 'actual_length': len(x)},
-        )
-    return x
-
-
-def max_length_validator(x: Any, max_length: Any) -> Any:
-    if len(x) > max_length:
-        raise PydanticKnownError(
-            'too_long',
-            {'field_type': 'Value', 'max_length': max_length, 'actual_length': len(x)},
-        )
+def max_length_validator(x: Any, constraint_value: Any) -> Any:
+    max_length = constraint_value
+    try:
+        if len(x) > max_length:
+            raise PydanticKnownError(
+                'too_long',
+                {'field_type': 'Value', 'max_length': max_length, 'actual_length': len(x)},
+            )
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'max_length' to supplied value {x}")
     return x
 
 
@@ -290,11 +286,13 @@ def forbid_inf_nan_check(x: Any) -> Any:
 
 
 _CONSTRAINT_TO_VALIDATOR_LOOKUP: dict[str, Callable] = {
-    'gt': greater_than_validator,
-    'ge': greater_than_or_equal_validator,
-    'lt': less_than_validator,
-    'le': less_than_or_equal_validator,
-    'multiple_of': multiple_of_validator,
+    'gt': create_constraint_validator('gt', lambda x, gt: x > gt, 'greater_than'),
+    'ge': create_constraint_validator('ge', lambda x, ge: x >= ge, 'greater_than_equal'),
+    'lt': create_constraint_validator('lt', lambda x, lt: x < lt, 'less_than'),
+    'le': create_constraint_validator('le', lambda x, le: x <= le, 'less_than_equal'),
+    'multiple_of': create_constraint_validator(
+        'multiple_of', lambda x, multiple_of: x % multiple_of == 0, 'multiple_of'
+    ),
     'min_length': min_length_validator,
     'max_length': max_length_validator,
 }

@@ -234,47 +234,37 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                 schema[constraint] = value
             continue
 
-        #  else if we recognize the type of the schema as one of the common wrapper types,
-        #  apply a function after to the schema to enforce the corresponding constraint
-        if schema_type in [
-            'function-before',
-            'function-wrap',
-            'function-after',
-            'function-plain',
-            'json-or-python',
-            'lax-or-strict',
-            'isinstance',
-        ]:
-            if constraint in chain_schema_constraints:
-                chain_schema_steps.append(cs.str_schema(**{constraint: value}))
-            elif constraint in {*NUMERIC_CONSTRAINTS, *LENGTH_CONSTRAINTS}:
-                if constraint in NUMERIC_CONSTRAINTS:
-                    json_schema_constraint = constraint
-                elif constraint in LENGTH_CONSTRAINTS:
-                    inner_schema = schema
-                    while inner_schema['type'] in {'function-before', 'function-wrap', 'function-after'}:
-                        inner_schema = inner_schema['schema']  # type: ignore
-                    inner_schema_type = inner_schema['type']
-                    if inner_schema_type == 'list' or (
-                        inner_schema_type == 'json-or-python' and inner_schema['json_schema']['type'] == 'list'  # type: ignore
-                    ):
-                        json_schema_constraint = 'minItems' if constraint == 'min_length' else 'maxItems'
-                    else:
-                        json_schema_constraint = 'minLength' if constraint == 'min_length' else 'maxLength'
+        #  else, apply a function after validator to the schema to enforce the corresponding constraint
+        if constraint in chain_schema_constraints:
+            chain_schema_steps.append(cs.str_schema(**{constraint: value}))
+        elif constraint in {*NUMERIC_CONSTRAINTS, *LENGTH_CONSTRAINTS}:
+            if constraint in NUMERIC_CONSTRAINTS:
+                json_schema_constraint = constraint
+            elif constraint in LENGTH_CONSTRAINTS:
+                inner_schema = schema
+                while inner_schema['type'] in {'function-before', 'function-wrap', 'function-after'}:
+                    inner_schema = inner_schema['schema']  # type: ignore
+                inner_schema_type = inner_schema['type']
+                if inner_schema_type == 'list' or (
+                    inner_schema_type == 'json-or-python' and inner_schema['json_schema']['type'] == 'list'  # type: ignore
+                ):
+                    json_schema_constraint = 'minItems' if constraint == 'min_length' else 'maxItems'
+                else:
+                    json_schema_constraint = 'minLength' if constraint == 'min_length' else 'maxLength'
 
-                schema = cs.no_info_after_validator_function(
-                    partial(get_constraint_validator(constraint), **{constraint: value}), schema
-                )
-                add_js_update_schema(schema, lambda: {json_schema_constraint: as_jsonable_value(value)})
-            elif constraint == 'allow_inf_nan' and value is False:
-                schema = cs.no_info_after_validator_function(
-                    forbid_inf_nan_check,
-                    schema,
-                )
-            else:
-                raise TypeError(f"Unable to apply constraint '{constraint}' to schema of type '{schema_type}'")
+            schema = cs.no_info_after_validator_function(
+                partial(get_constraint_validator(constraint), **{'constraint_value': value}), schema
+            )
+            add_js_update_schema(schema, lambda: {json_schema_constraint: as_jsonable_value(value)})
+        elif constraint == 'allow_inf_nan' and value is False:
+            schema = cs.no_info_after_validator_function(
+                forbid_inf_nan_check,
+                schema,
+            )
         else:
-            raise TypeError(f"Unable to apply constraint '{constraint}' to schema of type '{schema_type}'")
+            # It's rare that we'd get here, but it's possible if we add a new constraint and forget to handle it
+            # Most constraint errors are caught at runtime during attempted application
+            raise ValueError(f"Unable to apply constraint '{constraint}' to schema of type '{schema_type}'")
 
     for annotation in other_metadata:
         if (annotation_type := type(annotation)) in (at_to_constraint_map := _get_at_to_constraint_map()):
