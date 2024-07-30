@@ -285,9 +285,6 @@ class PydanticPluginConfig:
             for key in self.__slots__:
                 setting = plugin_config.getboolean(CONFIGFILE_KEY, key, fallback=False)
                 setattr(self, key, setting)
-        # self.init_typed = True
-        # self.init_forbid_extra = True
-        # print(self.init_typed, self.init_forbid_extra)
 
     def to_data(self) -> dict[str, Any]:
         """Returns a dict of config names to their values."""
