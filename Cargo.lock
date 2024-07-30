@@ -613,6 +613,8 @@ checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 [[package]]
 name = "speedate"
 version = "0.14.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "08a20480dbd4c693f0b0f3210f2cee5bfa21a176c1fa4df0e65cc0474e7fa557"
 dependencies = [
  "strum",
  "strum_macros",
