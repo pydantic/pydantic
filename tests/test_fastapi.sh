@@ -3,6 +3,9 @@
 set -x
 set -e
 
+# waiting on a fix for a bug introduced in v72.0.0, see https://github.com/pypa/setuptools/issues/4519
+echo "PIP_CONSTRAINT=setuptools<72.0.0" >> $GITHUB_ENV
+
 cd fastapi
 git fetch --tags
 

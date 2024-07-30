@@ -26,7 +26,6 @@ from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.fields import FieldInfo
 from pydantic.types import Strict
 
-from ..config import ConfigDict
 from ..json_schema import JsonSchemaValue
 from . import _known_annotated_metadata, _typing_extra
 from ._internal_dataclass import slots_true
@@ -60,7 +59,7 @@ class InnerSchemaValidator:
 
 
 def path_schema_prepare_pydantic_annotations(
-    source_type: Any, annotations: Iterable[Any], _config: ConfigDict
+    source_type: Any, annotations: Iterable[Any]
 ) -> tuple[Any, list[Any]] | None:
     import pathlib
 
@@ -272,7 +271,7 @@ SEQUENCE_ORIGIN_MAP: dict[Any, Any] = {
 
 
 def sequence_like_prepare_pydantic_annotations(
-    source_type: Any, annotations: Iterable[Any], _config: ConfigDict
+    source_type: Any, annotations: Iterable[Any]
 ) -> tuple[Any, list[Any]] | None:
     origin: Any = get_origin(source_type)
 
@@ -443,7 +442,7 @@ class MappingValidator:
 
 
 def mapping_like_prepare_pydantic_annotations(
-    source_type: Any, annotations: Iterable[Any], _config: ConfigDict
+    source_type: Any, annotations: Iterable[Any]
 ) -> tuple[Any, list[Any]] | None:
     origin: Any = get_origin(source_type)
 
@@ -477,7 +476,7 @@ def mapping_like_prepare_pydantic_annotations(
     )
 
 
-PREPARE_METHODS: tuple[Callable[[Any, Iterable[Any], ConfigDict], tuple[Any, list[Any]] | None], ...] = (
+PREPARE_METHODS: tuple[Callable[[Any, Iterable[Any]], tuple[Any, list[Any]] | None], ...] = (
     sequence_like_prepare_pydantic_annotations,
     mapping_like_prepare_pydantic_annotations,
     path_schema_prepare_pydantic_annotations,
