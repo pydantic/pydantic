@@ -251,6 +251,15 @@ def create_constraint_validator(
     error_type: ErrorType,
     context_gen: Callable[[Any, Any], dict[str, Any]] | None = None,
 ) -> Callable[[_InputType, Any], _InputType]:
+    """Create a validator function for a given constraint.
+
+    Args:
+        constraint_id: The constraint identifier, used to identify the constraint in error messages, ex 'gt'.
+        predicate: The predicate function to apply to the input value, ex `lambda x, gt: x > gt`.
+        error_type: The error type to raise if the predicate fails.
+        context_gen: A function to generate the error context from the constraint value and the input value.
+    """
+
     def validator(x: _InputType, constraint_value: Any) -> _InputType:
         try:
             if not predicate(x, constraint_value):
