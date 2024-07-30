@@ -1812,7 +1812,7 @@ def test_invalid_decimal_constraint():
             a: Decimal = Field('foo', title='A title', description='A description', max_length=5)
 
 
-@pytest.mark.xfail('should we allow gt on str?')
+@pytest.mark.xfail(reason='should we allow gt on str?')
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_string_success():
     class MoreStringsModel(BaseModel):
@@ -6009,7 +6009,7 @@ def test_transform_schema_for_first_party_class():
     ]
 
 
-@pytest.mark.xfail('currently raising a TypeError for constraints on dataclasses')
+@pytest.mark.xfail(reason='currently raising a TypeError for constraints on dataclasses')
 def test_constraint_dataclass() -> None:
     @dataclass(order=True)
     # need to make it inherit from int so that
@@ -6224,7 +6224,7 @@ def test_instanceof_serialization():
     }
 
 
-@pytest.mark.xfail('hmm, we should probably allow this...')
+@pytest.mark.xfail(reason='hmm, we should probably allow this - do we check for corresponding functions like __lt__?')
 def test_constraints_arbitrary_type() -> None:
     class CustomType:
         def __init__(self, v: Any) -> None:

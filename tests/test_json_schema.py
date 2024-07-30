@@ -5947,7 +5947,7 @@ def test_description_not_included_for_basemodel() -> None:
     assert 'description' not in Model.model_json_schema()['$defs']['BaseModel']
 
 
-@pytest.mark.xfail('should we allow max_length on enum?')
+@pytest.mark.xfail(reason='should we allow max_length on enum?')
 def test_recursive_json_schema_build() -> None:
     """
     Schema build for this case is a bit complicated due to the recursive nature of the models.
