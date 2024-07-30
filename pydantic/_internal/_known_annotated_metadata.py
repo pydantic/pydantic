@@ -235,7 +235,7 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             continue
 
         #  else if we recognize the type of the schema as one of the common wrapper types,
-        #  apply a function after to the schema to enforce the corresponding constraint, if
+        #  apply a function after to the schema to enforce the corresponding constraint
         if schema_type in [
             'function-before',
             'function-wrap',
