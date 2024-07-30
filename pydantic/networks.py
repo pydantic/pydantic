@@ -547,7 +547,7 @@ class NameEmail(_repr.Representation):
 
 
 IPvAnyAddressType: TypeAlias = 'IPv4Address | IPv6Address'
-IPvAnyInterfaceType: TypeAlias = 'IPv4Interface |IPv6Interface '
+IPvAnyInterfaceType: TypeAlias = 'IPv4Interface | IPv6Interface'
 IPvAnyNetworkType: TypeAlias = 'IPv4Network | IPv6Network'
 
 if TYPE_CHECKING:
