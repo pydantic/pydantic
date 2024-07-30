@@ -522,6 +522,24 @@ def test_multiple_inheritance_config():
     assert Child.model_config.get('use_enum_values') is True
 
 
+def test_multiple_inheritance_config_override():
+    class Parent1(BaseModel):
+        model_config = {'frozen': True, 'extra': 'forbid', 'strict': True}
+
+    class Parent2(BaseModel):
+        model_config = {'use_enum_values': True, 'extra': 'allow', 'strict': False}
+
+    class Mixin1(Parent1, Parent2):
+        pass
+
+    class Mixin2(Parent2, Parent1):
+        pass
+
+    # Closest parent wins
+    assert Mixin1.model_config == Parent2.model_config | Parent1.model_config
+    assert Mixin2.model_config == Parent1.model_config | Parent2.model_config
+
+
 def test_config_wrapper_match():
     localns = {
         '_GenerateSchema': GenerateSchema,
