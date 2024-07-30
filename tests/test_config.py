@@ -536,8 +536,8 @@ def test_multiple_inheritance_config_override():
         pass
 
     # Closest parent wins
-    assert Mixin1.model_config == Parent2.model_config | Parent1.model_config
-    assert Mixin2.model_config == Parent1.model_config | Parent2.model_config
+    assert Mixin1.model_config == {**Parent2.model_config, **Parent1.model_config}
+    assert Mixin2.model_config == {**Parent1.model_config, **Parent2.model_config}
 
 
 def test_config_wrapper_match():
