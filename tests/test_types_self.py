@@ -104,9 +104,8 @@ def test_recursive_model_with_subclass_override(Self):
     }
 
 
-@pytest.mark.xfail(reason='needs more strict annotation checks, see https://github.com/pydantic/pydantic/issues/9988')
 def test_self_type_with_field(Self):
-    with pytest.raises(TypeError, match=r'The following constraints cannot be applied.*\'gt\''):
+    with pytest.raises(TypeError, match=r"Unable to apply constraint 'gt' to schema of type 'list'"):
 
         class SelfRef(BaseModel):
             x: int

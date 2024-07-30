@@ -418,7 +418,6 @@ class Account(BaseModel):
     }
 
 
-@pytest.mark.xfail(reason='needs more strict annotation checks, see https://github.com/pydantic/pydantic/issues/9988')
 def test_forward_ref_with_field(create_module):
     @create_module
     def module():
@@ -430,7 +429,7 @@ def test_forward_ref_with_field(create_module):
 
         Foo = ForwardRef('Foo')
 
-        with pytest.raises(TypeError, match=r'The following constraints cannot be applied.*\'gt\''):
+        with pytest.raises(TypeError, match=r"Unable to apply constraint 'gt' to schema of type 'list'"):
 
             class Foo(BaseModel):
                 c: List[Foo] = Field(..., gt=0)
