@@ -35,6 +35,7 @@ fn main() {
     if let Some(true) = version_check::supports_feature("coverage_attribute") {
         println!("cargo:rustc-cfg=has_coverage_attribute");
     }
+    println!("cargo:rustc-check-cfg=cfg(has_coverage_attribute)");
     generate_self_schema();
     println!("cargo:rustc-env=PROFILE={}", std::env::var("PROFILE").unwrap());
 }

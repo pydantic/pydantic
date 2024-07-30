@@ -290,7 +290,8 @@ impl ObTypeLookup {
     /// We care about order here since:
     /// 1. we pay a price for each `isinstance` call
     /// 2. some types are subclasses of others, e.g. `bool` is a subclass of `int`
-    /// hence we put common types first
+    ///    hence we put common types first
+    ///
     /// In addition, some types have inheritance set as a bitflag on the type object:
     /// https://github.com/python/cpython/blob/v3.12.0rc1/Include/object.h#L546-L553
     /// Hence they come first
