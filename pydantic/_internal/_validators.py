@@ -236,53 +236,32 @@ def ip_v6_interface_validator(input_value: Any, /) -> IPv6Interface:
         raise PydanticCustomError('ip_v6_interface', 'Input is not a valid IPv6 interface')
 
 
+def forbid_inf_nan_check(x: Any) -> Any:
+    if not math.isfinite(x):
+        raise PydanticKnownError('finite_number')
+    return x
+
+
 _InputType = typing.TypeVar('_InputType')
 
 
 def create_constraint_validator(
-    constraint_id: str, predicate: Callable[[_InputType, Any], bool], error_type: ErrorType
+    constraint_id: str,
+    predicate: Callable[[_InputType, Any], bool],
+    error_type: ErrorType,
+    context_gen: Callable[[Any, Any], dict[str, Any]] | None = None,
 ) -> Callable[[_InputType, Any], _InputType]:
     def validator(x: _InputType, constraint_value: Any) -> _InputType:
         try:
             if not predicate(x, constraint_value):
-                raise PydanticKnownError(error_type, {constraint_id: constraint_value})
+                raise PydanticKnownError(
+                    error_type, context_gen(constraint_value, x) if context_gen else {constraint_id: constraint_value}
+                )
         except TypeError:
             raise TypeError(f"Unable to apply constraint '{constraint_id}' to supplied value {x}")
         return x
 
     return validator
-
-
-def min_length_validator(x: Any, constraint_value: Any) -> Any:
-    min_length = constraint_value
-    try:
-        if not (len(x) >= min_length):
-            raise PydanticKnownError(
-                'too_short',
-                {'field_type': 'Value', 'min_length': min_length, 'actual_length': len(x)},
-            )
-    except TypeError:
-        raise TypeError(f"Unable to apply constraint 'min_length' to supplied value {x}")
-    return x
-
-
-def max_length_validator(x: Any, constraint_value: Any) -> Any:
-    max_length = constraint_value
-    try:
-        if len(x) > max_length:
-            raise PydanticKnownError(
-                'too_long',
-                {'field_type': 'Value', 'max_length': max_length, 'actual_length': len(x)},
-            )
-    except TypeError:
-        raise TypeError(f"Unable to apply constraint 'max_length' to supplied value {x}")
-    return x
-
-
-def forbid_inf_nan_check(x: Any) -> Any:
-    if not math.isfinite(x):
-        raise PydanticKnownError('finite_number')
-    return x
 
 
 _CONSTRAINT_TO_VALIDATOR_LOOKUP: dict[str, Callable] = {
@@ -293,8 +272,18 @@ _CONSTRAINT_TO_VALIDATOR_LOOKUP: dict[str, Callable] = {
     'multiple_of': create_constraint_validator(
         'multiple_of', lambda x, multiple_of: x % multiple_of == 0, 'multiple_of'
     ),
-    'min_length': min_length_validator,
-    'max_length': max_length_validator,
+    'min_length': create_constraint_validator(
+        'min_length',
+        lambda x, min_length: len(x) >= min_length,
+        'too_short',
+        lambda c_val, x: {'field_type': 'Value', 'min_length': c_val, 'actual_length': len(x)},
+    ),
+    'max_length': create_constraint_validator(
+        'max_length',
+        lambda x, max_length: len(x) <= max_length,
+        'too_long',
+        lambda c_val, x: {'field_type': 'Value', 'max_length': c_val, 'actual_length': len(x)},
+    ),
 }
 
 
