@@ -264,7 +264,7 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
         else:
             # It's rare that we'd get here, but it's possible if we add a new constraint and forget to handle it
             # Most constraint errors are caught at runtime during attempted application
-            raise ValueError(f"Unable to apply constraint '{constraint}' to schema of type '{schema_type}'")
+            raise RuntimeError(f"Unable to apply constraint '{constraint}' to schema of type '{schema_type}'")
 
     for annotation in other_metadata:
         if (annotation_type := type(annotation)) in (at_to_constraint_map := _get_at_to_constraint_map()):
