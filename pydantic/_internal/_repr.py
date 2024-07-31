@@ -3,18 +3,26 @@
 from __future__ import annotations as _annotations
 
 import types
-import typing
-from typing import Any
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Collection,  # noqa: F401
+    Generator,
+    Iterable,
+    Literal,
+    get_args,
+    get_origin,
+)
 
-import typing_extensions
+from typing_extensions import TypeAlias, TypeAliasType
 
 from . import _typing_extra
 
-if typing.TYPE_CHECKING:
-    ReprArgs: typing_extensions.TypeAlias = 'typing.Iterable[tuple[str | None, Any]]'
-    RichReprResult: typing_extensions.TypeAlias = (
-        'typing.Iterable[Any | tuple[Any] | tuple[str, Any] | tuple[str, Any, Any]]'
-    )
+if TYPE_CHECKING:
+    # TODO: do these need to be in quotes?
+    ReprArgs: TypeAlias = 'Iterable[tuple[str | None, Any]]'
+    RichReprResult: TypeAlias = 'Iterable[Any | tuple[Any] | tuple[str, Any] | tuple[str, Any, Any]]'
 
 
 class PlainRepr(str):
@@ -33,7 +41,7 @@ class Representation:
     # (this is not a docstring to avoid adding a docstring to classes which inherit from Representation)
 
     # we don't want to use a type annotation here as it can break get_type_hints
-    __slots__ = tuple()  # type: typing.Collection[str]
+    __slots__ = tuple()  # type: Collection[str]
 
     def __repr_args__(self) -> ReprArgs:
         """Returns the attributes to show in __str__, __repr__, and __pretty__ this is generally overridden.
@@ -55,7 +63,7 @@ class Representation:
     def __repr_str__(self, join_str: str) -> str:
         return join_str.join(repr(v) if a is None else f'{a}={v!r}' for a, v in self.__repr_args__())
 
-    def __pretty__(self, fmt: typing.Callable[[Any], Any], **kwargs: Any) -> typing.Generator[Any, None, None]:
+    def __pretty__(self, fmt: Callable[[Any], Any], **kwargs: Any) -> Generator[Any, None, None]:
         """Used by devtools (https://python-devtools.helpmanual.io/) to pretty print objects."""
         yield self.__repr_name__() + '('
         yield 1
@@ -94,20 +102,20 @@ def display_as_type(obj: Any) -> str:
         return '...'
     elif isinstance(obj, Representation):
         return repr(obj)
-    elif isinstance(obj, typing_extensions.TypeAliasType):
+    elif isinstance(obj, TypeAliasType):
         return str(obj)
 
     if not isinstance(obj, (_typing_extra.typing_base, _typing_extra.WithArgsTypes, type)):
         obj = obj.__class__
 
-    if _typing_extra.origin_is_union(typing_extensions.get_origin(obj)):
-        args = ', '.join(map(display_as_type, typing_extensions.get_args(obj)))
+    if _typing_extra.origin_is_union(get_origin(obj)):
+        args = ', '.join(map(display_as_type, get_args(obj)))
         return f'Union[{args}]'
     elif isinstance(obj, _typing_extra.WithArgsTypes):
-        if typing_extensions.get_origin(obj) == typing_extensions.Literal:
-            args = ', '.join(map(repr, typing_extensions.get_args(obj)))
+        if get_origin(obj) == Literal:
+            args = ', '.join(map(repr, get_args(obj)))
         else:
-            args = ', '.join(map(display_as_type, typing_extensions.get_args(obj)))
+            args = ', '.join(map(display_as_type, get_args(obj)))
         try:
             return f'{obj.__qualname__}[{args}]'
         except AttributeError:

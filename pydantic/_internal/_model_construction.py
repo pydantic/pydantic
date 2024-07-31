@@ -4,15 +4,13 @@ from __future__ import annotations as _annotations
 
 import builtins
 import operator
-import typing
 import warnings
 import weakref
 from abc import ABCMeta
 from functools import partial
 from types import FunctionType
-from typing import Any, Callable, Generic, NoReturn
+from typing import TYPE_CHECKING, Any, Callable, Generic, NoReturn, get_args
 
-import typing_extensions
 from pydantic_core import PydanticUndefined, SchemaSerializer
 from typing_extensions import dataclass_transform, deprecated
 
@@ -31,7 +29,7 @@ from ._typing_extra import get_cls_types_namespace, is_annotated, is_classvar, p
 from ._utils import ClassAttribute, SafeGetItemProxy
 from ._validate_call import ValidateCallWrapper
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from ..fields import Field as PydanticModelField
     from ..fields import FieldInfo, ModelPrivateAttr
     from ..fields import PrivateAttr as PydanticModelPrivateAttr
@@ -226,7 +224,7 @@ class ModelMetaclass(ABCMeta):
             # this is the BaseModel class itself being created, no logic required
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
-    if not typing.TYPE_CHECKING:  # pragma: no branch
+    if not TYPE_CHECKING:  # pragma: no branch
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
 
         def __getattr__(self, item: str) -> Any:
@@ -415,7 +413,7 @@ def inspect_namespace(  # noqa C901
             and getattr(ann_type, '__module__', None) != 'functools'
         ):
             if is_annotated(ann_type):
-                _, *metadata = typing_extensions.get_args(ann_type)
+                _, *metadata = get_args(ann_type)
                 private_attr = next((v for v in metadata if isinstance(v, ModelPrivateAttr)), None)
                 if private_attr is not None:
                     private_attributes[ann_name] = private_attr

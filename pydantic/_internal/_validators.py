@@ -7,9 +7,8 @@ from __future__ import annotations as _annotations
 
 import math
 import re
-import typing
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import Any, Callable
+from typing import Any, Callable, Pattern, Sequence, TypeVar
 
 from pydantic_core import PydanticCustomError, core_schema
 from pydantic_core._pydantic_core import PydanticKnownError
@@ -17,10 +16,10 @@ from pydantic_core.core_schema import ErrorType
 
 
 def sequence_validator(
-    input_value: typing.Sequence[Any],
+    input_value: Sequence[Any],
     /,
     validator: core_schema.ValidatorFunctionWrapHandler,
-) -> typing.Sequence[Any]:
+) -> Sequence[Any]:
     """Validator for `Sequence` types, isinstance(v, Sequence) has already been called."""
     value_type = type(input_value)
 
@@ -118,8 +117,8 @@ def _import_string_logic(dotted_path: str) -> Any:
         return module
 
 
-def pattern_either_validator(input_value: Any, /) -> typing.Pattern[Any]:
-    if isinstance(input_value, typing.Pattern):
+def pattern_either_validator(input_value: Any, /) -> Pattern[Any]:
+    if isinstance(input_value, Pattern):
         return input_value
     elif isinstance(input_value, (str, bytes)):
         # todo strict mode
@@ -128,8 +127,8 @@ def pattern_either_validator(input_value: Any, /) -> typing.Pattern[Any]:
         raise PydanticCustomError('pattern_type', 'Input should be a valid pattern')
 
 
-def pattern_str_validator(input_value: Any, /) -> typing.Pattern[str]:
-    if isinstance(input_value, typing.Pattern):
+def pattern_str_validator(input_value: Any, /) -> Pattern[str]:
+    if isinstance(input_value, Pattern):
         if isinstance(input_value.pattern, str):
             return input_value
         else:
@@ -142,8 +141,8 @@ def pattern_str_validator(input_value: Any, /) -> typing.Pattern[str]:
         raise PydanticCustomError('pattern_type', 'Input should be a valid pattern')
 
 
-def pattern_bytes_validator(input_value: Any, /) -> typing.Pattern[bytes]:
-    if isinstance(input_value, typing.Pattern):
+def pattern_bytes_validator(input_value: Any, /) -> Pattern[bytes]:
+    if isinstance(input_value, Pattern):
         if isinstance(input_value.pattern, bytes):
             return input_value
         else:
@@ -156,10 +155,10 @@ def pattern_bytes_validator(input_value: Any, /) -> typing.Pattern[bytes]:
         raise PydanticCustomError('pattern_type', 'Input should be a valid pattern')
 
 
-PatternType = typing.TypeVar('PatternType', str, bytes)
+PatternType = TypeVar('PatternType', str, bytes)
 
 
-def compile_pattern(pattern: PatternType) -> typing.Pattern[PatternType]:
+def compile_pattern(pattern: PatternType) -> Pattern[PatternType]:
     try:
         return re.compile(pattern)
     except re.error:
@@ -242,7 +241,7 @@ def forbid_inf_nan_check(x: Any) -> Any:
     return x
 
 
-_InputType = typing.TypeVar('_InputType')
+_InputType = TypeVar('_InputType')
 
 
 def create_constraint_validator(

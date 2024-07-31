@@ -2,15 +2,16 @@ from __future__ import annotations
 
 import sys
 import types
-import typing
 from collections import ChainMap
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import prepare_class
-from typing import TYPE_CHECKING, Any, Iterator, List, Mapping, MutableMapping, Tuple, TypeVar
+from typing import TYPE_CHECKING, Any, Iterator, List, Mapping, MutableMapping, Tuple, TypeVar, Union
+from typing import get_args as typing_get_args
+from typing import get_origin as typing_get_origin
 from weakref import WeakValueDictionary
 
-import typing_extensions
+from typing_extensions import Annotated, ParamSpec, TypedDict
 
 from ._core_utils import get_type_ref
 from ._forward_ref import PydanticRecursiveRef
@@ -106,7 +107,7 @@ else:
 _GENERIC_TYPES_CACHE = GenericTypesCache()
 
 
-class PydanticGenericMetadata(typing_extensions.TypedDict):
+class PydanticGenericMetadata(TypedDict):
     origin: type[BaseModel] | None  # analogous to typing._GenericAlias.__origin__
     args: tuple[Any, ...]  # analogous to typing._GenericAlias.__args__
     parameters: tuple[type[Any], ...]  # analogous to typing.Generic.__parameters__
@@ -207,14 +208,14 @@ def get_args(v: Any) -> Any:
     pydantic_generic_metadata: PydanticGenericMetadata | None = getattr(v, '__pydantic_generic_metadata__', None)
     if pydantic_generic_metadata:
         return pydantic_generic_metadata.get('args')
-    return typing_extensions.get_args(v)
+    return typing_get_args(v)
 
 
 def get_origin(v: Any) -> Any:
     pydantic_generic_metadata: PydanticGenericMetadata | None = getattr(v, '__pydantic_generic_metadata__', None)
     if pydantic_generic_metadata:
         return pydantic_generic_metadata.get('origin')
-    return typing_extensions.get_origin(v)
+    return typing_get_origin(v)
 
 
 def get_standard_typevars_map(cls: type[Any]) -> dict[TypeVarType, Any] | None:
@@ -270,17 +271,19 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
         #> Tuple[int, Union[List[int], float]]
         ```
     """
+    import typing
+
     if not type_map:
         return type_
 
     type_args = get_args(type_)
     origin_type = get_origin(type_)
 
-    if origin_type is typing_extensions.Annotated:
+    if origin_type is Annotated:
         annotated_type, *annotations = type_args
         annotated = replace_types(annotated_type, type_map)
         for annotation in annotations:
-            annotated = typing_extensions.Annotated[annotated, annotation]
+            annotated = Annotated[annotated, annotation]
         return annotated
 
     # Having type args is a good indicator that this is a typing module
@@ -344,7 +347,7 @@ def has_instance_in_type(type_: Any, isinstance_target: Any) -> bool:
     type_args = get_args(type_)
     origin_type = get_origin(type_)
 
-    if origin_type is typing_extensions.Annotated:
+    if origin_type is Annotated:
         annotated_type, *annotations = type_args
         return has_instance_in_type(annotated_type, isinstance_target)
 
@@ -355,7 +358,7 @@ def has_instance_in_type(type_: Any, isinstance_target: Any) -> bool:
 
     # Handle special case for typehints that can have lists as arguments.
     # `typing.Callable[[int, str], int]` is an example for this.
-    if isinstance(type_, (List, list)) and not isinstance(type_, typing_extensions.ParamSpec):
+    if isinstance(type_, (List, list)) and not isinstance(type_, ParamSpec):
         if any(has_instance_in_type(element, isinstance_target) for element in type_):
             return True
 
@@ -486,7 +489,7 @@ def _union_orderings_key(typevar_values: Any) -> Any:
         for value in typevar_values:
             args_data.append(_union_orderings_key(value))
         return tuple(args_data)
-    elif typing_extensions.get_origin(typevar_values) is typing.Union:
+    elif get_origin(typevar_values) is Union:
         return get_args(typevar_values)
     else:
         return ()
