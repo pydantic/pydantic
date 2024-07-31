@@ -400,12 +400,17 @@ def __getattr__(attr_name: str) -> object:
 
     if module_name == '__module__':
         result = import_module(f'.{attr_name}', package=package)
+        globals()[attr_name] = result
+        return result
     else:
         module = import_module(module_name, package=package)
         result = getattr(module, attr_name)
+        g = globals()
+        for k, v in module.__dict__:
+            if not k.startswith('_'):
+                g[k] = v
+        return result
 
-    globals()[attr_name] = result
-    return result
 
 
 def __dir__() -> 'list[str]':
