@@ -1741,8 +1741,21 @@ class GenerateSchema:
             raise PydanticSchemaGenerationError(f'Unable to generate pydantic-core schema for {pattern_type!r}.')
 
     def _hashable_schema(self) -> core_schema.CoreSchema:
+        # json cannot be validated by isinstance, so we manually construct a schema
+        json_schema = core_schema.union_schema(
+            [
+                core_schema.str_schema(),
+                core_schema.int_schema(),
+                core_schema.float_schema(),
+                core_schema.bool_schema(),
+                core_schema.none_schema(),
+            ]
+        )
         return core_schema.custom_error_schema(
-            core_schema.is_instance_schema(collections.abc.Hashable),
+            core_schema.json_or_python_schema(
+                json_schema=json_schema,
+                python_schema=core_schema.is_instance_schema(collections.abc.Hashable),
+            ),
             custom_error_type='is_hashable',
             custom_error_message='Input should be hashable',
         )
