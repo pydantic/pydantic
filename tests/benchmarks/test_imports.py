@@ -3,9 +3,13 @@ import pytest
 
 @pytest.mark.benchmark
 def import_basemodel() -> None:
-    pass
+    from pydantic import BaseModel
+
+    assert BaseModel
 
 
 @pytest.mark.benchmark
 def import_field() -> None:
-    pass
+    from pydantic import Field
+
+    assert Field
