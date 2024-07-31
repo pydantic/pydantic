@@ -11,5 +11,5 @@ mv2 = ModelV2(my_str='hello')
 
 
 @pytest.mark.benchmark
-def isinstance_basemodel() -> None:
+def test_isinstance_basemodel() -> None:
     assert isinstance(mv2, BaseModel)
