@@ -110,6 +110,7 @@ cases = (
         ('mypy-plugin.ini', 'plugin_optional_inheritance.py'),
         ('mypy-plugin.ini', 'generics.py'),
         ('mypy-plugin.ini', 'root_models.py'),
+        ('mypy-plugin.ini', 'plugin_strict_fields.py'),
         ('mypy-plugin-strict.ini', 'plugin_default_factory.py'),
         ('mypy-plugin-strict-no-any.ini', 'dataclass_no_any.py'),
         ('mypy-plugin-very-strict.ini', 'metaclass_args.py'),
@@ -117,6 +118,7 @@ cases = (
         ('pyproject-default.toml', 'with_config_decorator.py'),
         ('pyproject-plugin-no-strict-optional.toml', 'no_strict_optional.py'),
         ('pyproject-plugin-strict-equality.toml', 'strict_equality.py'),
+        ('pyproject-plugin.toml', 'from_orm_v1_noconflict.py'),
     ]
 )
 
