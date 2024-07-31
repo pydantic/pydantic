@@ -197,7 +197,7 @@ jobs:
       - uses: pdm-project/setup-pdm@v4
         with:
           python-version: '3.12'
-          cache: true
+          cache: false
 
       - name: install deps
         run: |
