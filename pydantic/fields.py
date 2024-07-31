@@ -5,17 +5,15 @@ from __future__ import annotations as _annotations
 import dataclasses
 import inspect
 import sys
-import typing
 from copy import copy
 from dataclasses import Field as DataclassField
 from functools import cached_property
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Final, Literal, Pattern, TypeVar, cast, get_args, overload
 from warnings import warn
 
 import annotated_types
-import typing_extensions
 from pydantic_core import PydanticUndefined
-from typing_extensions import Literal, TypeAlias, Unpack, deprecated
+from typing_extensions import Annotated, TypeAlias, TypedDict, Unpack, deprecated
 
 from . import types
 from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils
@@ -24,7 +22,7 @@ from .config import JsonDict
 from .errors import PydanticUserError
 from .warnings import PydanticDeprecatedSince20
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from ._internal._repr import ReprArgs
 else:
     # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
@@ -44,17 +42,17 @@ else:
     Deprecated: TypeAlias = deprecated
 
 
-class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
+class _FromFieldInfoInputs(TypedDict, total=False):
     """This class exists solely to add type checking for the `**kwargs` in `FieldInfo.from_field`."""
 
     annotation: type[Any] | None
-    default_factory: typing.Callable[[], Any] | None
+    default_factory: Callable[[], Any] | None
     alias: str | None
     alias_priority: int | None
     validation_alias: str | AliasPath | AliasChoices | None
     serialization_alias: str | None
     title: str | None
-    field_title_generator: typing_extensions.Callable[[str, FieldInfo], str] | None
+    field_title_generator: Callable[[str, FieldInfo], str] | None
     description: str | None
     examples: list[Any] | None
     exclude: bool | None
@@ -66,14 +64,14 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     strict: bool | None
     min_length: int | None
     max_length: int | None
-    pattern: str | typing.Pattern[str] | None
+    pattern: str | Pattern[str] | None
     allow_inf_nan: bool | None
     max_digits: int | None
     decimal_places: int | None
     union_mode: Literal['smart', 'left_to_right'] | None
     discriminator: str | types.Discriminator | None
     deprecated: Deprecated | str | bool | None
-    json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
+    json_schema_extra: JsonDict | Callable[[JsonDict], None] | None
     frozen: bool | None
     validate_default: bool | None
     repr: bool
@@ -128,19 +126,19 @@ class FieldInfo(_repr.Representation):
 
     annotation: type[Any] | None
     default: Any
-    default_factory: typing.Callable[[], Any] | None
+    default_factory: Callable[[], Any] | None
     alias: str | None
     alias_priority: int | None
     validation_alias: str | AliasPath | AliasChoices | None
     serialization_alias: str | None
     title: str | None
-    field_title_generator: typing.Callable[[str, FieldInfo], str] | None
+    field_title_generator: Callable[[str, FieldInfo], str] | None
     description: str | None
     examples: list[Any] | None
     exclude: bool | None
     discriminator: str | types.Discriminator | None
     deprecated: Deprecated | str | bool | None
-    json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
+    json_schema_extra: JsonDict | Callable[[JsonDict], None] | None
     frozen: bool | None
     validate_default: bool | None
     repr: bool
@@ -177,7 +175,7 @@ class FieldInfo(_repr.Representation):
 
     # used to convert kwargs to metadata/constraints,
     # None has a special meaning - these items are collected into a `PydanticGeneralMetadata`
-    metadata_lookup: ClassVar[dict[str, typing.Callable[[Any], Any] | None]] = {
+    metadata_lookup: ClassVar[dict[str, Callable[[Any], Any] | None]] = {
         'strict': types.Strict,
         'gt': annotated_types.Gt,
         'ge': annotated_types.Ge,
@@ -304,11 +302,11 @@ class FieldInfo(_repr.Representation):
         final = False
         if _typing_extra.is_finalvar(annotation):
             final = True
-            if annotation is not typing_extensions.Final:
-                annotation = typing_extensions.get_args(annotation)[0]
+            if annotation is not Final:
+                annotation = get_args(annotation)[0]
 
         if _typing_extra.is_annotated(annotation):
-            first_arg, *extra_args = typing_extensions.get_args(annotation)
+            first_arg, *extra_args = get_args(annotation)
             if _typing_extra.is_finalvar(first_arg):
                 final = True
             field_info_annotations = [a for a in extra_args if isinstance(a, FieldInfo)]
@@ -365,8 +363,8 @@ class FieldInfo(_repr.Representation):
         final = False
         if _typing_extra.is_finalvar(annotation):
             final = True
-            if annotation is not typing_extensions.Final:
-                annotation = typing_extensions.get_args(annotation)[0]
+            if annotation is not Final:
+                annotation = get_args(annotation)[0]
 
         if isinstance(default, FieldInfo):
             default.annotation, annotation_metadata = FieldInfo._extract_metadata(annotation)  # pyright: ignore[reportArgumentType]
@@ -380,7 +378,7 @@ class FieldInfo(_repr.Representation):
             init_var = False
             if annotation is dataclasses.InitVar:
                 init_var = True
-                annotation = typing.cast(Any, Any)
+                annotation = cast(Any, Any)
             elif isinstance(annotation, dataclasses.InitVar):
                 init_var = True
                 annotation = annotation.type
@@ -399,7 +397,7 @@ class FieldInfo(_repr.Representation):
             return pydantic_field
         else:
             if _typing_extra.is_annotated(annotation):
-                first_arg, *extra_args = typing_extensions.get_args(annotation)
+                first_arg, *extra_args = get_args(annotation)
                 field_infos = [a for a in extra_args if isinstance(a, FieldInfo)]
                 field_info = FieldInfo.merge_field_infos(*field_infos, annotation=first_arg, default=default)
                 metadata: list[Any] = []
@@ -491,7 +489,7 @@ class FieldInfo(_repr.Representation):
             default = _Unset
 
         if dc_field.default_factory is dataclasses.MISSING:
-            default_factory: typing.Callable[[], Any] | None = _Unset
+            default_factory: Callable[[], Any] | None = _Unset
         else:
             default_factory = dc_field.default_factory
 
@@ -511,7 +509,7 @@ class FieldInfo(_repr.Representation):
         """
         if annotation is not None:
             if _typing_extra.is_annotated(annotation):
-                first_arg, *extra_args = typing_extensions.get_args(annotation)
+                first_arg, *extra_args = get_args(annotation)
                 return first_arg, list(extra_args)
 
         return annotation, []
@@ -599,7 +597,7 @@ class FieldInfo(_repr.Representation):
             return self.annotation
         else:
             # Annotated arguments must be a tuple
-            return typing_extensions.Annotated[(self.annotation, *self.metadata)]  # type: ignore
+            return Annotated[(self.annotation, *self.metadata)]  # type: ignore
 
     def apply_typevars_map(self, typevars_map: dict[Any, Any] | None, types_namespace: dict[str, Any] | None) -> None:
         """Apply a `typevars_map` to the annotation.
@@ -648,7 +646,7 @@ class FieldInfo(_repr.Representation):
                     yield s, value
 
 
-class _EmptyKwargs(typing_extensions.TypedDict):
+class _EmptyKwargs(TypedDict):
     """This class exists solely to ensure that type checking warns about passing `**extra` in `Field`."""
 
 
@@ -690,26 +688,26 @@ _DefaultValues = dict(
 def Field(  # noqa: C901
     default: Any = PydanticUndefined,
     *,
-    default_factory: typing.Callable[[], Any] | None = _Unset,
+    default_factory: Callable[[], Any] | None = _Unset,
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
     validation_alias: str | AliasPath | AliasChoices | None = _Unset,
     serialization_alias: str | None = _Unset,
     title: str | None = _Unset,
-    field_title_generator: typing_extensions.Callable[[str, FieldInfo], str] | None = _Unset,
+    field_title_generator: Callable[[str, FieldInfo], str] | None = _Unset,
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
     discriminator: str | types.Discriminator | None = _Unset,
     deprecated: Deprecated | str | bool | None = _Unset,
-    json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None = _Unset,
+    json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = _Unset,
     frozen: bool | None = _Unset,
     validate_default: bool | None = _Unset,
     repr: bool = _Unset,
     init: bool | None = _Unset,
     init_var: bool | None = _Unset,
     kw_only: bool | None = _Unset,
-    pattern: str | typing.Pattern[str] | None = _Unset,
+    pattern: str | Pattern[str] | None = _Unset,
     strict: bool | None = _Unset,
     coerce_numbers_to_str: bool | None = _Unset,
     gt: annotated_types.SupportsGt | None = _Unset,
@@ -912,13 +910,11 @@ class ModelPrivateAttr(_repr.Representation):
 
     __slots__ = 'default', 'default_factory'
 
-    def __init__(
-        self, default: Any = PydanticUndefined, *, default_factory: typing.Callable[[], Any] | None = None
-    ) -> None:
+    def __init__(self, default: Any = PydanticUndefined, *, default_factory: Callable[[], Any] | None = None) -> None:
         self.default = default
         self.default_factory = default_factory
 
-    if not typing.TYPE_CHECKING:
+    if not TYPE_CHECKING:
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
 
         def __getattr__(self, item: str) -> Any:
@@ -961,7 +957,7 @@ class ModelPrivateAttr(_repr.Representation):
 def PrivateAttr(
     default: Any = PydanticUndefined,
     *,
-    default_factory: typing.Callable[[], Any] | None = None,
+    default_factory: Callable[[], Any] | None = None,
     init: Literal[False] = False,
 ) -> Any:
     """Usage docs: https://docs.pydantic.dev/2.9/concepts/models/#private-model-attributes
@@ -1020,11 +1016,11 @@ class ComputedFieldInfo:
     alias: str | None
     alias_priority: int | None
     title: str | None
-    field_title_generator: typing.Callable[[str, ComputedFieldInfo], str] | None
+    field_title_generator: Callable[[str, ComputedFieldInfo], str] | None
     description: str | None
     deprecated: Deprecated | str | bool | None
     examples: list[Any] | None
-    json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
+    json_schema_extra: JsonDict | Callable[[JsonDict], None] | None
     repr: bool
 
     @property
@@ -1051,26 +1047,26 @@ def _wrapped_property_is_private(property_: cached_property | property) -> bool:
 
 # this should really be `property[T], cached_property[T]` but property is not generic unlike cached_property
 # See https://github.com/python/typing/issues/985 and linked issues
-PropertyT = typing.TypeVar('PropertyT')
+PropertyT = TypeVar('PropertyT')
 
 
-@typing.overload
+@overload
 def computed_field(
     *,
     alias: str | None = None,
     alias_priority: int | None = None,
     title: str | None = None,
-    field_title_generator: typing.Callable[[str, ComputedFieldInfo], str] | None = None,
+    field_title_generator: Callable[[str, ComputedFieldInfo], str] | None = None,
     description: str | None = None,
     deprecated: Deprecated | str | bool | None = None,
     examples: list[Any] | None = None,
-    json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None = None,
+    json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = None,
     repr: bool = True,
     return_type: Any = PydanticUndefined,
-) -> typing.Callable[[PropertyT], PropertyT]: ...
+) -> Callable[[PropertyT], PropertyT]: ...
 
 
-@typing.overload
+@overload
 def computed_field(__func: PropertyT) -> PropertyT: ...
 
 
@@ -1081,14 +1077,14 @@ def computed_field(
     alias: str | None = None,
     alias_priority: int | None = None,
     title: str | None = None,
-    field_title_generator: typing.Callable[[str, ComputedFieldInfo], str] | None = None,
+    field_title_generator: Callable[[str, ComputedFieldInfo], str] | None = None,
     description: str | None = None,
     deprecated: Deprecated | str | bool | None = None,
     examples: list[Any] | None = None,
-    json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None = None,
+    json_schema_extra: JsonDict | Callable[[JsonDict], None] | None = None,
     repr: bool | None = None,
     return_type: Any = PydanticUndefined,
-) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
+) -> PropertyT | Callable[[PropertyT], PropertyT]:
     """Usage docs: https://docs.pydantic.dev/2.9/concepts/fields#the-computed_field-decorator
 
     Decorator to include `property` and `cached_property` when serializing models or dataclasses.

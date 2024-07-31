@@ -1,11 +1,10 @@
 from __future__ import annotations as _annotations
 
-import typing
 from copy import deepcopy
 from enum import Enum
-from typing import Any, Tuple
+from typing import TYPE_CHECKING, AbstractSet, Any, Dict, Generator, Tuple, TypeVar, no_type_check
 
-import typing_extensions
+from typing_extensions import TypeAlias
 
 from .._internal import (
     _model_construction,
@@ -13,15 +12,15 @@ from .._internal import (
     _utils,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from .. import BaseModel
     from .._internal._utils import AbstractSetIntStr, MappingIntStrAny
 
     AnyClassMethod = classmethod[Any, Any, Any]
-    TupleGenerator = typing.Generator[Tuple[str, Any], None, None]
-    Model = typing.TypeVar('Model', bound='BaseModel')
+    TupleGenerator = Generator[Tuple[str, Any], None, None]
+    Model = TypeVar('Model', bound='BaseModel')
     # should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
-    IncEx: typing_extensions.TypeAlias = 'set[int] | set[str] | dict[int, Any] | dict[str, Any] | None'
+    IncEx: TypeAlias = 'set[int] | set[str] | dict[int, Any] | dict[str, Any] | None'
 
 _object_setattr = _model_construction.object_setattr
 
@@ -120,7 +119,7 @@ def _copy_and_set_values(
     return m
 
 
-@typing.no_type_check
+@no_type_check
 def _get_value(
     cls: type[BaseModel],
     v: Any,
@@ -200,12 +199,12 @@ def _calculate_keys(
     include: MappingIntStrAny | None,
     exclude: MappingIntStrAny | None,
     exclude_unset: bool,
-    update: typing.Dict[str, Any] | None = None,  # noqa UP006
-) -> typing.AbstractSet[str] | None:
+    update: Dict[str, Any] | None = None,  # noqa UP006
+) -> AbstractSet[str] | None:
     if include is None and exclude is None and exclude_unset is False:
         return None
 
-    keys: typing.AbstractSet[str]
+    keys: AbstractSet[str]
     if exclude_unset:
         keys = self.__pydantic_fields_set__.copy()
     else:

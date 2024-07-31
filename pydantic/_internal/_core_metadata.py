@@ -1,11 +1,10 @@
 from __future__ import annotations as _annotations
 
-import typing
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import typing_extensions
+from typing_extensions import TypedDict
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from ._schema_generation_shared import (
         CoreSchemaOrField as CoreSchemaOrField,
     )
@@ -14,7 +13,7 @@ if typing.TYPE_CHECKING:
     )
 
 
-class CoreMetadata(typing_extensions.TypedDict, total=False):
+class CoreMetadata(TypedDict, total=False):
     """A `TypedDict` for holding the metadata dict of the schema.
 
     Attributes:

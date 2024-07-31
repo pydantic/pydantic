@@ -3,10 +3,9 @@
 from __future__ import annotations as _annotations
 
 import dataclasses
-import typing
 import warnings
 from functools import partial, wraps
-from typing import Any, Callable, ClassVar
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Protocol, cast
 
 from pydantic_core import (
     ArgsKwargs,
@@ -28,10 +27,10 @@ from ._mock_val_ser import set_dataclass_mocks
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._signature import generate_pydantic_signature
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from ..config import ConfigDict
 
-    class StandardDataclass(typing.Protocol):
+    class StandardDataclass(Protocol):
         __dataclass_fields__: ClassVar[dict[str, Any]]
         __dataclass_params__: ClassVar[Any]  # in reality `dataclasses._DataclassParams`
         __post_init__: ClassVar[Callable[..., None]]
@@ -39,7 +38,7 @@ if typing.TYPE_CHECKING:
         def __init__(self, *args: object, **kwargs: object) -> None:
             pass
 
-    class PydanticDataclass(StandardDataclass, typing.Protocol):
+    class PydanticDataclass(StandardDataclass, Protocol):
         """A protocol containing attributes only available once a class has been decorated as a Pydantic dataclass.
 
         Attributes:
@@ -174,7 +173,7 @@ def complete_dataclass(
 
     # We are about to set all the remaining required properties expected for this cast;
     # __pydantic_decorators__ and __pydantic_fields__ should already be set
-    cls = typing.cast('type[PydanticDataclass]', cls)
+    cls = cast('type[PydanticDataclass]', cls)
     # debug(schema)
 
     cls.__pydantic_core_schema__ = schema
