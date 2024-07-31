@@ -1781,40 +1781,39 @@ def test_enum_with_no_cases() -> None:
     assert json_schema['properties']['e']['enum'] == []
 
 
-@pytest.mark.xfail(reason='needs more strict annotation checks, see https://github.com/pydantic/pydantic/issues/9988')
 @pytest.mark.parametrize(
-    'kwargs,type_',
+    'kwargs,type_,a',
     [
         pytest.param(
             {'pattern': '^foo$'},
             int,
+            1,
             marks=pytest.mark.xfail(
                 reason='int cannot be used with pattern but we do not currently validate that at schema build time'
             ),
         ),
-        ({'gt': 0}, conlist(int, min_length=4)),
-        ({'gt': 0}, conset(int, min_length=4)),
-        ({'gt': 0}, confrozenset(int, min_length=4)),
+        ({'gt': 0}, conlist(int, min_length=4), [1, 2, 3, 4, 5]),
+        ({'gt': 0}, conset(int, min_length=4), {1, 2, 3, 4, 5}),
+        ({'gt': 0}, confrozenset(int, min_length=4), frozenset({1, 2, 3, 4, 5})),
     ],
 )
-def test_invalid_schema_constraints(kwargs, type_):
-    match = (
-        r'(:?Invalid Schema:\n.*\n  Extra inputs are not permitted)|(:?The following constraints cannot be applied to)'
-    )
-    with pytest.raises((SchemaError, TypeError), match=match):
+def test_invalid_schema_constraints(kwargs, type_, a):
+    class Foo(BaseModel):
+        a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
-        class Foo(BaseModel):
-            a: type_ = Field('foo', title='A title', description='A description', **kwargs)
-
-
-@pytest.mark.xfail(reason='needs more strict annotation checks, see https://github.com/pydantic/pydantic/issues/9988')
-def test_invalid_decimal_constraint():
+    constraint_name = list(kwargs.keys())[0]
     with pytest.raises(
-        TypeError, match="The following constraints cannot be applied to <class 'decimal.Decimal'>: 'max_length'"
+        TypeError, match=re.escape(f"Unable to apply constraint '{constraint_name}' to supplied value {a}")
     ):
+        Foo(a=a)
 
-        class Foo(BaseModel):
-            a: Decimal = Field('foo', title='A title', description='A description', max_length=5)
+
+def test_invalid_decimal_constraint():
+    class Foo(BaseModel):
+        a: Decimal = Field('foo', title='A title', description='A description', max_length=5)
+
+    with pytest.raises(TypeError, match="Unable to apply constraint 'max_length' to supplied value 1.0"):
+        Foo(a=1.0)
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')

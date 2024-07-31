@@ -418,10 +418,10 @@ class Account(BaseModel):
     }
 
 
-@pytest.mark.xfail(reason='needs more strict annotation checks, see https://github.com/pydantic/pydantic/issues/9988')
 def test_forward_ref_with_field(create_module):
     @create_module
     def module():
+        import re
         from typing import ForwardRef, List
 
         import pytest
@@ -430,10 +430,11 @@ def test_forward_ref_with_field(create_module):
 
         Foo = ForwardRef('Foo')
 
-        with pytest.raises(TypeError, match=r'The following constraints cannot be applied.*\'gt\''):
+        class Foo(BaseModel):
+            c: List[Foo] = Field(..., gt=0)
 
-            class Foo(BaseModel):
-                c: List[Foo] = Field(..., gt=0)
+        with pytest.raises(TypeError, match=re.escape("Unable to apply constraint 'gt' to supplied value []")):
+            Foo(c=[Foo(c=[])])
 
 
 def test_forward_ref_optional(create_module):
