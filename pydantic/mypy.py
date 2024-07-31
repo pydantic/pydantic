@@ -308,6 +308,9 @@ def from_attributes_callback(ctx: MethodContext) -> Type:
     pydantic_metadata = model_type.type.metadata.get(METADATA_KEY)
     if pydantic_metadata is None:
         return ctx.default_return_type
+    if not any(base.fullname == BASEMODEL_FULLNAME for base in model_type.type.mro):
+        # not a Pydantic v2 model
+        return ctx.default_return_type
     from_attributes = pydantic_metadata.get('config', {}).get('from_attributes')
     if from_attributes is not True:
         error_from_attributes(model_type.type.name, ctx.api, ctx.context)
