@@ -16,7 +16,7 @@ from contextlib import ExitStack, contextmanager
 from copy import copy, deepcopy
 from decimal import Decimal
 from enum import Enum
-from functools import partial
+from functools import lru_cache, partial
 from inspect import Parameter, _ParameterKind, signature
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
@@ -359,7 +359,6 @@ class GenerateSchema:
         '_config_wrapper_stack',
         '_types_namespace_stack',
         '_typevars_map',
-        '_simple_type_to_schema_map',
         'field_name_stack',
         'model_type_stack',
         'defs',
@@ -375,35 +374,6 @@ class GenerateSchema:
         self._config_wrapper_stack = ConfigWrapperStack(config_wrapper)
         self._types_namespace_stack = TypesNamespaceStack(types_namespace)
         self._typevars_map = typevars_map
-        self._simple_type_to_schema: dict[Any, Callable] = {
-            str: self.str_schema,
-            bytes: core_schema.bytes_schema,
-            int: core_schema.int_schema,
-            float: core_schema.float_schema,
-            bool: core_schema.bool_schema,
-            Any: core_schema.any_schema,
-            object: core_schema.any_schema,
-            datetime.date: core_schema.date_schema,
-            datetime.datetime: core_schema.datetime_schema,
-            datetime.time: core_schema.time_schema,
-            datetime.timedelta: core_schema.timedelta_schema,
-            Decimal: core_schema.decimal_schema,
-            UUID: core_schema.uuid_schema,
-            Url: core_schema.url_schema,
-            MultiHostUrl: core_schema.multi_host_url_schema,
-            None: core_schema.none_schema,
-            _typing_extra.NoneType: core_schema.none_schema,
-            type: self._type_schema,
-            typing.Type: self._type_schema,
-            collections.abc.Hashable: self._hashable_schema,
-            typing.Hashable: self._hashable_schema,
-        }
-        self._one_arg_generic_type_to_schema: dict[type, Callable] = {
-            **{t: self._list_schema for t in LIST_TYPES},
-            **{t: self._set_schema for t in SET_TYPES},
-            **{t: self._frozenset_schema for t in FROZEN_SET_TYPES},
-            **{t: self._sequence_schema for t in SEQUENCE_TYPES},
-        }
         self.field_name_stack = _FieldNameStack()
         self.model_type_stack = _ModelTypeStack()
         self.defs = _Definitions()
@@ -963,9 +933,39 @@ class GenerateSchema:
         The idea is that we'll evolve this into adding more and more user facing methods over time
         as they get requested and we figure out what the right API for them is.
         """
-        if schema_callable := self._simple_type_to_schema.get(obj):
+        _simple_type_to_schema: dict[Any, Callable] = {
+            str: self.str_schema,
+            bytes: core_schema.bytes_schema,
+            int: core_schema.int_schema,
+            float: core_schema.float_schema,
+            bool: core_schema.bool_schema,
+            Any: core_schema.any_schema,
+            object: core_schema.any_schema,
+            datetime.date: core_schema.date_schema,
+            datetime.datetime: core_schema.datetime_schema,
+            datetime.time: core_schema.time_schema,
+            datetime.timedelta: core_schema.timedelta_schema,
+            Decimal: core_schema.decimal_schema,
+            UUID: core_schema.uuid_schema,
+            Url: core_schema.url_schema,
+            MultiHostUrl: core_schema.multi_host_url_schema,
+            None: core_schema.none_schema,
+            _typing_extra.NoneType: core_schema.none_schema,
+            type: self._type_schema,
+            typing.Type: self._type_schema,
+            collections.abc.Hashable: self._hashable_schema,
+            typing.Hashable: self._hashable_schema,
+        }
+        _one_arg_generic_type_to_schema: dict[type, Callable] = {
+            **{t: self._list_schema for t in LIST_TYPES},
+            **{t: self._set_schema for t in SET_TYPES},
+            **{t: self._frozenset_schema for t in FROZEN_SET_TYPES},
+            **{t: self._sequence_schema for t in SEQUENCE_TYPES},
+        }
+
+        if schema_callable := _simple_type_to_schema.get(obj):
             return schema_callable()
-        elif schema_callable := self._one_arg_generic_type_to_schema.get(obj):
+        elif schema_callable := _one_arg_generic_type_to_schema.get(obj):
             return schema_callable(Any)
 
         if obj in TUPLE_TYPES:
@@ -1037,7 +1037,14 @@ class GenerateSchema:
         if from_property is not None:
             return from_property
 
-        if schema_callable := self._one_arg_generic_type_to_schema.get(origin):
+        _one_arg_generic_type_to_schema: dict[type, Callable] = {
+            **{t: self._list_schema for t in LIST_TYPES},
+            **{t: self._set_schema for t in SET_TYPES},
+            **{t: self._frozenset_schema for t in FROZEN_SET_TYPES},
+            **{t: self._sequence_schema for t in SEQUENCE_TYPES},
+        }
+
+        if schema_callable := _one_arg_generic_type_to_schema.get(origin):
             return schema_callable(self._get_first_arg_or_any(obj))
 
         if _typing_extra.origin_is_union(origin):
