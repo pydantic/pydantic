@@ -965,14 +965,10 @@ class GenerateSchema:
         """
         if schema_callable := self._simple_type_to_schema.get(obj):
             return schema_callable()
-
-        if schema_callable := self._one_arg_generic_type_to_schema.get(obj):
-            # this covers the case of un-parametrized List, Set, Sequence, etc.
+        elif schema_callable := self._one_arg_generic_type_to_schema.get(obj):
             return schema_callable(Any)
 
-        if obj in IP_TYPES:
-            return self._ip_schema(obj)
-        elif obj in TUPLE_TYPES:
+        if obj in TUPLE_TYPES:
             return self._tuple_schema(obj)
         elif obj in DICT_TYPES:
             return self._dict_schema(Any, Any)
@@ -1005,6 +1001,8 @@ class GenerateSchema:
             return self._enum_schema(obj)
         elif is_zoneinfo_type(obj):
             return self._zoneinfo_schema()
+        elif obj in IP_TYPES:
+            return self._ip_schema(obj)
 
         if _typing_extra.is_dataclass(obj):
             return self._dataclass_schema(obj, None)
@@ -1039,24 +1037,19 @@ class GenerateSchema:
         if from_property is not None:
             return from_property
 
+        if schema_callable := self._one_arg_generic_type_to_schema.get(origin):
+            return schema_callable(self._get_first_arg_or_any(obj))
+
         if _typing_extra.origin_is_union(origin):
             return self._union_schema(obj)
         elif origin in TUPLE_TYPES:
             return self._tuple_schema(obj)
-        elif origin in LIST_TYPES:
-            return self._list_schema(self._get_first_arg_or_any(obj))
-        elif origin in SET_TYPES:
-            return self._set_schema(self._get_first_arg_or_any(obj))
-        elif origin in FROZEN_SET_TYPES:
-            return self._frozenset_schema(self._get_first_arg_or_any(obj))
         elif origin in DICT_TYPES:
             return self._dict_schema(*self._get_first_two_args_or_any(obj))
         elif is_typeddict(origin):
             return self._typed_dict_schema(obj, origin)
         elif origin in (typing.Type, type):
             return self._subclass_schema(obj)
-        elif origin in SEQUENCE_TYPES:
-            return self._sequence_schema(self._get_first_arg_or_any(obj))
         elif origin in {typing.Iterable, collections.abc.Iterable, typing.Generator, collections.abc.Generator}:
             return self._iterable_schema(obj)
         elif origin in (re.Pattern, typing.Pattern):

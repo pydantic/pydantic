@@ -11,9 +11,9 @@ import warnings
 from collections.abc import Callable
 from functools import partial
 from types import GetSetDescriptorType
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, Literal
 
-from typing_extensions import Annotated, Literal, TypeAliasType, TypeGuard, deprecated, get_args, get_origin
+from typing_extensions import Annotated, TypeAliasType, TypeGuard, deprecated, get_args, get_origin
 
 if TYPE_CHECKING:
     from ._dataclasses import StandardDataclass
@@ -61,16 +61,12 @@ else:
     from types import NoneType as NoneType
 
 
-LITERAL_TYPES: set[Any] = {Literal}
-if hasattr(typing, 'Literal'):
-    LITERAL_TYPES.add(typing.Literal)  # type: ignore
-
 # Check if `deprecated` is a type to prevent errors when using typing_extensions < 4.9.0
 DEPRECATED_TYPES: tuple[Any, ...] = (deprecated,) if isinstance(deprecated, type) else ()
 if hasattr(warnings, 'deprecated'):
     DEPRECATED_TYPES = (*DEPRECATED_TYPES, warnings.deprecated)  # type: ignore
 
-NONE_TYPES: tuple[Any, ...] = (None, NoneType, *(tp[None] for tp in LITERAL_TYPES))
+NONE_TYPES: tuple[Any, ...] = (None, NoneType, Literal[None])
 
 
 TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
@@ -85,7 +81,7 @@ def is_callable_type(type_: type[Any]) -> bool:
 
 
 def is_literal_type(type_: type[Any]) -> bool:
-    return Literal is not None and get_origin(type_) in LITERAL_TYPES
+    return get_origin(type_) is Literal
 
 
 def is_deprecated_instance(instance: Any) -> TypeGuard[deprecated]:
