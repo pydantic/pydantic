@@ -24,7 +24,7 @@ from typing import (
 
 import pytest
 from dirty_equals import HasRepr, IsStr
-from pydantic_core import ErrorDetails, InitErrorDetails, core_schema
+from pydantic_core import ErrorDetails, InitErrorDetails, PydanticSerializationError, core_schema
 from typing_extensions import Annotated, Literal, TypedDict, get_args
 
 from pydantic import (
@@ -2080,6 +2080,50 @@ def test_hashable_optional(default):
 
     Model(v=None)
     Model()
+
+
+def test_hashable_serialization():
+    class Model(BaseModel):
+        v: Hashable
+
+    class HashableButNotSerializable:
+        def __hash__(self):
+            return 0
+
+    with pytest.warns(UserWarning) as w:
+        assert Model(v=(1,)).model_dump_json() == '{"v":[1]}'
+    assert w.list[0].message.args == (
+        'Pydantic serializer warnings:\n  Expected `Union[str, int, float, bool, none]` but got `tuple` - serialized value may not be as expected',
+    )
+
+    m = Model(v=HashableButNotSerializable())
+    with pytest.raises(
+        PydanticSerializationError, match='Unable to serialize unknown type:.*HashableButNotSerializable'
+    ):
+        m.model_dump_json()
+
+
+def test_hashable_json_schema():
+    class Model(BaseModel):
+        v: Hashable
+
+    Model.model_json_schema() == {
+        'properties': {
+            'v': {
+                'anyOf': [
+                    {'type': 'string'},
+                    {'type': 'integer'},
+                    {'type': 'number'},
+                    {'type': 'boolean'},
+                    {'type': 'null'},
+                ],
+                'title': 'V',
+            }
+        },
+        'required': ['v'],
+        'title': 'Model',
+        'type': 'object',
+    }
 
 
 def test_hashable_validate_json():
