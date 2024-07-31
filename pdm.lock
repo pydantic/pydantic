@@ -3,9 +3,12 @@
 
 [metadata]
 groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "testing-extra"]
-strategy = ["cross_platform"]
-lock_version = "4.4.2"
+strategy = []
+lock_version = "4.5.0"
 content_hash = "sha256:f9e24e14e2d0ac5c6ea190eed2c28d28e397454540fb5b74d03368510a0e1d41"
+
+[[metadata.targets]]
+requires_python = ">=3.8"
 
 [[package]]
 name = "annotated-types"
@@ -25,6 +28,10 @@ name = "ansi2html"
 version = "1.9.2"
 requires_python = ">=3.7"
 summary = "Convert text with ANSI color codes to HTML or to LaTeX"
+dependencies = [
+    "importlib-metadata; python_version < \"3.8\"",
+    "typing-extensions; python_version < \"3.8\"",
+]
 files = [
     {file = "ansi2html-1.9.2-py3-none-any.whl", hash = "sha256:dccb75aa95fb018e5d299be2b45f802952377abfdce0504c17a6ee6ef0a420c5"},
     {file = "ansi2html-1.9.2.tar.gz", hash = "sha256:3453bf87535d37b827b05245faaa756dbab4ec3d69925e352b6319c3c955c0a5"},
@@ -36,6 +43,7 @@ version = "2.4.1"
 summary = "Annotate AST trees with source code positions"
 dependencies = [
     "six>=1.12.0",
+    "typing; python_version < \"3.5\"",
 ]
 files = [
     {file = "asttokens-2.4.1-py2.py3-none-any.whl", hash = "sha256:051ed49c3dcae8913ea7cd08e46a606dba30b79993209636c4875bc1d637bc24"},
@@ -296,6 +304,7 @@ requires_python = ">=3.7"
 summary = "Composable command line interface toolkit"
 dependencies = [
     "colorama; platform_system == \"Windows\"",
+    "importlib-metadata; python_version < \"3.8\"",
 ]
 files = [
     {file = "click-8.1.7-py3-none-any.whl", hash = "sha256:ae74fb96c20a0277a1d615f1e4d73c8414f5a98db8b799a7931d1582f3390c28"},
@@ -651,6 +660,7 @@ version = "8.2.0"
 requires_python = ">=3.8"
 summary = "Read metadata from Python packages"
 dependencies = [
+    "typing-extensions>=3.6.4; python_version < \"3.8\"",
     "zipp>=0.5",
 ]
 files = [
@@ -840,6 +850,7 @@ dependencies = [
     "jinja2>=2.9",
     "rich>=11.2.0",
     "textual>=0.41.0",
+    "typing-extensions; python_version < \"3.8.0\"",
 ]
 files = [
     {file = "memray-1.13.4-cp310-cp310-macosx_10_14_x86_64.whl", hash = "sha256:ed0bfcffbd857cbf78a4db942019e9e153019b754048b0522065844d1c538e8c"},
@@ -1088,6 +1099,7 @@ summary = "Optional static typing for Python"
 dependencies = [
     "mypy-extensions>=1.0.0",
     "tomli>=1.1.0; python_version < \"3.11\"",
+    "typed-ast<2,>=1.4.0; python_version < \"3.8\"",
     "typing-extensions>=3.10",
 ]
 files = [
@@ -1386,8 +1398,10 @@ version = "4.0.0"
 requires_python = ">=3.7"
 summary = "A ``pytest`` fixture for benchmarking code. It will group the tests into rounds that are calibrated to the chosen timer."
 dependencies = [
+    "pathlib2; python_version < \"3.4\"",
     "py-cpuinfo",
     "pytest>=3.8",
+    "statistics; python_version < \"3.4\"",
 ]
 files = [
     {file = "pytest-benchmark-4.0.0.tar.gz", hash = "sha256:fb0785b83efe599a6a956361c0691ae1dbb5318018561af10f3e915caa0048d1"},
@@ -1742,6 +1756,7 @@ requires_python = ">=3.7"
 summary = "Database Abstraction Library"
 dependencies = [
     "greenlet!=0.4.17; (platform_machine == \"win32\" or platform_machine == \"WIN32\" or platform_machine == \"AMD64\" or platform_machine == \"amd64\" or platform_machine == \"x86_64\" or platform_machine == \"ppc64le\" or platform_machine == \"aarch64\") and python_version < \"3.13\"",
+    "importlib-metadata; python_version < \"3.8\"",
     "typing-extensions>=4.6.0",
 ]
 files = [
