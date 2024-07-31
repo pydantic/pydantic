@@ -398,6 +398,12 @@ class GenerateSchema:
             collections.abc.Hashable: self._hashable_schema,
             typing.Hashable: self._hashable_schema,
         }
+        self._one_arg_generic_type_to_schema: dict[type, Callable] = {
+            **{t: self._list_schema for t in LIST_TYPES},
+            **{t: self._set_schema for t in SET_TYPES},
+            **{t: self._frozenset_schema for t in FROZEN_SET_TYPES},
+            **{t: self._sequence_schema for t in SEQUENCE_TYPES},
+        }
         self.field_name_stack = _FieldNameStack()
         self.model_type_stack = _ModelTypeStack()
         self.defs = _Definitions()
@@ -960,18 +966,14 @@ class GenerateSchema:
         if schema_callable := self._simple_type_to_schema.get(obj):
             return schema_callable()
 
+        if schema_callable := self._one_arg_generic_type_to_schema.get(obj):
+            # this covers the case of un-parametrized List, Set, Sequence, etc.
+            return schema_callable(Any)
+
         if obj in IP_TYPES:
             return self._ip_schema(obj)
         elif obj in TUPLE_TYPES:
             return self._tuple_schema(obj)
-        elif obj in LIST_TYPES:
-            return self._list_schema(Any)
-        elif obj in SET_TYPES:
-            return self._set_schema(Any)
-        elif obj in FROZEN_SET_TYPES:
-            return self._frozenset_schema(Any)
-        elif obj in SEQUENCE_TYPES:
-            return self._sequence_schema(Any)
         elif obj in DICT_TYPES:
             return self._dict_schema(Any, Any)
         elif isinstance(obj, TypeAliasType):
