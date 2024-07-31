@@ -24,7 +24,7 @@ from typing import (
 
 import pytest
 from dirty_equals import HasRepr, IsStr
-from pydantic_core import ErrorDetails, InitErrorDetails, PydanticSerializationError, core_schema
+from pydantic_core import ErrorDetails, InitErrorDetails, core_schema
 from typing_extensions import Annotated, Literal, TypedDict, get_args
 
 from pydantic import (
@@ -32,7 +32,6 @@ from pydantic import (
     ConfigDict,
     GetCoreSchemaHandler,
     PydanticDeprecatedSince20,
-    PydanticInvalidForJsonSchema,
     PydanticSchemaGenerationError,
     RootModel,
     TypeAdapter,
@@ -2083,33 +2082,30 @@ def test_hashable_optional(default):
     Model()
 
 
-def test_hashable_serialization():
+def test_hashable_validate_json():
     class Model(BaseModel):
         v: Hashable
 
-    class HashableButNotSerializable:
-        def __hash__(self):
-            return 0
+    ta = TypeAdapter(Model)
 
-    assert Model(v=(1,)).model_dump_json() == '{"v":[1]}'
-    m = Model(v=HashableButNotSerializable())
-    with pytest.raises(
-        PydanticSerializationError, match='Unable to serialize unknown type:.*HashableButNotSerializable'
-    ):
-        m.model_dump_json()
+    for validate in (Model.model_validate_json, ta.validate_json):
+        validate('{"v": "a"}')
+        validate('{"v": 1}')
+        validate('{"v": 1.0}')
+        validate('{"v": true}')
+        validate('{"v": null}')
 
+        with pytest.raises(ValidationError) as exc_info:
+            validate('{"v": []}')
+        assert exc_info.value.errors(include_url=False) == [
+            {'type': 'is_hashable', 'loc': ('v',), 'msg': 'Input should be hashable', 'input': []}
+        ]
 
-def test_hashable_json_schema():
-    class Model(BaseModel):
-        v: Hashable
-
-    with pytest.raises(
-        PydanticInvalidForJsonSchema,
-        match=re.escape(
-            "Cannot generate a JsonSchema for core_schema.IsInstanceSchema (<class 'collections.abc.Hashable'>)"
-        ),
-    ):
-        Model.model_json_schema()
+        with pytest.raises(ValidationError) as exc_info:
+            validate('{"v": {"a": 0}}')
+        assert exc_info.value.errors(include_url=False) == [
+            {'type': 'is_hashable', 'loc': ('v',), 'msg': 'Input should be hashable', 'input': {'a': 0}}
+        ]
 
 
 def test_default_factory_called_once():
