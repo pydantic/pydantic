@@ -136,7 +136,6 @@ testing = [
     "pytest-examples",
     "faker>=18.13.0",
     "pytest-benchmark>=4.0.0",
-    # TODO: remove bound once pytest-codspeed supports 3.13, blocked by `python-cffi`
     "pytest-codspeed==2.2.1",
     "packaging>=23.2",
 ]
