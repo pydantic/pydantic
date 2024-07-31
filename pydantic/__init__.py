@@ -399,10 +399,13 @@ def __getattr__(attr_name: str) -> object:
     from importlib import import_module
 
     if module_name == '__module__':
-        return import_module(f'.{attr_name}', package=package)
+        result = import_module(f'.{attr_name}', package=package)
     else:
         module = import_module(module_name, package=package)
-        return getattr(module, attr_name)
+        result = getattr(module, attr_name)
+
+    globals()[attr_name] = result
+    return result
 
 
 def __dir__() -> 'list[str]':
