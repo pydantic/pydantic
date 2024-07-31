@@ -92,6 +92,7 @@ from ._docs_extraction import extract_docstrings_from_cls
 from ._fields import collect_dataclass_fields, get_type_hints_infer_globalns
 from ._forward_ref import PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, has_instance_in_type, recursively_defined_type_refs, replace_types
+from ._import_utils import get_cached_component
 from ._mock_val_ser import MockCoreSchema
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._typing_extra import is_finalvar, is_self_type, is_zoneinfo_type
@@ -259,9 +260,10 @@ def modify_model_json_schema(
         JsonSchemaValue: The updated JSON schema.
     """
     from ..dataclasses import is_pydantic_dataclass
-    from ..main import BaseModel
     from ..root_model import RootModel
     from ._dataclasses import is_builtin_dataclass
+
+    BaseModel = get_cached_component('pydantic.main', 'BaseModel')
 
     json_schema = handler(schema_or_field)
     original_schema = handler.resolve_ref_schema(json_schema)
@@ -909,7 +911,7 @@ class GenerateSchema:
         if isinstance(obj, ForwardRef):
             return self.generate_schema(self._resolve_forward_ref(obj))
 
-        from ..main import BaseModel
+        BaseModel = get_cached_component('pydantic.main', 'BaseModel')
 
         if lenient_issubclass(obj, BaseModel):
             with self.model_type_stack.push(obj):
@@ -2416,7 +2418,7 @@ def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSch
     js_modify_function = getattr(tp, '__get_pydantic_json_schema__', None)
 
     if hasattr(tp, '__modify_schema__'):
-        from pydantic import BaseModel  # circular reference
+        BaseModel = get_cached_component('pydantic.main', 'BaseModel')
 
         has_custom_v2_modify_js_func = (
             js_modify_function is not None
