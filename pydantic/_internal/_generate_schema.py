@@ -148,6 +148,26 @@ MAPPING_TYPES = [
 ]
 DEQUE_TYPES: list[type] = [collections.deque, typing.Deque]
 
+TYPES_TO_SCHEMA_MAP = {
+    str: core_schema.str_schema(),
+    bytes: core_schema.bytes_schema(),
+    int: core_schema.int_schema(),
+    float: core_schema.float_schema(),
+    bool: core_schema.bool_schema(),
+    Any: core_schema.any_schema(),
+    object: core_schema.any_schema(),
+    datetime.date: core_schema.date_schema(),
+    datetime.datetime: core_schema.datetime_schema(),
+    datetime.time: core_schema.time_schema(),
+    datetime.timedelta: core_schema.timedelta_schema(),
+    Decimal: core_schema.decimal_schema(),
+    UUID: core_schema.uuid_schema(),
+    Url: core_schema.url_schema(),
+    MultiHostUrl: core_schema.multi_host_url_schema(),
+    None: core_schema.none_schema(),
+    _typing_extra.NoneType: core_schema.none_schema(),
+}
+
 
 def check_validator_fields_against_field_name(
     info: FieldDecoratorInfo,
@@ -933,37 +953,12 @@ class GenerateSchema:
         The idea is that we'll evolve this into adding more and more user facing methods over time
         as they get requested and we figure out what the right API for them is.
         """
-        if obj is str:
-            return self.str_schema()
-        elif obj is bytes:
-            return core_schema.bytes_schema()
-        elif obj is int:
-            return core_schema.int_schema()
-        elif obj is float:
-            return core_schema.float_schema()
-        elif obj is bool:
-            return core_schema.bool_schema()
-        elif obj is Any or obj is object:
-            return core_schema.any_schema()
-        elif obj is datetime.date:
-            return core_schema.date_schema()
-        elif obj is datetime.datetime:
-            return core_schema.datetime_schema()
-        elif obj is datetime.time:
-            return core_schema.time_schema()
-        elif obj is datetime.timedelta:
-            return core_schema.timedelta_schema()
-        elif obj is Decimal:
-            return core_schema.decimal_schema()
-        elif obj is UUID:
-            return core_schema.uuid_schema()
-        elif obj is Url:
-            return core_schema.url_schema()
-        elif obj is MultiHostUrl:
-            return core_schema.multi_host_url_schema()
-        elif obj is None or obj is _typing_extra.NoneType:
-            return core_schema.none_schema()
-        elif obj in IP_TYPES:
+
+
+        if schema := TYPES_TO_SCHEMA_MAP.get(obj):
+            return schema
+        
+        if obj in IP_TYPES:
             return self._ip_schema(obj)
         elif obj in TUPLE_TYPES:
             return self._tuple_schema(obj)
