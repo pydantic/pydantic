@@ -1,0 +1,16 @@
+import pytest
+
+from pydantic import BaseModel
+
+
+class ModelV2(BaseModel):
+    my_str: str
+
+
+mv2 = ModelV2(my_str='hello')
+
+
+@pytest.mark.benchmark
+def test_isinstance_basemodel() -> None:
+    for _ in range(10000):
+        assert isinstance(mv2, BaseModel)
