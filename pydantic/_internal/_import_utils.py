@@ -1,30 +1,15 @@
-from importlib import import_module
-from typing import Any, Dict, Tuple
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pydantic import BaseModel
+
+_type_cache = {}
 
 
-class CachedImportManager:
-    def __init__(self) -> None:
-        self._attr_cache: Dict[Tuple[str, str], Any] = {}
-        self._module_cache: Dict[str, Any] = {}
+def import_cached_base_model() -> type['BaseModel']:
+    if 'BaseModel' not in _type_cache:
+        from pydantic import BaseModel
 
-    def get_attr(self, attr_name: str, module_name: str) -> Any:
-        if (key := (module_name, attr_name)) in self._attr_cache:
-            return self._attr_cache[key]
-
-        if module_name in self._module_cache:
-            module = self._module_cache[module_name]
-        else:
-            module = import_module(module_name)
-            self._module_cache[module_name] = module
-        self._attr_cache[key] = getattr(module, attr_name)
-        return self._attr_cache[key]
-
-    def get_module(self, module_name: str) -> Any:
-        if module_name in self._module_cache:
-            return self._module_cache[module_name]
-        module = import_module(module_name)
-        self._module_cache[module_name] = module
-        return module
-
-
-import_manager = CachedImportManager()
+        _type_cache['BaseModel'] = BaseModel
+        return BaseModel
+    return _type_cache['BaseModel']
