@@ -1,14 +1,14 @@
 from importlib import import_module
-from typing import Any
+from typing import Any, Dict, Tuple
 
 
 class CachedImportManager:
     def __init__(self) -> None:
-        self._attr_cache = {}
-        self._module_cache = {}
+        self._attr_cache: Dict[Tuple[str, str], Any] = {}
+        self._module_cache: Dict[str, Any] = {}
 
     def get_cached_attr(self, attr_name: str, module_name: str) -> Any:
-        if key := (module_name, attr_name) in self._attr_cache:
+        if (key := (module_name, attr_name)) in self._attr_cache:
             return self._attr_cache[key]
 
         if module_name in self._module_cache:
