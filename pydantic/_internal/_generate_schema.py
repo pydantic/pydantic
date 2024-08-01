@@ -1686,7 +1686,7 @@ class GenerateSchema:
 
     def _sequence_schema(self, items_type: Any) -> core_schema.CoreSchema:
         """Generate schema for a Sequence, e.g. `Sequence[int]`."""
-        from ._std_types_schema import serialize_sequence_via_list
+        from ._serializers import serialize_sequence_via_list
 
         item_type_schema = self.generate_schema(items_type)
         list_schema = core_schema.list_schema(item_type_schema)
@@ -2023,9 +2023,9 @@ class GenerateSchema:
         self, obj: Any, annotations: tuple[Any, ...]
     ) -> tuple[Any, list[Any]] | None:
         from ._std_types_schema import (
+            deque_schema_prepare_pydantic_annotations,
             mapping_like_prepare_pydantic_annotations,
             path_schema_prepare_pydantic_annotations,
-            sequence_like_prepare_pydantic_annotations,
         )
 
         # Check for hashability
@@ -2043,7 +2043,7 @@ class GenerateSchema:
         if obj_origin in PATH_TYPES:
             return path_schema_prepare_pydantic_annotations(obj, annotations)
         elif obj_origin in DEQUE_TYPES:
-            return sequence_like_prepare_pydantic_annotations(obj, annotations)
+            return deque_schema_prepare_pydantic_annotations(obj, annotations)
         elif obj_origin in MAPPING_TYPES:
             return mapping_like_prepare_pydantic_annotations(obj, annotations)
         else:
