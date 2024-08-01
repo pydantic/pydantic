@@ -976,7 +976,7 @@ class GenerateSchema:
         elif obj in FROZEN_SET_TYPES:
             return self._frozenset_schema(Any)
         elif obj in SEQUENCE_TYPES:
-            return self._sequence_schema(Any)
+            return self._sequence_like_schema(obj, Any)
         elif obj in DICT_TYPES:
             return self._dict_schema(Any, Any)
         elif isinstance(obj, TypeAliasType):
@@ -1063,7 +1063,7 @@ class GenerateSchema:
         elif origin in (typing.Type, type):
             return self._subclass_schema(obj)
         elif origin in SEQUENCE_TYPES:
-            return self._sequence_schema(self._get_first_arg_or_any(obj))
+            return self._sequence_like_schema(obj, self._get_first_arg_or_any(obj))
         elif origin in {typing.Iterable, collections.abc.Iterable, typing.Generator, collections.abc.Generator}:
             return self._iterable_schema(obj)
         elif origin in (re.Pattern, typing.Pattern):
@@ -1684,15 +1684,23 @@ class GenerateSchema:
         else:
             return core_schema.is_subclass_schema(type_param)
 
-    def _sequence_schema(self, items_type: Any) -> core_schema.CoreSchema:
-        """Generate schema for a Sequence, e.g. `Sequence[int]`."""
+    def _sequence_like_schema(self, tp: Any, items_type: Any) -> core_schema.CoreSchema:
+        """Generate schema for a Sequence like type, e.g. `Sequence[int]` or `Collection[int]`."""
         from ._serializers import serialize_sequence_via_list
 
         item_type_schema = self.generate_schema(items_type)
         list_schema = core_schema.list_schema(item_type_schema)
 
         json_schema = smart_deepcopy(list_schema)
-        python_schema = core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence')
+
+        origin = get_origin(tp) or tp
+        if origin in {typing.Sequence, collections.abc.Sequence}:
+            python_schema = core_schema.is_instance_schema(collections.abc.Sequence, cls_repr='Sequence')
+        elif origin in {typing.Collection, collections.abc.Collection}:
+            python_schema = core_schema.is_instance_schema(collections.abc.Collection, cls_repr='Collection')
+        else:
+            raise PydanticSchemaGenerationError(f'Unable to generate pydantic-core schema for {tp!r}.')
+
         if items_type != Any:
             from ._validators import sequence_validator
 

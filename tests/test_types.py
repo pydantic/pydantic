@@ -6816,6 +6816,30 @@ def test_collection() -> None:
         with pytest.raises(ValidationError):
             ta.validate_python(1)
 
+        assert ta.dump_python([1, 2, 3]) == [1, 2, 3]
+        assert ta.dump_json([1, 2, 3]) == '[1, 2, 3]'
+
     for ta in [ta2, ta4]:
         with pytest.raises(ValidationError):
             ta.validate_python([1, 2, 'a'])
+
+
+def test_collection_sublcass() -> None:
+    from collections.abc import Collection
+
+    class MyCollection(Collection):
+        def __init__(self, initial_items):
+            self._items = list(initial_items)
+
+        def __len__(self):
+            return len(self._items)
+
+        def __iter__(self):
+            return iter(self._items)
+
+        def __contains__(self, item):
+            return item in self._items
+
+    ta = TypeAdapter(Collection)
+    assert isinstance(ta.validate_python(MyCollection([1, 2, 3])), MyCollection)
+    assert ta.dump_python(MyCollection([1, 2, 3])) == [1, 2, 3]

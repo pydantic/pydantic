@@ -5,7 +5,7 @@ import collections.abc
 import typing
 from typing import Any
 
-from pydantic_core import PydanticOmit, core_schema
+from pydantic_core import PydanticOmit, PydanticSerializationError, core_schema
 
 SEQUENCE_ORIGIN_MAP: dict[Any, Any] = {
     typing.Deque: collections.deque,
@@ -34,10 +34,18 @@ def serialize_sequence_via_list(
 ) -> Any:
     items: list[Any] = []
 
-    mapped_origin = SEQUENCE_ORIGIN_MAP.get(type(v), None)
+    v_type = type(v)
+    mapped_origin = SEQUENCE_ORIGIN_MAP.get(v_type, None)
     if mapped_origin is None:
-        # we shouldn't hit this branch, should probably add a serialization error or something
-        return v
+        # attempt to handle subclasses more gracefully
+        for seq_type, ser_type in SEQUENCE_ORIGIN_MAP.items():
+            if issubclass(v_type, seq_type):
+                mapped_origin = ser_type
+                break
+        if mapped_origin is None:
+            raise PydanticSerializationError(
+                f'Error serializing sequence of type {v_type!r}. Support must be added internally for this type.'
+            )
 
     for index, item in enumerate(v):
         try:
