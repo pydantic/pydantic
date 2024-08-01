@@ -4,7 +4,6 @@ from __future__ import annotations as _annotations
 
 import dataclasses as _dataclasses
 import re
-from importlib.metadata import version
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import TYPE_CHECKING, Any
 
@@ -399,6 +398,8 @@ ClickHouseDsn = Annotated[
 
 
 def import_email_validator() -> None:
+    from importlib.metadata import version
+
     global email_validator
     try:
         import email_validator

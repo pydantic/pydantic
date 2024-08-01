@@ -8,6 +8,9 @@ from typing import TYPE_CHECKING, Any, Callable, Iterable, TypeVar
 from pydantic_core import CoreConfig, CoreSchema, SchemaValidator, ValidationError
 from typing_extensions import Literal, ParamSpec
 
+from . import SchemaTypePath
+from ._loader import get_plugins
+
 if TYPE_CHECKING:
     from . import BaseValidateHandlerProtocol, PydanticPluginProtocol, SchemaKind, SchemaTypePath
 
@@ -32,10 +35,8 @@ def create_schema_validator(
     Returns:
         If plugins are installed then return `PluggableSchemaValidator`, otherwise return `SchemaValidator`.
     """
-    from . import SchemaTypePath
-    from ._loader import get_plugins
-
     plugins = get_plugins()
+
     if plugins:
         return PluggableSchemaValidator(
             schema,

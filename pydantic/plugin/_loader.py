@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import importlib.metadata as importlib_metadata
 import os
 import warnings
+from functools import lru_cache
 from typing import TYPE_CHECKING, Final, Iterable
 
 if TYPE_CHECKING:
@@ -18,6 +18,7 @@ _plugins: dict[str, PydanticPluginProtocol] | None = None
 _loading_plugins: bool = False
 
 
+@lru_cache(maxsize=None)
 def get_plugins() -> Iterable[PydanticPluginProtocol]:
     """Load plugins for Pydantic.
 
@@ -31,6 +32,8 @@ def get_plugins() -> Iterable[PydanticPluginProtocol]:
     elif disabled_plugins in ('__all__', '1', 'true'):
         return ()
     elif _plugins is None:
+        import importlib.metadata as importlib_metadata
+
         _plugins = {}
         # set _loading_plugins so any plugins that use pydantic don't themselves use plugins
         _loading_plugins = True
