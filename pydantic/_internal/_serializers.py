@@ -24,6 +24,8 @@ SEQUENCE_ORIGIN_MAP: dict[Any, Any] = {
     # parametrized typing.Set creates one of these
     collections.abc.MutableSet: set,
     collections.abc.Set: frozenset,
+    collections.abc.Collection: list,
+    typing.Collection: list,
 }
 
 

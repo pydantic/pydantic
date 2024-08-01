@@ -126,7 +126,7 @@ SET_TYPES: list[type] = [set, typing.Set, collections.abc.MutableSet]
 FROZEN_SET_TYPES: list[type] = [frozenset, typing.FrozenSet, collections.abc.Set]
 DICT_TYPES: list[type] = [dict, typing.Dict, collections.abc.MutableMapping, collections.abc.Mapping]
 IP_TYPES: list[type] = [IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network]
-SEQUENCE_TYPES: list[type] = [typing.Sequence, collections.abc.Sequence]
+SEQUENCE_TYPES: list[type] = [typing.Sequence, collections.abc.Sequence, typing.Collection, collections.abc.Collection]
 PATH_TYPES: list[type] = [
     os.PathLike,
     pathlib.Path,

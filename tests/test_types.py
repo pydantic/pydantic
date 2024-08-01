@@ -6798,3 +6798,23 @@ def test_fail_fast(tp, fail_fast, decl) -> None:
         )
 
     assert exc_info.value.errors(include_url=False) == errors
+
+
+def test_collection() -> None:
+    import collections.abc
+
+    ta1 = TypeAdapter(collections.abc.Collection)
+    ta2 = TypeAdapter(collections.abc.Collection[int])
+    ta3 = TypeAdapter(typing.Collection)
+    ta4 = TypeAdapter(typing.Collection[int])
+
+    for ta in [ta1, ta2, ta3, ta4]:
+        assert ta.validate_python([1, 2, 3]) == [1, 2, 3]
+        assert ta.validate_json('[1, 2, 3]') == [1, 2, 3]
+
+        with pytest.raises(ValidationError):
+            ta.validate_python(1)
+
+    for ta in [ta2, ta4]:
+        with pytest.raises(ValidationError):
+            ta.validate_python([1, 2, 'a'])
