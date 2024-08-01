@@ -1,4 +1,5 @@
 import typing
+from importlib import import_module
 
 from ._migration import getattr_migration
 from .version import VERSION
@@ -396,8 +397,6 @@ def __getattr__(attr_name: str) -> object:
         return _getattr_migration(attr_name)
 
     package, module_name = dynamic_attr
-
-    from importlib import import_module
 
     if module_name == '__module__':
         result = import_module(f'.{attr_name}', package=package)
