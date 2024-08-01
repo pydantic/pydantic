@@ -8,7 +8,7 @@ import typing
 import warnings
 import weakref
 from abc import ABCMeta
-from functools import partial
+from functools import lru_cache, partial
 from types import FunctionType
 from typing import Any, Callable, Generic, NoReturn
 
@@ -24,7 +24,7 @@ from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
 from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
-from ._import_utils import import_cached_base_model
+from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import set_model_mocks
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._signature import generate_pydantic_signature
@@ -334,7 +334,9 @@ def inspect_namespace(  # noqa C901
             - If a field does not have a type annotation.
             - If a field on base class was overridden by a non-annotated attribute.
     """
-    from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
+    from ..fields import ModelPrivateAttr, PrivateAttr
+
+    FieldInfo = import_cached_field_info()
 
     all_ignored_types = ignored_types + default_ignored_types()
 
@@ -695,6 +697,7 @@ def unpack_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | N
     return result
 
 
+@lru_cache(maxsize=None)
 def default_ignored_types() -> tuple[type[Any], ...]:
     from ..fields import ComputedFieldInfo
 
