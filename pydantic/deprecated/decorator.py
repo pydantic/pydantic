@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, 
 from typing_extensions import deprecated
 
 from .._internal import _config, _typing_extra
-from .._internal._import_utils import import_manager
 from ..alias_generators import to_pascal
 from ..errors import PydanticUserError
 from ..functional_validators import field_validator
+from ..main import BaseModel, create_model
 from ..warnings import PydanticDeprecatedSince20
 
 if not TYPE_CHECKING:
@@ -19,8 +19,6 @@ if not TYPE_CHECKING:
 __all__ = ('validate_arguments',)
 
 if TYPE_CHECKING:
-    from ..main import BaseModel
-
     AnyCallable = Callable[..., Any]
 
     AnyCallableT = TypeVar('AnyCallableT', bound=AnyCallable)
@@ -224,9 +222,6 @@ class ValidatedFunction:
             return self.raw_function(**d, **var_kwargs)
 
     def create_model(self, fields: Dict[str, Any], takes_args: bool, takes_kwargs: bool, config: 'ConfigType') -> None:
-        BaseModel_: Type[BaseModel] = import_manager.get_attr('BaseModel', 'pydantic.main')
-        create_model_ = import_manager.get_attr('create_model', 'pydantic.main')
-
         pos_args = len(self.arg_mapping)
 
         config_wrapper = _config.ConfigWrapper(config)
@@ -240,7 +235,7 @@ class ValidatedFunction:
         if config_wrapper.extra is None:
             config_wrapper.config_dict['extra'] = 'forbid'
 
-        class DecoratorBaseModel(BaseModel_):
+        class DecoratorBaseModel(BaseModel):
             @field_validator(self.v_args_name, check_fields=False)
             @classmethod
             def check_args(cls, v: Optional[List[Any]]) -> Optional[List[Any]]:
@@ -281,4 +276,4 @@ class ValidatedFunction:
 
             model_config = config_wrapper.config_dict
 
-        self.model = create_model_(to_pascal(self.raw_function.__name__), __base__=DecoratorBaseModel, **fields)
+        self.model = create_model(to_pascal(self.raw_function.__name__), __base__=DecoratorBaseModel, **fields)
