@@ -224,8 +224,8 @@ class ValidatedFunction:
             return self.raw_function(**d, **var_kwargs)
 
     def create_model(self, fields: Dict[str, Any], takes_args: bool, takes_kwargs: bool, config: 'ConfigType') -> None:
-        BaseModel_: type[BaseModel] = import_manager.get_cached_attr('BaseModel', 'pydantic.main')
-        create_model_ = import_manager.get_cached_attr('create_model', 'pydantic.main')
+        BaseModel_: Type[BaseModel] = import_manager.get_attr('BaseModel', 'pydantic.main')
+        create_model_ = import_manager.get_attr('create_model', 'pydantic.main')
 
         pos_args = len(self.arg_mapping)
 

@@ -148,7 +148,7 @@ def collect_model_fields(  # noqa: C901
             if ann_name.startswith(protected_namespace):
                 for b in bases:
                     if hasattr(b, ann_name):
-                        BaseModel: type[BaseModel] = import_manager.get_cached_attr('BaseModel', 'pydantic.main')
+                        BaseModel: type[BaseModel] = import_manager.get_attr('BaseModel', 'pydantic.main')
 
                         if not (issubclass(b, BaseModel) and ann_name in b.model_fields):
                             raise NameError(

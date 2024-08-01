@@ -86,7 +86,7 @@ def is_model_class(cls: Any) -> TypeGuard[type[BaseModel]]:
     """Returns true if cls is a _proper_ subclass of BaseModel, and provides proper type-checking,
     unlike raw calls to lenient_issubclass.
     """
-    BaseModel: type[BaseModel] = import_manager.get_cached_attr('BaseModel', 'pydantic.main')
+    BaseModel: type[BaseModel] = import_manager.get_attr('BaseModel', 'pydantic.main')
 
     return lenient_issubclass(cls, BaseModel) and cls is not BaseModel
 

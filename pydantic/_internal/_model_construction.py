@@ -118,7 +118,7 @@ class ModelMetaclass(ABCMeta):
 
             cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
 
-            BaseModel: type[BaseModel] = import_manager.get_cached_attr('BaseModel', 'pydantic.main')
+            BaseModel: type[BaseModel] = import_manager.get_attr('BaseModel', 'pydantic.main')
 
             mro = cls.__mro__
             if Generic in mro and mro.index(Generic) < mro.index(BaseModel):
@@ -250,7 +250,7 @@ class ModelMetaclass(ABCMeta):
 
     @staticmethod
     def _collect_bases_data(bases: tuple[type[Any], ...]) -> tuple[set[str], set[str], dict[str, ModelPrivateAttr]]:
-        BaseModel: type[BaseModel] = import_manager.get_cached_attr('BaseModel', 'pydantic.main')
+        BaseModel: type[BaseModel] = import_manager.get_attr('BaseModel', 'pydantic.main')
 
         field_names: set[str] = set()
         class_vars: set[str] = set()
@@ -301,7 +301,7 @@ def get_model_post_init(namespace: dict[str, Any], bases: tuple[type[Any], ...])
     if 'model_post_init' in namespace:
         return namespace['model_post_init']
 
-    BaseModel: type[BaseModel] = import_manager.get_cached_attr('BaseModel', 'pydantic.main')
+    BaseModel: type[BaseModel] = import_manager.get_attr('BaseModel', 'pydantic.main')
 
     model_post_init = get_attribute_from_bases(bases, 'model_post_init')
     if model_post_init is not BaseModel.model_post_init:

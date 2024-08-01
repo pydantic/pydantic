@@ -7,7 +7,7 @@ class CachedImportManager:
         self._attr_cache: Dict[Tuple[str, str], Any] = {}
         self._module_cache: Dict[str, Any] = {}
 
-    def get_cached_attr(self, attr_name: str, module_name: str) -> Any:
+    def get_attr(self, attr_name: str, module_name: str) -> Any:
         if (key := (module_name, attr_name)) in self._attr_cache:
             return self._attr_cache[key]
 
@@ -18,6 +18,13 @@ class CachedImportManager:
             self._module_cache[module_name] = module
         self._attr_cache[key] = getattr(module, attr_name)
         return self._attr_cache[key]
+
+    def get_module(self, module_name: str) -> Any:
+        if module_name in self._module_cache:
+            return self._module_cache[module_name]
+        module = import_module(module_name)
+        self._module_cache[module_name] = module
+        return module
 
 
 import_manager = CachedImportManager()
