@@ -6817,7 +6817,7 @@ def test_collection() -> None:
             ta.validate_python(1)
 
         assert ta.dump_python([1, 2, 3]) == [1, 2, 3]
-        assert ta.dump_json([1, 2, 3]) == '[1, 2, 3]'
+        assert ta.dump_json([1, 2, 3]) == b'[1,2,3]'
 
     for ta in [ta2, ta4]:
         with pytest.raises(ValidationError):
