@@ -263,7 +263,7 @@ def modify_model_json_schema(
     from ..root_model import RootModel
     from ._dataclasses import is_builtin_dataclass
 
-    BaseModel = import_manager.get_cached_attr('BaseModel', 'pydantic.main')
+    BaseModel: type[BaseModel] = import_manager.get_cached_attr('BaseModel', 'pydantic.main')
 
     json_schema = handler(schema_or_field)
     original_schema = handler.resolve_ref_schema(json_schema)
@@ -911,7 +911,7 @@ class GenerateSchema:
         if isinstance(obj, ForwardRef):
             return self.generate_schema(self._resolve_forward_ref(obj))
 
-        BaseModel = import_manager.get_cached_attr('BaseModel', 'pydantic.main')
+        BaseModel: type[BaseModel] = import_manager.get_cached_attr('BaseModel', 'pydantic.main')
 
         if lenient_issubclass(obj, BaseModel):
             with self.model_type_stack.push(obj):
@@ -2418,7 +2418,7 @@ def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSch
     js_modify_function = getattr(tp, '__get_pydantic_json_schema__', None)
 
     if hasattr(tp, '__modify_schema__'):
-        BaseModel = import_manager.get_cached_attr('BaseModel', 'pydantic.main')
+        BaseModel: type[BaseModel] = import_manager.get_cached_attr('BaseModel', 'pydantic.main')
 
         has_custom_v2_modify_js_func = (
             js_modify_function is not None

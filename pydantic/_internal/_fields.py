@@ -16,6 +16,7 @@ from pydantic.errors import PydanticUserError
 from . import _typing_extra
 from ._config import ConfigWrapper
 from ._docs_extraction import extract_docstrings_from_cls
+from ._import_utils import import_manager
 from ._repr import Representation
 from ._typing_extra import get_cls_type_hints_lenient, get_type_hints, is_classvar, is_finalvar
 
@@ -147,7 +148,7 @@ def collect_model_fields(  # noqa: C901
             if ann_name.startswith(protected_namespace):
                 for b in bases:
                     if hasattr(b, ann_name):
-                        from ..main import BaseModel
+                        BaseModel: type[BaseModel] = import_manager.get_cached_attr('BaseModel', 'pydantic.main')
 
                         if not (issubclass(b, BaseModel) and ann_name in b.model_fields):
                             raise NameError(
