@@ -6798,3 +6798,16 @@ def test_fail_fast(tp, fail_fast, decl) -> None:
         )
 
     assert exc_info.value.errors(include_url=False) == errors
+
+
+def test_mutable_mapping() -> None:
+    """Addresses https://github.com/pydantic/pydantic/issues/9549.
+
+    Note - we still don't do a good job of handling subclasses, as we convert the input to a dict
+    via the MappingValidator annotation's schema.
+    """
+    import collections.abc
+
+    adapter = TypeAdapter(collections.abc.MutableMapping, config=ConfigDict(arbitrary_types_allowed=True, strict=True))
+
+    assert isinstance(adapter.validate_python(collections.UserDict()), collections.abc.MutableMapping)
