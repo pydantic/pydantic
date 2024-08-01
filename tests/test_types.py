@@ -6800,6 +6800,7 @@ def test_fail_fast(tp, fail_fast, decl) -> None:
     assert exc_info.value.errors(include_url=False) == errors
 
 
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='non-subscriptible collections in v3.8')
 def test_collection() -> None:
     import collections.abc
 
