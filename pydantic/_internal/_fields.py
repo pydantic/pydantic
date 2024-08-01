@@ -16,6 +16,7 @@ from pydantic.errors import PydanticUserError
 from . import _typing_extra
 from ._config import ConfigWrapper
 from ._docs_extraction import extract_docstrings_from_cls
+from ._import_utils import import_cached_base_model
 from ._repr import Representation
 from ._typing_extra import get_cls_type_hints_lenient, get_type_hints, is_classvar, is_finalvar
 
@@ -128,7 +129,6 @@ def collect_model_fields(  # noqa: C901
             - If a field shadows an attribute in the parent model.
     """
     from ..fields import FieldInfo
-    from ._import_utils import import_cached_base_model
 
     type_hints = get_cls_type_hints_lenient(cls, types_namespace)
 

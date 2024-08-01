@@ -35,6 +35,7 @@ from ._internal import (
     _fields,
     _forward_ref,
     _generics,
+    _import_utils,
     _mock_val_ser,
     _model_construction,
     _repr,
@@ -1533,7 +1534,7 @@ def create_model(  # noqa: C901
             (f_annotation, f_value, *_) = typing_extensions.get_args(
                 f_def
             )  # first two input are expected from Annotated, refer to https://docs.python.org/3/library/typing.html#typing.Annotated
-            from .fields import FieldInfo
+            FieldInfo = _import_utils.import_cached_field_info()
 
             if not isinstance(f_value, FieldInfo):
                 raise PydanticUserError(

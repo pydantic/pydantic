@@ -23,13 +23,15 @@ from pydantic_core import (
 from typing_extensions import get_args, get_origin
 
 from pydantic.errors import PydanticSchemaGenerationError
-from pydantic.fields import FieldInfo
 from pydantic.types import Strict
 
 from ..json_schema import JsonSchemaValue
 from . import _known_annotated_metadata, _typing_extra
+from ._import_utils import import_cached_field_info
 from ._internal_dataclass import slots_true
 from ._schema_generation_shared import GetCoreSchemaHandler, GetJsonSchemaHandler
+
+FieldInfo = import_cached_field_info()
 
 if typing.TYPE_CHECKING:
     from ._generate_schema import GenerateSchema

@@ -9,6 +9,7 @@ from pydantic_core import CoreSchema, PydanticCustomError, to_jsonable_python
 from pydantic_core import core_schema as cs
 
 from ._fields import PydanticMetadata
+from ._import_utils import import_cached_field_info
 
 if TYPE_CHECKING:
     from ..annotated_handlers import GetJsonSchemaHandler
@@ -136,7 +137,7 @@ def expand_grouped_metadata(annotations: Iterable[Any]) -> Iterable[Any]:
     """
     import annotated_types as at
 
-    from pydantic.fields import FieldInfo  # circular import
+    FieldInfo = import_cached_field_info()
 
     for annotation in annotations:
         if isinstance(annotation, at.GroupedMetadata):
