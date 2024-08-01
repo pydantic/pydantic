@@ -8,6 +8,7 @@ use pyo3::{PyTraverseError, PyVisit};
 use crate::definitions::{Definitions, DefinitionsBuilder};
 use crate::py_gc::PyGcTraverse;
 
+pub(crate) use config::BytesMode;
 use config::SerializationConfig;
 pub use errors::{PydanticSerializationError, PydanticSerializationUnexpectedValue};
 use extra::{CollectWarnings, SerRecursionState, WarningsMode};

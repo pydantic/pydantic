@@ -10,6 +10,7 @@ use strum::EnumMessage;
 use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::lookup_key::{LookupKey, LookupPath};
 use crate::validators::decimal::create_decimal;
+use crate::validators::ValBytesMode;
 
 use super::datetime::{
     bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, float_as_datetime, float_as_duration,
@@ -106,9 +107,16 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
         }
     }
 
-    fn validate_bytes<'a>(&'a self, _strict: bool) -> ValResult<ValidationMatch<EitherBytes<'a, 'py>>> {
+    fn validate_bytes<'a>(
+        &'a self,
+        _strict: bool,
+        mode: ValBytesMode,
+    ) -> ValResult<ValidationMatch<EitherBytes<'a, 'py>>> {
         match self {
-            JsonValue::Str(s) => Ok(ValidationMatch::strict(s.as_bytes().into())),
+            JsonValue::Str(s) => match mode.deserialize_string(s) {
+                Ok(b) => Ok(ValidationMatch::strict(b)),
+                Err(e) => Err(ValError::new(e, self)),
+            },
             _ => Err(ValError::new(ErrorTypeDefaults::BytesType, self)),
         }
     }
@@ -342,8 +350,15 @@ impl<'py> Input<'py> for str {
         Ok(ValidationMatch::strict(self.into()))
     }
 
-    fn validate_bytes<'a>(&'a self, _strict: bool) -> ValResult<ValidationMatch<EitherBytes<'a, 'py>>> {
-        Ok(ValidationMatch::strict(self.as_bytes().into()))
+    fn validate_bytes<'a>(
+        &'a self,
+        _strict: bool,
+        mode: ValBytesMode,
+    ) -> ValResult<ValidationMatch<EitherBytes<'a, 'py>>> {
+        match mode.deserialize_string(self) {
+            Ok(b) => Ok(ValidationMatch::strict(b)),
+            Err(e) => Err(ValError::new(e, self)),
+        }
     }
 
     fn validate_bool(&self, _strict: bool) -> ValResult<ValidationMatch<bool>> {

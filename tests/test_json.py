@@ -376,3 +376,78 @@ def test_partial_parse():
     with pytest.raises(ValueError, match='EOF while parsing a string at line 1 column 15'):
         from_json(b'["aa", "bb", "c')
     assert from_json(b'["aa", "bb", "c', allow_partial=True) == ['aa', 'bb']
+
+
+def test_json_bytes_base64_round_trip():
+    data = b'hello'
+    encoded = b'"aGVsbG8="'
+    assert to_json(data, bytes_mode='base64') == encoded
+
+    v = SchemaValidator({'type': 'bytes'}, {'val_json_bytes': 'base64'})
+    assert v.validate_json(encoded) == data
+
+    assert to_json({'key': data}, bytes_mode='base64') == b'{"key":"aGVsbG8="}'
+    v = SchemaValidator(
+        {'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'bytes'}},
+        {'val_json_bytes': 'base64'},
+    )
+    assert v.validate_json('{"key":"aGVsbG8="}') == {'key': data}
+
+
+def test_json_bytes_base64_invalid():
+    v = SchemaValidator({'type': 'bytes'}, {'val_json_bytes': 'base64'})
+    wrong_input = 'wrong!'
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_json(json.dumps(wrong_input))
+    assert exc_info.value.errors(include_url=False, include_context=False) == [
+        {
+            'type': 'bytes_invalid_encoding',
+            'loc': (),
+            'msg': f'Data should be valid base64: Invalid byte {ord("!")}, offset {len(wrong_input)-1}.',
+            'input': wrong_input,
+        }
+    ]
+
+
+def test_json_bytes_hex_round_trip():
+    data = b'hello'
+    encoded = b'"68656c6c6f"'
+    assert to_json(data, bytes_mode='hex') == encoded
+
+    v = SchemaValidator({'type': 'bytes'}, {'val_json_bytes': 'hex'})
+    assert v.validate_json(encoded) == data
+
+    assert to_json({'key': data}, bytes_mode='hex') == b'{"key":"68656c6c6f"}'
+    v = SchemaValidator(
+        {'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'bytes'}},
+        {'val_json_bytes': 'hex'},
+    )
+    assert v.validate_json('{"key":"68656c6c6f"}') == {'key': data}
+
+
+def test_json_bytes_hex_invalid():
+    v = SchemaValidator({'type': 'bytes'}, {'val_json_bytes': 'hex'})
+
+    wrong_input = 'a'
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_json(json.dumps(wrong_input))
+    assert exc_info.value.errors(include_url=False, include_context=False) == [
+        {
+            'type': 'bytes_invalid_encoding',
+            'loc': (),
+            'msg': 'Data should be valid hex: Odd number of digits',
+            'input': wrong_input,
+        }
+    ]
+
+    wrong_input = 'ag'
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_json(json.dumps(wrong_input))
+    assert exc_info.value.errors(include_url=False, include_context=False) == [
+        {
+            'type': 'bytes_invalid_encoding',
+            'loc': (),
+            'msg': "Data should be valid hex: Invalid character 'g' at position 1",
+            'input': wrong_input,
+        }
+    ]

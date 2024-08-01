@@ -16,6 +16,7 @@ use crate::input::{Input, InputType, StringMapping};
 use crate::py_gc::PyGcTraverse;
 use crate::recursion_guard::RecursionState;
 use crate::tools::SchemaDict;
+pub(crate) use config::ValBytesMode;
 
 mod any;
 mod arguments;
@@ -24,6 +25,7 @@ mod bytes;
 mod call;
 mod callable;
 mod chain;
+mod config;
 mod custom_error;
 mod dataclass;
 mod date;

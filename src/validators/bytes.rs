@@ -8,11 +8,13 @@ use crate::input::Input;
 
 use crate::tools::SchemaDict;
 
+use super::config::ValBytesMode;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 #[derive(Debug, Clone)]
 pub struct BytesValidator {
     strict: bool,
+    bytes_mode: ValBytesMode,
 }
 
 impl BuildValidator for BytesValidator {
@@ -31,6 +33,7 @@ impl BuildValidator for BytesValidator {
         } else {
             Ok(Self {
                 strict: is_strict(schema, config)?,
+                bytes_mode: ValBytesMode::from_config(config)?,
             }
             .into())
         }
@@ -47,7 +50,7 @@ impl Validator for BytesValidator {
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
         input
-            .validate_bytes(state.strict_or(self.strict))
+            .validate_bytes(state.strict_or(self.strict), self.bytes_mode)
             .map(|m| m.unpack(state).into_py(py))
     }
 
@@ -59,6 +62,7 @@ impl Validator for BytesValidator {
 #[derive(Debug, Clone)]
 pub struct BytesConstrainedValidator {
     strict: bool,
+    bytes_mode: ValBytesMode,
     max_length: Option<usize>,
     min_length: Option<usize>,
 }
@@ -72,7 +76,9 @@ impl Validator for BytesConstrainedValidator {
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
-        let either_bytes = input.validate_bytes(state.strict_or(self.strict))?.unpack(state);
+        let either_bytes = input
+            .validate_bytes(state.strict_or(self.strict), self.bytes_mode)?
+            .unpack(state);
         let len = either_bytes.len()?;
 
         if let Some(min_length) = self.min_length {
@@ -110,6 +116,7 @@ impl BytesConstrainedValidator {
         let py = schema.py();
         Ok(Self {
             strict: is_strict(schema, config)?,
+            bytes_mode: ValBytesMode::from_config(config)?,
             min_length: schema.get_as(intern!(py, "min_length"))?,
             max_length: schema.get_as(intern!(py, "max_length"))?,
         }
