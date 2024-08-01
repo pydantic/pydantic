@@ -53,7 +53,7 @@ from pydantic_core import (
 )
 from typing_extensions import Annotated, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
-from ..aliases import AliasGenerator
+from ..aliases import AliasChoices, AliasGenerator, AliasPath
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from ..config import ConfigDict, JsonDict, JsonEncoder
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
@@ -92,6 +92,7 @@ from ._docs_extraction import extract_docstrings_from_cls
 from ._fields import collect_dataclass_fields, get_type_hints_infer_globalns
 from ._forward_ref import PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, has_instance_in_type, recursively_defined_type_refs, replace_types
+from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import MockCoreSchema
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._typing_extra import is_finalvar, is_self_type, is_zoneinfo_type
@@ -259,9 +260,10 @@ def modify_model_json_schema(
         JsonSchemaValue: The updated JSON schema.
     """
     from ..dataclasses import is_pydantic_dataclass
-    from ..main import BaseModel
     from ..root_model import RootModel
     from ._dataclasses import is_builtin_dataclass
+
+    BaseModel = import_cached_base_model()
 
     json_schema = handler(schema_or_field)
     original_schema = handler.resolve_ref_schema(json_schema)
@@ -909,7 +911,7 @@ class GenerateSchema:
         if isinstance(obj, ForwardRef):
             return self.generate_schema(self._resolve_forward_ref(obj))
 
-        from ..main import BaseModel
+        BaseModel = import_cached_base_model()
 
         if lenient_issubclass(obj, BaseModel):
             with self.model_type_stack.push(obj):
@@ -1252,8 +1254,7 @@ class GenerateSchema:
         self, name: str, field_info: FieldInfo, decorators: DecoratorInfos
     ) -> _CommonField:
         # Update FieldInfo annotation if appropriate:
-        from .. import AliasChoices, AliasPath
-        from ..fields import FieldInfo
+        FieldInfo = import_cached_field_info()
 
         if has_instance_in_type(field_info.annotation, (ForwardRef, str)):
             types_namespace = self._types_namespace
@@ -1431,7 +1432,7 @@ class GenerateSchema:
         Hence to avoid creating validators that do not do what users expect we only
         support typing.TypedDict on Python >= 3.12 or typing_extension.TypedDict on all versions
         """
-        from ..fields import FieldInfo
+        FieldInfo = import_cached_field_info()
 
         with self.model_type_stack.push(typed_dict_cls), self.defs.get_schema_or_ref(typed_dict_cls) as (
             typed_dict_ref,
@@ -1567,7 +1568,7 @@ class GenerateSchema:
         mode: Literal['positional_only', 'positional_or_keyword', 'keyword_only'] | None = None,
     ) -> core_schema.ArgumentsParameter:
         """Prepare a ArgumentsParameter to represent a field in a namedtuple or function signature."""
-        from ..fields import FieldInfo
+        FieldInfo = import_cached_field_info()
 
         if default is Parameter.empty:
             field = FieldInfo.from_annotation(annotation)
@@ -2004,7 +2005,7 @@ class GenerateSchema:
 
     def _annotated_schema(self, annotated_type: Any) -> core_schema.CoreSchema:
         """Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`."""
-        from ..fields import FieldInfo
+        FieldInfo = import_cached_field_info()
 
         source_type, *annotations = self._get_args_resolving_forward_refs(
             annotated_type,
@@ -2096,7 +2097,7 @@ class GenerateSchema:
         return _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, source_type, schema)
 
     def _apply_single_annotation(self, schema: core_schema.CoreSchema, metadata: Any) -> core_schema.CoreSchema:
-        from ..fields import FieldInfo
+        FieldInfo = import_cached_field_info()
 
         if isinstance(metadata, FieldInfo):
             for field_metadata in metadata.metadata:
@@ -2140,7 +2141,7 @@ class GenerateSchema:
     def _apply_single_annotation_json_schema(
         self, schema: core_schema.CoreSchema, metadata: Any
     ) -> core_schema.CoreSchema:
-        from ..fields import FieldInfo
+        FieldInfo = import_cached_field_info()
 
         if isinstance(metadata, FieldInfo):
             for field_metadata in metadata.metadata:
@@ -2416,7 +2417,7 @@ def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSch
     js_modify_function = getattr(tp, '__get_pydantic_json_schema__', None)
 
     if hasattr(tp, '__modify_schema__'):
-        from pydantic import BaseModel  # circular reference
+        BaseModel = import_cached_base_model()
 
         has_custom_v2_modify_js_func = (
             js_modify_function is not None
