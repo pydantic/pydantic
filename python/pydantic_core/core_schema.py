@@ -70,6 +70,7 @@ class CoreConfig(TypedDict, total=False):
         ser_json_bytes: The serialization option for `bytes` values. Default is 'utf8'.
         ser_json_inf_nan: The serialization option for infinity and NaN values
             in float fields. Default is 'null'.
+        val_json_bytes: The validation option for `bytes` values, complementing ser_json_bytes. Default is 'utf8'.
         hide_input_in_errors: Whether to hide input data from `ValidationError` representation.
         validation_error_cause: Whether to add user-python excs to the __cause__ of a ValidationError.
             Requires exceptiongroup backport pre Python 3.11.
@@ -107,6 +108,7 @@ class CoreConfig(TypedDict, total=False):
     ser_json_timedelta: Literal['iso8601', 'float']  # default: 'iso8601'
     ser_json_bytes: Literal['utf8', 'base64', 'hex']  # default: 'utf8'
     ser_json_inf_nan: Literal['null', 'constants', 'strings']  # default: 'null'
+    val_json_bytes: Literal['utf8', 'base64', 'hex']  # default: 'utf8'
     # used to hide input data from ValidationError repr
     hide_input_in_errors: bool
     validation_error_cause: bool  # default: False
@@ -3904,6 +3906,7 @@ ErrorType = Literal[
     'bytes_type',
     'bytes_too_short',
     'bytes_too_long',
+    'bytes_invalid_encoding',
     'value_error',
     'assertion_error',
     'literal_error',

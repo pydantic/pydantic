@@ -52,7 +52,7 @@ pub trait FromConfig {
 macro_rules! serialization_mode {
     ($name:ident, $config_key:expr, $($variant:ident => $value:expr),* $(,)?) => {
         #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
-        pub(crate) enum $name {
+        pub enum $name {
             #[default]
             $($variant,)*
         }
@@ -183,9 +183,7 @@ impl BytesMode {
                 Err(e) => Err(Error::custom(e.to_string())),
             },
             Self::Base64 => serializer.serialize_str(&base64::engine::general_purpose::URL_SAFE.encode(bytes)),
-            Self::Hex => {
-                serializer.serialize_str(&bytes.iter().fold(String::new(), |acc, b| acc + &format!("{b:02x}")))
-            }
+            Self::Hex => serializer.serialize_str(hex::encode(bytes).as_str()),
         }
     }
 }

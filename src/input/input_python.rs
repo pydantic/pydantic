@@ -17,6 +17,7 @@ use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError,
 use crate::tools::{extract_i64, safe_repr};
 use crate::validators::decimal::{create_decimal, get_decimal_type};
 use crate::validators::Exactness;
+use crate::validators::ValBytesMode;
 use crate::ArgsKwargs;
 
 use super::datetime::{
@@ -174,7 +175,11 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         Err(ValError::new(ErrorTypeDefaults::StringType, self))
     }
 
-    fn validate_bytes<'a>(&'a self, strict: bool) -> ValResult<ValidationMatch<EitherBytes<'a, 'py>>> {
+    fn validate_bytes<'a>(
+        &'a self,
+        strict: bool,
+        mode: ValBytesMode,
+    ) -> ValResult<ValidationMatch<EitherBytes<'a, 'py>>> {
         if let Ok(py_bytes) = self.downcast_exact::<PyBytes>() {
             return Ok(ValidationMatch::exact(py_bytes.into()));
         } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
@@ -185,7 +190,10 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
             if !strict {
                 return if let Ok(py_str) = self.downcast::<PyString>() {
                     let str = py_string_str(py_str)?;
-                    Ok(str.as_bytes().into())
+                    match mode.deserialize_string(str) {
+                        Ok(b) => Ok(b),
+                        Err(e) => Err(ValError::new(e, self)),
+                    }
                 } else if let Ok(py_byte_array) = self.downcast::<PyByteArray>() {
                     Ok(py_byte_array.to_vec().into())
                 } else {

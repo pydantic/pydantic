@@ -7,6 +7,7 @@ use pyo3::{intern, prelude::*};
 use crate::errors::{ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::lookup_key::{LookupKey, LookupPath};
 use crate::tools::py_err;
+use crate::validators::ValBytesMode;
 
 use super::datetime::{EitherDate, EitherDateTime, EitherTime, EitherTimedelta};
 use super::return_enums::{EitherBytes, EitherInt, EitherString};
@@ -71,7 +72,7 @@ pub trait Input<'py>: fmt::Debug + ToPyObject {
 
     fn validate_str(&self, strict: bool, coerce_numbers_to_str: bool) -> ValMatch<EitherString<'_>>;
 
-    fn validate_bytes<'a>(&'a self, strict: bool) -> ValMatch<EitherBytes<'a, 'py>>;
+    fn validate_bytes<'a>(&'a self, strict: bool, mode: ValBytesMode) -> ValMatch<EitherBytes<'a, 'py>>;
 
     fn validate_bool(&self, strict: bool) -> ValMatch<bool>;
 
