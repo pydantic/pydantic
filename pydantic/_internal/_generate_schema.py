@@ -53,7 +53,7 @@ from pydantic_core import (
 )
 from typing_extensions import Annotated, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
-from ..aliases import AliasGenerator
+from ..aliases import AliasChoices, AliasGenerator, AliasPath
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from ..config import ConfigDict, JsonDict, JsonEncoder
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
@@ -1254,8 +1254,6 @@ class GenerateSchema:
         self, name: str, field_info: FieldInfo, decorators: DecoratorInfos
     ) -> _CommonField:
         # Update FieldInfo annotation if appropriate:
-        from .. import AliasChoices, AliasPath
-
         FieldInfo = import_cached_field_info()
 
         if has_instance_in_type(field_info.annotation, (ForwardRef, str)):
