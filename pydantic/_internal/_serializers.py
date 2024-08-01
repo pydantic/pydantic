@@ -1,11 +1,11 @@
 import collections
 import collections.abc
 import typing
-from typing import Any
+from typing import Any, Dict
 
 from pydantic_core import PydanticOmit, core_schema
 
-SEQUENCE_ORIGIN_MAP: dict[Any, Any] = {
+SEQUENCE_ORIGIN_MAP: Dict[Any, Any] = {
     typing.Deque: collections.deque,
     collections.deque: collections.deque,
     list: list,
