@@ -7,9 +7,10 @@ _type_cache = {}
 
 
 def import_cached_base_model() -> type['BaseModel']:
-    if 'BaseModel' not in _type_cache:
+    if 'BaseModel' in _type_cache:
+        return _type_cache['BaseModel']
+    else:
         from pydantic import BaseModel
 
         _type_cache['BaseModel'] = BaseModel
         return BaseModel
-    return _type_cache['BaseModel']
