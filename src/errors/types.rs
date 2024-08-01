@@ -290,6 +290,10 @@ error_types! {
     BytesTooLong {
         max_length: {ctx_type: usize, ctx_fn: field_from_context},
     },
+    BytesInvalidEncoding {
+        encoding: {ctx_type: String, ctx_fn: field_from_context},
+        encoding_error: {ctx_type: String, ctx_fn: field_from_context},
+    },
     // ---------------------
     // python errors from functions
     ValueError {
@@ -515,6 +519,7 @@ impl ErrorType {
             Self::BytesType {..} => "Input should be a valid bytes",
             Self::BytesTooShort {..} => "Data should have at least {min_length} byte{expected_plural}",
             Self::BytesTooLong {..} => "Data should have at most {max_length} byte{expected_plural}",
+            Self::BytesInvalidEncoding { .. } => "Data should be valid {encoding}: {encoding_error}",
             Self::ValueError {..} => "Value error, {error}",
             Self::AssertionError {..} => "Assertion failed, {error}",
             Self::CustomError {..} => "",  // custom errors are handled separately
@@ -664,6 +669,11 @@ impl ErrorType {
                 let expected_plural = plural_s(*max_length);
                 to_string_render!(tmpl, max_length, expected_plural)
             }
+            Self::BytesInvalidEncoding {
+                encoding,
+                encoding_error,
+                ..
+            } => render!(tmpl, encoding, encoding_error),
             Self::ValueError { error, .. } => {
                 let error = &error
                     .as_ref()
