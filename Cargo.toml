@@ -77,7 +77,7 @@ strip = false
 pyo3 = { version = "0.22.0", features = ["auto-initialize"] }
 
 [build-dependencies]
-version_check = "0.9.4"
+version_check = "0.9.5"
 # used where logic has to be version/distribution specific, e.g. pypy
 pyo3-build-config = { version = "0.22.0" }
 
