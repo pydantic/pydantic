@@ -389,7 +389,7 @@ _ModelTypeCo = TypeVar('_ModelTypeCo', covariant=True)
 
 
 class ModelWrapValidatorHandler(_core_schema.ValidatorFunctionWrapHandler, Protocol[_ModelTypeCo]):
-    """@model_validator decorated function handler argument type. This is used when `mode='wrap'`."""
+    """`@model_validator` decorated function handler argument type. This is used when `mode='wrap'`."""
 
     def __call__(  # noqa: D102
         self,
@@ -401,7 +401,7 @@ class ModelWrapValidatorHandler(_core_schema.ValidatorFunctionWrapHandler, Proto
 
 
 class ModelWrapValidatorWithoutInfo(Protocol[_ModelType]):
-    """A @model_validator decorated function signature.
+    """A `@model_validator` decorated function signature.
     This is used when `mode='wrap'` and the function does not have info argument.
     """
 
@@ -418,7 +418,7 @@ class ModelWrapValidatorWithoutInfo(Protocol[_ModelType]):
 
 
 class ModelWrapValidator(Protocol[_ModelType]):
-    """A @model_validator decorated function signature. This is used when `mode='wrap'`."""
+    """A `@model_validator` decorated function signature. This is used when `mode='wrap'`."""
 
     def __call__(  # noqa: D102
         self,
@@ -434,7 +434,7 @@ class ModelWrapValidator(Protocol[_ModelType]):
 
 
 class FreeModelBeforeValidatorWithoutInfo(Protocol):
-    """A @model_validator decorated function signature.
+    """A `@model_validator` decorated function signature.
     This is used when `mode='before'` and the function does not have info argument.
     """
 
@@ -449,7 +449,7 @@ class FreeModelBeforeValidatorWithoutInfo(Protocol):
 
 
 class ModelBeforeValidatorWithoutInfo(Protocol):
-    """A @model_validator decorated function signature.
+    """A `@model_validator` decorated function signature.
     This is used when `mode='before'` and the function does not have info argument.
     """
 

@@ -99,7 +99,8 @@ class WrapSerializer:
         end: datetime
 
     def convert_to_utc(value: Any, handler, info) -> Dict[str, datetime]:
-        # Note that `helper` can actually help serialize the `value` for further custom serialization in case it's a subclass.
+        # Note that `handler` can actually help serialize the `value` for
+        # further custom serialization in case it's a subclass.
         partial_result = handler(value, info)
         if info.mode == 'json':
             return {
@@ -336,7 +337,17 @@ def model_serializer(
     #> {'unit': 'C', 'value': 100}
     ```
 
-    See [Custom serializers](../concepts/serialization.md#custom-serializers) for more information.
+    Two signatures are supported for `mode='plain'`, which is the default:
+
+    - `(self)`
+    - `(self, info: SerializationInfo)`
+
+    And two other signatures for `mode='wrap'`:
+
+    - `(self, nxt: SerializerFunctionWrapHandler)`
+    - `(self, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)`
+
+        See [Custom serializers](../concepts/serialization.md#custom-serializers) for more information.
 
     Args:
         f: The function to be decorated.
