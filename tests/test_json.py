@@ -392,7 +392,7 @@ def test_resolve_ref_schema_recursive_model():
                 'type': 'object',
             }
         },
-        'allOf': [{'$ref': '#/$defs/Model'}],
+        '$ref': '#/$defs/Model',
     }
 
 

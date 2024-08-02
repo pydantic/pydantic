@@ -265,11 +265,6 @@ def modify_model_json_schema(
 
     json_schema = handler(schema_or_field)
     original_schema = handler.resolve_ref_schema(json_schema)
-    # Preserve the fact that definitions schemas should never have sibling keys:
-    if '$ref' in original_schema:
-        ref = original_schema['$ref']
-        original_schema.clear()
-        original_schema['allOf'] = [{'$ref': ref}]
     if title is not None:
         original_schema['title'] = title
     elif 'title' not in original_schema:
