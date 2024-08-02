@@ -337,8 +337,6 @@ def model_serializer(
     #> {'unit': 'C', 'value': 100}
     ```
 
-    See [Custom serializers](../concepts/serialization.md#custom-serializers) for more information.
-
     Two signatures are supported for `mode='plain'`, which is the default:
 
     - `(self)`
@@ -348,6 +346,8 @@ def model_serializer(
 
     - `(self, nxt: SerializerFunctionWrapHandler)`
     - `(self, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)`
+
+        See [Custom serializers](../concepts/serialization.md#custom-serializers) for more information.
 
     Args:
         f: The function to be decorated.
