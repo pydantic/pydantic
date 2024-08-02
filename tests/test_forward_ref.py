@@ -1087,7 +1087,9 @@ def test_invalid_forward_ref() -> None:
     class CustomType:
         """A custom type that isn't subscriptable."""
 
-    with pytest.raises(TypeError, match=re.escape("Unable to evaluate type annotation 'CustomType[int]'.")):
+    msg = "Unable to evaluate type annotation 'CustomType[int]'. It might be that the type being used isn't subscriptable."
+
+    with pytest.raises(TypeError, match=re.escape(msg)):
 
         class Model(BaseModel):
             foo: 'CustomType[int]'
