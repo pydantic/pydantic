@@ -3721,7 +3721,8 @@ logic, and can modify the resulting value before returning it as the final outpu
     <span class="n">end</span><span class="p">:</span> <span class="n">datetime</span>
 
 <span class="k">def</span> <span class="nf">convert_to_utc</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">datetime</span><span class="p">]:</span>
-    <span class="c1"># Note that `helper` can actually help serialize the `value` for further custom serialization in case it&#39;s a subclass.</span>
+    <span class="c1"># Note that `handler` can actually help serialize the `value` for</span>
+    <span class="c1"># further custom serialization in case it&#39;s a subclass.</span>
     <span class="n">partial_result</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;json&#39;</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
@@ -3992,8 +3993,7 @@ logic, and can modify the resulting value before returning it as the final outpu
 
             <details class="quote">
               <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">221</span>
-<span class="normal">222</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">222</span>
 <span class="normal">223</span>
 <span class="normal">224</span>
 <span class="normal">225</span>
@@ -4057,7 +4057,8 @@ logic, and can modify the resulting value before returning it as the final outpu
 <span class="normal">283</span>
 <span class="normal">284</span>
 <span class="normal">285</span>
-<span class="normal">286</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">field_serializer</span><span class="p">(</span>
+<span class="normal">286</span>
+<span class="normal">287</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">field_serializer</span><span class="p">(</span>
     <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;plain&#39;</span><span class="p">,</span> <span class="s1">&#39;wrap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;plain&#39;</span><span class="p">,</span>
     <span class="n">return_type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
@@ -4172,7 +4173,19 @@ logic, and can modify the resulting value before returning it as the final outpu
 <span class="nb">print</span><span class="p">(</span><span class="n">temperature</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="c1">#&gt; {&#39;unit&#39;: &#39;C&#39;, &#39;value&#39;: 100}</span>
 </code></pre></div>
+<p>Two signatures are supported for <code>mode='plain'</code>, which is the default:</p>
+<ul>
+<li><code>(self)</code></li>
+<li><code>(self, info: SerializationInfo)</code></li>
+</ul>
+<p>And two other signatures for <code>mode='wrap'</code>:</p>
+<ul>
+<li><code>(self, nxt: SerializerFunctionWrapHandler)</code></li>
+<li>
+<p><code>(self, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)</code></p>
 <p>See <a href="../../concepts/serialization/#custom-serializers">Custom serializers</a> for more information.</p>
+</li>
+</ul>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -4275,8 +4288,7 @@ logic, and can modify the resulting value before returning it as the final outpu
 
             <details class="quote">
               <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">305</span>
-<span class="normal">306</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">306</span>
 <span class="normal">307</span>
 <span class="normal">308</span>
 <span class="normal">309</span>
@@ -4332,7 +4344,18 @@ logic, and can modify the resulting value before returning it as the final outpu
 <span class="normal">359</span>
 <span class="normal">360</span>
 <span class="normal">361</span>
-<span class="normal">362</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_serializer</span><span class="p">(</span>
+<span class="normal">362</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span>
+<span class="normal">366</span>
+<span class="normal">367</span>
+<span class="normal">368</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_serializer</span><span class="p">(</span>
     <span class="n">f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -4366,7 +4389,17 @@ logic, and can modify the resulting value before returning it as the final outpu
 <span class="sd">    #&gt; {&#39;unit&#39;: &#39;C&#39;, &#39;value&#39;: 100}</span>
 <span class="sd">    ```</span>
 
-<span class="sd">    See [Custom serializers](../concepts/serialization.md#custom-serializers) for more information.</span>
+<span class="sd">    Two signatures are supported for `mode=&#39;plain&#39;`, which is the default:</span>
+
+<span class="sd">    - `(self)`</span>
+<span class="sd">    - `(self, info: SerializationInfo)`</span>
+
+<span class="sd">    And two other signatures for `mode=&#39;wrap&#39;`:</span>
+
+<span class="sd">    - `(self, nxt: SerializerFunctionWrapHandler)`</span>
+<span class="sd">    - `(self, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)`</span>
+
+<span class="sd">        See [Custom serializers](../concepts/serialization.md#custom-serializers) for more information.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        f: The function to be decorated.</span>
