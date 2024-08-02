@@ -68,6 +68,6 @@ jobs:
           RUSTFLAGS: "-Cprofile-use=${{ github.workspace }}/merged.profdata"
 
       - name: Run CodSpeed benchmarks
-        uses: CodSpeedHQ/action@v2
+        uses: CodSpeedHQ/action@v3
         with:
           run: pytest tests/benchmarks/ --codspeed
