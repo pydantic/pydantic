@@ -77,7 +77,7 @@ macro_rules! serialization_mode {
                     return Ok(Self::default());
                 };
                 let raw_mode = config_dict.get_as::<Bound<'_, PyString>>(intern!(config_dict.py(), $config_key))?;
-                raw_mode.map_or_else(|| Ok(Self::default()), |raw| Self::from_str(&raw.to_cow()?))
+                raw_mode.map_or_else(|| Ok(Self::default()), |raw| Self::from_str(raw.to_str()?))
             }
         }
 
