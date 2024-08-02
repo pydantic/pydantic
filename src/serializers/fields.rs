@@ -159,7 +159,7 @@ impl GeneralFieldsSerializer {
         for result in main_iter {
             let (key, value) = result?;
             let key_str = key_str(&key)?;
-            let op_field = self.fields.get(key_str.as_ref());
+            let op_field = self.fields.get(key_str);
             if extra.exclude_none && value.is_none() {
                 if let Some(field) = op_field {
                     if field.required {
@@ -169,7 +169,7 @@ impl GeneralFieldsSerializer {
                 continue;
             }
             let field_extra = Extra {
-                field_name: Some(&key_str),
+                field_name: Some(key_str),
                 ..extra
             };
             if let Some((next_include, next_exclude)) = self.filter.key_filter(&key, include, exclude)? {
@@ -236,13 +236,13 @@ impl GeneralFieldsSerializer {
             }
             let key_str = key_str(&key).map_err(py_err_se_err)?;
             let field_extra = Extra {
-                field_name: Some(&key_str),
+                field_name: Some(key_str),
                 ..extra
             };
 
             let filter = self.filter.key_filter(&key, include, exclude).map_err(py_err_se_err)?;
             if let Some((next_include, next_exclude)) = filter {
-                if let Some(field) = self.fields.get(key_str.as_ref()) {
+                if let Some(field) = self.fields.get(key_str) {
                     if let Some(ref serializer) = field.serializer {
                         if !exclude_default(&value, &field_extra, serializer).map_err(py_err_se_err)? {
                             let s = PydanticSerializer::new(
@@ -252,7 +252,7 @@ impl GeneralFieldsSerializer {
                                 next_exclude.as_ref(),
                                 &field_extra,
                             );
-                            let output_key = field.get_key_json(&key_str, &field_extra);
+                            let output_key = field.get_key_json(key_str, &field_extra);
                             map.serialize_entry(&output_key, &s)?;
                         }
                     }
@@ -446,8 +446,8 @@ impl TypeSerializer for GeneralFieldsSerializer {
     }
 }
 
-fn key_str<'a>(key: &'a Bound<'_, PyAny>) -> PyResult<Cow<'a, str>> {
-    key.downcast::<PyString>()?.to_cow()
+fn key_str<'a>(key: &'a Bound<'_, PyAny>) -> PyResult<&'a str> {
+    key.downcast::<PyString>()?.to_str()
 }
 
 fn dict_items<'py>(
