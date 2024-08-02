@@ -265,19 +265,23 @@ def eval_type_backport(
                 value, globalns, localns
             )
     except TypeError as e:
-        if not (isinstance(value, typing.ForwardRef) and is_backport_fixable_error(e)):
-            raise
-        try:
-            from eval_type_backport import eval_type_backport
-        except ImportError:
-            raise TypeError(
-                f'You have a type annotation {value.__forward_arg__!r} '
-                f'which makes use of newer typing features than are supported in your version of Python. '
-                f'To handle this error, you should either remove the use of new syntax '
-                f'or install the `eval_type_backport` package.'
-            ) from e
+        if isinstance(value, typing.ForwardRef):
+            if is_backport_fixable_error(e):
+                try:
+                    from eval_type_backport import eval_type_backport
+                except ImportError:
+                    raise TypeError(
+                        f'You have a type annotation {value.__forward_arg__!r} '
+                        f'which makes use of newer typing features than are supported in your version of Python. '
+                        f'To handle this error, you should either remove the use of new syntax '
+                        f'or install the `eval_type_backport` package.'
+                    ) from e
 
-        return eval_type_backport(value, globalns, localns, try_default=False)
+                return eval_type_backport(value, globalns, localns, try_default=False)
+
+            raise TypeError(f'Unable to evaluate type annotation {value.__forward_arg__!r}.') from e
+
+        raise e
 
 
 def is_backport_fixable_error(e: TypeError) -> bool:
