@@ -696,7 +696,7 @@ def unpack_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | N
 
     result = {}
     for k, v in d.items():
-        if getattr(v, '_is_weakref', False):
+        if getattr(v, '_is_pydantic_weakref', False):
             v = v()
             if v is not None:
                 result[k] = v
