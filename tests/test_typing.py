@@ -133,10 +133,10 @@ def test_eval_type_backport_not_installed():
                 foo: 'int | str'
 
         assert str(exc_info.value) == (
-            "Unable to evaluate type annotation 'int | str' which makes use of newer typing. "
-            'If you are making use of the new typing syntax (unions using `|` or builtins subscripting), '
-            'you should either replace the use of new syntax with the existing `typing` constructs '
-            'or install the `eval_type_backport` package. Otherwise, it might be '
+            "Unable to evaluate type annotation 'int | str'. If you are making use "
+            'of the new typing syntax (unions using `|` since Python 3.10 or builtins subscripting '
+            'since Python 3.9), you should either replace the use of new syntax with the existing '
+            '`typing` constructs or install the `eval_type_backport` package. Otherwise, it might be '
             "that the type being used isn't subscriptable."
         )
 
