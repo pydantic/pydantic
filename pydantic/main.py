@@ -518,15 +518,19 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             else:
                 if _parent_namespace_depth > 0:
                     frame_parent_ns = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth) or {}
-                    cls_parent_ns = (
-                        _model_construction.unpack_lenient_weakvaluedict(cls.__pydantic_parent_namespace__) or {}
-                    )
-                    types_namespace = {**cls_parent_ns, **frame_parent_ns}
-                    cls.__pydantic_parent_namespace__ = _model_construction.build_lenient_weakvaluedict(types_namespace)
-                else:
-                    types_namespace = _model_construction.unpack_lenient_weakvaluedict(
-                        cls.__pydantic_parent_namespace__
-                    )
+                    cls_parent_ns = cls.__pydantic_parent_namespace__ or {}
+                    cls.__pydantic_parent_namespace__ = {**cls_parent_ns, **frame_parent_ns}
+
+                types_namespace = cls.__pydantic_parent_namespace__
+                #     cls_parent_ns = (
+                #         _model_construction.unpack_lenient_weakvaluedict(cls.__pydantic_parent_namespace__) or {}
+                #     )
+                #     types_namespace = {**cls_parent_ns, **frame_parent_ns}
+                #     cls.__pydantic_parent_namespace__ = _model_construction.build_lenient_weakvaluedict(types_namespace)
+                # else:
+                #     types_namespace = _model_construction.unpack_lenient_weakvaluedict(
+                #         cls.__pydantic_parent_namespace__
+                #     )
 
                 types_namespace = _typing_extra.get_cls_types_namespace(cls, types_namespace)
 
