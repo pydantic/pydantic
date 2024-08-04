@@ -274,16 +274,12 @@ def eval_type_backport(
                         f'Unable to evaluate type annotation {value.__forward_arg__!r}. If you are making use '
                         'of the new typing syntax (unions using `|` since Python 3.10 or builtins subscripting '
                         'since Python 3.9), you should either replace the use of new syntax with the existing '
-                        '`typing` constructs or install the `eval_type_backport` package. Otherwise, it might be '
-                        "that the type being used isn't subscriptable."
+                        '`typing` constructs or install the `eval_type_backport` package.'
                     ) from e
 
                 return eval_type_backport(value, globalns, localns, try_default=False)
 
-            raise TypeError(
-                f'Unable to evaluate type annotation {value.__forward_arg__!r}. '
-                "It might be that the type being used isn't subscriptable."
-            ) from e
+            raise TypeError(f'Unable to evaluate type annotation {value.__forward_arg__!r}.') from e
 
         raise e
 
@@ -292,9 +288,9 @@ def is_backport_fixable_error(e: TypeError) -> bool:
     msg = str(e)
 
     return (
-        sys.version_info <= (3, 8)
+        sys.version_info < (3, 10)
         and msg.startswith('unsupported operand type(s) for |: ')
-        or sys.version_info <= (3, 9)
+        or sys.version_info < (3, 9)
         and "' object is not subscriptable" in msg
     )
 
