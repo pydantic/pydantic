@@ -89,13 +89,13 @@ from ._decorators import (
     inspect_validator,
 )
 from ._docs_extraction import extract_docstrings_from_cls
-from ._fields import collect_dataclass_fields, get_type_hints_infer_globalns
+from ._fields import collect_dataclass_fields
 from ._forward_ref import PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, has_instance_in_type, recursively_defined_type_refs, replace_types
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import MockCoreSchema
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
-from ._typing_extra import is_finalvar, is_self_type, is_zoneinfo_type
+from ._typing_extra import get_cls_type_hints_lenient, is_finalvar, is_self_type, is_zoneinfo_type
 from ._utils import lenient_issubclass, smart_deepcopy
 
 if TYPE_CHECKING:
@@ -1472,9 +1472,7 @@ class GenerateSchema:
                 else:
                     field_docstrings = None
 
-                for field_name, annotation in get_type_hints_infer_globalns(
-                    typed_dict_cls, localns=self._types_namespace, include_extras=True
-                ).items():
+                for field_name, annotation in get_cls_type_hints_lenient(typed_dict_cls, self._types_namespace).items():
                     annotation = replace_types(annotation, typevars_map)
                     required = field_name in required_keys
 
@@ -1536,9 +1534,7 @@ class GenerateSchema:
             if origin is not None:
                 namedtuple_cls = origin
 
-            annotations: dict[str, Any] = get_type_hints_infer_globalns(
-                namedtuple_cls, include_extras=True, localns=self._types_namespace
-            )
+            annotations: dict[str, Any] = get_cls_type_hints_lenient(namedtuple_cls, self._types_namespace)
             if not annotations:
                 # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
                 annotations = {k: Any for k in namedtuple_cls._fields}
