@@ -7794,7 +7794,7 @@ not the original JSON string. However, you can use the argument <code>round_trip
         <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
               </details>
 
@@ -12858,7 +12858,7 @@ than it would be as a normal <code>Union</code>.</p>
             <span class="n">original_schema</span> <span class="o">=</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">union_schema</span><span class="p">([</span><span class="n">original_schema</span><span class="p">])</span>
 
         <span class="n">tagged_union_choices</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">choice</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">original_schema</span><span class="p">[</span><span class="s1">&#39;choices&#39;</span><span class="p">]):</span>
+        <span class="k">for</span> <span class="n">choice</span> <span class="ow">in</span> <span class="n">original_schema</span><span class="p">[</span><span class="s1">&#39;choices&#39;</span><span class="p">]:</span>
             <span class="n">tag</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">choice</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
                 <span class="n">choice</span><span class="p">,</span> <span class="n">tag</span> <span class="o">=</span> <span class="n">choice</span>

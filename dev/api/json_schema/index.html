@@ -6280,7 +6280,7 @@ mapping that links the input keys to the definition references.</p>
             <span class="n">code</span><span class="o">=</span><span class="s1">&#39;json-schema-already-used&#39;</span><span class="p">,</span>
         <span class="p">)</span>
 
-    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">schema</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">schema</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span> <span class="o">=</span> <span class="n">mode</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 

@@ -4010,7 +4010,7 @@ new attributes after instantiation.</p>
     <span class="k">assert</span> <span class="n">validate_on_init</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;validate_on_init=False is no longer supported&#39;</span>
 
     <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span>
-        <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">kw_only</span><span class="o">=</span><span class="n">kw_only</span><span class="p">,</span> <span class="n">slots</span><span class="o">=</span><span class="n">slots</span><span class="p">)</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;kw_only&#39;</span><span class="p">:</span> <span class="n">kw_only</span><span class="p">,</span> <span class="s1">&#39;slots&#39;</span><span class="p">:</span> <span class="n">slots</span><span class="p">}</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
 
