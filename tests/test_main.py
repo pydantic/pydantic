@@ -2232,8 +2232,9 @@ def test_model_rebuild_zero_depth():
     with pytest.raises(NameError, match='X_Type'):
         Model.model_rebuild(_parent_namespace_depth=0)
 
-    Model.__pydantic_parent_namespace__.update({'X_Type': int})
-    Model.model_rebuild(_parent_namespace_depth=0)
+    X_Type = int
+
+    Model.model_rebuild(_parent_namespace_depth=2)
 
     m = Model(x=42)
     assert m.model_dump() == {'x': 42}

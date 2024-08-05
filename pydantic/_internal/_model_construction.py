@@ -192,12 +192,9 @@ class ModelMetaclass(ABCMeta):
                 obj.__set_name__(cls, name)
 
             if __pydantic_reset_parent_namespace__:
-                # cls.__pydantic_parent_namespace__ = build_lenient_weakvaluedict(parent_frame_namespace())
-                cls.__pydantic_parent_namespace__ = parent_frame_namespace()
-            parent_namespace = getattr(cls, '__pydantic_parent_namespace__', None)
-            # if isinstance(parent_namespace, dict):
-            #     parent_namespace = unpack_lenient_weakvaluedict(parent_namespace)
-
+                parent_namespace = parent_frame_namespace() or {}
+            else:
+                parent_namespace = {}
             types_namespace = get_cls_types_namespace(cls, parent_namespace)
             set_model_fields(cls, bases, config_wrapper, types_namespace)
 
