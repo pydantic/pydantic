@@ -395,7 +395,7 @@ def from_json(
     *,
     allow_inf_nan: bool = True,
     cache_strings: bool | Literal['all', 'keys', 'none'] = True,
-    allow_partial: bool = False,
+    allow_partial: bool | Literal['off', 'on', 'trailing-strings'] = False,
 ) -> Any:
     """
     Deserialize JSON data to a Python object.
