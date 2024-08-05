@@ -249,40 +249,68 @@ def eval_type_backport(
     localns: dict[str, Any] | None = None,
     type_params: tuple[Any] | None = None,
 ) -> Any:
-    """Like `typing._eval_type`, but falls back to the `eval_type_backport` package if it's
-    installed to let older Python versions use newer typing features.
-    Specifically, this transforms `X | Y` into `typing.Union[X, Y]`
-    and `list[X]` into `typing.List[X]` etc. (for all the types made generic in PEP 585)
-    if the original syntax is not supported in the current Python version.
+    """An enhanced version of `typing._eval_type` which will fall back to using the `eval_type_backport`
+    package if it's installed to let older Python versions use newer typing constructs.
+
+    Specifically, this transforms `X | Y` into `typing.Union[X, Y]` and `list[X]` into `typing.List[X]`
+    (as well as all the types made generic in PEP 585) if the original syntax is not supported in the
+    current Python version.
+
+    This function will also display a helpful error if the value passed fails to evaluate.
     """
     try:
-        if sys.version_info >= (3, 13):
-            return typing._eval_type(  # type: ignore
-                value, globalns, localns, type_params=type_params
-            )
-        else:
-            return typing._eval_type(  # type: ignore
-                value, globalns, localns
-            )
+        return _eval_type_backport(value, globalns, localns, type_params)
     except TypeError as e:
-        if isinstance(value, typing.ForwardRef):
-            if is_backport_fixable_error(e):
-                try:
-                    from eval_type_backport import eval_type_backport
-                except ImportError:
-                    raise TypeError(
-                        f'Unable to evaluate type annotation {value.__forward_arg__!r}. If you are making use '
-                        'of the new typing syntax (unions using `|` since Python 3.10 or builtins subscripting '
-                        'since Python 3.9), you should either replace the use of new syntax with the existing '
-                        '`typing` constructs or install the `eval_type_backport` package.'
-                    ) from e
+        # If it is a `TypeError` and value isn't a `ForwardRef`, it would have failed during class definition.
+        # Thus we assert here for type checking purposes:
+        assert isinstance(value, typing.ForwardRef)
 
-                return eval_type_backport(value, globalns, localns, try_default=False)
+        message = f'Unable to evaluate type annotation {value.__forward_arg__!r}.'
+        if sys.version_info >= (3, 11):
+            e.add_note(message)
+            raise
+        else:
+            raise TypeError(message) from e
 
-            raise TypeError(f'Unable to evaluate type annotation {value.__forward_arg__!r}.') from e
+def _eval_type_backport(
+    value: Any,
+    globalns: dict[str, Any] | None = None,
+    localns: dict[str, Any] | None = None,
+    type_params: tuple[Any] | None = None,
+) -> Any:
+    try:
+        return _eval_type(value, globalns, localns, type_params)
+    except TypeError as e:
+        if not (isinstance(value, typing.ForwardRef) and is_backport_fixable_error(e)):
+            raise
 
-        raise e
+        try:
+            from eval_type_backport import eval_type_backport
+        except ImportError:
+            raise TypeError(
+                f'Unable to evaluate type annotation {value.__forward_arg__!r}. If you are making use '
+                'of the new typing syntax (unions using `|` since Python 3.10 or builtins subscripting '
+                'since Python 3.9), you should either replace the use of new syntax with the existing '
+                '`typing` constructs or install the `eval_type_backport` package.'
+            ) from e
 
+        return eval_type_backport(value, globalns, localns, try_default=False)
+
+
+def _eval_type(
+    value: Any,
+    globalns: dict[str, Any] | None = None,
+    localns: dict[str, Any] | None = None,
+    type_params: tuple[Any] | None = None,
+) -> Any:
+    if sys.version_info >= (3, 13):
+        return typing._eval_type(  # type: ignore
+            value, globalns, localns, type_params=type_params
+        )
+    else:
+        return typing._eval_type(  # type: ignore
+            value, globalns, localns
+        )
 
 def is_backport_fixable_error(e: TypeError) -> bool:
     msg = str(e)
