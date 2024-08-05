@@ -652,8 +652,6 @@ class _PydanticWeakRef:
         else:
             self._wr = weakref.ref(obj)
 
-        self._is_pydantic_weakref = True
-
     def __call__(self) -> Any:
         if self._wr is None:
             return None
@@ -662,9 +660,6 @@ class _PydanticWeakRef:
 
     def __reduce__(self) -> tuple[Callable, tuple[weakref.ReferenceType | None]]:
         return _PydanticWeakRef, (self(),)
-
-
-non_weakref_types = {int, str, float, bool, type(None)}
 
 
 def build_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | None:
@@ -679,13 +674,10 @@ def build_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | No
         return None
     result = {}
     for k, v in d.items():
-        if type(v) in non_weakref_types:
+        try:
+            proxy = _PydanticWeakRef(v)
+        except TypeError:
             proxy = v
-        else:
-            try:
-                proxy = _PydanticWeakRef(v)
-            except TypeError:
-                proxy = v
         result[k] = proxy
     return result
 
@@ -697,7 +689,7 @@ def unpack_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | N
 
     result = {}
     for k, v in d.items():
-        if getattr(v, '_is_pydantic_weakref', False):
+        if isinstance(v, _PydanticWeakRef):
             v = v()
             if v is not None:
                 result[k] = v
