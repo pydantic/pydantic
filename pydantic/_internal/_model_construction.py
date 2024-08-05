@@ -8,7 +8,7 @@ import typing
 import warnings
 import weakref
 from abc import ABCMeta
-from functools import lru_cache, partial
+from functools import partial
 from types import FunctionType
 from typing import Any, Callable, Generic, NoReturn
 
@@ -24,7 +24,6 @@ from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
 from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
-from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import set_model_mocks
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._signature import generate_pydantic_signature
@@ -118,7 +117,7 @@ class ModelMetaclass(ABCMeta):
 
             cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
 
-            BaseModel = import_cached_base_model()
+            from ..main import BaseModel
 
             mro = cls.__mro__
             if Generic in mro and mro.index(Generic) < mro.index(BaseModel):
@@ -250,7 +249,7 @@ class ModelMetaclass(ABCMeta):
 
     @staticmethod
     def _collect_bases_data(bases: tuple[type[Any], ...]) -> tuple[set[str], set[str], dict[str, ModelPrivateAttr]]:
-        BaseModel = import_cached_base_model()
+        from ..main import BaseModel
 
         field_names: set[str] = set()
         class_vars: set[str] = set()
@@ -301,7 +300,7 @@ def get_model_post_init(namespace: dict[str, Any], bases: tuple[type[Any], ...])
     if 'model_post_init' in namespace:
         return namespace['model_post_init']
 
-    BaseModel = import_cached_base_model()
+    from ..main import BaseModel
 
     model_post_init = get_attribute_from_bases(bases, 'model_post_init')
     if model_post_init is not BaseModel.model_post_init:
@@ -334,9 +333,7 @@ def inspect_namespace(  # noqa C901
             - If a field does not have a type annotation.
             - If a field on base class was overridden by a non-annotated attribute.
     """
-    from ..fields import ModelPrivateAttr, PrivateAttr
-
-    FieldInfo = import_cached_field_info()
+    from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 
     all_ignored_types = ignored_types + default_ignored_types()
 
@@ -697,7 +694,6 @@ def unpack_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | N
     return result
 
 
-@lru_cache(maxsize=None)
 def default_ignored_types() -> tuple[type[Any], ...]:
     from ..fields import ComputedFieldInfo
 
