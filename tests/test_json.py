@@ -403,7 +403,7 @@ def test_json_bytes_base64_invalid():
         {
             'type': 'bytes_invalid_encoding',
             'loc': (),
-            'msg': f'Data should be valid base64: Invalid byte {ord("!")}, offset {len(wrong_input)-1}.',
+            'msg': f'Data should be valid base64: Invalid symbol {ord("!")}, offset {len(wrong_input)-1}.',
             'input': wrong_input,
         }
     ]
