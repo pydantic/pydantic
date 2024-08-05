@@ -342,7 +342,7 @@ class TypeAdapter(Generic[T]):
         # TODO reevaluate this logic when we have a better understanding of how defer_build should work with TypeAdapter
         # Should we drop the special experimental_defer_build_mode check?
         return config.get('defer_build', False) is True and 'type_adapter' in config.get(
-            'experimental_defer_build_mode', tuple()
+            'experimental_defer_build_mode', ()
         )
 
     @_frame_depth(1)

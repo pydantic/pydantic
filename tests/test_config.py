@@ -376,11 +376,6 @@ class TestsBaseConfig:
         expected_warnings = {
             'Support for class-based `config` is deprecated, use ConfigDict instead',
             'BaseConfig is deprecated. Use the `pydantic.ConfigDict` instead',
-            'Support for class-based `config` is deprecated, use ConfigDict instead',
-            'BaseConfig is deprecated. Use the `pydantic.ConfigDict` instead',
-            'Support for class-based `config` is deprecated, use ConfigDict instead',
-            'Support for class-based `config` is deprecated, use ConfigDict instead',
-            'Support for class-based `config` is deprecated, use ConfigDict instead',
         }
         assert set(w.message.message for w in all_warnings) <= expected_warnings
 
@@ -905,7 +900,7 @@ def test_dataclass_allowes_model_config_as_model_field():
     m = MyDataclass(model_config={'title': field_title})
 
     assert m.model_config['title'] == field_title
-    assert getattr(m, '__pydantic_config__')['title'] == config_title
+    assert m.__pydantic_config__['title'] == config_title
 
 
 def test_with_config_disallowed_with_model():

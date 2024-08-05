@@ -1438,7 +1438,7 @@ else:
             return hash(type(self))
 
         def __eq__(self, other: Any) -> bool:
-            return type(other) == type(self)
+            return type(other) is type(self)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SECRET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2834,7 +2834,7 @@ class Discriminator:
             original_schema = core_schema.union_schema([original_schema])
 
         tagged_union_choices = {}
-        for i, choice in enumerate(original_schema['choices']):
+        for choice in original_schema['choices']:
             tag = None
             if isinstance(choice, tuple):
                 choice, tag = choice

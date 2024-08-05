@@ -179,7 +179,7 @@ class _DefinitionsRemapping:
 
             # Deduplicate the schemas for each alternative; the idea is that we only want to remap to a new DefsRef
             # if it introduces no ambiguity, i.e., there is only one distinct schema for that DefsRef.
-            for defs_ref, schemas in schemas_for_alternatives.items():
+            for defs_ref in schemas_for_alternatives:
                 schemas_for_alternatives[defs_ref] = _deduplicate_schemas(schemas_for_alternatives[defs_ref])
 
             # Build the remapping
@@ -373,7 +373,7 @@ class GenerateJsonSchema:
                 code='json-schema-already-used',
             )
 
-        for key, mode, schema in inputs:
+        for _, mode, schema in inputs:
             self._mode = mode
             self.generate_inner(schema)
 

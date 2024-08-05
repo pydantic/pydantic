@@ -546,7 +546,7 @@ class PydanticModelTransformer:
         Teach mypy this by marking any function whose outermost decorator is a `validator()`,
         `field_validator()` or `serializer()` call as a `classmethod`.
         """
-        for name, sym in self._cls.info.names.items():
+        for sym in self._cls.info.names.values():
             if isinstance(sym.node, Decorator):
                 first_dec = sym.node.original_decorators[0]
                 if (

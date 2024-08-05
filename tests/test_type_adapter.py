@@ -556,7 +556,7 @@ def test_core_schema_respects_defer_build(model: Any, config: ConfigDict, method
         # assert generate_schema_calls.count < 2, 'Should not build duplicates'
     elif method == 'validate':
         validated = type_adapter.validate_python({'x': 1})  # Use it
-        assert (validated['x'] if isinstance(validated, dict) else getattr(validated, 'x')) == 1  # Sanity check
+        assert (validated['x'] if isinstance(validated, dict) else validated.x) == 1  # Sanity check
         assert generate_schema_calls.count < 2, 'Should not build duplicates'
     else:
         assert method == 'dump'

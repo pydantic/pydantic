@@ -272,9 +272,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         if _fields_set is None:
             _fields_set = fields_set
 
-        _extra: dict[str, Any] | None = (
-            {k: v for k, v in values.items()} if cls.model_config.get('extra') == 'allow' else None
-        )
+        _extra: dict[str, Any] | None = values if cls.model_config.get('extra') == 'allow' else None
         _object_setattr(m, '__dict__', fields_values)
         _object_setattr(m, '__pydantic_fields_set__', _fields_set)
         if not cls.__pydantic_root_model__:
