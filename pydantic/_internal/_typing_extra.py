@@ -272,6 +272,7 @@ def eval_type_backport(
         else:
             raise TypeError(message) from e
 
+
 def _eval_type_backport(
     value: Any,
     globalns: dict[str, Any] | None = None,
@@ -311,6 +312,7 @@ def _eval_type(
         return typing._eval_type(  # type: ignore
             value, globalns, localns
         )
+
 
 def is_backport_fixable_error(e: TypeError) -> bool:
     msg = str(e)
