@@ -105,7 +105,7 @@ def all_literal_values(type_: type[Any]) -> list[Any]:
         return [type_]
 
     values = literal_values(type_)
-    return list(x for value in values for x in all_literal_values(value))
+    return [x for value in values for x in all_literal_values(value)]
 
 
 def is_annotated(ann_type: Any) -> bool:

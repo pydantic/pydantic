@@ -142,7 +142,7 @@ def dataclass(
     assert validate_on_init is not False, 'validate_on_init=False is no longer supported'
 
     if sys.version_info >= (3, 10):
-        kwargs = dict(kw_only=kw_only, slots=slots)
+        kwargs = {'kw_only': kw_only, 'slots': slots}
     else:
         kwargs = {}
 

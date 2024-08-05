@@ -406,7 +406,7 @@ def __getattr__(attr_name: str) -> object:
         module = import_module(module_name, package=package)
         result = getattr(module, attr_name)
         g = globals()
-        for k, (v_package, v_module_name) in _dynamic_imports.items():
+        for k, (_, v_module_name) in _dynamic_imports.items():
             if v_module_name == module_name and k not in _deprecated_dynamic_imports:
                 g[k] = getattr(module, k)
         return result

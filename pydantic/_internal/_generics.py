@@ -324,7 +324,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
     # Handle special case for typehints that can have lists as arguments.
     # `typing.Callable[[int, str], int]` is an example for this.
     if isinstance(type_, (List, list)):
-        resolved_list = list(replace_types(element, type_map) for element in type_)
+        resolved_list = [replace_types(element, type_map) for element in type_]
         if all_identical(type_, resolved_list):
             return type_
         return resolved_list

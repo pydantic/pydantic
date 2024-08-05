@@ -2081,7 +2081,7 @@ def test_tuple_variable_len_fails(value, cls, exc):
 @pytest.mark.parametrize(
     'value,result',
     (
-        ({1, 2, 2, '3'}, {1, 2, '3'}),
+        ({1, 2, '3'}, {1, 2, '3'}),
         ((1, 2, 2, '3'), {1, 2, '3'}),
         ([1, 2, 2, '3'], {1, 2, '3'}),
         ({i**2 for i in range(5)}, {0, 1, 4, 9, 16}),
@@ -4962,7 +4962,7 @@ def test_deque_success():
         (float, [1.0, 2.0, 3.0], deque([1.0, 2.0, 3.0])),
         (Set[int], [{1, 2}, {3, 4}, {5, 6}], deque([{1, 2}, {3, 4}, {5, 6}])),
         (Tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), deque(((1, 'a'), (2, 'b'), (3, 'c')))),
-        (str, [w for w in 'one two three'.split()], deque(['one', 'two', 'three'])),
+        (str, 'one two three'.split(), deque(['one', 'two', 'three'])),
         (
             int,
             {1: 10, 2: 20, 3: 30}.keys(),

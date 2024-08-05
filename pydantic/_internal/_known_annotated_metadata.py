@@ -256,7 +256,7 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             schema = cs.no_info_after_validator_function(
                 partial(get_constraint_validator(constraint), **{'constraint_value': value}), schema
             )
-            add_js_update_schema(schema, lambda: {json_schema_constraint: as_jsonable_value(value)})
+            add_js_update_schema(schema, lambda: {json_schema_constraint: as_jsonable_value(value)})  # noqa: B023
         elif constraint == 'allow_inf_nan' and value is False:
             schema = cs.no_info_after_validator_function(
                 forbid_inf_nan_check,
@@ -279,10 +279,10 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
 
             def val_func(v: Any) -> Any:
                 # annotation.func may also raise an exception, let it pass through
-                if not annotation.func(v):
+                if not annotation.func(v):  # noqa: B023
                     raise PydanticCustomError(
                         'predicate_failed',
-                        f'Predicate {predicate_name}failed',  # type: ignore
+                        f'Predicate {predicate_name}failed',  # type: ignore  # noqa: B023
                     )
                 return v
 
