@@ -611,6 +611,8 @@ def test_recursive_generic_typeddict_in_module(create_module):
 
 
 def test_recursive_generic_typeddict_in_function_1():
+    from pydantic._internal._core_utils import pretty_print_core_schema
+
     T = TypeVar('T')
 
     # First ordering: typed dict first
@@ -623,6 +625,8 @@ def test_recursive_generic_typeddict_in_function_1():
 
     # Note: no model_rebuild() necessary here
     # RecursiveGenTypedDictModel.model_rebuild()
+
+    pretty_print_core_schema(RecursiveGenTypedDictModel[int].__pydantic_core_schema__)
 
     int_data: RecursiveGenTypedDict[int] = {'foo': {'foo': None, 'ls': [1]}, 'ls': [1]}
     assert RecursiveGenTypedDictModel[int](rec=int_data).rec == int_data

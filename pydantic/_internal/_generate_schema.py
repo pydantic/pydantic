@@ -1472,7 +1472,8 @@ class GenerateSchema:
                 else:
                     field_docstrings = None
 
-                for field_name, annotation in get_cls_type_hints_lenient(typed_dict_cls, self._types_namespace).items():
+                type_hints = get_cls_type_hints_lenient(typed_dict_cls, self._types_namespace) or {}
+                for field_name, annotation in type_hints.items():
                     annotation = replace_types(annotation, typevars_map)
                     required = field_name in required_keys
 
@@ -1538,12 +1539,7 @@ class GenerateSchema:
             if not annotations:
                 # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
                 annotations = {k: Any for k in namedtuple_cls._fields}
-
-            if typevars_map:
-                annotations = {
-                    field_name: replace_types(annotation, typevars_map)
-                    for field_name, annotation in annotations.items()
-                }
+            annotations = replace_types(annotations, typevars_map)
 
             arguments_schema = core_schema.arguments_schema(
                 [
