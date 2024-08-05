@@ -42,38 +42,23 @@ pub use validators::{validate_core_schema, PySome, SchemaValidator};
 
 use crate::input::Input;
 
-#[derive(FromPyObject)]
-pub enum CacheStringsArg {
-    Bool(bool),
-    Literal(StringCacheMode),
-}
-
-#[pyfunction(signature = (data, *, allow_inf_nan=true, cache_strings=CacheStringsArg::Bool(true), allow_partial=false))]
+#[pyfunction(signature = (data, *, allow_inf_nan=true, cache_strings=StringCacheMode::All, allow_partial=PartialMode::Off))]
 pub fn from_json<'py>(
     py: Python<'py>,
     data: &Bound<'_, PyAny>,
     allow_inf_nan: bool,
-    cache_strings: CacheStringsArg,
-    allow_partial: bool,
+    cache_strings: StringCacheMode,
+    allow_partial: PartialMode,
 ) -> PyResult<Bound<'py, PyAny>> {
     let v_match = data
         .validate_bytes(false, ValBytesMode { ser: BytesMode::Utf8 })
         .map_err(|_| PyTypeError::new_err("Expected bytes, bytearray or str"))?;
     let json_either_bytes = v_match.into_inner();
     let json_bytes = json_either_bytes.as_slice();
-    let cache_mode = match cache_strings {
-        CacheStringsArg::Bool(b) => b.into(),
-        CacheStringsArg::Literal(mode) => mode,
-    };
-    let partial_mode = if allow_partial {
-        PartialMode::On
-    } else {
-        PartialMode::Off
-    };
     let parse_builder = PythonParse {
         allow_inf_nan,
-        cache_mode,
-        partial_mode,
+        cache_mode: cache_strings,
+        partial_mode: allow_partial,
         catch_duplicate_keys: false,
         lossless_floats: false,
     };
