@@ -18,7 +18,7 @@ from ._config import ConfigWrapper
 from ._docs_extraction import extract_docstrings_from_cls
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._repr import Representation
-from ._typing_extra import get_cls_type_hints_lenient, get_type_hints, is_classvar, is_finalvar
+from ._typing_extra import get_cls_type_hints_lenient, is_classvar, is_finalvar
 
 if TYPE_CHECKING:
     from annotated_types import BaseMetadata
@@ -27,35 +27,6 @@ if TYPE_CHECKING:
     from ..main import BaseModel
     from ._dataclasses import StandardDataclass
     from ._decorators import DecoratorInfos
-
-
-def get_type_hints_infer_globalns(
-    obj: Any,
-    localns: dict[str, Any] | None = None,
-    include_extras: bool = False,
-) -> dict[str, Any]:
-    """Gets type hints for an object by inferring the global namespace.
-
-    It uses the `typing.get_type_hints`, The only thing that we do here is fetching
-    global namespace from `obj.__module__` if it is not `None`.
-
-    Args:
-        obj: The object to get its type hints.
-        localns: The local namespaces.
-        include_extras: Whether to recursively include annotation metadata.
-
-    Returns:
-        The object type hints.
-    """
-    module_name = getattr(obj, '__module__', None)
-    globalns: dict[str, Any] | None = None
-    if module_name:
-        try:
-            globalns = sys.modules[module_name].__dict__
-        except KeyError:
-            # happens occasionally, see https://github.com/pydantic/pydantic/issues/2363
-            pass
-    return get_type_hints(obj, globalns=globalns, localns=localns, include_extras=include_extras)
 
 
 class PydanticMetadata(Representation):
