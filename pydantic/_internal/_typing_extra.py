@@ -261,7 +261,10 @@ def eval_type_backport(
     try:
         return _eval_type_backport(value, globalns, localns, type_params)
     except TypeError as e:
-        # If it is a `TypeError` and value isn't a `ForwardRef`, it would have failed during class definition.
+        if 'Unable to evaluate type annotation' in str(e):
+            raise
+
+        # If it is a `TypeError` and value isn't a `ForwardRef`, it would have failed during annotation definition.
         # Thus we assert here for type checking purposes:
         assert isinstance(value, typing.ForwardRef)
 
