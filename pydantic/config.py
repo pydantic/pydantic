@@ -1026,6 +1026,9 @@ class ConfigDict(TypedDict, total=False):
         generic typed dicts and named tuples, might be incorrect. In some cases, type hints may be resolved with
         incorrect namespaces.
 
+        We've demonstrated some of these cases in https://github.com/pydantic/pydantic/blob/main/tests/test_fast_build.py
+        to help folks better understand the limitations of this setting.
+
         There may also be other edge cases where the model schema is incorrect. That being said, this setting has the potential
         to speed up schema builds by a factor of 10x in cases with hundreds or thousands of complex models, hence the value.
         We're working on making this speedup compatible with schema builds across the board.
