@@ -219,6 +219,7 @@ ExpectedSerializationTypes = Literal[
     'multi-host-url',
     'json',
     'uuid',
+    'any',
 ]
 
 
