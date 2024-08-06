@@ -249,40 +249,83 @@ def eval_type_backport(
     localns: dict[str, Any] | None = None,
     type_params: tuple[Any] | None = None,
 ) -> Any:
-    """Like `typing._eval_type`, but falls back to the `eval_type_backport` package if it's
-    installed to let older Python versions use newer typing features.
-    Specifically, this transforms `X | Y` into `typing.Union[X, Y]`
-    and `list[X]` into `typing.List[X]` etc. (for all the types made generic in PEP 585)
-    if the original syntax is not supported in the current Python version.
+    """An enhanced version of `typing._eval_type` which will fall back to using the `eval_type_backport`
+    package if it's installed to let older Python versions use newer typing constructs.
+
+    Specifically, this transforms `X | Y` into `typing.Union[X, Y]` and `list[X]` into `typing.List[X]`
+    (as well as all the types made generic in PEP 585) if the original syntax is not supported in the
+    current Python version.
+
+    This function will also display a helpful error if the value passed fails to evaluate.
     """
     try:
-        if sys.version_info >= (3, 13):
-            return typing._eval_type(  # type: ignore
-                value, globalns, localns, type_params=type_params
-            )
+        return _eval_type_backport(value, globalns, localns, type_params)
+    except TypeError as e:
+        if 'Unable to evaluate type annotation' in str(e):
+            raise
+
+        # If it is a `TypeError` and value isn't a `ForwardRef`, it would have failed during annotation definition.
+        # Thus we assert here for type checking purposes:
+        assert isinstance(value, typing.ForwardRef)
+
+        message = f'Unable to evaluate type annotation {value.__forward_arg__!r}.'
+        if sys.version_info >= (3, 11):
+            e.add_note(message)
+            raise
         else:
-            return typing._eval_type(  # type: ignore
-                value, globalns, localns
-            )
+            raise TypeError(message) from e
+
+
+def _eval_type_backport(
+    value: Any,
+    globalns: dict[str, Any] | None = None,
+    localns: dict[str, Any] | None = None,
+    type_params: tuple[Any] | None = None,
+) -> Any:
+    try:
+        return _eval_type(value, globalns, localns, type_params)
     except TypeError as e:
         if not (isinstance(value, typing.ForwardRef) and is_backport_fixable_error(e)):
             raise
+
         try:
             from eval_type_backport import eval_type_backport
         except ImportError:
             raise TypeError(
-                f'You have a type annotation {value.__forward_arg__!r} '
-                f'which makes use of newer typing features than are supported in your version of Python. '
-                f'To handle this error, you should either remove the use of new syntax '
-                f'or install the `eval_type_backport` package.'
+                f'Unable to evaluate type annotation {value.__forward_arg__!r}. If you are making use '
+                'of the new typing syntax (unions using `|` since Python 3.10 or builtins subscripting '
+                'since Python 3.9), you should either replace the use of new syntax with the existing '
+                '`typing` constructs or install the `eval_type_backport` package.'
             ) from e
 
         return eval_type_backport(value, globalns, localns, try_default=False)
 
 
+def _eval_type(
+    value: Any,
+    globalns: dict[str, Any] | None = None,
+    localns: dict[str, Any] | None = None,
+    type_params: tuple[Any] | None = None,
+) -> Any:
+    if sys.version_info >= (3, 13):
+        return typing._eval_type(  # type: ignore
+            value, globalns, localns, type_params=type_params
+        )
+    else:
+        return typing._eval_type(  # type: ignore
+            value, globalns, localns
+        )
+
+
 def is_backport_fixable_error(e: TypeError) -> bool:
     msg = str(e)
-    return msg.startswith('unsupported operand type(s) for |: ') or "' object is not subscriptable" in msg
+
+    return (
+        sys.version_info < (3, 10)
+        and msg.startswith('unsupported operand type(s) for |: ')
+        or sys.version_info < (3, 9)
+        and "' object is not subscriptable" in msg
+    )
 
 
 def get_function_type_hints(

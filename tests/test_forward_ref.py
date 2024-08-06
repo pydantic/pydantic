@@ -1081,3 +1081,15 @@ def test_forward_ref_in_generic_separate_modules(create_module: Any) -> None:
     Bar = module_2.Bar
     Foo.model_rebuild(_types_namespace={'tp': typing, 'Bar': Bar})
     assert Foo(x={Bar: Bar}).x[Bar] is Bar
+
+
+def test_invalid_forward_ref() -> None:
+    class CustomType:
+        """A custom type that isn't subscriptable."""
+
+    msg = "Unable to evaluate type annotation 'CustomType[int]'."
+
+    with pytest.raises(TypeError, match=re.escape(msg)):
+
+        class Model(BaseModel):
+            foo: 'CustomType[int]'
