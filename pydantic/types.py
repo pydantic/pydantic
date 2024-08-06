@@ -1438,7 +1438,7 @@ else:
             return hash(type(self))
 
         def __eq__(self, other: Any) -> bool:
-            return type(other) == type(self)
+            return type(other) is type(self)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SECRET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

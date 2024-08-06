@@ -1539,7 +1539,12 @@ class GenerateSchema:
             if not annotations:
                 # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
                 annotations = {k: Any for k in namedtuple_cls._fields}
-            annotations = replace_types(annotations, typevars_map)
+
+            if typevars_map:
+                annotations = {
+                    field_name: replace_types(annotation, typevars_map)
+                    for field_name, annotation in annotations.items()
+                }
 
             arguments_schema = core_schema.arguments_schema(
                 [
