@@ -136,23 +136,22 @@ def is_new_type(type_: type[Any]) -> bool:
     return isinstance(type_, test_new_type.__class__) and hasattr(type_, '__supertype__')  # type: ignore[arg-type]
 
 
-def _check_classvar(v: type[Any] | None) -> bool:
-    if v is None:
-        return False
+classvar_re = re.compile(r'(\w+\.)?ClassVar\[')
 
-    return v.__class__ == typing.ClassVar.__class__ and getattr(v, '_name', None) == 'ClassVar'
+
+def _check_classvar(v: type[Any] | None) -> bool:
+    return v is not None and v.__class__ is typing.ClassVar.__class__ and getattr(v, '_name', None) == 'ClassVar'
 
 
 def is_classvar(ann_type: type[Any]) -> bool:
-    if _check_classvar(ann_type) or _check_classvar(get_origin(ann_type)):
+    origin = get_origin(ann_type)
+
+    if _check_classvar(ann_type) or _check_classvar(origin):
         return True
 
     # this is an ugly workaround for class vars that contain forward references and are therefore themselves
     # forward references, see #3679
-    if ann_type.__class__ == typing.ForwardRef and re.match(
-        r'(\w+\.)?ClassVar\[',
-        ann_type.__forward_arg__,  # type: ignore
-    ):
+    if ann_type.__class__ == typing.ForwardRef and classvar_re.match(ann_type.__forward_arg__):
         return True
 
     return False
