@@ -9212,7 +9212,7 @@ identifies a value as being present, and provides a way to access it.</p>
     <span class="n">exclude_none</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">round_trip</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">timedelta_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;iso8601&quot;</span><span class="p">,</span> <span class="s2">&quot;float&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;iso8601&quot;</span><span class="p">,</span>
-    <span class="n">bytes_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;utf8&quot;</span><span class="p">,</span> <span class="s2">&quot;base64&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;utf8&quot;</span><span class="p">,</span>
+    <span class="n">bytes_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;utf8&quot;</span><span class="p">,</span> <span class="s2">&quot;base64&quot;</span><span class="p">,</span> <span class="s2">&quot;hex&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;utf8&quot;</span><span class="p">,</span>
     <span class="n">inf_nan_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span>
         <span class="s2">&quot;null&quot;</span><span class="p">,</span> <span class="s2">&quot;constants&quot;</span><span class="p">,</span> <span class="s2">&quot;strings&quot;</span>
     <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;constants&quot;</span><span class="p">,</span>
@@ -9355,11 +9355,11 @@ identifies a value as being present, and provides a way to access it.</p>
           <tr class="doc-section-item">
             <td><code>bytes_mode</code></td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;utf8&#39;, &#39;base64&#39;]</code>
+                  <code><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;utf8&#39;, &#39;base64&#39;, &#39;hex&#39;]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>How to serialize <code>bytes</code> objects, either <code>'utf8'</code> or <code>'base64'</code>.</p>
+                <p>How to serialize <code>bytes</code> objects, either <code>'utf8'</code>, <code>'base64'</code>, or <code>'hex'</code>.</p>
               </div>
             </td>
             <td>
@@ -9507,7 +9507,9 @@ if <code>None</code> a <a class="autorefs autorefs-internal" href="#pydantic_cor
     <span class="n">cache_strings</span><span class="p">:</span> <span class="p">(</span>
         <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="s2">&quot;keys&quot;</span><span class="p">,</span> <span class="s2">&quot;none&quot;</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">allow_partial</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">allow_partial</span><span class="p">:</span> <span class="p">(</span>
+        <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;off&quot;</span><span class="p">,</span> <span class="s2">&quot;on&quot;</span><span class="p">,</span> <span class="s2">&quot;trailing-strings&quot;</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Any" href="https://docs.python.org/3/library/typing.html#typing.Any">Any</a></span>
 </code></pre></div>
 
@@ -9575,7 +9577,7 @@ this should have a significant impact on performance while increasing memory usa
           <tr class="doc-section-item">
             <td><code>allow_partial</code></td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a> | <a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;off&#39;, &#39;on&#39;, &#39;trailing-strings&#39;]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -9657,7 +9659,7 @@ input is reached before the full object is deserialized, e.g. <code>["aa", "bb",
     <span class="n">exclude_none</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">round_trip</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">timedelta_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;iso8601&quot;</span><span class="p">,</span> <span class="s2">&quot;float&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;iso8601&quot;</span><span class="p">,</span>
-    <span class="n">bytes_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;utf8&quot;</span><span class="p">,</span> <span class="s2">&quot;base64&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;utf8&quot;</span><span class="p">,</span>
+    <span class="n">bytes_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;utf8&quot;</span><span class="p">,</span> <span class="s2">&quot;base64&quot;</span><span class="p">,</span> <span class="s2">&quot;hex&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;utf8&quot;</span><span class="p">,</span>
     <span class="n">inf_nan_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span>
         <span class="s2">&quot;null&quot;</span><span class="p">,</span> <span class="s2">&quot;constants&quot;</span><span class="p">,</span> <span class="s2">&quot;strings&quot;</span>
     <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;constants&quot;</span><span class="p">,</span>
@@ -9787,11 +9789,11 @@ input is reached before the full object is deserialized, e.g. <code>["aa", "bb",
           <tr class="doc-section-item">
             <td><code>bytes_mode</code></td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;utf8&#39;, &#39;base64&#39;]</code>
+                  <code><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;utf8&#39;, &#39;base64&#39;, &#39;hex&#39;]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>How to serialize <code>bytes</code> objects, either <code>'utf8'</code> or <code>'base64'</code>.</p>
+                <p>How to serialize <code>bytes</code> objects, either <code>'utf8'</code>, <code>'base64'</code>, or <code>'hex'</code>.</p>
               </div>
             </td>
             <td>
@@ -9988,7 +9990,7 @@ if <code>None</code> a <a class="autorefs autorefs-internal" href="#pydantic_cor
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.9.0a1", "pydantic-core==2.20.1", "pydantic-extra-types==2.9.0"]
+    window.mkdocs_run_deps = ["pydantic==2.9.0a1", "pydantic-core==2.21.0", "pydantic-extra-types==2.9.0"]
     </script>
 
               </article>
