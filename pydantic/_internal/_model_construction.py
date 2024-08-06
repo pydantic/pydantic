@@ -198,6 +198,7 @@ class ModelMetaclass(ABCMeta):
                 if isinstance(parent_namespace, dict):
                     parent_namespace = unpack_lenient_weakvaluedict(parent_namespace)
             else:
+                cls.__pydantic_parent_namespace__ = None
                 parent_namespace = {}
 
             types_namespace = get_cls_types_namespace(cls, parent_namespace)
