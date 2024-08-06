@@ -254,11 +254,12 @@ def collect_model_fields(  # noqa: C901
     return fields, class_vars
 
 
-def _warn_on_nested_alias_in_annotation(ann_type: type[Any], ann_name: str):
+def _warn_on_nested_alias_in_annotation(ann_type: type[Any], ann_name: str) -> None:
     FieldInfo = import_cached_field_info()
 
-    if hasattr(ann_type, '__args__'):
-        for anno_arg in ann_type.__args__:
+    args = getattr(ann_type, '__args__', None)
+    if args:
+        for anno_arg in args:
             if _typing_extra.is_annotated(anno_arg):
                 for anno_type_arg in _typing_extra.get_args(anno_arg):
                     if isinstance(anno_type_arg, FieldInfo) and anno_type_arg.alias is not None:
@@ -266,7 +267,7 @@ def _warn_on_nested_alias_in_annotation(ann_type: type[Any], ann_name: str):
                             f'`alias` specification on field "{ann_name}" must be set on outermost annotation to take effect.',
                             UserWarning,
                         )
-                        break
+                        return
 
 
 def _is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:
