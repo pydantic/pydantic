@@ -144,9 +144,7 @@ def _check_classvar(v: type[Any] | None) -> bool:
 
 
 def is_classvar(ann_type: type[Any]) -> bool:
-    origin = get_origin(ann_type)
-
-    if _check_classvar(ann_type) or _check_classvar(origin):
+    if _check_classvar(ann_type) or _check_classvar(get_origin(ann_type)):
         return True
 
     # this is an ugly workaround for class vars that contain forward references and are therefore themselves
