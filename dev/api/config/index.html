@@ -1986,6 +1986,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </li>
         
           <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.val_json_bytes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        val_json_bytes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pydantic.config.ConfigDict.ser_json_inf_nan" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4209,6 +4220,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </li>
         
           <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.val_json_bytes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        val_json_bytes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pydantic.config.ConfigDict.ser_json_inf_nan" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5693,16 +5715,51 @@ of subclasses of the model.</p>
   </span>
 
 <a href="#pydantic.config.ConfigDict.ser_json_bytes" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">ser_json_bytes</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span><span class="s1">&#39;utf8&#39;</span><span class="p">,</span> <span class="s1">&#39;base64&#39;</span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">ser_json_bytes</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span><span class="s1">&#39;utf8&#39;</span><span class="p">,</span> <span class="s1">&#39;base64&#39;</span><span class="p">,</span> <span class="s1">&#39;hex&#39;</span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-      <p>The encoding of JSON serialized bytes. Accepts the string values of <code>'utf8'</code> and <code>'base64'</code>.
-Defaults to <code>'utf8'</code>.</p>
+      <p>The encoding of JSON serialized bytes. Defaults to <code>'utf8'</code>.
+Set equal to <code>val_json_bytes</code> to get back an equal value after serialization round trip.</p>
 <ul>
 <li><code>'utf8'</code> will serialize bytes to UTF-8 strings.</li>
 <li><code>'base64'</code> will serialize bytes to URL safe base64 strings.</li>
+<li><code>'hex'</code> will serialize bytes to hexadecimal strings.</li>
+</ul>
+    </div>
+
+</div>
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic.config.ConfigDict.val_json_bytes" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">val_json_bytes</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#pydantic.config.ConfigDict.val_json_bytes" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">val_json_bytes</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span><span class="s1">&#39;utf8&#39;</span><span class="p">,</span> <span class="s1">&#39;base64&#39;</span><span class="p">,</span> <span class="s1">&#39;hex&#39;</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+      <p>The encoding of JSON serialized bytes to decode. Defaults to <code>'utf8'</code>.
+Set equal to <code>ser_json_bytes</code> to get back an equal value after serialization round trip.</p>
+<ul>
+<li><code>'utf8'</code> will deserialize UTF-8 strings to bytes.</li>
+<li><code>'base64'</code> will deserialize URL safe base64 strings to bytes.</li>
+<li><code>'hex'</code> will deserialize hexadecimal strings to bytes.</li>
 </ul>
     </div>
 
@@ -6536,18 +6593,7 @@ especially with <code>TypedDict</code>.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/config.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1010</span>
-<span class="normal">1011</span>
-<span class="normal">1012</span>
-<span class="normal">1013</span>
-<span class="normal">1014</span>
-<span class="normal">1015</span>
-<span class="normal">1016</span>
-<span class="normal">1017</span>
-<span class="normal">1018</span>
-<span class="normal">1019</span>
-<span class="normal">1020</span>
-<span class="normal">1021</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1021</span>
 <span class="normal">1022</span>
 <span class="normal">1023</span>
 <span class="normal">1024</span>
@@ -6576,7 +6622,18 @@ especially with <code>TypedDict</code>.</p>
 <span class="normal">1047</span>
 <span class="normal">1048</span>
 <span class="normal">1049</span>
-<span class="normal">1050</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
+<span class="normal">1050</span>
+<span class="normal">1051</span>
+<span class="normal">1052</span>
+<span class="normal">1053</span>
+<span class="normal">1054</span>
+<span class="normal">1055</span>
+<span class="normal">1056</span>
+<span class="normal">1057</span>
+<span class="normal">1058</span>
+<span class="normal">1059</span>
+<span class="normal">1060</span>
+<span class="normal">1061</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.9/concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict</span>
 
 <span class="sd">    A convenience decorator to set a [Pydantic configuration](config.md) on a `TypedDict` or a `dataclass` from the standard library.</span>
