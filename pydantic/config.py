@@ -1017,12 +1017,18 @@ class ConfigDict(TypedDict, total=False):
     experimental_fast_build: bool
     """Build models faster by skipping the logic associated with storing the parent namespace on the model.
 
-    Defaults to `False` to maintain backwards compatibility.
+    Defaults to `False` to maintain backwards compatibility, for now. The ideal case is that this change or it's successor
+    can become the default. Thus, if you experience issues with this setting that have not already been documented,
+    please open an issue on GitHub.
 
     !!! warning
-        If this setting is set to `True`, model schemas for generic typed dicts and named tuples might be incorrect.
+        If this setting is set to `True`, model schemas for models that involve edge case uses of namespaces, such as
+        generic typed dicts and named tuples, might be incorrect. In some cases, type hints may be resolved with
+        incorrect namespaces.
+
         There may also be other edge cases where the model schema is incorrect. That being said, this setting has the potential
-        to speed up schema builds by a factor of 10x in cases with hundreds or thousands of complex models.
+        to speed up schema builds by a factor of 10x in cases with hundreds or thousands of complex models, hence the value.
+        We're working on making this speedup compatible with schema builds across the board.
     """
 
 
