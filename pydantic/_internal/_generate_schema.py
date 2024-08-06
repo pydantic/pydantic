@@ -1840,6 +1840,7 @@ class GenerateSchema:
                     slots=has_slots,
                     config=core_config,
                     metadata=metadata,
+                    frozen=self._config_wrapper_stack.tail.frozen,
                 )
                 schema = self._apply_model_serializers(dc_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, model_validators, 'outer')
