@@ -6,7 +6,6 @@ import typing
 from collections import ChainMap
 from contextlib import contextmanager
 from contextvars import ContextVar
-from functools import lru_cache
 from types import prepare_class
 from typing import TYPE_CHECKING, Any, Iterator, List, Mapping, MutableMapping, Tuple, TypeVar
 from weakref import WeakValueDictionary
@@ -335,7 +334,6 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
     return type_map.get(type_, type_)
 
 
-@lru_cache(maxsize=None)
 def has_instance_in_type(type_: Any, isinstance_target: Any) -> bool:
     """Checks if the type, or any of its arbitrary nested args, satisfy
     `isinstance(<type>, isinstance_target)`.
