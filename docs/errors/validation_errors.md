@@ -93,6 +93,27 @@ except ValidationError as exc:
     #> 'bool_type'
 ```
 
+## `bytes_invalid_encoding`
+
+This error is raised when a `bytes` value is invalid under the configured encoding.
+In the following example, `b'a'` is invalid hex (odd number of digits).
+
+```py
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: bytes
+    model_config = {'val_json_bytes': 'hex'}
+
+
+try:
+    Model(x=b'a')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'bytes_invalid_encoding'
+```
+
 This error is also raised for strict fields when the input value is not an instance of `bool`.
 
 ## `bytes_too_long`

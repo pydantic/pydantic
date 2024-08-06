@@ -2073,7 +2073,9 @@ class GenerateJsonSchema:
         return pydantic_core.to_jsonable_python(
             default,
             timedelta_mode=config.ser_json_timedelta,
-            bytes_mode=config.ser_json_bytes,
+            # pydantic-core will support 'hex' after pydantic/pydantic-core#1308;
+            # then this typechecking ignore can be removed.
+            bytes_mode=config.ser_json_bytes,  # type: ignore
         )
 
     def update_with_validations(
