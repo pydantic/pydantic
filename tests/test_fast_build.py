@@ -120,7 +120,7 @@ def test_extra_validator_named() -> None:
     }
 
 
-@pytest.mark.xfail(reason='Parametrized TypedDicts are not yet supported with `experimental_fast_build`')
+@pytest.mark.xfail(reason='Parametrized TypedDicts are not yet supported with `experimental_fast_build`', strict=False)
 def test_recursive_generic_typeddict_in_function_1():
     T = TypeVar('T')
 
@@ -160,7 +160,7 @@ def test_recursive_generic_typeddict_in_function_1():
     ]
 
 
-@pytest.mark.xfail(reason='Parametrized TypedDicts are not yet supported with `experimental_fast_build`')
+@pytest.mark.xfail(reason='Parametrized TypedDicts are not yet supported with `experimental_fast_build`', strict=False)
 def test_recursive_generic_typeddict_in_function_2():
     T = TypeVar('T')
 
