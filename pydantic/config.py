@@ -1015,7 +1015,7 @@ class ConfigDict(TypedDict, total=False):
     """
 
     experimental_fast_build: bool
-    """Build models faster by skipping the logic associated with storing the parent namespace on the model.
+    """Build model schemas faster by skipping the logic associated with storing the parent namespace on the model.
 
     Defaults to `False` to maintain backwards compatibility, for now. The ideal case is that this change or it's successor
     can become the default. Thus, if you experience issues with this setting that have not already been documented,
