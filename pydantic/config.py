@@ -1014,6 +1014,17 @@ class ConfigDict(TypedDict, total=False):
         as the performance difference is minimal if repeated strings are rare.
     """
 
+    experimental_fast_build: bool
+    """Build models faster by skipping the logic associated with storing the parent namespace on the model.
+
+    Defaults to `False` to maintain backwards compatibility.
+
+    !!! warning
+        If this setting is set to `True`, model schemas for generic typed dicts and named tuples might be incorrect.
+        There may also be other edge cases where the model schema is incorrect. That being said, this setting has the potential
+        to speed up schema builds by a factor of 10x in cases with hundreds or thousands of complex models.
+    """
+
 
 _TypeT = TypeVar('_TypeT', bound=type)
 
