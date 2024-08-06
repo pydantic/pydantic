@@ -350,14 +350,16 @@ def has_instance_in_type(type_: Any, isinstance_target: Any) -> bool:
 
     # Having type args is a good indicator that this is a typing module
     # class instantiation or a generic alias of some sort.
-    if any(has_instance_in_type(a, isinstance_target) for a in type_args):
-        return True
+    for arg in type_args:
+        if has_instance_in_type(arg, isinstance_target):
+            return True
 
     # Handle special case for typehints that can have lists as arguments.
     # `typing.Callable[[int, str], int]` is an example for this.
     if isinstance(type_, (List, list)) and not isinstance(type_, typing_extensions.ParamSpec):
-        if any(has_instance_in_type(element, isinstance_target) for element in type_):
-            return True
+        for element in type_:
+            if has_instance_in_type(element, isinstance_target):
+                return True
 
     return False
 
