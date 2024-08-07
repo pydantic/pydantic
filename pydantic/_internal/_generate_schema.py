@@ -1840,6 +1840,8 @@ class GenerateSchema:
                     slots=has_slots,
                     config=core_config,
                     metadata=metadata,
+                    # we don't use a custom __setattr__ for dataclasses, so we must
+                    # pass along the frozen config setting to the pydantic-core schema
                     frozen=self._config_wrapper_stack.tail.frozen,
                 )
                 schema = self._apply_model_serializers(dc_schema, decorators.model_serializers.values())
