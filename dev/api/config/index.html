@@ -2172,6 +2172,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.experimental_fast_build" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        experimental_fast_build
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4406,6 +4417,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.experimental_fast_build" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        experimental_fast_build
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -6541,6 +6563,48 @@ as the performance difference is minimal if repeated strings are rare.</p>
 
 
 
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic.config.ConfigDict.experimental_fast_build" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">experimental_fast_build</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#pydantic.config.ConfigDict.experimental_fast_build" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">experimental_fast_build</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+      <p>Build model schemas faster by skipping the logic associated with storing the parent namespace on the model.</p>
+<p>Defaults to <code>False</code> to maintain backwards compatibility, for now. The ideal case is that this change or it's successor
+can become the default. Thus, if you experience issues with this setting that have not already been documented,
+please open an issue on GitHub.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If this setting is set to <code>True</code>, model schemas for models that involve edge case uses of namespaces, such as
+generic typed dicts and named tuples, might be incorrect. In some cases, type hints may be resolved with
+incorrect namespaces.</p>
+<p>We've demonstrated some of these cases in https://github.com/pydantic/pydantic/blob/main/tests/test_fast_build.py
+to help folks better understand the limitations of this setting.</p>
+<p>There may also be other edge cases where the model schema is incorrect. That being said, this setting has the potential
+to speed up schema builds by a factor of 10x in cases with hundreds or thousands of complex models, hence the value.
+We're working on making this speedup compatible with schema builds across the board.</p>
+</div>
+    </div>
+
+</div>
+
+
+
+
   </div>
 
     </div>
@@ -6593,27 +6657,7 @@ especially with <code>TypedDict</code>.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/config.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1021</span>
-<span class="normal">1022</span>
-<span class="normal">1023</span>
-<span class="normal">1024</span>
-<span class="normal">1025</span>
-<span class="normal">1026</span>
-<span class="normal">1027</span>
-<span class="normal">1028</span>
-<span class="normal">1029</span>
-<span class="normal">1030</span>
-<span class="normal">1031</span>
-<span class="normal">1032</span>
-<span class="normal">1033</span>
-<span class="normal">1034</span>
-<span class="normal">1035</span>
-<span class="normal">1036</span>
-<span class="normal">1037</span>
-<span class="normal">1038</span>
-<span class="normal">1039</span>
-<span class="normal">1040</span>
-<span class="normal">1041</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1041</span>
 <span class="normal">1042</span>
 <span class="normal">1043</span>
 <span class="normal">1044</span>
@@ -6633,7 +6677,27 @@ especially with <code>TypedDict</code>.</p>
 <span class="normal">1058</span>
 <span class="normal">1059</span>
 <span class="normal">1060</span>
-<span class="normal">1061</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
+<span class="normal">1061</span>
+<span class="normal">1062</span>
+<span class="normal">1063</span>
+<span class="normal">1064</span>
+<span class="normal">1065</span>
+<span class="normal">1066</span>
+<span class="normal">1067</span>
+<span class="normal">1068</span>
+<span class="normal">1069</span>
+<span class="normal">1070</span>
+<span class="normal">1071</span>
+<span class="normal">1072</span>
+<span class="normal">1073</span>
+<span class="normal">1074</span>
+<span class="normal">1075</span>
+<span class="normal">1076</span>
+<span class="normal">1077</span>
+<span class="normal">1078</span>
+<span class="normal">1079</span>
+<span class="normal">1080</span>
+<span class="normal">1081</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.9/concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict</span>
 
 <span class="sd">    A convenience decorator to set a [Pydantic configuration](config.md) on a `TypedDict` or a `dataclass` from the standard library.</span>
