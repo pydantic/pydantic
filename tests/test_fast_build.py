@@ -1,4 +1,4 @@
-"""Tests for our experimental."""
+"""Tests for our experimental fast build flag."""
 
 import re
 import time
