@@ -811,21 +811,15 @@ class GenerateSchema:
         schema: CoreSchema
 
         if (get_schema := getattr(obj, '__get_pydantic_core_schema__', None)) is not None:
-            if len(inspect.signature(get_schema).parameters) == 1:
-                # (source) -> CoreSchema
-                schema = get_schema(source)
-            else:
-                schema = get_schema(
-                    source, CallbackGetCoreSchemaHandler(self._generate_schema_inner, self, ref_mode=ref_mode)
-                )
-        # fmt: off
+            schema = get_schema(
+                source, CallbackGetCoreSchemaHandler(self._generate_schema_inner, self, ref_mode=ref_mode)
+            )
         elif (
             (existing_schema := getattr(obj, '__pydantic_core_schema__', None)) is not None
             and not isinstance(existing_schema, MockCoreSchema)
             and existing_schema.get('cls', None) == obj
         ):
             schema = existing_schema
-        # fmt: on
         elif (validators := getattr(obj, '__get_validators__', None)) is not None:
             warn(
                 '`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
