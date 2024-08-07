@@ -136,6 +136,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         __pydantic_complete__: ClassVar[bool]
         __pydantic_core_schema__: ClassVar[CoreSchema]
+        """The core schema of the model."""
+
         __pydantic_custom_init__: ClassVar[bool]
         __pydantic_decorators__: ClassVar[_decorators.DecoratorInfos]
         __pydantic_generic_metadata__: ClassVar[_generics.PydanticGenericMetadata]
