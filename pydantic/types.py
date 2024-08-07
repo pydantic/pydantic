@@ -788,7 +788,7 @@ def constr(
     from pydantic import BaseModel, constr
 
     class Foo(BaseModel):
-        bar: constr(strip_whitespace=True, to_upper=True, pattern=r'^[A-Z]+$')
+        bar: constr(strip_whitespace=True, to_upper=True)
 
     foo = Foo(bar='  hello  ')
     print(foo)
