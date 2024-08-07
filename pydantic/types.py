@@ -115,6 +115,7 @@ class Strict(_fields.PydanticMetadata, BaseMetadata):
     """Usage docs: https://docs.pydantic.dev/2.9/concepts/strict_mode/#strict-mode-with-annotated-strict
 
     A field metadata class to indicate that a field should be validated in strict mode.
+    Use this class as an annotation via [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated), as seen below.
 
     Attributes:
         strict: Whether to validate the field in strict mode.
@@ -380,7 +381,21 @@ except ValidationError as e:
 
 @_dataclasses.dataclass
 class AllowInfNan(_fields.PydanticMetadata):
-    """A field metadata class to indicate that a field should allow ``-inf``, ``inf``, and ``nan``."""
+    """A field metadata class to indicate that a field should allow `-inf`, `inf`, and `nan`.
+
+    Use this class as an annotation via [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated), as seen below.
+
+    Attributes:
+        allow_inf_nan: Whether to allow `-inf`, `inf`, and `nan`. Defaults to `True`.
+
+    Example:
+        ```python
+        from typing_extensions import Annotated
+
+        from pydantic.types import AllowInfNan
+
+        LaxFloat = Annotated[float, AllowInfNan()]
+    """
 
     allow_inf_nan: bool = True
 
@@ -674,7 +689,8 @@ StrictBytes = Annotated[bytes, Strict()]
 class StringConstraints(annotated_types.GroupedMetadata):
     """Usage docs: https://docs.pydantic.dev/2.9/concepts/fields/#string-constraints
 
-    Apply constraints to `str` types.
+    A field metadata class to apply constraints to `str` types.
+    Use this class as an annotation via [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated), as seen below.
 
     Attributes:
         strip_whitespace: Whether to remove leading and trailing whitespace.
@@ -684,6 +700,14 @@ class StringConstraints(annotated_types.GroupedMetadata):
         min_length: The minimum length of the string.
         max_length: The maximum length of the string.
         pattern: A regex pattern that the string must match.
+
+    Example:
+        ```python
+        from typing_extensions import Annotated
+
+        from pydantic.types import StringConstraints
+
+        ConstrainedStr = Annotated[str, StringConstraints(min_length=1, max_length=10)]
     """
 
     strip_whitespace: bool | None = None
@@ -750,7 +774,12 @@ def constr(
             from pydantic import BaseModel, StringConstraints
 
             class Foo(BaseModel):
-                bar: Annotated[str, StringConstraints(strip_whitespace=True, to_upper=True, pattern=r'^[A-Z]+$')]
+                bar: Annotated[
+                    str,
+                    StringConstraints(
+                        strip_whitespace=True, to_upper=True, pattern=r'^[A-Z]+$'
+                    ),
+                ]
             ```
 
     A wrapper around `str` that allows for additional constraints.
@@ -760,7 +789,6 @@ def constr(
 
     class Foo(BaseModel):
         bar: constr(strip_whitespace=True, to_upper=True, pattern=r'^[A-Z]+$')
-
 
     foo = Foo(bar='  hello  ')
     print(foo)
@@ -888,14 +916,12 @@ else:
 
         **Good behavior:**
         ```py
-        from math import cos
+        import math
 
         from pydantic import BaseModel, Field, ImportString, ValidationError
 
-
         class ImportThings(BaseModel):
             obj: ImportString
-
 
         # A string value will cause an automatic import
         my_cos = ImportThings(obj='math.cos')
@@ -903,7 +929,6 @@ else:
         # You can use the imported function as you would expect
         cos_of_0 = my_cos.obj(0)
         assert cos_of_0 == 1
-
 
         # A string whose value cannot be imported will raise an error
         try:
@@ -913,31 +938,26 @@ else:
             '''
             1 validation error for ImportThings
             obj
-            Invalid python path: No module named 'foo.bar' [type=import_error, input_value='foo.bar', input_type=str]
+              Invalid python path: No module named 'foo.bar' [type=import_error, input_value='foo.bar', input_type=str]
             '''
 
-
         # Actual python objects can be assigned as well
-        my_cos = ImportThings(obj=cos)
+        my_cos = ImportThings(obj=math.cos)
         my_cos_2 = ImportThings(obj='math.cos')
         my_cos_3 = ImportThings(obj='math:cos')
         assert my_cos == my_cos_2 == my_cos_3
-
 
         # You can set default field value either as Python object:
         class ImportThingsDefaultPyObj(BaseModel):
             obj: ImportString = math.cos
 
-
         # or as a string value (but only if used with `validate_default=True`)
         class ImportThingsDefaultString(BaseModel):
             obj: ImportString = Field(default='math.cos', validate_default=True)
 
-
         my_cos_default1 = ImportThingsDefaultPyObj()
         my_cos_default2 = ImportThingsDefaultString()
         assert my_cos_default1.obj == my_cos_default2.obj == math.cos
-
 
         # note: this will not work!
         class ImportThingsMissingValidateDefault(BaseModel):
@@ -949,13 +969,11 @@ else:
 
         Serializing an `ImportString` type to json is also possible.
 
-        ```py
+        ```py lint="skip"
         from pydantic import BaseModel, ImportString
-
 
         class ImportThings(BaseModel):
             obj: ImportString
-
 
         # Create an instance
         m = ImportThings(obj='math.cos')
@@ -1105,7 +1123,23 @@ def condecimal(
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class UuidVersion:
-    """A field metadata class to indicate a [UUID](https://docs.python.org/3/library/uuid.html) version."""
+    """A field metadata class to indicate a [UUID](https://docs.python.org/3/library/uuid.html) version.
+
+    Use this class as an annotation via [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated), as seen below.
+
+    Attributes:
+        uuid_version: The version of the UUID. Must be one of 1, 3, 4, or 5.
+
+    Example:
+        ```python
+        from typing_extensions import Annotated
+        from uuid import UUID
+
+        from pydantic.types import UuidVersion
+
+        UUID1 = Annotated[UUID, UuidVersion(1)]
+        ```
+    """
 
     uuid_version: Literal[1, 3, 4, 5]
 
@@ -1351,14 +1385,11 @@ else:
 
         from pydantic import BaseModel, Json, ValidationError
 
-
         class AnyJsonModel(BaseModel):
             json_obj: Json[Any]
 
-
         class ConstrainedJsonModel(BaseModel):
             json_obj: Json[List[int]]
-
 
         print(AnyJsonModel(json_obj='{"b": 1}'))
         #> json_obj={'b': 1}
@@ -1372,7 +1403,7 @@ else:
             '''
             1 validation error for ConstrainedJsonModel
             json_obj
-            JSON input should be string, bytes or bytearray [type=json_type, input_value=12, input_type=int]
+              JSON input should be string, bytes or bytearray [type=json_type, input_value=12, input_type=int]
             '''
 
         try:
@@ -1382,7 +1413,7 @@ else:
             '''
             1 validation error for ConstrainedJsonModel
             json_obj
-            Invalid JSON: expected value at line 1 column 2 [type=json_invalid, input_value='[a, b]', input_type=str]
+              Invalid JSON: expected value at line 1 column 2 [type=json_invalid, input_value='[a, b]', input_type=str]
             '''
 
         try:
@@ -1392,9 +1423,9 @@ else:
             '''
             2 validation errors for ConstrainedJsonModel
             json_obj.0
-            Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
+              Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
             json_obj.1
-            Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='b', input_type=str]
+              Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='b', input_type=str]
             '''
         ```
 
@@ -1406,10 +1437,8 @@ else:
 
         from pydantic import BaseModel, Json
 
-
         class ConstrainedJsonModel(BaseModel):
             json_obj: Json[List[int]]
-
 
         print(ConstrainedJsonModel(json_obj='[1, 2, 3]').model_dump_json())
         #> {"json_obj":[1,2,3]}
