@@ -1093,3 +1093,35 @@ def test_invalid_forward_ref() -> None:
 
         class Model(BaseModel):
             foo: 'CustomType[int]'
+
+
+def test_pydantic_extra_forward_ref_separate_module(create_module: Any) -> None:
+    """https://github.com/pydantic/pydantic/issues/10069"""
+
+    @create_module
+    def module_1():
+        from typing import Dict
+
+        from pydantic import BaseModel, ConfigDict
+
+        class Bar(BaseModel):
+            model_config = ConfigDict(defer_build=True, extra='allow')
+
+            __pydantic_extra__: 'Dict[str, int]'
+
+    module_2 = create_module(
+        f"""
+from pydantic import BaseModel
+
+from {module_1.__name__} import Bar
+
+class Foo(BaseModel):
+    bar: Bar
+        """
+    )
+
+    extras_schema = module_2.Foo.__pydantic_core_schema__['schema']['fields']['bar']['schema']['schema'][
+        'extras_schema'
+    ]
+
+    assert extras_schema == {'type': 'int'}
