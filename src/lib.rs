@@ -98,7 +98,10 @@ pub fn build_info() -> String {
     format!(
         "profile={} pgo={}",
         env!("PROFILE"),
-        option_env!("RUSTFLAGS").unwrap_or("").contains("-Cprofile-use="),
+        // We use a `cfg!` here not `env!`/`option_env!` as those would
+        // embed `RUSTFLAGS` into the generated binary which causes problems
+        // with reproducable builds.
+        cfg!(specified_profile_use),
     )
 }
 
