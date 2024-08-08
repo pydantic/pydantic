@@ -6,6 +6,7 @@ import dataclasses
 import sys
 import types
 from typing import TYPE_CHECKING, Any, Callable, Generic, NoReturn, TypeVar, overload
+from warnings import warn
 
 from typing_extensions import Literal, TypeGuard, dataclass_transform
 
@@ -230,6 +231,12 @@ def dataclass(
         if frozen is not None:
             frozen_ = frozen
         else:
+            # It's not recommended to define both, as the setting from the dataclass decorator will take priority.
+            if config_wrapper.frozen:
+                warn(
+                    "Both 'dataclass' decorator and 'config.frozen' are defined. 'config.frozen' take priority.",
+                    UserWarning,
+                )
             frozen_ = config_wrapper.frozen or False
 
         cls = dataclasses.dataclass(  # type: ignore[call-overload]
