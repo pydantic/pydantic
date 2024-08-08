@@ -6,6 +6,7 @@ import dataclasses
 import sys
 import types
 from typing import TYPE_CHECKING, Any, Callable, Generic, NoReturn, TypeVar, overload
+from warnings import warn
 
 from typing_extensions import Literal, TypeGuard, dataclass_transform
 
