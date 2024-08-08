@@ -12,10 +12,16 @@ def test_datetime():
     assert v.to_python(datetime(2022, 12, 2, 12, 13, 14), mode='json') == '2022-12-02T12:13:14'
     assert v.to_json(datetime(2022, 12, 2, 12, 13, 14)) == b'"2022-12-02T12:13:14"'
 
-    with pytest.warns(UserWarning, match='Expected `datetime` but got `int` - serialized value may not be as expected'):
+    with pytest.warns(
+        UserWarning,
+        match='Expected `datetime` but got `int` with value `123` - serialized value may not be as expected',
+    ):
         assert v.to_python(123, mode='json') == 123
 
-    with pytest.warns(UserWarning, match='Expected `datetime` but got `int` - serialized value may not be as expected'):
+    with pytest.warns(
+        UserWarning,
+        match='Expected `datetime` but got `int` with value `123` - serialized value may not be as expected',
+    ):
         assert v.to_json(123) == b'123'
 
 

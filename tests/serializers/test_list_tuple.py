@@ -18,26 +18,26 @@ def test_list_any():
 
 def test_list_fallback():
     v = SchemaSerializer(core_schema.list_schema(core_schema.any_schema()))
-    msg = 'Expected `list[any]` but got `str` - serialized value may not be as expected'
+    msg = "Expected `list[any]` but got `str` with value `'apple'` - serialized value may not be as expected"
     with pytest.warns(UserWarning, match=re.escape(msg)):
         assert v.to_python('apple') == 'apple'
 
     with pytest.warns(UserWarning) as warning_info:
         assert v.to_json('apple') == b'"apple"'
     assert [w.message.args[0] for w in warning_info.list] == [
-        'Pydantic serializer warnings:\n  Expected `list[any]` but got `str` - serialized value may not be as expected'
+        "Pydantic serializer warnings:\n  Expected `list[any]` but got `str` with value `'apple'` - serialized value may not be as expected"
     ]
 
-    msg = 'Expected `list[any]` but got `bytes` - serialized value may not be as expected'
+    msg = "Expected `list[any]` but got `bytes` with value `b'apple'` - serialized value may not be as expected"
     with pytest.warns(UserWarning, match=re.escape(msg)):
         assert v.to_json(b'apple') == b'"apple"'
 
-    msg = 'Expected `list[any]` but got `tuple` - serialized value may not be as expected'
+    msg = 'Expected `list[any]` but got `tuple` with value `(1, 2, 3)` - serialized value may not be as expected'
     with pytest.warns(UserWarning, match=re.escape(msg)):
         assert v.to_python((1, 2, 3)) == (1, 2, 3)
 
     # # even though we're in the fallback state, non JSON types should still be converted to JSON here
-    msg = 'Expected `list[any]` but got `tuple` - serialized value may not be as expected'
+    msg = 'Expected `list[any]` but got `tuple` with value `(1, 2, 3)` - serialized value may not be as expected'
     with pytest.warns(UserWarning, match=re.escape(msg)):
         assert v.to_python((1, 2, 3), mode='json') == [1, 2, 3]
 
@@ -48,18 +48,18 @@ def test_list_str_fallback():
         assert v.to_json([1, 2, 3]) == b'[1,2,3]'
     assert [w.message.args[0] for w in warning_info.list] == [
         'Pydantic serializer warnings:\n'
-        '  Expected `str` but got `int` - serialized value may not be as expected\n'
-        '  Expected `str` but got `int` - serialized value may not be as expected\n'
-        '  Expected `str` but got `int` - serialized value may not be as expected'
+        '  Expected `str` but got `int` with value `1` - serialized value may not be as expected\n'
+        '  Expected `str` but got `int` with value `2` - serialized value may not be as expected\n'
+        '  Expected `str` but got `int` with value `3` - serialized value may not be as expected'
     ]
     with pytest.raises(PydanticSerializationError) as warning_ex:
         v.to_json([1, 2, 3], warnings='error')
     assert str(warning_ex.value) == ''.join(
         [
             'Pydantic serializer warnings:\n'
-            '  Expected `str` but got `int` - serialized value may not be as expected\n'
-            '  Expected `str` but got `int` - serialized value may not be as expected\n'
-            '  Expected `str` but got `int` - serialized value may not be as expected'
+            '  Expected `str` but got `int` with value `1` - serialized value may not be as expected\n'
+            '  Expected `str` but got `int` with value `2` - serialized value may not be as expected\n'
+            '  Expected `str` but got `int` with value `3` - serialized value may not be as expected'
         ]
     )
 
@@ -243,25 +243,25 @@ def test_include_error_call_time(schema_func, seq_f, include, exclude):
 
 def test_tuple_fallback():
     v = SchemaSerializer(core_schema.tuple_variable_schema(core_schema.any_schema()))
-    msg = 'Expected `tuple[any, ...]` but got `str` - serialized value may not be as expected'
+    msg = "Expected `tuple[any, ...]` but got `str` with value `'apple'` - serialized value may not be as expected"
     with pytest.warns(UserWarning, match=re.escape(msg)):
         assert v.to_python('apple') == 'apple'
 
     with pytest.warns(UserWarning) as warning_info:
         assert v.to_json([1, 2, 3]) == b'[1,2,3]'
     assert [w.message.args[0] for w in warning_info.list] == [
-        'Pydantic serializer warnings:\n  Expected `tuple[any, ...]` but got `list` - '
+        'Pydantic serializer warnings:\n  Expected `tuple[any, ...]` but got `list` with value `[1, 2, 3]` - '
         'serialized value may not be as expected'
     ]
 
-    msg = 'Expected `tuple[any, ...]` but got `bytes` - serialized value may not be as expected'
+    msg = "Expected `tuple[any, ...]` but got `bytes` with value `b'apple'` - serialized value may not be as expected"
     with pytest.warns(UserWarning, match=re.escape(msg)):
         assert v.to_json(b'apple') == b'"apple"'
 
     assert v.to_python((1, 2, 3)) == (1, 2, 3)
 
     # even though we're in the fallback state, non JSON types should still be converted to JSON here
-    msg = 'Expected `tuple[any, ...]` but got `list` - serialized value may not be as expected'
+    msg = 'Expected `tuple[any, ...]` but got `list` with value `[1, 2, 3]` - serialized value may not be as expected'
     with pytest.warns(UserWarning, match=re.escape(msg)):
         assert v.to_python([1, 2, 3], mode='json') == [1, 2, 3]
 

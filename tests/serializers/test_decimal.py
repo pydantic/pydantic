@@ -20,10 +20,14 @@ def test_decimal():
         == b'"123456789123456789123456789.123456789123456789123456789"'
     )
 
-    with pytest.warns(UserWarning, match='Expected `decimal` but got `int` - serialized value may not be as expected'):
+    with pytest.warns(
+        UserWarning, match='Expected `decimal` but got `int` with value `123` - serialized value may not be as expected'
+    ):
         assert v.to_python(123, mode='json') == 123
 
-    with pytest.warns(UserWarning, match='Expected `decimal` but got `int` - serialized value may not be as expected'):
+    with pytest.warns(
+        UserWarning, match='Expected `decimal` but got `int` with value `123` - serialized value may not be as expected'
+    ):
         assert v.to_json(123) == b'123'
 
 

@@ -386,51 +386,6 @@ impl ValidationError {
     }
 }
 
-// TODO: is_utf8_char_boundary, floor_char_boundary and ceil_char_boundary
-// with builtin methods once https://github.com/rust-lang/rust/issues/93743 is resolved
-// These are just copy pasted from the current implementation
-const fn is_utf8_char_boundary(value: u8) -> bool {
-    // This is bit magic equivalent to: b < 128 || b >= 192
-    (value as i8) >= -0x40
-}
-
-fn floor_char_boundary(value: &str, index: usize) -> usize {
-    if index >= value.len() {
-        value.len()
-    } else {
-        let lower_bound = index.saturating_sub(3);
-        let new_index = value.as_bytes()[lower_bound..=index]
-            .iter()
-            .rposition(|b| is_utf8_char_boundary(*b));
-
-        // SAFETY: we know that the character boundary will be within four bytes
-        unsafe { lower_bound + new_index.unwrap_unchecked() }
-    }
-}
-
-pub fn ceil_char_boundary(value: &str, index: usize) -> usize {
-    let upper_bound = Ord::min(index + 4, value.len());
-    value.as_bytes()[index..upper_bound]
-        .iter()
-        .position(|b| is_utf8_char_boundary(*b))
-        .map_or(upper_bound, |pos| pos + index)
-}
-
-macro_rules! truncate_input_value {
-    ($out:expr, $value:expr) => {
-        if $value.len() > 50 {
-            write!(
-                $out,
-                ", input_value={}...{}",
-                &$value[0..floor_char_boundary($value, 25)],
-                &$value[ceil_char_boundary($value, $value.len() - 24)..]
-            )?;
-        } else {
-            write!($out, ", input_value={}", $value)?;
-        }
-    };
-}
-
 pub fn pretty_py_line_errors<'a>(
     py: Python,
     input_type: InputType,
@@ -570,7 +525,8 @@ impl PyLineError {
         if !hide_input {
             let input_value = self.input_value.bind(py);
             let input_str = safe_repr(input_value);
-            truncate_input_value!(output, &input_str.to_cow());
+            write!(output, ", input_value=")?;
+            super::write_truncated_to_50_bytes(&mut output, input_str.to_cow())?;
 
             if let Ok(type_) = input_value.get_type().qualname() {
                 write!(output, ", input_type={type_}")?;
