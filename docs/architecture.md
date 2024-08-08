@@ -24,18 +24,19 @@ attribute (this is done by the `GenerateSchema` class). A core schema is a struc
 dictionary (represented using [`TypedDict`][typing.TypedDict] definitions) representing a
 specific validation and serialization logic. It is the core data structure used to communicate
 between the `pydantic` and `pydantic-core` packages. Every core schema has a required `type` key,
-and extra properties depending on the `type`.
+and extra properties depending on this `type`.
 
 !!! note
     It is not possible to define a custom core schema. A core schema needs to be understood by the
     `pydantic-core` package, and as such we only support a fixed number of core schema types.
+    This is also part of the reason why the `GenerateSchema` is private and not documented.
 
     The core schema definitions can be found in the [`pydantic_core.core_schema`][] module.
 
 To illustrate what a core schema looks like, we will take the example of the
 [`bool`][pydantic_core.core_schema.bool_schema] core schema:
 
-```python
+```python lint="skip" test="skip"
 class BoolSchema(TypedDict, total=False):
     type: Required[Literal['bool']]
     strict: bool
@@ -48,6 +49,7 @@ When defining a Pydantic model with a boolean field:
 
 ```python
 from pydantic import BaseModel, Field
+
 
 class Model(BaseModel):
     foo: bool = Field(strict=True)
@@ -69,7 +71,7 @@ If we were to define a custom serialization function for `foo` (1), the `seriali
 
 1.  For example using the [`field_serializer`][pydantic.functional_serializers.field_serializer] decorator.
 
-```python
+```python lint="skip" test="skip"
 {
     'type': 'function-plain',
     'function': <function Model.serialize_foo at 0x111>,
@@ -81,7 +83,6 @@ If we were to define a custom serialization function for `foo` (1), the `seriali
 
 Note that this is also a core schema definition, just that it is only relevant for `pydantic-core` during serialization.
 Core schemas cover a broad scope, and are used whenever we want to communicate between the Python and Rust side.
-
 
 ### JSON Schema generation
 
@@ -97,30 +98,40 @@ The [`generate`][pydantic.json_schema.GenerateJsonSchema.generate] method is the
     [Custom types](concepts/types.md#custom-types)
 
 While the `GenerateSchema` and [`GenerateJsonSchema`][pydantic.json_schema.GenerateJsonSchema] classes handle
-the creation of the corresponding schemas, Pydantic offers a way to customize them, following a wrapper pattern.
+the creation of the corresponding schemas, Pydantic offers a way to customize them in some cases, following a wrapper pattern.
 This customization is done through the `__get_pydantic_core_schema__` and `__get_pydantic_json_schema__` methods.
 
-To understand this wrapper pattern, we will take the following example:
+To understand this wrapper pattern, we will take the example of metadata classes used with [`Annotated`][typing.Annotated]
+where the `__get_pydantic_core_schema__` method can be used:
 
 ```python
-from typing import Annotated, Any
+from typing import Any
+
+from pydantic_core import CoreSchema
+from typing_extensions import Annotated
 
 from pydantic import GetCoreSchemaHandler, TypeAdapter
-from pydantic_core import CoreSchema
+
 
 class MyStrict:
     @classmethod
-    def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        schema = handler(source) # (1)!
+    def __get_pydantic_core_schema__(
+        cls, source: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        schema = handler(source)  # (1)!
         schema['strict'] = True
         return schema
 
+
 class MyGt:
     @classmethod
-    def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        schema = handler(source) # (2)!
+    def __get_pydantic_core_schema__(
+        cls, source: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        schema = handler(source)  # (2)!
         schema['gt'] = 1
         return schema
+
 
 ta = TypeAdapter(Annotated[int, MyStrict(), MyGt()])
 ```
@@ -128,9 +139,17 @@ ta = TypeAdapter(Annotated[int, MyStrict(), MyGt()])
 1. `MyStrict` is the first annotation to be applied. At this point, `schema = {'type': 'int'}`.
 2. `MyGt` is the last annotation to be applied. At this point, `schema = {'type': 'int', 'strict': True}`.
 
-When the `GenerateSchema` class builds the core schema for `Annotated[int, MyStrict(), MyGt()]`, it will first
-build an [`IntSchema`][pydantic_core.core_schema.int_schema] for the `int` type, and then call the two
-`__get_pydantic_core_schema__` methods by providing a handler to be called. TODO what about the `source` arg?
+When the `GenerateSchema` class builds the core schema for `Annotated[int, MyStrict(), MyGt()]`, it will
+create an instance of a `GetCoreSchemaHandler` to be passed to the `MyGt.__get_pydantic_core_schema__` method. (1)
+{ .annotate }
+
+1.  In the case of our [`Annotated`][typing.Annotated] pattern, the `GetCoreSchemaHandler` is defined in a nested way.
+    Calling it will recursively call the other `__get_pydantic_core_schema__` methods until it reaches the `int` annotation,
+    where a simple `{'type': 'int'}` schema is returned.
+
+The `source` argument depends on the core schema generation pattern. In the case of [`Annotated`][typing.Annotated],
+the `source` will be the type being annotated. When [defining a custom type](concepts/types.md#as-a-method-on-a-custom-type),
+the `source` will be the actual class where `__get_pydantic_core_schema__` is defined.
 
 ## Model validation and serialization
 
@@ -146,8 +165,10 @@ In a real life use case, when doing the following:
 ```python
 from pydantic import BaseModel
 
+
 class Model(BaseModel):
     foo: int
+
 
 model = Model.model_validate({'foo': 1}).model_dump()
 ```
