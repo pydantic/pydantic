@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-import logging
 import ast
+import logging
 import re
 from functools import partial
 from pathlib import Path
 
-from griffe import Object as GriffeObject, Extension, ObjectNode
+from griffe import Extension, ObjectNode
+from griffe import Object as GriffeObject
 from pymdownx.slugs import slugify
 
 DOCS_PATH = Path(__file__).parent.parent
