@@ -1,7 +1,8 @@
 use std::borrow::Cow;
 use std::str::FromStr;
 
-use base64::Engine;
+use base64::engine::general_purpose::{STANDARD, URL_SAFE};
+use base64::{DecodeError, Engine};
 use pyo3::types::{PyDict, PyString};
 use pyo3::{intern, prelude::*};
 
@@ -28,14 +29,18 @@ impl ValBytesMode {
     pub fn deserialize_string<'py>(self, s: &str) -> Result<EitherBytes<'_, 'py>, ErrorType> {
         match self.ser {
             BytesMode::Utf8 => Ok(EitherBytes::Cow(Cow::Borrowed(s.as_bytes()))),
-            BytesMode::Base64 => match base64::engine::general_purpose::URL_SAFE.decode(s) {
-                Ok(bytes) => Ok(EitherBytes::from(bytes)),
-                Err(err) => Err(ErrorType::BytesInvalidEncoding {
+            BytesMode::Base64 => URL_SAFE
+                .decode(s)
+                .or_else(|err| match err {
+                    DecodeError::InvalidByte(_, b'/' | b'+') => STANDARD.decode(s),
+                    _ => Err(err),
+                })
+                .map(EitherBytes::from)
+                .map_err(|err| ErrorType::BytesInvalidEncoding {
                     encoding: "base64".to_string(),
                     encoding_error: err.to_string(),
                     context: None,
                 }),
-            },
             BytesMode::Hex => match hex::decode(s) {
                 Ok(vec) => Ok(EitherBytes::from(vec)),
                 Err(err) => Err(ErrorType::BytesInvalidEncoding {
