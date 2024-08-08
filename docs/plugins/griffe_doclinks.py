@@ -1,18 +1,20 @@
+from __future__ import annotations
+
+import logging
 import ast
 import re
 from functools import partial
 from pathlib import Path
-from typing import Tuple
 
-from griffe.dataclasses import Object as GriffeObject
-from griffe.extensions import VisitorExtension
+from griffe import Object as GriffeObject, Extension, ObjectNode
 from pymdownx.slugs import slugify
 
 DOCS_PATH = Path(__file__).parent.parent
 slugifier = slugify(case='lower')
+logger = logging.getLogger('griffe_docklinks')
 
 
-def find_heading(content: str, slug: str, file_path: Path) -> Tuple[str, int]:
+def find_heading(content: str, slug: str, file_path: Path) -> tuple[str, int]:
     for m in re.finditer('^#+ (.+)', content, flags=re.M):
         heading = m.group(1)
         h_slug = slugifier(heading, '-')
@@ -30,14 +32,14 @@ def insert_at_top(path: str, api_link: str) -> str:
     first_section = content[: second_heading.start()]
 
     if f'[{api_link}]' not in first_section:
-        print(f'inserting API link "{api_link}" at the top of {file_path.relative_to(DOCS_PATH)}')
+        logger.debug('inserting API link "%s" at the top of %s', api_link, file_path.relative_to(DOCS_PATH))
         file_path.write_text('??? api "API Documentation"\n' f'    [`{api_link}`][{api_link}]<br>\n\n' f'{content}')
 
     heading = file_path.stem.replace('_', ' ').title()
     return f'!!! abstract "Usage Documentation"\n    [{heading}](../{rel_file})\n'
 
 
-def replace_links(m: re.Match, *, api_link: str) -> str:
+def replace_links(m: re.Match[str], *, api_link: str) -> str:
     path_group = m.group(1)
     if '#' not in path_group:
         # no heading id, put the content at the top of the page
@@ -56,7 +58,7 @@ def replace_links(m: re.Match, *, api_link: str) -> str:
         next_section = content[heading_end:]
 
     if f'[{api_link}]' not in next_section:
-        print(f'inserting API link "{api_link}" into {file_path.relative_to(DOCS_PATH)}')
+        logger.debug('inserting API link "%s" into %s', api_link, file_path.relative_to(DOCS_PATH))
         file_path.write_text(
             f'{content[:heading_end]}\n\n'
             '??? api "API Documentation"\n'
@@ -76,15 +78,7 @@ def update_docstring(obj: GriffeObject) -> str:
     )
 
 
-def update_docstrings_recursively(obj: GriffeObject) -> None:
-    if obj.docstring:
-        obj.docstring.value = update_docstring(obj)
-    for member in obj.members.values():
-        if not member.is_alias:
-            update_docstrings_recursively(member)
-
-
-class Extension(VisitorExtension):
-    def visit_module(self, node: ast.AST) -> None:
-        module = self.visitor.current.module
-        update_docstrings_recursively(module)
+class UpdateDocstringsExtension(Extension):
+    def on_instance(self, *, node: ast.AST | ObjectNode, obj: GriffeObject) -> None:
+        if not obj.is_alias and obj.docstring is not None:
+            update_docstring(obj)
