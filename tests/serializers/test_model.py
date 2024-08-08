@@ -230,14 +230,17 @@ def test_model_wrong_warn():
     assert s.to_python(None, mode='json') is None
     assert s.to_json(None) == b'null'
 
-    with pytest.warns(UserWarning, match='Expected `MyModel` but got `int` - serialized value may.+'):
+    with pytest.warns(UserWarning, match='Expected `MyModel` but got `int` with value `123` - serialized value may.+'):
         assert s.to_python(123) == 123
-    with pytest.warns(UserWarning, match='Expected `MyModel` but got `int` - serialized value may.+'):
+    with pytest.warns(UserWarning, match='Expected `MyModel` but got `int` with value `123` - serialized value may.+'):
         assert s.to_python(123, mode='json') == 123
-    with pytest.warns(UserWarning, match='Expected `MyModel` but got `int` - serialized value may.+'):
+    with pytest.warns(UserWarning, match='Expected `MyModel` but got `int` with value `123` - serialized value may.+'):
         assert s.to_json(123) == b'123'
 
-    with pytest.warns(UserWarning, match='Expected `MyModel` but got `dict` - serialized value may.+'):
+    with pytest.warns(
+        UserWarning,
+        match="Expected `MyModel` but got `dict` with value `{'foo': 1, 'bar': b'more'}` - serialized value may.+",
+    ):
         assert s.to_python({'foo': 1, 'bar': b'more'}) == {'foo': 1, 'bar': b'more'}
 
 

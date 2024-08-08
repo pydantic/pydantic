@@ -14,10 +14,14 @@ def test_uuid():
     )
     assert v.to_json(UUID('12345678-1234-5678-1234-567812345678')) == b'"12345678-1234-5678-1234-567812345678"'
 
-    with pytest.warns(UserWarning, match='Expected `uuid` but got `int` - serialized value may not be as expected'):
+    with pytest.warns(
+        UserWarning, match='Expected `uuid` but got `int` with value `123` - serialized value may not be as expected'
+    ):
         assert v.to_python(123, mode='json') == 123
 
-    with pytest.warns(UserWarning, match='Expected `uuid` but got `int` - serialized value may not be as expected'):
+    with pytest.warns(
+        UserWarning, match='Expected `uuid` but got `int` with value `123` - serialized value may not be as expected'
+    ):
         assert v.to_json(123) == b'123'
 
 

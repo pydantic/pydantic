@@ -32,7 +32,7 @@ def test_union_bool_int(input_value, expected_value, bool_case_label, int_case_l
 
 def test_union_error():
     s = SchemaSerializer(core_schema.union_schema([core_schema.bool_schema(), core_schema.int_schema()]))
-    msg = 'Expected `Union[bool, int]` but got `str` - serialized value may not be as expected'
+    msg = "Expected `Union[bool, int]` but got `str` with value `'a string'` - serialized value may not be as expected"
     with pytest.warns(UserWarning, match=re.escape(msg)):
         assert s.to_python('a string') == 'a string'
 

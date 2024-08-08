@@ -44,7 +44,9 @@ def test_lax_or_strict():
     assert plain_repr(s) == 'SchemaSerializer(serializer=Str(StrSerializer),definitions=[])'
 
     assert s.to_json('abc') == b'"abc"'
-    with pytest.warns(UserWarning, match='Expected `str` but got `int` - serialized value may not be as expected'):
+    with pytest.warns(
+        UserWarning, match='Expected `str` but got `int` with value `123` - serialized value may not be as expected'
+    ):
         assert s.to_json(123) == b'123'
 
 

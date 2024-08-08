@@ -158,7 +158,7 @@ def test_any_with_date_serializer():
         assert s.to_python(b'bang', mode='json') == 'bang'
 
     assert [w.message.args[0] for w in warning_info.list] == [
-        'Pydantic serializer warnings:\n  Expected `date` but got `bytes` - serialized value may not be as expected'
+        "Pydantic serializer warnings:\n  Expected `date` but got `bytes` with value `b'bang'` - serialized value may not be as expected"
     ]
 
 
@@ -172,7 +172,7 @@ def test_any_with_timedelta_serializer():
         assert s.to_python(b'bang', mode='json') == 'bang'
 
     assert [w.message.args[0] for w in warning_info.list] == [
-        'Pydantic serializer warnings:\n  Expected `timedelta` but got `bytes` - '
+        "Pydantic serializer warnings:\n  Expected `timedelta` but got `bytes` with value `b'bang'` - "
         'serialized value may not be as expected'
     ]
 
