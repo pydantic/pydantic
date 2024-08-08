@@ -445,7 +445,7 @@ Here is the order:
 * `model_validator(mode='after')`
 
 
-```py requires="3.8"
+```py
 from dataclasses import InitVar
 from pathlib import Path
 from typing import Optional

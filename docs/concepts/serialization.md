@@ -314,9 +314,7 @@ If you want to do this and still get proper type-checking for this method, you c
 `if TYPE_CHECKING:` block:
 
 ```py
-from typing import TYPE_CHECKING, Any
-
-from typing_extensions import Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, model_serializer
 

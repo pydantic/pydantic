@@ -977,7 +977,7 @@ except ValidationError as e:
 One benefit of this field type is that it can be used to check for equality with one or more specific values
 without needing to declare custom validators:
 
-```py requires="3.8"
+```py
 from typing import ClassVar, List, Literal, Union
 
 from pydantic import BaseModel, ValidationError
@@ -1016,7 +1016,7 @@ except ValidationError as e:
 
 With proper ordering in an annotated `Union`, you can use this to parse types of decreasing specificity:
 
-```py requires="3.8"
+```py
 from typing import Literal, Optional, Union
 
 from pydantic import BaseModel
