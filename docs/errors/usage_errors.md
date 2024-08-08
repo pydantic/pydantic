@@ -169,9 +169,7 @@ model = create_model('FooModel', a=(str, 'cake'), __base__=Model)
 This error is raised when a model in discriminated unions doesn't define a discriminator field.
 
 ```py
-from typing import Union
-
-from typing_extensions import Literal
+from typing import Literal, Union
 
 from pydantic import BaseModel, Field, PydanticUserError
 
@@ -200,9 +198,7 @@ except PydanticUserError as exc_info:
 This error is raised when you define a non-string alias on a discriminator field.
 
 ```py
-from typing import Union
-
-from typing_extensions import Literal
+from typing import Literal, Union
 
 from pydantic import AliasChoices, BaseModel, Field, PydanticUserError
 
@@ -234,9 +230,7 @@ except PydanticUserError as exc_info:
 This error is raised when you define a non-`Literal` type on a discriminator field.
 
 ```py
-from typing import Union
-
-from typing_extensions import Literal
+from typing import Literal, Union
 
 from pydantic import BaseModel, Field, PydanticUserError
 
@@ -266,9 +260,7 @@ except PydanticUserError as exc_info:
 This error is raised when you define different aliases on discriminator fields.
 
 ```py
-from typing import Union
-
-from typing_extensions import Literal
+from typing import Literal, Union
 
 from pydantic import BaseModel, Field, PydanticUserError
 
@@ -301,9 +293,7 @@ This is disallowed because the discriminator field is used to determine the type
 so you can't use a validator that might change its value.
 
 ```py
-from typing import Union
-
-from typing_extensions import Literal
+from typing import Literal, Union
 
 from pydantic import BaseModel, Field, PydanticUserError, field_validator
 
@@ -336,9 +326,7 @@ except PydanticUserError as exc_info:
 This can be worked around by using a standard `Union`, dropping the discriminator:
 
 ```py
-from typing import Union
-
-from typing_extensions import Literal
+from typing import Literal, Union
 
 from pydantic import BaseModel, field_validator
 

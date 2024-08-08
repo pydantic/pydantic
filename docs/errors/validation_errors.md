@@ -1215,7 +1215,7 @@ except ValidationError as exc:
 This error is raised when the input value is not one of the expected literal values:
 
 ```py
-from typing_extensions import Literal
+from typing import Literal
 
 from pydantic import BaseModel, ValidationError
 
@@ -1335,7 +1335,7 @@ except ValidationError as exc:
 This error is raised when a required positional-only argument is not passed to a function decorated with
 `validate_call`:
 
-```py requires="3.8"
+```py
 from pydantic import ValidationError, validate_call
 
 
@@ -1881,7 +1881,7 @@ This error is also raised for strict fields when the input value is not an insta
 This error is raised when you provide a value by keyword for a positional-only
 argument while calling a function decorated with `validate_call`:
 
-```py requires="3.8"
+```py
 from pydantic import ValidationError, validate_call
 
 
@@ -1942,9 +1942,7 @@ except ValidationError as exc:
 This error is raised when the input's discriminator is not one of the expected values:
 
 ```py
-from typing import Union
-
-from typing_extensions import Literal
+from typing import Literal, Union
 
 from pydantic import BaseModel, Field, ValidationError
 
@@ -1973,9 +1971,7 @@ except ValidationError as exc:
 This error is raised when it is not possible to extract a discriminator value from the input:
 
 ```py
-from typing import Union
-
-from typing_extensions import Literal
+from typing import Literal, Union
 
 from pydantic import BaseModel, Field, ValidationError
 

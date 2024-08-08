@@ -540,7 +540,7 @@ approach can be useful when the discriminator fields aren't the same for all the
 
 The following example shows how to use `discriminator` with a field name:
 
-```py requires="3.8"
+```py
 from typing import Literal, Union
 
 from pydantic import BaseModel, Field
@@ -568,7 +568,7 @@ print(Model.model_validate({'pet': {'pet_type': 'cat', 'age': 12}}))  # (1)!
 
 The following example shows how to use the `discriminator` keyword argument with a `Discriminator` instance:
 
-```py requires="3.8"
+```py
 from typing import Literal, Union
 
 from typing_extensions import Annotated

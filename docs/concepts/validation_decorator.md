@@ -94,7 +94,7 @@ all possible combinations of these:
 
 To demonstrate all the above parameter types:
 
-```py requires="3.8"
+```py
 from pydantic import validate_call
 
 
