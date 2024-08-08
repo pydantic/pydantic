@@ -11,5 +11,7 @@ def test_nullable():
     assert s.to_python(1, mode='json') == 1
     assert s.to_json(1) == b'1'
     assert s.to_json(None) == b'null'
-    with pytest.warns(UserWarning, match='Expected `int` but got `str` - serialized value may not be as expected'):
+    with pytest.warns(
+        UserWarning, match="Expected `int` but got `str` with value `'aaa'` - serialized value may not be as expected"
+    ):
         assert s.to_json('aaa') == b'"aaa"'

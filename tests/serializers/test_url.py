@@ -18,7 +18,10 @@ def test_url():
     assert s.to_python(url, mode='json') == 'https://example.com/'
     assert s.to_json(url) == b'"https://example.com/"'
 
-    with pytest.warns(UserWarning, match='Expected `url` but got `str` - serialized value may not be as expected'):
+    with pytest.warns(
+        UserWarning,
+        match="Expected `url` but got `str` with value `'https://example.com'` - serialized value may not be as expected",
+    ):
         assert s.to_python('https://example.com', mode='json') == 'https://example.com'
 
 
@@ -36,7 +39,8 @@ def test_multi_host_url():
     assert s.to_json(url) == b'"https://example.com,example.org/path"'
 
     with pytest.warns(
-        UserWarning, match='Expected `multi-host-url` but got `str` - serialized value may not be as expected'
+        UserWarning,
+        match="Expected `multi-host-url` but got `str` with value `'https://ex.com,ex.org/path'` - serialized value may not be as expected",
     ):
         assert s.to_python('https://ex.com,ex.org/path', mode='json') == 'https://ex.com,ex.org/path'
 
