@@ -6720,10 +6720,7 @@ any invalid items are discarded and the valid ones are returned.</p>
               Bases: <code><span title="pydantic._internal._fields.PydanticMetadata">PydanticMetadata</span></code>, <code><span title="annotated_types.BaseMetadata">BaseMetadata</span></code></p>
 
 
-      <div class="admonition abstract">
-<p class="admonition-title">Usage Documentation</p>
-<p><a href="../../concepts/strict_mode/#strict-mode-with-annotated-strict">Strict mode with <code>Annotated[..., Strict()]</code></a></p>
-</div>
+      <p>Usage docs: https://docs.pydantic.dev/2.9/concepts/strict_mode/#strict-mode-with-annotated-strict</p>
 <p>A field metadata class to indicate that a field should be validated in strict mode.
 Use this class as an annotation via <a href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a>, as seen below.</p>
 
@@ -6978,10 +6975,7 @@ from typing_extensions import Annotated</p>
               Bases: <code><span title="annotated_types.GroupedMetadata">GroupedMetadata</span></code></p>
 
 
-      <div class="admonition abstract">
-<p class="admonition-title">Usage Documentation</p>
-<p><a href="../../concepts/fields/#string-constraints">String Constraints</a></p>
-</div>
+      <p>Usage docs: https://docs.pydantic.dev/2.9/concepts/fields/#string-constraints</p>
 <p>A field metadata class to apply constraints to <code>str</code> types.
 Use this class as an annotation via <a href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a>, as seen below.</p>
 
@@ -12282,10 +12276,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
     <div class="doc doc-contents ">
 
 
-      <div class="admonition abstract">
-<p class="admonition-title">Usage Documentation</p>
-<p><a href="../../concepts/types/#using-getpydanticschema-to-reduce-boilerplate">Using <code>GetPydanticSchema</code> to reduce boilerplate</a></p>
-</div>
+      <p>Usage docs: https://docs.pydantic.dev/2.9/concepts/types/#using-getpydanticschema-to-reduce-boilerplate</p>
 <p>A convenience class for creating an annotation that provides pydantic custom type hooks.</p>
 <p>This class is intended to eliminate the need to create a custom "marker" which defines the
  <code>__get_pydantic_core_schema__</code> and <code>__get_pydantic_json_schema__</code> custom hook methods.</p>
@@ -12721,10 +12712,7 @@ callable <code>Discriminator</code>. Failing to do so will result in a <code>Pyd
     <div class="doc doc-contents ">
 
 
-      <div class="admonition abstract">
-<p class="admonition-title">Usage Documentation</p>
-<p><a href="../../concepts/unions/#discriminated-unions-with-callable-discriminator">Discriminated Unions with callable <code>Discriminator</code></a></p>
-</div>
+      <p>Usage docs: https://docs.pydantic.dev/2.9/concepts/unions/#discriminated-unions-with-callable-discriminator</p>
 <p>Provides a way to use a custom callable as the way to extract the value of a union discriminator.</p>
 <p>This allows you to get validation behavior like you'd get from <code>Field(discriminator=&lt;field_name&gt;)</code>,
 but without needing to have a single shared field across all the union choices. This also makes it

@@ -3944,10 +3944,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 
     <div class="doc doc-contents ">
 
-      <div class="admonition abstract">
-<p class="admonition-title">Usage Documentation</p>
-<p><a href="../../concepts/fields/">Fields</a></p>
-</div>
+      <p>Usage docs: https://docs.pydantic.dev/2.9/concepts/fields</p>
 <p>Create a field for objects that can be configured.</p>
 <p>Used to provide extra information about a field, either for the model schema or complex validation. Some arguments
 apply only to number fields (<code>int</code>, <code>float</code>, <code>Decimal</code>) and some apply only to <code>str</code>.</p>
@@ -6615,10 +6612,7 @@ type had unrecognized annotations, or was annotated with a call to <code>pydanti
 
     <div class="doc doc-contents ">
 
-      <div class="admonition abstract">
-<p class="admonition-title">Usage Documentation</p>
-<p><a href="../../concepts/models/#private-model-attributes">Private model attributes</a></p>
-</div>
+      <p>Usage docs: https://docs.pydantic.dev/2.9/concepts/models/#private-model-attributes</p>
 <p>Indicates that an attribute is intended for private use and not handled during normal validation/serialization.</p>
 <p>Private attributes are not validated by Pydantic, so it's up to you to ensure they are used in a type-safe manner.</p>
 <p>Private attributes are stored in <code>__private_attributes__</code> on the model.</p>
@@ -7009,10 +7003,7 @@ attribute if not provided.</p>
 
     <div class="doc doc-contents ">
 
-      <div class="admonition abstract">
-<p class="admonition-title">Usage Documentation</p>
-<p><a href="../../concepts/fields/#the-computed_field-decorator">The <code>computed_field</code> decorator</a></p>
-</div>
+      <p>Usage docs: https://docs.pydantic.dev/2.9/concepts/fields#the-computed_field-decorator</p>
 <p>Decorator to include <code>property</code> and <code>cached_property</code> when serializing models or dataclasses.</p>
 <p>This is useful for fields that are computed from other fields, or for fields that are expensive to compute and should be cached.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">computed_field</span>
