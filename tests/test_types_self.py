@@ -135,7 +135,7 @@ def test_self_type_json_schema(Self):
                 'type': 'object',
             }
         },
-        'allOf': [{'$ref': '#/$defs/SelfRef'}],
+        '$ref': '#/$defs/SelfRef',
     }
 
 

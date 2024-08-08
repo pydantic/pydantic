@@ -274,7 +274,7 @@ def test_self_reference_json_schema(create_module):
 
     Account = module.Account
     assert Account.model_json_schema() == {
-        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$ref': '#/$defs/Account',
         '$defs': {
             'Account': {
                 'title': 'Account',
@@ -308,7 +308,7 @@ class Account(BaseModel):
     )
     Account = module.Account
     assert Account.model_json_schema() == {
-        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$ref': '#/$defs/Account',
         '$defs': {
             'Account': {
                 'title': 'Account',
@@ -345,7 +345,7 @@ def test_circular_reference_json_schema(create_module):
 
     Account = module.Account
     assert Account.model_json_schema() == {
-        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$ref': '#/$defs/Account',
         '$defs': {
             'Account': {
                 'title': 'Account',
@@ -391,7 +391,7 @@ class Account(BaseModel):
     )
     Account = module.Account
     assert Account.model_json_schema() == {
-        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$ref': '#/$defs/Account',
         '$defs': {
             'Account': {
                 'title': 'Account',

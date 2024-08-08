@@ -964,7 +964,7 @@ def test_forward_ref_for_serializers(as_annotation, mode):
                 'type': 'object',
             }
         },
-        'properties': {'x': {'allOf': [{'$ref': '#/$defs/OtherModel'}], 'title': 'X'}},
+        'properties': {'x': {'$ref': '#/$defs/OtherModel', 'title': 'X'}},
         'required': ['x'],
         'title': 'Model',
         'type': 'object',
