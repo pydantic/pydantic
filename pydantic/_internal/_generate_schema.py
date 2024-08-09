@@ -51,7 +51,7 @@ from pydantic_core import (
     core_schema,
     to_jsonable_python,
 )
-from typing_extensions import Annotated, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
+from typing_extensions import Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
 from ..aliases import AliasChoices, AliasGenerator, AliasPath
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
@@ -95,7 +95,7 @@ from ._generics import get_standard_typevars_map, has_instance_in_type, recursiv
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import MockCoreSchema
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
-from ._typing_extra import get_cls_type_hints_lenient, is_finalvar, is_self_type, is_zoneinfo_type
+from ._typing_extra import get_cls_type_hints_lenient, is_annotated, is_finalvar, is_self_type, is_zoneinfo_type
 from ._utils import lenient_issubclass, smart_deepcopy
 
 if TYPE_CHECKING:
@@ -107,7 +107,6 @@ if TYPE_CHECKING:
     from ._schema_generation_shared import GetJsonSchemaFunction
 
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 12)
-_AnnotatedType = type(Annotated[int, 123])
 
 FieldDecoratorInfo = Union[ValidatorDecoratorInfo, FieldValidatorDecoratorInfo, FieldSerializerDecoratorInfo]
 FieldDecoratorInfoType = TypeVar('FieldDecoratorInfoType', bound=FieldDecoratorInfo)
@@ -892,7 +891,7 @@ class GenerateSchema:
         return args[0], args[1]
 
     def _generate_schema_inner(self, obj: Any) -> core_schema.CoreSchema:
-        if isinstance(obj, _AnnotatedType):
+        if is_annotated(obj):
             return self._annotated_schema(obj)
 
         if isinstance(obj, dict):
@@ -2427,7 +2426,7 @@ def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSch
             )
 
     # handle GenericAlias' but ignore Annotated which "lies" about its origin (in this case it would be `int`)
-    if hasattr(tp, '__origin__') and not isinstance(tp, type(Annotated[int, 'placeholder'])):
+    if hasattr(tp, '__origin__') and not is_annotated(tp):
         return _extract_get_pydantic_json_schema(tp.__origin__, schema)
 
     if js_modify_function is None:
