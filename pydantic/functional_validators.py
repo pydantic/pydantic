@@ -8,11 +8,10 @@ from functools import partialmethod
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, cast, overload
 
-from pydantic_core import core_schema
+from pydantic_core import PydanticUndefined, core_schema
 from pydantic_core import core_schema as _core_schema
 from typing_extensions import Annotated, Literal, TypeAlias
 
-from . import GetCoreSchemaHandler as _GetCoreSchemaHandler
 from ._internal import _core_metadata, _decorators, _generics, _internal_dataclass
 from .annotated_handlers import GetCoreSchemaHandler
 from .errors import PydanticUserError
@@ -70,7 +69,7 @@ class AfterValidator:
 
     func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
 
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
         info_arg = _inspect_validator(self.func, 'after')
         if info_arg:
@@ -89,6 +88,8 @@ class BeforeValidator:
 
     Attributes:
         func: The validator function.
+        input_type: The input type of the function. This is only used to generate the appropriate JSON Schema
+            (in validation mode).
 
     Example:
         ```py
@@ -113,16 +114,25 @@ class BeforeValidator:
     """
 
     func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
+    input_type: Any = PydanticUndefined
 
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
+        input_schema = None if self.input_type is PydanticUndefined else handler.generate_schema(self.input_type)
+        metadata = {'input_schema': input_schema}
+
         info_arg = _inspect_validator(self.func, 'before')
         if info_arg:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
-            return core_schema.with_info_before_validator_function(func, schema=schema, field_name=handler.field_name)
+            return core_schema.with_info_before_validator_function(
+                func,
+                schema=schema,
+                field_name=handler.field_name,
+                metadata=metadata,
+            )
         else:
             func = cast(core_schema.NoInfoValidatorFunction, self.func)
-            return core_schema.no_info_before_validator_function(func, schema=schema)
+            return core_schema.no_info_before_validator_function(func, schema=schema, metadata=metadata)
 
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
@@ -133,6 +143,8 @@ class PlainValidator:
 
     Attributes:
         func: The validator function.
+        input_type: The input type of the function. This is only used to generate the appropriate JSON Schema
+            (in validation mode).
 
     Example:
         ```py
@@ -151,8 +163,9 @@ class PlainValidator:
     """
 
     func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
+    input_type: Any = PydanticUndefined
 
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         # Note that for some valid uses of PlainValidator, it is not possible to generate a core schema for the
         # source_type, so calling `handler(source_type)` will error, which prevents us from generating a proper
         # serialization schema. To work around this for use cases that will not involve serialization, we simply
@@ -170,15 +183,21 @@ class PlainValidator:
         except PydanticSchemaGenerationError:
             serialization = None
 
+        input_schema = None if self.input_type is PydanticUndefined else handler.generate_schema(self.input_type)
+        metadata = {'input_schema': input_schema}
+
         info_arg = _inspect_validator(self.func, 'plain')
         if info_arg:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
             return core_schema.with_info_plain_validator_function(
-                func, field_name=handler.field_name, serialization=serialization
+                func,
+                field_name=handler.field_name,
+                serialization=serialization,
+                metadata=metadata,
             )
         else:
             func = cast(core_schema.NoInfoValidatorFunction, self.func)
-            return core_schema.no_info_plain_validator_function(func, serialization=serialization)
+            return core_schema.no_info_plain_validator_function(func, serialization=serialization, metadata=metadata)
 
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
@@ -189,6 +208,8 @@ class WrapValidator:
 
     Attributes:
         func: The validator function.
+        input_type: The input type of the function. This is only used to generate the appropriate JSON Schema
+            (in validation mode).
 
     ```py
     from datetime import datetime
@@ -220,16 +241,29 @@ class WrapValidator:
     """
 
     func: core_schema.NoInfoWrapValidatorFunction | core_schema.WithInfoWrapValidatorFunction
+    input_type: Any = PydanticUndefined
 
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
+        input_schema = None if self.input_type is PydanticUndefined else handler.generate_schema(self.input_type)
+        metadata = {'input_schema': input_schema}
+
         info_arg = _inspect_validator(self.func, 'wrap')
         if info_arg:
             func = cast(core_schema.WithInfoWrapValidatorFunction, self.func)
-            return core_schema.with_info_wrap_validator_function(func, schema=schema, field_name=handler.field_name)
+            return core_schema.with_info_wrap_validator_function(
+                func,
+                schema=schema,
+                field_name=handler.field_name,
+                metadata=metadata,
+            )
         else:
             func = cast(core_schema.NoInfoWrapValidatorFunction, self.func)
-            return core_schema.no_info_wrap_validator_function(func, schema=schema)
+            return core_schema.no_info_wrap_validator_function(
+                func,
+                schema=schema,
+                metadata=metadata,
+            )
 
 
 if TYPE_CHECKING:

@@ -42,6 +42,7 @@ import pydantic
 from pydantic import (
     AfterValidator,
     BaseModel,
+    BeforeValidator,
     Field,
     GetCoreSchemaHandler,
     GetJsonSchemaHandler,
@@ -55,6 +56,7 @@ from pydantic import (
     RootModel,
     ValidationError,
     WithJsonSchema,
+    WrapValidator,
     computed_field,
     field_serializer,
     field_validator,
@@ -6460,4 +6462,23 @@ def test_plain_field_validator_serialization() -> None:
         'required': ['a'],
         'title': 'Foo',
         'type': 'object',
+    }
+
+
+def test_validator_input_type() -> None:
+    class Model(BaseModel):
+        a: Annotated[int, BeforeValidator(lambda v: v, input_type=Union[int, str])]
+        b: Annotated[int, WrapValidator(lambda v, h: h(v), input_type=Union[int, str])]
+        c: Annotated[int, PlainValidator(lambda v: v, input_type=Union[int, str])]
+
+    assert Model.model_json_schema(mode='validation')['properties'] == {
+        'a': {'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'title': 'A'},
+        'b': {'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'title': 'B'},
+        'c': {'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'title': 'C'},
+    }
+
+    assert Model.model_json_schema(mode='serialization')['properties'] == {
+        'a': {'title': 'A', 'type': 'integer'},
+        'b': {'title': 'B', 'type': 'integer'},
+        'c': {'title': 'C', 'type': 'integer'},
     }
