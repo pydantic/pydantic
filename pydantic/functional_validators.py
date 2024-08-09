@@ -502,7 +502,7 @@ ModelAfterValidator = Callable[[_ModelType, _core_schema.ValidationInfo], _Model
 """A `@model_validator` decorated function signature. This is used when `mode='after'`."""
 
 _AnyModelWrapValidator = Union[ModelWrapValidator[_ModelType], ModelWrapValidatorWithoutInfo[_ModelType]]
-_AnyModeBeforeValidator = Union[
+_AnyModelBeforeValidator = Union[
     FreeModelBeforeValidator, ModelBeforeValidator, FreeModelBeforeValidatorWithoutInfo, ModelBeforeValidatorWithoutInfo
 ]
 _AnyModelAfterValidator = Union[ModelAfterValidator[_ModelType], ModelAfterValidatorWithoutInfo[_ModelType]]
@@ -522,7 +522,7 @@ def model_validator(
     *,
     mode: Literal['before'],
 ) -> Callable[
-    [_AnyModeBeforeValidator], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]
+    [_AnyModelBeforeValidator], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]
 ]: ...
 
 
