@@ -1,21 +1,22 @@
 """
-This file is used to test pyright's ability to check pydantic code.
+This file is used to test pyright's ability to check Pydantic's `BaseModel` related code.
 """
 
 from functools import cached_property
-from typing import List
+
+from typing_extensions import assert_type
 
 from pydantic import BaseModel, Field, computed_field
 
 
 class MyModel(BaseModel):
     x: str
-    y: List[int]
+    y: list[int]
 
 
 m1 = MyModel(x='hello', y=[1, 2, 3])
 
-m2 = MyModel(x='hello')  # pyright: ignore
+m2 = MyModel(x='hello')  # pyright: ignore[reportCallIssue]
 
 
 class Knight(BaseModel):
@@ -23,7 +24,7 @@ class Knight(BaseModel):
     age: int = Field(23)  # this works fine at runtime but will case an error for pyright
 
 
-k = Knight()  # pyright: ignore
+k = Knight()  # pyright: ignore[reportCallIssue]
 
 
 class Square(BaseModel):
@@ -40,8 +41,7 @@ class Square(BaseModel):
 
 
 sq = Square(side=10)
-y = 12.4 + sq.area
-z = 'x' + sq.area  # type: ignore
+assert_type(sq.area, float)
 
 
 class Square2(BaseModel):
@@ -54,5 +54,4 @@ class Square2(BaseModel):
 
 
 sq = Square(side=10)
-y = 12.4 + sq.area
-z = 'x' + sq.area  # type: ignore
+assert_type(sq.area, float)
