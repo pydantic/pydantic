@@ -1,5 +1,6 @@
 import re
 import sys
+from dataclasses import dataclass
 from enum import Enum, IntEnum
 from types import SimpleNamespace
 from typing import Any, Callable, Generic, List, Optional, Sequence, TypeVar, Union
@@ -9,7 +10,16 @@ from dirty_equals import HasRepr, IsStr
 from pydantic_core import SchemaValidator, core_schema
 from typing_extensions import Annotated, Literal, TypedDict
 
-from pydantic import BaseModel, ConfigDict, Discriminator, Field, TypeAdapter, ValidationError, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Discriminator,
+    Field,
+    PlainSerializer,
+    TypeAdapter,
+    ValidationError,
+    field_validator,
+)
 from pydantic._internal._discriminated_union import apply_discriminator
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
@@ -2139,3 +2149,26 @@ def test_discriminated_union_model_dump_with_nested_class() -> None:
     assert isinstance(yard_dict['pet']['type'], str)
     assert not isinstance(yard_dict['pet']['type'], SomeEnum)
     assert str(yard_dict['pet']['type']) == 'dog'
+
+
+@pytest.mark.xfail(reason='Waiting for union serialization fixes via https://github.com/pydantic/pydantic/issues/9688.')
+def test_discriminated_union_serializer() -> None:
+    """Reported via https://github.com/pydantic/pydantic/issues/9590."""
+
+    @dataclass
+    class FooId:
+        _id: int
+
+    @dataclass
+    class BarId:
+        _id: int
+
+    FooOrBarId = Annotated[
+        Annotated[FooId, PlainSerializer(lambda v: {'tag': 'foo', '_id': v._id}), Tag('foo')]
+        | Annotated[BarId, PlainSerializer(lambda v: {'tag': 'bar', '_id': v._id}), Tag('bar')],
+        Discriminator(lambda v: v['tag']),
+    ]
+
+    adapter = TypeAdapter(FooOrBarId)
+    assert adapter.dump_python(FooId(1)) == {'tag': 'foo', '_id': 1}
+    assert adapter.dump_python(BarId(2)) == {'tag': 'bar', '_id': 2}
