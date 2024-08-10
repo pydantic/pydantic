@@ -125,7 +125,7 @@ def dataclass(
         order: Determines if comparison magic methods should be generated, such as `__lt__`, but not `__eq__`.
         unsafe_hash: Determines if a `__hash__` method should be included in the class, as in `dataclasses.dataclass`.
         frozen: Determines if the generated class should be a 'frozen' `dataclass`, which does not allow its
-            attributes to be modified after it has been initialized.
+            attributes to be modified after it has been initialized. If not set, the value from the provided `config` argument will be used (and will default to `False` otherwise).
         config: The Pydantic config to use for the `dataclass`.
         validate_on_init: A deprecated parameter included for backwards compatibility; in V2, all Pydantic dataclasses
             are validated on init.
