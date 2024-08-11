@@ -35,6 +35,7 @@ from ._internal import (
     _fields,
     _forward_ref,
     _generics,
+    _import_utils,
     _mock_val_ser,
     _model_construction,
     _repr,
@@ -271,9 +272,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         if _fields_set is None:
             _fields_set = fields_set
 
-        _extra: dict[str, Any] | None = (
-            {k: v for k, v in values.items()} if cls.model_config.get('extra') == 'allow' else None
-        )
+        _extra: dict[str, Any] | None = values if cls.model_config.get('extra') == 'allow' else None
         _object_setattr(m, '__dict__', fields_values)
         _object_setattr(m, '__pydantic_fields_set__', _fields_set)
         if not cls.__pydantic_root_model__:
@@ -1533,7 +1532,7 @@ def create_model(  # noqa: C901
             (f_annotation, f_value, *_) = typing_extensions.get_args(
                 f_def
             )  # first two input are expected from Annotated, refer to https://docs.python.org/3/library/typing.html#typing.Annotated
-            from .fields import FieldInfo
+            FieldInfo = _import_utils.import_cached_field_info()
 
             if not isinstance(f_value, FieldInfo):
                 raise PydanticUserError(

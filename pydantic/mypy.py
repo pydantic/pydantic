@@ -308,6 +308,9 @@ def from_attributes_callback(ctx: MethodContext) -> Type:
     pydantic_metadata = model_type.type.metadata.get(METADATA_KEY)
     if pydantic_metadata is None:
         return ctx.default_return_type
+    if not any(base.fullname == BASEMODEL_FULLNAME for base in model_type.type.mro):
+        # not a Pydantic v2 model
+        return ctx.default_return_type
     from_attributes = pydantic_metadata.get('config', {}).get('from_attributes')
     if from_attributes is not True:
         error_from_attributes(model_type.type.name, ctx.api, ctx.context)
@@ -324,6 +327,7 @@ class PydanticModelField:
         is_frozen: bool,
         has_dynamic_alias: bool,
         has_default: bool,
+        strict: bool | None,
         line: int,
         column: int,
         type: Type | None,
@@ -334,6 +338,7 @@ class PydanticModelField:
         self.is_frozen = is_frozen
         self.has_dynamic_alias = has_dynamic_alias
         self.has_default = has_default
+        self.strict = strict
         self.line = line
         self.column = column
         self.type = type
@@ -343,6 +348,7 @@ class PydanticModelField:
         self,
         current_info: TypeInfo,
         typed: bool,
+        model_strict: bool,
         force_optional: bool,
         use_alias: bool,
         api: SemanticAnalyzerPluginInterface,
@@ -351,7 +357,13 @@ class PydanticModelField:
     ) -> Argument:
         """Based on mypy.plugins.dataclasses.DataclassAttribute.to_argument."""
         variable = self.to_var(current_info, api, use_alias, force_typevars_invariant)
-        type_annotation = self.expand_type(current_info, api) if typed else AnyType(TypeOfAny.explicit)
+
+        strict = model_strict if self.strict is None else self.strict
+        if typed or strict:
+            type_annotation = self.expand_type(current_info, api)
+        else:
+            type_annotation = AnyType(TypeOfAny.explicit)
+
         return Argument(
             variable=variable,
             type_annotation=type_annotation,
@@ -414,6 +426,7 @@ class PydanticModelField:
             'is_frozen': self.is_frozen,
             'has_dynamic_alias': self.has_dynamic_alias,
             'has_default': self.has_default,
+            'strict': self.strict,
             'line': self.line,
             'column': self.column,
             'type': self.type.serialize(),
@@ -473,6 +486,7 @@ class PydanticModelTransformer:
         'from_attributes',
         'populate_by_name',
         'alias_generator',
+        'strict',
     }
 
     def __init__(
@@ -532,7 +546,7 @@ class PydanticModelTransformer:
         Teach mypy this by marking any function whose outermost decorator is a `validator()`,
         `field_validator()` or `serializer()` call as a `classmethod`.
         """
-        for name, sym in self._cls.info.names.items():
+        for sym in self._cls.info.names.values():
             if isinstance(sym.node, Decorator):
                 first_dec = sym.node.original_decorators[0]
                 if (
@@ -796,6 +810,7 @@ class PydanticModelTransformer:
             )
 
         has_default = self.get_has_default(stmt)
+        strict = self.get_strict(stmt)
 
         if sym.type is None and node.is_final and node.is_inferred:
             # This follows the logic from the dataclasses plugin. The following comment is taken verbatim:
@@ -825,6 +840,7 @@ class PydanticModelTransformer:
             name=lhs.name,
             has_dynamic_alias=has_dynamic_alias,
             has_default=has_default,
+            strict=strict,
             alias=alias,
             is_frozen=is_frozen,
             line=stmt.line,
@@ -882,11 +898,13 @@ class PydanticModelTransformer:
             return  # Don't generate an __init__ if one already exists
 
         typed = self.plugin_config.init_typed
+        model_strict = bool(config.strict)
         use_alias = config.populate_by_name is not True
         requires_dynamic_aliases = bool(config.has_alias_generator and not config.populate_by_name)
         args = self.get_field_arguments(
             fields,
             typed=typed,
+            model_strict=model_strict,
             requires_dynamic_aliases=requires_dynamic_aliases,
             use_alias=use_alias,
             is_settings=is_settings,
@@ -937,6 +955,7 @@ class PydanticModelTransformer:
             args = self.get_field_arguments(
                 fields,
                 typed=True,
+                model_strict=bool(config.strict),
                 requires_dynamic_aliases=False,
                 use_alias=False,
                 is_settings=is_settings,
@@ -1046,6 +1065,22 @@ class PydanticModelTransformer:
         return not isinstance(expr, EllipsisExpr)
 
     @staticmethod
+    def get_strict(stmt: AssignmentStmt) -> bool | None:
+        """Returns a the `strict` value of a field if defined, otherwise `None`."""
+        expr = stmt.rvalue
+        if isinstance(expr, CallExpr) and isinstance(expr.callee, RefExpr) and expr.callee.fullname == FIELD_FULLNAME:
+            for arg, name in zip(expr.args, expr.arg_names):
+                if name != 'strict':
+                    continue
+                if isinstance(arg, NameExpr):
+                    if arg.fullname == 'builtins.True':
+                        return True
+                    elif arg.fullname == 'builtins.False':
+                        return False
+                return None
+        return None
+
+    @staticmethod
     def get_alias_info(stmt: AssignmentStmt) -> tuple[str | None, bool]:
         """Returns a pair (alias, has_dynamic_alias), extracted from the declaration of the field defined in `stmt`.
 
@@ -1102,6 +1137,7 @@ class PydanticModelTransformer:
         self,
         fields: list[PydanticModelField],
         typed: bool,
+        model_strict: bool,
         use_alias: bool,
         requires_dynamic_aliases: bool,
         is_settings: bool,
@@ -1117,6 +1153,7 @@ class PydanticModelTransformer:
             field.to_argument(
                 info,
                 typed=typed,
+                model_strict=model_strict,
                 force_optional=requires_dynamic_aliases or is_settings,
                 use_alias=use_alias,
                 api=self._api,
@@ -1166,12 +1203,14 @@ class ModelConfigData:
         from_attributes: bool | None = None,
         populate_by_name: bool | None = None,
         has_alias_generator: bool | None = None,
+        strict: bool | None = None,
     ):
         self.forbid_extra = forbid_extra
         self.frozen = frozen
         self.from_attributes = from_attributes
         self.populate_by_name = populate_by_name
         self.has_alias_generator = has_alias_generator
+        self.strict = strict
 
     def get_values_dict(self) -> dict[str, Any]:
         """Returns a dict of Pydantic model config names to their values.

@@ -1,4 +1,5 @@
 import dataclasses
+import re
 import typing
 from typing import List, Optional, Union
 
@@ -104,13 +105,13 @@ def test_recursive_model_with_subclass_override(Self):
     }
 
 
-@pytest.mark.xfail(reason='needs more strict annotation checks, see https://github.com/pydantic/pydantic/issues/9988')
 def test_self_type_with_field(Self):
-    with pytest.raises(TypeError, match=r'The following constraints cannot be applied.*\'gt\''):
+    class SelfRef(BaseModel):
+        x: int
+        refs: typing.List[Self] = Field(..., gt=0)
 
-        class SelfRef(BaseModel):
-            x: int
-            refs: typing.List[Self] = Field(..., gt=0)
+    with pytest.raises(TypeError, match=re.escape("Unable to apply constraint 'gt' to supplied value []")):
+        SelfRef(x=1, refs=[SelfRef(x=2, refs=[])])
 
 
 def test_self_type_json_schema(Self):
@@ -134,7 +135,7 @@ def test_self_type_json_schema(Self):
                 'type': 'object',
             }
         },
-        'allOf': [{'$ref': '#/$defs/SelfRef'}],
+        '$ref': '#/$defs/SelfRef',
     }
 
 

@@ -362,11 +362,9 @@ class FieldInfo(_repr.Representation):
                 code='unevaluable-type-annotation',
             )
 
-        final = False
-        if _typing_extra.is_finalvar(annotation):
-            final = True
-            if annotation is not typing_extensions.Final:
-                annotation = typing_extensions.get_args(annotation)[0]
+        final = _typing_extra.is_finalvar(annotation)
+        if final and annotation is not typing_extensions.Final:
+            annotation = typing_extensions.get_args(annotation)[0]
 
         if isinstance(default, FieldInfo):
             default.annotation, annotation_metadata = FieldInfo._extract_metadata(annotation)  # pyright: ignore[reportArgumentType]
@@ -376,7 +374,8 @@ class FieldInfo(_repr.Representation):
             )
             default.frozen = final or default.frozen
             return default
-        elif isinstance(default, dataclasses.Field):
+
+        if isinstance(default, dataclasses.Field):
             init_var = False
             if annotation is dataclasses.InitVar:
                 init_var = True
@@ -384,6 +383,7 @@ class FieldInfo(_repr.Representation):
             elif isinstance(annotation, dataclasses.InitVar):
                 init_var = True
                 annotation = annotation.type
+
             pydantic_field = FieldInfo._from_dataclass_field(default)
             pydantic_field.annotation, annotation_metadata = FieldInfo._extract_metadata(annotation)  # pyright: ignore[reportArgumentType]
             pydantic_field.metadata += annotation_metadata
@@ -397,23 +397,23 @@ class FieldInfo(_repr.Representation):
             pydantic_field.init = getattr(default, 'init', None)
             pydantic_field.kw_only = getattr(default, 'kw_only', None)
             return pydantic_field
-        else:
-            if _typing_extra.is_annotated(annotation):
-                first_arg, *extra_args = typing_extensions.get_args(annotation)
-                field_infos = [a for a in extra_args if isinstance(a, FieldInfo)]
-                field_info = FieldInfo.merge_field_infos(*field_infos, annotation=first_arg, default=default)
-                metadata: list[Any] = []
-                for a in extra_args:
-                    if _typing_extra.is_deprecated_instance(a):
-                        field_info.deprecated = a.message
-                    elif not isinstance(a, FieldInfo):
-                        metadata.append(a)
-                    else:
-                        metadata.extend(a.metadata)
-                field_info.metadata = metadata
-                return field_info
 
-            return FieldInfo(annotation=annotation, default=default, frozen=final or None)  # pyright: ignore[reportArgumentType]
+        if _typing_extra.is_annotated(annotation):
+            first_arg, *extra_args = typing_extensions.get_args(annotation)
+            field_infos = [a for a in extra_args if isinstance(a, FieldInfo)]
+            field_info = FieldInfo.merge_field_infos(*field_infos, annotation=first_arg, default=default)
+            metadata: list[Any] = []
+            for a in extra_args:
+                if _typing_extra.is_deprecated_instance(a):
+                    field_info.deprecated = a.message
+                elif not isinstance(a, FieldInfo):
+                    metadata.append(a)
+                else:
+                    metadata.extend(a.metadata)
+            field_info.metadata = metadata
+            return field_info
+
+        return FieldInfo(annotation=annotation, default=default, frozen=final or None)  # pyright: ignore[reportArgumentType]
 
     @staticmethod
     def merge_field_infos(*field_infos: FieldInfo, **overrides: Any) -> FieldInfo:
@@ -424,11 +424,6 @@ class FieldInfo(_repr.Representation):
         Returns:
             FieldInfo: A merged FieldInfo instance.
         """
-        flattened_field_infos: list[FieldInfo] = []
-        for field_info in field_infos:
-            flattened_field_infos.extend(x for x in field_info.metadata if isinstance(x, FieldInfo))
-            flattened_field_infos.append(field_info)
-        field_infos = tuple(flattened_field_infos)
         if len(field_infos) == 1:
             # No merging necessary, but we still need to make a copy and apply the overrides
             field_info = copy(field_infos[0])
@@ -652,39 +647,39 @@ class _EmptyKwargs(typing_extensions.TypedDict):
     """This class exists solely to ensure that type checking warns about passing `**extra` in `Field`."""
 
 
-_DefaultValues = dict(
-    default=...,
-    default_factory=None,
-    alias=None,
-    alias_priority=None,
-    validation_alias=None,
-    serialization_alias=None,
-    title=None,
-    description=None,
-    examples=None,
-    exclude=None,
-    discriminator=None,
-    json_schema_extra=None,
-    frozen=None,
-    validate_default=None,
-    repr=True,
-    init=None,
-    init_var=None,
-    kw_only=None,
-    pattern=None,
-    strict=None,
-    gt=None,
-    ge=None,
-    lt=None,
-    le=None,
-    multiple_of=None,
-    allow_inf_nan=None,
-    max_digits=None,
-    decimal_places=None,
-    min_length=None,
-    max_length=None,
-    coerce_numbers_to_str=None,
-)
+_DefaultValues = {
+    'default': ...,
+    'default_factory': None,
+    'alias': None,
+    'alias_priority': None,
+    'validation_alias': None,
+    'serialization_alias': None,
+    'title': None,
+    'description': None,
+    'examples': None,
+    'exclude': None,
+    'discriminator': None,
+    'json_schema_extra': None,
+    'frozen': None,
+    'validate_default': None,
+    'repr': True,
+    'init': None,
+    'init_var': None,
+    'kw_only': None,
+    'pattern': None,
+    'strict': None,
+    'gt': None,
+    'ge': None,
+    'lt': None,
+    'le': None,
+    'multiple_of': None,
+    'allow_inf_nan': None,
+    'max_digits': None,
+    'decimal_places': None,
+    'min_length': None,
+    'max_length': None,
+    'coerce_numbers_to_str': None,
+}
 
 
 def Field(  # noqa: C901

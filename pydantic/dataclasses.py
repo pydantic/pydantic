@@ -52,7 +52,7 @@ if sys.version_info >= (3, 10):
         eq: bool = True,
         order: bool = False,
         unsafe_hash: bool = False,
-        frozen: bool = False,
+        frozen: bool | None = None,
         config: ConfigDict | type[object] | None = None,
         validate_on_init: bool | None = None,
         kw_only: bool = ...,
@@ -70,7 +70,7 @@ else:
         eq: bool = True,
         order: bool = False,
         unsafe_hash: bool = False,
-        frozen: bool = False,
+        frozen: bool | None = None,
         config: ConfigDict | type[object] | None = None,
         validate_on_init: bool | None = None,
     ) -> Callable[[type[_T]], type[PydanticDataclass]]:  # type: ignore
@@ -86,7 +86,7 @@ else:
         eq: bool = True,
         order: bool = False,
         unsafe_hash: bool = False,
-        frozen: bool = False,
+        frozen: bool | None = None,
         config: ConfigDict | type[object] | None = None,
         validate_on_init: bool | None = None,
     ) -> type[PydanticDataclass]: ...
@@ -101,7 +101,7 @@ def dataclass(
     eq: bool = True,
     order: bool = False,
     unsafe_hash: bool = False,
-    frozen: bool = False,
+    frozen: bool | None = None,
     config: ConfigDict | type[object] | None = None,
     validate_on_init: bool | None = None,
     kw_only: bool = False,
@@ -142,7 +142,7 @@ def dataclass(
     assert validate_on_init is not False, 'validate_on_init=False is no longer supported'
 
     if sys.version_info >= (3, 10):
-        kwargs = dict(kw_only=kw_only, slots=slots)
+        kwargs = {'kw_only': kw_only, 'slots': slots}
     else:
         kwargs = {}
 
@@ -226,6 +226,12 @@ def dataclass(
 
         make_pydantic_fields_compatible(cls)
 
+        # Respect frozen setting from dataclass constructor and fallback to config setting if not provided
+        if frozen is not None:
+            frozen_ = frozen
+        else:
+            frozen_ = config_wrapper.frozen or False
+
         cls = dataclasses.dataclass(  # type: ignore[call-overload]
             cls,
             # the value of init here doesn't affect anything except that it makes it easier to generate a signature
@@ -234,7 +240,7 @@ def dataclass(
             eq=eq,
             order=order,
             unsafe_hash=unsafe_hash,
-            frozen=frozen,
+            frozen=frozen_,
             **kwargs,
         )
 

@@ -2974,3 +2974,54 @@ def test_annotated_with_field_default_factory() -> None:
         results = (1, 1, 1, 2, 2, 2)
         for field_name, result in zip(field_names, results):
             assert getattr(instance, field_name) == result
+
+
+def test_simple_frozen() -> None:
+    @pydantic.dataclasses.dataclass(frozen=True)
+    class MyDataclass:
+        x: str
+
+    inst = MyDataclass('hello')
+
+    try:
+        inst.x = 'other'
+    except Exception as e:
+        assert "cannot assign to field 'x'" in repr(e)
+
+    @pydantic.dataclasses.dataclass(config=ConfigDict(frozen=True))
+    class MyDataclass2:
+        x: str
+
+    inst = MyDataclass2('hello')
+
+    try:
+        inst.x = 'other'
+    except Exception as e:
+        assert "cannot assign to field 'x'" in repr(e)
+
+
+def test_frozen_with_validate_assignment() -> None:
+    """Test for https://github.com/pydantic/pydantic/issues/10041."""
+
+    @pydantic.dataclasses.dataclass(frozen=True, config=ConfigDict(validate_assignment=True))
+    class MyDataclass:
+        x: str
+
+    inst = MyDataclass('hello')
+
+    try:
+        inst.x = 'other'
+    except Exception as e:
+        assert "cannot assign to field 'x'" in repr(e)
+
+    @pydantic.dataclasses.dataclass(config=ConfigDict(frozen=True, validate_assignment=True))
+    class MyDataclass2:
+        x: str
+
+    inst = MyDataclass2('hello')
+
+    # we want to make sure that the error raised relates to the frozen nature of the instance
+    try:
+        inst.x = 'other'
+    except ValidationError as e:
+        assert 'Instance is frozen' in repr(e)

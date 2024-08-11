@@ -572,13 +572,24 @@ class ConfigDict(TypedDict, total=False):
     - `'float'` will serialize timedeltas to the total number of seconds.
     """
 
-    ser_json_bytes: Literal['utf8', 'base64']
+    ser_json_bytes: Literal['utf8', 'base64', 'hex']
     """
-    The encoding of JSON serialized bytes. Accepts the string values of `'utf8'` and `'base64'`.
-    Defaults to `'utf8'`.
+    The encoding of JSON serialized bytes. Defaults to `'utf8'`.
+    Set equal to `val_json_bytes` to get back an equal value after serialization round trip.
 
     - `'utf8'` will serialize bytes to UTF-8 strings.
     - `'base64'` will serialize bytes to URL safe base64 strings.
+    - `'hex'` will serialize bytes to hexadecimal strings.
+    """
+
+    val_json_bytes: Literal['utf8', 'base64', 'hex']
+    """
+    The encoding of JSON serialized bytes to decode. Defaults to `'utf8'`.
+    Set equal to `ser_json_bytes` to get back an equal value after serialization round trip.
+
+    - `'utf8'` will deserialize UTF-8 strings to bytes.
+    - `'base64'` will deserialize URL safe base64 strings to bytes.
+    - `'hex'` will deserialize hexadecimal strings to bytes.
     """
 
     ser_json_inf_nan: Literal['null', 'constants', 'strings']
@@ -1001,6 +1012,26 @@ class ConfigDict(TypedDict, total=False):
     !!! tip
         If repeated strings are rare, it's recommended to use `'keys'` or `'none'` to reduce memory usage,
         as the performance difference is minimal if repeated strings are rare.
+    """
+
+    experimental_fast_build: bool
+    """Build model schemas faster by skipping the logic associated with storing the parent namespace on the model.
+
+    Defaults to `False` to maintain backwards compatibility, for now. The ideal case is that this change or it's successor
+    can become the default. Thus, if you experience issues with this setting that have not already been documented,
+    please open an issue on GitHub.
+
+    !!! warning
+        If this setting is set to `True`, model schemas for models that involve edge case uses of namespaces, such as
+        generic typed dicts and named tuples, might be incorrect. In some cases, type hints may be resolved with
+        incorrect namespaces.
+
+        We've demonstrated some of these cases in https://github.com/pydantic/pydantic/blob/main/tests/test_fast_build.py
+        to help folks better understand the limitations of this setting.
+
+        There may also be other edge cases where the model schema is incorrect. That being said, this setting has the potential
+        to speed up schema builds by a factor of 10x in cases with hundreds or thousands of complex models, hence the value.
+        We're working on making this speedup compatible with schema builds across the board.
     """
 
 

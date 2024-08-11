@@ -179,7 +179,7 @@ class _DefinitionsRemapping:
 
             # Deduplicate the schemas for each alternative; the idea is that we only want to remap to a new DefsRef
             # if it introduces no ambiguity, i.e., there is only one distinct schema for that DefsRef.
-            for defs_ref, schemas in schemas_for_alternatives.items():
+            for defs_ref in schemas_for_alternatives:
                 schemas_for_alternatives[defs_ref] = _deduplicate_schemas(schemas_for_alternatives[defs_ref])
 
             # Build the remapping
@@ -373,7 +373,7 @@ class GenerateJsonSchema:
                 code='json-schema-already-used',
             )
 
-        for key, mode, schema in inputs:
+        for _, mode, schema in inputs:
             self._mode = mode
             self.generate_inner(schema)
 
@@ -414,18 +414,15 @@ class GenerateJsonSchema:
         json_schema: JsonSchemaValue = self.generate_inner(schema)
         json_ref_counts = self.get_json_ref_counts(json_schema)
 
-        # Remove the top-level $ref if present; note that the _generate method already ensures there are no sibling keys
         ref = cast(JsonRef, json_schema.get('$ref'))
         while ref is not None:  # may need to unpack multiple levels
             ref_json_schema = self.get_schema_from_definitions(ref)
-            if json_ref_counts[ref] > 1 or ref_json_schema is None:
-                # Keep the ref, but use an allOf to remove the top level $ref
-                json_schema = {'allOf': [{'$ref': ref}]}
-            else:
-                # "Unpack" the ref since this is the only reference
+            if json_ref_counts[ref] == 1 and ref_json_schema is not None and len(json_schema) == 1:
+                # "Unpack" the ref since this is the only reference and there are no sibling keys
                 json_schema = ref_json_schema.copy()  # copy to prevent recursive dict reference
                 json_ref_counts[ref] -= 1
-            ref = cast(JsonRef, json_schema.get('$ref'))
+                ref = cast(JsonRef, json_schema.get('$ref'))
+            ref = None
 
         self._garbage_collect_definitions(json_schema)
         definitions_remapping = self._build_definitions_remapping()
@@ -478,15 +475,6 @@ class GenerateJsonSchema:
                 json_schema = ref_json_schema
             return json_schema
 
-        def convert_to_all_of(json_schema: JsonSchemaValue) -> JsonSchemaValue:
-            if '$ref' in json_schema and len(json_schema.keys()) > 1:
-                # technically you can't have any other keys next to a "$ref"
-                # but it's an easy mistake to make and not hard to correct automatically here
-                json_schema = json_schema.copy()
-                ref = json_schema.pop('$ref')
-                json_schema = {'allOf': [{'$ref': ref}], **json_schema}
-            return json_schema
-
         def handler_func(schema_or_field: CoreSchemaOrField) -> JsonSchemaValue:
             """Generate a JSON schema based on the input schema.
 
@@ -512,7 +500,6 @@ class GenerateJsonSchema:
                     raise TypeError(f'Unexpected schema type: schema={schema_or_field}')
             if _core_utils.is_core_schema(schema_or_field):
                 json_schema = populate_defs(schema_or_field, json_schema)
-                json_schema = convert_to_all_of(json_schema)
             return json_schema
 
         current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, handler_func)
@@ -545,7 +532,6 @@ class GenerateJsonSchema:
                 json_schema = js_modify_function(schema_or_field, current_handler)
                 if _core_utils.is_core_schema(schema_or_field):
                     json_schema = populate_defs(schema_or_field, json_schema)
-                    json_schema = convert_to_all_of(json_schema)
                 return json_schema
 
             current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, new_handler_func)
@@ -553,7 +539,6 @@ class GenerateJsonSchema:
         json_schema = current_handler(schema)
         if _core_utils.is_core_schema(schema):
             json_schema = populate_defs(schema, json_schema)
-            json_schema = convert_to_all_of(json_schema)
         return json_schema
 
     # ### Schema generation methods
@@ -1080,12 +1065,8 @@ class GenerateJsonSchema:
             # Return the inner schema, as though there was no default
             return json_schema
 
-        if '$ref' in json_schema:
-            # Since reference schemas do not support child keys, we wrap the reference schema in a single-case allOf:
-            return {'allOf': [json_schema], 'default': encoded_default}
-        else:
-            json_schema['default'] = encoded_default
-            return json_schema
+        json_schema['default'] = encoded_default
+        return json_schema
 
     def nullable_schema(self, schema: core_schema.NullableSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that allows null values.
@@ -2001,14 +1982,13 @@ class GenerateJsonSchema:
         return defs_ref, ref_json_schema
 
     def handle_ref_overrides(self, json_schema: JsonSchemaValue) -> JsonSchemaValue:
-        """It is not valid for a schema with a top-level $ref to have sibling keys.
+        """Remove any sibling keys that are redundant with the referenced schema.
 
-        During our own schema generation, we treat sibling keys as overrides to the referenced schema,
-        but this is not how the official JSON schema spec works.
+        Args:
+            json_schema: The schema to remove redundant sibling keys from.
 
-        Because of this, we first remove any sibling keys that are redundant with the referenced schema, then if
-        any remain, we transform the schema from a top-level '$ref' to use allOf to move the $ref out of the top level.
-        (See bottom of https://swagger.io/docs/specification/using-ref/ for a reference about this behavior)
+        Returns:
+            The schema with redundant sibling keys removed.
         """
         if '$ref' in json_schema:
             # prevent modifications to the input; this copy may be safe to drop if there is significant overhead
@@ -2019,25 +1999,12 @@ class GenerateJsonSchema:
                 # This can happen when building schemas for models with not-yet-defined references.
                 # It may be a good idea to do a recursive pass at the end of the generation to remove
                 # any redundant override keys.
-                if len(json_schema) > 1:
-                    # Make it an allOf to at least resolve the sibling keys issue
-                    json_schema = json_schema.copy()
-                    json_schema.setdefault('allOf', [])
-                    json_schema['allOf'].append({'$ref': json_schema['$ref']})
-                    del json_schema['$ref']
-
                 return json_schema
             for k, v in list(json_schema.items()):
                 if k == '$ref':
                     continue
                 if k in referenced_json_schema and referenced_json_schema[k] == v:
                     del json_schema[k]  # redundant key
-            if len(json_schema) > 1:
-                # There is a remaining "override" key, so we need to move $ref out of the top level
-                json_ref = JsonRef(json_schema['$ref'])
-                del json_schema['$ref']
-                assert 'allOf' not in json_schema  # this should never happen, but just in case
-                json_schema['allOf'] = [{'$ref': json_ref}]
 
         return json_schema
 

@@ -546,118 +546,120 @@ class NameEmail(_repr.Representation):
         return f'{self.name} <{self.email}>'
 
 
-class IPvAnyAddress:
-    """Validate an IPv4 or IPv6 address.
-
-    ```py
-    from pydantic import BaseModel
-    from pydantic.networks import IPvAnyAddress
-
-    class IpModel(BaseModel):
-        ip: IPvAnyAddress
-
-    print(IpModel(ip='127.0.0.1'))
-    #> ip=IPv4Address('127.0.0.1')
-
-    try:
-        IpModel(ip='http://www.example.com')
-    except ValueError as e:
-        print(e.errors())
-        '''
-        [
-            {
-                'type': 'ip_any_address',
-                'loc': ('ip',),
-                'msg': 'value is not a valid IPv4 or IPv6 address',
-                'input': 'http://www.example.com',
-            }
-        ]
-        '''
-    ```
-    """
-
-    __slots__ = ()
-
-    def __new__(cls, value: Any) -> IPv4Address | IPv6Address:
-        """Validate an IPv4 or IPv6 address."""
-        try:
-            return IPv4Address(value)
-        except ValueError:
-            pass
-
-        try:
-            return IPv6Address(value)
-        except ValueError:
-            raise PydanticCustomError('ip_any_address', 'value is not a valid IPv4 or IPv6 address')
-
-    @classmethod
-    def __get_pydantic_json_schema__(
-        cls, core_schema: core_schema.CoreSchema, handler: _schema_generation_shared.GetJsonSchemaHandler
-    ) -> JsonSchemaValue:
-        field_schema = {}
-        field_schema.update(type='string', format='ipvanyaddress')
-        return field_schema
-
-    @classmethod
-    def __get_pydantic_core_schema__(
-        cls,
-        _source: type[Any],
-        _handler: GetCoreSchemaHandler,
-    ) -> core_schema.CoreSchema:
-        return core_schema.no_info_plain_validator_function(
-            cls._validate, serialization=core_schema.to_string_ser_schema()
-        )
-
-    @classmethod
-    def _validate(cls, input_value: Any, /) -> IPv4Address | IPv6Address:
-        return cls(input_value)  # type: ignore[return-value]
-
-
-class IPvAnyInterface:
-    """Validate an IPv4 or IPv6 interface."""
-
-    __slots__ = ()
-
-    def __new__(cls, value: NetworkType) -> IPv4Interface | IPv6Interface:
-        """Validate an IPv4 or IPv6 interface."""
-        try:
-            return IPv4Interface(value)
-        except ValueError:
-            pass
-
-        try:
-            return IPv6Interface(value)
-        except ValueError:
-            raise PydanticCustomError('ip_any_interface', 'value is not a valid IPv4 or IPv6 interface')
-
-    @classmethod
-    def __get_pydantic_json_schema__(
-        cls, core_schema: core_schema.CoreSchema, handler: _schema_generation_shared.GetJsonSchemaHandler
-    ) -> JsonSchemaValue:
-        field_schema = {}
-        field_schema.update(type='string', format='ipvanyinterface')
-        return field_schema
-
-    @classmethod
-    def __get_pydantic_core_schema__(
-        cls,
-        _source: type[Any],
-        _handler: GetCoreSchemaHandler,
-    ) -> core_schema.CoreSchema:
-        return core_schema.no_info_plain_validator_function(
-            cls._validate, serialization=core_schema.to_string_ser_schema()
-        )
-
-    @classmethod
-    def _validate(cls, input_value: NetworkType, /) -> IPv4Interface | IPv6Interface:
-        return cls(input_value)  # type: ignore[return-value]
-
-
+IPvAnyAddressType: TypeAlias = 'IPv4Address | IPv6Address'
+IPvAnyInterfaceType: TypeAlias = 'IPv4Interface | IPv6Interface'
 IPvAnyNetworkType: TypeAlias = 'IPv4Network | IPv6Network'
 
 if TYPE_CHECKING:
+    IPvAnyAddress = IPvAnyAddressType
+    IPvAnyInterface = IPvAnyInterfaceType
     IPvAnyNetwork = IPvAnyNetworkType
 else:
+
+    class IPvAnyAddress:
+        """Validate an IPv4 or IPv6 address.
+
+        ```py
+        from pydantic import BaseModel
+        from pydantic.networks import IPvAnyAddress
+
+        class IpModel(BaseModel):
+            ip: IPvAnyAddress
+
+        print(IpModel(ip='127.0.0.1'))
+        #> ip=IPv4Address('127.0.0.1')
+
+        try:
+            IpModel(ip='http://www.example.com')
+        except ValueError as e:
+            print(e.errors())
+            '''
+            [
+                {
+                    'type': 'ip_any_address',
+                    'loc': ('ip',),
+                    'msg': 'value is not a valid IPv4 or IPv6 address',
+                    'input': 'http://www.example.com',
+                }
+            ]
+            '''
+        ```
+        """
+
+        __slots__ = ()
+
+        def __new__(cls, value: Any) -> IPvAnyAddressType:
+            """Validate an IPv4 or IPv6 address."""
+            try:
+                return IPv4Address(value)
+            except ValueError:
+                pass
+
+            try:
+                return IPv6Address(value)
+            except ValueError:
+                raise PydanticCustomError('ip_any_address', 'value is not a valid IPv4 or IPv6 address')
+
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, core_schema: core_schema.CoreSchema, handler: _schema_generation_shared.GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            field_schema = {}
+            field_schema.update(type='string', format='ipvanyaddress')
+            return field_schema
+
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls,
+            _source: type[Any],
+            _handler: GetCoreSchemaHandler,
+        ) -> core_schema.CoreSchema:
+            return core_schema.no_info_plain_validator_function(
+                cls._validate, serialization=core_schema.to_string_ser_schema()
+            )
+
+        @classmethod
+        def _validate(cls, input_value: Any, /) -> IPvAnyAddressType:
+            return cls(input_value)  # type: ignore[return-value]
+
+    class IPvAnyInterface:
+        """Validate an IPv4 or IPv6 interface."""
+
+        __slots__ = ()
+
+        def __new__(cls, value: NetworkType) -> IPvAnyInterfaceType:
+            """Validate an IPv4 or IPv6 interface."""
+            try:
+                return IPv4Interface(value)
+            except ValueError:
+                pass
+
+            try:
+                return IPv6Interface(value)
+            except ValueError:
+                raise PydanticCustomError('ip_any_interface', 'value is not a valid IPv4 or IPv6 interface')
+
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, core_schema: core_schema.CoreSchema, handler: _schema_generation_shared.GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            field_schema = {}
+            field_schema.update(type='string', format='ipvanyinterface')
+            return field_schema
+
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls,
+            _source: type[Any],
+            _handler: GetCoreSchemaHandler,
+        ) -> core_schema.CoreSchema:
+            return core_schema.no_info_plain_validator_function(
+                cls._validate, serialization=core_schema.to_string_ser_schema()
+            )
+
+        @classmethod
+        def _validate(cls, input_value: NetworkType, /) -> IPvAnyInterfaceType:
+            return cls(input_value)  # type: ignore[return-value]
 
     class IPvAnyNetwork:
         """Validate an IPv4 or IPv6 network."""

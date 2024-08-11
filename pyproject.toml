@@ -50,7 +50,7 @@ dependencies = [
     'typing-extensions>=4.6.1; python_version < "3.13"',
     'typing-extensions>=4.12.2; python_version >= "3.13"',
     'annotated-types>=0.4.0',
-    "pydantic-core==2.20.1",
+    "pydantic-core==2.21.0",
     # See: https://docs.python.org/3/library/zoneinfo.html#data-sources
     'tzdata; python_version >= "3.9"',
 ]
@@ -116,11 +116,13 @@ docs = [
     "mkdocs-embed-external-markdown>=2.3.0",
     "pytest-examples>=0.0.11",
     "pydantic-settings>=2.0b1",
-    "pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main"
+    "pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main",
+    # Not available before v3.8.6, hence the pin here, as it's required by griffe
+    "backports-strenum==1.3.1; python_version >= '3.8.6' and python_version < '3.11'"
 ]
 linting = [
     "eval-type-backport>=0.1.3",
-    "ruff==0.5.0",
+    "ruff==0.5.6",
     "mypy~=1.1.1",
 ]
 testing = [
@@ -169,7 +171,7 @@ addopts = [
     '--benchmark-columns', 'min,mean,stddev,outliers,rounds,iterations',
     '--benchmark-group-by', 'group',
     '--benchmark-warmup', 'on',
-    '--benchmark-disable',  # this is enable by `make benchmark` when you actually want to run benchmarks
+    '--benchmark-disable',  # this is enabled by `make benchmark` when you actually want to run benchmarks
 ]
 
 # configuring https://github.com/pydantic/hooky
@@ -184,8 +186,20 @@ target-version = 'py38'
 extend-exclude = ['pydantic/v1', 'tests/mypy/']
 
 [tool.ruff.lint]
-extend-select = ['Q', 'RUF100', 'C90', 'UP', 'I', 'D', 'T']
-extend-ignore = ['D105', 'D107', 'D205', 'D415']
+select = [
+    'F',      # Pyflakes
+    'E',      # pycodestyle (Error)
+    'I',      # isort
+    'D',      # pydocstyle
+    'UP',     # pyupgrade
+    'YTT',    # flake8-2020
+    'B',      # flake8-bugbear
+    'T10',    # flake8-debugger
+    'T20',    # flake8-print
+    'C4',     # flake8-comprehensions
+    'PYI006', # flake8-pyi
+]
+ignore = ['D105', 'D107', 'D205', 'D415', 'E501', 'B011', 'B028', 'B904']
 flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
 isort = { known-first-party = ['pydantic', 'tests'] }
 mccabe = { max-complexity = 14 }
@@ -195,7 +209,7 @@ pydocstyle = { convention = 'google' }
 'docs/*' = ['D']
 'pydantic/__init__.py' = ['F405', 'F403', 'D']
 'tests/test_forward_ref.py' = ['F821']
-'tests/*' = ['D']
+'tests/*' = ['D', 'B', 'C4']
 'pydantic/deprecated/*' = ['D']
 'pydantic/json_schema.py' = ['D']
 

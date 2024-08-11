@@ -1781,40 +1781,39 @@ def test_enum_with_no_cases() -> None:
     assert json_schema['properties']['e']['enum'] == []
 
 
-@pytest.mark.xfail(reason='needs more strict annotation checks, see https://github.com/pydantic/pydantic/issues/9988')
 @pytest.mark.parametrize(
-    'kwargs,type_',
+    'kwargs,type_,a',
     [
         pytest.param(
             {'pattern': '^foo$'},
             int,
+            1,
             marks=pytest.mark.xfail(
                 reason='int cannot be used with pattern but we do not currently validate that at schema build time'
             ),
         ),
-        ({'gt': 0}, conlist(int, min_length=4)),
-        ({'gt': 0}, conset(int, min_length=4)),
-        ({'gt': 0}, confrozenset(int, min_length=4)),
+        ({'gt': 0}, conlist(int, min_length=4), [1, 2, 3, 4, 5]),
+        ({'gt': 0}, conset(int, min_length=4), {1, 2, 3, 4, 5}),
+        ({'gt': 0}, confrozenset(int, min_length=4), frozenset({1, 2, 3, 4, 5})),
     ],
 )
-def test_invalid_schema_constraints(kwargs, type_):
-    match = (
-        r'(:?Invalid Schema:\n.*\n  Extra inputs are not permitted)|(:?The following constraints cannot be applied to)'
-    )
-    with pytest.raises((SchemaError, TypeError), match=match):
+def test_invalid_schema_constraints(kwargs, type_, a):
+    class Foo(BaseModel):
+        a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
-        class Foo(BaseModel):
-            a: type_ = Field('foo', title='A title', description='A description', **kwargs)
-
-
-@pytest.mark.xfail(reason='needs more strict annotation checks, see https://github.com/pydantic/pydantic/issues/9988')
-def test_invalid_decimal_constraint():
+    constraint_name = list(kwargs.keys())[0]
     with pytest.raises(
-        TypeError, match="The following constraints cannot be applied to <class 'decimal.Decimal'>: 'max_length'"
+        TypeError, match=re.escape(f"Unable to apply constraint '{constraint_name}' to supplied value {a}")
     ):
+        Foo(a=a)
 
-        class Foo(BaseModel):
-            a: Decimal = Field('foo', title='A title', description='A description', max_length=5)
+
+def test_invalid_decimal_constraint():
+    class Foo(BaseModel):
+        a: Decimal = Field('foo', title='A title', description='A description', max_length=5)
+
+    with pytest.raises(TypeError, match="Unable to apply constraint 'max_length' to supplied value 1.0"):
+        Foo(a=1.0)
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
@@ -2082,7 +2081,7 @@ def test_tuple_variable_len_fails(value, cls, exc):
 @pytest.mark.parametrize(
     'value,result',
     (
-        ({1, 2, 2, '3'}, {1, 2, '3'}),
+        ({1, 2, '3'}, {1, 2, '3'}),
         ((1, 2, 2, '3'), {1, 2, '3'}),
         ([1, 2, 2, '3'], {1, 2, '3'}),
         ({i**2 for i in range(5)}, {0, 1, 4, 9, 16}),
@@ -4963,7 +4962,7 @@ def test_deque_success():
         (float, [1.0, 2.0, 3.0], deque([1.0, 2.0, 3.0])),
         (Set[int], [{1, 2}, {3, 4}, {5, 6}], deque([{1, 2}, {3, 4}, {5, 6}])),
         (Tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), deque(((1, 'a'), (2, 'b'), (3, 'c')))),
-        (str, [w for w in 'one two three'.split()], deque(['one', 'two', 'three'])),
+        (str, 'one two three'.split(), deque(['one', 'two', 'three'])),
         (
             int,
             {1: 10, 2: 20, 3: 30}.keys(),
@@ -6799,3 +6798,16 @@ def test_fail_fast(tp, fail_fast, decl) -> None:
         )
 
     assert exc_info.value.errors(include_url=False) == errors
+
+
+def test_mutable_mapping() -> None:
+    """Addresses https://github.com/pydantic/pydantic/issues/9549.
+
+    Note - we still don't do a good job of handling subclasses, as we convert the input to a dict
+    via the MappingValidator annotation's schema.
+    """
+    import collections.abc
+
+    adapter = TypeAdapter(collections.abc.MutableMapping, config=ConfigDict(arbitrary_types_allowed=True, strict=True))
+
+    assert isinstance(adapter.validate_python(collections.UserDict()), collections.abc.MutableMapping)

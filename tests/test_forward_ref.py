@@ -274,7 +274,7 @@ def test_self_reference_json_schema(create_module):
 
     Account = module.Account
     assert Account.model_json_schema() == {
-        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$ref': '#/$defs/Account',
         '$defs': {
             'Account': {
                 'title': 'Account',
@@ -308,7 +308,7 @@ class Account(BaseModel):
     )
     Account = module.Account
     assert Account.model_json_schema() == {
-        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$ref': '#/$defs/Account',
         '$defs': {
             'Account': {
                 'title': 'Account',
@@ -345,7 +345,7 @@ def test_circular_reference_json_schema(create_module):
 
     Account = module.Account
     assert Account.model_json_schema() == {
-        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$ref': '#/$defs/Account',
         '$defs': {
             'Account': {
                 'title': 'Account',
@@ -391,7 +391,7 @@ class Account(BaseModel):
     )
     Account = module.Account
     assert Account.model_json_schema() == {
-        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$ref': '#/$defs/Account',
         '$defs': {
             'Account': {
                 'title': 'Account',
@@ -418,10 +418,10 @@ class Account(BaseModel):
     }
 
 
-@pytest.mark.xfail(reason='needs more strict annotation checks, see https://github.com/pydantic/pydantic/issues/9988')
 def test_forward_ref_with_field(create_module):
     @create_module
     def module():
+        import re
         from typing import ForwardRef, List
 
         import pytest
@@ -430,10 +430,11 @@ def test_forward_ref_with_field(create_module):
 
         Foo = ForwardRef('Foo')
 
-        with pytest.raises(TypeError, match=r'The following constraints cannot be applied.*\'gt\''):
+        class Foo(BaseModel):
+            c: List[Foo] = Field(..., gt=0)
 
-            class Foo(BaseModel):
-                c: List[Foo] = Field(..., gt=0)
+        with pytest.raises(TypeError, match=re.escape("Unable to apply constraint 'gt' to supplied value []")):
+            Foo(c=[Foo(c=[])])
 
 
 def test_forward_ref_optional(create_module):
@@ -1080,3 +1081,47 @@ def test_forward_ref_in_generic_separate_modules(create_module: Any) -> None:
     Bar = module_2.Bar
     Foo.model_rebuild(_types_namespace={'tp': typing, 'Bar': Bar})
     assert Foo(x={Bar: Bar}).x[Bar] is Bar
+
+
+def test_invalid_forward_ref() -> None:
+    class CustomType:
+        """A custom type that isn't subscriptable."""
+
+    msg = "Unable to evaluate type annotation 'CustomType[int]'."
+
+    with pytest.raises(TypeError, match=re.escape(msg)):
+
+        class Model(BaseModel):
+            foo: 'CustomType[int]'
+
+
+def test_pydantic_extra_forward_ref_separate_module(create_module: Any) -> None:
+    """https://github.com/pydantic/pydantic/issues/10069"""
+
+    @create_module
+    def module_1():
+        from typing import Dict
+
+        from pydantic import BaseModel, ConfigDict
+
+        class Bar(BaseModel):
+            model_config = ConfigDict(defer_build=True, extra='allow')
+
+            __pydantic_extra__: 'Dict[str, int]'
+
+    module_2 = create_module(
+        f"""
+from pydantic import BaseModel
+
+from {module_1.__name__} import Bar
+
+class Foo(BaseModel):
+    bar: Bar
+        """
+    )
+
+    extras_schema = module_2.Foo.__pydantic_core_schema__['schema']['fields']['bar']['schema']['schema'][
+        'extras_schema'
+    ]
+
+    assert extras_schema == {'type': 'int'}
