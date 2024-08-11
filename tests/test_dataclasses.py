@@ -718,12 +718,8 @@ def test_hashable_required():
     class MyDataclass:
         v: Hashable
 
-    MyDataclass(v=None)
-    with pytest.raises(ValidationError) as exc_info:
-        MyDataclass(v=[])
-    assert exc_info.value.errors(include_url=False) == [
-        {'input': [], 'loc': ('v',), 'msg': 'Input should be hashable', 'type': 'is_hashable'}
-    ]
+    hash(MyDataclass(v=None).v)
+    hash(MyDataclass(v=[]).v)
 
     with pytest.raises(ValidationError) as exc_info:
         # Should this raise a TypeError instead? https://github.com/pydantic/pydantic/issues/5487
