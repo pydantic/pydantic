@@ -233,7 +233,7 @@ class ModelMetaclass(ABCMeta):
             # this is the BaseModel class itself being created, no logic required
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
-    if not typing.TYPE_CHECKING or 0:  # pragma: no branch
+    if not typing.TYPE_CHECKING:  # pragma: no branch
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
 
         def __getattr__(self, item: str) -> Any:
@@ -243,46 +243,46 @@ class ModelMetaclass(ABCMeta):
                 return private_attributes[item]
             raise AttributeError(item)
 
-    def mro(cls):
-        original_mro = super().mro()
+        def mro(cls):
+            original_mro = super().mro()
 
-        if cls.__bases__ == (object,):
-            return original_mro
+            if cls.__bases__ == (object,):
+                return original_mro
 
-        generic_metadata = cls.__dict__.get('__pydantic_generic_metadata__', None)
-        if not generic_metadata:
-            return original_mro
+            generic_metadata = cls.__dict__.get('__pydantic_generic_metadata__', None)
+            if not generic_metadata:
+                return original_mro
 
-        origin, args = (
-            generic_metadata['origin'],
-            generic_metadata['args'],
-        )
-        if not origin:
-            return original_mro
+            origin, args = (
+                generic_metadata['origin'],
+                generic_metadata['args'],
+            )
+            if not origin:
+                return original_mro
 
-        target_params: tuple[TypeVar] = origin.__pydantic_generic_metadata__['parameters']
+            target_params: tuple[TypeVar] = origin.__pydantic_generic_metadata__['parameters']
 
-        # This is necessary otherwise in some case TypeVar may be same:
-        #
-        # class A(BaseModel, Generic[T]): ...
-        # class B(A[int], Generic[T]): ...
-        # class C(B[str], Generic[T]): ...
-        #
-        indexed_origins = {origin}
+            # This is necessary otherwise in some case TypeVar may be same:
+            #
+            # class A(BaseModel, Generic[T]): ...
+            # class B(A[int], Generic[T]): ...
+            # class C(B[str], Generic[T]): ...
+            #
+            indexed_origins = {origin}
 
-        new_mro = [original_mro[0]]
-        for base in original_mro[1:]:
-            base_params = getattr(base, '__pydantic_generic_metadata__', {}).get('parameters', ())
-            base_origin = getattr(base, '__pydantic_generic_metadata__', {}).get('origin', None)
-            if base_origin is not None:
-                indexed_origins.add(base_origin)
+            new_mro = [original_mro[0]]
+            for base in original_mro[1:]:
+                base_params = getattr(base, '__pydantic_generic_metadata__', {}).get('parameters', ())
+                base_origin = getattr(base, '__pydantic_generic_metadata__', {}).get('origin', None)
+                if base_origin is not None:
+                    indexed_origins.add(base_origin)
 
-            if base not in indexed_origins and base_params == target_params:
-                new_mro.append(base[args])  # type: ignore
-                indexed_origins.add(base)
+                if base not in indexed_origins and base_params == target_params:
+                    new_mro.append(base[args])  # type: ignore
+                    indexed_origins.add(base)
 
-            new_mro.append(base)
-        return new_mro
+                new_mro.append(base)
+            return new_mro
 
     @classmethod
     def __prepare__(cls, *args: Any, **kwargs: Any) -> dict[str, object]:
