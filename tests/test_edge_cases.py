@@ -2161,7 +2161,7 @@ def test_hashable_json_schema():
                 ]
             }
         },
-        'properties': {'v': {'allOf': [{'$ref': '#/$defs/json-hashable'}], 'title': 'V'}},
+        'properties': {'v': {'$ref': '#/$defs/json-hashable', 'title': 'V'}},
         'required': ['v'],
         'title': 'Model',
         'type': 'object',
