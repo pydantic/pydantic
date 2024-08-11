@@ -231,13 +231,14 @@ def dataclass(
         if frozen is not None:
             frozen_ = frozen
         else:
-            # It's not recommended to define both, as the setting from the dataclass decorator will take priority.
-            if config_wrapper.frozen:
-                warn(
-                    "Both 'dataclass' decorator and 'config.frozen' are defined. 'config.frozen' take priority.",
-                    UserWarning,
-                )
             frozen_ = config_wrapper.frozen or False
+
+        # It's not recommended to define both, as the setting from the dataclass decorator will take priority.
+        if frozen is not None and config_wrapper.frozen == True:
+            warn(
+                "Both 'dataclass' decorator and 'config.frozen' are defined. 'config.frozen' take priority.",
+                UserWarning,
+            )
 
         cls = dataclasses.dataclass(  # type: ignore[call-overload]
             cls,
