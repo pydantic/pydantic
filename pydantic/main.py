@@ -107,58 +107,53 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_private__: Instance attribute with the values of private attributes set on the model instance.
     """
 
+    # Class attributes:
+    # `model_fields` and `__pydantic_decorators__` must be set for
+    # `GenerateSchema.model_schema` to work for a plain `BaseModel` annotation.
+
+    model_config: ClassVar[ConfigDict] = ConfigDict()
+    """
+    Configuration for the model, should be a dictionary conforming to [`ConfigDict`][pydantic.config.ConfigDict].
+    """
+
+    model_fields: ClassVar[dict[str, FieldInfo]] = {}
+    """
+    Metadata about the fields defined on the model,
+    mapping of field names to [`FieldInfo`][pydantic.fields.FieldInfo] objects.
+
+    This replaces `Model.__fields__` from Pydantic V1.
+    """
+
+    model_computed_fields: ClassVar[dict[str, ComputedFieldInfo]] = {}
+    """A dictionary of computed field names and their corresponding `ComputedFieldInfo` objects."""
+
+    __class_vars__: ClassVar[set[str]]
+    __private_attributes__: ClassVar[dict[str, ModelPrivateAttr]]
+    __signature__: ClassVar[Signature]
+    __pydantic_complete__: ClassVar[bool] = False
+    __pydantic_core_schema__: ClassVar[CoreSchema]
+    __pydantic_custom_init__: ClassVar[bool]
+    __pydantic_decorators__: ClassVar[_decorators.DecoratorInfos] = _decorators.DecoratorInfos()
+    __pydantic_generic_metadata__: ClassVar[_generics.PydanticGenericMetadata]
+    __pydantic_parent_namespace__: ClassVar[dict[str, Any] | None] = None
+    __pydantic_post_init__: ClassVar[None | Literal['model_post_init']]
+    __pydantic_root_model__: ClassVar[bool] = False
+    __pydantic_serializer__: ClassVar[SchemaSerializer]
+    __pydantic_validator__: ClassVar[SchemaValidator | PluggableSchemaValidator]
+
+    # Instance attributes:
     if TYPE_CHECKING:
-        # Here we provide annotations for the attributes of BaseModel.
-        # Many of these are populated by the metaclass, which is why this section is in a `TYPE_CHECKING` block.
-        # However, for the sake of easy review, we have included type annotations of all class and instance attributes
-        # of `BaseModel` here:
+        # Using a `TYPE_CHECKING` block to let type checkers know
+        # the following attributes should be ignored when synthesizing
+        # the `__init__` signature. (`_PrivateAttr` has a `Literal[False]`
+        # type annotation for the `init` argument).
 
-        # Class attributes
-        model_config: ClassVar[ConfigDict]
-        """
-        Configuration for the model, should be a dictionary conforming to [`ConfigDict`][pydantic.config.ConfigDict].
-        """
-
-        model_fields: ClassVar[dict[str, FieldInfo]]
-        """
-        Metadata about the fields defined on the model,
-        mapping of field names to [`FieldInfo`][pydantic.fields.FieldInfo].
-
-        This replaces `Model.__fields__` from Pydantic V1.
-        """
-
-        model_computed_fields: ClassVar[dict[str, ComputedFieldInfo]]
-        """A dictionary of computed field names and their corresponding `ComputedFieldInfo` objects."""
-
-        __class_vars__: ClassVar[set[str]]
-        __private_attributes__: ClassVar[dict[str, ModelPrivateAttr]]
-        __signature__: ClassVar[Signature]
-
-        __pydantic_complete__: ClassVar[bool]
-        __pydantic_core_schema__: ClassVar[CoreSchema]
-        __pydantic_custom_init__: ClassVar[bool]
-        __pydantic_decorators__: ClassVar[_decorators.DecoratorInfos]
-        __pydantic_generic_metadata__: ClassVar[_generics.PydanticGenericMetadata]
-        __pydantic_parent_namespace__: ClassVar[dict[str, Any] | None]
-        __pydantic_post_init__: ClassVar[None | Literal['model_post_init']]
-        __pydantic_root_model__: ClassVar[bool]
-        __pydantic_serializer__: ClassVar[SchemaSerializer]
-        __pydantic_validator__: ClassVar[SchemaValidator | PluggableSchemaValidator]
-
-        # Instance attributes
         __pydantic_extra__: dict[str, Any] | None = _PrivateAttr()
         __pydantic_fields_set__: set[str] = _PrivateAttr()
         __pydantic_private__: dict[str, Any] | None = _PrivateAttr()
-
     else:
-        # `model_fields` and `__pydantic_decorators__` must be set for
-        # pydantic._internal._generate_schema.GenerateSchema.model_schema to work for a plain BaseModel annotation
-        model_fields = {}
-        model_computed_fields = {}
-
-        __pydantic_decorators__ = _decorators.DecoratorInfos()
-        __pydantic_parent_namespace__ = None
-        # Prevent `BaseModel` from being instantiated directly:
+        # Prevent `BaseModel` from being instantiated directly
+        # (defined in the else block for clarity and to avoid type checking errors):
         __pydantic_core_schema__ = _mock_val_ser.MockCoreSchema(
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly',
             code='base-model-instantiated',
@@ -176,11 +171,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
 
-    model_config = ConfigDict()
-    __pydantic_complete__ = False
-    __pydantic_root_model__ = False
-
-    def __init__(self, /, **data: Any) -> None:  # type: ignore
+    def __init__(self, /, **data: Any) -> None:
         """Create a new model by parsing and validating input data from keyword arguments.
 
         Raises [`ValidationError`][pydantic_core.ValidationError] if the input data cannot be
