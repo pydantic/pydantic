@@ -3368,3 +3368,21 @@ def test_model_construct_with_model_post_init_and_model_copy() -> None:
 
     assert m == copy
     assert id(m) != id(copy)
+
+
+def test_model_dump_float_serialization():
+    """
+    This test checks the following:
+    - The `x` field, which is a float with a value of NaN, should be serialized as `null` in JSON.
+    - The `y` field, which is a Decimal, should be serialized correctly as a string representation of the decimal value.
+
+    """
+    from decimal import Decimal
+
+    class Model(BaseModel):
+        x: float
+        y: Decimal
+
+    result = Model(x=float('nan'), y=Decimal('12345')).model_dump(mode='json')
+
+    assert result == {'x': None, 'y': '12345'}

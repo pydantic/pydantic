@@ -359,20 +359,38 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Returns:
             A dictionary representation of the model.
         """
-        return self.__pydantic_serializer__.to_python(
-            self,
-            mode=mode,
-            by_alias=by_alias,
-            include=include,
-            exclude=exclude,
-            context=context,
-            exclude_unset=exclude_unset,
-            exclude_defaults=exclude_defaults,
-            exclude_none=exclude_none,
-            round_trip=round_trip,
-            warnings=warnings,
-            serialize_as_any=serialize_as_any,
-        )
+        import json
+
+        if mode == 'json':
+            json_str = self.__pydantic_serializer__.to_json(
+                self,
+                include=include,
+                exclude=exclude,
+                context=context,
+                by_alias=by_alias,
+                exclude_unset=exclude_unset,
+                exclude_defaults=exclude_defaults,
+                exclude_none=exclude_none,
+                round_trip=round_trip,
+                warnings=warnings,
+                serialize_as_any=serialize_as_any,
+            ).decode()
+            return json.loads(json_str)
+        else:
+            return self.__pydantic_serializer__.to_python(
+                self,
+                mode=mode,
+                by_alias=by_alias,
+                include=include,
+                exclude=exclude,
+                context=context,
+                exclude_unset=exclude_unset,
+                exclude_defaults=exclude_defaults,
+                exclude_none=exclude_none,
+                round_trip=round_trip,
+                warnings=warnings,
+                serialize_as_any=serialize_as_any,
+            )
 
     def model_dump_json(
         self,
