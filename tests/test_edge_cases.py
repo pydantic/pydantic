@@ -1,5 +1,6 @@
 import functools
 import importlib.util
+import json
 import re
 import sys
 from abc import ABC, abstractmethod
@@ -2056,20 +2057,48 @@ def test_custom_generic_disallowed():
             gen: MyGen[str, bool]
 
 
-def test_hashable_required():
+def test_hashable_basic():
+    class A: ...
+
+    class B:
+        __hash__ = None
+
+    b = B()
+
     class Model(BaseModel):
         v: Hashable
 
-    Model(v=None)
-    with pytest.raises(ValidationError) as exc_info:
-        Model(v=[])
-    assert exc_info.value.errors(include_url=False) == [
-        {'input': [], 'loc': ('v',), 'msg': 'Input should be hashable', 'type': 'is_hashable'}
-    ]
+    hash(Model(v=None).v)
+    hash(Model(v=1).v)
+    hash(Model(v='foo').v)
+    hash(Model(v=A).v)
+    hash(Model(v=A()).v)
+    assert (m := Model(v=[1, 2])).model_dump() == {'v': (1, 2)}
+    hash(m.v)
+    assert (m := Model(v={1: 2})).model_dump() == {'v': {1: 2}}
+    hash(m.v)
+    with pytest.raises(TypeError, match='frozendict is immutable') as exc_info:
+        m.v[2] = 3
+    assert (m := Model(v=Model(v=None))).model_dump() == {'v': {'v': None}}
+    hash(m.v)
+    assert (m := Model(v={1, 2})).model_dump() == {'v': frozenset({1, 2})}
+    hash(m.v)
+
     with pytest.raises(ValidationError) as exc_info:
         Model()
     assert exc_info.value.errors(include_url=False) == [
         {'input': {}, 'loc': ('v',), 'msg': 'Field required', 'type': 'missing'}
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=b)
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'is_hashable',
+            'loc': ('v',),
+            'msg': 'Input should be hashable',
+            'input': b,
+        }
     ]
 
 
@@ -2082,6 +2111,21 @@ def test_hashable_optional(default):
     Model()
 
 
+def test_hashable_nested():
+    class Model(BaseModel):
+        v: Hashable
+
+    assert (m := Model(v=[1, 2, [3, 4]])).model_dump() == {'v': (1, 2, (3, 4))}
+    hash(m.v)
+    assert (m := Model(v=[1, {2}, {3: 4}, {5: {6: 7}}])).model_dump() == {'v': (1, frozenset({2}), {3: 4}, {5: {6: 7}})}
+    hash(m.v)
+    assert (m := Model(v=Model(v=Model(v={1, 2})))).model_dump() == {'v': {'v': {'v': (1, 2)}}}
+    hash(m.v)
+
+    # Test a large nested dict
+    assert hash(Model(v=Model.model_json_schema()).v) == hash(Model(v=Model.model_json_schema()).v)
+
+
 def test_hashable_serialization():
     class Model(BaseModel):
         v: Hashable
@@ -2090,11 +2134,7 @@ def test_hashable_serialization():
         def __hash__(self):
             return 0
 
-    with pytest.warns(UserWarning) as w:
-        assert Model(v=(1,)).model_dump_json() == '{"v":[1]}'
-    assert w.list[0].message.args == (
-        'Pydantic serializer warnings:\n  Expected `Union[str, int, float, bool, none]` but got `tuple` - serialized value may not be as expected',
-    )
+    assert Model(v=(1,)).model_dump_json() == '{"v":[1]}'
 
     m = Model(v=HashableButNotSerializable())
     with pytest.raises(
@@ -2107,19 +2147,21 @@ def test_hashable_json_schema():
     class Model(BaseModel):
         v: Hashable
 
-    Model.model_json_schema() == {
-        'properties': {
-            'v': {
+    assert Model.model_json_schema() == {
+        '$defs': {
+            'json-hashable': {
                 'anyOf': [
                     {'type': 'string'},
                     {'type': 'integer'},
                     {'type': 'number'},
                     {'type': 'boolean'},
                     {'type': 'null'},
-                ],
-                'title': 'V',
+                    {'items': {'$ref': '#/$defs/json-hashable'}, 'type': 'array'},
+                    {'additionalProperties': {'$ref': '#/$defs/json-hashable'}, 'type': 'object'},
+                ]
             }
         },
+        'properties': {'v': {'allOf': [{'$ref': '#/$defs/json-hashable'}], 'title': 'V'}},
         'required': ['v'],
         'title': 'Model',
         'type': 'object',
@@ -2132,24 +2174,19 @@ def test_hashable_validate_json():
 
     ta = TypeAdapter(Model)
 
+    # Test a large nested dict
     for validate in (Model.model_validate_json, ta.validate_json):
-        validate('{"v": "a"}')
-        validate('{"v": 1}')
-        validate('{"v": 1.0}')
-        validate('{"v": true}')
-        validate('{"v": null}')
-
-        with pytest.raises(ValidationError) as exc_info:
-            validate('{"v": []}')
-        assert exc_info.value.errors(include_url=False) == [
-            {'type': 'is_hashable', 'loc': ('v',), 'msg': 'Input should be hashable', 'input': []}
-        ]
-
-        with pytest.raises(ValidationError) as exc_info:
-            validate('{"v": {"a": 0}}')
-        assert exc_info.value.errors(include_url=False) == [
-            {'type': 'is_hashable', 'loc': ('v',), 'msg': 'Input should be hashable', 'input': {'a': 0}}
-        ]
+        for testcase in (
+            '{"v": "a"}',
+            '{"v": 1}',
+            '{"v": 1.0}',
+            '{"v": true}',
+            '{"v": null}',
+            '{"v": []}',
+            '{"v": {"a": 0}}',
+            json.dumps({'v': Model.model_json_schema()}),
+        ):
+            assert hash(validate(testcase).v) == hash(validate(testcase).v)
 
 
 def test_default_factory_called_once():

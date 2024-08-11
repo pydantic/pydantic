@@ -29,9 +29,11 @@ from typing import (
     Dict,
     Final,
     ForwardRef,
+    Hashable,
     Iterable,
     Iterator,
     Mapping,
+    Sequence,
     Type,
     TypeVar,
     Union,
@@ -1741,20 +1743,100 @@ class GenerateSchema:
             raise PydanticSchemaGenerationError(f'Unable to generate pydantic-core schema for {pattern_type!r}.')
 
     def _hashable_schema(self) -> core_schema.CoreSchema:
-        # json cannot be validated by isinstance, so we manually construct a schema
-        json_schema = core_schema.union_schema(
+        # json cannot be validated by isinstance, so we have to manually construct a schema
+
+        json_ref = core_schema.definition_reference_schema('json-hashable')
+
+        class frozendict(dict, Hashable):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.__item_set = frozenset(self.items())
+
+            def __hash__(self) -> int:  # type: ignore
+                return hash(self.__item_set)
+
+            def pop(self, *args, **kwargs):
+                raise TypeError('frozendict is immutable')
+
+            def __setitem__(self, *args, **kwargs):
+                raise TypeError('frozendict is immutable')
+
+            def __delitem__(self, *args, **kwargs):
+                raise TypeError('frozendict is immutable')
+
+        json_frozen_dict_schema = core_schema.chain_schema(
+            [
+                core_schema.no_info_after_validator_function(
+                    frozendict,
+                    core_schema.dict_schema(json_ref, json_ref),
+                ),
+            ]
+        )
+
+        json_definition = core_schema.union_schema(
             [
                 core_schema.str_schema(),
                 core_schema.int_schema(),
                 core_schema.float_schema(),
                 core_schema.bool_schema(),
                 core_schema.none_schema(),
+                core_schema.tuple_schema([json_ref], variadic_item_index=0),
+                json_frozen_dict_schema,
+            ],
+            ref='json-hashable',
+        )
+
+        json_schema = core_schema.definitions_schema(
+            schema=json_ref,
+            definitions=[
+                json_definition,
+            ],
+        )
+
+        python_ref = core_schema.definition_reference_schema('python-hashable')
+
+        # By default, both `tuple({})` or `frozenset([])` works without error
+        # So we only convert to tuple if object is sequence
+        tuple_schema = core_schema.chain_schema(
+            [
+                core_schema.is_instance_schema(Sequence),
+                core_schema.tuple_schema([python_ref], variadic_item_index=0),
             ]
         )
+
+        # Try to convert a `BaseModel` to `dict`
+        def get_frozendict(x: Any, handler):
+            try:
+                x = dict(x)
+            except TypeError as exc:
+                raise ValueError from exc
+            return frozendict(handler(x))
+
+        python_frozen_dict_schema = core_schema.no_info_wrap_validator_function(
+            get_frozendict,
+            core_schema.dict_schema(json_ref, json_ref),
+        )
+
+        python_schema = core_schema.definitions_schema(
+            schema=python_ref,
+            definitions=[
+                core_schema.union_schema(
+                    [
+                        core_schema.is_instance_schema(collections.abc.Hashable),
+                        tuple_schema,
+                        python_frozen_dict_schema,
+                        core_schema.frozenset_schema(core_schema.any_schema()),
+                    ],
+                    mode='left_to_right',
+                    ref='python-hashable',
+                )
+            ],
+        )
+
         return core_schema.custom_error_schema(
             core_schema.json_or_python_schema(
                 json_schema=json_schema,
-                python_schema=core_schema.is_instance_schema(collections.abc.Hashable),
+                python_schema=python_schema,
             ),
             custom_error_type='is_hashable',
             custom_error_message='Input should be hashable',
