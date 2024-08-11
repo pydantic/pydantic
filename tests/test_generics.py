@@ -2958,5 +2958,7 @@ def test_generic_field():
     class Model(BaseModel):
         input_bool: A[bool]
 
-    assert issubclass(C, A[bool]) and issubclass(C, A[int]) is False
     Model(input_bool=C())
+
+    assert C.__mro__ == (C, B[bool], B, A[bool], A, BaseModel, Generic, object)
+    assert issubclass(C, A[bool]) and issubclass(C, A[int]) is False
