@@ -41,7 +41,7 @@ class PydanticDeprecationWarning(DeprecationWarning):
             f'{self.message}. Deprecated in Pydantic V{self.since[0]}.{self.since[1]}'
             f' to be removed in V{self.expected_removal[0]}.{self.expected_removal[1]}.'
         )
-        if self.since >= (2, 0):
+        if self.since == (2, 0):
             message += f' See Pydantic V2 Migration Guide at https://errors.pydantic.dev/{version_short()}/migration/'
         return message
 
