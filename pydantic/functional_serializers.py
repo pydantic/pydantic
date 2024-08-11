@@ -179,14 +179,17 @@ class WrapSerializer:
 if TYPE_CHECKING:
     _Partial: TypeAlias = 'partial[Any] | partialmethod[Any]'
 
-    AnyFieldPlainSerializer: TypeAlias = 'core_schema.SerializerFunction | _Partial'
+    FieldPlainSerializer: TypeAlias = 'core_schema.SerializerFunction | _Partial'
     """A field serializer method or function in `plain` mode."""
 
-    AnyFieldWrapSerializer: TypeAlias = 'core_schema.WrapSerializerFunction | _Partial'
+    FieldWrapSerializer: TypeAlias = 'core_schema.WrapSerializerFunction | _Partial'
     """A field serializer method or function in `wrap` mode."""
 
-    _AnyFieldPlainSerializerT = TypeVar('_AnyFieldPlainSerializerT', bound=AnyFieldPlainSerializer)
-    _AnyFieldWrapSerializerT = TypeVar('_AnyFieldWrapSerializerT', bound=AnyFieldWrapSerializer)
+    FieldSerializer: TypeAlias = 'FieldPlainSerializer | FieldWrapSerializer'
+    """A field serializer method or function."""
+
+    _FieldPlainSerializerT = TypeVar('_FieldPlainSerializerT', bound=FieldPlainSerializer)
+    _FieldWrapSerializerT = TypeVar('_FieldWrapSerializerT', bound=FieldWrapSerializer)
 
 
 @overload
@@ -198,7 +201,7 @@ def field_serializer(
     return_type: Any = ...,
     when_used: WhenUsed = ...,
     check_fields: bool | None = ...,
-) -> Callable[[_AnyFieldWrapSerializerT], _AnyFieldWrapSerializerT]: ...
+) -> Callable[[_FieldWrapSerializerT], _FieldWrapSerializerT]: ...
 
 
 @overload
@@ -210,7 +213,7 @@ def field_serializer(
     return_type: Any = ...,
     when_used: WhenUsed = ...,
     check_fields: bool | None = ...,
-) -> Callable[[_AnyFieldPlainSerializerT], _AnyFieldPlainSerializerT]: ...
+) -> Callable[[_FieldPlainSerializerT], _FieldPlainSerializerT]: ...
 
 
 def field_serializer(
@@ -220,8 +223,8 @@ def field_serializer(
     when_used: WhenUsed = 'always',
     check_fields: bool | None = None,
 ) -> (
-    Callable[[_AnyFieldWrapSerializerT], _AnyFieldWrapSerializerT]
-    | Callable[[_AnyFieldPlainSerializerT], _AnyFieldPlainSerializerT]
+    Callable[[_FieldWrapSerializerT], _FieldWrapSerializerT]
+    | Callable[[_FieldPlainSerializerT], _FieldPlainSerializerT]
 ):
     """Decorator that enables custom field serialization.
 
@@ -269,9 +272,7 @@ def field_serializer(
         The decorator function.
     """
 
-    def dec(
-        f: AnyFieldPlainSerializer | AnyFieldWrapSerializer,
-    ) -> _decorators.PydanticDescriptorProxy[Any]:
+    def dec(f: FieldSerializer) -> _decorators.PydanticDescriptorProxy[Any]:
         dec_info = _decorators.FieldSerializerDecoratorInfo(
             fields=fields,
             mode=mode,
@@ -287,36 +288,38 @@ def field_serializer(
 if TYPE_CHECKING:
     # The first argument in the following callables represent the `self` type:
 
-    ModelPlainSerializer: TypeAlias = Callable[[Any, SerializationInfo], Any]
+    ModelPlainSerializerWithInfo: TypeAlias = Callable[[Any, SerializationInfo], Any]
     """A model serializer method with the `info` argument, in `plain` mode."""
 
     ModelPlainSerializerWithoutInfo: TypeAlias = Callable[[Any], Any]
     """A model serializer method without the `info` argument, in `plain` mode."""
 
-    AnyModelPlainSerializer: TypeAlias = 'ModelPlainSerializer | ModelPlainSerializerWithoutInfo'
+    ModelPlainSerializer: TypeAlias = 'ModelPlainSerializerWithInfo | ModelPlainSerializerWithoutInfo'
     """A model serializer method in `plain` mode."""
 
-    ModelWrapSerializer: TypeAlias = Callable[[Any, SerializerFunctionWrapHandler, SerializationInfo], Any]
+    ModelWrapSerializerWithInfo: TypeAlias = Callable[[Any, SerializerFunctionWrapHandler, SerializationInfo], Any]
     """A model serializer method with the `info` argument, in `wrap` mode."""
 
     ModelWrapSerializerWithoutInfo: TypeAlias = Callable[[Any, SerializerFunctionWrapHandler], Any]
     """A model serializer method without the `info` argument, in `wrap` mode."""
 
-    AnyModelWrapSerializer: TypeAlias = 'ModelWrapSerializer | ModelWrapSerializerWithoutInfo'
+    ModelWrapSerializer: TypeAlias = 'ModelWrapSerializerWithInfo | ModelWrapSerializerWithoutInfo'
     """A model serializer method in `wrap` mode."""
 
-    _AnyModelPlainSerializerT = TypeVar('_AnyModelPlainSerializerT', bound=AnyModelPlainSerializer)
-    _AnyModelWrapSerializerT = TypeVar('_AnyModelWrapSerializerT', bound=AnyModelWrapSerializer)
+    ModelSerializer: TypeAlias = 'ModelPlainSerializer | ModelWrapSerializer'
+
+    _ModelPlainSerializerT = TypeVar('_ModelPlainSerializerT', bound=ModelPlainSerializer)
+    _ModelWrapSerializerT = TypeVar('_ModelWrapSerializerT', bound=ModelWrapSerializer)
 
 
 @overload
-def model_serializer(f: _AnyModelPlainSerializerT, /) -> _AnyModelPlainSerializerT: ...
+def model_serializer(f: _ModelPlainSerializerT, /) -> _ModelPlainSerializerT: ...
 
 
 @overload
 def model_serializer(
     *, mode: Literal['wrap'], when_used: WhenUsed = 'always', return_type: Any = ...
-) -> Callable[[_AnyModelWrapSerializerT], _AnyModelWrapSerializerT]: ...
+) -> Callable[[_ModelWrapSerializerT], _ModelWrapSerializerT]: ...
 
 
 @overload
@@ -325,20 +328,20 @@ def model_serializer(
     mode: Literal['plain'] = ...,
     when_used: WhenUsed = 'always',
     return_type: Any = ...,
-) -> Callable[[_AnyModelPlainSerializerT], _AnyModelPlainSerializerT]: ...
+) -> Callable[[_ModelPlainSerializerT], _ModelPlainSerializerT]: ...
 
 
 def model_serializer(
-    f: _AnyModelPlainSerializerT | None = None,
+    f: _ModelPlainSerializerT | _ModelWrapSerializerT | None = None,
     /,
     *,
     mode: Literal['plain', 'wrap'] = 'plain',
     when_used: WhenUsed = 'always',
     return_type: Any = PydanticUndefined,
 ) -> (
-    _AnyModelPlainSerializerT
-    | Callable[[_AnyModelWrapSerializerT], _AnyModelWrapSerializerT]
-    | Callable[[_AnyModelPlainSerializerT], _AnyModelPlainSerializerT]
+    _ModelPlainSerializerT
+    | Callable[[_ModelWrapSerializerT], _ModelWrapSerializerT]
+    | Callable[[_ModelPlainSerializerT], _ModelPlainSerializerT]
 ):
     """Decorator that enables custom model serialization.
 
@@ -392,7 +395,7 @@ def model_serializer(
         The decorator function.
     """
 
-    def dec(f: AnyModelPlainSerializer | AnyModelWrapSerializer) -> _decorators.PydanticDescriptorProxy[Any]:
+    def dec(f: ModelSerializer) -> _decorators.PydanticDescriptorProxy[Any]:
         dec_info = _decorators.ModelSerializerDecoratorInfo(mode=mode, return_type=return_type, when_used=when_used)
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
