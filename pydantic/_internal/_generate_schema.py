@@ -1826,7 +1826,7 @@ class GenerateSchema:
                         core_schema.is_instance_schema(collections.abc.Hashable),
                         tuple_schema,
                         python_frozen_dict_schema,
-                        core_schema.frozenset_schema(core_schema.any_schema()),
+                        core_schema.frozenset_schema(python_ref),
                     ],
                     mode='left_to_right',
                     ref='python-hashable',
