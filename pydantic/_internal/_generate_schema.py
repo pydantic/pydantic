@@ -1805,14 +1805,15 @@ class GenerateSchema:
         )
 
         # Try to convert a `BaseModel` to `dict`
-        def get_frozendict(x: Any, handler):
-            try:
-                x = dict(x)
-            except TypeError as exc:
-                raise ValueError from exc
+        def get_frozendict(x: Any, handler: core_schema.ValidatorFunctionWrapHandler, info: core_schema.ValidationInfo):
+            if not info.config or not info.config.get('strict', False):
+                try:
+                    x = dict(x)
+                except TypeError as exc:
+                    raise ValueError from exc
             return frozendict(handler(x))
 
-        python_frozen_dict_schema = core_schema.no_info_wrap_validator_function(
+        python_frozen_dict_schema = core_schema.with_info_wrap_validator_function(
             get_frozendict,
             core_schema.dict_schema(json_ref, json_ref),
         )
