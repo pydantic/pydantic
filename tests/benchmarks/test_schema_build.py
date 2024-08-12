@@ -1,5 +1,3 @@
-import os
-import subprocess
 from typing import Dict, Generic, List, Literal, Optional, TypeVar, Union, get_origin
 
 import pytest
@@ -111,17 +109,7 @@ def test_lots_of_models_with_lots_of_fields():
         globals()[model_name] = model
 
 
-url = 'https://github.com/kubernetes/kubernetes/raw/master/api/openapi-spec/swagger.json'
-output_file = 'lots_of_models.py'
-output_model_type = 'pydantic_v2.BaseModel'
-
-command = f'datamodel-codegen --url {url} --output-model-type={output_model_type} > {output_file}'
-subprocess.run(command, shell=True, check=True)
-
-
 @pytest.mark.benchmark
 def test_expensive_namespace() -> None:
     import tests.benchmarks.lots_of_models  # noqa: F401
 
-    if os.path.exists(output_file):
-        os.remove(output_file)
