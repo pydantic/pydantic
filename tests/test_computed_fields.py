@@ -740,6 +740,7 @@ def test_multiple_references_to_schema(model_factory: Callable[[], Any]) -> None
     }
 
 
+@pytest.mark.xfail(reason='requires updated pydantic core')
 def test_generic_computed_field():
     T = TypeVar('T')
 
@@ -764,7 +765,9 @@ def test_generic_computed_field():
         def double_x(self) -> T:
             return 'abc'  # this may not match the annotated return type, and will warn if not
 
-    with pytest.warns(UserWarning, match='Expected `int` but got `str` - serialized value may not be as expected'):
+    with pytest.warns(
+        UserWarning, match="Expected `int` but got `str` with value `'abc'` - serialized value may not be as expected"
+    ):
         B[int]().model_dump()
 
 

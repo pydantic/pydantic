@@ -464,6 +464,7 @@ def test_model_serializer_wrap_info():
     assert m.model_dump_json(exclude={'a'}) == '{"b":"boom","info":"mode=json exclude={\'a\'}"}'
 
 
+@pytest.mark.xfail(reason='requires updated pydantic core')
 def test_model_serializer_plain_json_return_type():
     class MyModel(BaseModel):
         a: int
@@ -482,10 +483,14 @@ def test_model_serializer_plain_json_return_type():
 
     m = MyModel(a=666)
     assert m.model_dump() == {'a': 666}
-    with pytest.warns(UserWarning, match='Expected `str` but got `int` - serialized value may not be as expected'):
+    with pytest.warns(
+        UserWarning, match='Expected `str` but got `int` with value `666` - serialized value may not be as expected'
+    ):
         assert m.model_dump(mode='json') == 666
 
-    with pytest.warns(UserWarning, match='Expected `str` but got `int` - serialized value may not be as expected'):
+    with pytest.warns(
+        UserWarning, match='Expected `str` but got `int` with value `666` - serialized value may not be as expected'
+    ):
         assert m.model_dump_json() == '666'
 
 
