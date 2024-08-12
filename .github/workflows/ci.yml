@@ -346,6 +346,11 @@ jobs:
         with:
           name: coverage-data
 
+      - name: Debug coverage file
+        run: |
+          ls -la
+          coverage report
+
       - name: Generate coverage comment
         id: coverage-comment
         uses: py-cov-action/python-coverage-comment-action@v3
