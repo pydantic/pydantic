@@ -230,15 +230,14 @@ def dataclass(
         # Respect frozen setting from dataclass constructor and fallback to config setting if not provided
         if frozen is not None:
             frozen_ = frozen
+            if config_wrapper.frozen:
+                # It's not recommended to define both, as the setting from the dataclass decorator will take priority.
+                warn(
+                    "Both 'dataclass' decorator and 'config.frozen' are defined. 'config.frozen' take priority.",
+                    UserWarning,
+                )
         else:
             frozen_ = config_wrapper.frozen or False
-
-        # It's not recommended to define both, as the setting from the dataclass decorator will take priority.
-        if frozen is not None and config_wrapper.frozen == True:
-            warn(
-                "Both 'dataclass' decorator and 'config.frozen' are defined. 'config.frozen' take priority.",
-                UserWarning,
-            )
 
         cls = dataclasses.dataclass(  # type: ignore[call-overload]
             cls,
