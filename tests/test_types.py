@@ -6811,3 +6811,21 @@ def test_mutable_mapping() -> None:
     adapter = TypeAdapter(collections.abc.MutableMapping, config=ConfigDict(arbitrary_types_allowed=True, strict=True))
 
     assert isinstance(adapter.validate_python(collections.UserDict()), collections.abc.MutableMapping)
+
+
+def test_ser_ip_with_union() -> None:
+    import ipaddress
+
+    class GoodModel(BaseModel):
+        value: bool | ipaddress.IPv4Address
+
+    class BadModel(BaseModel):
+        value: ipaddress.IPv4Address | bool
+
+    bool_first = TypeAdapter(bool | ipaddress.IPv4Address)
+    assert bool_first.dump_python(True, mode='json') is True
+    assert bool_first.dump_json(True) is True
+
+    ip_first = TypeAdapter(ipaddress.IPv4Address | bool)
+    assert ip_first.dump_python(True, mode='json') is True
+    assert ip_first.dump_json(True) is True

@@ -46,6 +46,7 @@ from pydantic_core import (
     CoreSchema,
     MultiHostUrl,
     PydanticCustomError,
+    PydanticSerializationUnexpectedValue,
     PydanticUndefined,
     Url,
     core_schema,
@@ -518,13 +519,20 @@ class GenerateSchema:
             IPv6Interface: 'ipv6interface',
         }
 
+        def ser_ip(ip: Any) -> str:
+            if not isinstance(ip, tp):
+                raise PydanticSerializationUnexpectedValue(
+                    f"Expected `{tp}` but got `{type(ip)}` with value `'{ip}'` - serialized value may not be as expected."
+                )
+            return str(ip)
+
         return core_schema.lax_or_strict_schema(
             lax_schema=core_schema.no_info_plain_validator_function(IP_VALIDATOR_LOOKUP[tp]),
             strict_schema=core_schema.json_or_python_schema(
                 json_schema=core_schema.no_info_after_validator_function(tp, core_schema.str_schema()),
                 python_schema=core_schema.is_instance_schema(tp),
             ),
-            serialization=core_schema.to_string_ser_schema(),
+            serialization=core_schema.plain_serializer_function_ser_schema(ser_ip),
             metadata=build_metadata_dict(
                 js_functions=[lambda _1, _2: {'type': 'string', 'format': ip_type_json_schema_format[tp]}]
             ),
