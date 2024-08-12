@@ -808,7 +808,11 @@ The [`computed_field`][pydantic.fields.computed_field] decorator can be used to 
 The property will also be taken into account in the JSON Schema.
 
 !!! note
-    Pydantic will *not* perform any additional logic on the wrapped property (validation, cache invalidation, etc.).
+    Properties can be useful for fields that are computed from other fields, or for fields that
+    are expensive to be computed (and thus, are cached if using [`cached_property`][functools.cached_property]).
+
+    However, note that Pydantic will *not* perform any additional logic on the wrapped property
+    (validation, cache invalidation, etc.).
 
 Here's an example:
 
