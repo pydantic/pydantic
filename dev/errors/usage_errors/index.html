@@ -5003,39 +5003,40 @@ but it is a dictionary instead of an object like it was in Pydantic V1.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;field-serializer-signature&#39;</span>
 </code></pre></div>
 <p>Valid field serializer signatures are:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">field_serializer</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">FieldSerializationInfo</span><span class="p">,</span> <span class="n">SerializerFunctionWrapHandler</span><span class="p">,</span> <span class="n">field_serializer</span>
 
 <span class="c1"># an instance method with the default mode or `mode=&#39;plain&#39;`</span>
-<span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>  <span class="c1"># or @serialize(&#39;x&#39;, mode=&#39;plain&#39;)</span>
-<span class="k">def</span> <span class="nf">ser_x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">pydantic</span><span class="o">.</span><span class="n">FieldSerializationInfo</span><span class="p">):</span> <span class="o">...</span>
+<span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>  <span class="c1"># or @field_serializer(&#39;x&#39;, mode=&#39;plain&#39;)</span>
+<span class="k">def</span> <span class="nf">ser_x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">FieldSerializationInfo</span><span class="p">):</span> <span class="o">...</span>
 
-<span class="c1"># a static method or free-standing function with the default mode or `mode=&#39;plain&#39;`</span>
-<span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>  <span class="c1"># or @serialize(&#39;x&#39;, mode=&#39;plain&#39;)</span>
+<span class="c1"># a static method or function with the default mode or `mode=&#39;plain&#39;`</span>
+<span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>  <span class="c1"># or @field_serializer(&#39;x&#39;, mode=&#39;plain&#39;)</span>
 <span class="nd">@staticmethod</span>
-<span class="k">def</span> <span class="nf">ser_x</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">pydantic</span><span class="o">.</span><span class="n">FieldSerializationInfo</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span> <span class="nf">ser_x</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">FieldSerializationInfo</span><span class="p">):</span> <span class="o">...</span>
+
 <span class="c1"># equivalent to</span>
-<span class="k">def</span> <span class="nf">ser_x</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">pydantic</span><span class="o">.</span><span class="n">FieldSerializationInfo</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span> <span class="nf">ser_x</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">FieldSerializationInfo</span><span class="p">):</span> <span class="o">...</span>
 <span class="n">serializer</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)(</span><span class="n">ser_x</span><span class="p">)</span>
 
 <span class="c1"># an instance method with `mode=&#39;wrap&#39;`</span>
 <span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;wrap&#39;</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">ser_x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">nxt</span><span class="p">:</span> <span class="n">pydantic</span><span class="o">.</span><span class="n">SerializerFunctionWrapHandler</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">pydantic</span><span class="o">.</span><span class="n">FieldSerializationInfo</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span> <span class="nf">ser_x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">nxt</span><span class="p">:</span> <span class="n">SerializerFunctionWrapHandler</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">FieldSerializationInfo</span><span class="p">):</span> <span class="o">...</span>
 
-<span class="c1"># a static method or free-standing function with `mode=&#39;wrap&#39;`</span>
+<span class="c1"># a static method or function with `mode=&#39;wrap&#39;`</span>
 <span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;wrap&#39;</span><span class="p">)</span>
 <span class="nd">@staticmethod</span>
-<span class="k">def</span> <span class="nf">ser_x</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">nxt</span><span class="p">:</span> <span class="n">pydantic</span><span class="o">.</span><span class="n">SerializerFunctionWrapHandler</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">pydantic</span><span class="o">.</span><span class="n">FieldSerializationInfo</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span> <span class="nf">ser_x</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">nxt</span><span class="p">:</span> <span class="n">SerializerFunctionWrapHandler</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">FieldSerializationInfo</span><span class="p">):</span> <span class="o">...</span>
+
 <span class="c1"># equivalent to</span>
-<span class="k">def</span> <span class="nf">ser_x</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">nxt</span><span class="p">:</span> <span class="n">pydantic</span><span class="o">.</span><span class="n">SerializerFunctionWrapHandler</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">pydantic</span><span class="o">.</span><span class="n">FieldSerializationInfo</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span> <span class="nf">ser_x</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">nxt</span><span class="p">:</span> <span class="n">SerializerFunctionWrapHandler</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">FieldSerializationInfo</span><span class="p">):</span> <span class="o">...</span>
 <span class="n">serializer</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)(</span><span class="n">ser_x</span><span class="p">)</span>
 
-<span class="n">For</span> <span class="nb">all</span> <span class="n">of</span> <span class="n">these</span><span class="p">,</span> <span class="n">you</span> <span class="n">can</span> <span class="n">also</span> <span class="n">choose</span> <span class="n">to</span> <span class="n">omit</span> <span class="n">the</span> <span class="err">`</span><span class="n">info</span><span class="err">`</span> <span class="n">argument</span><span class="p">,</span> <span class="k">for</span> <span class="n">example</span><span class="p">:</span>
-
+<span class="c1"># For all of these, you can also choose to omit the `info` argument, for example:</span>
 <span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">ser_x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span> <span class="o">...</span>
 
 <span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;wrap&#39;</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">ser_x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">pydantic</span><span class="o">.</span><span class="n">SerializerFunctionWrapHandler</span><span class="p">):</span> <span class="o">...</span>
+<span class="k">def</span> <span class="nf">ser_x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">SerializerFunctionWrapHandler</span><span class="p">):</span> <span class="o">...</span>
 </code></pre></div>
 <h2 id="model-serializer-signature">Unrecognized <code>model_serializer</code> signature<a class="headerlink" href="#model-serializer-signature" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the <code>model_serializer</code> function has the wrong signature.</p>
@@ -5054,7 +5055,7 @@ but it is a dictionary instead of an object like it was in Pydantic V1.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;model-serializer-signature&#39;</span>
 </code></pre></div>
 <p>Valid model serializer signatures are:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">model_serializer</span><span class="p">,</span> <span class="n">SerializerFunctionWrapHandler</span><span class="p">,</span> <span class="n">SerializationInfo</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">SerializerFunctionWrapHandler</span><span class="p">,</span> <span class="n">SerializationInfo</span><span class="p">,</span> <span class="n">model_serializer</span>
 
 <span class="c1"># an instance method with the default mode or `mode=&#39;plain&#39;`</span>
 <span class="nd">@model_serializer</span>  <span class="c1"># or model_serializer(mode=&#39;plain&#39;)</span>
@@ -5064,8 +5065,7 @@ but it is a dictionary instead of an object like it was in Pydantic V1.</p>
 <span class="nd">@model_serializer</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;wrap&#39;</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">mod_ser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">SerializerFunctionWrapHandler</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">SerializationInfo</span><span class="p">):</span>
 
-<span class="n">For</span> <span class="nb">all</span> <span class="n">of</span> <span class="n">these</span><span class="p">,</span> <span class="n">you</span> <span class="n">can</span> <span class="n">also</span> <span class="n">choose</span> <span class="n">to</span> <span class="n">omit</span> <span class="n">the</span> <span class="err">`</span><span class="n">info</span><span class="err">`</span> <span class="n">argument</span><span class="p">,</span> <span class="k">for</span> <span class="n">example</span><span class="p">:</span>
-
+<span class="c1"># For all of these, you can also choose to omit the `info` argument, for example:</span>
 <span class="nd">@model_serializer</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;plain&#39;</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">mod_ser</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="o">...</span>
 
