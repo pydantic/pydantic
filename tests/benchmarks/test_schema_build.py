@@ -111,5 +111,6 @@ def test_lots_of_models_with_lots_of_fields():
 
 @pytest.mark.benchmark
 def test_expensive_namespace() -> None:
-    import tests.benchmarks.lots_of_models  # noqa: F401
+    import tests.benchmarks.lots_of_models as lots_of_models
 
+    assert lots_of_models.Model is not None
