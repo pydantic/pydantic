@@ -740,6 +740,7 @@ def test_multiple_references_to_schema(model_factory: Callable[[], Any]) -> None
     }
 
 
+@pytest.mark.xfail(reason='requires updated pydantic core')
 def test_generic_computed_field():
     T = TypeVar('T')
 

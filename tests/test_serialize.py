@@ -464,6 +464,7 @@ def test_model_serializer_wrap_info():
     assert m.model_dump_json(exclude={'a'}) == '{"b":"boom","info":"mode=json exclude={\'a\'}"}'
 
 
+@pytest.mark.xfail(reason='requires updated pydantic core')
 def test_model_serializer_plain_json_return_type():
     class MyModel(BaseModel):
         a: int
