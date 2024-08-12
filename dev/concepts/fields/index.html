@@ -4584,11 +4584,18 @@ arguments to the <code>deprecated</code> decorator. This might land in a future 
 <h2 id="the-computed_field-decorator">The <code>computed_field</code> decorator<a class="headerlink" href="#the-computed_field-decorator" title="Permanent link">&para;</a></h2>
 <details class="api">
 <summary>API Documentation</summary>
-<p><a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.computed_field"><code>pydantic.fields.computed_field</code></a><br></p>
+<p><a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.computed_field"><code>computed_field</code></a><br></p>
 </details>
-<p>The <code>computed_field</code> decorator can be used to include <code>property</code> or <code>cached_property</code> attributes when serializing a
-model or dataclass. This can be useful for fields that are computed from other fields, or for fields that
-are expensive to computed (and thus, are cached).</p>
+<p>The <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.computed_field"><code>computed_field</code></a> decorator can be used to include <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#property"><code>property</code></a> or
+<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functools.html#functools.cached_property"><code>cached_property</code></a> attributes when serializing a model or dataclass.
+The property will also be taken into account in the JSON Schema.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Properties can be useful for fields that are computed from other fields, or for fields that
+are expensive to be computed (and thus, are cached if using <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functools.html#functools.cached_property"><code>cached_property</code></a>).</p>
+<p>However, note that Pydantic will <em>not</em> perform any additional logic on the wrapped property
+(validation, cache invalidation, etc.).</p>
+</div>
 <p>Here's an example:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">computed_field</span>
 
@@ -4599,6 +4606,7 @@ are expensive to computed (and thus, are cached).</p>
     <span class="n">depth</span><span class="p">:</span> <span class="nb">float</span>
 
     <span class="nd">@computed_field</span>
+    <span class="nd">@property</span>  <span class="c1"># (1)!</span>
     <span class="k">def</span> <span class="nf">volume</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">depth</span>
 
@@ -4607,6 +4615,11 @@ are expensive to computed (and thus, are cached).</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="c1">#&gt; {&#39;width&#39;: 1.0, &#39;height&#39;: 2.0, &#39;depth&#39;: 3.0, &#39;volume&#39;: 6.0}</span>
 </code></pre></div>
+<ol>
+<li>If not specified, <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.computed_field"><code>computed_field</code></a> will implicitly convert the method
+   to a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#property"><code>property</code></a>. However, it is preferable to explicitly use the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#property"><code>@property</code></a> decorator
+   for type checking purposes.</li>
+</ol>
 <p>As with regular fields, computed fields can be marked as being deprecated:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">deprecated</span>
 
@@ -4619,6 +4632,7 @@ are expensive to computed (and thus, are cached).</p>
     <span class="n">depth</span><span class="p">:</span> <span class="nb">float</span>
 
     <span class="nd">@computed_field</span>
+    <span class="nd">@property</span>
     <span class="nd">@deprecated</span><span class="p">(</span><span class="s2">&quot;&#39;volume&#39; is deprecated&quot;</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">volume</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">depth</span>
