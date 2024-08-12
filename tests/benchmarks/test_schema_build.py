@@ -115,9 +115,7 @@ url = 'https://github.com/kubernetes/kubernetes/raw/master/api/openapi-spec/swag
 output_file = 'lots_of_models.py'
 output_model_type = 'pydantic_v2.BaseModel'
 
-# Command to run datamodel-codegen
 command = f'datamodel-codegen --url {url} --output-model-type={output_model_type} > {output_file}'
-
 subprocess.run(command, shell=True, check=True)
 
 

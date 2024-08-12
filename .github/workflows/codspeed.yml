@@ -25,6 +25,7 @@ jobs:
         run: |
           pdm venv create --with-pip --force $PYTHON
           pdm install -G testing -G testing-extra -G email
+          pdm install datamodel-code-generator
 
       - name: Run CodSpeed benchmarks
         uses: CodSpeedHQ/action@v3
