@@ -5,6 +5,7 @@ queried by :py:meth:`typing.get_type_hints`.
 
 import inspect
 import sys
+from functools import lru_cache
 from typing import (
     Any,
     Dict,
@@ -57,6 +58,34 @@ def parent_sub_model_fixture():
     return ParentModel
 
 
+@lru_cache
+def get_type_checking_only_ns():
+    """
+    When creating `BaseModel` in `pydantic.main`, some globals are imported only when `TYPE_CHECKING` is `True`, so we have to manually include them when calling `typing.get_type_hints`.
+    """
+
+    from inspect import Signature
+
+    from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
+
+    from pydantic.deprecated.parse import Protocol as DeprecatedParseProtocol
+    from pydantic.fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
+    from pydantic.fields import PrivateAttr as _PrivateAttr
+
+    return {
+        # **pydantic_main_globals,
+        'Signature': Signature,
+        'CoreSchema': CoreSchema,
+        'SchemaSerializer': SchemaSerializer,
+        'SchemaValidator': SchemaValidator,
+        'DeprecatedParseProtocol': DeprecatedParseProtocol,
+        'ComputedFieldInfo': ComputedFieldInfo,
+        'FieldInfo': FieldInfo,
+        'ModelPrivateAttr': ModelPrivateAttr,
+        '_PrivateAttr': _PrivateAttr,
+    }
+
+
 def inspect_type_hints(
     obj_type, members: Optional[Set[str]] = None, exclude_members: Optional[Set[str]] = None, recursion_limit: int = 3
 ):
@@ -69,7 +98,7 @@ def inspect_type_hints(
     """
 
     try:
-        hints = typing_extensions.get_type_hints(obj_type)
+        hints = typing_extensions.get_type_hints(obj_type, localns=get_type_checking_only_ns())
         assert isinstance(hints, dict), f'Type annotation(s) on {obj_type} are invalid'
     except NameError as ex:
         raise AssertionError(f'Type annotation(s) on {obj_type} are invalid: {str(ex)}') from ex

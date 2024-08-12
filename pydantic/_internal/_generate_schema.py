@@ -683,6 +683,9 @@ class GenerateSchema:
                     assert cls.__mro__[0] is cls
                     assert cls.__mro__[-1] is object
                     for candidate_cls in cls.__mro__[:-1]:
+                        if candidate_cls is import_cached_base_model():
+                            continue
+
                         extras_annotation = getattr(candidate_cls, '__annotations__', {}).get(
                             '__pydantic_extra__', None
                         )

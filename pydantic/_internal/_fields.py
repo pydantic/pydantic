@@ -101,7 +101,9 @@ def collect_model_fields(  # noqa: C901
     """
     FieldInfo_ = import_cached_field_info()
 
-    type_hints = get_cls_type_hints_lenient(cls, types_namespace)
+    BaseModel = import_cached_base_model()
+    mro = reversed(tuple(base for base in cls.__mro__ if base is not BaseModel))
+    type_hints = get_cls_type_hints_lenient(cls, types_namespace, mro=mro)
 
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
     # annotations is only used for finding fields in parent classes
@@ -119,8 +121,6 @@ def collect_model_fields(  # noqa: C901
             if ann_name.startswith(protected_namespace):
                 for b in bases:
                     if hasattr(b, ann_name):
-                        BaseModel = import_cached_base_model()
-
                         if not (issubclass(b, BaseModel) and ann_name in b.model_fields):
                             raise NameError(
                                 f'Field "{ann_name}" conflicts with member {getattr(b, ann_name)}'
