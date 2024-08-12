@@ -6820,11 +6820,11 @@ def test_mutable_mapping() -> None:
 
 
 def test_ser_ip_with_union() -> None:
-    bool_first = TypeAdapter(bool | ipaddress.IPv4Address)
+    bool_first = TypeAdapter(Union[bool, ipaddress.IPv4Address])
     assert bool_first.dump_python(True, mode='json') is True
     assert bool_first.dump_json(True) == b'true'
 
-    ip_first = TypeAdapter(ipaddress.IPv4Address | bool)
+    ip_first = TypeAdapter(Union[ipaddress.IPv4Address, bool])
     assert ip_first.dump_python(True, mode='json') is True
     assert ip_first.dump_json(True) == b'true'
 
@@ -6833,4 +6833,4 @@ def test_ser_ip_with_unexpected_value() -> None:
     ta = TypeAdapter(ipaddress.IPv4Address)
 
     with pytest.raises(UserWarning, match='serialized value may not be as expected.'):
-        assert ta.dump_python('not_an_ip_address')
+        assert ta.dump_python(123)
