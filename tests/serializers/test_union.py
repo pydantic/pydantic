@@ -626,3 +626,27 @@ def test_union_serializer_picks_exact_type_over_subclass_json(
     )
     assert s.to_python(input_value, mode='json') == expected_value
     assert s.to_json(input_value) == json.dumps(expected_value).encode()
+
+
+def test_custom_serializer() -> None:
+    s = SchemaSerializer(
+        core_schema.union_schema(
+            [
+                core_schema.dict_schema(
+                    keys_schema=core_schema.any_schema(),
+                    values_schema=core_schema.any_schema(),
+                    serialization=core_schema.plain_serializer_function_ser_schema(lambda x: x['id']),
+                ),
+                core_schema.list_schema(
+                    items_schema=core_schema.dict_schema(
+                        keys_schema=core_schema.any_schema(),
+                        values_schema=core_schema.any_schema(),
+                        serialization=core_schema.plain_serializer_function_ser_schema(lambda x: x['id']),
+                    )
+                ),
+            ]
+        )
+    )
+    print(s)
+    assert s.to_python([{'id': 1}, {'id': 2}]) == [1, 2]
+    assert s.to_python({'id': 1}) == 1
