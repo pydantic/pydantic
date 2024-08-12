@@ -520,7 +520,7 @@ class GenerateSchema:
         }
 
         def ser_ip(ip: Any) -> str:
-            if not isinstance(ip, tp):
+            if not isinstance(ip, (tp, str)):
                 raise PydanticSerializationUnexpectedValue(
                     f"Expected `{tp}` but got `{type(ip)}` with value `'{ip}'` - serialized value may not be as expected."
                 )
