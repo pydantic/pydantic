@@ -12,7 +12,7 @@ use crate::errors::{ErrorType, ToErrorValue, ValError, ValLineError, ValResult};
 use crate::input::{BorrowInput, Input, ValidatedDict};
 use crate::lookup_key::LookupKey;
 use crate::py_gc::PyGcTraverse;
-use crate::tools::SchemaDict;
+use crate::tools::{SchemaDict, UNION_ERR_SMALLVEC_CAPACITY};
 
 use super::custom_error::CustomError;
 use super::literal::LiteralLookup;
@@ -249,7 +249,7 @@ struct ChoiceLineErrors<'a> {
 
 enum MaybeErrors<'a> {
     Custom(&'a CustomError),
-    Errors(SmallVec<[ChoiceLineErrors<'a>; 4]>),
+    Errors(SmallVec<[ChoiceLineErrors<'a>; UNION_ERR_SMALLVEC_CAPACITY]>),
 }
 
 impl<'a> MaybeErrors<'a> {

@@ -1,16 +1,17 @@
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
+use smallvec::SmallVec;
 use std::borrow::Cow;
 
 use crate::build_tools::py_schema_err;
 use crate::definitions::DefinitionsBuilder;
-use crate::tools::SchemaDict;
+use crate::tools::{SchemaDict, UNION_ERR_SMALLVEC_CAPACITY};
 use crate::PydanticSerializationUnexpectedValue;
 
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, Extra,
-    SerCheck, TypeSerializer,
+    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, Extra, SerCheck,
+    TypeSerializer,
 };
 
 #[derive(Debug, Clone)]
@@ -78,13 +79,14 @@ impl TypeSerializer for UnionSerializer {
         // try the serializers in left to right order with error_on fallback=true
         let mut new_extra = extra.clone();
         new_extra.check = SerCheck::Strict;
+        let mut errors: SmallVec<[PyErr; UNION_ERR_SMALLVEC_CAPACITY]> = SmallVec::new();
 
         for comb_serializer in &self.choices {
             match comb_serializer.to_python(value, include, exclude, &new_extra) {
                 Ok(v) => return Ok(v),
                 Err(err) => match err.is_instance_of::<PydanticSerializationUnexpectedValue>(value.py()) {
                     true => (),
-                    false => return Err(err),
+                    false => errors.push(err),
                 },
             }
         }
@@ -95,10 +97,14 @@ impl TypeSerializer for UnionSerializer {
                     Ok(v) => return Ok(v),
                     Err(err) => match err.is_instance_of::<PydanticSerializationUnexpectedValue>(value.py()) {
                         true => (),
-                        false => return Err(err),
+                        false => errors.push(err),
                     },
                 }
             }
+        }
+
+        for err in &errors {
+            extra.warnings.custom_warning(err.to_string());
         }
 
         extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
@@ -108,12 +114,14 @@ impl TypeSerializer for UnionSerializer {
     fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
         let mut new_extra = extra.clone();
         new_extra.check = SerCheck::Strict;
+        let mut errors: SmallVec<[PyErr; UNION_ERR_SMALLVEC_CAPACITY]> = SmallVec::new();
+
         for comb_serializer in &self.choices {
             match comb_serializer.json_key(key, &new_extra) {
                 Ok(v) => return Ok(v),
                 Err(err) => match err.is_instance_of::<PydanticSerializationUnexpectedValue>(key.py()) {
                     true => (),
-                    false => return Err(err),
+                    false => errors.push(err),
                 },
             }
         }
@@ -124,10 +132,14 @@ impl TypeSerializer for UnionSerializer {
                     Ok(v) => return Ok(v),
                     Err(err) => match err.is_instance_of::<PydanticSerializationUnexpectedValue>(key.py()) {
                         true => (),
-                        false => return Err(err),
+                        false => errors.push(err),
                     },
                 }
             }
+        }
+
+        for err in &errors {
+            extra.warnings.custom_warning(err.to_string());
         }
 
         extra.warnings.on_fallback_py(self.get_name(), key, extra)?;
@@ -145,12 +157,14 @@ impl TypeSerializer for UnionSerializer {
         let py = value.py();
         let mut new_extra = extra.clone();
         new_extra.check = SerCheck::Strict;
+        let mut errors: SmallVec<[PyErr; UNION_ERR_SMALLVEC_CAPACITY]> = SmallVec::new();
+
         for comb_serializer in &self.choices {
             match comb_serializer.to_python(value, include, exclude, &new_extra) {
                 Ok(v) => return infer_serialize(v.bind(py), serializer, None, None, extra),
-                Err(err) => match err.is_instance_of::<PydanticSerializationUnexpectedValue>(py) {
+                Err(err) => match err.is_instance_of::<PydanticSerializationUnexpectedValue>(value.py()) {
                     true => (),
-                    false => return Err(py_err_se_err(err)),
+                    false => errors.push(err),
                 },
             }
         }
@@ -159,12 +173,16 @@ impl TypeSerializer for UnionSerializer {
             for comb_serializer in &self.choices {
                 match comb_serializer.to_python(value, include, exclude, &new_extra) {
                     Ok(v) => return infer_serialize(v.bind(py), serializer, None, None, extra),
-                    Err(err) => match err.is_instance_of::<PydanticSerializationUnexpectedValue>(py) {
+                    Err(err) => match err.is_instance_of::<PydanticSerializationUnexpectedValue>(value.py()) {
                         true => (),
-                        false => return Err(py_err_se_err(err)),
+                        false => errors.push(err),
                     },
                 }
             }
+        }
+
+        for err in &errors {
+            extra.warnings.custom_warning(err.to_string());
         }
 
         extra.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
