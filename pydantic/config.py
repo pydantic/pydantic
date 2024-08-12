@@ -1014,26 +1014,6 @@ class ConfigDict(TypedDict, total=False):
         as the performance difference is minimal if repeated strings are rare.
     """
 
-    experimental_fast_build: bool
-    """Build model schemas faster by skipping the logic associated with storing the parent namespace on the model.
-
-    Defaults to `False` to maintain backwards compatibility, for now. The ideal case is that this change or it's successor
-    can become the default. Thus, if you experience issues with this setting that have not already been documented,
-    please open an issue on GitHub.
-
-    !!! warning
-        If this setting is set to `True`, model schemas for models that involve edge case uses of namespaces, such as
-        generic typed dicts and named tuples, might be incorrect. In some cases, type hints may be resolved with
-        incorrect namespaces.
-
-        We've demonstrated some of these cases in https://github.com/pydantic/pydantic/blob/main/tests/test_fast_build.py
-        to help folks better understand the limitations of this setting.
-
-        There may also be other edge cases where the model schema is incorrect. That being said, this setting has the potential
-        to speed up schema builds by a factor of 10x in cases with hundreds or thousands of complex models, hence the value.
-        We're working on making this speedup compatible with schema builds across the board.
-    """
-
 
 _TypeT = TypeVar('_TypeT', bound=type)
 
