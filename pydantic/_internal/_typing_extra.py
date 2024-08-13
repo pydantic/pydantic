@@ -10,7 +10,6 @@ import typing
 import warnings
 from collections.abc import Callable
 from functools import partial
-from inspect import getframeinfo
 from types import GetSetDescriptorType
 from typing import TYPE_CHECKING, Any, Final
 
@@ -181,7 +180,12 @@ def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
     other cases. See https://discuss.python.org/t/is-there-a-way-to-access-parent-nested-namespaces/20659.
     """
     frame = sys._getframe(parent_depth)
-    # if the class is defined at the top module level, we don't need to add namespace information
+    # if either of the following conditions are true, the class is defined at the top module level
+    # and we don't need to cache the parent frame namespace, because it's accessible via the class' __module__
+    # which we access via _typing_extra.add_module_globals
+
+    # to better understand why we need both of these checks, see
+    # https://github.com/pydantic/pydantic/pull/10113#discussion_r1714981531
     if frame.f_back is None or frame.f_code.co_name == '<module>':
         return None
     else:
