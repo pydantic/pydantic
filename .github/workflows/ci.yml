@@ -355,7 +355,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MERGE_COVERAGE_FILES: true
 
-      - name: Debug coverage file
+      - name: Debug coverage output
         run: |
           pip install coverage[toml]
           ls -la coverage
