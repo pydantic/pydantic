@@ -115,7 +115,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     Configuration for the model, should be a dictionary conforming to [`ConfigDict`][pydantic.config.ConfigDict].
     """
 
-    # Because `dict` is in local namespace of `BaseModel`, we should use `Dict` for annotations.
+    # Because `dict` is in the local namespace of the `BaseModel` class, we use `Dict` for annotations.
+    # TODO v3 fallback to `dict` when the deprecated `dict` method gets removed.
     model_fields: ClassVar[Dict[str, FieldInfo]] = {}  # noqa: UP006
     """
     Metadata about the fields defined on the model,
@@ -180,7 +181,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     if not TYPE_CHECKING:
         # Prevent `BaseModel` from being instantiated directly
-        # (defined in the else block for clarity and to avoid type checking errors):
+        # (defined in an `if not TYPE_CHECKING` block for clarity and to avoid type checking errors):
         __pydantic_core_schema__ = _mock_val_ser.MockCoreSchema(
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly',
             code='base-model-instantiated',
