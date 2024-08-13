@@ -348,12 +348,16 @@ jobs:
           pattern: coverage-*
           path: coverage
 
+      - name: List files
+        run: ls -la
+
       - name: Generate coverage comment
         id: coverage-comment
         uses: py-cov-action/python-coverage-comment-action@v3
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MERGE_COVERAGE_FILES: true
+          COVERAGE_PATH: coverage
 
       - name: Debug coverage output
         run: |
