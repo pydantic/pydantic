@@ -180,7 +180,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     if not TYPE_CHECKING:
         # Prevent `BaseModel` from being instantiated directly
-        # (defined in the else block for clarity and to avoid type checking errors):
+        # (defined in an `if not TYPE_CHECKING` block for clarity and to avoid type checking errors):
         __pydantic_core_schema__ = _mock_val_ser.MockCoreSchema(
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly',
             code='base-model-instantiated',
