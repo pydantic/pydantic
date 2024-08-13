@@ -167,6 +167,11 @@ def is_finalvar(ann_type: Any) -> bool:
     return _check_finalvar(ann_type) or _check_finalvar(get_origin(ann_type))
 
 
+def _remove_default_globals_from_ns(namespace: dict[str, Any]) -> dict[str, Any]:
+    """Remove default globals like __name__, __doc__, etc that aren't needed for type evaluation."""
+    return {k: v for k, v in namespace.items() if not k.startswith('__')}
+
+
 def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
     """We allow use of items in parent namespace to get around the issue with `get_type_hints` only looking in the
     global module namespace. See https://github.com/pydantic/pydantic/issues/2678#issuecomment-1008139014 -> Scope
@@ -184,7 +189,9 @@ def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
     if frame.f_back is None:
         return None
     else:
-        return frame.f_locals
+        if f_locals := frame.f_locals:
+            return _remove_default_globals_from_ns(f_locals)
+        return f_locals
 
 
 def add_module_globals(obj: Any, globalns: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -202,7 +209,9 @@ def add_module_globals(obj: Any, globalns: dict[str, Any] | None = None) -> dict
                 # copy module globals to make sure it can't be updated later
                 return module_globalns.copy()
 
-    return globalns or {}
+    if globalns:
+        return _remove_default_globals_from_ns(globalns)
+    return {}
 
 
 def get_cls_types_namespace(cls: type[Any], parent_namespace: dict[str, Any] | None = None) -> dict[str, Any]:
