@@ -17,7 +17,7 @@ use super::{
 
 macro_rules! build_serializer {
     ($struct_name:ident, $expected_type:literal, $py_type:ty) => {
-        #[derive(Debug, Clone)]
+        #[derive(Debug)]
         pub struct $struct_name {
             item_serializer: Box<CombinedSerializer>,
             name: String,

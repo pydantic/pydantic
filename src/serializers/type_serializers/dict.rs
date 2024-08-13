@@ -15,7 +15,7 @@ use super::{
     SchemaFilter, SerMode, TypeSerializer,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct DictSerializer {
     key_serializer: Box<CombinedSerializer>,
     value_serializer: Box<CombinedSerializer>,

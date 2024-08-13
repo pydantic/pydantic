@@ -40,7 +40,7 @@ macro_rules! combined_serializer {
         find_only: {$($builder:path;)*}
         both: {$($b_key:ident: $b_serializer:path;)*}
     ) => {
-        #[derive(Debug, Clone)]
+        #[derive(Debug)]
         #[enum_dispatch]
         pub enum CombinedSerializer {
             $($e_key($e_serializer),)*
@@ -256,7 +256,7 @@ impl PyGcTraverse for CombinedSerializer {
 }
 
 #[enum_dispatch(CombinedSerializer)]
-pub(crate) trait TypeSerializer: Send + Sync + Clone + Debug {
+pub(crate) trait TypeSerializer: Send + Sync + Debug {
     fn to_python(
         &self,
         value: &Bound<'_, PyAny>,

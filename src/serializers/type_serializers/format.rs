@@ -53,7 +53,7 @@ impl WhenUsed {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct FormatSerializer {
     format_func: PyObject,
     formatting_string: Py<PyString>,
@@ -161,7 +161,7 @@ impl TypeSerializer for FormatSerializer {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ToStringSerializer {
     when_used: WhenUsed,
 }

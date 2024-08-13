@@ -16,7 +16,7 @@ use super::{
     SerMode, TypeSerializer,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct LiteralSerializer {
     expected_int: AHashSet<i64>,
     expected_str: AHashSet<String>,

@@ -38,7 +38,7 @@ fn downcast_date_reject_datetime<'a, 'py>(py_date: &'a Bound<'py, PyAny>) -> PyR
 
 macro_rules! build_serializer {
     ($struct_name:ident, $expected_type:literal, $downcast:path, $convert_func:ident $(, $json_check_func:ident)?) => {
-        #[derive(Debug, Clone)]
+        #[derive(Debug)]
         pub struct $struct_name;
 
         impl BuildSerializer for $struct_name {

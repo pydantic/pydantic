@@ -13,7 +13,7 @@ use super::{
     SerCheck, SerMode, TypeSerializer,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct NoneSerializer;
 
 impl BuildSerializer for NoneSerializer {
@@ -87,7 +87,7 @@ impl TypeSerializer for NoneSerializer {
 
 macro_rules! build_simple_serializer {
     ($struct_name:ident, $expected_type:literal, $rust_type:ty, $ob_type:expr, $key_method:ident, $subtypes_allowed:expr) => {
-        #[derive(Debug, Clone)]
+        #[derive(Debug)]
         pub struct $struct_name;
 
         impl $struct_name {

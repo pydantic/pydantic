@@ -1,4 +1,7 @@
-use std::borrow::Cow;
+use std::{
+    borrow::Cow,
+    sync::{Arc, OnceLock},
+};
 
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -13,6 +16,13 @@ use super::{
 
 #[derive(Debug, Clone, Default)]
 pub struct AnySerializer;
+
+impl AnySerializer {
+    pub fn get() -> &'static Arc<CombinedSerializer> {
+        static ANY_SERIALIZER: OnceLock<Arc<CombinedSerializer>> = OnceLock::new();
+        ANY_SERIALIZER.get_or_init(|| Arc::new(Self.into()))
+    }
+}
 
 impl BuildSerializer for AnySerializer {
     const EXPECTED_TYPE: &'static str = "any";

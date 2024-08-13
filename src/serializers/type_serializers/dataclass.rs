@@ -61,7 +61,7 @@ impl BuildSerializer for DataclassArgsBuilder {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct DataclassSerializer {
     class: Py<PyType>,
     serializer: Box<CombinedSerializer>,

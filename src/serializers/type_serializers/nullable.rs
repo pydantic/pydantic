@@ -9,7 +9,7 @@ use crate::tools::SchemaDict;
 
 use super::{infer_json_key_known, BuildSerializer, CombinedSerializer, Extra, IsType, ObType, TypeSerializer};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct NullableSerializer {
     serializer: Box<CombinedSerializer>,
 }
