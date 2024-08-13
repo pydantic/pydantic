@@ -60,7 +60,7 @@ class _ModelNamespaceDict(dict):
         return super().__setitem__(k, v)
 
 
-def NonInitField(
+def NoInitField(
     default: Any = PydanticUndefined,
     *,
     default_factory: typing.Callable[[], Any] | None = None,
@@ -72,9 +72,7 @@ def NonInitField(
     """
 
 
-@dataclass_transform(
-    kw_only_default=True, field_specifiers=(PydanticModelField, PydanticModelPrivateAttr, NonInitField)
-)
+@dataclass_transform(kw_only_default=True, field_specifiers=(PydanticModelField, PydanticModelPrivateAttr, NoInitField))
 class ModelMetaclass(ABCMeta):
     def __new__(
         mcs,
@@ -245,6 +243,7 @@ class ModelMetaclass(ABCMeta):
             # These are instance variables, but have been assigned value to trick type checker.
             for instance_slot in '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__':
                 del namespace[instance_slot]
+            namespace.get('__annotations__', {}).clear()
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
     if not typing.TYPE_CHECKING:  # pragma: no branch

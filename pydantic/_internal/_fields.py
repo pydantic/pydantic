@@ -99,11 +99,10 @@ def collect_model_fields(  # noqa: C901
             - If there is a field other than `root` in `RootModel`.
             - If a field shadows an attribute in the parent model.
     """
+    BaseModel = import_cached_base_model()
     FieldInfo_ = import_cached_field_info()
 
-    BaseModel = import_cached_base_model()
-    mro = reversed(tuple(base for base in cls.__mro__ if base is not BaseModel))
-    type_hints = get_cls_type_hints_lenient(cls, types_namespace, mro=mro)
+    type_hints = get_cls_type_hints_lenient(cls, types_namespace)
 
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
     # annotations is only used for finding fields in parent classes
