@@ -169,7 +169,7 @@ def is_finalvar(ann_type: Any) -> bool:
 
 def _remove_default_globals_from_ns(namespace: dict[str, Any]) -> dict[str, Any]:
     """Remove default globals like __name__, __doc__, etc that aren't needed for type evaluation."""
-    return {k: v for k, v in namespace.items() if not k.startswith('__')}
+    return {k: v for k, v in namespace.items() if not k.startswith(('__', '@'))}
 
 
 def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
