@@ -169,14 +169,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     __pydantic_validator__: ClassVar[SchemaValidator | PluggableSchemaValidator]
     """The pydantic-core SchemaValidator used to validate instances of the model."""
 
-    __pydantic_extra__: dict[str, Any] | None = _model_construction.NoInitField()
+    __pydantic_extra__: dict[str, Any] | None = _model_construction.NoInitField(init=False)
     """An instance attribute with the values of extra fields from validation when
     `model_config['extra'] == 'allow'`."""
 
-    __pydantic_fields_set__: set[str] = _model_construction.NoInitField()
+    __pydantic_fields_set__: set[str] = _model_construction.NoInitField(init=False)
     """An instance attribute with the names of fields explicitly set."""
 
-    __pydantic_private__: dict[str, Any] | None = _model_construction.NoInitField()
+    __pydantic_private__: dict[str, Any] | None = _model_construction.NoInitField(init=False)
     """Instance attribute with the values of private attributes set on the model instance."""
 
     if not TYPE_CHECKING:
