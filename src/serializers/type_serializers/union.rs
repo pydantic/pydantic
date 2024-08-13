@@ -14,7 +14,7 @@ use super::{
     TypeSerializer,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct UnionSerializer {
     choices: Vec<CombinedSerializer>,
     name: String,

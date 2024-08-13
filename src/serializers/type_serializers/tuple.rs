@@ -17,7 +17,7 @@ use super::{
     PydanticSerializer, SchemaFilter, SerMode, TypeSerializer,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct TupleSerializer {
     serializers: Vec<CombinedSerializer>,
     variadic_item_index: Option<usize>,

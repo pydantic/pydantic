@@ -10,7 +10,7 @@ use super::{
     IsType, ObType, SerMode, TypeSerializer,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct StrSerializer;
 
 impl StrSerializer {

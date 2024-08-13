@@ -15,7 +15,7 @@ use super::simple::IntSerializer;
 use super::string::StrSerializer;
 use super::{BuildSerializer, CombinedSerializer, Extra, TypeSerializer};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct EnumSerializer {
     class: Py<PyType>,
     serializer: Option<Box<CombinedSerializer>>,

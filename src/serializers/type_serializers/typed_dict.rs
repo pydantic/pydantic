@@ -11,7 +11,7 @@ use crate::tools::SchemaDict;
 
 use super::{BuildSerializer, CombinedSerializer, ComputedFields, FieldsMode, GeneralFieldsSerializer, SerField};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct TypedDictBuilder;
 
 impl BuildSerializer for TypedDictBuilder {

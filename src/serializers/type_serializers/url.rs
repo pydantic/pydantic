@@ -14,7 +14,7 @@ use super::{
 
 macro_rules! build_serializer {
     ($struct_name:ident, $expected_type:literal, $extract:ty) => {
-        #[derive(Debug, Clone)]
+        #[derive(Debug)]
         pub struct $struct_name;
 
         impl BuildSerializer for $struct_name {

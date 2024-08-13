@@ -12,7 +12,7 @@ use super::{
     TypeSerializer,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct TimeDeltaSerializer {
     timedelta_mode: TimedeltaMode,
 }

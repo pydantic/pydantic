@@ -12,7 +12,7 @@ use crate::tools::SchemaDict;
 
 use super::{py_err_se_err, BuildSerializer, CombinedSerializer, Extra, TypeSerializer};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct DefinitionsSerializerBuilder;
 
 impl BuildSerializer for DefinitionsSerializerBuilder {

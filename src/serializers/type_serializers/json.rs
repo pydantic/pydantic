@@ -16,7 +16,7 @@ use super::{
     TypeSerializer,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct JsonSerializer {
     serializer: Box<CombinedSerializer>,
 }
