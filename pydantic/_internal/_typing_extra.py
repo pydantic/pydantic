@@ -212,7 +212,7 @@ def get_cls_types_namespace(cls: type[Any], parent_namespace: dict[str, Any] | N
 
 
 def get_cls_type_hints_lenient(
-    obj: Any, globalns: dict[str, Any] | None = None, mro: Iterable[type] | None = None
+    obj: Any, globalns: dict[str, Any] | None = None, mro: Iterable[type[Any]] | None = None
 ) -> dict[str, Any]:
     """Collect annotations from a class, including those from parent classes.
 
