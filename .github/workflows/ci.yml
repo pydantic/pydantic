@@ -348,7 +348,7 @@ jobs:
           pattern: coverage-*
           path: coverage
 
-      - name: List files
+      - name: List all files
         run: ls -la
 
       - name: Generate coverage comment
