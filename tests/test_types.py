@@ -1,4 +1,5 @@
 import collections
+import ipaddress
 import itertools
 import json
 import math
@@ -39,7 +40,12 @@ import annotated_types
 import dirty_equals
 import pytest
 from dirty_equals import HasRepr, IsFloatNan, IsOneOf, IsStr
-from pydantic_core import CoreSchema, PydanticCustomError, SchemaError, core_schema
+from pydantic_core import (
+    CoreSchema,
+    PydanticCustomError,
+    SchemaError,
+    core_schema,
+)
 from typing_extensions import Annotated, Literal, NotRequired, TypedDict, get_args
 
 from pydantic import (
@@ -6811,3 +6817,20 @@ def test_mutable_mapping() -> None:
     adapter = TypeAdapter(collections.abc.MutableMapping, config=ConfigDict(arbitrary_types_allowed=True, strict=True))
 
     assert isinstance(adapter.validate_python(collections.UserDict()), collections.abc.MutableMapping)
+
+
+def test_ser_ip_with_union() -> None:
+    bool_first = TypeAdapter(Union[bool, ipaddress.IPv4Address])
+    assert bool_first.dump_python(True, mode='json') is True
+    assert bool_first.dump_json(True) == b'true'
+
+    ip_first = TypeAdapter(Union[ipaddress.IPv4Address, bool])
+    assert ip_first.dump_python(True, mode='json') is True
+    assert ip_first.dump_json(True) == b'true'
+
+
+def test_ser_ip_with_unexpected_value() -> None:
+    ta = TypeAdapter(ipaddress.IPv4Address)
+
+    with pytest.raises(UserWarning, match='serialized value may not be as expected.'):
+        assert ta.dump_python(123)
