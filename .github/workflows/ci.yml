@@ -349,7 +349,11 @@ jobs:
           path: coverage
 
       - name: List all files
-        run: ls -la
+        run: |
+          echo "Current directory:"
+          ls -la
+          echo "coverage directory (if it exists):"
+          ls -la coverage || echo "coverage directory does not exist"
 
       - name: Generate coverage comment
         id: coverage-comment
