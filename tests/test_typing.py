@@ -141,3 +141,28 @@ def test_eval_type_backport_not_installed():
 
     finally:
         del sys.modules['eval_type_backport']
+
+
+def test_func_ns_excludes_default_globals() -> None:
+    foo = 'foo'
+
+    func_ns = parent_frame_namespace(parent_depth=1)
+    assert func_ns is not None
+    assert func_ns['foo'] == foo
+
+    # there are more default global variables, but these are examples of well known ones
+    for default_global_var in ['__name__', '__doc__', '__package__', '__builtins__']:
+        assert default_global_var not in func_ns
+
+
+module_foo = 'global_foo'
+module_ns = parent_frame_namespace(parent_depth=1)
+
+
+def test_module_ns_excludes_default_globals() -> None:
+    assert module_ns is not None
+    assert 'module_foo' in module_ns
+
+    # there are more default global variables, but these are examples of well known ones
+    for default_global_var in ['__name__', '__doc__', '__package__', '__builtins__']:
+        assert default_global_var not in module_ns

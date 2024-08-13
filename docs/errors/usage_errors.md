@@ -864,39 +864,40 @@ except PydanticUserError as exc_info:
 Valid field serializer signatures are:
 
 ```py test="skip" lint="skip" upgrade="skip"
-from pydantic import field_serializer
+from pydantic import FieldSerializationInfo, SerializerFunctionWrapHandler, field_serializer
 
 # an instance method with the default mode or `mode='plain'`
-@field_serializer('x')  # or @serialize('x', mode='plain')
-def ser_x(self, value: Any, info: pydantic.FieldSerializationInfo): ...
+@field_serializer('x')  # or @field_serializer('x', mode='plain')
+def ser_x(self, value: Any, info: FieldSerializationInfo): ...
 
-# a static method or free-standing function with the default mode or `mode='plain'`
-@field_serializer('x')  # or @serialize('x', mode='plain')
+# a static method or function with the default mode or `mode='plain'`
+@field_serializer('x')  # or @field_serializer('x', mode='plain')
 @staticmethod
-def ser_x(value: Any, info: pydantic.FieldSerializationInfo): ...
+def ser_x(value: Any, info: FieldSerializationInfo): ...
+
 # equivalent to
-def ser_x(value: Any, info: pydantic.FieldSerializationInfo): ...
+def ser_x(value: Any, info: FieldSerializationInfo): ...
 serializer('x')(ser_x)
 
 # an instance method with `mode='wrap'`
 @field_serializer('x', mode='wrap')
-def ser_x(self, value: Any, nxt: pydantic.SerializerFunctionWrapHandler, info: pydantic.FieldSerializationInfo): ...
+def ser_x(self, value: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo): ...
 
-# a static method or free-standing function with `mode='wrap'`
+# a static method or function with `mode='wrap'`
 @field_serializer('x', mode='wrap')
 @staticmethod
-def ser_x(value: Any, nxt: pydantic.SerializerFunctionWrapHandler, info: pydantic.FieldSerializationInfo): ...
+def ser_x(value: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo): ...
+
 # equivalent to
-def ser_x(value: Any, nxt: pydantic.SerializerFunctionWrapHandler, info: pydantic.FieldSerializationInfo): ...
+def ser_x(value: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo): ...
 serializer('x')(ser_x)
 
-For all of these, you can also choose to omit the `info` argument, for example:
-
+# For all of these, you can also choose to omit the `info` argument, for example:
 @field_serializer('x')
 def ser_x(self, value: Any): ...
 
 @field_serializer('x', mode='wrap')
-def ser_x(self, value: Any, handler: pydantic.SerializerFunctionWrapHandler): ...
+def ser_x(self, value: Any, handler: SerializerFunctionWrapHandler): ...
 ```
 
 ## Unrecognized `model_serializer` signature {#model-serializer-signature}
@@ -922,7 +923,7 @@ except PydanticUserError as exc_info:
 Valid model serializer signatures are:
 
 ```py test="skip" lint="skip" upgrade="skip"
-from pydantic import model_serializer, SerializerFunctionWrapHandler, SerializationInfo
+from pydantic import SerializerFunctionWrapHandler, SerializationInfo, model_serializer
 
 # an instance method with the default mode or `mode='plain'`
 @model_serializer  # or model_serializer(mode='plain')
@@ -932,8 +933,7 @@ def mod_ser(self, info: SerializationInfo): ...
 @model_serializer(mode='wrap')
 def mod_ser(self, handler: SerializerFunctionWrapHandler, info: SerializationInfo):
 
-For all of these, you can also choose to omit the `info` argument, for example:
-
+# For all of these, you can also choose to omit the `info` argument, for example:
 @model_serializer(mode='plain')
 def mod_ser(self): ...
 
