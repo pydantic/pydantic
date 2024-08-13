@@ -182,7 +182,7 @@ def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
     """
     frame = sys._getframe(parent_depth)
     # if the class is defined at the top module level, we don't need to add namespace information
-    if frame.f_back is None or getframeinfo(frame).function == '<module>':
+    if frame.f_back is None or frame.f_code.co_name == '<module>':
         return None
     else:
         return frame.f_locals
