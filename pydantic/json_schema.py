@@ -1053,7 +1053,20 @@ class GenerateJsonSchema:
             and not ser_schema.get('info_arg')
             and not (default is None and ser_schema.get('when_used') == 'json-unless-none')
         ):
-            default = ser_func(default)  # type: ignore
+            try:
+                default = ser_func(default)  # type: ignore
+            except Exception:
+                # It might be that the provided default needs to be validated (read: parsed) first
+                # (assuming `validate_default` is enabled). However, we can't perform
+                # such validation during JSON Schema generation so we don't support
+                # this pattern for now.
+                # (One example is when using `foo: ByteSize = '1MB'`, which validates and
+                # serializes as an int. In this case, `ser_func` is `int` and `int('1MB')` fails).
+                self.emit_warning(
+                    'non-serializable-default',
+                    f'Unable to serialize value {default!r} with the plain serializer; excluding default from JSON schema',
+                )
+                return json_schema
 
         try:
             encoded_default = self.encode_default(default)

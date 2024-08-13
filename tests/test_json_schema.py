@@ -1300,14 +1300,10 @@ def test_callable_type_with_fallback(default_value, properties):
 def test_byte_size_type():
     class Model(BaseModel):
         a: ByteSize
-        b: ByteSize = Field('1MB', validate_default=True)
+        b: ByteSize = ByteSize(1000000)
+        c: ByteSize = Field(default='1MB', validate_default=True)
 
-    model_json_schema_validation = Model.model_json_schema(mode='validation')
-    model_json_schema_serialization = Model.model_json_schema(mode='serialization')
-
-    print(model_json_schema_serialization)
-
-    assert model_json_schema_validation == {
+    assert Model.model_json_schema(mode='validation') == {
         'properties': {
             'a': {
                 'anyOf': [
@@ -1321,8 +1317,16 @@ def test_byte_size_type():
                     {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
                     {'minimum': 0, 'type': 'integer'},
                 ],
-                'default': '1MB',
+                'default': 1000000,
                 'title': 'B',
+            },
+            'c': {
+                'anyOf': [
+                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
+                    {'minimum': 0, 'type': 'integer'},
+                ],
+                'default': '1MB',
+                'title': 'C',
             },
         },
         'required': ['a'],
@@ -1330,15 +1334,22 @@ def test_byte_size_type():
         'type': 'object',
     }
 
-    assert model_json_schema_serialization == {
-        'properties': {
-            'a': {'minimum': 0, 'title': 'A', 'type': 'integer'},
-            'b': {'default': '1MB', 'minimum': 0, 'title': 'B', 'type': 'integer'},
-        },
-        'required': ['a'],
-        'title': 'Model',
-        'type': 'object',
-    }
+    with pytest.warns(
+        PydanticJsonSchemaWarning,
+        match=re.escape(
+            "Unable to serialize value '1MB' with the plain serializer; excluding default from JSON schema"
+        ),
+    ):
+        assert Model.model_json_schema(mode='serialization') == {
+            'properties': {
+                'a': {'minimum': 0, 'title': 'A', 'type': 'integer'},
+                'b': {'default': 1000000, 'minimum': 0, 'title': 'B', 'type': 'integer'},
+                'c': {'minimum': 0, 'title': 'C', 'type': 'integer'},
+            },
+            'required': ['a'],
+            'title': 'Model',
+            'type': 'object',
+        }
 
 
 @pytest.mark.parametrize(
