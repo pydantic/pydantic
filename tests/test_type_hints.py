@@ -73,7 +73,6 @@ def get_type_checking_only_ns():
     from pydantic.fields import PrivateAttr as _PrivateAttr
 
     return {
-        # **pydantic_main_globals,
         'Signature': Signature,
         'CoreSchema': CoreSchema,
         'SchemaSerializer': SchemaSerializer,
