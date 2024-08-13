@@ -183,12 +183,13 @@ def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
     WARNING 2: this only looks in the parent namespace, not other parents since (AFAIK) there's no way to collect a
     dict of exactly what's in scope. Using `f_back` would work sometimes but would be very wrong and confusing in many
     other cases. See https://discuss.python.org/t/is-there-a-way-to-access-parent-nested-namespaces/20659.
+
+    This function returns None if the parent frame is at the top module level. This is because the class' __module__
+    attribute can be used to access the parent namespace. This is done in `_typing_extra.add_module_globals`.
+    There's no need to cache the parent frame namespace in this case.
     """
     frame = sys._getframe(parent_depth)
     # if either of the following conditions are true, the class is defined at the top module level
-    # and we don't need to cache the parent frame namespace, because it's accessible via the class' __module__
-    # which we access via _typing_extra.add_module_globals
-
     # to better understand why we need both of these checks, see
     # https://github.com/pydantic/pydantic/pull/10113#discussion_r1714981531
     if frame.f_back is None or frame.f_code.co_name == '<module>':
