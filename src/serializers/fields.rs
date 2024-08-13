@@ -206,7 +206,7 @@ impl GeneralFieldsSerializer {
 
         if extra.check.enabled()
             // If any of these are true we can't count fields
-            && !(extra.exclude_defaults || extra.exclude_unset || extra.exclude_none)
+            && !(extra.exclude_defaults || extra.exclude_unset || extra.exclude_none || exclude.is_some())
             // Check for missing fields, we can't have extra fields here
             && self.required_fields > used_req_fields
         {
