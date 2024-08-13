@@ -191,15 +191,11 @@ class ModelMetaclass(ABCMeta):
             for name, obj in private_attributes.items():
                 obj.__set_name__(cls, name)
 
-            if not config_wrapper.experimental_fast_build:
-                if __pydantic_reset_parent_namespace__:
-                    cls.__pydantic_parent_namespace__ = build_lenient_weakvaluedict(parent_frame_namespace())
-                parent_namespace = getattr(cls, '__pydantic_parent_namespace__', None)
-                if isinstance(parent_namespace, dict):
-                    parent_namespace = unpack_lenient_weakvaluedict(parent_namespace)
-            else:
-                cls.__pydantic_parent_namespace__ = None
-                parent_namespace = {}
+            if __pydantic_reset_parent_namespace__:
+                cls.__pydantic_parent_namespace__ = build_lenient_weakvaluedict(parent_frame_namespace())
+            parent_namespace = getattr(cls, '__pydantic_parent_namespace__', None)
+            if isinstance(parent_namespace, dict):
+                parent_namespace = unpack_lenient_weakvaluedict(parent_namespace)
 
             types_namespace = get_cls_types_namespace(cls, parent_namespace)
             set_model_fields(cls, bases, config_wrapper, types_namespace)
