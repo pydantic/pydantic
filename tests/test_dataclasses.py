@@ -3029,3 +3029,11 @@ def test_frozen_with_validate_assignment() -> None:
         inst.x = 'other'
     except ValidationError as e:
         assert 'Instance is frozen' in repr(e)
+
+
+def test_warns_on_double_frozen() -> None:
+    with pytest.warns(UserWarning, match='`frozen` is set via both the `dataclass` decorator and `config`'):
+
+        @pydantic.dataclasses.dataclass(frozen=True, config=ConfigDict(frozen=True))
+        class DC:
+            x: int
