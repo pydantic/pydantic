@@ -348,6 +348,7 @@ jobs:
 
       - name: Debug coverage file
         run: |
+          pip install coverage[toml]
           ls -la
           coverage report
 
