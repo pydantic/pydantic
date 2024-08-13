@@ -628,6 +628,18 @@ def test_union_serializer_picks_exact_type_over_subclass_json(
     assert s.to_json(input_value) == json.dumps(expected_value).encode()
 
 
+def test_union_float_int() -> None:
+    s = SchemaSerializer(core_schema.union_schema([core_schema.float_schema(), core_schema.int_schema()]))
+
+    assert s.to_python(1) == 1
+    assert json.loads(s.to_json(1)) == 1
+
+    s = SchemaSerializer(core_schema.union_schema([core_schema.int_schema(), core_schema.float_schema()]))
+
+    assert s.to_python(1) == 1
+    assert json.loads(s.to_json(1)) == 1
+
+
 def test_custom_serializer() -> None:
     s = SchemaSerializer(
         core_schema.union_schema(
