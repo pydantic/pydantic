@@ -236,7 +236,7 @@ def dataclass(
                     f'`frozen` is set via both the `dataclass` decorator and `config` for dataclass {cls.__name__!r}.'
                     'This is not recommended. The `frozen` specification on `dataclass` will take priority.',
                     category=UserWarning,
-                    stacklevel=3,
+                    stacklevel=2,
                 )
         else:
             frozen_ = config_wrapper.frozen or False
