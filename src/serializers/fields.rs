@@ -20,7 +20,7 @@ use super::shared::PydanticSerializer;
 use super::shared::{CombinedSerializer, TypeSerializer};
 
 /// representation of a field for serialization
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub(super) struct SerField {
     pub key_py: Py<PyString>,
     pub alias: Option<String>,
@@ -93,7 +93,7 @@ pub(super) enum FieldsMode {
 }
 
 /// General purpose serializer for fields - used by dataclasses, models and typed_dicts
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct GeneralFieldsSerializer {
     fields: AHashMap<String, SerField>,
     computed_fields: Option<ComputedFields>,

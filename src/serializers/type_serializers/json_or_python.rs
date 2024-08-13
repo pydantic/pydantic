@@ -8,7 +8,7 @@ use super::{BuildSerializer, CombinedSerializer, Extra, TypeSerializer};
 use crate::definitions::DefinitionsBuilder;
 use crate::tools::SchemaDict;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct JsonOrPythonSerializer {
     json: Box<CombinedSerializer>,
     python: Box<CombinedSerializer>,

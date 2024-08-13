@@ -10,7 +10,7 @@ use crate::validators::DefaultType;
 
 use super::{BuildSerializer, CombinedSerializer, Extra, TypeSerializer};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct WithDefaultSerializer {
     default: DefaultType,
     serializer: Box<CombinedSerializer>,

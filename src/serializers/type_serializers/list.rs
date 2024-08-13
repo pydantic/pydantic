@@ -15,7 +15,7 @@ use super::{
     SchemaFilter, TypeSerializer,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ListSerializer {
     item_serializer: Box<CombinedSerializer>,
     filter: SchemaFilter<usize>,

@@ -14,7 +14,7 @@ use crate::tools::SchemaDict;
 use super::errors::py_err_se_err;
 use super::Extra;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub(super) struct ComputedFields(Vec<ComputedField>);
 
 impl ComputedFields {
@@ -109,7 +109,7 @@ impl ComputedFields {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 struct ComputedField {
     property_name: String,
     property_name_py: Py<PyString>,

@@ -72,7 +72,7 @@ impl BuildSerializer for ModelFieldsBuilder {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ModelSerializer {
     class: Py<PyType>,
     serializer: Box<CombinedSerializer>,

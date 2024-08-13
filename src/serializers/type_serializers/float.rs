@@ -15,7 +15,7 @@ use super::{
     SerMode, TypeSerializer,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct FloatSerializer {
     inf_nan_mode: InfNanMode,
 }

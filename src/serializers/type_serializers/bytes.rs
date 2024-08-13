@@ -11,7 +11,7 @@ use super::{
     TypeSerializer,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct BytesSerializer {
     bytes_mode: BytesMode,
 }

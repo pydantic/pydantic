@@ -18,7 +18,7 @@ pub(crate) fn uuid_to_string(py_uuid: &Bound<'_, PyAny>) -> PyResult<String> {
     Ok(uuid.to_string())
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct UuidSerializer;
 
 impl_py_gc_traverse!(UuidSerializer {});
