@@ -1,6 +1,7 @@
 import dataclasses
 import json
 import platform
+import warnings
 from random import randint
 from typing import Any, ClassVar, Dict
 
@@ -1080,3 +1081,23 @@ def test_extra_custom_serializer():
     m.__pydantic_extra__ = {'extra': 'extra'}
 
     assert s.to_python(m) == {'extra': 'extra bam!'}
+
+
+def test_no_warn_on_exclude() -> None:
+    warnings.simplefilter('error')
+
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            BasicModel,
+            core_schema.model_fields_schema(
+                {
+                    'a': core_schema.model_field(core_schema.int_schema()),
+                    'b': core_schema.model_field(core_schema.int_schema()),
+                }
+            ),
+        )
+    )
+
+    value = BasicModel(a=0, b=1)
+    assert s.to_python(value, exclude={'b'}) == {'a': 0}
+    assert s.to_python(value, mode='json', exclude={'b'}) == {'a': 0}
