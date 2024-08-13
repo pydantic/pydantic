@@ -6257,6 +6257,22 @@ def test_plain_serializer_applies_to_default() -> None:
     }
 
 
+def test_plain_serializer_does_not_apply_json_unless_none() -> None:
+    """Test plain serializers aren't used to compute the JSON Schema default if mode is 'json-unless-none'
+    and default value is `None`."""
+
+    class Model(BaseModel):
+        custom_decimal: Annotated[
+            Optional[Decimal], PlainSerializer(lambda x: float(x), when_used='json-unless-none', return_type=float)
+        ] = None
+
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': {'custom_decimal': {'default': None, 'title': 'Custom Decimal', 'type': 'number'}},
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 def test_merge_json_schema_extra_from_field_infos() -> None:
     class Model(BaseModel):
         f: Annotated[str, Field(json_schema_extra={'a': 1, 'b': 2})]
