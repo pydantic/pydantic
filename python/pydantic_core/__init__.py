@@ -34,7 +34,7 @@ if _sys.version_info < (3, 11):
 else:
     from typing import NotRequired as _NotRequired
 
-if _sys.version_info < (3, 9):
+if _sys.version_info < (3, 12):
     from typing_extensions import TypedDict as _TypedDict
 else:
     from typing import TypedDict as _TypedDict
