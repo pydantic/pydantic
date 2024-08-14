@@ -513,15 +513,15 @@ files = [
 
 [[package]]
 name = "dirty-equals"
-version = "0.7.1.post0"
-requires_python = ">=3.7"
+version = "0.8.0"
+requires_python = ">=3.8"
 summary = "Doing dirty (but extremely useful) things with equals."
 dependencies = [
-    "pytz>=2021.3",
+    "pytz>=2021.3; python_version < \"3.9\"",
 ]
 files = [
-    {file = "dirty_equals-0.7.1.post0-py3-none-any.whl", hash = "sha256:7fb9217ea7cd04c0e95ace3bc717e2ee5532b8990518533483e53b5a43903c88"},
-    {file = "dirty_equals-0.7.1.post0.tar.gz", hash = "sha256:78ff80578a46163831ecb3255cf30d03d1dc2fbca8e67f820105691a1bc556dc"},
+    {file = "dirty_equals-0.8.0-py3-none-any.whl", hash = "sha256:0ef998ba3c395e03cf5eb3cd1c13c26a9a992efa18c0d59c22ba27344519cee1"},
+    {file = "dirty_equals-0.8.0.tar.gz", hash = "sha256:798db3b9481b9a5024c0e520946507676ed2f0c65317d3e95bdce1a01657cf60"},
 ]
 
 [[package]]
@@ -580,15 +580,15 @@ files = [
 
 [[package]]
 name = "faker"
-version = "26.1.0"
+version = "27.0.0"
 requires_python = ">=3.8"
 summary = "Faker is a Python package that generates fake data for you."
 dependencies = [
     "python-dateutil>=2.4",
 ]
 files = [
-    {file = "Faker-26.1.0-py3-none-any.whl", hash = "sha256:e8c5ef795223e945d9166aea3c0ecaf85ac54b4ade2af068d8e3c6524c2c0aa7"},
-    {file = "Faker-26.1.0.tar.gz", hash = "sha256:33921b6fc3b83dd75fd42ec7f47ec87b50c00d3c5380fa7d8a507dab848b8229"},
+    {file = "Faker-27.0.0-py3-none-any.whl", hash = "sha256:55ed0c4ed7bf16800c64823805f6fbbe6d4823db4b7c0903f6f890b8e4d6c34b"},
+    {file = "faker-27.0.0.tar.gz", hash = "sha256:32c78b68d2ba97aaad78422e4035785de2b4bb46b81e428190fc11978da9036c"},
 ]
 
 [[package]]
@@ -942,7 +942,7 @@ files = [
 name = "mike"
 version = "2.2.0.dev0"
 git = "https://github.com/jimporter/mike.git"
-revision = "3b19e27e9041cca20131f97419a9d7d88f85cf37"
+revision = "3b425156dec71bd7cd3440f42f41b99c7013a9ce"
 summary = "Manage multiple versions of your MkDocs-powered documentation"
 dependencies = [
     "importlib-metadata",
@@ -1350,7 +1350,7 @@ version = "2.9.0"
 requires_python = ">=3.8"
 git = "https://github.com/pydantic/pydantic-extra-types.git"
 ref = "main"
-revision = "b1def3530cd5c0d234a09ea709a3cb152003ed76"
+revision = "49db83a9dfbdbec887f90ab78b0403720543c049"
 summary = "Extra Pydantic types."
 dependencies = [
     "pydantic>=2.5.2",
