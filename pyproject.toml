@@ -53,7 +53,6 @@ dependencies = [
     "pydantic-core==2.21.0",
     # See: https://docs.python.org/3/library/zoneinfo.html#data-sources
     'tzdata; python_version >= "3.9"',
-    'pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main',
 ]
 dynamic = ['version', 'readme']
 

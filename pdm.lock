@@ -5,7 +5,7 @@
 groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "testing-extra"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:4349df975b4389b25187c40ab31fb67b67b6cf8eb1630ea61a17f4775d143b27"
+content_hash = "sha256:a840e6bba88218dbec7f3ac1de5db5644f8b76fce16925957867562e7fee4791"
 
 [[metadata.targets]]
 requires_python = ">=3.8"
@@ -942,6 +942,7 @@ files = [
 name = "mike"
 version = "2.2.0.dev0"
 git = "https://github.com/jimporter/mike.git"
+ref = "main"
 revision = "3b425156dec71bd7cd3440f42f41b99c7013a9ce"
 summary = "Manage multiple versions of your MkDocs-powered documentation"
 dependencies = [
