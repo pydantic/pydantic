@@ -112,7 +112,7 @@ docs = [
     "mkdocstrings-python",
     "tomli",
     "pyupgrade",
-    "mike @ git+https://github.com/jimporter/mike.git",
+    "mike @ git+https://github.com/jimporter/mike.git@master",
     "mkdocs-embed-external-markdown>=2.3.0",
     "pytest-examples>=0.0.13",
     "pydantic-settings>=2.0b1",
@@ -128,6 +128,7 @@ linting = [
 testing = [
     "cloudpickle",
     "coverage[toml]",
+    "pytz",
     "dirty-equals",
     "eval-type-backport",
     "pytest>=8.2.2",
