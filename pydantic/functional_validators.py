@@ -304,15 +304,7 @@ if TYPE_CHECKING:
     )
     _V2WrapValidatorType = TypeVar('_V2WrapValidatorType', bound=Union[_V2WrapValidator, _PartialClsOrStaticMethod])
 
-
-@overload
-def field_validator(
-    field: str,
-    /,
-    *fields: str,
-    mode: Literal['before', 'after', 'plain'] = ...,
-    check_fields: bool | None = ...,
-) -> Callable[[_V2BeforeAfterOrPlainValidatorType], _V2BeforeAfterOrPlainValidatorType]: ...
+FieldValidatorModes: TypeAlias = Literal['before', 'after', 'wrap', 'plain']
 
 
 @overload
@@ -322,10 +314,29 @@ def field_validator(
     *fields: str,
     mode: Literal['wrap'],
     check_fields: bool | None = ...,
+    input_type: Any = ...,
 ) -> Callable[[_V2WrapValidatorType], _V2WrapValidatorType]: ...
 
 
-FieldValidatorModes: TypeAlias = Literal['before', 'after', 'wrap', 'plain']
+@overload
+def field_validator(
+    field: str,
+    /,
+    *fields: str,
+    mode: Literal['before', 'plain'],
+    check_fields: bool | None = ...,
+    input_type: Any = ...,
+) -> Callable[[_V2BeforeAfterOrPlainValidatorType], _V2BeforeAfterOrPlainValidatorType]: ...
+
+
+@overload
+def field_validator(
+    field: str,
+    /,
+    *fields: str,
+    mode: Literal['after'] = ...,
+    check_fields: bool | None = ...,
+) -> Callable[[_V2BeforeAfterOrPlainValidatorType], _V2BeforeAfterOrPlainValidatorType]: ...
 
 
 def field_validator(
@@ -334,6 +345,7 @@ def field_validator(
     *fields: str,
     mode: FieldValidatorModes = 'after',
     check_fields: bool | None = None,
+    input_type: Any = PydanticUndefined,
 ) -> Callable[[Any], Any]:
     """Usage docs: https://docs.pydantic.dev/2.9/concepts/validators/#field-validators
 
@@ -381,6 +393,9 @@ def field_validator(
         *fields: Additional field(s) the `field_validator` should be called on.
         mode: Specifies whether to validate the fields before or after validation.
         check_fields: Whether to check that the fields actually exist on the model.
+        input_type: The input type of the function. This is only used to generate
+            the appropriate JSON Schema (in validation mode) and can only specified
+            when `mode` is either `'before'`, `'plain'` or `'wrap'`.
 
     Returns:
         A decorator that can be used to decorate a function to be used as a field_validator.
@@ -397,6 +412,13 @@ def field_validator(
             "E.g. usage should be `@validator('<field_name>', ...)`",
             code='validator-no-fields',
         )
+
+    if mode not in ('before', 'plain', 'wrap') and input_type is not PydanticUndefined:
+        raise PydanticUserError(
+            f"`input_type` can't be used when mode is set to {mode!r}",
+            code=None,
+        )
+
     fields = field, *fields
     if not all(isinstance(field, str) for field in fields):
         raise PydanticUserError(
@@ -416,7 +438,9 @@ def field_validator(
         # auto apply the @classmethod decorator
         f = _decorators.ensure_classmethod_based_on_signature(f)
 
-        dec_info = _decorators.FieldValidatorDecoratorInfo(fields=fields, mode=mode, check_fields=check_fields)
+        dec_info = _decorators.FieldValidatorDecoratorInfo(
+            fields=fields, mode=mode, check_fields=check_fields, input_type=input_type
+        )
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     return dec
