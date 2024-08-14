@@ -112,7 +112,7 @@ docs = [
     "mkdocstrings-python",
     "tomli",
     "pyupgrade",
-    "mike @ git+https://github.com/jimporter/mike.git@main",
+    "mike @ git+https://github.com/jimporter/mike.git@master",
     "mkdocs-embed-external-markdown>=2.3.0",
     "pytest-examples>=0.0.13",
     "pydantic-settings>=2.0b1",
