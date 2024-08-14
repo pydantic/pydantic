@@ -6268,17 +6268,31 @@ def test_plain_serializer_applies_to_default() -> None:
     }
 
 
-def test_plain_serializer_does_not_apply_json_unless_none() -> None:
+def test_plain_serializer_does_not_apply_with_unless_none() -> None:
     """Test plain serializers aren't used to compute the JSON Schema default if mode is 'json-unless-none'
     and default value is `None`."""
 
     class Model(BaseModel):
-        custom_decimal: Annotated[
+        custom_decimal_json_unless_none: Annotated[
             Optional[Decimal], PlainSerializer(lambda x: float(x), when_used='json-unless-none', return_type=float)
+        ] = None
+        custom_decimal_unless_none: Annotated[
+            Optional[Decimal], PlainSerializer(lambda x: float(x), when_used='unless-none', return_type=float)
         ] = None
 
     assert Model.model_json_schema(mode='serialization') == {
-        'properties': {'custom_decimal': {'default': None, 'title': 'Custom Decimal', 'type': 'number'}},
+        'properties': {
+            'custom_decimal_json_unless_none': {
+                'anyOf': [{'type': 'null'}, {'type': 'number'}],
+                'default': None,
+                'title': 'Custom Decimal Json Unless None',
+            },
+            'custom_decimal_unless_none': {
+                'anyOf': [{'type': 'null'}, {'type': 'number'}],
+                'default': None,
+                'title': 'Custom Decimal Unless None',
+            },
+        },
         'title': 'Model',
         'type': 'object',
     }

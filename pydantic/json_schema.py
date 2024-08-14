@@ -492,6 +492,12 @@ class GenerateJsonSchema:
             if self.mode == 'serialization' and 'serialization' in schema_or_field:
                 ser_schema = schema_or_field['serialization']  # type: ignore
                 json_schema = self.ser_schema(ser_schema)
+                if (
+                    json_schema is not None
+                    and ser_schema.get('when_used') in ('unless-none', 'json-unless-none')
+                    and schema_or_field['type'] == 'nullable'
+                ):
+                    json_schema = self.get_flattened_anyof([{'type': 'null'}, json_schema])
             if json_schema is None:
                 if _core_utils.is_core_schema(schema_or_field) or _core_utils.is_core_schema_field(schema_or_field):
                     generate_for_schema_type = self._schema_type_to_method[schema_or_field['type']]
@@ -1051,7 +1057,7 @@ class GenerateJsonSchema:
             and (ser_func := ser_schema.get('function'))
             and ser_schema.get('type') == 'function-plain'
             and not ser_schema.get('info_arg')
-            and not (default is None and ser_schema.get('when_used') == 'json-unless-none')
+            and not (default is None and ser_schema.get('when_used') in ('unless-none', 'json-unless-none'))
         ):
             try:
                 default = ser_func(default)  # type: ignore
