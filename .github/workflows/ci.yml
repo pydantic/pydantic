@@ -205,7 +205,9 @@ jobs:
           pdm install -G testing
 
       - name: install example plugin
-        run: pdm add ./tests/plugin -v
+        run: |
+          pdm cache clear
+          pdm add ./tests/plugin -v
 
       - run: pdm run pytest ./tests/plugin
         env:
