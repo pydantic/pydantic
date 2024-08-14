@@ -214,7 +214,7 @@ jobs:
       # uninstalling is necessary to avoid creating a pdm cache shared with other jobs
       # which includes the plugin
       - name: uninstall example plugin
-        run: pdm remove ./tests/plugin
+        run: pdm remove ./tests/plugin -v
 
   test-mypy:
     name: mypy ${{ matrix.mypy-version }} / ${{ matrix.python-version }}
