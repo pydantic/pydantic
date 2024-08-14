@@ -87,7 +87,7 @@ jobs:
       - name: install deps
         run: |
           pdm venv create --with-pip --force $PYTHON
-          pdm install -G testing -G testing-extra -G email -G memray
+          pdm install -G testing -G testing-extra -G email -G memray -v
           pdm add pytest-memray
 
       - name: test
@@ -198,6 +198,7 @@ jobs:
         with:
           python-version: '3.12'
           cache: true
+          version: '2.17.0'
 
       - name: install deps
         run: |
@@ -205,9 +206,7 @@ jobs:
           pdm install -G testing
 
       - name: install example plugin
-        run: |
-          pdm cache clear
-          pdm add ./tests/plugin -v
+        run: pdm add ./tests/plugin
 
       - run: pdm run pytest ./tests/plugin
         env:
