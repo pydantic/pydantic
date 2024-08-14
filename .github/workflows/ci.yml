@@ -193,7 +193,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: pdm-project/setup-pdm@v4
         with:
           python-version: '3.12'
@@ -204,6 +203,8 @@ jobs:
           pdm venv create --with-pip --force $PYTHON
           pdm install -G testing
 
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
       - name: install example plugin
         run: pdm add ./tests/plugin
 
