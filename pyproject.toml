@@ -114,7 +114,7 @@ docs = [
     "pyupgrade",
     "mike @ git+https://github.com/jimporter/mike.git",
     "mkdocs-embed-external-markdown>=2.3.0",
-    "pytest-examples>=0.0.11",
+    "pytest-examples>=0.0.13",
     "pydantic-settings>=2.0b1",
     "pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main",
     # Not available before v3.8.6, hence the pin here, as it's required by griffe
