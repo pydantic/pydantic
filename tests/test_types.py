@@ -1040,6 +1040,17 @@ def test_string_import_errors(import_string, errors):
     assert exc_info.value.errors() == errors
 
 
+@pytest.mark.xfail(
+    reason='This fails with pytest bc of the weirdness associated with importing modules in a test, but works in normal usage'
+)
+def test_import_string_sys_stdout() -> None:
+    class ImportThings(BaseModel):
+        obj: ImportString
+
+    import_things = ImportThings(obj='sys.stdout')
+    assert import_things.model_dump_json() == '{"obj":"sys.stdout"}'
+
+
 def test_decimal():
     class Model(BaseModel):
         v: Decimal
@@ -6834,12 +6845,3 @@ def test_ser_ip_with_unexpected_value() -> None:
 
     with pytest.raises(UserWarning, match='serialized value may not be as expected.'):
         assert ta.dump_python(123)
-
-
-@pytest.mark.xfail(reason='For some reason fails with pytest, but works fine in the interpreter')
-def test_import_string_sys_stdout() -> None:
-    class ImportThings(BaseModel):
-        obj: ImportString
-
-    import_things = ImportThings(obj='sys.stdout')
-    assert import_things.model_dump_json() == '{"obj":"sys.stdout"}'
