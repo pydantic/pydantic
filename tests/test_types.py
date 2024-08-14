@@ -6834,3 +6834,12 @@ def test_ser_ip_with_unexpected_value() -> None:
 
     with pytest.raises(UserWarning, match='serialized value may not be as expected.'):
         assert ta.dump_python(123)
+
+
+@pytest.mark.xfail(reason='For some reason fails with pytest, but works fine in the interpreter')
+def test_import_string_sys_stdout() -> None:
+    class ImportThings(BaseModel):
+        obj: ImportString
+
+    import_things = ImportThings(obj='sys.stdout')
+    assert import_things.model_dump_json() == '{"obj":"sys.stdout"}'
