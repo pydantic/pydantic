@@ -198,8 +198,6 @@ jobs:
         with:
           python-version: '3.12'
           cache: true
-          # TODO: remove this once https://github.com/pdm-project/pdm/issues/3107 has been addressed
-          version: '2.17.3'
 
       - name: install deps
         run: |
