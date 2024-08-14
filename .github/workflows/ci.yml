@@ -87,7 +87,7 @@ jobs:
       - name: install deps
         run: |
           pdm venv create --with-pip --force $PYTHON
-          pdm install -G testing -G testing-extra -G email -G memray -v
+          pdm install -G testing -G testing-extra -G email -G memray
           pdm add pytest-memray
 
       - name: test
@@ -198,7 +198,8 @@ jobs:
         with:
           python-version: '3.12'
           cache: true
-          version: '2.17.0'
+          # TODO: remove this once https://github.com/pdm-project/pdm/issues/3107 has been addressed
+          version: '2.17.3'
 
       - name: install deps
         run: |
@@ -215,7 +216,7 @@ jobs:
       # uninstalling is necessary to avoid creating a pdm cache shared with other jobs
       # which includes the plugin
       - name: uninstall example plugin
-        run: pdm remove ./tests/plugin -v
+        run: pdm remove ./tests/plugin
 
   test-mypy:
     name: mypy ${{ matrix.mypy-version }} / ${{ matrix.python-version }}
