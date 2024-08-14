@@ -53,6 +53,7 @@ dependencies = [
     "pydantic-core==2.21.0",
     # See: https://docs.python.org/3/library/zoneinfo.html#data-sources
     'tzdata; python_version >= "3.9"',
+    "pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main",
 ]
 dynamic = ['version', 'readme']
 
@@ -112,11 +113,11 @@ docs = [
     "mkdocstrings-python",
     "tomli",
     "pyupgrade",
-    "mike @ git+https://github.com/jimporter/mike.git",
+    { git = "https://github.com/jimporter/mike.git", ref = "main", name = "mike" },
     "mkdocs-embed-external-markdown>=2.3.0",
     "pytest-examples>=0.0.13",
     "pydantic-settings>=2.0b1",
-    "pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main",
+    { git = "https://github.com/pydantic/pydantic-extra-types.git", ref = "main", name = "pydantic-extra-types" },
     # Not available before v3.8.6, hence the pin here, as it's required by griffe
     "backports-strenum==1.3.1; python_version >= '3.8.6' and python_version < '3.11'"
 ]
