@@ -490,8 +490,14 @@ class GenerateJsonSchema:
             # Generate the core-schema-type-specific bits of the schema generation:
             json_schema: JsonSchemaValue | None = None
             if self.mode == 'serialization' and 'serialization' in schema_or_field:
+                # In this case, we skip the JSON Schema generation of the schema
+                # and use the `'serialization'` schema instead (canonical example:
+                # `Annotated[int, PlainSerializer(str)]`).
                 ser_schema = schema_or_field['serialization']  # type: ignore
                 json_schema = self.ser_schema(ser_schema)
+
+                # It might be that the 'serialization'` is skipped depending on `when_used`.
+                # This is only relevant for `nullable` schemas though, so we special case here.
                 if (
                     json_schema is not None
                     and ser_schema.get('when_used') in ('unless-none', 'json-unless-none')
