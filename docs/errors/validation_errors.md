@@ -198,25 +198,12 @@ except ValidationError as exc:
     #> 'callable_type'
 ```
 
-## `complex_parsing`
+## `complex_str_parsing`
 
 This error is raised when the input value is a string but cannot be parsed as a complex number because
 it does not follow the [rule](https://docs.python.org/3/library/functions.html#complex) in Python:
 
-```py
-from pydantic import BaseModel, ValidationError
-
-
-class Model(BaseModel):
-    num: complex
-
-
-try:
-    Model(num='foo')
-except ValidationError as exc:
-    print(repr(exc.errors()[0]['type']))
-    #> 'complex_parsing'
-```
+<!-- TODO: find a case where this is actually raised -->
 
 ## `complex_type`
 
@@ -231,7 +218,7 @@ class Model(BaseModel):
 
 
 try:
-    Model(num=1234567812412341234567812345678)
+    Model(num=False)
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'complex_type'
