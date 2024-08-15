@@ -1,6 +1,7 @@
 use std::fmt::Write;
 use std::str::FromStr;
 
+use crate::py_gc::PyGcTraverse;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple};
 use pyo3::{intern, PyTraverseError, PyVisit};
@@ -8,11 +9,10 @@ use smallvec::SmallVec;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{is_strict, schema_or_config};
+use crate::common::union::{Discriminator, SMALL_UNION_THRESHOLD};
 use crate::errors::{ErrorType, ToErrorValue, ValError, ValLineError, ValResult};
 use crate::input::{BorrowInput, Input, ValidatedDict};
-use crate::lookup_key::LookupKey;
-use crate::py_gc::PyGcTraverse;
-use crate::tools::{SchemaDict, UNION_ERR_SMALLVEC_CAPACITY};
+use crate::tools::SchemaDict;
 
 use super::custom_error::CustomError;
 use super::literal::LiteralLookup;
@@ -249,7 +249,7 @@ struct ChoiceLineErrors<'a> {
 
 enum MaybeErrors<'a> {
     Custom(&'a CustomError),
-    Errors(SmallVec<[ChoiceLineErrors<'a>; UNION_ERR_SMALLVEC_CAPACITY]>),
+    Errors(SmallVec<[ChoiceLineErrors<'a>; SMALL_UNION_THRESHOLD]>),
 }
 
 impl<'a> MaybeErrors<'a> {
@@ -292,49 +292,6 @@ impl<'a> MaybeErrors<'a> {
                     .collect(),
             ),
         }
-    }
-}
-
-#[derive(Debug, Clone)]
-enum Discriminator {
-    /// use `LookupKey` to find the tag, same as we do to find values in typed_dict aliases
-    LookupKey(LookupKey),
-    /// call a function to find the tag to use
-    Function(PyObject),
-    /// Custom discriminator specifically for the root `Schema` union in self-schema
-    SelfSchema,
-}
-
-impl Discriminator {
-    fn new(py: Python, raw: &Bound<'_, PyAny>) -> PyResult<Self> {
-        if raw.is_callable() {
-            return Ok(Self::Function(raw.to_object(py)));
-        } else if let Ok(py_str) = raw.downcast::<PyString>() {
-            if py_str.to_str()? == "self-schema-discriminator" {
-                return Ok(Self::SelfSchema);
-            }
-        }
-
-        let lookup_key = LookupKey::from_py(py, raw, None)?;
-        Ok(Self::LookupKey(lookup_key))
-    }
-
-    fn to_string_py(&self, py: Python) -> PyResult<String> {
-        match self {
-            Self::Function(f) => Ok(format!("{}()", f.getattr(py, "__name__")?)),
-            Self::LookupKey(lookup_key) => Ok(lookup_key.to_string()),
-            Self::SelfSchema => Ok("self-schema".to_string()),
-        }
-    }
-}
-
-impl PyGcTraverse for Discriminator {
-    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
-        match self {
-            Self::Function(obj) => visit.call(obj)?,
-            Self::LookupKey(_) | Self::SelfSchema => {}
-        }
-        Ok(())
     }
 }
 
@@ -388,11 +345,6 @@ impl BuildValidator for TaggedUnionValidator {
         let key = intern!(py, "from_attributes");
         let from_attributes = schema_or_config(schema, config, key, key)?.unwrap_or(true);
 
-        let descr = match discriminator {
-            Discriminator::SelfSchema => "self-schema".to_string(),
-            _ => descr,
-        };
-
         Ok(Self {
             discriminator,
             lookup,
@@ -436,9 +388,6 @@ impl Validator for TaggedUnionValidator {
                     self.find_call_validator(py, tag.bind(py), input, state)
                 }
             }
-            Discriminator::SelfSchema => {
-                self.find_call_validator(py, self.self_schema_tag(py, input, state)?.as_any(), input, state)
-            }
         }
     }
 
@@ -448,35 +397,6 @@ impl Validator for TaggedUnionValidator {
 }
 
 impl TaggedUnionValidator {
-    fn self_schema_tag<'py>(
-        &self,
-        py: Python<'py>,
-        input: &(impl Input<'py> + ?Sized),
-        state: &mut ValidationState<'_, 'py>,
-    ) -> ValResult<Bound<'py, PyString>> {
-        let dict = input.strict_dict()?;
-        let dict = dict.as_py_dict().expect("self schema is always a Python dictionary");
-        let tag = match dict.get_item(intern!(py, "type"))? {
-            Some(t) => t.downcast_into::<PyString>()?,
-            None => return Err(self.tag_not_found(input)),
-        };
-        let tag = tag.to_str()?;
-        // custom logic to distinguish between different function and tuple schemas
-        if tag == "function" {
-            let Some(mode) = dict.get_item(intern!(py, "mode"))? else {
-                return Err(self.tag_not_found(input));
-            };
-            let tag = match mode.validate_str(true, false)?.into_inner().as_cow()?.as_ref() {
-                "plain" => Ok(intern!(py, "function-plain").to_owned()),
-                "wrap" => Ok(intern!(py, "function-wrap").to_owned()),
-                _ => Ok(intern!(py, "function").to_owned()),
-            };
-            tag
-        } else {
-            Ok(state.maybe_cached_str(py, tag))
-        }
-    }
-
     fn find_call_validator<'py>(
         &self,
         py: Python<'py>,

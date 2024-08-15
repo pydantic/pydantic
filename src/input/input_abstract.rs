@@ -239,7 +239,6 @@ pub trait ValidatedDict<'py> {
     where
         Self: 'a;
     fn get_item<'k>(&self, key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>>;
-    fn as_py_dict(&self) -> Option<&Bound<'py, PyDict>>;
     // FIXME this is a bit of a leaky abstraction
     fn is_py_get_attr(&self) -> bool {
         false
@@ -280,9 +279,6 @@ impl<'py> ValidatedDict<'py> for Never {
     type Key<'a> = Bound<'py, PyAny>;
     type Item<'a> = Bound<'py, PyAny>;
     fn get_item<'k>(&self, _key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>> {
-        unreachable!()
-    }
-    fn as_py_dict(&self) -> Option<&Bound<'py, PyDict>> {
         unreachable!()
     }
     fn iterate<'a, R>(
