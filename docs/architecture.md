@@ -1,3 +1,6 @@
+!!! warning "🚧 Work in Progress"
+    This page is a work in progress.
+
 Starting with Pydantic V2, part of the codebase is written in Rust in a separate package called `pydantic-core`.
 This was done partly in order to improve validation and serialization performance (with the cost of limited
 customization and extendibility of the internal logic).
@@ -36,7 +39,7 @@ The generation of a core schema is handled in a single place, by the `GenerateSc
 !!! note
     It is not possible to define a custom core schema. A core schema needs to be understood by the
     `pydantic-core` package, and as such we only support a fixed number of core schema types.
-    This is also part of the reason why the `GenerateSchema` isn't truely exposed and properly
+    This is also part of the reason why the `GenerateSchema` isn't truly exposed and properly
     documented.
 
     The core schema definitions can be found in the [`pydantic_core.core_schema`][] module.
