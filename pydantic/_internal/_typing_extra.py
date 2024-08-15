@@ -167,7 +167,7 @@ def is_finalvar(ann_type: Any) -> bool:
     return _check_finalvar(ann_type) or _check_finalvar(get_origin(ann_type))
 
 
-_DEFAULT_GLOBALS = [
+_DEFAULT_GLOBALS = {
     '__name__',
     '__doc__',
     '__package__',
@@ -177,7 +177,7 @@ _DEFAULT_GLOBALS = [
     '__builtins__',
     '__file__',
     '__cached__',
-]
+}
 
 
 def _remove_default_globals_from_ns(namespace: dict[str, Any]) -> dict[str, Any]:
