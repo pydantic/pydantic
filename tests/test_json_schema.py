@@ -831,6 +831,18 @@ def test_date_constrained_types(field_type, expected_schema):
     }
 
 
+def test_complex_types():
+    class Model(BaseModel):
+        a: complex
+
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }
+
+
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
