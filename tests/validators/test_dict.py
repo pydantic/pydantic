@@ -235,3 +235,26 @@ def test_json_dict():
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'dict_type', 'loc': (), 'msg': 'Input should be an object', 'input': 1}
     ]
+
+
+def test_dict_complex_key():
+    v = SchemaValidator(
+        {'type': 'dict', 'keys_schema': {'type': 'complex', 'strict': True}, 'values_schema': {'type': 'str'}}
+    )
+    assert v.validate_python({complex(1, 2): '1'}) == {complex(1, 2): '1'}
+    with pytest.raises(ValidationError, match='Input should be an instance of complex'):
+        assert v.validate_python({'1+2j': b'1'}) == {complex(1, 2): '1'}
+
+    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'complex'}, 'values_schema': {'type': 'str'}})
+    with pytest.raises(
+        ValidationError, match='Input should be a valid python complex object, a number, or a valid complex string'
+    ):
+        v.validate_python({'1+2ja': b'1'})
+
+
+def test_json_dict_complex_key():
+    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'complex'}, 'values_schema': {'type': 'int'}})
+    assert v.validate_json('{"1+2j": 2, "-3": 4}') == {complex(1, 2): 2, complex(-3, 0): 4}
+    assert v.validate_json('{"1+2j": 2, "infj": 4}') == {complex(1, 2): 2, complex(0, float('inf')): 4}
+    with pytest.raises(ValidationError, match='Input should be a valid complex string'):
+        v.validate_json('{"1+2j": 2, "": 4}') == {complex(1, 2): 2, complex(0, float('inf')): 4}

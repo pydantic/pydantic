@@ -142,6 +142,7 @@ combined_serializer! {
         Enum: super::type_serializers::enum_::EnumSerializer;
         Recursive: super::type_serializers::definitions::DefinitionRefSerializer;
         Tuple: super::type_serializers::tuple::TupleSerializer;
+        Complex: super::type_serializers::complex::ComplexSerializer;
     }
 }
 
@@ -251,6 +252,7 @@ impl PyGcTraverse for CombinedSerializer {
             CombinedSerializer::Recursive(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Tuple(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Uuid(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Complex(inner) => inner.py_gc_traverse(visit),
         }
     }
 }

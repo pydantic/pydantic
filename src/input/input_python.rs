@@ -5,15 +5,17 @@ use pyo3::prelude::*;
 
 use pyo3::types::PyType;
 use pyo3::types::{
-    PyBool, PyByteArray, PyBytes, PyDate, PyDateTime, PyDict, PyFloat, PyFrozenSet, PyInt, PyIterator, PyList,
-    PyMapping, PySet, PyString, PyTime, PyTuple,
+    PyBool, PyByteArray, PyBytes, PyComplex, PyDate, PyDateTime, PyDict, PyFloat, PyFrozenSet, PyInt, PyIterator,
+    PyList, PyMapping, PySet, PyString, PyTime, PyTuple,
 };
 
 use pyo3::PyTypeCheck;
+use pyo3::PyTypeInfo;
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 
 use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::tools::{extract_i64, safe_repr};
+use crate::validators::complex::string_to_complex;
 use crate::validators::decimal::{create_decimal, get_decimal_type};
 use crate::validators::Exactness;
 use crate::validators::ValBytesMode;
@@ -25,6 +27,7 @@ use super::datetime::{
     EitherTime,
 };
 use super::input_abstract::ValMatch;
+use super::return_enums::EitherComplex;
 use super::return_enums::{iterate_attributes, iterate_mapping_items, ValidationMatch};
 use super::shared::{
     decimal_as_int, float_as_int, get_enum_meta_object, int_as_bool, str_as_bool, str_as_float, str_as_int,
@@ -597,6 +600,45 @@ impl<'py> Input<'py> for Bound<'py, PyAny> {
         }
 
         Err(ValError::new(ErrorTypeDefaults::TimeDeltaType, self))
+    }
+
+    fn validate_complex<'a>(&'a self, strict: bool, py: Python<'py>) -> ValResult<ValidationMatch<EitherComplex<'py>>> {
+        if let Ok(complex) = self.downcast::<PyComplex>() {
+            return Ok(ValidationMatch::strict(EitherComplex::Py(complex.to_owned())));
+        }
+        if strict {
+            return Err(ValError::new(
+                ErrorType::IsInstanceOf {
+                    class: PyComplex::type_object_bound(py)
+                        .qualname()
+                        .and_then(|name| name.extract())
+                        .unwrap_or_else(|_| "complex".to_owned()),
+                    context: None,
+                },
+                self,
+            ));
+        }
+
+        if let Ok(s) = self.downcast::<PyString>() {
+            // If input is not a valid complex string, instead of telling users to correct
+            // the string, it makes more sense to tell them to provide any acceptable value
+            // since they might have just given values of some incorrect types instead
+            // of actually trying some complex strings.
+            if let Ok(c) = string_to_complex(s, self) {
+                return Ok(ValidationMatch::lax(EitherComplex::Py(c)));
+            }
+        } else if self.is_exact_instance_of::<PyFloat>() {
+            return Ok(ValidationMatch::lax(EitherComplex::Complex([
+                self.extract::<f64>().unwrap(),
+                0.0,
+            ])));
+        } else if self.is_exact_instance_of::<PyInt>() {
+            return Ok(ValidationMatch::lax(EitherComplex::Complex([
+                self.extract::<i64>().unwrap() as f64,
+                0.0,
+            ])));
+        }
+        Err(ValError::new(ErrorTypeDefaults::ComplexType, self))
     }
 }
 
