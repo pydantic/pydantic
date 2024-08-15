@@ -136,6 +136,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         __pydantic_complete__: ClassVar[bool]
         __pydantic_core_schema__: ClassVar[CoreSchema]
+        """The core schema of the model."""
+
         __pydantic_custom_init__: ClassVar[bool]
         __pydantic_decorators__: ClassVar[_decorators.DecoratorInfos]
         __pydantic_generic_metadata__: ClassVar[_generics.PydanticGenericMetadata]
@@ -994,8 +996,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             ```py
             from pydantic import BaseModel
 
-            class MyModel(BaseModel, extra='allow'):
-                ...
+            class MyModel(BaseModel, extra='allow'): ...
             ```
 
             However, this may be deceiving, since the _actual_ calls to `__init_subclass__` will not receive any
