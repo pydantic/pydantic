@@ -293,9 +293,6 @@ impl<'py> ValidatedDict<'py> for StringMappingDict<'py> {
     fn get_item<'k>(&self, key: &'k LookupKey) -> ValResult<Option<(&'k LookupPath, Self::Item<'_>)>> {
         key.py_get_string_mapping_item(&self.0)
     }
-    fn as_py_dict(&self) -> Option<&Bound<'py, PyDict>> {
-        None
-    }
     fn iterate<'a, R>(
         &'a self,
         consumer: impl super::ConsumeIterator<ValResult<(Self::Key<'a>, Self::Item<'a>)>, Output = R>,

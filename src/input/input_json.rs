@@ -509,10 +509,6 @@ impl<'py, 'data> ValidatedDict<'py> for &'_ JsonObject<'data> {
         key.json_get(self)
     }
 
-    fn as_py_dict(&self) -> Option<&Bound<'py, PyDict>> {
-        None
-    }
-
     fn iterate<'a, R>(
         &'a self,
         consumer: impl ConsumeIterator<ValResult<(Self::Key<'a>, Self::Item<'a>)>, Output = R>,
