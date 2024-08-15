@@ -98,18 +98,7 @@ pub trait Input<'py>: fmt::Debug + ToPyObject {
 
     fn validate_float(&self, strict: bool) -> ValMatch<EitherFloat<'_>>;
 
-    fn validate_decimal(&self, strict: bool, py: Python<'py>) -> ValResult<Bound<'py, PyAny>> {
-        if strict {
-            self.strict_decimal(py)
-        } else {
-            self.lax_decimal(py)
-        }
-    }
-    fn strict_decimal(&self, py: Python<'py>) -> ValResult<Bound<'py, PyAny>>;
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn lax_decimal(&self, py: Python<'py>) -> ValResult<Bound<'py, PyAny>> {
-        self.strict_decimal(py)
-    }
+    fn validate_decimal(&self, strict: bool, py: Python<'py>) -> ValMatch<Bound<'py, PyAny>>;
 
     type Dict<'a>: ValidatedDict<'py>
     where
