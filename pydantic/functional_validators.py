@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, cast, overload
 
 from pydantic_core import PydanticUndefined, core_schema
 from pydantic_core import core_schema as _core_schema
-from typing_extensions import Annotated, Literal, TypeAlias
+from typing_extensions import Annotated, Literal, Self, TypeAlias
 
 from ._internal import _core_metadata, _decorators, _generics, _internal_dataclass
 from .annotated_handlers import GetCoreSchemaHandler
@@ -79,6 +79,10 @@ class AfterValidator:
             func = cast(core_schema.NoInfoValidatorFunction, self.func)
             return core_schema.no_info_after_validator_function(func, schema=schema)
 
+    @classmethod
+    def _from_decorator(cls, decorator: _decorators.Decorator[_decorators.FieldValidatorDecoratorInfo]) -> Self:
+        return cls(func=decorator.func)
+
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class BeforeValidator:
@@ -133,6 +137,13 @@ class BeforeValidator:
         else:
             func = cast(core_schema.NoInfoValidatorFunction, self.func)
             return core_schema.no_info_before_validator_function(func, schema=schema, metadata=metadata)
+
+    @classmethod
+    def _from_decorator(cls, decorator: _decorators.Decorator[_decorators.FieldValidatorDecoratorInfo]) -> Self:
+        return cls(
+            func=decorator.func,
+            input_type=decorator.info.input_type,
+        )
 
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
@@ -199,6 +210,13 @@ class PlainValidator:
             func = cast(core_schema.NoInfoValidatorFunction, self.func)
             return core_schema.no_info_plain_validator_function(func, serialization=serialization, metadata=metadata)
 
+    @classmethod
+    def _from_decorator(cls, decorator: _decorators.Decorator[_decorators.FieldValidatorDecoratorInfo]) -> Self:
+        return cls(
+            func=decorator.func,
+            input_type=decorator.info.input_type,
+        )
+
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class WrapValidator:
@@ -264,6 +282,13 @@ class WrapValidator:
                 schema=schema,
                 metadata=metadata,
             )
+
+    @classmethod
+    def _from_decorator(cls, decorator: _decorators.Decorator[_decorators.FieldValidatorDecoratorInfo]) -> Self:
+        return cls(
+            func=decorator.func,
+            input_type=decorator.info.input_type,
+        )
 
 
 if TYPE_CHECKING:
