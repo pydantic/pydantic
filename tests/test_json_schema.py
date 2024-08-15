@@ -6465,20 +6465,27 @@ def test_plain_field_validator_serialization() -> None:
     }
 
 
-def test_validator_input_type() -> None:
+def test_field_validator_input_type() -> None:
     class Model(BaseModel):
         a: Annotated[int, BeforeValidator(lambda v: v, input_type=Union[int, str])]
         b: Annotated[int, WrapValidator(lambda v, h: h(v), input_type=Union[int, str])]
         c: Annotated[int, PlainValidator(lambda v: v, input_type=Union[int, str])]
+        d: int
+
+        @field_validator('d', mode='before', input_type=Union[int, str])
+        @classmethod
+        def validate_d(cls, value: Any) -> int: ...
 
     assert Model.model_json_schema(mode='validation')['properties'] == {
         'a': {'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'title': 'A'},
         'b': {'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'title': 'B'},
         'c': {'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'title': 'C'},
+        'd': {'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'title': 'D'},
     }
 
     assert Model.model_json_schema(mode='serialization')['properties'] == {
         'a': {'title': 'A', 'type': 'integer'},
         'b': {'title': 'B', 'type': 'integer'},
         'c': {'title': 'C', 'type': 'integer'},
+        'd': {'title': 'D', 'type': 'integer'},
     }

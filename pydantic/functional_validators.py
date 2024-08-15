@@ -441,7 +441,7 @@ def field_validator(
     if mode not in ('before', 'plain', 'wrap') and input_type is not PydanticUndefined:
         raise PydanticUserError(
             f"`input_type` can't be used when mode is set to {mode!r}",
-            code=None,
+            code='validator-input-type',
         )
 
     fields = field, *fields
