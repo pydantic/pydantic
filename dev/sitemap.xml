@@ -6,6 +6,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://docs.pydantic.dev/latest/architecture/</loc>
+         <lastmod>2024-08-15</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://docs.pydantic.dev/latest/changelog/</loc>
          <lastmod>2024-08-15</lastmod>
          <changefreq>daily</changefreq>
