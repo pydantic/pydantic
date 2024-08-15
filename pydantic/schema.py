@@ -738,7 +738,7 @@ def field_singleton_sub_fields_schema(
                     discriminator_models_refs[discriminator_value] = discriminator_model_ref['$ref']
 
             s['discriminator'] = {
-                'propertyName': field.discriminator_alias,
+                'propertyName': field.discriminator_alias if by_alias else field.discriminator_key,
                 'mapping': discriminator_models_refs,
             }
 

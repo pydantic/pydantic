@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import (
     Any,
     Callable,
+    ClassVar,
     Deque,
     Dict,
     FrozenSet,
@@ -2809,6 +2810,179 @@ def test_discriminated_union():
             },
         },
     }
+
+
+@pytest.mark.parametrize(
+    ('by_alias', 'expected_schema'),
+    [
+        pytest.param(
+            True,
+            {
+                'title': 'Model',
+                'type': 'object',
+                'properties': {
+                    'pet': {
+                        'title': 'Pet',
+                        'discriminator': {
+                            'propertyName': 'pet',
+                            'mapping': {
+                                'cat': '#/definitions/Cat',
+                                'dog': '#/definitions/Dog',
+                                'reptile': '#/definitions/Lizard',
+                                'lizard': '#/definitions/Lizard',
+                            },
+                        },
+                        'oneOf': [
+                            {'$ref': '#/definitions/Cat'},
+                            {'$ref': '#/definitions/Dog'},
+                            {'$ref': '#/definitions/Lizard'},
+                        ],
+                    }
+                },
+                'required': ['pet'],
+                'definitions': {
+                    'BlackCat': {
+                        'title': 'BlackCat',
+                        'type': 'object',
+                        'properties': {
+                            'pet': {'title': 'Pet', 'enum': ['cat'], 'type': 'string'},
+                            'color': {'title': 'Color', 'enum': ['black'], 'type': 'string'},
+                        },
+                        'required': ['pet', 'color'],
+                    },
+                    'WhiteCat': {
+                        'title': 'WhiteCat',
+                        'type': 'object',
+                        'properties': {
+                            'pet': {'title': 'Pet', 'enum': ['cat'], 'type': 'string'},
+                            'color': {'title': 'Color', 'enum': ['white'], 'type': 'string'},
+                        },
+                        'required': ['pet', 'color'],
+                    },
+                    'Cat': {
+                        'title': 'Cat',
+                        'discriminator': {
+                            'propertyName': 'color',
+                            'mapping': {'black': '#/definitions/BlackCat', 'white': '#/definitions/WhiteCat'},
+                        },
+                        'oneOf': [{'$ref': '#/definitions/BlackCat'}, {'$ref': '#/definitions/WhiteCat'}],
+                    },
+                    'Dog': {
+                        'title': 'Dog',
+                        'type': 'object',
+                        'properties': {'pet': {'title': 'Pet', 'enum': ['dog'], 'type': 'string'}},
+                        'required': ['pet'],
+                    },
+                    'Lizard': {
+                        'title': 'Lizard',
+                        'type': 'object',
+                        'properties': {'pet': {'title': 'Pet', 'enum': ['reptile', 'lizard'], 'type': 'string'}},
+                        'required': ['pet'],
+                    },
+                },
+            },
+            id='by_alias-discriminated-union',
+        ),
+        pytest.param(
+            False,
+            {
+                'title': 'Model',
+                'type': 'object',
+                'properties': {
+                    'pet': {
+                        'title': 'Pet',
+                        'discriminator': {
+                            'propertyName': 'pet_type',
+                            'mapping': {
+                                'cat': '#/definitions/Cat',
+                                'dog': '#/definitions/Dog',
+                                'reptile': '#/definitions/Lizard',
+                                'lizard': '#/definitions/Lizard',
+                            },
+                        },
+                        'oneOf': [
+                            {'$ref': '#/definitions/Cat'},
+                            {'$ref': '#/definitions/Dog'},
+                            {'$ref': '#/definitions/Lizard'},
+                        ],
+                    }
+                },
+                'required': ['pet'],
+                'definitions': {
+                    'BlackCat': {
+                        'title': 'BlackCat',
+                        'type': 'object',
+                        'properties': {
+                            'pet_type': {'title': 'Pet', 'enum': ['cat'], 'type': 'string'},
+                            'color': {'title': 'Color', 'enum': ['black'], 'type': 'string'},
+                        },
+                        'required': ['pet_type', 'color'],
+                    },
+                    'WhiteCat': {
+                        'title': 'WhiteCat',
+                        'type': 'object',
+                        'properties': {
+                            'pet_type': {'title': 'Pet', 'enum': ['cat'], 'type': 'string'},
+                            'color': {'title': 'Color', 'enum': ['white'], 'type': 'string'},
+                        },
+                        'required': ['pet_type', 'color'],
+                    },
+                    'Cat': {
+                        'title': 'Cat',
+                        'discriminator': {
+                            'propertyName': 'color',
+                            'mapping': {'black': '#/definitions/BlackCat', 'white': '#/definitions/WhiteCat'},
+                        },
+                        'oneOf': [{'$ref': '#/definitions/BlackCat'}, {'$ref': '#/definitions/WhiteCat'}],
+                    },
+                    'Dog': {
+                        'title': 'Dog',
+                        'type': 'object',
+                        'properties': {'pet_type': {'title': 'Pet', 'enum': ['dog'], 'type': 'string'}},
+                        'required': ['pet_type'],
+                    },
+                    'Lizard': {
+                        'title': 'Lizard',
+                        'type': 'object',
+                        'properties': {'pet_type': {'title': 'Pet', 'enum': ['reptile', 'lizard'], 'type': 'string'}},
+                        'required': ['pet_type'],
+                    },
+                },
+            },
+            id='not_by_alias-discriminated-pet',
+        ),
+    ],
+)
+def test_discriminated_union_by_alias_discriminator_alias(by_alias: bool, expected_schema: Dict[str, Any]):
+    """That a discriminated union with an alias field creates a schema correctly."""
+
+    class BasePet(BaseModel):
+        pet_type: str
+
+        class Config:
+            fields: ClassVar[Dict[str, Any]] = {'pet_type': {'alias': 'pet'}}
+
+    class BlackCat(BasePet):
+        pet_type: Literal['cat']
+        color: Literal['black']
+
+    class WhiteCat(BasePet):
+        pet_type: Literal['cat']
+        color: Literal['white']
+
+    class Cat(BaseModel):
+        __root__: Union[BlackCat, WhiteCat] = Field(..., discriminator='color')
+
+    class Dog(BasePet):
+        pet_type: Literal['dog']
+
+    class Lizard(BasePet):
+        pet_type: Literal['reptile', 'lizard']
+
+    class Model(BaseModel):
+        pet: Union[Cat, Dog, Lizard] = Field(..., discriminator='pet_type')
+
+    assert Model.schema(by_alias=by_alias) == expected_schema
 
 
 def test_discriminated_annotated_union():
