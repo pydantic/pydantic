@@ -6831,7 +6831,7 @@ def test_complex_field():
 def test_strict_complex_field():
     class Model(BaseModel):
         # Only complex objects are accepted
-        number: complex = Field(strict=True)
+        number: Annotated[complex, Field(strict=True)]
 
     m = Model(number=complex(1, 2))
     assert repr(m) == 'Model(number=(1+2j))'
