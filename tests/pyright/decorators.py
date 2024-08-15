@@ -5,6 +5,7 @@ This file is used to test pyright's ability to check Pydantic decorators used in
 from functools import partial, partialmethod
 from typing import Any
 
+from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from typing_extensions import Self, assert_type
 
 from pydantic import (
@@ -14,6 +15,7 @@ from pydantic import (
     SerializerFunctionWrapHandler,
     ValidationInfo,
     field_serializer,
+    field_validator,
     model_serializer,
     model_validator,
 )
@@ -86,6 +88,58 @@ class AfterModelValidator(BaseModel):
 
     @model_validator(mode='after')
     def valid_method_info(self, info: ValidationInfo) -> Self: ...
+
+
+class BeforeFieldValidator(BaseModel):
+    """Same tests should apply to `mode='plain'`."""
+
+    @field_validator('foo', mode='before')
+    def no_classmethod(self, value: Any) -> Any:
+        """TODO this shouldn't be valid, the decorator should only work on classmethods.
+
+        We might want to do the same type checking as wrap model validators.
+        """
+
+    @field_validator('foo', mode='before')
+    @classmethod
+    def valid_classmethod(cls, value: Any) -> Any: ...
+
+    @field_validator('foo', mode='before')  # pyright: ignore[reportArgumentType]
+    @classmethod
+    def invalid_with_info(cls, value: Any, info: int) -> Any: ...
+
+    @field_validator('foo', mode='before', input_type=int)  # `input_type` allowed here.
+    @classmethod
+    def valid_with_info(cls, value: Any, info: ValidationInfo) -> Any: ...
+
+
+class AfterFieldValidator(BaseModel):
+    @field_validator('foo', mode='after')
+    @classmethod
+    def valid_classmethod(cls, value: Any) -> Any: ...
+
+    @field_validator('foo', mode='after', input_type=int)  # pyright: ignore[reportCallIssue, reportArgumentType]
+    @classmethod
+    def invalid_input_type_not_allowed(cls, value: Any) -> Any: ...
+
+
+class WrapFieldValidator(BaseModel):
+    @field_validator('foo', mode='wrap')  # pyright: ignore[reportArgumentType]
+    @classmethod
+    def invalid_missing_handler(cls, value: Any) -> Any: ...
+
+    @field_validator('foo', mode='wrap')  # pyright: ignore[reportArgumentType]
+    @classmethod
+    def invalid_handler(cls, value: Any, handler: int) -> Any: ...
+
+    @field_validator('foo', mode='wrap')  # pyright: ignore[reportArgumentType]
+    @classmethod
+    def valid_no_info(cls, value: Any, handler: ValidatorFunctionWrapHandler) -> Any:
+        """TODO this should be valid."""
+
+    @field_validator('foo', mode='wrap')
+    @classmethod
+    def valid_with_info(cls, value: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo) -> Any: ...
 
 
 class PlainModelSerializer(BaseModel):
