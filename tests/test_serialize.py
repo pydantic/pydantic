@@ -1252,7 +1252,7 @@ def test_serialize_with_custom_ser() -> None:
         id: int
 
         @model_serializer
-        def dump(self) -> dict[str, Any]:
+        def dump(self) -> Dict[str, Any]:
             return {'id': self.id}
 
     class ItemContainer(BaseModel):
