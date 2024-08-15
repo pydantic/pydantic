@@ -499,7 +499,11 @@ class PydanticModelTransformer:
             tvd = TypeVarType(
                 self_tvar_name,
                 tvar_fullname,
-                TypeVarId(-1),
+                (
+                    TypeVarId(-1, namespace=ctx.cls.fullname + '.construct')
+                    if MYPY_VERSION_TUPLE >= (1, 11)
+                    else TypeVarId(-1)
+                ),
                 [],
                 obj_type,
                 AnyType(TypeOfAny.from_omitted_generics),  # type: ignore[arg-type]
