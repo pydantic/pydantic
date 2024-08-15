@@ -520,7 +520,6 @@ def test_mixed_discriminated_union(data):
         assert Model(**data).model_dump() == data
 
 
-
 def test_list_rootmodel():
     class A(BaseModel):
         type: Literal['a']
