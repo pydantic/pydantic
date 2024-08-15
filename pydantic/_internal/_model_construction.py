@@ -261,6 +261,7 @@ class ModelMetaclass(ABCMeta):
                 return original_mro
 
             target_params: tuple[TypeVar] = origin.__pydantic_generic_metadata__['parameters']
+            param_dict = dict(zip(target_params, args))
 
             # This is necessary otherwise in some case TypeVar may be same:
             #
@@ -268,20 +269,33 @@ class ModelMetaclass(ABCMeta):
             # class B(A[int], Generic[T]): ...
             # class C(B[str], Generic[T]): ...
             #
-            indexed_origins = {origin}
+            key = '__pydantic_inserted_mro_origins__'
+            inserted_origins: set[tuple[type, tuple]] = getattr(origin, key, set()) | {(origin, ())}
 
             new_mro = [original_mro[0]]
             for base in original_mro[1:]:
                 base_params = getattr(base, '__pydantic_generic_metadata__', {}).get('parameters', ())
+                base_args = getattr(base, '__pydantic_generic_metadata__', {}).get('args', ())
                 base_origin = getattr(base, '__pydantic_generic_metadata__', {}).get('origin', None)
+
                 if base_origin is not None:
-                    indexed_origins.add(base_origin)
+                    inserted_origins.add((base_origin, ()))
 
-                if base not in indexed_origins and base_params == target_params:
-                    new_mro.append(base[args])  # type: ignore
-                    indexed_origins.add(base)
+                if (base, base_args) not in inserted_origins and base_params:
+                    assert set(base_params) <= param_dict.keys(), 'Some bug occurs'
+                    new_base_args = tuple(param_dict[param] for param in base_params)
+                    new_base = base[*new_base_args]  # type: ignore
+                    new_mro.append(new_base)
+                    inserted_origins.add((base, base_args))
 
-                new_mro.append(base)
+                # Avoid redundunt case such as
+                # class A(BaseModel, Generic[T]): ...
+                # A[T] is A  # True
+                if base is not new_mro[-1]:
+                    new_mro.append(base)
+
+            setattr(cls, key, inserted_origins)
+
             return new_mro
 
     @classmethod
