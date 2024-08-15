@@ -290,6 +290,7 @@ all_schema_functions = [
     (core_schema.uuid_schema, args(), {'type': 'uuid'}),
     (core_schema.decimal_schema, args(), {'type': 'decimal'}),
     (core_schema.decimal_schema, args(multiple_of=5, gt=1.2), {'type': 'decimal', 'multiple_of': 5, 'gt': 1.2}),
+    (core_schema.complex_schema, args(), {'type': 'complex'}),
 ]
 
 

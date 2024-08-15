@@ -12,7 +12,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 #[cfg(not(PyPy))]
 use pyo3::types::PyFunction;
-use pyo3::types::{PyBytes, PyFloat, PyFrozenSet, PyIterator, PyMapping, PySet, PyString};
+use pyo3::types::{PyBytes, PyComplex, PyFloat, PyFrozenSet, PyIterator, PyMapping, PySet, PyString};
 
 use serde::{ser::Error, Serialize, Serializer};
 
@@ -721,6 +721,33 @@ impl ToPyObject for Int {
         match self {
             Self::I64(i) => i.to_object(py),
             Self::Big(big_i) => big_i.to_object(py),
+        }
+    }
+}
+
+#[derive(Clone)]
+pub enum EitherComplex<'a> {
+    Complex([f64; 2]),
+    Py(Bound<'a, PyComplex>),
+}
+
+impl<'a> IntoPy<PyObject> for EitherComplex<'a> {
+    fn into_py(self, py: Python<'_>) -> PyObject {
+        match self {
+            Self::Complex(c) => PyComplex::from_doubles_bound(py, c[0], c[1]).into_py(py),
+            Self::Py(c) => c.into_py(py),
+        }
+    }
+}
+
+impl<'a> EitherComplex<'a> {
+    pub fn as_f64(&self, py: Python<'_>) -> [f64; 2] {
+        match self {
+            EitherComplex::Complex(f) => *f,
+            EitherComplex::Py(f) => [
+                f.getattr(intern!(py, "real")).unwrap().extract().unwrap(),
+                f.getattr(intern!(py, "imag")).unwrap().extract().unwrap(),
+            ],
         }
     }
 }

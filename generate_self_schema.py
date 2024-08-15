@@ -50,7 +50,7 @@ schema_ref_validator = {'type': 'definition-ref', 'schema_ref': 'root-schema'}
 def get_schema(obj: Any, definitions: dict[str, core_schema.CoreSchema]) -> core_schema.CoreSchema:  # noqa: C901
     if isinstance(obj, str):
         return {'type': obj}
-    elif obj in (datetime, timedelta, date, time, bool, int, float, str, decimal.Decimal):
+    elif obj in (datetime, timedelta, date, time, bool, int, float, str, decimal.Decimal, complex):
         return {'type': obj.__name__.lower()}
     elif is_typeddict(obj):
         return type_dict_schema(obj, definitions)

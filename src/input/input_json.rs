@@ -8,7 +8,9 @@ use speedate::MicrosecondsPrecisionOverflowBehavior;
 use strum::EnumMessage;
 
 use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
+use crate::input::return_enums::EitherComplex;
 use crate::lookup_key::{LookupKey, LookupPath};
+use crate::validators::complex::string_to_complex;
 use crate::validators::decimal::create_decimal;
 use crate::validators::ValBytesMode;
 
@@ -304,6 +306,30 @@ impl<'py, 'data> Input<'py> for JsonValue<'data> {
             _ => Err(ValError::new(ErrorTypeDefaults::TimeDeltaType, self)),
         }
     }
+
+    fn validate_complex(&self, strict: bool, py: Python<'py>) -> ValResult<ValidationMatch<EitherComplex<'py>>> {
+        match self {
+            JsonValue::Str(s) => Ok(ValidationMatch::strict(EitherComplex::Py(string_to_complex(
+                &PyString::new_bound(py, s),
+                self,
+            )?))),
+            JsonValue::Float(f) => {
+                if !strict {
+                    Ok(ValidationMatch::lax(EitherComplex::Complex([*f, 0.0])))
+                } else {
+                    Err(ValError::new(ErrorTypeDefaults::ComplexStrParsing, self))
+                }
+            }
+            JsonValue::Int(f) => {
+                if !strict {
+                    Ok(ValidationMatch::lax(EitherComplex::Complex([(*f) as f64, 0.0])))
+                } else {
+                    Err(ValError::new(ErrorTypeDefaults::ComplexStrParsing, self))
+                }
+            }
+            _ => Err(ValError::new(ErrorTypeDefaults::ComplexType, self)),
+        }
+    }
 }
 
 /// Required for JSON Object keys so the string can behave like an Input
@@ -439,6 +465,13 @@ impl<'py> Input<'py> for str {
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
     ) -> ValResult<ValidationMatch<EitherTimedelta<'py>>> {
         bytes_as_timedelta(self, self.as_bytes(), microseconds_overflow_behavior).map(ValidationMatch::lax)
+    }
+
+    fn validate_complex(&self, _strict: bool, py: Python<'py>) -> ValResult<ValidationMatch<EitherComplex<'py>>> {
+        Ok(ValidationMatch::strict(EitherComplex::Py(string_to_complex(
+            self.to_object(py).downcast_bound::<PyString>(py)?,
+            self,
+        )?)))
     }
 }
 

@@ -1,8 +1,8 @@
 use pyo3::prelude::*;
 use pyo3::sync::GILOnceCell;
 use pyo3::types::{
-    PyBool, PyByteArray, PyBytes, PyDate, PyDateTime, PyDelta, PyDict, PyFloat, PyFrozenSet, PyInt, PyIterator, PyList,
-    PyNone, PySet, PyString, PyTime, PyTuple, PyType,
+    PyBool, PyByteArray, PyBytes, PyComplex, PyDate, PyDateTime, PyDelta, PyDict, PyFloat, PyFrozenSet, PyInt,
+    PyIterator, PyList, PyNone, PySet, PyString, PyTime, PyTuple, PyType,
 };
 use pyo3::{intern, PyTypeInfo};
 
@@ -48,6 +48,7 @@ pub struct ObTypeLookup {
     pattern_object: PyObject,
     // uuid type
     uuid_object: PyObject,
+    complex: usize,
 }
 
 static TYPE_LOOKUP: GILOnceCell<ObTypeLookup> = GILOnceCell::new();
@@ -101,6 +102,7 @@ impl ObTypeLookup {
                 .to_object(py),
             pattern_object: py.import_bound("re").unwrap().getattr("Pattern").unwrap().to_object(py),
             uuid_object: py.import_bound("uuid").unwrap().getattr("UUID").unwrap().to_object(py),
+            complex: PyComplex::type_object_raw(py) as usize,
         }
     }
 
@@ -171,6 +173,7 @@ impl ObTypeLookup {
             ObType::Pattern => self.path_object.as_ptr() as usize == ob_type,
             ObType::Uuid => self.uuid_object.as_ptr() as usize == ob_type,
             ObType::Unknown => false,
+            ObType::Complex => self.complex == ob_type,
         };
 
         if ans {
@@ -426,6 +429,7 @@ pub enum ObType {
     Uuid,
     // unknown type
     Unknown,
+    Complex,
 }
 
 impl PartialEq for ObType {
