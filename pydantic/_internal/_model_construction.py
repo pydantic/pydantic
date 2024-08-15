@@ -284,7 +284,7 @@ class ModelMetaclass(ABCMeta):
                 if (base, base_args) not in inserted_origins and base_params:
                     assert set(base_params) <= param_dict.keys(), 'Some bug occurs'
                     new_base_args = tuple(param_dict[param] for param in base_params)
-                    new_base = base[*new_base_args]  # type: ignore
+                    new_base = base[new_base_args]  # type: ignore
                     new_mro.append(new_base)
                     inserted_origins.add((base, base_args))
 
