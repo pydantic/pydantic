@@ -122,7 +122,7 @@ impl Validator for DecimalValidator {
         input: &(impl Input<'py> + ?Sized),
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<PyObject> {
-        let decimal = input.validate_decimal(state.strict_or(self.strict), py)?;
+        let decimal = input.validate_decimal(state.strict_or(self.strict), py)?.unpack(state);
 
         if !self.allow_inf_nan || self.check_digits {
             if !decimal.call_method0(intern!(py, "is_finite"))?.extract()? {

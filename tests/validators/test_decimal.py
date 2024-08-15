@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 from dirty_equals import FunctionCheck, IsStr
 
-from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import SchemaValidator, ValidationError, core_schema
 
 from ..conftest import Err, PyAndJson, plain_repr
 
@@ -467,3 +467,23 @@ def test_validate_max_digits_and_decimal_places_edge_case() -> None:
     assert v.validate_python(Decimal('9999999999999999.999999999999999999')) == Decimal(
         '9999999999999999.999999999999999999'
     )
+
+
+def test_str_validation_w_strict() -> None:
+    s = SchemaValidator(core_schema.decimal_schema(strict=True))
+
+    with pytest.raises(ValidationError):
+        assert s.validate_python('1.23')
+
+
+def test_str_validation_w_lax() -> None:
+    s = SchemaValidator(core_schema.decimal_schema(strict=False))
+
+    assert s.validate_python('1.23') == Decimal('1.23')
+
+
+def test_union_with_str_prefers_str() -> None:
+    s = SchemaValidator(core_schema.union_schema([core_schema.decimal_schema(), core_schema.str_schema()]))
+
+    assert s.validate_python('1.23') == '1.23'
+    assert s.validate_python(1.23) == Decimal('1.23')
