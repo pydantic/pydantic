@@ -1256,7 +1256,7 @@ def test_serialize_with_custom_ser() -> None:
             return {'id': self.id}
 
     class ItemContainer(BaseModel):
-        item_or_items: Union[Item, list[Item]]
+        item_or_items: Union[Item, List[Item]]
 
     items = [Item(id=i) for i in range(5)]
     assert (
