@@ -9,4 +9,6 @@ pre-commit==2.20.0
 pycodestyle==2.11.1
 pyflakes==3.1.0
 twine==4.0.1
+# So twine doesn't crash with a keyerror, https://github.com/pypa/twine/issues/1125
+importlib-metadata==7.2.1
 tomli==2.0.1 # to squelch mypy warnings about types
