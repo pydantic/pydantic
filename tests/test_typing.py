@@ -162,3 +162,12 @@ module_ns = parent_frame_namespace(parent_depth=1)
 def test_module_ns_is_none() -> None:
     """Module namespace should be none because we skip fetching data from the top module level."""
     assert module_ns is None
+
+
+def test_exotic_localns() -> None:
+    __foo_annotation__ = str
+
+    class Model(BaseModel):
+        foo: __foo_annotation__
+
+    assert Model.model_fields['foo'].annotation == str
