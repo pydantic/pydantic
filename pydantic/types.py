@@ -1013,6 +1013,15 @@ else:
                 return v.__name__
             elif hasattr(v, '__module__') and hasattr(v, '__name__'):
                 return f'{v.__module__}.{v.__name__}'
+            # Handle special cases for sys.XXX streams
+            # if we see more of these, we should consider a more general solution
+            elif hasattr(v, 'name'):
+                if v.name == '<stdout>':
+                    return 'sys.stdout'
+                elif v.name == '<stdin>':
+                    return 'sys.stdin'
+                elif v.name == '<stderr>':
+                    return 'sys.stderr'
             else:
                 return v
 
