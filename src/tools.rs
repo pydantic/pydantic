@@ -146,5 +146,3 @@ pub(crate) fn new_py_string<'py>(py: Python<'py>, s: &str, cache_str: StringCach
         pystring_fast_new(py, s, ascii_only)
     }
 }
-
-pub(crate) const UNION_ERR_SMALLVEC_CAPACITY: usize = 4;
