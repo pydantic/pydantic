@@ -169,3 +169,121 @@ except ValidationError as e:
     'url': 'https://errors.pydantic.dev/2.8/v/assertion_error'}]
     """
 ```
+
+## Validating Nested Model Fields
+
+Here, we demonstrate two ways to validate a field of a nested model, where the validator utilizes data from the parent model.
+
+In this example, we construct a validator that checks that each user's password is not in a list of forbidden passwords specified by the parent model.
+
+One way to do this is to place a custom validator on the outer model:
+
+```py
+from typing import List
+
+from typing_extensions import Self
+
+from pydantic import BaseModel, ValidationError, model_validator
+
+
+class User(BaseModel):
+    username: str
+    password: str
+
+
+class Organization(BaseModel):
+    forbidden_passwords: List[str]
+    users: List[User]
+
+    @model_validator(mode='after')
+    def validate_user_passwords(self) -> Self:
+        """Check that user password is not in forbidden list. Raise a validation error if a forbidden password is encountered."""
+        for user in self.users:
+            current_pw = user.password
+            if current_pw in self.forbidden_passwords:
+                raise ValueError(
+                    f'Password {current_pw} is forbidden. Please choose another password for user {user.username}.'
+                )
+        return self
+
+
+data = {
+    'forbidden_passwords': ['123'],
+    'users': [
+        {'username': 'Spartacat', 'password': '123'},
+        {'username': 'Iceburgh', 'password': '87'},
+    ],
+}
+try:
+    org = Organization(**data)
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Organization
+      Value error, Password 123 is forbidden. Please choose another password for user Spartacat. [type=value_error, input_value={'forbidden_passwords': [...gh', 'password': '87'}]}, input_type=dict]
+    """
+```
+
+Alternatively, a custom validator can be used in the nested model class (`User`), with the forbidden passwords data from the parent model being passed in via validation context.
+
+!!! warning
+    The ability to mutate the context within a validator adds a lot of power to nested validation, but can also lead to confusing or hard-to-debug code. Use this approach at your own risk!
+
+```py
+from typing import List
+
+from pydantic import BaseModel, ValidationError, ValidationInfo, field_validator
+
+
+class User(BaseModel):
+    username: str
+    password: str
+
+    @field_validator('password', mode='after')
+    @classmethod
+    def validate_user_passwords(
+        cls, password: str, info: ValidationInfo
+    ) -> str:
+        """Check that user password is not in forbidden list."""
+        forbidden_passwords = (
+            info.context.get('forbidden_passwords', []) if info.context else []
+        )
+        if password in forbidden_passwords:
+            raise ValueError(f'Password {password} is forbidden.')
+        return password
+
+
+class Organization(BaseModel):
+    forbidden_passwords: List[str]
+    users: List[User]
+
+    @field_validator('forbidden_passwords', mode='after')
+    @classmethod
+    def add_context(cls, v: List[str], info: ValidationInfo) -> List[str]:
+        if info.context is not None:
+            info.context.update({'forbidden_passwords': v})
+        return v
+
+
+data = {
+    'forbidden_passwords': ['123'],
+    'users': [
+        {'username': 'Spartacat', 'password': '123'},
+        {'username': 'Iceburgh', 'password': '87'},
+    ],
+}
+
+try:
+    org = Organization.model_validate(data, context={})
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Organization
+    users.0.password
+      Value error, Password 123 is forbidden. [type=value_error, input_value='123', input_type=str]
+    """
+```
+
+Note that if the context property is not included in `model_validate`, then `info.context` will be `None` and the forbidden passwords list will not get added to the context in the above implementation. As such, `validate_user_passwords` would not carry out the desired password validation.
+
+More details about validation context can be found [here](../concepts/validators.md#validation-context).

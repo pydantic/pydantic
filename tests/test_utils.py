@@ -542,6 +542,7 @@ def test_snake2pascal(value: str, result: str) -> None:
         ('Kebab-Snake', 'kebab_snake'),
         ('PascalToSnake', 'pascal_to_snake'),
         ('snake_to_snake', 'snake_to_snake'),
+        ('snakeV2', 'snake_v2'),
     ],
 )
 def test_to_snake(value: str, result: str) -> None:

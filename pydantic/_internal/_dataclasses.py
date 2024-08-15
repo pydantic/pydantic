@@ -17,8 +17,7 @@ from pydantic_core import (
 from typing_extensions import TypeGuard
 
 from ..errors import PydanticUndefinedAnnotation
-from ..fields import FieldInfo
-from ..plugin._schema_validator import create_schema_validator
+from ..plugin._schema_validator import PluggableSchemaValidator, create_schema_validator
 from ..warnings import PydanticDeprecatedSince20
 from . import _config, _decorators, _typing_extra
 from ._fields import collect_dataclass_fields
@@ -30,6 +29,7 @@ from ._signature import generate_pydantic_signature
 
 if typing.TYPE_CHECKING:
     from ..config import ConfigDict
+    from ..fields import FieldInfo
 
     class StandardDataclass(typing.Protocol):
         __dataclass_fields__: ClassVar[dict[str, Any]]
@@ -58,7 +58,7 @@ if typing.TYPE_CHECKING:
         __pydantic_decorators__: ClassVar[_decorators.DecoratorInfos]
         __pydantic_fields__: ClassVar[dict[str, FieldInfo]]
         __pydantic_serializer__: ClassVar[SchemaSerializer]
-        __pydantic_validator__: ClassVar[SchemaValidator]
+        __pydantic_validator__: ClassVar[SchemaValidator | PluggableSchemaValidator]
 
 else:
     # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915

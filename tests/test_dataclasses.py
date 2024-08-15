@@ -2944,3 +2944,96 @@ def test_validation_works_for_cyclical_forward_refs() -> None:
         x: Union[X, None]
 
     assert Y(x={'y': None}).x.y is None
+
+
+def test_annotated_with_field_default_factory() -> None:
+    """
+    https://github.com/pydantic/pydantic/issues/9947
+    """
+
+    field = dataclasses.field
+
+    @pydantic.dataclasses.dataclass()
+    class A:
+        a: Annotated[int, Field(default_factory=lambda: 1)]
+        b: Annotated[int, Field(default_factory=lambda: 1)] = Field()
+        c: Annotated[int, Field(default_factory=lambda: 2), Field(default_factory=lambda: 1)] = Field()
+        d: Annotated[int, Field] = Field(default_factory=lambda: 2)
+        e: int = Field(default_factory=lambda: 2)
+        f: Annotated[int, Field(default_factory=lambda: 1)] = Field(default_factory=lambda: 2)
+
+    # check the same tests for dataclasses.field
+    @pydantic.dataclasses.dataclass()
+    class B:
+        a: Annotated[int, Field(default_factory=lambda: 1)]
+        b: Annotated[int, Field(default_factory=lambda: 1)] = field()
+        c: Annotated[int, field(default_factory=lambda: 2), Field(default_factory=lambda: 1)] = field()
+        d: Annotated[int, field] = Field(default_factory=lambda: 2)
+        e: int = field(default_factory=lambda: 2)
+        f: Annotated[int, Field(default_factory=lambda: 1)] = field(default_factory=lambda: 2)
+
+    for cls in (A, B):
+        instance = cls()  # type: ignore
+        field_names = ('a', 'b', 'c', 'd', 'e', 'f')
+        results = (1, 1, 1, 2, 2, 2)
+        for field_name, result in zip(field_names, results):
+            assert getattr(instance, field_name) == result
+
+
+def test_simple_frozen() -> None:
+    @pydantic.dataclasses.dataclass(frozen=True)
+    class MyDataclass:
+        x: str
+
+    inst = MyDataclass('hello')
+
+    try:
+        inst.x = 'other'
+    except Exception as e:
+        assert "cannot assign to field 'x'" in repr(e)
+
+    @pydantic.dataclasses.dataclass(config=ConfigDict(frozen=True))
+    class MyDataclass2:
+        x: str
+
+    inst = MyDataclass2('hello')
+
+    try:
+        inst.x = 'other'
+    except Exception as e:
+        assert "cannot assign to field 'x'" in repr(e)
+
+
+def test_frozen_with_validate_assignment() -> None:
+    """Test for https://github.com/pydantic/pydantic/issues/10041."""
+
+    @pydantic.dataclasses.dataclass(frozen=True, config=ConfigDict(validate_assignment=True))
+    class MyDataclass:
+        x: str
+
+    inst = MyDataclass('hello')
+
+    try:
+        inst.x = 'other'
+    except Exception as e:
+        assert "cannot assign to field 'x'" in repr(e)
+
+    @pydantic.dataclasses.dataclass(config=ConfigDict(frozen=True, validate_assignment=True))
+    class MyDataclass2:
+        x: str
+
+    inst = MyDataclass2('hello')
+
+    # we want to make sure that the error raised relates to the frozen nature of the instance
+    try:
+        inst.x = 'other'
+    except ValidationError as e:
+        assert 'Instance is frozen' in repr(e)
+
+
+def test_warns_on_double_frozen() -> None:
+    with pytest.warns(UserWarning, match='`frozen` is set via both the `dataclass` decorator and `config`'):
+
+        @pydantic.dataclasses.dataclass(frozen=True, config=ConfigDict(frozen=True))
+        class DC:
+            x: int

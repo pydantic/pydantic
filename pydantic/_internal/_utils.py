@@ -18,6 +18,7 @@ from typing import Any, Mapping, TypeVar
 from typing_extensions import TypeAlias, TypeGuard
 
 from . import _repr, _typing_extra
+from ._import_utils import import_cached_base_model
 
 if typing.TYPE_CHECKING:
     MappingIntStrAny: TypeAlias = 'typing.Mapping[int, Any] | typing.Mapping[str, Any]'
@@ -85,7 +86,7 @@ def is_model_class(cls: Any) -> TypeGuard[type[BaseModel]]:
     """Returns true if cls is a _proper_ subclass of BaseModel, and provides proper type-checking,
     unlike raw calls to lenient_issubclass.
     """
-    from ..main import BaseModel
+    BaseModel = import_cached_base_model()
 
     return lenient_issubclass(cls, BaseModel) and cls is not BaseModel
 

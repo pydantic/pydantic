@@ -200,7 +200,7 @@ To validate models based on that information you can set the same field - let's 
 in each of the models with a discriminated value, which is one (or many) `Literal` value(s).
 For your `Union`, you can set the discriminator in its value: `Field(discriminator='my_discriminator')`.
 
-```py requires="3.8"
+```py
 from typing import Literal, Union
 
 from pydantic import BaseModel, Field, ValidationError
@@ -248,7 +248,7 @@ In the case of a `Union` with multiple models, sometimes there isn't a single un
 across all models that you can use as a discriminator.
 This is the perfect use case for a callable `Discriminator`.
 
-```py requires="3.8"
+```py
 from typing import Any, Literal, Union
 
 from typing_extensions import Annotated
@@ -312,7 +312,7 @@ ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, fillin
 
 For example:
 
-```py requires="3.8"
+```py
 from typing import Any, Union
 
 from typing_extensions import Annotated
@@ -369,7 +369,7 @@ except ValidationError as e:
    When `None` is returned, this `union_tag_not_found` error is raised.
 
 !!! note
-    Using the [[`typing.Annotated`][] fields syntax](../concepts/json_schema.md#typingannotated-fields) can be handy to regroup
+    Using the [[`typing.Annotated`][] fields syntax](../concepts/types.md#composing-types-via-annotated) can be handy to regroup
     the `Union` and `discriminator` information. See the next example for more details.
 
     There are a few ways to set a discriminator for a field, all varying slightly in syntax.
@@ -398,7 +398,7 @@ except ValidationError as e:
 Only one discriminator can be set for a field but sometimes you want to combine multiple discriminators.
 You can do it by creating nested `Annotated` types, e.g.:
 
-```py requires="3.8"
+```py
 from typing import Literal, Union
 
 from typing_extensions import Annotated
@@ -458,7 +458,7 @@ except ValidationError as e:
 ```
 
 !!! tip
-    If you want to validate data against a union, and solely a union, you can use pydantic's [`TypeAdapter`](../concepts/type_adapter.md#required-fields) construct instead of inheriting from the standard `BaseModel`.
+    If you want to validate data against a union, and solely a union, you can use pydantic's [`TypeAdapter`](../concepts/type_adapter.md) construct instead of inheriting from the standard `BaseModel`.
 
     In the context of the previous example, we have the following:
 

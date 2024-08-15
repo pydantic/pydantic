@@ -1,4 +1,5 @@
 import typing
+from importlib import import_module
 
 from ._migration import getattr_migration
 from .version import VERSION
@@ -133,6 +134,7 @@ __all__ = (
     'MySQLDsn',
     'MariaDBDsn',
     'ClickHouseDsn',
+    'SnowflakeDsn',
     'validate_email',
     # root_model
     'RootModel',
@@ -199,6 +201,7 @@ __all__ = (
     'Tag',
     'Discriminator',
     'JsonValue',
+    'FailFast',
     # type_adapter
     'TypeAdapter',
     # version
@@ -291,6 +294,7 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'MySQLDsn': (__spec__.parent, '.networks'),
     'MariaDBDsn': (__spec__.parent, '.networks'),
     'ClickHouseDsn': (__spec__.parent, '.networks'),
+    'SnowflakeDsn': (__spec__.parent, '.networks'),
     'validate_email': (__spec__.parent, '.networks'),
     # root_model
     'RootModel': (__spec__.parent, '.root_model'),
@@ -354,6 +358,7 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'Discriminator': (__spec__.parent, '.types'),
     'JsonValue': (__spec__.parent, '.types'),
     'OnErrorOmit': (__spec__.parent, '.types'),
+    'FailFast': (__spec__.parent, '.types'),
     # type_adapter
     'TypeAdapter': (__spec__.parent, '.type_adapter'),
     # warnings
@@ -383,6 +388,7 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'schema_json_of': (__spec__.parent, '.deprecated.tools'),
     'FieldValidationInfo': ('pydantic_core', '.core_schema'),
 }
+_deprecated_dynamic_imports = {'FieldValidationInfo'}
 
 _getattr_migration = getattr_migration(__name__)
 
@@ -394,13 +400,18 @@ def __getattr__(attr_name: str) -> object:
 
     package, module_name = dynamic_attr
 
-    from importlib import import_module
-
     if module_name == '__module__':
-        return import_module(f'.{attr_name}', package=package)
+        result = import_module(f'.{attr_name}', package=package)
+        globals()[attr_name] = result
+        return result
     else:
         module = import_module(module_name, package=package)
-        return getattr(module, attr_name)
+        result = getattr(module, attr_name)
+        g = globals()
+        for k, (_, v_module_name) in _dynamic_imports.items():
+            if v_module_name == module_name and k not in _deprecated_dynamic_imports:
+                g[k] = getattr(module, k)
+        return result
 
 
 def __dir__() -> 'list[str]':

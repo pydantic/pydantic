@@ -50,3 +50,6 @@ print('user:', user)
 Will output in your terminal:
 
 {{ devtools_example }}
+
+!!! note
+    `python-devtools` doesn't yet support Python 3.13.

@@ -27,7 +27,7 @@ _inspect_validator = _decorators.inspect_validator
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class AfterValidator:
-    """Usage docs: https://docs.pydantic.dev/2.8/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.9/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **after** the inner validation logic.
 
@@ -83,7 +83,7 @@ class AfterValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class BeforeValidator:
-    """Usage docs: https://docs.pydantic.dev/2.8/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.9/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **before** the inner validation logic.
 
@@ -127,7 +127,7 @@ class BeforeValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class PlainValidator:
-    """Usage docs: https://docs.pydantic.dev/2.8/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.9/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **instead** of the inner validation logic.
 
@@ -179,7 +179,7 @@ class PlainValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class WrapValidator:
-    """Usage docs: https://docs.pydantic.dev/2.8/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.9/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **around** the inner validation logic.
 
@@ -262,10 +262,9 @@ if TYPE_CHECKING:
 
     _V2BeforeAfterOrPlainValidatorType = TypeVar(
         '_V2BeforeAfterOrPlainValidatorType',
-        _V2Validator,
-        _PartialClsOrStaticMethod,
+        bound=Union[_V2Validator, _PartialClsOrStaticMethod],
     )
-    _V2WrapValidatorType = TypeVar('_V2WrapValidatorType', _V2WrapValidator, _PartialClsOrStaticMethod)
+    _V2WrapValidatorType = TypeVar('_V2WrapValidatorType', bound=Union[_V2WrapValidator, _PartialClsOrStaticMethod])
 
 
 @overload
@@ -298,7 +297,7 @@ def field_validator(
     mode: FieldValidatorModes = 'after',
     check_fields: bool | None = None,
 ) -> Callable[[Any], Any]:
-    """Usage docs: https://docs.pydantic.dev/2.8/concepts/validators/#field-validators
+    """Usage docs: https://docs.pydantic.dev/2.9/concepts/validators/#field-validators
 
     Decorate methods on the class indicating that they should be used to validate fields.
 
@@ -390,7 +389,7 @@ _ModelTypeCo = TypeVar('_ModelTypeCo', covariant=True)
 
 
 class ModelWrapValidatorHandler(_core_schema.ValidatorFunctionWrapHandler, Protocol[_ModelTypeCo]):
-    """@model_validator decorated function handler argument type. This is used when `mode='wrap'`."""
+    """`@model_validator` decorated function handler argument type. This is used when `mode='wrap'`."""
 
     def __call__(  # noqa: D102
         self,
@@ -402,7 +401,7 @@ class ModelWrapValidatorHandler(_core_schema.ValidatorFunctionWrapHandler, Proto
 
 
 class ModelWrapValidatorWithoutInfo(Protocol[_ModelType]):
-    """A @model_validator decorated function signature.
+    """A `@model_validator` decorated function signature.
     This is used when `mode='wrap'` and the function does not have info argument.
     """
 
@@ -419,7 +418,7 @@ class ModelWrapValidatorWithoutInfo(Protocol[_ModelType]):
 
 
 class ModelWrapValidator(Protocol[_ModelType]):
-    """A @model_validator decorated function signature. This is used when `mode='wrap'`."""
+    """A `@model_validator` decorated function signature. This is used when `mode='wrap'`."""
 
     def __call__(  # noqa: D102
         self,
@@ -435,7 +434,7 @@ class ModelWrapValidator(Protocol[_ModelType]):
 
 
 class FreeModelBeforeValidatorWithoutInfo(Protocol):
-    """A @model_validator decorated function signature.
+    """A `@model_validator` decorated function signature.
     This is used when `mode='before'` and the function does not have info argument.
     """
 
@@ -450,7 +449,7 @@ class FreeModelBeforeValidatorWithoutInfo(Protocol):
 
 
 class ModelBeforeValidatorWithoutInfo(Protocol):
-    """A @model_validator decorated function signature.
+    """A `@model_validator` decorated function signature.
     This is used when `mode='before'` and the function does not have info argument.
     """
 
@@ -503,7 +502,7 @@ ModelAfterValidator = Callable[[_ModelType, _core_schema.ValidationInfo], _Model
 """A `@model_validator` decorated function signature. This is used when `mode='after'`."""
 
 _AnyModelWrapValidator = Union[ModelWrapValidator[_ModelType], ModelWrapValidatorWithoutInfo[_ModelType]]
-_AnyModeBeforeValidator = Union[
+_AnyModelBeforeValidator = Union[
     FreeModelBeforeValidator, ModelBeforeValidator, FreeModelBeforeValidatorWithoutInfo, ModelBeforeValidatorWithoutInfo
 ]
 _AnyModelAfterValidator = Union[ModelAfterValidator[_ModelType], ModelAfterValidatorWithoutInfo[_ModelType]]
@@ -523,7 +522,7 @@ def model_validator(
     *,
     mode: Literal['before'],
 ) -> Callable[
-    [_AnyModeBeforeValidator], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]
+    [_AnyModelBeforeValidator], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]
 ]: ...
 
 
@@ -540,7 +539,7 @@ def model_validator(
     *,
     mode: Literal['wrap', 'before', 'after'],
 ) -> Any:
-    """Usage docs: https://docs.pydantic.dev/2.8/concepts/validators/#model-validators
+    """Usage docs: https://docs.pydantic.dev/2.9/concepts/validators/#model-validators
 
     Decorate model methods for validation purposes.
 

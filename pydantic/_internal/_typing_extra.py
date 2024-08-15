@@ -105,14 +105,11 @@ def all_literal_values(type_: type[Any]) -> list[Any]:
         return [type_]
 
     values = literal_values(type_)
-    return list(x for value in values for x in all_literal_values(value))
+    return [x for value in values for x in all_literal_values(value)]
 
 
 def is_annotated(ann_type: Any) -> bool:
-    from ._utils import lenient_issubclass
-
-    origin = get_origin(ann_type)
-    return origin is not None and lenient_issubclass(origin, Annotated)
+    return get_origin(ann_type) is Annotated
 
 
 def annotated_type(type_: Any) -> Any | None:
@@ -139,11 +136,11 @@ def is_new_type(type_: type[Any]) -> bool:
     return isinstance(type_, test_new_type.__class__) and hasattr(type_, '__supertype__')  # type: ignore[arg-type]
 
 
-def _check_classvar(v: type[Any] | None) -> bool:
-    if v is None:
-        return False
+classvar_re = re.compile(r'(\w+\.)?ClassVar\[')
 
-    return v.__class__ == typing.ClassVar.__class__ and getattr(v, '_name', None) == 'ClassVar'
+
+def _check_classvar(v: type[Any] | None) -> bool:
+    return v is not None and v.__class__ is typing.ClassVar.__class__ and getattr(v, '_name', None) == 'ClassVar'
 
 
 def is_classvar(ann_type: type[Any]) -> bool:
@@ -152,10 +149,7 @@ def is_classvar(ann_type: type[Any]) -> bool:
 
     # this is an ugly workaround for class vars that contain forward references and are therefore themselves
     # forward references, see #3679
-    if ann_type.__class__ == typing.ForwardRef and re.match(
-        r'(\w+\.)?ClassVar\[',
-        ann_type.__forward_arg__,  # type: ignore
-    ):
+    if ann_type.__class__ == typing.ForwardRef and classvar_re.match(ann_type.__forward_arg__):
         return True
 
     return False
@@ -173,6 +167,24 @@ def is_finalvar(ann_type: Any) -> bool:
     return _check_finalvar(ann_type) or _check_finalvar(get_origin(ann_type))
 
 
+_DEFAULT_GLOBALS = {
+    '__name__',
+    '__doc__',
+    '__package__',
+    '__loader__',
+    '__spec__',
+    '__annotations__',
+    '__builtins__',
+    '__file__',
+    '__cached__',
+}
+
+
+def _remove_default_globals_from_ns(namespace: dict[str, Any]) -> dict[str, Any]:
+    """Remove default globals like __name__, __doc__, etc that aren't needed for type evaluation."""
+    return {k: v for k, v in namespace.items() if k not in _DEFAULT_GLOBALS}
+
+
 def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
     """We allow use of items in parent namespace to get around the issue with `get_type_hints` only looking in the
     global module namespace. See https://github.com/pydantic/pydantic/issues/2678#issuecomment-1008139014 -> Scope
@@ -184,13 +196,21 @@ def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
     WARNING 2: this only looks in the parent namespace, not other parents since (AFAIK) there's no way to collect a
     dict of exactly what's in scope. Using `f_back` would work sometimes but would be very wrong and confusing in many
     other cases. See https://discuss.python.org/t/is-there-a-way-to-access-parent-nested-namespaces/20659.
+
+    This function returns None if the parent frame is at the top module level. This is because the class' __module__
+    attribute can be used to access the parent namespace. This is done in `_typing_extra.add_module_globals`.
+    There's no need to cache the parent frame namespace in this case.
     """
     frame = sys._getframe(parent_depth)
-    # if f_back is None, it's the global module namespace and we don't need to include it here
-    if frame.f_back is None:
+    # if either of the following conditions are true, the class is defined at the top module level
+    # to better understand why we need both of these checks, see
+    # https://github.com/pydantic/pydantic/pull/10113#discussion_r1714981531
+    if frame.f_back is None or frame.f_code.co_name == '<module>':
         return None
     else:
-        return frame.f_locals
+        if f_locals := frame.f_locals:
+            return _remove_default_globals_from_ns(f_locals)
+        return f_locals
 
 
 def add_module_globals(obj: Any, globalns: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -200,15 +220,13 @@ def add_module_globals(obj: Any, globalns: dict[str, Any] | None = None) -> dict
             module_globalns = sys.modules[module_name].__dict__
         except KeyError:
             # happens occasionally, see https://github.com/pydantic/pydantic/issues/2363
-            pass
+            ns = {}
         else:
-            if globalns:
-                return {**module_globalns, **globalns}
-            else:
-                # copy module globals to make sure it can't be updated later
-                return module_globalns.copy()
+            ns = {**module_globalns, **globalns} if globalns else module_globalns.copy()
+    else:
+        ns = globalns or {}
 
-    return globalns or {}
+    return _remove_default_globals_from_ns(ns)
 
 
 def get_cls_types_namespace(cls: type[Any], parent_namespace: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -247,37 +265,88 @@ def eval_type_lenient(value: Any, globalns: dict[str, Any] | None = None, localn
 
 
 def eval_type_backport(
-    value: Any, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None
+    value: Any,
+    globalns: dict[str, Any] | None = None,
+    localns: dict[str, Any] | None = None,
+    type_params: tuple[Any] | None = None,
 ) -> Any:
-    """Like `typing._eval_type`, but falls back to the `eval_type_backport` package if it's
-    installed to let older Python versions use newer typing features.
-    Specifically, this transforms `X | Y` into `typing.Union[X, Y]`
-    and `list[X]` into `typing.List[X]` etc. (for all the types made generic in PEP 585)
-    if the original syntax is not supported in the current Python version.
+    """An enhanced version of `typing._eval_type` which will fall back to using the `eval_type_backport`
+    package if it's installed to let older Python versions use newer typing constructs.
+
+    Specifically, this transforms `X | Y` into `typing.Union[X, Y]` and `list[X]` into `typing.List[X]`
+    (as well as all the types made generic in PEP 585) if the original syntax is not supported in the
+    current Python version.
+
+    This function will also display a helpful error if the value passed fails to evaluate.
     """
     try:
-        return typing._eval_type(  # type: ignore
-            value, globalns, localns
-        )
+        return _eval_type_backport(value, globalns, localns, type_params)
+    except TypeError as e:
+        if 'Unable to evaluate type annotation' in str(e):
+            raise
+
+        # If it is a `TypeError` and value isn't a `ForwardRef`, it would have failed during annotation definition.
+        # Thus we assert here for type checking purposes:
+        assert isinstance(value, typing.ForwardRef)
+
+        message = f'Unable to evaluate type annotation {value.__forward_arg__!r}.'
+        if sys.version_info >= (3, 11):
+            e.add_note(message)
+            raise
+        else:
+            raise TypeError(message) from e
+
+
+def _eval_type_backport(
+    value: Any,
+    globalns: dict[str, Any] | None = None,
+    localns: dict[str, Any] | None = None,
+    type_params: tuple[Any] | None = None,
+) -> Any:
+    try:
+        return _eval_type(value, globalns, localns, type_params)
     except TypeError as e:
         if not (isinstance(value, typing.ForwardRef) and is_backport_fixable_error(e)):
             raise
+
         try:
             from eval_type_backport import eval_type_backport
         except ImportError:
             raise TypeError(
-                f'You have a type annotation {value.__forward_arg__!r} '
-                f'which makes use of newer typing features than are supported in your version of Python. '
-                f'To handle this error, you should either remove the use of new syntax '
-                f'or install the `eval_type_backport` package.'
+                f'Unable to evaluate type annotation {value.__forward_arg__!r}. If you are making use '
+                'of the new typing syntax (unions using `|` since Python 3.10 or builtins subscripting '
+                'since Python 3.9), you should either replace the use of new syntax with the existing '
+                '`typing` constructs or install the `eval_type_backport` package.'
             ) from e
 
         return eval_type_backport(value, globalns, localns, try_default=False)
 
 
+def _eval_type(
+    value: Any,
+    globalns: dict[str, Any] | None = None,
+    localns: dict[str, Any] | None = None,
+    type_params: tuple[Any] | None = None,
+) -> Any:
+    if sys.version_info >= (3, 13):
+        return typing._eval_type(  # type: ignore
+            value, globalns, localns, type_params=type_params
+        )
+    else:
+        return typing._eval_type(  # type: ignore
+            value, globalns, localns
+        )
+
+
 def is_backport_fixable_error(e: TypeError) -> bool:
     msg = str(e)
-    return msg.startswith('unsupported operand type(s) for |: ') or "' object is not subscriptable" in msg
+
+    return (
+        sys.version_info < (3, 10)
+        and msg.startswith('unsupported operand type(s) for |: ')
+        or sys.version_info < (3, 9)
+        and "' object is not subscriptable" in msg
+    )
 
 
 def get_function_type_hints(
@@ -302,6 +371,7 @@ def get_function_type_hints(
 
     globalns = add_module_globals(function)
     type_hints = {}
+    type_params: tuple[Any] = getattr(function, '__type_params__', ())  # type: ignore
     for name, value in annotations.items():
         if include_keys is not None and name not in include_keys:
             continue
@@ -310,7 +380,7 @@ def get_function_type_hints(
         elif isinstance(value, str):
             value = _make_forward_ref(value)
 
-        type_hints[name] = eval_type_backport(value, globalns, types_namespace)
+        type_hints[name] = eval_type_backport(value, globalns, types_namespace, type_params)
 
     return type_hints
 
@@ -500,3 +570,16 @@ else:
 def is_self_type(tp: Any) -> bool:
     """Check if a given class is a Self type (from `typing` or `typing_extensions`)"""
     return isinstance(tp, typing_base) and getattr(tp, '_name', None) == 'Self'
+
+
+if sys.version_info >= (3, 9):
+    from zoneinfo import ZoneInfo
+
+    def is_zoneinfo_type(tp: Any) -> bool:
+        """Check if a give class is a zone_info.ZoneInfo type"""
+        return tp is ZoneInfo
+
+else:
+
+    def is_zoneinfo_type(tp: Any) -> bool:
+        return False

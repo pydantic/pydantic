@@ -29,8 +29,7 @@ into their own dedicates keys in a plugin specific key in the `plugin_settings` 
 from pydantic import BaseModel
 
 
-class Foo(BaseModel, plugin_settings={'my-plugin': {'observe': 'all'}}):
-    ...
+class Foo(BaseModel, plugin_settings={'my-plugin': {'observe': 'all'}}): ...
 ```
 
 ## Build a plugin
@@ -111,8 +110,7 @@ Consider that you have a plugin called setting called "observer", then you can u
 from pydantic import BaseModel
 
 
-class Foo(BaseModel, plugin_settings={'observer': 'all'}):
-    ...
+class Foo(BaseModel, plugin_settings={'observer': 'all'}): ...
 ```
 
 On each validation call, the `plugin_settings` will be passed to a callable registered for the events.

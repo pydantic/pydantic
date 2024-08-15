@@ -119,11 +119,11 @@ Models possess the following methods and attributes:
 * [`model_construct()`][pydantic.main.BaseModel.model_construct]: a class method for creating models without running validation. See
     [Creating models without validation](#creating-models-without-validation).
 * [`model_copy()`][pydantic.main.BaseModel.model_copy]: returns a copy (by default, shallow copy) of the model. See
-    [Serialization](serialization.md#modelcopy).
+    [Serialization](serialization.md#model_copy).
 * [`model_dump()`][pydantic.main.BaseModel.model_dump]: returns a dictionary of the model's fields and values. See
-    [Serialization](serialization.md#modeldump).
+    [Serialization](serialization.md#model_dump).
 * [`model_dump_json()`][pydantic.main.BaseModel.model_dump_json]: returns a JSON string representation of [`model_dump()`][pydantic.main.BaseModel.model_dump]. See
-    [Serialization](serialization.md#modeldumpjson).
+    [Serialization](serialization.md#model_dump_json).
 * [`model_extra`][pydantic.main.BaseModel.model_extra]: get extra fields set during validation.
 * [`model_fields_set`][pydantic.main.BaseModel.model_fields_set]: set of fields which were set when the model instance was initialized.
 * [`model_json_schema()`][pydantic.main.BaseModel.model_json_schema]: returns a jsonable dictionary representing the model as JSON Schema. See [JSON Schema](json_schema.md).
@@ -1097,8 +1097,7 @@ from pydantic import BaseModel
 TItem = TypeVar('TItem', bound='ItemBase')
 
 
-class ItemBase(BaseModel):
-    ...
+class ItemBase(BaseModel): ...
 
 
 class IntItem(ItemBase):
@@ -1394,7 +1393,7 @@ Field order affects models in the following ways:
 
 * field order is preserved in the model [schema](json_schema.md)
 * field order is preserved in [validation errors](#error-handling)
-* field order is preserved by [`.model_dump()` and `.model_dump_json()` etc.](serialization.md#modelmodeldump)
+* field order is preserved by [`.model_dump()` and `.model_dump_json()` etc.](serialization.md#model_dump)
 
 ```py
 from pydantic import BaseModel, ValidationError

@@ -144,7 +144,10 @@ nav:
     - Currency: api/pydantic_extra_types_currency_code.md
     - Language: api/pydantic_extra_types_language_code.md
     - Script Code: api/pydantic_extra_types_script_code.md
+    - Semantic Version: api/pydantic_extra_types_semantic_version.md
+    - Timezone Name: api/pydantic_extra_types_timezone_name.md
     - ULID: api/pydantic_extra_types_ulid.md
+- Architecture: architecture.md
 - Examples:
   - Secrets: examples/secrets.md
   - Validators: examples/validators.md

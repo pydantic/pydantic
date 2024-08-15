@@ -22,6 +22,7 @@ from pydantic import (
     NatsDsn,
     PostgresDsn,
     RedisDsn,
+    SnowflakeDsn,
     Strict,
     UrlConstraints,
     ValidationError,
@@ -62,6 +63,8 @@ except ImportError:
         'mariadb://user:pass@localhost:3306/app',
         'mariadb+mariadbconnector://user:pass@localhost:3306/app',
         'mariadb+pymysql://user:pass@localhost:3306/app',
+        'snowflake://user:pass@myorganization-myaccount',
+        'snowflake://user:pass@myorganization-myaccount/testdb/public?warehouse=testwh&role=myrole',
         'foo-bar://example.org',
         'foo.bar://example.org',
         'foo0bar://example.org',
@@ -535,6 +538,20 @@ def test_clickhouse_dsns(dsn):
 
 
 @pytest.mark.parametrize(
+    'dsn',
+    [
+        'snowflake://user:pass@myorganization-myaccount',
+        'snowflake://user:pass@myorganization-myaccount/testdb/public?warehouse=testwh&role=myrole',
+    ],
+)
+def test_snowflake_dsns(dsn):
+    class Model(BaseModel):
+        a: SnowflakeDsn
+
+    assert str(Model(a=dsn).a) == dsn
+
+
+@pytest.mark.parametrize(
     'dsn,error_message',
     (
         (
@@ -923,7 +940,7 @@ def test_address_valid(value, name, email):
     [
         ('@example.com', 'There must be something before the @-sign.'),
         ('f oo.bar@example.com', 'The email address contains invalid characters before the @-sign'),
-        ('foobar', 'The email address is not valid. It must have exactly one @-sign.'),
+        ('foobar', 'An email address must have an @-sign.'),
         ('foobar@localhost', 'The part after the @-sign is not valid. It should have a period.'),
         ('foobar@127.0.0.1', 'The part after the @-sign is not valid. It is not within a valid top-level domain.'),
         ('foo.bar@exam\nple.com ', None),

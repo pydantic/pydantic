@@ -17,7 +17,7 @@ def _field_name_for_signature(field_name: str, field_info: FieldInfo) -> str:
     """Extract the correct name to use for the field when generating a signature.
 
     Assuming the field has a valid alias, this will return the alias. Otherwise, it will return the field name.
-    First priority is given to the validation_alias, then the alias, then the field name.
+    First priority is given to the alias, then the validation_alias, then the field name.
 
     Args:
         field_name: The name of the field
@@ -26,12 +26,12 @@ def _field_name_for_signature(field_name: str, field_info: FieldInfo) -> str:
     Returns:
         The correct name to use when generating a signature.
     """
+    if isinstance(field_info.alias, str) and is_valid_identifier(field_info.alias):
+        return field_info.alias
+    if isinstance(field_info.validation_alias, str) and is_valid_identifier(field_info.validation_alias):
+        return field_info.validation_alias
 
-    def _alias_if_valid(x: Any) -> str | None:
-        """Return the alias if it is a valid alias and identifier, else None."""
-        return x if isinstance(x, str) and is_valid_identifier(x) else None
-
-    return _alias_if_valid(field_info.alias) or _alias_if_valid(field_info.validation_alias) or field_name
+    return field_name
 
 
 def _process_param_defaults(param: Parameter) -> Parameter:

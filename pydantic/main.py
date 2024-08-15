@@ -35,6 +35,7 @@ from ._internal import (
     _fields,
     _forward_ref,
     _generics,
+    _import_utils,
     _mock_val_ser,
     _model_construction,
     _repr,
@@ -47,14 +48,14 @@ from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .config import ConfigDict
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema
+from .plugin._schema_validator import PluggableSchemaValidator
 from .warnings import PydanticDeprecatedSince20
 
 # Always define certain types that are needed to resolve method type hints/annotations
 # (even when not type checking) via typing.get_type_hints.
 ModelT = TypeVar('ModelT', bound='BaseModel')
 TupleGenerator = Generator[Tuple[str, Any], None, None]
-# should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
-IncEx: TypeAlias = Union[Set[int], Set[str], Dict[int, Any], Dict[str, Any], None]
+IncEx: TypeAlias = Union[Set[int], Set[str], Dict[int, 'IncEx'], Dict[str, 'IncEx'], None]
 
 
 if TYPE_CHECKING:
@@ -78,7 +79,7 @@ _object_setattr = _model_construction.object_setattr
 
 
 class BaseModel(metaclass=_model_construction.ModelMetaclass):
-    """Usage docs: https://docs.pydantic.dev/2.8/concepts/models/
+    """Usage docs: https://docs.pydantic.dev/2.9/concepts/models/
 
     A base class for creating Pydantic models.
 
@@ -135,6 +136,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         __pydantic_complete__: ClassVar[bool]
         __pydantic_core_schema__: ClassVar[CoreSchema]
+        """The core schema of the model."""
+
         __pydantic_custom_init__: ClassVar[bool]
         __pydantic_decorators__: ClassVar[_decorators.DecoratorInfos]
         __pydantic_generic_metadata__: ClassVar[_generics.PydanticGenericMetadata]
@@ -142,7 +145,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_post_init__: ClassVar[None | Literal['model_post_init']]
         __pydantic_root_model__: ClassVar[bool]
         __pydantic_serializer__: ClassVar[SchemaSerializer]
-        __pydantic_validator__: ClassVar[SchemaValidator]
+        __pydantic_validator__: ClassVar[SchemaValidator | PluggableSchemaValidator]
 
         # Instance attributes
         __pydantic_extra__: dict[str, Any] | None = _PrivateAttr()
@@ -271,9 +274,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         if _fields_set is None:
             _fields_set = fields_set
 
-        _extra: dict[str, Any] | None = (
-            {k: v for k, v in values.items()} if cls.model_config.get('extra') == 'allow' else None
-        )
+        _extra: dict[str, Any] | None = values if cls.model_config.get('extra') == 'allow' else None
         _object_setattr(m, '__dict__', fields_values)
         _object_setattr(m, '__pydantic_fields_set__', _fields_set)
         if not cls.__pydantic_root_model__:
@@ -295,7 +296,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return m
 
     def model_copy(self, *, update: dict[str, Any] | None = None, deep: bool = False) -> Self:
-        """Usage docs: https://docs.pydantic.dev/2.8/concepts/serialization/#model_copy
+        """Usage docs: https://docs.pydantic.dev/2.9/concepts/serialization/#model_copy
 
         Returns a copy of the model.
 
@@ -337,7 +338,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         serialize_as_any: bool = False,
     ) -> dict[str, Any]:
-        """Usage docs: https://docs.pydantic.dev/2.8/concepts/serialization/#modelmodel_dump
+        """Usage docs: https://docs.pydantic.dev/2.9/concepts/serialization/#modelmodel_dump
 
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
 
@@ -390,7 +391,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         serialize_as_any: bool = False,
     ) -> str:
-        """Usage docs: https://docs.pydantic.dev/2.8/concepts/serialization/#modelmodel_dump_json
+        """Usage docs: https://docs.pydantic.dev/2.9/concepts/serialization/#modelmodel_dump_json
 
         Generates a JSON representation of the model using Pydantic's `to_json` method.
 
@@ -576,7 +577,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         strict: bool | None = None,
         context: Any | None = None,
     ) -> Self:
-        """Usage docs: https://docs.pydantic.dev/2.8/concepts/json/#json-parsing
+        """Usage docs: https://docs.pydantic.dev/2.9/concepts/json/#json-parsing
 
         Validate the given JSON data against the Pydantic model.
 
@@ -589,7 +590,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             The validated Pydantic model.
 
         Raises:
-            ValueError: If `json_data` is not a JSON string.
+            ValidationError: If `json_data` is not a JSON string or the object could not be validated.
         """
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
@@ -995,8 +996,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             ```py
             from pydantic import BaseModel
 
-            class MyModel(BaseModel, extra='allow'):
-                ...
+            class MyModel(BaseModel, extra='allow'): ...
             ```
 
             However, this may be deceiving, since the _actual_ calls to `__init_subclass__` will not receive any
@@ -1469,7 +1469,7 @@ def create_model(  # noqa: C901
     __slots__: tuple[str, ...] | None = None,
     **field_definitions: Any,
 ) -> type[ModelT]:
-    """Usage docs: https://docs.pydantic.dev/2.8/concepts/models/#dynamic-model-creation
+    """Usage docs: https://docs.pydantic.dev/2.9/concepts/models/#dynamic-model-creation
 
     Dynamically creates and returns a new Pydantic model, in other words, `create_model` dynamically creates a
     subclass of [`BaseModel`][pydantic.BaseModel].
@@ -1533,7 +1533,7 @@ def create_model(  # noqa: C901
             (f_annotation, f_value, *_) = typing_extensions.get_args(
                 f_def
             )  # first two input are expected from Annotated, refer to https://docs.python.org/3/library/typing.html#typing.Annotated
-            from .fields import FieldInfo
+            FieldInfo = _import_utils.import_cached_field_info()
 
             if not isinstance(f_value, FieldInfo):
                 raise PydanticUserError(

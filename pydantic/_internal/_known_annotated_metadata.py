@@ -2,25 +2,27 @@ from __future__ import annotations
 
 from collections import defaultdict
 from copy import copy
-from functools import partial
+from functools import lru_cache, partial
 from typing import TYPE_CHECKING, Any, Callable, Iterable
 
 from pydantic_core import CoreSchema, PydanticCustomError, to_jsonable_python
 from pydantic_core import core_schema as cs
 
 from ._fields import PydanticMetadata
+from ._import_utils import import_cached_field_info
 
 if TYPE_CHECKING:
     from ..annotated_handlers import GetJsonSchemaHandler
 
-
 STRICT = {'strict'}
-SEQUENCE_CONSTRAINTS = {'min_length', 'max_length'}
+FAIL_FAST = {'fail_fast'}
+LENGTH_CONSTRAINTS = {'min_length', 'max_length'}
 INEQUALITY = {'le', 'ge', 'lt', 'gt'}
-NUMERIC_CONSTRAINTS = {'multiple_of', 'allow_inf_nan', *INEQUALITY}
+NUMERIC_CONSTRAINTS = {'multiple_of', *INEQUALITY}
+ALLOW_INF_NAN = {'allow_inf_nan'}
 
 STR_CONSTRAINTS = {
-    *SEQUENCE_CONSTRAINTS,
+    *LENGTH_CONSTRAINTS,
     *STRICT,
     'strip_whitespace',
     'to_lower',
@@ -28,16 +30,18 @@ STR_CONSTRAINTS = {
     'pattern',
     'coerce_numbers_to_str',
 }
-BYTES_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT}
+BYTES_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *STRICT}
 
-LIST_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT}
-TUPLE_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT}
-SET_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT}
-DICT_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT}
-GENERATOR_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT}
+LIST_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *STRICT, *FAIL_FAST}
+TUPLE_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *STRICT, *FAIL_FAST}
+SET_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *STRICT, *FAIL_FAST}
+DICT_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *STRICT}
+GENERATOR_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *STRICT}
+SEQUENCE_CONSTRAINTS = {*LENGTH_CONSTRAINTS, *FAIL_FAST}
 
-FLOAT_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
-INT_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
+FLOAT_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *ALLOW_INF_NAN, *STRICT}
+DECIMAL_CONSTRAINTS = {'max_digits', 'decimal_places', *FLOAT_CONSTRAINTS}
+INT_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *ALLOW_INF_NAN, *STRICT}
 BOOL_CONSTRAINTS = STRICT
 UUID_CONSTRAINTS = STRICT
 
@@ -62,44 +66,32 @@ SEQUENCE_SCHEMA_TYPES = ('list', 'tuple', 'set', 'frozenset', 'generator', *TEXT
 NUMERIC_SCHEMA_TYPES = ('float', 'int', 'date', 'time', 'timedelta', 'datetime')
 
 CONSTRAINTS_TO_ALLOWED_SCHEMAS: dict[str, set[str]] = defaultdict(set)
-for constraint in STR_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(TEXT_SCHEMA_TYPES)
-for constraint in BYTES_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('bytes',))
-for constraint in LIST_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('list',))
-for constraint in TUPLE_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('tuple',))
-for constraint in SET_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('set', 'frozenset'))
-for constraint in DICT_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('dict',))
-for constraint in GENERATOR_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('generator',))
-for constraint in FLOAT_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('float',))
-for constraint in INT_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('int',))
-for constraint in DATE_TIME_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('date', 'time', 'datetime'))
-for constraint in TIMEDELTA_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('timedelta',))
-for constraint in TIME_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('time',))
-for schema_type in (*TEXT_SCHEMA_TYPES, *SEQUENCE_SCHEMA_TYPES, *NUMERIC_SCHEMA_TYPES, 'typed-dict', 'model'):
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS['strict'].add(schema_type)
-for constraint in UNION_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('union',))
-for constraint in URL_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('url', 'multi-host-url'))
-for constraint in BOOL_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('bool',))
-for constraint in UUID_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('uuid',))
-for constraint in LAX_OR_STRICT_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('lax-or-strict',))
-for constraint in ENUM_CONSTRAINTS:
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('enum',))
+
+constraint_schema_pairings: list[tuple[set[str], tuple[str, ...]]] = [
+    (STR_CONSTRAINTS, TEXT_SCHEMA_TYPES),
+    (BYTES_CONSTRAINTS, ('bytes',)),
+    (LIST_CONSTRAINTS, ('list',)),
+    (TUPLE_CONSTRAINTS, ('tuple',)),
+    (SET_CONSTRAINTS, ('set', 'frozenset')),
+    (DICT_CONSTRAINTS, ('dict',)),
+    (GENERATOR_CONSTRAINTS, ('generator',)),
+    (FLOAT_CONSTRAINTS, ('float',)),
+    (INT_CONSTRAINTS, ('int',)),
+    (DATE_TIME_CONSTRAINTS, ('date', 'time', 'datetime', 'timedelta')),
+    # TODO: this is a bit redundant, we could probably avoid some of these
+    (STRICT, (*TEXT_SCHEMA_TYPES, *SEQUENCE_SCHEMA_TYPES, *NUMERIC_SCHEMA_TYPES, 'typed-dict', 'model')),
+    (UNION_CONSTRAINTS, ('union',)),
+    (URL_CONSTRAINTS, ('url', 'multi-host-url')),
+    (BOOL_CONSTRAINTS, ('bool',)),
+    (UUID_CONSTRAINTS, ('uuid',)),
+    (LAX_OR_STRICT_CONSTRAINTS, ('lax-or-strict',)),
+    (ENUM_CONSTRAINTS, ('enum',)),
+    (DECIMAL_CONSTRAINTS, ('decimal',)),
+]
+
+for constraints, schemas in constraint_schema_pairings:
+    for c in constraints:
+        CONSTRAINTS_TO_ALLOWED_SCHEMAS[c].update(schemas)
 
 
 def add_js_update_schema(s: cs.CoreSchema, f: Callable[[], dict[str, Any]]) -> None:
@@ -145,7 +137,7 @@ def expand_grouped_metadata(annotations: Iterable[Any]) -> Iterable[Any]:
     """
     import annotated_types as at
 
-    from pydantic.fields import FieldInfo  # circular import
+    FieldInfo = import_cached_field_info()
 
     for annotation in annotations:
         if isinstance(annotation, at.GroupedMetadata):
@@ -162,6 +154,28 @@ def expand_grouped_metadata(annotations: Iterable[Any]) -> Iterable[Any]:
             yield annotation
         else:
             yield annotation
+
+
+@lru_cache
+def _get_at_to_constraint_map() -> dict[type, str]:
+    """Return a mapping of annotated types to constraints.
+
+    Normally, we would define a mapping like this in the module scope, but we can't do that
+    because we don't permit module level imports of `annotated_types`, in an attempt to speed up
+    the import time of `pydantic`. We still only want to have this dictionary defined in one place,
+    so we use this function to cache the result.
+    """
+    import annotated_types as at
+
+    return {
+        at.Gt: 'gt',
+        at.Ge: 'ge',
+        at.Lt: 'lt',
+        at.Le: 'le',
+        at.MultipleOf: 'multiple_of',
+        at.MinLen: 'min_length',
+        at.MaxLen: 'max_length',
+    }
 
 
 def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | None:  # noqa: C901
@@ -185,32 +199,19 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
     """
     import annotated_types as at
 
-    from . import _validators
-
-    COMPARISON_VALIDATORS = {
-        'gt': _validators.greater_than_validator,
-        'ge': _validators.greater_than_or_equal_validator,
-        'lt': _validators.less_than_validator,
-        'le': _validators.less_than_or_equal_validator,
-        'multiple_of': _validators.multiple_of_validator,
-        'min_length': _validators.min_length_validator,
-        'max_length': _validators.max_length_validator,
-    }
-
-    CONSTRAINT_STR_FROM_ANNOTATED_TYPE = {
-        at.Gt: 'gt',
-        at.Ge: 'ge',
-        at.Lt: 'lt',
-        at.Le: 'le',
-        at.MultipleOf: 'multiple_of',
-        at.MinLen: 'min_length',
-        at.MaxLen: 'max_length',
-    }
+    from ._validators import forbid_inf_nan_check, get_constraint_validator
 
     schema = schema.copy()
     schema_update, other_metadata = collect_known_metadata([annotation])
     schema_type = schema['type']
 
+    chain_schema_constraints: set[str] = {
+        'pattern',
+        'strip_whitespace',
+        'to_lower',
+        'to_upper',
+        'coerce_numbers_to_str',
+    }
     chain_schema_steps: list[CoreSchema] = []
 
     for constraint, value in schema_update.items():
@@ -220,10 +221,13 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
 
         # if it becomes necessary to handle more than one constraint
         # in this recursive case with function-after or function-wrap, we should refactor
+        # this is a bit challenging because we sometimes want to apply constraints to the inner schema,
+        # whereas other times we want to wrap the existing schema with a new one that enforces a new constraint.
         if schema_type in {'function-before', 'function-wrap', 'function-after'} and constraint == 'strict':
-            schema['schema'] = apply_known_metadata(annotation, schema['schema'])  # type: ignore  # schema is function-after schema
+            schema['schema'] = apply_known_metadata(annotation, schema['schema'])  # type: ignore  # schema is function schema
             return schema
 
+        # if we're allowed to apply constraint directly to the schema, like le to int, do that
         if schema_type in allowed_schemas:
             if constraint == 'union_mode' and schema_type == 'union':
                 schema['mode'] = value  # type: ignore  # schema is UnionSchema
@@ -231,55 +235,61 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                 schema[constraint] = value
             continue
 
-        if constraint in {'pattern', 'strip_whitespace', 'to_lower', 'to_upper', 'coerce_numbers_to_str'}:
+        #  else, apply a function after validator to the schema to enforce the corresponding constraint
+        if constraint in chain_schema_constraints:
             chain_schema_steps.append(cs.str_schema(**{constraint: value}))
-        elif constraint in {'gt', 'ge', 'lt', 'le', 'multiple_of', 'min_length', 'max_length'}:
-            if constraint == 'multiple_of':
-                json_schema_constraint = 'multiple_of'
-            elif constraint in {'min_length', 'max_length'}:
-                if schema['type'] == 'list' or (
-                    schema['type'] == 'json-or-python' and schema['json_schema']['type'] == 'list'
+        elif constraint in {*NUMERIC_CONSTRAINTS, *LENGTH_CONSTRAINTS}:
+            if constraint in NUMERIC_CONSTRAINTS:
+                json_schema_constraint = constraint
+            elif constraint in LENGTH_CONSTRAINTS:
+                inner_schema = schema
+                while inner_schema['type'] in {'function-before', 'function-wrap', 'function-after'}:
+                    inner_schema = inner_schema['schema']  # type: ignore
+                inner_schema_type = inner_schema['type']
+                if inner_schema_type == 'list' or (
+                    inner_schema_type == 'json-or-python' and inner_schema['json_schema']['type'] == 'list'  # type: ignore
                 ):
                     json_schema_constraint = 'minItems' if constraint == 'min_length' else 'maxItems'
                 else:
                     json_schema_constraint = 'minLength' if constraint == 'min_length' else 'maxLength'
-            else:
-                json_schema_constraint = constraint
 
             schema = cs.no_info_after_validator_function(
-                partial(COMPARISON_VALIDATORS[constraint], **{constraint: value}), schema
+                partial(get_constraint_validator(constraint), **{'constraint_value': value}), schema
             )
-
-            add_js_update_schema(schema, lambda: {json_schema_constraint: as_jsonable_value(value)})
+            add_js_update_schema(schema, lambda: {json_schema_constraint: as_jsonable_value(value)})  # noqa: B023
         elif constraint == 'allow_inf_nan' and value is False:
             schema = cs.no_info_after_validator_function(
-                _validators.forbid_inf_nan_check,
+                forbid_inf_nan_check,
                 schema,
             )
         else:
-            raise RuntimeError(f'Unable to apply constraint {constraint} to schema {schema_type}')
+            # It's rare that we'd get here, but it's possible if we add a new constraint and forget to handle it
+            # Most constraint errors are caught at runtime during attempted application
+            raise RuntimeError(f"Unable to apply constraint '{constraint}' to schema of type '{schema_type}'")
 
     for annotation in other_metadata:
-        if isinstance(annotation, (at.Gt, at.Ge, at.Lt, at.Le, at.MultipleOf, at.MinLen, at.MaxLen)):
-            constraint = CONSTRAINT_STR_FROM_ANNOTATED_TYPE[type(annotation)]
+        if (annotation_type := type(annotation)) in (at_to_constraint_map := _get_at_to_constraint_map()):
+            constraint = at_to_constraint_map[annotation_type]
             schema = cs.no_info_after_validator_function(
-                partial(COMPARISON_VALIDATORS[constraint], {constraint: getattr(annotation, constraint)}), schema
+                partial(get_constraint_validator(constraint), {constraint: getattr(annotation, constraint)}), schema
             )
+            continue
         elif isinstance(annotation, at.Predicate):
             predicate_name = f'{annotation.func.__qualname__} ' if hasattr(annotation.func, '__qualname__') else ''
 
             def val_func(v: Any) -> Any:
                 # annotation.func may also raise an exception, let it pass through
-                if not annotation.func(v):
+                if not annotation.func(v):  # noqa: B023
                     raise PydanticCustomError(
                         'predicate_failed',
-                        f'Predicate {predicate_name}failed',  # type: ignore
+                        f'Predicate {predicate_name}failed',  # type: ignore  # noqa: B023
                     )
                 return v
 
-            return cs.no_info_after_validator_function(val_func, schema)
-        # ignore any other unknown metadata
-        return None
+            schema = cs.no_info_after_validator_function(val_func, schema)
+        else:
+            # ignore any other unknown metadata
+            return None
 
     if chain_schema_steps:
         chain_schema_steps = [schema] + chain_schema_steps
@@ -307,31 +317,19 @@ def collect_known_metadata(annotations: Iterable[Any]) -> tuple[dict[str, Any], 
         #> ({'gt': 1, 'min_length': 42}, [Ellipsis])
         ```
     """
-    import annotated_types as at
-
     annotations = expand_grouped_metadata(annotations)
 
     res: dict[str, Any] = {}
     remaining: list[Any] = []
+
     for annotation in annotations:
         # isinstance(annotation, PydanticMetadata) also covers ._fields:_PydanticGeneralMetadata
         if isinstance(annotation, PydanticMetadata):
             res.update(annotation.__dict__)
         # we don't use dataclasses.asdict because that recursively calls asdict on the field values
-        elif isinstance(annotation, at.MinLen):
-            res.update({'min_length': annotation.min_length})
-        elif isinstance(annotation, at.MaxLen):
-            res.update({'max_length': annotation.max_length})
-        elif isinstance(annotation, at.Gt):
-            res.update({'gt': annotation.gt})
-        elif isinstance(annotation, at.Ge):
-            res.update({'ge': annotation.ge})
-        elif isinstance(annotation, at.Lt):
-            res.update({'lt': annotation.lt})
-        elif isinstance(annotation, at.Le):
-            res.update({'le': annotation.le})
-        elif isinstance(annotation, at.MultipleOf):
-            res.update({'multiple_of': annotation.multiple_of})
+        elif (annotation_type := type(annotation)) in (at_to_constraint_map := _get_at_to_constraint_map()):
+            constraint = at_to_constraint_map[annotation_type]
+            res[constraint] = getattr(annotation, constraint)
         elif isinstance(annotation, type) and issubclass(annotation, PydanticMetadata):
             # also support PydanticMetadata classes being used without initialisation,
             # e.g. `Annotated[int, Strict]` as well as `Annotated[int, Strict()]`

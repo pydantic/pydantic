@@ -12,6 +12,7 @@ from .errors import PydanticUserError
 
 if TYPE_CHECKING:
     from ._internal._generate_schema import GenerateSchema as _GenerateSchema
+    from .fields import ComputedFieldInfo, FieldInfo
 
 __all__ = ('ConfigDict', 'with_config')
 
@@ -35,11 +36,18 @@ class ConfigDict(TypedDict, total=False):
     title: str | None
     """The title for the generated JSON schema, defaults to the model's name"""
 
+    model_title_generator: Callable[[type], str] | None
+    """A callable that takes a model class and returns the title for it. Defaults to `None`."""
+
+    field_title_generator: Callable[[str, FieldInfo | ComputedFieldInfo], str] | None
+    """A callable that takes a field's name and info and returns title for it. Defaults to `None`."""
+
     str_to_lower: bool
     """Whether to convert all characters to lowercase for str types. Defaults to `False`."""
 
     str_to_upper: bool
     """Whether to convert all characters to uppercase for str types. Defaults to `False`."""
+
     str_strip_whitespace: bool
     """Whether to strip leading and trailing whitespace for str types."""
 
@@ -385,7 +393,7 @@ class ConfigDict(TypedDict, total=False):
     """
 
     allow_inf_nan: bool
-    """Whether to allow infinity (`+inf` an `-inf`) and NaN values to float fields. Defaults to `True`."""
+    """Whether to allow infinity (`+inf` an `-inf`) and NaN values to float and decimal fields. Defaults to `True`."""
 
     json_schema_extra: JsonDict | JsonSchemaExtraCallable | None
     """A dict or callable to provide extra JSON schema properties. Defaults to `None`."""
@@ -564,22 +572,33 @@ class ConfigDict(TypedDict, total=False):
     - `'float'` will serialize timedeltas to the total number of seconds.
     """
 
-    ser_json_bytes: Literal['utf8', 'base64']
+    ser_json_bytes: Literal['utf8', 'base64', 'hex']
     """
-    The encoding of JSON serialized bytes. Accepts the string values of `'utf8'` and `'base64'`.
-    Defaults to `'utf8'`.
+    The encoding of JSON serialized bytes. Defaults to `'utf8'`.
+    Set equal to `val_json_bytes` to get back an equal value after serialization round trip.
 
     - `'utf8'` will serialize bytes to UTF-8 strings.
     - `'base64'` will serialize bytes to URL safe base64 strings.
+    - `'hex'` will serialize bytes to hexadecimal strings.
     """
 
-    ser_json_inf_nan: Literal['null', 'constants']
+    val_json_bytes: Literal['utf8', 'base64', 'hex']
     """
-    The encoding of JSON serialized infinity and NaN float values. Accepts the string values of `'null'` and `'constants'`.
-    Defaults to `'null'`.
+    The encoding of JSON serialized bytes to decode. Defaults to `'utf8'`.
+    Set equal to `ser_json_bytes` to get back an equal value after serialization round trip.
+
+    - `'utf8'` will deserialize UTF-8 strings to bytes.
+    - `'base64'` will deserialize URL safe base64 strings to bytes.
+    - `'hex'` will deserialize hexadecimal strings to bytes.
+    """
+
+    ser_json_inf_nan: Literal['null', 'constants', 'strings']
+    """
+    The encoding of JSON serialized infinity and NaN float values. Defaults to `'null'`.
 
     - `'null'` will serialize infinity and NaN values as `null`.
     - `'constants'` will serialize infinity and NaN values as `Infinity` and `NaN`.
+    - `'strings'` will serialize infinity as string `"Infinity"` and NaN as string `"NaN"`.
     """
 
     # whether to validate default values during validation, default False
@@ -612,7 +631,7 @@ class ConfigDict(TypedDict, total=False):
     except UserWarning as e:
         print(e)
         '''
-        Field "model_prefixed_field" has conflict with protected namespace "model_".
+        Field "model_prefixed_field" in Model has conflict with protected namespace "model_".
 
         You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ()`.
         '''
@@ -640,7 +659,7 @@ class ConfigDict(TypedDict, total=False):
     except UserWarning as e:
         print(e)
         '''
-        Field "also_protect_field" has conflict with protected namespace "also_protect_".
+        Field "also_protect_field" in Model has conflict with protected namespace "also_protect_".
 
         You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_',)`.
         '''
@@ -1000,7 +1019,7 @@ _TypeT = TypeVar('_TypeT', bound=type)
 
 
 def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
-    """Usage docs: https://docs.pydantic.dev/2.8/concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict
+    """Usage docs: https://docs.pydantic.dev/2.9/concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict
 
     A convenience decorator to set a [Pydantic configuration](config.md) on a `TypedDict` or a `dataclass` from the standard library.
 

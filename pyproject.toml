@@ -31,6 +31,7 @@ classifiers = [
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
     'Intended Audience :: Developers',
     'Intended Audience :: Information Technology',
     'Intended Audience :: System Administrators',
@@ -46,9 +47,12 @@ classifiers = [
 ]
 requires-python = '>=3.8'
 dependencies = [
-    'typing-extensions>=4.6.1',
+    'typing-extensions>=4.6.1; python_version < "3.13"',
+    'typing-extensions>=4.12.2; python_version >= "3.13"',
     'annotated-types>=0.4.0',
-    "pydantic-core==2.19.0",
+    "pydantic-core==2.21.0",
+    # See: https://docs.python.org/3/library/zoneinfo.html#data-sources
+    'tzdata; python_version >= "3.9"',
 ]
 dynamic = ['version', 'readme']
 
@@ -108,20 +112,23 @@ docs = [
     "mkdocstrings-python",
     "tomli",
     "pyupgrade",
-    "mike @ git+https://github.com/jimporter/mike.git",
+    "mike @ git+https://github.com/jimporter/mike.git@master",
     "mkdocs-embed-external-markdown>=2.3.0",
-    "pytest-examples>=0.0.10",
+    "pytest-examples>=0.0.13",
     "pydantic-settings>=2.0b1",
-    "pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main"
+    "pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main",
+    # Not available before v3.8.6, hence the pin here, as it's required by griffe
+    "backports-strenum==1.3.1; python_version >= '3.8.6' and python_version < '3.11'"
 ]
 linting = [
     "eval-type-backport>=0.1.3",
-    "ruff==0.4.8",
+    "ruff==0.5.6",
     "mypy~=1.1.1",
 ]
 testing = [
     "cloudpickle",
     "coverage[toml]",
+    "pytz",
     "dirty-equals",
     "eval-type-backport",
     "pytest>=8.2.2",
@@ -130,7 +137,8 @@ testing = [
     "pytest-examples",
     "faker>=18.13.0",
     "pytest-benchmark>=4.0.0",
-    "pytest-codspeed~=2.2.0",
+    # TODO: remove bound once pytest-codspeed supports 3.13, blocked by `python-cffi`
+    "pytest-codspeed~=2.2.0; python_version < '3.13'",
     "packaging>=23.2",
 ]
 testing-extra = [
@@ -138,16 +146,16 @@ testing-extra = [
     "ansi2html",
     "devtools",
     # used in docs tests
-    "sqlalchemy>=2.0,<3.0",
-    "greenlet>=3.0.0rc3",
+    # TODO: remove bound once sqlalchemy supports 3.13
+    "sqlalchemy>=2.0,<3.0; python_version < '3.13'",
+    "greenlet>=3.0.0rc3; python_version < '3.13'",
 ]
 mypy = [
     "mypy",
     "pydantic-settings>=2.0.0",
 ]
-memray = [
-    "pytest-memray; platform_system != 'Windows'",
-]
+# TODO: remove once memray supports 3.13
+memray = ["pytest-memray; python_version < '3.13' and platform_system != 'Windows'"]
 
 [tool.pytest.ini_options]
 testpaths = 'tests'
@@ -164,12 +172,12 @@ addopts = [
     '--benchmark-columns', 'min,mean,stddev,outliers,rounds,iterations',
     '--benchmark-group-by', 'group',
     '--benchmark-warmup', 'on',
-    '--benchmark-disable',  # this is enable by `make benchmark` when you actually want to run benchmarks
+    '--benchmark-disable',  # this is enabled by `make benchmark` when you actually want to run benchmarks
 ]
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
-assignees = ['sydney-runkle']
+reviewers = ['sydney-runkle']
 require_change_file = false
 unconfirmed_label = 'pending'
 
@@ -179,8 +187,20 @@ target-version = 'py38'
 extend-exclude = ['pydantic/v1', 'tests/mypy/']
 
 [tool.ruff.lint]
-extend-select = ['Q', 'RUF100', 'C90', 'UP', 'I', 'D', 'T']
-extend-ignore = ['D105', 'D107', 'D205', 'D415']
+select = [
+    'F',      # Pyflakes
+    'E',      # pycodestyle (Error)
+    'I',      # isort
+    'D',      # pydocstyle
+    'UP',     # pyupgrade
+    'YTT',    # flake8-2020
+    'B',      # flake8-bugbear
+    'T10',    # flake8-debugger
+    'T20',    # flake8-print
+    'C4',     # flake8-comprehensions
+    'PYI006', # flake8-pyi
+]
+ignore = ['D105', 'D107', 'D205', 'D415', 'E501', 'B011', 'B028', 'B904']
 flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
 isort = { known-first-party = ['pydantic', 'tests'] }
 mccabe = { max-complexity = 14 }
@@ -190,7 +210,7 @@ pydocstyle = { convention = 'google' }
 'docs/*' = ['D']
 'pydantic/__init__.py' = ['F405', 'F403', 'D']
 'tests/test_forward_ref.py' = ['F821']
-'tests/*' = ['D']
+'tests/*' = ['D', 'B', 'C4']
 'pydantic/deprecated/*' = ['D']
 'pydantic/json_schema.py' = ['D']
 
@@ -207,6 +227,7 @@ quote-style = 'single'
 source = ['pydantic']
 omit = ['pydantic/deprecated/*', 'pydantic/v1/*']
 branch = true
+relative_files = true
 context = '${CONTEXT}'
 
 [tool.coverage.report]
@@ -243,3 +264,10 @@ skip = '.git,env*,pydantic/v1/*'
 # `ser` - abbreviation for "ser"ialisation
 # `crate` - a rust crate
 ignore-words-list = 'gir,ser,crate'
+
+[tool.codeflash]
+module-root = "pydantic"
+tests-root = "tests"
+test-framework = "pytest"
+ignore-paths = []
+formatter-cmd = ["ruff check --exit-zero --fix $file", "ruff format $file"]

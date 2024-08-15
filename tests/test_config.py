@@ -29,7 +29,7 @@ from pydantic._internal._typing_extra import get_type_hints
 from pydantic.config import ConfigDict, JsonValue
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
-from pydantic.fields import FieldInfo
+from pydantic.fields import ComputedFieldInfo, FieldInfo
 from pydantic.type_adapter import TypeAdapter
 from pydantic.warnings import PydanticDeprecationWarning
 
@@ -376,11 +376,6 @@ class TestsBaseConfig:
         expected_warnings = {
             'Support for class-based `config` is deprecated, use ConfigDict instead',
             'BaseConfig is deprecated. Use the `pydantic.ConfigDict` instead',
-            'Support for class-based `config` is deprecated, use ConfigDict instead',
-            'BaseConfig is deprecated. Use the `pydantic.ConfigDict` instead',
-            'Support for class-based `config` is deprecated, use ConfigDict instead',
-            'Support for class-based `config` is deprecated, use ConfigDict instead',
-            'Support for class-based `config` is deprecated, use ConfigDict instead',
         }
         assert set(w.message.message for w in all_warnings) <= expected_warnings
 
@@ -523,7 +518,13 @@ def test_multiple_inheritance_config():
 
 
 def test_config_wrapper_match():
-    localns = {'_GenerateSchema': GenerateSchema, 'GenerateSchema': GenerateSchema, 'JsonValue': JsonValue}
+    localns = {
+        '_GenerateSchema': GenerateSchema,
+        'GenerateSchema': GenerateSchema,
+        'JsonValue': JsonValue,
+        'FieldInfo': FieldInfo,
+        'ComputedFieldInfo': ComputedFieldInfo,
+    }
     config_dict_annotations = [(k, str(v)) for k, v in get_type_hints(ConfigDict, localns=localns).items()]
     config_dict_annotations.sort()
     # remove config
@@ -566,7 +567,12 @@ def test_config_validation_error_cause():
 
 
 def test_config_defaults_match():
-    localns = {'_GenerateSchema': GenerateSchema, 'GenerateSchema': GenerateSchema}
+    localns = {
+        '_GenerateSchema': GenerateSchema,
+        'GenerateSchema': GenerateSchema,
+        'FieldInfo': FieldInfo,
+        'ComputedFieldInfo': ComputedFieldInfo,
+    }
     config_dict_keys = sorted(list(get_type_hints(ConfigDict, localns=localns).keys()))
     config_defaults_keys = sorted(list(config_defaults.keys()))
 
@@ -894,7 +900,7 @@ def test_dataclass_allowes_model_config_as_model_field():
     m = MyDataclass(model_config={'title': field_title})
 
     assert m.model_config['title'] == field_title
-    assert getattr(m, '__pydantic_config__')['title'] == config_title
+    assert m.__pydantic_config__['title'] == config_title
 
 
 def test_with_config_disallowed_with_model():

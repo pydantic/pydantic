@@ -316,8 +316,8 @@ For custom types, Pydantic offers other tools for customizing JSON schema genera
 
 1. [`WithJsonSchema` annotation](#withjsonschema-annotation)
 2. [`SkipJsonSchema` annotation](#skipjsonschema-annotation)
-3. [Implementing `__get_pydantic_core_schema__`](#implementing-__get_pydantic_core_schema__)
-4. [Implementing `__get_pydantic_json_schema__`](#implementing-__get_pydantic_json_schema__)
+3. [Implementing `__get_pydantic_core_schema__`](#implementing_get_pydantic_core_schema)
+4. [Implementing `__get_pydantic_json_schema__`](#implementing_get_pydantic_json_schema)
 
 ### Field-Level Customization
 
@@ -330,6 +330,7 @@ Some field parameters are used exclusively to customize the generated JSON Schem
 * `description`: The description of the field.
 * `examples`: The examples of the field.
 * `json_schema_extra`: Extra JSON Schema properties to be added to the field.
+* `field_title_generator`: A function that programmatically sets the field's title, based on its name and info.
 
 Here's an example:
 
@@ -481,6 +482,51 @@ print(json.dumps(Foo.model_json_schema(), indent=2))
 """
 ```
 
+### Programmatic field title generation
+
+The `field_title_generator` parameter can be used to programmatically generate the title for a field based on its name and info.
+
+See the following example:
+
+```py
+import json
+
+from pydantic import BaseModel, Field
+from pydantic.fields import FieldInfo
+
+
+def make_title(field_name: str, field_info: FieldInfo) -> str:
+    return field_name.upper()
+
+
+class Person(BaseModel):
+    name: str = Field(field_title_generator=make_title)
+    age: int = Field(field_title_generator=make_title)
+
+
+print(json.dumps(Person.model_json_schema(), indent=2))
+"""
+{
+  "properties": {
+    "name": {
+      "title": "NAME",
+      "type": "string"
+    },
+    "age": {
+      "title": "AGE",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "name",
+    "age"
+  ],
+  "title": "Person",
+  "type": "object"
+}
+"""
+```
+
 ### Model-Level Customization
 
 You can also use [model config][pydantic.config.ConfigDict] to customize JSON schema generation on a model.
@@ -490,6 +536,8 @@ Specifically, the following config options are relevant:
 * [`json_schema_extra`][pydantic.config.ConfigDict.json_schema_extra]
 * [`schema_generator`][pydantic.config.ConfigDict.schema_generator]
 * [`json_schema_mode_override`][pydantic.config.ConfigDict.json_schema_mode_override]
+* [`field_title_generator`][pydantic.config.ConfigDict.field_title_generator]
+* [`model_title_generator`][pydantic.config.ConfigDict.model_title_generator]
 
 ### Using `json_schema_extra`
 
@@ -569,6 +617,78 @@ print(json.dumps(Model.model_json_schema(), indent=2))
 """
 ```
 
+#### Merging `json_schema_extra`
+
+Starting in v2.9, Pydantic merges `json_schema_extra` dictionaries from annotated types.
+This pattern offers a more additive approach to merging rather than the previous override behavior.
+This can be quite helpful for cases of reusing json schema extra information across multiple types.
+
+We viewed this change largely as a bug fix, as it resolves unintentional differences in the `json_schema_extra` merging behavior
+between `BaseModel` and `TypeAdapter` instances - see [this issue](https://github.com/pydantic/pydantic/issues/9210)
+for more details.
+
+```py
+import json
+
+from typing_extensions import Annotated, TypeAlias
+
+from pydantic import Field, TypeAdapter
+
+ExternalType: TypeAlias = Annotated[
+    int, Field(..., json_schema_extra={'key1': 'value1'})
+]
+
+ta = TypeAdapter(
+    Annotated[ExternalType, Field(..., json_schema_extra={'key2': 'value2'})]
+)
+print(json.dumps(ta.json_schema(), indent=2))
+"""
+{
+  "key1": "value1",
+  "key2": "value2",
+  "type": "integer"
+}
+"""
+```
+
+If you would prefer for the last of your `json_schema_extra` specifications to override the previous ones,
+you can use a `callable` to make more significant changes, including adding or removing keys, or modifying values.
+You can use this pattern if you'd like to mimic the behavior of the `json_schema_extra` overrides present
+in Pydantic v2.8 and earlier:
+
+```py
+import json
+
+from typing_extensions import Annotated, TypeAlias
+
+from pydantic import Field, TypeAdapter
+from pydantic.json_schema import JsonDict
+
+ExternalType: TypeAlias = Annotated[
+    int, Field(..., json_schema_extra={'key1': 'value1', 'key2': 'value2'})
+]
+
+
+def finalize_schema(s: JsonDict) -> None:
+    s.pop('key1')
+    s['key2'] = s['key2'] + '-final'
+    s['key3'] = 'value3-final'
+
+
+ta = TypeAdapter(
+    Annotated[ExternalType, Field(..., json_schema_extra=finalize_schema)]
+)
+print(json.dumps(ta.json_schema(), indent=2))
+"""
+{
+  "key2": "value2-final",
+  "key3": "value3-final",
+  "type": "integer"
+}
+"""
+```
+
+
 ### `WithJsonSchema` annotation
 
 ??? api "API Documentation"
@@ -576,7 +696,7 @@ print(json.dumps(Model.model_json_schema(), indent=2))
 
 !!! tip
     Using [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema]] is preferred over
-    [implementing `__get_pydantic_json_schema__`](#implementing-getpydanticjsonschema) for custom types,
+    [implementing `__get_pydantic_json_schema__`](#implementing_get_pydantic_json_schema) for custom types,
     as it's more simple and less error-prone.
 
 The [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema] annotation can be used to override the generated (base)
@@ -648,7 +768,7 @@ print(json.dumps(Model.model_json_schema(), indent=2))
 The [`SkipJsonSchema`][pydantic.json_schema.SkipJsonSchema] annotation can be used to skip a including field (or part of a field's specifications)
 from the generated JSON schema. See the API docs for more details.
 
-### Implementing `__get_pydantic_core_schema__`
+### Implementing `__get_pydantic_core_schema__` <a name="implementing_get_pydantic_core_schema"></a>
 
 Custom types (used as `field_name: TheType` or `field_name: Annotated[TheType, ...]`) as well as `Annotated` metadata
 (used as `field_name: Annotated[int, SomeMetadata]`)
@@ -947,7 +1067,7 @@ print(m.model_fields)
 """
 ```
 
-### Implementing `__get_pydantic_json_schema__`
+### Implementing `__get_pydantic_json_schema__` <a name="implementing_get_pydantic_json_schema"></a>
 
 You can also implement `__get_pydantic_json_schema__` to modify or override the generated json schema.
 Modifying this method only affects the JSON schema - it doesn't affect the core schema, which is used for validation and serialization.
@@ -1028,6 +1148,97 @@ print(json.dumps(TypeAdapter(Person).json_schema(), indent=2))
 """
 ```
 
+
+### Using `field_title_generator`
+
+The `field_title_generator` parameter can be used to programmatically generate the title for a field based on its name and info.
+This is similar to the field level `field_title_generator`, but the `ConfigDict` option will be applied to all fields of the class.
+
+See the following example:
+
+```py
+import json
+
+from pydantic import BaseModel, ConfigDict
+
+
+class Person(BaseModel):
+    model_config = ConfigDict(
+        field_title_generator=lambda field_name, field_info: field_name.upper()
+    )
+    name: str
+    age: int
+
+
+print(json.dumps(Person.model_json_schema(), indent=2))
+"""
+{
+  "properties": {
+    "name": {
+      "title": "NAME",
+      "type": "string"
+    },
+    "age": {
+      "title": "AGE",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "name",
+    "age"
+  ],
+  "title": "Person",
+  "type": "object"
+}
+"""
+```
+
+### Using `model_title_generator`
+
+The `model_title_generator` config option is similar to the `field_title_generator` option, but it applies to the title of the model itself,
+and accepts the model class as input.
+
+See the following example:
+
+```py
+import json
+from typing import Type
+
+from pydantic import BaseModel, ConfigDict
+
+
+def make_title(model: Type) -> str:
+    return f'Title-{model.__name__}'
+
+
+class Person(BaseModel):
+    model_config = ConfigDict(model_title_generator=make_title)
+    name: str
+    age: int
+
+
+print(json.dumps(Person.model_json_schema(), indent=2))
+"""
+{
+  "properties": {
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "age": {
+      "title": "Age",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "name",
+    "age"
+  ],
+  "title": "Title-Person",
+  "type": "object"
+}
+"""
+```
 
 ## JSON schema types
 

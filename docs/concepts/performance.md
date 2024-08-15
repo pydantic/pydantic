@@ -101,9 +101,7 @@ model = Model(a=1)
 Tagged union (or discriminated union) is a union with a field that indicates which type it is.
 
 ```py test="skip"
-from typing import Any
-
-from typing_extensions import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -185,6 +183,35 @@ Instead of using nested models, use `TypedDict` to define the structure of the d
 
 ## Avoid wrap validators if you really care about performance
 
-<!-- TODO: I need help on this one. -->
+Wrap validators are generally slower than other validators. This is because they require
+that data is materialized in Python during validation. Wrap validators can be incredibly useful
+for complex validation logic, but if you're looking for the best performance, you should avoid them.
+
+## Failing early with `FailFast`
+
+Starting in v2.8+, you can apply the `FailFast` annotation to sequence types to fail early if any item in the sequence fails validation.
+If you use this annotation, you won't get validation errors for the rest of the items in the sequence if one fails, so you're effectively
+trading off visibility for performance.
+
+```py
+from typing import List
+
+from typing_extensions import Annotated
+
+from pydantic import FailFast, TypeAdapter, ValidationError
+
+ta = TypeAdapter(Annotated[List[bool], FailFast()])
+try:
+    ta.validate_python([True, 'invalid', False, 'also invalid'])
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for list[bool]
+    1
+      Input should be a valid boolean, unable to interpret input [type=bool_parsing, input_value='invalid', input_type=str]
+    """
+```
+
+Read more about `FailFast` [here][pydantic.types.FailFast].
 
 [Discriminated Unions]: ../concepts/unions.md#discriminated-unions

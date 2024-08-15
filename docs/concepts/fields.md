@@ -540,7 +540,7 @@ approach can be useful when the discriminator fields aren't the same for all the
 
 The following example shows how to use `discriminator` with a field name:
 
-```py requires="3.8"
+```py
 from typing import Literal, Union
 
 from pydantic import BaseModel, Field
@@ -568,7 +568,7 @@ print(Model.model_validate({'pet': {'pet_type': 'cat', 'age': 12}}))  # (1)!
 
 The following example shows how to use the `discriminator` keyword argument with a `Discriminator` instance:
 
-```py requires="3.8"
+```py
 from typing import Literal, Union
 
 from typing_extensions import Annotated
@@ -801,11 +801,18 @@ Read more about JSON schema customization / modification with fields in the [Cus
 ## The `computed_field` decorator
 
 ??? api "API Documentation"
-    [`pydantic.fields.computed_field`][pydantic.fields.computed_field]<br>
+    [`computed_field`][pydantic.fields.computed_field]<br>
 
-The `computed_field` decorator can be used to include `property` or `cached_property` attributes when serializing a
-model or dataclass. This can be useful for fields that are computed from other fields, or for fields that
-are expensive to computed (and thus, are cached).
+The [`computed_field`][pydantic.fields.computed_field] decorator can be used to include [`property`][] or
+[`cached_property`][functools.cached_property] attributes when serializing a model or dataclass.
+The property will also be taken into account in the JSON Schema.
+
+!!! note
+    Properties can be useful for fields that are computed from other fields, or for fields that
+    are expensive to be computed (and thus, are cached if using [`cached_property`][functools.cached_property]).
+
+    However, note that Pydantic will *not* perform any additional logic on the wrapped property
+    (validation, cache invalidation, etc.).
 
 Here's an example:
 
@@ -819,6 +826,7 @@ class Box(BaseModel):
     depth: float
 
     @computed_field
+    @property  # (1)!
     def volume(self) -> float:
         return self.width * self.height * self.depth
 
@@ -827,6 +835,10 @@ b = Box(width=1, height=2, depth=3)
 print(b.model_dump())
 #> {'width': 1.0, 'height': 2.0, 'depth': 3.0, 'volume': 6.0}
 ```
+
+1. If not specified, [`computed_field`][pydantic.fields.computed_field] will implicitly convert the method
+   to a [`property`][]. However, it is preferable to explicitly use the [`@property`][property] decorator
+   for type checking purposes.
 
 As with regular fields, computed fields can be marked as being deprecated:
 
@@ -842,6 +854,7 @@ class Box(BaseModel):
     depth: float
 
     @computed_field
+    @property
     @deprecated("'volume' is deprecated")
     def volume(self) -> float:
         return self.width * self.height * self.depth

@@ -1,4 +1,5 @@
 import collections
+import ipaddress
 import itertools
 import json
 import math
@@ -39,7 +40,12 @@ import annotated_types
 import dirty_equals
 import pytest
 from dirty_equals import HasRepr, IsFloatNan, IsOneOf, IsStr
-from pydantic_core import CoreSchema, PydanticCustomError, SchemaError, core_schema
+from pydantic_core import (
+    CoreSchema,
+    PydanticCustomError,
+    SchemaError,
+    core_schema,
+)
 from typing_extensions import Annotated, Literal, NotRequired, TypedDict, get_args
 
 from pydantic import (
@@ -59,6 +65,7 @@ from pydantic import (
     ConfigDict,
     DirectoryPath,
     EmailStr,
+    FailFast,
     Field,
     FilePath,
     FiniteFloat,
@@ -1033,6 +1040,17 @@ def test_string_import_errors(import_string, errors):
     assert exc_info.value.errors() == errors
 
 
+@pytest.mark.xfail(
+    reason='This fails with pytest bc of the weirdness associated with importing modules in a test, but works in normal usage'
+)
+def test_import_string_sys_stdout() -> None:
+    class ImportThings(BaseModel):
+        obj: ImportString
+
+    import_things = ImportThings(obj='sys.stdout')
+    assert import_things.model_dump_json() == '{"obj":"sys.stdout"}'
+
+
 def test_decimal():
     class Model(BaseModel):
         v: Decimal
@@ -1781,37 +1799,38 @@ def test_enum_with_no_cases() -> None:
 
 
 @pytest.mark.parametrize(
-    'kwargs,type_',
+    'kwargs,type_,a',
     [
         pytest.param(
             {'pattern': '^foo$'},
             int,
+            1,
             marks=pytest.mark.xfail(
                 reason='int cannot be used with pattern but we do not currently validate that at schema build time'
             ),
         ),
-        ({'gt': 0}, conlist(int, min_length=4)),
-        ({'gt': 0}, conset(int, min_length=4)),
-        ({'gt': 0}, confrozenset(int, min_length=4)),
+        ({'gt': 0}, conlist(int, min_length=4), [1, 2, 3, 4, 5]),
+        ({'gt': 0}, conset(int, min_length=4), {1, 2, 3, 4, 5}),
+        ({'gt': 0}, confrozenset(int, min_length=4), frozenset({1, 2, 3, 4, 5})),
     ],
 )
-def test_invalid_schema_constraints(kwargs, type_):
-    match = (
-        r'(:?Invalid Schema:\n.*\n  Extra inputs are not permitted)|(:?The following constraints cannot be applied to)'
-    )
-    with pytest.raises((SchemaError, TypeError), match=match):
+def test_invalid_schema_constraints(kwargs, type_, a):
+    class Foo(BaseModel):
+        a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
-        class Foo(BaseModel):
-            a: type_ = Field('foo', title='A title', description='A description', **kwargs)
+    constraint_name = list(kwargs.keys())[0]
+    with pytest.raises(
+        TypeError, match=re.escape(f"Unable to apply constraint '{constraint_name}' to supplied value {a}")
+    ):
+        Foo(a=a)
 
 
 def test_invalid_decimal_constraint():
-    with pytest.raises(
-        TypeError, match="The following constraints cannot be applied to <class 'decimal.Decimal'>: 'max_length'"
-    ):
+    class Foo(BaseModel):
+        a: Decimal = Field('foo', title='A title', description='A description', max_length=5)
 
-        class Foo(BaseModel):
-            a: Decimal = Field('foo', title='A title', description='A description', max_length=5)
+    with pytest.raises(TypeError, match="Unable to apply constraint 'max_length' to supplied value 1.0"):
+        Foo(a=1.0)
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
@@ -1879,20 +1898,16 @@ def test_string_fails():
         {
             'type': 'value_error',
             'loc': ('str_email',),
-            'msg': (
-                'value is not a valid email address: The email address contains invalid '
-                "characters before the @-sign: '<'."
-            ),
+            'msg': 'value is not a valid email address: An open angle bracket at the start of the email address has to be followed by a close angle bracket at the end.',
             'input': 'foobar<@example.com',
-            'ctx': {'reason': "The email address contains invalid characters before the @-sign: '<'."},
+            'ctx': {
+                'reason': 'An open angle bracket at the start of the email address has to be followed by a close angle bracket at the end.'
+            },
         },
         {
             'type': 'value_error',
             'loc': ('name_email',),
-            'msg': (
-                'value is not a valid email address: The email address contains invalid characters '
-                'before the @-sign: SPACE.'
-            ),
+            'msg': 'value is not a valid email address: The email address contains invalid characters before the @-sign: SPACE.',
             'input': 'foobar @example.com',
             'ctx': {'reason': 'The email address contains invalid characters before the @-sign: SPACE.'},
         },
@@ -2083,7 +2098,7 @@ def test_tuple_variable_len_fails(value, cls, exc):
 @pytest.mark.parametrize(
     'value,result',
     (
-        ({1, 2, 2, '3'}, {1, 2, '3'}),
+        ({1, 2, '3'}, {1, 2, '3'}),
         ((1, 2, 2, '3'), {1, 2, '3'}),
         ([1, 2, 2, '3'], {1, 2, '3'}),
         ({i**2 for i in range(5)}, {0, 1, 4, 9, 16}),
@@ -3393,12 +3408,17 @@ ANY_THING = object()
         ),
     ],
 )
-@pytest.mark.parametrize('mode', ['Field', 'condecimal'])
+@pytest.mark.parametrize('mode', ['Field', 'condecimal', 'optional'])
 def test_decimal_validation(mode, type_args, value, result):
     if mode == 'Field':
 
         class Model(BaseModel):
             foo: Decimal = Field(**type_args)
+
+    elif mode == 'optional':
+
+        class Model(BaseModel):
+            foo: Optional[Decimal] = Field(**type_args)
 
     else:
 
@@ -3492,6 +3512,60 @@ def test_path_like():
     }
 
 
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='requires python 3.9 or higher to parametrize os.PathLike')
+def test_path_like_extra_subtype():
+    class Model(BaseModel):
+        str_type: os.PathLike[str]
+        byte_type: os.PathLike[bytes]
+        any_type: os.PathLike[Any]
+
+    m = Model(
+        str_type='/foo/bar',
+        byte_type=b'/foo/bar',
+        any_type='/foo/bar',
+    )
+    assert m.str_type == Path('/foo/bar')
+    assert m.byte_type == Path('/foo/bar')
+    assert m.any_type == Path('/foo/bar')
+    assert Model.model_json_schema() == {
+        'properties': {
+            'str_type': {'format': 'path', 'title': 'Str Type', 'type': 'string'},
+            'byte_type': {'format': 'path', 'title': 'Byte Type', 'type': 'string'},
+            'any_type': {'format': 'path', 'title': 'Any Type', 'type': 'string'},
+        },
+        'required': ['str_type', 'byte_type', 'any_type'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(
+            str_type=b'/foo/bar',
+            byte_type='/foo/bar',
+            any_type=111,
+        )
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'path_type',
+            'loc': ('str_type',),
+            'msg': "Input is not a valid path for <class 'os.PathLike'>",
+            'input': b'/foo/bar',
+        },
+        {
+            'type': 'path_type',
+            'loc': ('byte_type',),
+            'msg': "Input is not a valid path for <class 'os.PathLike'>",
+            'input': '/foo/bar',
+        },
+        {
+            'type': 'path_type',
+            'loc': ('any_type',),
+            'msg': "Input is not a valid path for <class 'os.PathLike'>",
+            'input': 111,
+        },
+    ]
+
+
 def test_path_like_strict():
     class Model(BaseModel):
         model_config = dict(strict=True)
@@ -3527,17 +3601,13 @@ def test_path_validation_fails():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=123)
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {'type': 'path_type', 'loc': ('foo',), 'msg': 'Input is not a valid path', 'input': 123}
-    ]
+    # insert_assert(exc_info.value.errors(include_url=False))[0]['type']
+    assert exc_info.value.errors(include_url=False)[0]['type'] == 'path_type'
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=None)
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {'type': 'path_type', 'loc': ('foo',), 'msg': 'Input is not a valid path', 'input': None}
-    ]
+    # insert_assert(exc_info.value.errors(include_url=False))[0]['type']
+    assert exc_info.value.errors(include_url=False)[0]['type'] == 'path_type'
 
 
 def test_path_validation_strict():
@@ -4909,7 +4979,7 @@ def test_deque_success():
         (float, [1.0, 2.0, 3.0], deque([1.0, 2.0, 3.0])),
         (Set[int], [{1, 2}, {3, 4}, {5, 6}], deque([{1, 2}, {3, 4}, {5, 6}])),
         (Tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), deque(((1, 'a'), (2, 'b'), (3, 'c')))),
-        (str, [w for w in 'one two three'.split()], deque(['one', 'two', 'three'])),
+        (str, 'one two three'.split(), deque(['one', 'two', 'three'])),
         (
             int,
             {1: 10, 2: 20, 3: 30}.keys(),
@@ -6770,3 +6840,82 @@ def test_constraints_on_str_like() -> None:
         baz: Annotated[EmailStr, StringConstraints(to_lower=True, strip_whitespace=True)]
 
     assert Foo(baz=' uSeR@ExAmPlE.com  ').baz == 'user@example.com'
+
+
+@pytest.mark.parametrize(
+    'tp',
+    [
+        pytest.param(List[int], id='list'),
+        pytest.param(Tuple[int, ...], id='tuple'),
+        pytest.param(Set[int], id='set'),
+        pytest.param(FrozenSet[int], id='frozenset'),
+    ],
+)
+@pytest.mark.parametrize(
+    ['fail_fast', 'decl'],
+    [
+        pytest.param(True, FailFast(), id='fail-fast-default'),
+        pytest.param(True, FailFast(True), id='fail-fast-true'),
+        pytest.param(False, FailFast(False), id='fail-fast-false'),
+        pytest.param(False, Field(...), id='field-default'),
+        pytest.param(True, Field(..., fail_fast=True), id='field-true'),
+        pytest.param(False, Field(..., fail_fast=False), id='field-false'),
+    ],
+)
+def test_fail_fast(tp, fail_fast, decl) -> None:
+    class Foo(BaseModel):
+        a: Annotated[tp, decl]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Foo(a=[1, 'a', 'c'])
+
+    errors = [
+        {
+            'input': 'a',
+            'loc': ('a', 1),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'type': 'int_parsing',
+        },
+    ]
+
+    if not fail_fast:
+        errors.append(
+            {
+                'input': 'c',
+                'loc': ('a', 2),
+                'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                'type': 'int_parsing',
+            },
+        )
+
+    assert exc_info.value.errors(include_url=False) == errors
+
+
+def test_mutable_mapping() -> None:
+    """Addresses https://github.com/pydantic/pydantic/issues/9549.
+
+    Note - we still don't do a good job of handling subclasses, as we convert the input to a dict
+    via the MappingValidator annotation's schema.
+    """
+    import collections.abc
+
+    adapter = TypeAdapter(collections.abc.MutableMapping, config=ConfigDict(arbitrary_types_allowed=True, strict=True))
+
+    assert isinstance(adapter.validate_python(collections.UserDict()), collections.abc.MutableMapping)
+
+
+def test_ser_ip_with_union() -> None:
+    bool_first = TypeAdapter(Union[bool, ipaddress.IPv4Address])
+    assert bool_first.dump_python(True, mode='json') is True
+    assert bool_first.dump_json(True) == b'true'
+
+    ip_first = TypeAdapter(Union[ipaddress.IPv4Address, bool])
+    assert ip_first.dump_python(True, mode='json') is True
+    assert ip_first.dump_json(True) == b'true'
+
+
+def test_ser_ip_with_unexpected_value() -> None:
+    ta = TypeAdapter(ipaddress.IPv4Address)
+
+    with pytest.raises(UserWarning, match='serialized value may not be as expected.'):
+        assert ta.dump_python(123)

@@ -127,7 +127,7 @@ class ModelValidatorDecoratorInfo:
     while building the pydantic-core schema.
 
     Attributes:
-        decorator_repr: A class variable representing the decorator string, '@model_serializer'.
+        decorator_repr: A class variable representing the decorator string, '@model_validator'.
         mode: The proposed serializer mode.
     """
 
@@ -178,6 +178,12 @@ class PydanticDescriptorProxy(Generic[ReturnType]):
 
     def _call_wrapped_attr(self, func: Callable[[Any], None], *, name: str) -> PydanticDescriptorProxy[ReturnType]:
         self.wrapped = getattr(self.wrapped, name)(func)
+        if isinstance(self.wrapped, property):
+            # update ComputedFieldInfo.wrapped_property
+            from ..fields import ComputedFieldInfo
+
+            if isinstance(self.decorator_info, ComputedFieldInfo):
+                self.decorator_info.wrapped_property = self.wrapped
         return self
 
     def __get__(self, obj: object | None, obj_type: type[object] | None = None) -> PydanticDescriptorProxy[ReturnType]:
@@ -495,7 +501,7 @@ class DecoratorInfos:
             # so then we don't need to re-process the type, which means we can discard our descriptor wrappers
             # and replace them with the thing they are wrapping (see the other setattr call below)
             # which allows validator class methods to also function as regular class methods
-            setattr(model_dc, '__pydantic_decorators__', res)
+            model_dc.__pydantic_decorators__ = res
             for name, value in to_replace:
                 setattr(model_dc, name, value)
         return res
@@ -717,27 +723,25 @@ def unwrap_wrapped_function(
     unwrap_class_static_method: bool = True,
 ) -> Any:
     """Recursively unwraps a wrapped function until the underlying function is reached.
-    This handles property, functools.partial, functools.partialmethod, staticmethod and classmethod.
+    This handles property, functools.partial, functools.partialmethod, staticmethod, and classmethod.
 
     Args:
         func: The function to unwrap.
-        unwrap_partial: If True (default), unwrap partial and partialmethod decorators, otherwise don't.
-            decorators.
+        unwrap_partial: If True (default), unwrap partial and partialmethod decorators.
         unwrap_class_static_method: If True (default), also unwrap classmethod and staticmethod
             decorators. If False, only unwrap partial and partialmethod decorators.
 
     Returns:
         The underlying function of the wrapped function.
     """
-    all: set[Any] = {property, cached_property}
+    # Define the types we want to check against as a single tuple.
+    unwrap_types = (
+        (property, cached_property)
+        + ((partial, partialmethod) if unwrap_partial else ())
+        + ((staticmethod, classmethod) if unwrap_class_static_method else ())
+    )
 
-    if unwrap_partial:
-        all.update({partial, partialmethod})
-
-    if unwrap_class_static_method:
-        all.update({staticmethod, classmethod})
-
-    while isinstance(func, tuple(all)):
+    while isinstance(func, unwrap_types):
         if unwrap_class_static_method and isinstance(func, (classmethod, staticmethod)):
             func = func.__func__
         elif isinstance(func, (partial, partialmethod)):

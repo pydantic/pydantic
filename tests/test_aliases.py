@@ -4,6 +4,7 @@ from typing import Any, ContextManager, List, Optional
 
 import pytest
 from dirty_equals import IsStr
+from pydantic_core import PydanticUndefined
 
 from pydantic import (
     AliasChoices,
@@ -583,6 +584,12 @@ def test_validation_alias_path(value):
         x: str = Field(validation_alias=value)
 
     assert Model.model_fields['x'].validation_alias == value
+
+
+def test_search_dict_for_alias_path():
+    ap = AliasPath('a', 1)
+    assert ap.search_dict_for_path({'a': ['hello', 'world']}) == 'world'
+    assert ap.search_dict_for_path({'a': 'hello'}) is PydanticUndefined
 
 
 def test_validation_alias_invalid_value_type():

@@ -38,7 +38,7 @@ from .json_schema import (
     JsonSchemaMode,
     JsonSchemaValue,
 )
-from .plugin._schema_validator import create_schema_validator
+from .plugin._schema_validator import PluggableSchemaValidator, create_schema_validator
 
 T = TypeVar('T')
 R = TypeVar('R')
@@ -148,7 +148,7 @@ def _frame_depth(
 
 @final
 class TypeAdapter(Generic[T]):
-    """Usage docs: https://docs.pydantic.dev/2.8/concepts/type_adapter/
+    """Usage docs: https://docs.pydantic.dev/2.9/concepts/type_adapter/
 
     Type adapters provide a flexible way to perform validation and serialization based on a Python type.
 
@@ -253,7 +253,7 @@ class TypeAdapter(Generic[T]):
             self._module_name = module
 
         self._core_schema: CoreSchema | None = None
-        self._validator: SchemaValidator | None = None
+        self._validator: SchemaValidator | PluggableSchemaValidator | None = None
         self._serializer: SchemaSerializer | None = None
 
         if not self._defer_build():
@@ -311,11 +311,11 @@ class TypeAdapter(Generic[T]):
 
     @cached_property
     @_frame_depth(2)  # +2 for @cached_property + validator(self)
-    def validator(self) -> SchemaValidator:
+    def validator(self) -> SchemaValidator | PluggableSchemaValidator:
         """The pydantic-core SchemaValidator used to validate instances of the model."""
-        if not isinstance(self._validator, SchemaValidator):
+        if not isinstance(self._validator, (SchemaValidator, PluggableSchemaValidator)):
             self._init_core_attrs(rebuild_mocks=True)  # Do not expose MockValSer from public function
-        assert isinstance(self._validator, SchemaValidator)
+        assert isinstance(self._validator, (SchemaValidator, PluggableSchemaValidator))
         return self._validator
 
     @cached_property
@@ -342,7 +342,7 @@ class TypeAdapter(Generic[T]):
         # TODO reevaluate this logic when we have a better understanding of how defer_build should work with TypeAdapter
         # Should we drop the special experimental_defer_build_mode check?
         return config.get('defer_build', False) is True and 'type_adapter' in config.get(
-            'experimental_defer_build_mode', tuple()
+            'experimental_defer_build_mode', ()
         )
 
     @_frame_depth(1)
@@ -376,7 +376,7 @@ class TypeAdapter(Generic[T]):
     def validate_json(
         self, data: str | bytes, /, *, strict: bool | None = None, context: dict[str, Any] | None = None
     ) -> T:
-        """Usage docs: https://docs.pydantic.dev/2.8/concepts/json/#json-parsing
+        """Usage docs: https://docs.pydantic.dev/2.9/concepts/json/#json-parsing
 
         Validate a JSON string or bytes against the model.
 
@@ -488,7 +488,7 @@ class TypeAdapter(Generic[T]):
         serialize_as_any: bool = False,
         context: dict[str, Any] | None = None,
     ) -> bytes:
-        """Usage docs: https://docs.pydantic.dev/2.8/concepts/json/#json-serialization
+        """Usage docs: https://docs.pydantic.dev/2.9/concepts/json/#json-serialization
 
         Serialize an instance of the adapted type to JSON.
 

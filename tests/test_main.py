@@ -747,11 +747,11 @@ def test_validating_assignment_fail(ValidateAssignmentModel):
 
 
 class Foo(Enum):
-    foo = 'foo'
-    bar = 'bar'
+    FOO = 'foo'
+    BAR = 'bar'
 
 
-@pytest.mark.parametrize('value', [Foo.foo, Foo.foo.value, 'foo'])
+@pytest.mark.parametrize('value', [Foo.FOO, Foo.FOO.value, 'foo'])
 def test_enum_values(value: Any) -> None:
     class Model(BaseModel):
         foo: Foo
@@ -777,9 +777,9 @@ def test_literal_enum_values():
         model_config = ConfigDict(use_enum_values=True)
 
     m = Model(baz=FooEnum.foo)
-    assert m.model_dump() == {'baz': FooEnum.foo, 'boo': 'hoo'}
+    assert m.model_dump() == {'baz': 'foo_value', 'boo': 'hoo'}
     assert m.model_dump(mode='json') == {'baz': 'foo_value', 'boo': 'hoo'}
-    assert m.baz.value == 'foo_value'
+    assert m.baz == 'foo_value'
 
     with pytest.raises(ValidationError) as exc_info:
         Model(baz=FooEnum.bar)
@@ -794,6 +794,38 @@ def test_literal_enum_values():
             'ctx': {'expected': "<FooEnum.foo: 'foo_value'>"},
         }
     ]
+
+
+class StrFoo(str, Enum):
+    FOO = 'foo'
+    BAR = 'bar'
+
+
+@pytest.mark.parametrize('value', [StrFoo.FOO, StrFoo.FOO.value, 'foo', 'hello'])
+def test_literal_use_enum_values_multi_type(value) -> None:
+    class Model(BaseModel):
+        baz: Literal[StrFoo.FOO, 'hello']
+        model_config = ConfigDict(use_enum_values=True)
+
+    assert isinstance(Model(baz=value).baz, str)
+
+
+def test_literal_use_enum_values_with_default() -> None:
+    class Model(BaseModel):
+        baz: Literal[StrFoo.FOO] = Field(default=StrFoo.FOO)
+        model_config = ConfigDict(use_enum_values=True, validate_default=True)
+
+    validated = Model()
+    assert type(validated.baz) is str
+    assert type(validated.model_dump()['baz']) is str
+
+    validated = Model.model_validate_json('{"baz": "foo"}')
+    assert type(validated.baz) is str
+    assert type(validated.model_dump()['baz']) is str
+
+    validated = Model.model_validate({'baz': StrFoo.FOO})
+    assert type(validated.baz) is str
+    assert type(validated.model_dump()['baz']) is str
 
 
 def test_strict_enum_values():
@@ -1515,9 +1547,9 @@ def test_model_export_inclusion():
         b: Sub = Field(Sub(), include={'s1'})
         c: Sub = Field(Sub(), include={'s1', 's2'})
 
-    Model.model_fields['a'].field_info.include == {'s1': ..., 's2': ..., 's3': ...}
-    Model.model_fields['b'].field_info.include == {'s1': ...}
-    Model.model_fields['c'].field_info.include == {'s1': ..., 's2': ...}
+    assert Model.model_fields['a'].field_info.include == {'s1': ..., 's2': ..., 's3': ...}
+    assert Model.model_fields['b'].field_info.include == {'s1': ...}
+    assert Model.model_fields['c'].field_info.include == {'s1': ..., 's2': ...}
 
     actual = Model().model_dump(include={'a': {'s3', 's4'}, 'b': ..., 'c': ...})
     # s1 included via field, s2 via config and s3 via .dict call:
@@ -2554,7 +2586,9 @@ def test_recursion_loop_error():
 
 
 def test_protected_namespace_default():
-    with pytest.warns(UserWarning, match='Field "model_prefixed_field" has conflict with protected namespace "model_"'):
+    with pytest.warns(
+        UserWarning, match='Field "model_prefixed_field" in Model has conflict with protected namespace "model_"'
+    ):
 
         class Model(BaseModel):
             model_prefixed_field: str
@@ -2570,7 +2604,7 @@ def test_protected_namespace_real_conflict():
 
 
 def test_custom_protected_namespace():
-    with pytest.warns(UserWarning, match='Field "test_field" has conflict with protected namespace "test_"'):
+    with pytest.warns(UserWarning, match='Field "test_field" in Model has conflict with protected namespace "test_"'):
 
         class Model(BaseModel):
             # this field won't raise error because we changed the default value for the
@@ -2583,7 +2617,7 @@ def test_custom_protected_namespace():
 
 def test_multiple_protected_namespace():
     with pytest.warns(
-        UserWarning, match='Field "also_protect_field" has conflict with protected namespace "also_protect_"'
+        UserWarning, match='Field "also_protect_field" in Model has conflict with protected namespace "also_protect_"'
     ):
 
         class Model(BaseModel):

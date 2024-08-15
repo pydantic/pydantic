@@ -151,6 +151,7 @@ def test_computed_fields_set():
     assert s.model_dump() == {'side': 10.0, 'area': 100.0, 'area_string': '100.0 SQUARE UNITS'}
     s.area = 64
     assert s.model_dump() == {'side': 8.0, 'area': 64.0, 'area_string': '64.0 SQUARE UNITS'}
+    assert Square.model_computed_fields['area'].wrapped_property is Square.area
 
 
 def test_computed_fields_del():
@@ -427,7 +428,10 @@ def test_private_computed_field():
     assert m.model_dump() == {'x': 2, '_double': 4}
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason='@computed_field @classmethod @property only works in 3.9+')
+@pytest.mark.skipif(
+    sys.version_info < (3, 9) or sys.version_info >= (3, 13),
+    reason='@computed_field @classmethod @property only works in 3.9-3.12',
+)
 def test_classmethod():
     class MyModel(BaseModel):
         x: int
@@ -727,8 +731,8 @@ def test_multiple_references_to_schema(model_factory: Callable[[], Any]) -> None
     assert ta.json_schema(mode='serialization') == {
         '$defs': {'CompModel': {'properties': {}, 'title': 'CompModel', 'type': 'object'}},
         'properties': {
-            'comp_1': {'allOf': [{'$ref': '#/$defs/CompModel'}], 'readOnly': True},
-            'comp_2': {'allOf': [{'$ref': '#/$defs/CompModel'}], 'readOnly': True},
+            'comp_1': {'$ref': '#/$defs/CompModel', 'readOnly': True},
+            'comp_2': {'$ref': '#/$defs/CompModel', 'readOnly': True},
         },
         'required': ['comp_1', 'comp_2'],
         'title': 'Model',
@@ -736,6 +740,7 @@ def test_multiple_references_to_schema(model_factory: Callable[[], Any]) -> None
     }
 
 
+@pytest.mark.xfail(reason='requires updated pydantic core')
 def test_generic_computed_field():
     T = TypeVar('T')
 
@@ -760,7 +765,9 @@ def test_generic_computed_field():
         def double_x(self) -> T:
             return 'abc'  # this may not match the annotated return type, and will warn if not
 
-    with pytest.warns(UserWarning, match='Expected `int` but got `str` - serialized value may not be as expected'):
+    with pytest.warns(
+        UserWarning, match="Expected `int` but got `str` with value `'abc'` - serialized value may not be as expected"
+    ):
         B[int]().model_dump()
 
 

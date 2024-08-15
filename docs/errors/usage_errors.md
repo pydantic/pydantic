@@ -169,9 +169,7 @@ model = create_model('FooModel', a=(str, 'cake'), __base__=Model)
 This error is raised when a model in discriminated unions doesn't define a discriminator field.
 
 ```py
-from typing import Union
-
-from typing_extensions import Literal
+from typing import Literal, Union
 
 from pydantic import BaseModel, Field, PydanticUserError
 
@@ -200,9 +198,7 @@ except PydanticUserError as exc_info:
 This error is raised when you define a non-string alias on a discriminator field.
 
 ```py
-from typing import Union
-
-from typing_extensions import Literal
+from typing import Literal, Union
 
 from pydantic import AliasChoices, BaseModel, Field, PydanticUserError
 
@@ -234,9 +230,7 @@ except PydanticUserError as exc_info:
 This error is raised when you define a non-`Literal` type on a discriminator field.
 
 ```py
-from typing import Union
-
-from typing_extensions import Literal
+from typing import Literal, Union
 
 from pydantic import BaseModel, Field, PydanticUserError
 
@@ -266,9 +260,7 @@ except PydanticUserError as exc_info:
 This error is raised when you define different aliases on discriminator fields.
 
 ```py
-from typing import Union
-
-from typing_extensions import Literal
+from typing import Literal, Union
 
 from pydantic import BaseModel, Field, PydanticUserError
 
@@ -301,9 +293,7 @@ This is disallowed because the discriminator field is used to determine the type
 so you can't use a validator that might change its value.
 
 ```py
-from typing import Union
-
-from typing_extensions import Literal
+from typing import Literal, Union
 
 from pydantic import BaseModel, Field, PydanticUserError, field_validator
 
@@ -336,9 +326,7 @@ except PydanticUserError as exc_info:
 This can be worked around by using a standard `Union`, dropping the discriminator:
 
 ```py
-from typing import Union
-
-from typing_extensions import Literal
+from typing import Literal, Union
 
 from pydantic import BaseModel, field_validator
 
@@ -873,42 +861,43 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'field-serializer-signature'
 ```
 
-Valid serializer signatures are:
+Valid field serializer signatures are:
 
 ```py test="skip" lint="skip" upgrade="skip"
-from pydantic import model_serializer
+from pydantic import FieldSerializationInfo, SerializerFunctionWrapHandler, field_serializer
 
 # an instance method with the default mode or `mode='plain'`
-@model_serializer('x')  # or @serialize('x', mode='plain')
-def ser_x(self, value: Any, info: pydantic.FieldSerializationInfo): ...
+@field_serializer('x')  # or @field_serializer('x', mode='plain')
+def ser_x(self, value: Any, info: FieldSerializationInfo): ...
 
-# a static method or free-standing function with the default mode or `mode='plain'`
-@model_serializer('x')  # or @serialize('x', mode='plain')
+# a static method or function with the default mode or `mode='plain'`
+@field_serializer('x')  # or @field_serializer('x', mode='plain')
 @staticmethod
-def ser_x(value: Any, info: pydantic.FieldSerializationInfo): ...
+def ser_x(value: Any, info: FieldSerializationInfo): ...
+
 # equivalent to
-def ser_x(value: Any, info: pydantic.FieldSerializationInfo): ...
+def ser_x(value: Any, info: FieldSerializationInfo): ...
 serializer('x')(ser_x)
 
 # an instance method with `mode='wrap'`
-@model_serializer('x', mode='wrap')
-def ser_x(self, value: Any, nxt: pydantic.SerializerFunctionWrapHandler, info: pydantic.FieldSerializationInfo): ...
+@field_serializer('x', mode='wrap')
+def ser_x(self, value: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo): ...
 
-# a static method or free-standing function with `mode='wrap'`
-@model_serializer('x', mode='wrap')
+# a static method or function with `mode='wrap'`
+@field_serializer('x', mode='wrap')
 @staticmethod
-def ser_x(value: Any, nxt: pydantic.SerializerFunctionWrapHandler, info: pydantic.FieldSerializationInfo): ...
+def ser_x(value: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo): ...
+
 # equivalent to
-def ser_x(value: Any, nxt: pydantic.SerializerFunctionWrapHandler, info: pydantic.FieldSerializationInfo): ...
+def ser_x(value: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo): ...
 serializer('x')(ser_x)
 
-For all of these, you can also choose to omit the `info` argument, for example:
-
-@model_serializer('x')
+# For all of these, you can also choose to omit the `info` argument, for example:
+@field_serializer('x')
 def ser_x(self, value: Any): ...
 
-@model_serializer('x', mode='wrap')
-def ser_x(self, value: Any, handler: pydantic.SerializerFunctionWrapHandler): ...
+@field_serializer('x', mode='wrap')
+def ser_x(self, value: Any, handler: SerializerFunctionWrapHandler): ...
 ```
 
 ## Unrecognized `model_serializer` signature {#model-serializer-signature}
@@ -929,6 +918,27 @@ try:
 
 except PydanticUserError as exc_info:
     assert exc_info.code == 'model-serializer-signature'
+```
+
+Valid model serializer signatures are:
+
+```py test="skip" lint="skip" upgrade="skip"
+from pydantic import SerializerFunctionWrapHandler, SerializationInfo, model_serializer
+
+# an instance method with the default mode or `mode='plain'`
+@model_serializer  # or model_serializer(mode='plain')
+def mod_ser(self, info: SerializationInfo): ...
+
+# an instance method with `mode='wrap'`
+@model_serializer(mode='wrap')
+def mod_ser(self, handler: SerializerFunctionWrapHandler, info: SerializationInfo):
+
+# For all of these, you can also choose to omit the `info` argument, for example:
+@model_serializer(mode='plain')
+def mod_ser(self): ...
+
+@model_serializer(mode='wrap')
+def mod_ser(self, handler: SerializerFunctionWrapHandler): ...
 ```
 
 ## Multiple field serializers {#multiple-field-serializers}
@@ -956,7 +966,7 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'multiple-field-serializers'
 ```
 
-## Invalid annotated type {#invalid_annotated_type}
+## Invalid annotated type {#invalid-annotated-type}
 
 This error is raised when an annotation cannot annotate a type.
 
@@ -971,7 +981,7 @@ try:
         foo: Annotated[str, FutureDate()]
 
 except PydanticUserError as exc_info:
-    assert exc_info.code == 'invalid_annotated_type'
+    assert exc_info.code == 'invalid-annotated-type'
 ```
 
 ## `config` is unused with `TypeAdapter` {#type-adapter-config-unused}

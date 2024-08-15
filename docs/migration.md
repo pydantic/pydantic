@@ -327,6 +327,11 @@ dataclasses without having to subclass `BaseModel`. Pydantic V2 introduces the f
   with the key/value pairs you want to be used as the config. The Pydantic V1 behavior to create a class called `Config`
   in the namespace of the parent `BaseModel` subclass is now deprecated.
 
+* When subclassing a model, the `model_config` attribute is inherited. This is helpful in the case where you'd like to use
+a base class with a given configuration for many models. Note, if you inherit from multiple `BaseModel` subclasses,
+like `class MyModel(Model1, Model2)`, the non-default settings in the `model_config` attribute from the two models
+will be merged, and for any settings defined in both, those from `Model2` will override those from `Model1`.
+
 * The following config settings have been removed:
     * `allow_mutation` — this has been removed. You should be able to use [frozen](api/config.md#pydantic.config.ConfigDict) equivalently (inverse of current use).
     * `error_msg_templates`
@@ -363,7 +368,7 @@ See the [`ConfigDict` API reference][pydantic.config.ConfigDict] for more detail
     and improvements.
     * The new `@field_validator` decorator does not have the `each_item` keyword argument; validators you want to
         apply to items within a generic container should be added by annotating the type argument. See
-        [validators in Annotated metadata](concepts/validators.md#generic-validated-collections) for details.
+        [validators in Annotated metadata](concepts/types.md#composing-types-via-annotated) for details.
         This looks like `List[Annotated[int, Field(ge=0)]]`
     * Even if you keep using the deprecated `@validator` decorator, you can no longer add the `field` or
         `config` arguments to the signature of validator functions. If you need access to these, you'll need
@@ -756,9 +761,9 @@ We have also introduced ways to use [`typing.Annotated`][] to add custom validat
 The main changes are:
 
 * `__get_validators__` should be replaced with `__get_pydantic_core_schema__`.
-  See [Custom Data Types](concepts/types.md#customizing-validation-with-getpydanticcoreschema) for more information.
+  See [Custom Data Types](concepts/types.md#customizing_validation_with_get_pydantic_core_schema) for more information.
 * `__modify_schema__` becomes `__get_pydantic_json_schema__`.
-  See [JSON Schema Customization](concepts/json_schema.md#schema-customization) for more information.
+  See [JSON Schema Customization](concepts/json_schema.md#customizing-json-schema) for more information.
 
 Additionally, you can use [`typing.Annotated`][] to modify or provide the `__get_pydantic_core_schema__` and
 `__get_pydantic_json_schema__` functions of a type by annotating it, rather than modifying the type itself.

@@ -117,7 +117,7 @@ def test_recursive_type_alias() -> None:
     ]
 
     assert t.json_schema() == {
-        'allOf': [{'$ref': '#/$defs/JsonType'}],
+        '$ref': '#/$defs/JsonType',
         '$defs': {
             'JsonType': {
                 'anyOf': [
@@ -233,7 +233,7 @@ def test_recursive_generic_type_alias() -> None:
     ]
 
     assert t.json_schema() == {
-        'allOf': [{'$ref': '#/$defs/RecursiveGenericAlias_int_'}],
+        '$ref': '#/$defs/RecursiveGenericAlias_int_',
         '$defs': {
             'RecursiveGenericAlias_int_': {
                 'type': 'array',
@@ -324,7 +324,7 @@ def test_field() -> None:
     # insert_assert(ta.json_schema())
     assert ta.json_schema() == {
         '$defs': {'SomeAlias': {'type': 'integer', 'description': 'number'}},
-        'allOf': [{'$ref': '#/$defs/SomeAlias'}],
+        '$ref': '#/$defs/SomeAlias',
         'title': 'abc',
     }
 
