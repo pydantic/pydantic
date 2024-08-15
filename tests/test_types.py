@@ -6822,6 +6822,24 @@ def test_complex_field():
     with pytest.raises(ValidationError):
         Model(number='\t( -1.23 +4.5J \n')
 
+def test_strict_complex_field():
+    class Model(BaseModel):
+        # Only complex objects are accepted
+        number: complex = Field(strict=True)
+    
+    m = Model(number=complex(1, 2))
+    assert repr(m) == 'Model(number=(1+2j))'
+    assert m.model_dump() == {'number': complex(1, 2)}
+    assert m.model_dump_json() == '{"number":"1+2j"}'
+
+
+    with pytest.raises(ValidationError):
+        m = Model(number='1+2j')
+    with pytest.raises(ValidationError):
+        m = Model(number=1.0)
+    with pytest.raises(ValidationError):
+        m = Model(number=5)
+
 
 def test_python_re_respects_flags() -> None:
     class Model(BaseModel):

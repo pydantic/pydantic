@@ -203,7 +203,20 @@ except ValidationError as exc:
 This error is raised when the input value is a string but cannot be parsed as a complex number because
 it does not follow the [rule](https://docs.python.org/3/library/functions.html#complex) in Python:
 
-<!-- TODO: find a case where this is actually raised -->
+```py
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    num: complex
+
+
+try:
+    Model(num='foo')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'complex_str_parsing'
+```
 
 ## `complex_type`
 
