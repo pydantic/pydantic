@@ -4,6 +4,7 @@ import itertools
 import json
 import math
 import os
+import platform
 import re
 import sys
 import typing
@@ -6749,6 +6750,10 @@ def test_strict_enum_with_use_enum_values() -> None:
         Foo(foo='1')
 
 
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy',
+    reason='PyPy has a bug in complex string parsing. A fix is implemented but not yet released.',
+)
 def test_complex_field():
     class Model(BaseModel):
         number: complex
@@ -6822,16 +6827,16 @@ def test_complex_field():
     with pytest.raises(ValidationError):
         Model(number='\t( -1.23 +4.5J \n')
 
+
 def test_strict_complex_field():
     class Model(BaseModel):
         # Only complex objects are accepted
         number: complex = Field(strict=True)
-    
+
     m = Model(number=complex(1, 2))
     assert repr(m) == 'Model(number=(1+2j))'
     assert m.model_dump() == {'number': complex(1, 2)}
     assert m.model_dump_json() == '{"number":"1+2j"}'
-
 
     with pytest.raises(ValidationError):
         m = Model(number='1+2j')
