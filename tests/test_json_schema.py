@@ -1675,7 +1675,7 @@ def test_external_ref():
 
     assert Model.model_json_schema() == {
         'properties': {
-            'json_schema': {'allOf': [{'$ref': 'https://json-schema.org/draft/2020-12/schema'}], 'title': 'Json Schema'}
+            'json_schema': {'$ref': 'https://json-schema.org/draft/2020-12/schema', 'title': 'Json Schema'}
         },
         'required': ['json_schema'],
         'title': 'Model',
