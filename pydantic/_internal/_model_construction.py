@@ -3,14 +3,16 @@
 from __future__ import annotations as _annotations
 
 import builtins
+import inspect
 import operator
+import sys
 import typing
 import warnings
 import weakref
 from abc import ABCMeta
 from functools import lru_cache, partial
 from types import FunctionType
-from typing import Any, Callable, Generic, Literal, NoReturn
+from typing import Any, Callable, ForwardRef, Generic, Literal, NoReturn
 
 import typing_extensions
 from pydantic_core import PydanticUndefined, SchemaSerializer
@@ -28,7 +30,13 @@ from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import set_model_mocks
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._signature import generate_pydantic_signature
-from ._typing_extra import get_cls_types_namespace, is_annotated, is_classvar, parent_frame_namespace
+from ._typing_extra import (
+    eval_type_backport,
+    get_cls_types_namespace,
+    is_annotated,
+    is_classvar,
+    parent_frame_namespace,
+)
 from ._utils import ClassAttribute, SafeGetItemProxy
 from ._validate_call import ValidateCallWrapper
 
@@ -430,6 +438,12 @@ def inspect_namespace(  # noqa C901
             and ann_type not in all_ignored_types
             and getattr(ann_type, '__module__', None) != 'functools'
         ):
+            if isinstance(ann_type, str):
+                # Walking up the frames to get the module namespace where the model is defined
+                # (as the model class wasn't created yet, we unfortunately can't use `cls.__module__`):
+                module = inspect.getmodule(sys._getframe(2))
+                if module is not None:
+                    ann_type = eval_type_backport(ForwardRef(ann_type), globalns=module.__dict__)
             if is_annotated(ann_type):
                 _, *metadata = typing_extensions.get_args(ann_type)
                 private_attr = next((v for v in metadata if isinstance(v, ModelPrivateAttr)), None)
