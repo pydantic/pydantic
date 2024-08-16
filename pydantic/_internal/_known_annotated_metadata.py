@@ -5,7 +5,7 @@ from copy import copy
 from functools import lru_cache, partial
 from typing import TYPE_CHECKING, Any, Callable, Iterable
 
-from pydantic_core import CoreSchema, PydanticCustomError, to_jsonable_python
+from pydantic_core import CoreSchema, PydanticCustomError, ValidationError, to_jsonable_python
 from pydantic_core import core_schema as cs
 
 from ._fields import PydanticMetadata
@@ -239,7 +239,30 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
 
         #  else, apply a function after validator to the schema to enforce the corresponding constraint
         if constraint in chain_schema_constraints:
-            chain_schema_steps.append(cs.str_schema(**{constraint: value}))
+
+            def _apply_constraint_with_incompatibility_info(
+                value: Any, handler: cs.ValidatorFunctionWrapHandler
+            ) -> Any:
+                try:
+                    x = handler(value)
+                except ValidationError as ve:
+                    # if the error is about the type, it's likely that the constraint is incompatible the type of the field
+                    # for example, the following invalid schema wouldn't be caught during schema build, but rather at this point
+                    # with a cryptic 'string_type' error coming from the string validator,
+                    # that we'd rather express as a constraint incompatibility error (TypeError)
+                    # Annotated[list[int], Field(pattern='abc')]
+                    if 'type' in ve.errors()[0]['type']:
+                        raise TypeError(
+                            f"Unable to apply constraint '{constraint}' to supplied value {value} for schema of type '{schema_type}'"  # noqa: B023
+                        )
+                    raise ve
+                return x
+
+            chain_schema_steps.append(
+                cs.no_info_wrap_validator_function(
+                    _apply_constraint_with_incompatibility_info, cs.str_schema(**{constraint: value})
+                )
+            )
         elif constraint in {*NUMERIC_CONSTRAINTS, *LENGTH_CONSTRAINTS}:
             if constraint in NUMERIC_CONSTRAINTS:
                 json_schema_constraint = constraint
