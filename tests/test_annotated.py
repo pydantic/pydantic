@@ -9,7 +9,15 @@ from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt, Predicate
 from pydantic_core import CoreSchema, PydanticUndefined, core_schema
 from typing_extensions import Annotated
 
-from pydantic import BaseModel, Field, GetCoreSchemaHandler, PydanticUserError, TypeAdapter, ValidationError
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    Field,
+    GetCoreSchemaHandler,
+    PydanticUserError,
+    TypeAdapter,
+    ValidationError,
+)
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.fields import PrivateAttr
 from pydantic.functional_validators import AfterValidator
@@ -600,3 +608,16 @@ def test_utcoffset_validator_example_pattern() -> None:
     ta = TypeAdapter(Annotated[dt.datetime, MyDatetimeValidator(0, 4)])
     with pytest.raises(Exception):
         ta.validate_python(dt.datetime.now(pytz.timezone(LA)))
+
+
+def test_incompatible_metadata_error() -> None:
+    ta = TypeAdapter(Annotated[List[int], Field(pattern='abc')])
+    with pytest.raises(TypeError, match="Unable to apply constraint 'pattern'"):
+        ta.validate_python([1, 2, 3])
+
+
+def test_compatible_metadata_raises_correct_validation_error() -> None:
+    """Using a no-op before validator to ensure that constraint is applied as part of a chain."""
+    ta = TypeAdapter(Annotated[str, BeforeValidator(lambda x: x), Field(pattern='abc')])
+    with pytest.raises(ValidationError, match="String should match pattern 'abc'"):
+        ta.validate_python('def')
