@@ -501,6 +501,77 @@ In Pydantic V1, the decorated function had various attributes added, such as `ra
 these attributes, and performance-oriented changes in implementation, we have not preserved this functionality in
 `@validate_call`.
 
+#### `constr` constraints order changed
+
+In Pydantic V1, string constraints were applied in this order:
+
+```
+strict
+strip_whitespace
+upper
+lower
+min_length
+max_length
+regex
+```
+
+In Pydantic V2, string constraints are applied in this order:
+
+```
+strict
+strip_whitespace
+min_length
+max_length
+pattern (replaced "regex")
+lower
+upper
+```
+
+!!! note
+    For reference, this has been discussed in [this issue](https://github.com/pydantic/pydantic/issues/8577).
+
+Therefore, this snippet, while working in Pydantic V1, will result in a `ValidationError` in Pydantic V2:
+
+```py
+from pydantic import BaseModel, constr
+
+class Foo(BaseModel):
+    bar: constr(strip_whitespace=True, to_upper=True, pattern=r'^[A-Z]+$')
+
+foo = Foo(bar='  hello  ')
+print(foo)
+"""
+1 validation error for Foo
+bar
+  String should match pattern '^[A-Z]+$' [type=string_pattern_mismatch, input_value='  hello  ', input_type=str]
+"""
+```
+
+It fails because the `pattern` constraint is applied **before** the `upper` operation.
+
+To make it work, you can use [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated) with [`StringConstraints`](https://docs.pydantic.dev/latest/api/types/#pydantic.types.StringConstraints) in combination with an [`AfterValidator`](https://docs.pydantic.dev/latest/concepts/validators/#before-after-wrap-and-plain-validators):
+
+```py
+from pydantic import BaseModel, StringConstraints
+from pydantic.functional_validators import AfterValidator
+from typing_extensions import Annotated
+
+class Foo(BaseModel):
+    bar: Annotated[
+        str,
+        AfterValidator(lambda s: s.strip().upper()), 
+        StringConstraints(pattern=r'^[A-Z]+$')
+    ]
+
+foo = Foo(bar='  hello  ')
+print(foo)
+#> bar='HELLO'
+```
+
+`After` validators run after Pydantic's internal parsing, so we still benefit from the type validation.
+
+Note the order of validators in `Annotated` **matters** (i.e., in this specific case, the `AfterValidator` must NOT be placed after `StringConstraints`).
+
 ### Input types are not preserved
 
 In Pydantic V1 we made great efforts to preserve the types of all field inputs for generic collections when they were
