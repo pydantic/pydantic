@@ -103,8 +103,7 @@ exclude_lines = [
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
-assignees = ['samuelcolvin', 'adriangb', 'dmontagu', 'davidhewitt', 'lig']
-reviewers = ['samuelcolvin', 'adriangb', 'dmontagu', 'davidhewitt']
+reviewers = ['sydney-runkle', 'davidhewitt']
 require_change_file = false
 
 [tool.pyright]
