@@ -104,13 +104,13 @@ def add_mkdocs_run_deps() -> None:
     path.write_text(html)
 
 
-MIN_MINOR_VERSION = 7
-MAX_MINOR_VERSION = 11
+MIN_MINOR_VERSION = 8
+MAX_MINOR_VERSION = 12
 
 
 def upgrade_python(markdown: str) -> str:
     """
-    Apply pyupgrade to all python code blocks, unless explicitly skipped, create a tab for each version.
+    Apply pyupgrade to all Python code blocks, unless explicitly skipped, create a tab for each version.
     """
 
     def add_tabs(match: re.Match[str]) -> str:

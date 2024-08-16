@@ -17,7 +17,6 @@ from pydantic_core import (
 from typing_extensions import TypeGuard
 
 from ..errors import PydanticUndefinedAnnotation
-from ..fields import FieldInfo
 from ..plugin._schema_validator import PluggableSchemaValidator, create_schema_validator
 from ..warnings import PydanticDeprecatedSince20
 from . import _config, _decorators, _typing_extra
@@ -30,6 +29,7 @@ from ._signature import generate_pydantic_signature
 
 if typing.TYPE_CHECKING:
     from ..config import ConfigDict
+    from ..fields import FieldInfo
 
     class StandardDataclass(typing.Protocol):
         __dataclass_fields__: ClassVar[dict[str, Any]]

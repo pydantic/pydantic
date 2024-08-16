@@ -1547,9 +1547,9 @@ def test_model_export_inclusion():
         b: Sub = Field(Sub(), include={'s1'})
         c: Sub = Field(Sub(), include={'s1', 's2'})
 
-    Model.model_fields['a'].field_info.include == {'s1': ..., 's2': ..., 's3': ...}
-    Model.model_fields['b'].field_info.include == {'s1': ...}
-    Model.model_fields['c'].field_info.include == {'s1': ..., 's2': ...}
+    assert Model.model_fields['a'].field_info.include == {'s1': ..., 's2': ..., 's3': ...}
+    assert Model.model_fields['b'].field_info.include == {'s1': ...}
+    assert Model.model_fields['c'].field_info.include == {'s1': ..., 's2': ...}
 
     actual = Model().model_dump(include={'a': {'s3', 's4'}, 'b': ..., 'c': ...})
     # s1 included via field, s2 via config and s3 via .dict call:
@@ -2586,7 +2586,9 @@ def test_recursion_loop_error():
 
 
 def test_protected_namespace_default():
-    with pytest.warns(UserWarning, match='Field "model_prefixed_field" has conflict with protected namespace "model_"'):
+    with pytest.warns(
+        UserWarning, match='Field "model_prefixed_field" in Model has conflict with protected namespace "model_"'
+    ):
 
         class Model(BaseModel):
             model_prefixed_field: str
@@ -2602,7 +2604,7 @@ def test_protected_namespace_real_conflict():
 
 
 def test_custom_protected_namespace():
-    with pytest.warns(UserWarning, match='Field "test_field" has conflict with protected namespace "test_"'):
+    with pytest.warns(UserWarning, match='Field "test_field" in Model has conflict with protected namespace "test_"'):
 
         class Model(BaseModel):
             # this field won't raise error because we changed the default value for the
@@ -2615,7 +2617,7 @@ def test_custom_protected_namespace():
 
 def test_multiple_protected_namespace():
     with pytest.warns(
-        UserWarning, match='Field "also_protect_field" has conflict with protected namespace "also_protect_"'
+        UserWarning, match='Field "also_protect_field" in Model has conflict with protected namespace "also_protect_"'
     ):
 
         class Model(BaseModel):

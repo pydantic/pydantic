@@ -70,7 +70,8 @@ class ConfigWrapper:
     # whether instances of models and dataclasses (including subclass instances) should re-validate, default 'never'
     revalidate_instances: Literal['always', 'never', 'subclass-instances']
     ser_json_timedelta: Literal['iso8601', 'float']
-    ser_json_bytes: Literal['utf8', 'base64']
+    ser_json_bytes: Literal['utf8', 'base64', 'hex']
+    val_json_bytes: Literal['utf8', 'base64', 'hex']
     ser_json_inf_nan: Literal['null', 'constants', 'strings']
     # whether to validate default values during validation, default False
     validate_default: bool
@@ -166,37 +167,35 @@ class ConfigWrapper:
         Returns:
             A `CoreConfig` object created from config.
         """
+        config = self.config_dict
 
-        def dict_not_none(**kwargs: Any) -> Any:
-            return {k: v for k, v in kwargs.items() if v is not None}
+        core_config_values = {
+            'title': config.get('title') or (obj and obj.__name__),
+            'extra_fields_behavior': config.get('extra'),
+            'allow_inf_nan': config.get('allow_inf_nan'),
+            'populate_by_name': config.get('populate_by_name'),
+            'str_strip_whitespace': config.get('str_strip_whitespace'),
+            'str_to_lower': config.get('str_to_lower'),
+            'str_to_upper': config.get('str_to_upper'),
+            'strict': config.get('strict'),
+            'ser_json_timedelta': config.get('ser_json_timedelta'),
+            'ser_json_bytes': config.get('ser_json_bytes'),
+            'val_json_bytes': config.get('val_json_bytes'),
+            'ser_json_inf_nan': config.get('ser_json_inf_nan'),
+            'from_attributes': config.get('from_attributes'),
+            'loc_by_alias': config.get('loc_by_alias'),
+            'revalidate_instances': config.get('revalidate_instances'),
+            'validate_default': config.get('validate_default'),
+            'str_max_length': config.get('str_max_length'),
+            'str_min_length': config.get('str_min_length'),
+            'hide_input_in_errors': config.get('hide_input_in_errors'),
+            'coerce_numbers_to_str': config.get('coerce_numbers_to_str'),
+            'regex_engine': config.get('regex_engine'),
+            'validation_error_cause': config.get('validation_error_cause'),
+            'cache_strings': config.get('cache_strings'),
+        }
 
-        core_config = core_schema.CoreConfig(
-            **dict_not_none(
-                title=self.config_dict.get('title') or (obj and obj.__name__),
-                extra_fields_behavior=self.config_dict.get('extra'),
-                allow_inf_nan=self.config_dict.get('allow_inf_nan'),
-                populate_by_name=self.config_dict.get('populate_by_name'),
-                str_strip_whitespace=self.config_dict.get('str_strip_whitespace'),
-                str_to_lower=self.config_dict.get('str_to_lower'),
-                str_to_upper=self.config_dict.get('str_to_upper'),
-                strict=self.config_dict.get('strict'),
-                ser_json_timedelta=self.config_dict.get('ser_json_timedelta'),
-                ser_json_bytes=self.config_dict.get('ser_json_bytes'),
-                ser_json_inf_nan=self.config_dict.get('ser_json_inf_nan'),
-                from_attributes=self.config_dict.get('from_attributes'),
-                loc_by_alias=self.config_dict.get('loc_by_alias'),
-                revalidate_instances=self.config_dict.get('revalidate_instances'),
-                validate_default=self.config_dict.get('validate_default'),
-                str_max_length=self.config_dict.get('str_max_length'),
-                str_min_length=self.config_dict.get('str_min_length'),
-                hide_input_in_errors=self.config_dict.get('hide_input_in_errors'),
-                coerce_numbers_to_str=self.config_dict.get('coerce_numbers_to_str'),
-                regex_engine=self.config_dict.get('regex_engine'),
-                validation_error_cause=self.config_dict.get('validation_error_cause'),
-                cache_strings=self.config_dict.get('cache_strings'),
-            )
-        )
-        return core_config
+        return core_schema.CoreConfig(**{k: v for k, v in core_config_values.items() if v is not None})
 
     def __repr__(self):
         c = ', '.join(f'{k}={v!r}' for k, v in self.config_dict.items())
@@ -255,6 +254,7 @@ config_defaults = ConfigDict(
     revalidate_instances='never',
     ser_json_timedelta='iso8601',
     ser_json_bytes='utf8',
+    val_json_bytes='utf8',
     ser_json_inf_nan='null',
     validate_default=False,
     validate_return=False,

@@ -133,11 +133,41 @@ def test_eval_type_backport_not_installed():
                 foo: 'int | str'
 
         assert str(exc_info.value) == (
-            "You have a type annotation 'int | str' which makes use of newer typing "
-            'features than are supported in your version of Python. To handle this error, '
-            'you should either remove the use of new syntax or install the '
-            '`eval_type_backport` package.'
+            "Unable to evaluate type annotation 'int | str'. If you are making use "
+            'of the new typing syntax (unions using `|` since Python 3.10 or builtins subscripting '
+            'since Python 3.9), you should either replace the use of new syntax with the existing '
+            '`typing` constructs or install the `eval_type_backport` package.'
         )
 
     finally:
         del sys.modules['eval_type_backport']
+
+
+def test_func_ns_excludes_default_globals() -> None:
+    foo = 'foo'
+
+    func_ns = parent_frame_namespace(parent_depth=1)
+    assert func_ns is not None
+    assert func_ns['foo'] == foo
+
+    # there are more default global variables, but these are examples of well known ones
+    for default_global_var in ['__name__', '__doc__', '__package__', '__builtins__']:
+        assert default_global_var not in func_ns
+
+
+module_foo = 'global_foo'
+module_ns = parent_frame_namespace(parent_depth=1)
+
+
+def test_module_ns_is_none() -> None:
+    """Module namespace should be none because we skip fetching data from the top module level."""
+    assert module_ns is None
+
+
+def test_exotic_localns() -> None:
+    __foo_annotation__ = str
+
+    class Model(BaseModel):
+        foo: __foo_annotation__
+
+    assert Model.model_fields['foo'].annotation == str

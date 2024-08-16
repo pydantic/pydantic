@@ -93,6 +93,27 @@ except ValidationError as exc:
     #> 'bool_type'
 ```
 
+## `bytes_invalid_encoding`
+
+This error is raised when a `bytes` value is invalid under the configured encoding.
+In the following example, `b'a'` is invalid hex (odd number of digits).
+
+```py
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    x: bytes
+    model_config = {'val_json_bytes': 'hex'}
+
+
+try:
+    Model(x=b'a')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'bytes_invalid_encoding'
+```
+
 This error is also raised for strict fields when the input value is not an instance of `bool`.
 
 ## `bytes_too_long`
@@ -175,6 +196,47 @@ try:
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'callable_type'
+```
+
+## `complex_str_parsing`
+
+This error is raised when the input value is a string but cannot be parsed as a complex number because
+it does not follow the [rule](https://docs.python.org/3/library/functions.html#complex) in Python:
+
+```py
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    num: complex
+
+
+try:
+    # Complex numbers in json are expected to be valid complex strings.
+    # This value `abc` is not a valid complex string.
+    Model.model_validate_json('{"num": "abc"}')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'complex_str_parsing'
+```
+
+## `complex_type`
+
+This error is raised when the input value cannot be interpreted as a complex number:
+
+```py
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    num: complex
+
+
+try:
+    Model(num=False)
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'complex_type'
 ```
 
 ## `dataclass_exact_type`
@@ -1194,7 +1256,7 @@ except ValidationError as exc:
 This error is raised when the input value is not one of the expected literal values:
 
 ```py
-from typing_extensions import Literal
+from typing import Literal
 
 from pydantic import BaseModel, ValidationError
 
@@ -1314,7 +1376,7 @@ except ValidationError as exc:
 This error is raised when a required positional-only argument is not passed to a function decorated with
 `validate_call`:
 
-```py requires="3.8"
+```py
 from pydantic import ValidationError, validate_call
 
 
@@ -1860,7 +1922,7 @@ This error is also raised for strict fields when the input value is not an insta
 This error is raised when you provide a value by keyword for a positional-only
 argument while calling a function decorated with `validate_call`:
 
-```py requires="3.8"
+```py
 from pydantic import ValidationError, validate_call
 
 
@@ -1921,9 +1983,7 @@ except ValidationError as exc:
 This error is raised when the input's discriminator is not one of the expected values:
 
 ```py
-from typing import Union
-
-from typing_extensions import Literal
+from typing import Literal, Union
 
 from pydantic import BaseModel, Field, ValidationError
 
@@ -1952,9 +2012,7 @@ except ValidationError as exc:
 This error is raised when it is not possible to extract a discriminator value from the input:
 
 ```py
-from typing import Union
-
-from typing_extensions import Literal
+from typing import Literal, Union
 
 from pydantic import BaseModel, Field, ValidationError
 

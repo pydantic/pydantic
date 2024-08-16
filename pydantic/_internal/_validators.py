@@ -13,6 +13,7 @@ from typing import Any, Callable
 
 from pydantic_core import PydanticCustomError, core_schema
 from pydantic_core._pydantic_core import PydanticKnownError
+from pydantic_core.core_schema import ErrorType
 
 
 def sequence_validator(
@@ -235,74 +236,79 @@ def ip_v6_interface_validator(input_value: Any, /) -> IPv6Interface:
         raise PydanticCustomError('ip_v6_interface', 'Input is not a valid IPv6 interface')
 
 
-def greater_than_validator(x: Any, gt: Any) -> Any:
-    if not (x > gt):
-        raise PydanticKnownError('greater_than', {'gt': gt})
-    return x
-
-
-def greater_than_or_equal_validator(x: Any, ge: Any) -> Any:
-    if not (x >= ge):
-        raise PydanticKnownError('greater_than_equal', {'ge': ge})
-    return x
-
-
-def less_than_validator(x: Any, lt: Any) -> Any:
-    if not (x < lt):
-        raise PydanticKnownError('less_than', {'lt': lt})
-    return x
-
-
-def less_than_or_equal_validator(x: Any, le: Any) -> Any:
-    if not (x <= le):
-        raise PydanticKnownError('less_than_equal', {'le': le})
-    return x
-
-
-def multiple_of_validator(x: Any, multiple_of: Any) -> Any:
-    if not (x % multiple_of == 0):
-        raise PydanticKnownError('multiple_of', {'multiple_of': multiple_of})
-    return x
-
-
-def min_length_validator(x: Any, min_length: Any) -> Any:
-    if not (len(x) >= min_length):
-        raise PydanticKnownError(
-            'too_short',
-            {'field_type': 'Value', 'min_length': min_length, 'actual_length': len(x)},
-        )
-    return x
-
-
-def max_length_validator(x: Any, max_length: Any) -> Any:
-    if len(x) > max_length:
-        raise PydanticKnownError(
-            'too_long',
-            {'field_type': 'Value', 'max_length': max_length, 'actual_length': len(x)},
-        )
-    return x
-
-
 def forbid_inf_nan_check(x: Any) -> Any:
     if not math.isfinite(x):
         raise PydanticKnownError('finite_number')
     return x
 
 
-_CONSTRAINT_TO_VALIDATOR_MAP: dict[str, Callable] = {
-    'gt': greater_than_validator,
-    'ge': greater_than_or_equal_validator,
-    'lt': less_than_validator,
-    'le': less_than_or_equal_validator,
-    'multiple_of': multiple_of_validator,
-    'min_length': min_length_validator,
-    'max_length': max_length_validator,
+_InputType = typing.TypeVar('_InputType')
+
+
+def create_constraint_validator(
+    constraint_id: str,
+    predicate: Callable[[_InputType, Any], bool],
+    error_type: ErrorType,
+    context_gen: Callable[[Any, Any], dict[str, Any]] | None = None,
+) -> Callable[[_InputType, Any], _InputType]:
+    """Create a validator function for a given constraint.
+
+    Args:
+        constraint_id: The constraint identifier, used to identify the constraint in error messages, ex 'gt'.
+        predicate: The predicate function to apply to the input value, ex `lambda x, gt: x > gt`.
+        error_type: The error type to raise if the predicate fails.
+        context_gen: A function to generate the error context from the constraint value and the input value.
+    """
+
+    def validator(x: _InputType, constraint_value: Any) -> _InputType:
+        try:
+            if not predicate(x, constraint_value):
+                raise PydanticKnownError(
+                    error_type, context_gen(constraint_value, x) if context_gen else {constraint_id: constraint_value}
+                )
+        except TypeError:
+            raise TypeError(f"Unable to apply constraint '{constraint_id}' to supplied value {x}")
+        return x
+
+    return validator
+
+
+_CONSTRAINT_TO_VALIDATOR_LOOKUP: dict[str, Callable] = {
+    'gt': create_constraint_validator('gt', lambda x, gt: x > gt, 'greater_than'),
+    'ge': create_constraint_validator('ge', lambda x, ge: x >= ge, 'greater_than_equal'),
+    'lt': create_constraint_validator('lt', lambda x, lt: x < lt, 'less_than'),
+    'le': create_constraint_validator('le', lambda x, le: x <= le, 'less_than_equal'),
+    'multiple_of': create_constraint_validator(
+        'multiple_of', lambda x, multiple_of: x % multiple_of == 0, 'multiple_of'
+    ),
+    'min_length': create_constraint_validator(
+        'min_length',
+        lambda x, min_length: len(x) >= min_length,
+        'too_short',
+        lambda c_val, x: {'field_type': 'Value', 'min_length': c_val, 'actual_length': len(x)},
+    ),
+    'max_length': create_constraint_validator(
+        'max_length',
+        lambda x, max_length: len(x) <= max_length,
+        'too_long',
+        lambda c_val, x: {'field_type': 'Value', 'max_length': c_val, 'actual_length': len(x)},
+    ),
 }
 
 
 def get_constraint_validator(constraint: str) -> Callable:
     """Fetch the validator function for the given constraint."""
     try:
-        return _CONSTRAINT_TO_VALIDATOR_MAP[constraint]
+        return _CONSTRAINT_TO_VALIDATOR_LOOKUP[constraint]
     except KeyError:
         raise TypeError(f'Unknown constraint {constraint}')
+
+
+IP_VALIDATOR_LOOKUP: dict[type, Callable] = {
+    IPv4Address: ip_v4_address_validator,
+    IPv6Address: ip_v6_address_validator,
+    IPv4Network: ip_v4_network_validator,
+    IPv6Network: ip_v6_network_validator,
+    IPv4Interface: ip_v4_interface_validator,
+    IPv6Interface: ip_v6_interface_validator,
+}

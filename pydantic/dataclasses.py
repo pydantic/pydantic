@@ -6,6 +6,7 @@ import dataclasses
 import sys
 import types
 from typing import TYPE_CHECKING, Any, Callable, Generic, NoReturn, TypeVar, overload
+from warnings import warn
 
 from typing_extensions import Literal, TypeGuard, dataclass_transform
 
@@ -52,7 +53,7 @@ if sys.version_info >= (3, 10):
         eq: bool = True,
         order: bool = False,
         unsafe_hash: bool = False,
-        frozen: bool = False,
+        frozen: bool | None = None,
         config: ConfigDict | type[object] | None = None,
         validate_on_init: bool | None = None,
         kw_only: bool = ...,
@@ -70,7 +71,7 @@ else:
         eq: bool = True,
         order: bool = False,
         unsafe_hash: bool = False,
-        frozen: bool = False,
+        frozen: bool | None = None,
         config: ConfigDict | type[object] | None = None,
         validate_on_init: bool | None = None,
     ) -> Callable[[type[_T]], type[PydanticDataclass]]:  # type: ignore
@@ -86,14 +87,14 @@ else:
         eq: bool = True,
         order: bool = False,
         unsafe_hash: bool = False,
-        frozen: bool = False,
+        frozen: bool | None = None,
         config: ConfigDict | type[object] | None = None,
         validate_on_init: bool | None = None,
     ) -> type[PydanticDataclass]: ...
 
 
 @dataclass_transform(field_specifiers=(dataclasses.field, Field, PrivateAttr))
-def dataclass(  # noqa: C901
+def dataclass(
     _cls: type[_T] | None = None,
     *,
     init: Literal[False] = False,
@@ -101,7 +102,7 @@ def dataclass(  # noqa: C901
     eq: bool = True,
     order: bool = False,
     unsafe_hash: bool = False,
-    frozen: bool = False,
+    frozen: bool | None = None,
     config: ConfigDict | type[object] | None = None,
     validate_on_init: bool | None = None,
     kw_only: bool = False,
@@ -124,7 +125,7 @@ def dataclass(  # noqa: C901
         order: Determines if comparison magic methods should be generated, such as `__lt__`, but not `__eq__`.
         unsafe_hash: Determines if a `__hash__` method should be included in the class, as in `dataclasses.dataclass`.
         frozen: Determines if the generated class should be a 'frozen' `dataclass`, which does not allow its
-            attributes to be modified after it has been initialized.
+            attributes to be modified after it has been initialized. If not set, the value from the provided `config` argument will be used (and will default to `False` otherwise).
         config: The Pydantic config to use for the `dataclass`.
         validate_on_init: A deprecated parameter included for backwards compatibility; in V2, all Pydantic dataclasses
             are validated on init.
@@ -142,7 +143,7 @@ def dataclass(  # noqa: C901
     assert validate_on_init is not False, 'validate_on_init=False is no longer supported'
 
     if sys.version_info >= (3, 10):
-        kwargs = dict(kw_only=kw_only, slots=slots)
+        kwargs = {'kw_only': kw_only, 'slots': slots}
     else:
         kwargs = {}
 
@@ -200,12 +201,8 @@ def dataclass(  # noqa: C901
 
         original_cls = cls
 
-        config_dict = config
-        if config_dict is None:
-            # if not explicitly provided, read from the type
-            cls_config = getattr(cls, '__pydantic_config__', None)
-            if cls_config is not None:
-                config_dict = cls_config
+        # if config is not explicitly provided, try to read it from the type
+        config_dict = config if config is not None else getattr(cls, '__pydantic_config__', None)
         config_wrapper = _config.ConfigWrapper(config_dict)
         decorators = _decorators.DecoratorInfos.build(cls)
 
@@ -230,6 +227,20 @@ def dataclass(  # noqa: C901
 
         make_pydantic_fields_compatible(cls)
 
+        # Respect frozen setting from dataclass constructor and fallback to config setting if not provided
+        if frozen is not None:
+            frozen_ = frozen
+            if config_wrapper.frozen:
+                # It's not recommended to define both, as the setting from the dataclass decorator will take priority.
+                warn(
+                    f'`frozen` is set via both the `dataclass` decorator and `config` for dataclass {cls.__name__!r}.'
+                    'This is not recommended. The `frozen` specification on `dataclass` will take priority.',
+                    category=UserWarning,
+                    stacklevel=2,
+                )
+        else:
+            frozen_ = config_wrapper.frozen or False
+
         cls = dataclasses.dataclass(  # type: ignore[call-overload]
             cls,
             # the value of init here doesn't affect anything except that it makes it easier to generate a signature
@@ -238,7 +249,7 @@ def dataclass(  # noqa: C901
             eq=eq,
             order=order,
             unsafe_hash=unsafe_hash,
-            frozen=frozen,
+            frozen=frozen_,
             **kwargs,
         )
 
@@ -252,10 +263,7 @@ def dataclass(  # noqa: C901
         cls.__pydantic_complete__ = pydantic_complete  # type: ignore
         return cls
 
-    if _cls is None:
-        return create_dataclass
-
-    return create_dataclass(_cls)
+    return create_dataclass if _cls is None else create_dataclass(_cls)
 
 
 __getattr__ = getattr_migration(__name__)

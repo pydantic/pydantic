@@ -127,7 +127,7 @@ class ModelValidatorDecoratorInfo:
     while building the pydantic-core schema.
 
     Attributes:
-        decorator_repr: A class variable representing the decorator string, '@model_serializer'.
+        decorator_repr: A class variable representing the decorator string, '@model_validator'.
         mode: The proposed serializer mode.
     """
 
@@ -178,6 +178,12 @@ class PydanticDescriptorProxy(Generic[ReturnType]):
 
     def _call_wrapped_attr(self, func: Callable[[Any], None], *, name: str) -> PydanticDescriptorProxy[ReturnType]:
         self.wrapped = getattr(self.wrapped, name)(func)
+        if isinstance(self.wrapped, property):
+            # update ComputedFieldInfo.wrapped_property
+            from ..fields import ComputedFieldInfo
+
+            if isinstance(self.decorator_info, ComputedFieldInfo):
+                self.decorator_info.wrapped_property = self.wrapped
         return self
 
     def __get__(self, obj: object | None, obj_type: type[object] | None = None) -> PydanticDescriptorProxy[ReturnType]:
@@ -495,7 +501,7 @@ class DecoratorInfos:
             # so then we don't need to re-process the type, which means we can discard our descriptor wrappers
             # and replace them with the thing they are wrapping (see the other setattr call below)
             # which allows validator class methods to also function as regular class methods
-            setattr(model_dc, '__pydantic_decorators__', res)
+            model_dc.__pydantic_decorators__ = res
             for name, value in to_replace:
                 setattr(model_dc, name, value)
         return res

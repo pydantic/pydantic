@@ -193,7 +193,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: pdm-project/setup-pdm@v4
         with:
           python-version: '3.12'
@@ -286,7 +285,7 @@ jobs:
     - name: store coverage files
       uses: actions/upload-artifact@v4
       with:
-        name: coverage-${{ matrix.os }}-${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
+        name: coverage-${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
         path: coverage
 
   coverage-combine:

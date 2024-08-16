@@ -101,9 +101,7 @@ model = Model(a=1)
 Tagged union (or discriminated union) is a union with a field that indicates which type it is.
 
 ```py test="skip"
-from typing import Any
-
-from typing_extensions import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 

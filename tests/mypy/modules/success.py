@@ -99,7 +99,6 @@ assert m.list_of_ints == [1, 2, 3], m.list_of_ints
 dog_age = dog_years(m.age)
 assert dog_age == 294, dog_age
 
-
 Model(age=2, first_name='Woof', last_name='Woof', signup_ts=datetime(2017, 6, 7), list_of_ints=[1, 2, 3])
 m = Model.model_validate(
     {
@@ -115,7 +114,6 @@ assert m.first_name == 'Woof', m.first_name
 assert m.last_name == 'Woof', m.last_name
 assert m.signup_ts == datetime(2017, 6, 7), m.signup_ts
 assert day_of_week(m.signup_ts) == 3
-
 
 data = {'age': 10, 'first_name': 'Alena', 'last_name': 'Sousova', 'list_of_ints': [410]}
 m_from_obj = Model.model_validate(data)
@@ -133,7 +131,6 @@ assert m_copy.age == m_from_obj.age
 assert m_copy.first_name == m_from_obj.first_name
 assert m_copy.last_name == m_from_obj.last_name
 assert m_copy.list_of_ints == m_from_obj.list_of_ints
-
 
 T = TypeVar('T')
 
@@ -244,6 +241,8 @@ class PydanticTypes(BaseModel):
     my_future_datetime: FutureDatetime = datetime.now() + timedelta(1)
     my_aware_datetime: AwareDatetime = datetime.now(tz=timezone.utc)
     my_naive_datetime: NaiveDatetime = datetime.now()
+    # Complex
+    my_complex: complex = complex(1.0, 2.0)
 
 
 validated = PydanticTypes()
@@ -277,7 +276,6 @@ obj: SomeDict = {
     'val': 12,
     'name': 'John',
 }
-
 
 config = ConfigDict(title='Record', extra='ignore', str_max_length=1234)
 
@@ -321,3 +319,21 @@ class Square(BaseModel):
     height: float
 
     free_validator = model_validator(mode='before')(two_dim_shape_validator)
+
+
+class SomeModel(BaseModel):
+    field: int
+
+    @field_validator("field")
+    @classmethod
+    def validate_field(cls, v: int) -> int:
+        return v
+
+
+class OtherModel(BaseModel):
+    field: int
+
+    @field_validator("field")
+    @classmethod
+    def validate_field(cls, v: int) -> int:
+        return SomeModel.validate_field(v)

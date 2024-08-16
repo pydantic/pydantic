@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import dataclasses
-from functools import partialmethod
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, overload
+from functools import partial, partialmethod
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
 
 from pydantic_core import PydanticUndefined, core_schema
-from pydantic_core import core_schema as _core_schema
+from pydantic_core.core_schema import SerializationInfo, SerializerFunctionWrapHandler, WhenUsed
 from typing_extensions import Annotated, Literal, TypeAlias
 
 from . import PydanticUndefinedAnnotation
@@ -50,7 +50,7 @@ class PlainSerializer:
 
     func: core_schema.SerializerFunction
     return_type: Any = PydanticUndefined
-    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always'
+    when_used: WhenUsed = 'always'
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         """Gets the Pydantic core schema.
@@ -99,7 +99,8 @@ class WrapSerializer:
         end: datetime
 
     def convert_to_utc(value: Any, handler, info) -> Dict[str, datetime]:
-        # Note that `helper` can actually help serialize the `value` for further custom serialization in case it's a subclass.
+        # Note that `handler` can actually help serialize the `value` for
+        # further custom serialization in case it's a subclass.
         partial_result = handler(value, info)
         if info.mode == 'json':
             return {
@@ -146,7 +147,7 @@ class WrapSerializer:
 
     func: core_schema.WrapSerializerFunction
     return_type: Any = PydanticUndefined
-    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always'
+    when_used: WhenUsed = 'always'
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         """This method is used to get the Pydantic core schema of the class.
@@ -176,34 +177,19 @@ class WrapSerializer:
 
 
 if TYPE_CHECKING:
-    _PartialClsOrStaticMethod: TypeAlias = Union[classmethod[Any, Any, Any], staticmethod[Any, Any], partialmethod[Any]]
-    _PlainSerializationFunction = Union[_core_schema.SerializerFunction, _PartialClsOrStaticMethod]
-    _WrapSerializationFunction = Union[_core_schema.WrapSerializerFunction, _PartialClsOrStaticMethod]
-    _PlainSerializeMethodType = TypeVar('_PlainSerializeMethodType', bound=_PlainSerializationFunction)
-    _WrapSerializeMethodType = TypeVar('_WrapSerializeMethodType', bound=_WrapSerializationFunction)
+    _Partial: TypeAlias = 'partial[Any] | partialmethod[Any]'
 
+    FieldPlainSerializer: TypeAlias = 'core_schema.SerializerFunction | _Partial'
+    """A field serializer method or function in `plain` mode."""
 
-@overload
-def field_serializer(
-    field: str,
-    /,
-    *fields: str,
-    return_type: Any = ...,
-    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
-    check_fields: bool | None = ...,
-) -> Callable[[_PlainSerializeMethodType], _PlainSerializeMethodType]: ...
+    FieldWrapSerializer: TypeAlias = 'core_schema.WrapSerializerFunction | _Partial'
+    """A field serializer method or function in `wrap` mode."""
 
+    FieldSerializer: TypeAlias = 'FieldPlainSerializer | FieldWrapSerializer'
+    """A field serializer method or function."""
 
-@overload
-def field_serializer(
-    field: str,
-    /,
-    *fields: str,
-    mode: Literal['plain'],
-    return_type: Any = ...,
-    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
-    check_fields: bool | None = ...,
-) -> Callable[[_PlainSerializeMethodType], _PlainSerializeMethodType]: ...
+    _FieldPlainSerializerT = TypeVar('_FieldPlainSerializerT', bound=FieldPlainSerializer)
+    _FieldWrapSerializerT = TypeVar('_FieldWrapSerializerT', bound=FieldWrapSerializer)
 
 
 @overload
@@ -213,18 +199,33 @@ def field_serializer(
     *fields: str,
     mode: Literal['wrap'],
     return_type: Any = ...,
-    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
+    when_used: WhenUsed = ...,
     check_fields: bool | None = ...,
-) -> Callable[[_WrapSerializeMethodType], _WrapSerializeMethodType]: ...
+) -> Callable[[_FieldWrapSerializerT], _FieldWrapSerializerT]: ...
+
+
+@overload
+def field_serializer(
+    field: str,
+    /,
+    *fields: str,
+    mode: Literal['plain'] = ...,
+    return_type: Any = ...,
+    when_used: WhenUsed = ...,
+    check_fields: bool | None = ...,
+) -> Callable[[_FieldPlainSerializerT], _FieldPlainSerializerT]: ...
 
 
 def field_serializer(
     *fields: str,
     mode: Literal['plain', 'wrap'] = 'plain',
     return_type: Any = PydanticUndefined,
-    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
+    when_used: WhenUsed = 'always',
     check_fields: bool | None = None,
-) -> Callable[[Any], Any]:
+) -> (
+    Callable[[_FieldWrapSerializerT], _FieldWrapSerializerT]
+    | Callable[[_FieldPlainSerializerT], _FieldPlainSerializerT]
+):
     """Decorator that enables custom field serialization.
 
     In the below example, a field of type `set` is used to mitigate duplication. A `field_serializer` is used to serialize the data as a sorted list.
@@ -239,7 +240,7 @@ def field_serializer(
         courses: Set[str]
 
         @field_serializer('courses', when_used='json')
-        def serialize_courses_in_order(courses: Set[str]):
+        def serialize_courses_in_order(self, courses: Set[str]):
             return sorted(courses)
 
     student = StudentModel(courses={'Math', 'Chemistry', 'English'})
@@ -271,9 +272,7 @@ def field_serializer(
         The decorator function.
     """
 
-    def dec(
-        f: Callable[..., Any] | staticmethod[Any, Any] | classmethod[Any, Any, Any],
-    ) -> _decorators.PydanticDescriptorProxy[Any]:
+    def dec(f: FieldSerializer) -> _decorators.PydanticDescriptorProxy[Any]:
         dec_info = _decorators.FieldSerializerDecoratorInfo(
             fields=fields,
             mode=mode,
@@ -281,35 +280,69 @@ def field_serializer(
             when_used=when_used,
             check_fields=check_fields,
         )
-        return _decorators.PydanticDescriptorProxy(f, dec_info)
+        return _decorators.PydanticDescriptorProxy(f, dec_info)  # pyright: ignore[reportArgumentType]
 
-    return dec
+    return dec  # pyright: ignore[reportReturnType]
 
 
-FuncType = TypeVar('FuncType', bound=Callable[..., Any])
+if TYPE_CHECKING:
+    # The first argument in the following callables represent the `self` type:
+
+    ModelPlainSerializerWithInfo: TypeAlias = Callable[[Any, SerializationInfo], Any]
+    """A model serializer method with the `info` argument, in `plain` mode."""
+
+    ModelPlainSerializerWithoutInfo: TypeAlias = Callable[[Any], Any]
+    """A model serializer method without the `info` argument, in `plain` mode."""
+
+    ModelPlainSerializer: TypeAlias = 'ModelPlainSerializerWithInfo | ModelPlainSerializerWithoutInfo'
+    """A model serializer method in `plain` mode."""
+
+    ModelWrapSerializerWithInfo: TypeAlias = Callable[[Any, SerializerFunctionWrapHandler, SerializationInfo], Any]
+    """A model serializer method with the `info` argument, in `wrap` mode."""
+
+    ModelWrapSerializerWithoutInfo: TypeAlias = Callable[[Any, SerializerFunctionWrapHandler], Any]
+    """A model serializer method without the `info` argument, in `wrap` mode."""
+
+    ModelWrapSerializer: TypeAlias = 'ModelWrapSerializerWithInfo | ModelWrapSerializerWithoutInfo'
+    """A model serializer method in `wrap` mode."""
+
+    ModelSerializer: TypeAlias = 'ModelPlainSerializer | ModelWrapSerializer'
+
+    _ModelPlainSerializerT = TypeVar('_ModelPlainSerializerT', bound=ModelPlainSerializer)
+    _ModelWrapSerializerT = TypeVar('_ModelWrapSerializerT', bound=ModelWrapSerializer)
 
 
 @overload
-def model_serializer(__f: FuncType) -> FuncType: ...
+def model_serializer(f: _ModelPlainSerializerT, /) -> _ModelPlainSerializerT: ...
+
+
+@overload
+def model_serializer(
+    *, mode: Literal['wrap'], when_used: WhenUsed = 'always', return_type: Any = ...
+) -> Callable[[_ModelWrapSerializerT], _ModelWrapSerializerT]: ...
 
 
 @overload
 def model_serializer(
     *,
-    mode: Literal['plain', 'wrap'] = ...,
-    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
+    mode: Literal['plain'] = ...,
+    when_used: WhenUsed = 'always',
     return_type: Any = ...,
-) -> Callable[[FuncType], FuncType]: ...
+) -> Callable[[_ModelPlainSerializerT], _ModelPlainSerializerT]: ...
 
 
 def model_serializer(
-    f: Callable[..., Any] | None = None,
+    f: _ModelPlainSerializerT | _ModelWrapSerializerT | None = None,
     /,
     *,
     mode: Literal['plain', 'wrap'] = 'plain',
-    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
+    when_used: WhenUsed = 'always',
     return_type: Any = PydanticUndefined,
-) -> Callable[[Any], Any]:
+) -> (
+    _ModelPlainSerializerT
+    | Callable[[_ModelWrapSerializerT], _ModelWrapSerializerT]
+    | Callable[[_ModelPlainSerializerT], _ModelPlainSerializerT]
+):
     """Decorator that enables custom model serialization.
 
     This is useful when a model need to be serialized in a customized manner, allowing for flexibility beyond just specific fields.
@@ -336,7 +369,17 @@ def model_serializer(
     #> {'unit': 'C', 'value': 100}
     ```
 
-    See [Custom serializers](../concepts/serialization.md#custom-serializers) for more information.
+    Two signatures are supported for `mode='plain'`, which is the default:
+
+    - `(self)`
+    - `(self, info: SerializationInfo)`
+
+    And two other signatures for `mode='wrap'`:
+
+    - `(self, nxt: SerializerFunctionWrapHandler)`
+    - `(self, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)`
+
+        See [Custom serializers](../concepts/serialization.md#custom-serializers) for more information.
 
     Args:
         f: The function to be decorated.
@@ -352,14 +395,14 @@ def model_serializer(
         The decorator function.
     """
 
-    def dec(f: Callable[..., Any]) -> _decorators.PydanticDescriptorProxy[Any]:
+    def dec(f: ModelSerializer) -> _decorators.PydanticDescriptorProxy[Any]:
         dec_info = _decorators.ModelSerializerDecoratorInfo(mode=mode, return_type=return_type, when_used=when_used)
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     if f is None:
-        return dec
+        return dec  # pyright: ignore[reportReturnType]
     else:
-        return dec(f)  # type: ignore
+        return dec(f)  # pyright: ignore[reportReturnType]
 
 
 AnyType = TypeVar('AnyType')

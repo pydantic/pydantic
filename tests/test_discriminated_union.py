@@ -1,5 +1,6 @@
 import re
 import sys
+from dataclasses import dataclass
 from enum import Enum, IntEnum
 from types import SimpleNamespace
 from typing import Any, Callable, Generic, List, Optional, Sequence, TypeVar, Union
@@ -9,11 +10,21 @@ from dirty_equals import HasRepr, IsStr
 from pydantic_core import SchemaValidator, core_schema
 from typing_extensions import Annotated, Literal, TypedDict
 
-from pydantic import BaseModel, ConfigDict, Discriminator, Field, TypeAdapter, ValidationError, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Discriminator,
+    Field,
+    PlainSerializer,
+    TypeAdapter,
+    ValidationError,
+    field_validator,
+)
 from pydantic._internal._discriminated_union import apply_discriminator
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
 from pydantic.fields import FieldInfo
+from pydantic.functional_validators import model_validator
 from pydantic.json_schema import GenerateJsonSchema
 from pydantic.types import Tag
 
@@ -1379,6 +1390,90 @@ def test_sequence_discriminated_union():
     }
 
 
+def test_sequence_discriminated_union_validation():
+    """
+    Related issue: https://github.com/pydantic/pydantic/issues/9872
+    """
+
+    class A(BaseModel):
+        type: Literal['a']
+        a_field: str
+
+    class B(BaseModel):
+        type: Literal['b']
+        b_field: str
+
+    class Model(BaseModel):
+        items: Sequence[Annotated[Union[A, B], Field(discriminator='type')]]
+
+    import json
+
+    data_json = '{"items": [{"type": "b"}]}'
+    data_dict = json.loads(data_json)
+
+    expected_error = {
+        'type': 'missing',
+        'loc': ('items', 0, 'b', 'b_field'),
+        'msg': 'Field required',
+        'input': {'type': 'b'},
+    }
+
+    # missing field should be `b_field` only, not including `a_field`
+    # also `literal_error` should not be reported on `type`
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate(data_dict)
+    assert exc_info.value.errors(include_url=False) == [expected_error]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate_json(data_json)
+    assert exc_info.value.errors(include_url=False) == [expected_error]
+
+
+def test_sequence_discriminated_union_validation_with_validator():
+    """
+    This is the same as the previous test, but add validators to both class.
+    """
+
+    class A(BaseModel):
+        type: Literal['a']
+        a_field: str
+
+        @model_validator(mode='after')
+        def check_a(self):
+            return self
+
+    class B(BaseModel):
+        type: Literal['b']
+        b_field: str
+
+        @model_validator(mode='after')
+        def check_b(self):
+            return self
+
+    class Model(BaseModel):
+        items: Sequence[Annotated[Union[A, B], Field(discriminator='type')]]
+
+    import json
+
+    data_json = '{"items": [{"type": "b"}]}'
+    data_dict = json.loads(data_json)
+
+    expected_error = {
+        'type': 'missing',
+        'loc': ('items', 0, 'b', 'b_field'),
+        'msg': 'Field required',
+        'input': {'type': 'b'},
+    }
+
+    # missing field should be `b_field` only, not including `a_field`
+    # also `literal_error` should not be reported on `type`
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate(data_dict)
+    assert exc_info.value.errors(include_url=False) == [expected_error]
+
+
 @pytest.fixture(scope='session', name='animals')
 def callable_discriminated_union_animals() -> SimpleNamespace:
     class Cat(BaseModel):
@@ -2033,10 +2128,7 @@ def test_discriminated_union_with_unsubstituted_type_var() -> None:
     assert ta.validate_python(int_dog).friends[1].id == 3
 
 
-@pytest.mark.xfail(
-    reason='model_dump does not properly serialize the discriminator field to string if it is using an Enum. Issue: https://github.com/pydantic/pydantic/issues/9235'
-)
-def test_discriminated_union_model_dump_with_nested_class():
+def test_discriminated_union_model_dump_with_nested_class() -> None:
     class SomeEnum(str, Enum):
         CAT = 'cat'
         DOG = 'dog'
@@ -2057,3 +2149,26 @@ def test_discriminated_union_model_dump_with_nested_class():
     assert isinstance(yard_dict['pet']['type'], str)
     assert not isinstance(yard_dict['pet']['type'], SomeEnum)
     assert str(yard_dict['pet']['type']) == 'dog'
+
+
+@pytest.mark.xfail(reason='Waiting for union serialization fixes via https://github.com/pydantic/pydantic/issues/9688.')
+def test_discriminated_union_serializer() -> None:
+    """Reported via https://github.com/pydantic/pydantic/issues/9590."""
+
+    @dataclass
+    class FooId:
+        _id: int
+
+    @dataclass
+    class BarId:
+        _id: int
+
+    FooOrBarId = Annotated[
+        Annotated[FooId, PlainSerializer(lambda v: {'tag': 'foo', '_id': v._id}), Tag('foo')]
+        | Annotated[BarId, PlainSerializer(lambda v: {'tag': 'bar', '_id': v._id}), Tag('bar')],
+        Discriminator(lambda v: v['tag']),
+    ]
+
+    adapter = TypeAdapter(FooOrBarId)
+    assert adapter.dump_python(FooId(1)) == {'tag': 'foo', '_id': 1}
+    assert adapter.dump_python(BarId(2)) == {'tag': 'bar', '_id': 2}

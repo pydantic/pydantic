@@ -16,8 +16,9 @@ from pydantic.errors import PydanticUserError
 from . import _typing_extra
 from ._config import ConfigWrapper
 from ._docs_extraction import extract_docstrings_from_cls
+from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._repr import Representation
-from ._typing_extra import get_cls_type_hints_lenient, get_type_hints, is_classvar, is_finalvar
+from ._typing_extra import get_cls_type_hints_lenient, is_classvar, is_finalvar
 
 if TYPE_CHECKING:
     from annotated_types import BaseMetadata
@@ -26,35 +27,6 @@ if TYPE_CHECKING:
     from ..main import BaseModel
     from ._dataclasses import StandardDataclass
     from ._decorators import DecoratorInfos
-
-
-def get_type_hints_infer_globalns(
-    obj: Any,
-    localns: dict[str, Any] | None = None,
-    include_extras: bool = False,
-) -> dict[str, Any]:
-    """Gets type hints for an object by inferring the global namespace.
-
-    It uses the `typing.get_type_hints`, The only thing that we do here is fetching
-    global namespace from `obj.__module__` if it is not `None`.
-
-    Args:
-        obj: The object to get its type hints.
-        localns: The local namespaces.
-        include_extras: Whether to recursively include annotation metadata.
-
-    Returns:
-        The object type hints.
-    """
-    module_name = getattr(obj, '__module__', None)
-    globalns: dict[str, Any] | None = None
-    if module_name:
-        try:
-            globalns = sys.modules[module_name].__dict__
-        except KeyError:
-            # happens occasionally, see https://github.com/pydantic/pydantic/issues/2363
-            pass
-    return get_type_hints(obj, globalns=globalns, localns=localns, include_extras=include_extras)
 
 
 class PydanticMetadata(Representation):
@@ -127,7 +99,8 @@ def collect_model_fields(  # noqa: C901
             - If there is a field other than `root` in `RootModel`.
             - If a field shadows an attribute in the parent model.
     """
-    from ..fields import FieldInfo
+    BaseModel = import_cached_base_model()
+    FieldInfo_ = import_cached_field_info()
 
     type_hints = get_cls_type_hints_lenient(cls, types_namespace)
 
@@ -147,8 +120,6 @@ def collect_model_fields(  # noqa: C901
             if ann_name.startswith(protected_namespace):
                 for b in bases:
                     if hasattr(b, ann_name):
-                        from ..main import BaseModel
-
                         if not (issubclass(b, BaseModel) and ann_name in b.model_fields):
                             raise NameError(
                                 f'Field "{ann_name}" conflicts with member {getattr(b, ann_name)}'
@@ -159,7 +130,7 @@ def collect_model_fields(  # noqa: C901
                         x for x in config_wrapper.protected_namespaces if not ann_name.startswith(x)
                     )
                     warnings.warn(
-                        f'Field "{ann_name}" has conflict with protected namespace "{protected_namespace}".'
+                        f'Field "{ann_name}" in {cls.__name__} has conflict with protected namespace "{protected_namespace}".'
                         '\n\nYou may be able to resolve this warning by setting'
                         f" `model_config['protected_namespaces'] = {valid_namespaces}`.",
                         UserWarning,
@@ -210,7 +181,7 @@ def collect_model_fields(  # noqa: C901
                 raise AttributeError
         except AttributeError:
             if ann_name in annotations:
-                field_info = FieldInfo.from_annotation(ann_type)
+                field_info = FieldInfo_.from_annotation(ann_type)
             else:
                 # if field has no default value and is not in __annotations__ this means that it is
                 # defined in a base class and we can take it from there
@@ -225,10 +196,10 @@ def collect_model_fields(  # noqa: C901
                     # The field was not found on any base classes; this seems to be caused by fields not getting
                     # generated thanks to models not being fully defined while initializing recursive models.
                     # Nothing stops us from just creating a new FieldInfo for this type hint, so we do this.
-                    field_info = FieldInfo.from_annotation(ann_type)
+                    field_info = FieldInfo_.from_annotation(ann_type)
         else:
             _warn_on_nested_alias_in_annotation(ann_type, ann_name)
-            field_info = FieldInfo.from_annotated_attribute(ann_type, default)
+            field_info = FieldInfo_.from_annotated_attribute(ann_type, default)
             # attributes which are fields are removed from the class namespace:
             # 1. To match the behaviour of annotation-only fields
             # 2. To avoid false positives in the NameError check above
@@ -253,11 +224,12 @@ def collect_model_fields(  # noqa: C901
     return fields, class_vars
 
 
-def _warn_on_nested_alias_in_annotation(ann_type: type[Any], ann_name: str):
-    from ..fields import FieldInfo
+def _warn_on_nested_alias_in_annotation(ann_type: type[Any], ann_name: str) -> None:
+    FieldInfo = import_cached_field_info()
 
-    if hasattr(ann_type, '__args__'):
-        for anno_arg in ann_type.__args__:
+    args = getattr(ann_type, '__args__', None)
+    if args:
+        for anno_arg in args:
             if _typing_extra.is_annotated(anno_arg):
                 for anno_type_arg in _typing_extra.get_args(anno_arg):
                     if isinstance(anno_type_arg, FieldInfo) and anno_type_arg.alias is not None:
@@ -265,11 +237,11 @@ def _warn_on_nested_alias_in_annotation(ann_type: type[Any], ann_name: str):
                             f'`alias` specification on field "{ann_name}" must be set on outermost annotation to take effect.',
                             UserWarning,
                         )
-                        break
+                        return
 
 
 def _is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:
-    from ..fields import FieldInfo
+    FieldInfo = import_cached_field_info()
 
     if not is_finalvar(type_):
         return False
@@ -299,7 +271,7 @@ def collect_dataclass_fields(
     Returns:
         The dataclass fields.
     """
-    from ..fields import FieldInfo
+    FieldInfo_ = import_cached_field_info()
 
     fields: dict[str, FieldInfo] = {}
     dataclass_fields: dict[str, dataclasses.Field] = cls.__dataclass_fields__
@@ -323,7 +295,7 @@ def collect_dataclass_fields(
             #   Issue: https://github.com/pydantic/pydantic/issues/5470
             continue
 
-        if isinstance(dataclass_field.default, FieldInfo):
+        if isinstance(dataclass_field.default, FieldInfo_):
             if dataclass_field.default.init_var:
                 if dataclass_field.default.init is False:
                     raise PydanticUserError(
@@ -333,13 +305,13 @@ def collect_dataclass_fields(
 
                 # TODO: same note as above re validate_assignment
                 continue
-            field_info = FieldInfo.from_annotated_attribute(ann_type, dataclass_field.default)
+            field_info = FieldInfo_.from_annotated_attribute(ann_type, dataclass_field.default)
         else:
-            field_info = FieldInfo.from_annotated_attribute(ann_type, dataclass_field)
+            field_info = FieldInfo_.from_annotated_attribute(ann_type, dataclass_field)
 
         fields[ann_name] = field_info
 
-        if field_info.default is not PydanticUndefined and isinstance(getattr(cls, ann_name, field_info), FieldInfo):
+        if field_info.default is not PydanticUndefined and isinstance(getattr(cls, ann_name, field_info), FieldInfo_):
             # We need this to fix the default when the "default" from __dataclass_fields__ is a pydantic.FieldInfo
             setattr(cls, ann_name, field_info.default)
 

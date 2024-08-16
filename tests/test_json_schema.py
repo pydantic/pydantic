@@ -271,7 +271,7 @@ def test_choices():
         'properties': {
             'foo': {'$ref': '#/$defs/FooEnum'},
             'bar': {'$ref': '#/$defs/BarEnum'},
-            'spam': {'allOf': [{'$ref': '#/$defs/SpamEnum'}], 'default': None},
+            'spam': {'$ref': '#/$defs/SpamEnum', 'default': None},
         },
         'required': ['foo', 'bar'],
         'title': 'Model',
@@ -337,10 +337,10 @@ def test_enum_schema_custom_field():
             'pikalias': {
                 'title': 'Pikapika!',
                 'description': 'Pika is definitely the best!',
-                'allOf': [{'$ref': '#/$defs/FooBarEnum'}],
+                '$ref': '#/$defs/FooBarEnum',
             },
             'bulbialias': {
-                'allOf': [{'$ref': '#/$defs/FooBarEnum'}],
+                '$ref': '#/$defs/FooBarEnum',
                 'default': 'foo',
                 'title': 'Bulbibulbi!',
                 'description': 'Bulbi is not...',
@@ -384,13 +384,13 @@ def test_enum_and_model_have_same_behaviour():
             'titled_enum': {
                 'title': 'Title of enum',
                 'description': 'Description of enum',
-                'allOf': [{'$ref': '#/$defs/Names'}],
+                '$ref': '#/$defs/Names',
             },
             'model': {'$ref': '#/$defs/Pika'},
             'titled_model': {
                 'title': 'Title of model',
                 'description': 'Description of model',
-                'allOf': [{'$ref': '#/$defs/Pika'}],
+                '$ref': '#/$defs/Pika',
             },
         },
         'required': ['enum', 'titled_enum', 'model', 'titled_model'],
@@ -427,7 +427,7 @@ def test_enum_includes_extra_without_other_params():
         },
         'properties': {
             'enum': {'$ref': '#/$defs/Names'},
-            'extra_enum': {'allOf': [{'$ref': '#/$defs/Names'}], 'extra': 'Extra field'},
+            'extra_enum': {'$ref': '#/$defs/Names', 'extra': 'Extra field'},
         },
         'required': ['enum', 'extra_enum'],
         'title': 'Foo',
@@ -827,6 +827,18 @@ def test_date_constrained_types(field_type, expected_schema):
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'date', **expected_schema}},
+        'required': ['a'],
+    }
+
+
+def test_complex_types():
+    class Model(BaseModel):
+        a: complex
+
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
         'required': ['a'],
     }
 
@@ -1300,14 +1312,10 @@ def test_callable_type_with_fallback(default_value, properties):
 def test_byte_size_type():
     class Model(BaseModel):
         a: ByteSize
-        b: ByteSize = Field('1MB', validate_default=True)
+        b: ByteSize = ByteSize(1000000)
+        c: ByteSize = Field(default='1MB', validate_default=True)
 
-    model_json_schema_validation = Model.model_json_schema(mode='validation')
-    model_json_schema_serialization = Model.model_json_schema(mode='serialization')
-
-    print(model_json_schema_serialization)
-
-    assert model_json_schema_validation == {
+    assert Model.model_json_schema(mode='validation') == {
         'properties': {
             'a': {
                 'anyOf': [
@@ -1321,8 +1329,16 @@ def test_byte_size_type():
                     {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
                     {'minimum': 0, 'type': 'integer'},
                 ],
-                'default': '1MB',
+                'default': 1000000,
                 'title': 'B',
+            },
+            'c': {
+                'anyOf': [
+                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
+                    {'minimum': 0, 'type': 'integer'},
+                ],
+                'default': '1MB',
+                'title': 'C',
             },
         },
         'required': ['a'],
@@ -1330,15 +1346,22 @@ def test_byte_size_type():
         'type': 'object',
     }
 
-    assert model_json_schema_serialization == {
-        'properties': {
-            'a': {'minimum': 0, 'title': 'A', 'type': 'integer'},
-            'b': {'default': '1MB', 'minimum': 0, 'title': 'B', 'type': 'integer'},
-        },
-        'required': ['a'],
-        'title': 'Model',
-        'type': 'object',
-    }
+    with pytest.warns(
+        PydanticJsonSchemaWarning,
+        match=re.escape(
+            "Unable to serialize value '1MB' with the plain serializer; excluding default from JSON schema"
+        ),
+    ):
+        assert Model.model_json_schema(mode='serialization') == {
+            'properties': {
+                'a': {'minimum': 0, 'title': 'A', 'type': 'integer'},
+                'b': {'default': 1000000, 'minimum': 0, 'title': 'B', 'type': 'integer'},
+                'c': {'minimum': 0, 'title': 'C', 'type': 'integer'},
+            },
+            'required': ['a'],
+            'title': 'Model',
+            'type': 'object',
+        }
 
 
 @pytest.mark.parametrize(
@@ -1432,7 +1455,7 @@ def test_schema_overrides():
             'Bar': {
                 'title': 'Bar',
                 'type': 'object',
-                'properties': {'b': {'allOf': [{'$ref': '#/$defs/Foo'}], 'default': {'a': 'foo'}}},
+                'properties': {'b': {'$ref': '#/$defs/Foo', 'default': {'a': 'foo'}}},
             },
             'Baz': {
                 'title': 'Baz',
@@ -1743,7 +1766,7 @@ def test_model_default():
                 'type': 'object',
             }
         },
-        'properties': {'inner': {'allOf': [{'$ref': '#/$defs/Inner'}], 'default': {'a': {'.': ''}}}},
+        'properties': {'inner': {'$ref': '#/$defs/Inner', 'default': {'a': {'.': ''}}}},
         'title': 'Outer',
         'type': 'object',
     }
@@ -3309,7 +3332,7 @@ def test_namedtuple_default():
                 'type': 'array',
             }
         },
-        'properties': {'coords': {'allOf': [{'$ref': '#/$defs/Coordinates'}], 'default': [34, 42]}},
+        'properties': {'coords': {'$ref': '#/$defs/Coordinates', 'default': [34, 42]}},
         'title': 'LocationBase',
         'type': 'object',
     }
@@ -3339,7 +3362,7 @@ def test_namedtuple_modify_schema():
                 'type': 'object',
             }
         },
-        'properties': {'coords': {'allOf': [{'$ref': '#/$defs/CustomCoordinates'}], 'default': [34, 42]}},
+        'properties': {'coords': {'$ref': '#/$defs/CustomCoordinates', 'default': [34, 42]}},
         'title': 'Location',
         'type': 'object',
     }
@@ -3594,7 +3617,7 @@ def test_complex_nested_generic():
                 'required': ['uuid'],
             },
         },
-        'allOf': [{'$ref': '#/$defs/Model'}],
+        '$ref': '#/$defs/Model',
     }
 
 
@@ -4507,9 +4530,7 @@ def test_nested_default_json_schema():
                 'type': 'object',
             }
         },
-        'properties': {
-            'nested_field': {'allOf': [{'$ref': '#/$defs/InnerModel'}], 'default': {'my_alias': 'foobar', 'foo': 'bar'}}
-        },
+        'properties': {'nested_field': {'$ref': '#/$defs/InnerModel', 'default': {'my_alias': 'foobar', 'foo': 'bar'}}},
         'title': 'OuterModel',
         'type': 'object',
     }
@@ -5093,7 +5114,7 @@ def test_root_model():
 
     assert B.model_json_schema() == {
         '$defs': {'A': {'description': 'A Model docstring', 'title': 'A', 'type': 'integer'}},
-        'allOf': [{'$ref': '#/$defs/A'}],
+        '$ref': '#/$defs/A',
         'title': 'B',
     }
 
@@ -5102,7 +5123,7 @@ def test_root_model():
 
     assert C.model_json_schema() == {
         '$defs': {'A': {'description': 'A Model docstring', 'title': 'A', 'type': 'integer'}},
-        'allOf': [{'$ref': '#/$defs/A'}],
+        '$ref': '#/$defs/A',
         'title': 'C',
         'description': 'C Model docstring',
     }
@@ -5264,7 +5285,7 @@ def test_json_schema_extras_on_ref() -> None:
             self, core_schema: CoreSchema, handler: GetJsonSchemaHandler
         ) -> JsonSchemaValue:
             json_schema = handler(core_schema)
-            assert json_schema.keys() == {'allOf', 'examples'}
+            assert json_schema.keys() == {'$ref', 'examples'}
             json_schema['title'] = self.title
             return json_schema
 
@@ -5286,7 +5307,7 @@ def test_json_schema_extras_on_ref() -> None:
                 'type': 'object',
             }
         },
-        'allOf': [{'$ref': '#/$defs/Model'}],
+        '$ref': '#/$defs/Model',
         'examples': b'{"foo":{"name":"John","age":28}}',
         'title': 'ModelTitle',
     }
@@ -5331,7 +5352,7 @@ def test_resolve_def_schema_from_core_schema() -> None:
                 'type': 'object',
             }
         },
-        'properties': {'inner': {'allOf': [{'$ref': '#/$defs/Inner'}], 'title': 'Foo'}},
+        'properties': {'inner': {'$ref': '#/$defs/Inner', 'title': 'Foo'}},
         'required': ['inner'],
         'title': 'Outer',
         'type': 'object',
@@ -5520,7 +5541,7 @@ def test_custom_type_gets_unpacked_ref() -> None:
                 'type': 'object',
             }
         },
-        'allOf': [{'$ref': '#/$defs/Model'}],
+        '$ref': '#/$defs/Model',
         'title': 'Set from annotation',
     }
 
@@ -5897,7 +5918,7 @@ def test_recursive_non_generic_model() -> None:
                 'type': 'object',
             },
         },
-        'allOf': [{'$ref': '#/$defs/Bar'}],
+        '$ref': '#/$defs/Bar',
     }
 
 
@@ -6187,9 +6208,7 @@ class ModelParent(BaseModel):
                         'type': 'object',
                     }
                 },
-                'properties': {
-                    'parent': {'allOf': [{'$ref': '#/$defs/BuiltinDataclassParent'}], 'default': {'name': 'Jon Doe'}}
-                },
+                'properties': {'parent': {'$ref': '#/$defs/BuiltinDataclassParent', 'default': {'name': 'Jon Doe'}}},
                 'title': 'child',
                 'type': 'object',
             },
@@ -6206,9 +6225,7 @@ class ModelParent(BaseModel):
                         'type': 'object',
                     }
                 },
-                'properties': {
-                    'parent': {'allOf': [{'$ref': '#/$defs/PydanticDataclassParent'}], 'default': {'name': 'Jon Doe'}}
-                },
+                'properties': {'parent': {'$ref': '#/$defs/PydanticDataclassParent', 'default': {'name': 'Jon Doe'}}},
                 'title': 'child',
                 'type': 'object',
             },
@@ -6225,9 +6242,7 @@ class ModelParent(BaseModel):
                         'type': 'object',
                     }
                 },
-                'properties': {
-                    'parent': {'allOf': [{'$ref': '#/$defs/TypedDictParent'}], 'default': {'name': 'Jon Doe'}}
-                },
+                'properties': {'parent': {'$ref': '#/$defs/TypedDictParent', 'default': {'name': 'Jon Doe'}}},
                 'title': 'child',
                 'type': 'object',
             },
@@ -6244,7 +6259,7 @@ class ModelParent(BaseModel):
                         'type': 'object',
                     }
                 },
-                'properties': {'parent': {'allOf': [{'$ref': '#/$defs/ModelParent'}], 'default': {'name': 'Jon Doe'}}},
+                'properties': {'parent': {'$ref': '#/$defs/ModelParent', 'default': {'name': 'Jon Doe'}}},
                 'title': 'child',
                 'type': 'object',
             },
@@ -6279,6 +6294,36 @@ def test_plain_serializer_applies_to_default() -> None:
     }
     assert Model.model_json_schema(mode='serialization') == {
         'properties': {'custom_str': {'default': 'serialized-foo', 'title': 'Custom Str', 'type': 'string'}},
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_plain_serializer_does_not_apply_with_unless_none() -> None:
+    """Test plain serializers aren't used to compute the JSON Schema default if mode is 'json-unless-none'
+    and default value is `None`."""
+
+    class Model(BaseModel):
+        custom_decimal_json_unless_none: Annotated[
+            Optional[Decimal], PlainSerializer(lambda x: float(x), when_used='json-unless-none', return_type=float)
+        ] = None
+        custom_decimal_unless_none: Annotated[
+            Optional[Decimal], PlainSerializer(lambda x: float(x), when_used='unless-none', return_type=float)
+        ] = None
+
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': {
+            'custom_decimal_json_unless_none': {
+                'anyOf': [{'type': 'null'}, {'type': 'number'}],
+                'default': None,
+                'title': 'Custom Decimal Json Unless None',
+            },
+            'custom_decimal_unless_none': {
+                'anyOf': [{'type': 'null'}, {'type': 'number'}],
+                'default': None,
+                'title': 'Custom Decimal Unless None',
+            },
+        },
         'title': 'Model',
         'type': 'object',
     }

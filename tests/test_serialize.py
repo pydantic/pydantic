@@ -482,10 +482,14 @@ def test_model_serializer_plain_json_return_type():
 
     m = MyModel(a=666)
     assert m.model_dump() == {'a': 666}
-    with pytest.warns(UserWarning, match='Expected `str` but got `int` - serialized value may not be as expected'):
+    with pytest.warns(
+        UserWarning, match='Expected `str` but got `int` with value `666` - serialized value may not be as expected'
+    ):
         assert m.model_dump(mode='json') == 666
 
-    with pytest.warns(UserWarning, match='Expected `str` but got `int` - serialized value may not be as expected'):
+    with pytest.warns(
+        UserWarning, match='Expected `str` but got `int` with value `666` - serialized value may not be as expected'
+    ):
         assert m.model_dump_json() == '666'
 
 
@@ -964,7 +968,7 @@ def test_forward_ref_for_serializers(as_annotation, mode):
                 'type': 'object',
             }
         },
-        'properties': {'x': {'allOf': [{'$ref': '#/$defs/OtherModel'}], 'title': 'X'}},
+        'properties': {'x': {'$ref': '#/$defs/OtherModel', 'title': 'X'}},
         'required': ['x'],
         'title': 'Model',
         'type': 'object',
@@ -1224,3 +1228,38 @@ def test_plain_serializer_with_std_type() -> None:
         'title': 'MyModel',
         'type': 'object',
     }
+
+
+@pytest.mark.xfail(reason='Waiting for union serialization fixes via https://github.com/pydantic/pydantic/issues/9688.')
+def smart_union_serialization() -> None:
+    """Initially reported via https://github.com/pydantic/pydantic/issues/9417, effectively a round tripping problem with type consistency."""
+
+    class FloatThenInt(BaseModel):
+        value: Union[float, int, str] = Field(union_mode='smart')
+
+    class IntThenFloat(BaseModel):
+        value: Union[int, float, str] = Field(union_mode='smart')
+
+    float_then_int = FloatThenInt(value=100)
+    assert type(json.loads(float_then_int.model_dump_json())['value']) is int
+
+    int_then_float = IntThenFloat(value=100)
+    assert type(json.loads(int_then_float.model_dump_json())['value']) is int
+
+
+def test_serialize_with_custom_ser() -> None:
+    class Item(BaseModel):
+        id: int
+
+        @model_serializer
+        def dump(self) -> Dict[str, Any]:
+            return {'id': self.id}
+
+    class ItemContainer(BaseModel):
+        item_or_items: Union[Item, List[Item]]
+
+    items = [Item(id=i) for i in range(5)]
+    assert (
+        ItemContainer(item_or_items=items).model_dump_json()
+        == '{"item_or_items":[{"id":0},{"id":1},{"id":2},{"id":3},{"id":4}]}'
+    )

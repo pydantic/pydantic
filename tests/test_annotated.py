@@ -424,18 +424,20 @@ def test_annotated_private_field_with_default():
     class AnnotatedPrivateFieldModel(BaseModel):
         _foo: Annotated[int, PrivateAttr(default=1)]
         _bar: Annotated[str, 'hello']
+        _baz: 'Annotated[str, PrivateAttr(default=2)]'
 
     model = AnnotatedPrivateFieldModel()
     assert model._foo == 1
+    assert model._baz == 2
 
-    assert model.__pydantic_private__ == {'_foo': 1}
+    assert model.__pydantic_private__ == {'_foo': 1, '_baz': 2}
 
     with pytest.raises(AttributeError):
         assert model._bar
 
     model._bar = 'world'
     assert model._bar == 'world'
-    assert model.__pydantic_private__ == {'_foo': 1, '_bar': 'world'}
+    assert model.__pydantic_private__ == {'_foo': 1, '_bar': 'world', '_baz': 2}
 
     with pytest.raises(AttributeError):
         assert model.bar

@@ -2163,7 +2163,7 @@ def test_parse_generic_json():
                 'type': 'object',
             }
         },
-        'properties': {'message': {'allOf': [{'$ref': '#/$defs/Payload'}], 'title': 'Message'}},
+        'properties': {'message': {'$ref': '#/$defs/Payload', 'title': 'Message'}},
         'required': ['message'],
         'title': 'MessageWrapper[test_parse_generic_json.<locals>.Payload]',
         'type': 'object',

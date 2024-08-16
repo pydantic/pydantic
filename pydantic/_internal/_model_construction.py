@@ -4,13 +4,14 @@ from __future__ import annotations as _annotations
 
 import builtins
 import operator
+import sys
 import typing
 import warnings
 import weakref
 from abc import ABCMeta
-from functools import partial
+from functools import lru_cache, partial
 from types import FunctionType
-from typing import Any, Callable, Generic, NoReturn
+from typing import Any, Callable, ForwardRef, Generic, Literal, NoReturn
 
 import typing_extensions
 from pydantic_core import PydanticUndefined, SchemaSerializer
@@ -24,10 +25,17 @@ from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
 from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
+from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import set_model_mocks
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._signature import generate_pydantic_signature
-from ._typing_extra import get_cls_types_namespace, is_annotated, is_classvar, parent_frame_namespace
+from ._typing_extra import (
+    eval_type_backport,
+    get_cls_types_namespace,
+    is_annotated,
+    is_classvar,
+    parent_frame_namespace,
+)
 from ._utils import ClassAttribute, SafeGetItemProxy
 from ._validate_call import ValidateCallWrapper
 
@@ -59,7 +67,17 @@ class _ModelNamespaceDict(dict):
         return super().__setitem__(k, v)
 
 
-@dataclass_transform(kw_only_default=True, field_specifiers=(PydanticModelField, PydanticModelPrivateAttr))
+def NoInitField(
+    *,
+    init: Literal[False] = False,
+) -> Any:
+    """Only for typing purposes. Used as default value of `__pydantic_fields_set__`,
+    `__pydantic_extra__`, `__pydantic_private__`, so they could be ignored when
+    synthesizing the `__init__` signature.
+    """
+
+
+@dataclass_transform(kw_only_default=True, field_specifiers=(PydanticModelField, PydanticModelPrivateAttr, NoInitField))
 class ModelMetaclass(ABCMeta):
     def __new__(
         mcs,
@@ -117,7 +135,7 @@ class ModelMetaclass(ABCMeta):
 
             cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
 
-            from ..main import BaseModel
+            BaseModel = import_cached_base_model()
 
             mro = cls.__mro__
             if Generic in mro and mro.index(Generic) < mro.index(BaseModel):
@@ -223,7 +241,10 @@ class ModelMetaclass(ABCMeta):
             super(cls, cls).__pydantic_init_subclass__(**kwargs)  # type: ignore[misc]
             return cls
         else:
-            # this is the BaseModel class itself being created, no logic required
+            # These are instance variables, but have been assigned to `NoInitField` to trick the type checker.
+            for instance_slot in '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__':
+                del namespace[instance_slot]
+            namespace.get('__annotations__', {}).clear()
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
     if not typing.TYPE_CHECKING:  # pragma: no branch
@@ -249,7 +270,7 @@ class ModelMetaclass(ABCMeta):
 
     @staticmethod
     def _collect_bases_data(bases: tuple[type[Any], ...]) -> tuple[set[str], set[str], dict[str, ModelPrivateAttr]]:
-        from ..main import BaseModel
+        BaseModel = import_cached_base_model()
 
         field_names: set[str] = set()
         class_vars: set[str] = set()
@@ -300,7 +321,7 @@ def get_model_post_init(namespace: dict[str, Any], bases: tuple[type[Any], ...])
     if 'model_post_init' in namespace:
         return namespace['model_post_init']
 
-    from ..main import BaseModel
+    BaseModel = import_cached_base_model()
 
     model_post_init = get_attribute_from_bases(bases, 'model_post_init')
     if model_post_init is not BaseModel.model_post_init:
@@ -333,7 +354,9 @@ def inspect_namespace(  # noqa C901
             - If a field does not have a type annotation.
             - If a field on base class was overridden by a non-annotated attribute.
     """
-    from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
+    from ..fields import ModelPrivateAttr, PrivateAttr
+
+    FieldInfo = import_cached_field_info()
 
     all_ignored_types = ignored_types + default_ignored_types()
 
@@ -414,6 +437,14 @@ def inspect_namespace(  # noqa C901
             and ann_type not in all_ignored_types
             and getattr(ann_type, '__module__', None) != 'functools'
         ):
+            if isinstance(ann_type, str):
+                # Walking up the frames to get the module namespace where the model is defined
+                # (as the model class wasn't created yet, we unfortunately can't use `cls.__module__`):
+                frame = sys._getframe(2)
+                if frame is not None:
+                    ann_type = eval_type_backport(
+                        ForwardRef(ann_type), globalns=frame.f_globals, localns=frame.f_locals
+                    )
             if is_annotated(ann_type):
                 _, *metadata = typing_extensions.get_args(ann_type)
                 private_attr = next((v for v in metadata if isinstance(v, ModelPrivateAttr)), None)
@@ -694,6 +725,7 @@ def unpack_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | N
     return result
 
 
+@lru_cache(maxsize=None)
 def default_ignored_types() -> tuple[type[Any], ...]:
     from ..fields import ComputedFieldInfo
 

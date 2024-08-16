@@ -33,7 +33,7 @@ class Representation:
     # (this is not a docstring to avoid adding a docstring to classes which inherit from Representation)
 
     # we don't want to use a type annotation here as it can break get_type_hints
-    __slots__ = tuple()  # type: typing.Collection[str]
+    __slots__ = ()  # type: typing.Collection[str]
 
     def __repr_args__(self) -> ReprArgs:
         """Returns the attributes to show in __str__, __repr__, and __pretty__ this is generally overridden.

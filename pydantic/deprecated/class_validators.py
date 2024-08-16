@@ -119,7 +119,7 @@ def validator(
 
     if allow_reuse is True:  # pragma: no cover
         warn(_ALLOW_REUSE_WARNING_MESSAGE, DeprecationWarning)
-    fields = tuple((__field, *fields))
+    fields = __field, *fields
     if isinstance(fields[0], FunctionType):
         raise PydanticUserError(
             '`@validator` should be used with fields and keyword arguments, not bare. '
