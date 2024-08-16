@@ -139,22 +139,22 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     """Parent namespace of the model, used for automatic rebuilding of models."""
 
     __pydantic_root_model__: ClassVar[bool] = False
-    """Whether the model is a `RootModel`."""
+    """Whether the model is a [`RootModel`][pydantic.root_model.RootModel]."""
 
     __class_vars__: ClassVar[set[str]]
-    """The names of classvars defined on the model."""
+    """The names of the class variables defined on the model."""
 
     __private_attributes__: ClassVar[Dict[str, ModelPrivateAttr]]  # noqa: UP006
     """Metadata about the private attributes of the model."""
 
     __signature__: ClassVar[Signature]
-    """The signature for instantiating the model."""
+    """The synthesized `__init__` [`Signature`][inspect.Signature] of the model."""
 
     __pydantic_core_schema__: ClassVar[CoreSchema]
-    """The pydantic-core schema used to build the SchemaValidator and SchemaSerializer."""
+    """The core schema of the model."""
 
     __pydantic_custom_init__: ClassVar[bool]
-    """Whether the model has a custom `__init__` function."""
+    """Whether the model has a custom `__init__` method."""
 
     __pydantic_generic_metadata__: ClassVar[_generics.PydanticGenericMetadata]
     """Metadata for generic models; contains data used for a similar purpose to
@@ -164,20 +164,19 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     """The name of the post-init method for the model, if defined."""
 
     __pydantic_serializer__: ClassVar[SchemaSerializer]
-    """The pydantic-core SchemaSerializer used to dump instances of the model."""
+    """The `pydantic-core` `SchemaSerializer` used to dump instances of the model."""
 
     __pydantic_validator__: ClassVar[SchemaValidator | PluggableSchemaValidator]
-    """The pydantic-core SchemaValidator used to validate instances of the model."""
+    """The `pydantic-core` `SchemaValidator` used to validate instances of the model."""
 
     __pydantic_extra__: dict[str, Any] | None = _model_construction.NoInitField(init=False)
-    """An instance attribute with the values of extra fields from validation when
-    `model_config['extra'] == 'allow'`."""
+    """A dictionary containing extra values, if [`extra`][pydantic.config.ConfigDict.extra] is set to `'allow'`."""
 
     __pydantic_fields_set__: set[str] = _model_construction.NoInitField(init=False)
-    """An instance attribute with the names of fields explicitly set."""
+    """The names of fields explicitly set during instantiation."""
 
     __pydantic_private__: dict[str, Any] | None = _model_construction.NoInitField(init=False)
-    """Instance attribute with the values of private attributes set on the model instance."""
+    """Values of private attributes set on the model instance."""
 
     if not TYPE_CHECKING:
         # Prevent `BaseModel` from being instantiated directly

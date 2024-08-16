@@ -64,7 +64,7 @@ def NoInitField(
     *,
     init: Literal[False] = False,
 ) -> Any:
-    """Only for typing purpose. Used as default value of `__pydantic_fields_set__`,
+    """Only for typing purposes. Used as default value of `__pydantic_fields_set__`,
     `__pydantic_extra__`, `__pydantic_private__`, so they could be ignored when
     synthesizing the `__init__` signature.
     """
@@ -238,7 +238,7 @@ class ModelMetaclass(ABCMeta):
             super(cls, cls).__pydantic_init_subclass__(**kwargs)  # type: ignore[misc]
             return cls
         else:
-            # These are instance variables, but have been assigned value to trick type checker.
+            # These are instance variables, but have been assigned to `NoInitField` to trick the type checker.
             for instance_slot in '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__':
                 del namespace[instance_slot]
             namespace.get('__annotations__', {}).clear()
