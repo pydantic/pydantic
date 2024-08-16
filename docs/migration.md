@@ -535,10 +535,12 @@ Therefore, this snippet, while working in Pydantic V1, will result in a `Validat
 ```py
 from pydantic import BaseModel, constr
 
-class Foo(BaseModel):
-    bar: constr(strip_whitespace=True, to_upper=True, pattern=r'^[A-Z]+$')
 
-foo = Foo(bar='  hello  ')
+class Foo(BaseModel):
+    bar: constr(strip_whitespace=True, to_upper=True, pattern=r"^[A-Z]+$")
+
+
+foo = Foo(bar="  hello  ")
 print(foo)
 """
 1 validation error for Foo
@@ -556,16 +558,18 @@ from pydantic import BaseModel, StringConstraints
 from pydantic.functional_validators import AfterValidator
 from typing_extensions import Annotated
 
+
 class Foo(BaseModel):
     bar: Annotated[
         str,
-        AfterValidator(lambda s: s.strip().upper()), 
-        StringConstraints(pattern=r'^[A-Z]+$')
+        AfterValidator(lambda s: s.strip().upper()),
+        StringConstraints(pattern=r"^[A-Z]+$"),
     ]
 
-foo = Foo(bar='  hello  ')
+
+foo = Foo(bar="  hello  ")
 print(foo)
-#> bar='HELLO'
+# > bar='HELLO'
 ```
 
 `After` validators run after Pydantic's internal parsing, so we still benefit from the type validation.
