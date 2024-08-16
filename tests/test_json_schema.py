@@ -1668,7 +1668,7 @@ def test_external_ref():
     """https://github.com/pydantic/pydantic/issues/9783"""
 
     class Model(BaseModel):
-        json_schema: typing.Annotated[
+        json_schema: Annotated[
             dict,
             WithJsonSchema({'$ref': 'https://json-schema.org/draft/2020-12/schema'}),
         ]
