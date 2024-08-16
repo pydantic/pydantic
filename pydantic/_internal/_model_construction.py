@@ -10,7 +10,7 @@ import weakref
 from abc import ABCMeta
 from functools import lru_cache, partial
 from types import FunctionType
-from typing import Any, Callable, Generic, NoReturn
+from typing import Any, Callable, Generic, Literal, NoReturn
 
 import typing_extensions
 from pydantic_core import PydanticUndefined, SchemaSerializer
@@ -60,7 +60,17 @@ class _ModelNamespaceDict(dict):
         return super().__setitem__(k, v)
 
 
-@dataclass_transform(kw_only_default=True, field_specifiers=(PydanticModelField, PydanticModelPrivateAttr))
+def NoInitField(
+    *,
+    init: Literal[False] = False,
+) -> Any:
+    """Only for typing purposes. Used as default value of `__pydantic_fields_set__`,
+    `__pydantic_extra__`, `__pydantic_private__`, so they could be ignored when
+    synthesizing the `__init__` signature.
+    """
+
+
+@dataclass_transform(kw_only_default=True, field_specifiers=(PydanticModelField, PydanticModelPrivateAttr, NoInitField))
 class ModelMetaclass(ABCMeta):
     def __new__(
         mcs,
@@ -224,7 +234,10 @@ class ModelMetaclass(ABCMeta):
             super(cls, cls).__pydantic_init_subclass__(**kwargs)  # type: ignore[misc]
             return cls
         else:
-            # this is the BaseModel class itself being created, no logic required
+            # These are instance variables, but have been assigned to `NoInitField` to trick the type checker.
+            for instance_slot in '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__':
+                del namespace[instance_slot]
+            namespace.get('__annotations__', {}).clear()
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
     if not typing.TYPE_CHECKING:  # pragma: no branch

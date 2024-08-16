@@ -67,7 +67,6 @@ if TYPE_CHECKING:
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
     from .deprecated.parse import Protocol as DeprecatedParseProtocol
     from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
-    from .fields import PrivateAttr as _PrivateAttr
 else:
     # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
     # and https://youtrack.jetbrains.com/issue/PY-51428
@@ -84,12 +83,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     A base class for creating Pydantic models.
 
     Attributes:
-        __class_vars__: The names of classvars defined on the model.
+        __class_vars__: The names of the class variables defined on the model.
         __private_attributes__: Metadata about the private attributes of the model.
-        __signature__: The signature for instantiating the model.
+        __signature__: The synthesized `__init__` [`Signature`][inspect.Signature] of the model.
 
         __pydantic_complete__: Whether model building is completed, or if there are still undefined fields.
-        __pydantic_core_schema__: The pydantic-core schema used to build the SchemaValidator and SchemaSerializer.
+        __pydantic_core_schema__: The core schema of the model.
         __pydantic_custom_init__: Whether the model has a custom `__init__` function.
         __pydantic_decorators__: Metadata containing the decorators defined on the model.
             This replaces `Model.__validators__` and `Model.__root_validators__` from Pydantic V1.
@@ -97,70 +96,91 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             __args__, __origin__, __parameters__ in typing-module generics. May eventually be replaced by these.
         __pydantic_parent_namespace__: Parent namespace of the model, used for automatic rebuilding of models.
         __pydantic_post_init__: The name of the post-init method for the model, if defined.
-        __pydantic_root_model__: Whether the model is a `RootModel`.
-        __pydantic_serializer__: The pydantic-core SchemaSerializer used to dump instances of the model.
-        __pydantic_validator__: The pydantic-core SchemaValidator used to validate instances of the model.
+        __pydantic_root_model__: Whether the model is a [`RootModel`][pydantic.root_model.RootModel].
+        __pydantic_serializer__: The `pydantic-core` `SchemaSerializer` used to dump instances of the model.
+        __pydantic_validator__: The `pydantic-core` `SchemaValidator` used to validate instances of the model.
 
-        __pydantic_extra__: An instance attribute with the values of extra fields from validation when
-            `model_config['extra'] == 'allow'`.
-        __pydantic_fields_set__: An instance attribute with the names of fields explicitly set.
-        __pydantic_private__: Instance attribute with the values of private attributes set on the model instance.
+        __pydantic_extra__: A dictionary containing extra values, if [`extra`][pydantic.config.ConfigDict.extra]
+            is set to `'allow'`.
+        __pydantic_fields_set__: The names of fields explicitly set during instantiation.
+        __pydantic_private__: Values of private attributes set on the model instance.
     """
 
-    if TYPE_CHECKING:
-        # Here we provide annotations for the attributes of BaseModel.
-        # Many of these are populated by the metaclass, which is why this section is in a `TYPE_CHECKING` block.
-        # However, for the sake of easy review, we have included type annotations of all class and instance attributes
-        # of `BaseModel` here:
+    # Class attributes:
+    # `model_fields` and `__pydantic_decorators__` must be set for
+    # `GenerateSchema.model_schema` to work for a plain `BaseModel` annotation.
 
-        # Class attributes
-        model_config: ClassVar[ConfigDict]
-        """
-        Configuration for the model, should be a dictionary conforming to [`ConfigDict`][pydantic.config.ConfigDict].
-        """
+    model_config: ClassVar[ConfigDict] = ConfigDict()
+    """
+    Configuration for the model, should be a dictionary conforming to [`ConfigDict`][pydantic.config.ConfigDict].
+    """
 
-        model_fields: ClassVar[dict[str, FieldInfo]]
-        """
-        Metadata about the fields defined on the model,
-        mapping of field names to [`FieldInfo`][pydantic.fields.FieldInfo].
+    # Because `dict` is in the local namespace of the `BaseModel` class, we use `Dict` for annotations.
+    # TODO v3 fallback to `dict` when the deprecated `dict` method gets removed.
+    model_fields: ClassVar[Dict[str, FieldInfo]] = {}  # noqa: UP006
+    """
+    Metadata about the fields defined on the model,
+    mapping of field names to [`FieldInfo`][pydantic.fields.FieldInfo] objects.
 
-        This replaces `Model.__fields__` from Pydantic V1.
-        """
+    This replaces `Model.__fields__` from Pydantic V1.
+    """
 
-        model_computed_fields: ClassVar[dict[str, ComputedFieldInfo]]
-        """A dictionary of computed field names and their corresponding `ComputedFieldInfo` objects."""
+    model_computed_fields: ClassVar[Dict[str, ComputedFieldInfo]] = {}  # noqa: UP006
+    """A dictionary of computed field names and their corresponding `ComputedFieldInfo` objects."""
 
-        __class_vars__: ClassVar[set[str]]
-        __private_attributes__: ClassVar[dict[str, ModelPrivateAttr]]
-        __signature__: ClassVar[Signature]
+    __class_vars__: ClassVar[set[str]]
+    """The names of the class variables defined on the model."""
 
-        __pydantic_complete__: ClassVar[bool]
-        __pydantic_core_schema__: ClassVar[CoreSchema]
-        """The core schema of the model."""
+    __private_attributes__: ClassVar[Dict[str, ModelPrivateAttr]]  # noqa: UP006
+    """Metadata about the private attributes of the model."""
 
-        __pydantic_custom_init__: ClassVar[bool]
-        __pydantic_decorators__: ClassVar[_decorators.DecoratorInfos]
-        __pydantic_generic_metadata__: ClassVar[_generics.PydanticGenericMetadata]
-        __pydantic_parent_namespace__: ClassVar[dict[str, Any] | None]
-        __pydantic_post_init__: ClassVar[None | Literal['model_post_init']]
-        __pydantic_root_model__: ClassVar[bool]
-        __pydantic_serializer__: ClassVar[SchemaSerializer]
-        __pydantic_validator__: ClassVar[SchemaValidator | PluggableSchemaValidator]
+    __signature__: ClassVar[Signature]
+    """The synthesized `__init__` [`Signature`][inspect.Signature] of the model."""
 
-        # Instance attributes
-        __pydantic_extra__: dict[str, Any] | None = _PrivateAttr()
-        __pydantic_fields_set__: set[str] = _PrivateAttr()
-        __pydantic_private__: dict[str, Any] | None = _PrivateAttr()
+    __pydantic_complete__: ClassVar[bool] = False
+    """Whether model building is completed, or if there are still undefined fields."""
 
-    else:
-        # `model_fields` and `__pydantic_decorators__` must be set for
-        # pydantic._internal._generate_schema.GenerateSchema.model_schema to work for a plain BaseModel annotation
-        model_fields = {}
-        model_computed_fields = {}
+    __pydantic_core_schema__: ClassVar[CoreSchema]
+    """The core schema of the model."""
 
-        __pydantic_decorators__ = _decorators.DecoratorInfos()
-        __pydantic_parent_namespace__ = None
-        # Prevent `BaseModel` from being instantiated directly:
+    __pydantic_custom_init__: ClassVar[bool]
+    """Whether the model has a custom `__init__` method."""
+
+    __pydantic_decorators__: ClassVar[_decorators.DecoratorInfos] = _decorators.DecoratorInfos()
+    """Metadata containing the decorators defined on the model.
+    This replaces `Model.__validators__` and `Model.__root_validators__` from Pydantic V1."""
+
+    __pydantic_generic_metadata__: ClassVar[_generics.PydanticGenericMetadata]
+    """Metadata for generic models; contains data used for a similar purpose to
+    __args__, __origin__, __parameters__ in typing-module generics. May eventually be replaced by these."""
+
+    __pydantic_parent_namespace__: ClassVar[Dict[str, Any] | None] = None  # noqa: UP006
+    """Parent namespace of the model, used for automatic rebuilding of models."""
+
+    __pydantic_post_init__: ClassVar[None | Literal['model_post_init']]
+    """The name of the post-init method for the model, if defined."""
+
+    __pydantic_root_model__: ClassVar[bool] = False
+    """Whether the model is a [`RootModel`][pydantic.root_model.RootModel]."""
+
+    __pydantic_serializer__: ClassVar[SchemaSerializer]
+    """The `pydantic-core` `SchemaSerializer` used to dump instances of the model."""
+
+    __pydantic_validator__: ClassVar[SchemaValidator | PluggableSchemaValidator]
+    """The `pydantic-core` `SchemaValidator` used to validate instances of the model."""
+
+    __pydantic_extra__: dict[str, Any] | None = _model_construction.NoInitField(init=False)
+    """A dictionary containing extra values, if [`extra`][pydantic.config.ConfigDict.extra] is set to `'allow'`."""
+
+    __pydantic_fields_set__: set[str] = _model_construction.NoInitField(init=False)
+    """The names of fields explicitly set during instantiation."""
+
+    __pydantic_private__: dict[str, Any] | None = _model_construction.NoInitField(init=False)
+    """Values of private attributes set on the model instance."""
+
+    if not TYPE_CHECKING:
+        # Prevent `BaseModel` from being instantiated directly
+        # (defined in an `if not TYPE_CHECKING` block for clarity and to avoid type checking errors):
         __pydantic_core_schema__ = _mock_val_ser.MockCoreSchema(
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly',
             code='base-model-instantiated',
@@ -178,11 +198,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
 
-    model_config = ConfigDict()
-    __pydantic_complete__ = False
-    __pydantic_root_model__ = False
-
-    def __init__(self, /, **data: Any) -> None:  # type: ignore
+    def __init__(self, /, **data: Any) -> None:
         """Create a new model by parsing and validating input data from keyword arguments.
 
         Raises [`ValidationError`][pydantic_core.ValidationError] if the input data cannot be
