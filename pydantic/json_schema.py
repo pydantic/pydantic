@@ -2055,11 +2055,10 @@ class GenerateJsonSchema:
             if def_ref in self._core_defs_invalid_for_json_schema:
                 raise self._core_defs_invalid_for_json_schema[def_ref]
             return self.definitions.get(def_ref, None)
-        except KeyError as e:
+        except KeyError:
             if json_ref.startswith(('http://', 'https://')):
                 return None
-            else:
-                raise e
+            raise
 
     def encode_default(self, dft: Any) -> Any:
         """Encode a default value to a JSON-serializable value.
@@ -2174,9 +2173,9 @@ class GenerateJsonSchema:
                         if defs_ref in self._core_defs_invalid_for_json_schema:
                             raise self._core_defs_invalid_for_json_schema[defs_ref]
                         _add_json_refs(self.definitions[defs_ref])
-                    except KeyError as e:
+                    except KeyError:
                         if not json_ref.startswith(('http://', 'https://')):
-                            raise e
+                            raise
 
                 for v in schema.values():
                     _add_json_refs(v)
@@ -2239,9 +2238,9 @@ class GenerateJsonSchema:
                     continue
                 visited_defs_refs.add(next_defs_ref)
                 unvisited_json_refs.update(_get_all_json_refs(self.definitions[next_defs_ref]))
-            except KeyError as e:
+            except KeyError:
                 if not next_json_ref.startswith(('http://', 'https://')):
-                    raise e
+                    raise
 
         self.definitions = {k: v for k, v in self.definitions.items() if k in visited_defs_refs}
 
