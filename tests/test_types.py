@@ -1,8 +1,10 @@
 import collections
+import ipaddress
 import itertools
 import json
 import math
 import os
+import platform
 import re
 import sys
 import typing
@@ -39,7 +41,12 @@ import annotated_types
 import dirty_equals
 import pytest
 from dirty_equals import HasRepr, IsFloatNan, IsOneOf, IsStr
-from pydantic_core import CoreSchema, PydanticCustomError, SchemaError, core_schema
+from pydantic_core import (
+    CoreSchema,
+    PydanticCustomError,
+    SchemaError,
+    core_schema,
+)
 from typing_extensions import Annotated, Literal, NotRequired, TypedDict, get_args
 
 from pydantic import (
@@ -1032,6 +1039,17 @@ def test_string_import_errors(import_string, errors):
     with pytest.raises(ValidationError) as exc_info:
         TypeAdapter(ImportString).validate_python(import_string)
     assert exc_info.value.errors() == errors
+
+
+@pytest.mark.xfail(
+    reason='This fails with pytest bc of the weirdness associated with importing modules in a test, but works in normal usage'
+)
+def test_import_string_sys_stdout() -> None:
+    class ImportThings(BaseModel):
+        obj: ImportString
+
+    import_things = ImportThings(obj='sys.stdout')
+    assert import_things.model_dump_json() == '{"obj":"sys.stdout"}'
 
 
 def test_decimal():
@@ -6732,6 +6750,102 @@ def test_strict_enum_with_use_enum_values() -> None:
         Foo(foo='1')
 
 
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy',
+    reason='PyPy has a bug in complex string parsing. A fix is implemented but not yet released.',
+)
+def test_complex_field():
+    class Model(BaseModel):
+        number: complex
+
+    m = Model(number=complex(1, 2))
+    assert repr(m) == 'Model(number=(1+2j))'
+    assert m.model_dump() == {'number': complex(1, 2)}
+    assert m.model_dump_json() == '{"number":"1+2j"}'
+
+    # Complex numbers presented as strings are also acceptable
+    m = Model(number='1+2j')
+    assert repr(m) == 'Model(number=(1+2j))'
+    assert m.model_dump() == {'number': complex(1, 2)}
+    assert m.model_dump_json() == '{"number":"1+2j"}'
+
+    # The part that is 0 can be omitted
+    m = Model(number='1')
+    assert repr(m) == 'Model(number=(1+0j))'
+    assert m.model_dump() == {'number': complex(1, 0)}
+    assert m.model_dump_json() == '{"number":"1+0j"}'
+
+    m = Model(number='1j')
+    assert repr(m) == 'Model(number=1j)'
+    assert m.model_dump() == {'number': complex(0, 1)}
+    assert m.model_dump_json() == '{"number":"1j"}'
+
+    m = Model(number='0')
+    assert repr(m) == 'Model(number=0j)'
+    assert m.model_dump() == {'number': complex(0, 0)}
+    assert m.model_dump_json() == '{"number":"0j"}'
+
+    m = Model(number='infj')
+    assert repr(m) == 'Model(number=infj)'
+    assert m.model_dump() == {'number': complex(0, float('inf'))}
+    assert m.model_dump_json() == '{"number":"infj"}'
+
+    m = Model(number='-nanj')
+    assert repr(m) == 'Model(number=nanj)'
+    d = m.model_dump()
+    assert d['number'].real == 0
+    assert math.isnan(d['number'].imag)
+    assert m.model_dump_json() == '{"number":"NaNj"}'
+
+    # strings with brackets and space characters are allowed as long as
+    # they follow the rule
+    m = Model(number='\t( -1.23+4.5J )\n')
+    assert repr(m) == 'Model(number=(-1.23+4.5j))'
+    assert m.model_dump() == {'number': complex(-1.23, 4.5)}
+    assert m.model_dump_json() == '{"number":"-1.23+4.5j"}'
+
+    # int and float are also accepted (with imaginary part == 0)
+    m = Model(number=2)
+    assert repr(m) == 'Model(number=(2+0j))'
+    assert m.model_dump() == {'number': complex(2, 0)}
+    assert m.model_dump_json() == '{"number":"2+0j"}'
+
+    m = Model(number=1.5)
+    assert repr(m) == 'Model(number=(1.5+0j))'
+    assert m.model_dump() == {'number': complex(1.5, 0)}
+    assert m.model_dump_json() == '{"number":"1.5+0j"}'
+
+    # Empty strings are not allowed
+    with pytest.raises(ValidationError):
+        Model(number='')
+    with pytest.raises(ValidationError):
+        Model(number='foo')
+    # Bracket missing
+    with pytest.raises(ValidationError):
+        Model(number='\t( -1.23+4.5J \n')
+    # Space between numbers
+    with pytest.raises(ValidationError):
+        Model(number='\t( -1.23 +4.5J \n')
+
+
+def test_strict_complex_field():
+    class Model(BaseModel):
+        # Only complex objects are accepted
+        number: Annotated[complex, Field(strict=True)]
+
+    m = Model(number=complex(1, 2))
+    assert repr(m) == 'Model(number=(1+2j))'
+    assert m.model_dump() == {'number': complex(1, 2)}
+    assert m.model_dump_json() == '{"number":"1+2j"}'
+
+    with pytest.raises(ValidationError):
+        m = Model(number='1+2j')
+    with pytest.raises(ValidationError):
+        m = Model(number=1.0)
+    with pytest.raises(ValidationError):
+        m = Model(number=5)
+
+
 def test_python_re_respects_flags() -> None:
     class Model(BaseModel):
         a: Annotated[str, StringConstraints(pattern=re.compile(r'[A-Z]+', re.IGNORECASE))]
@@ -6811,3 +6925,20 @@ def test_mutable_mapping() -> None:
     adapter = TypeAdapter(collections.abc.MutableMapping, config=ConfigDict(arbitrary_types_allowed=True, strict=True))
 
     assert isinstance(adapter.validate_python(collections.UserDict()), collections.abc.MutableMapping)
+
+
+def test_ser_ip_with_union() -> None:
+    bool_first = TypeAdapter(Union[bool, ipaddress.IPv4Address])
+    assert bool_first.dump_python(True, mode='json') is True
+    assert bool_first.dump_json(True) == b'true'
+
+    ip_first = TypeAdapter(Union[ipaddress.IPv4Address, bool])
+    assert ip_first.dump_python(True, mode='json') is True
+    assert ip_first.dump_json(True) == b'true'
+
+
+def test_ser_ip_with_unexpected_value() -> None:
+    ta = TypeAdapter(ipaddress.IPv4Address)
+
+    with pytest.raises(UserWarning, match='serialized value may not be as expected.'):
+        assert ta.dump_python(123)

@@ -490,8 +490,20 @@ class GenerateJsonSchema:
             # Generate the core-schema-type-specific bits of the schema generation:
             json_schema: JsonSchemaValue | None = None
             if self.mode == 'serialization' and 'serialization' in schema_or_field:
+                # In this case, we skip the JSON Schema generation of the schema
+                # and use the `'serialization'` schema instead (canonical example:
+                # `Annotated[int, PlainSerializer(str)]`).
                 ser_schema = schema_or_field['serialization']  # type: ignore
                 json_schema = self.ser_schema(ser_schema)
+
+                # It might be that the 'serialization'` is skipped depending on `when_used`.
+                # This is only relevant for `nullable` schemas though, so we special case here.
+                if (
+                    json_schema is not None
+                    and ser_schema.get('when_used') in ('unless-none', 'json-unless-none')
+                    and schema_or_field['type'] == 'nullable'
+                ):
+                    json_schema = self.get_flattened_anyof([{'type': 'null'}, json_schema])
             if json_schema is None:
                 if _core_utils.is_core_schema(schema_or_field) or _core_utils.is_core_schema_field(schema_or_field):
                     generate_for_schema_type = self._schema_type_to_method[schema_or_field['type']]
@@ -1043,17 +1055,30 @@ class GenerateJsonSchema:
         #     return json_schema
 
         # we reflect the application of custom plain, no-info serializers to defaults for
-        # json schemas viewed in serialization mode
+        # JSON Schemas viewed in serialization mode:
         # TODO: improvements along with https://github.com/pydantic/pydantic/issues/8208
-        # TODO: improve type safety here
-        if self.mode == 'serialization':
-            if (
-                (ser_schema := schema['schema'].get('serialization', {}))
-                and (ser_func := ser_schema.get('function'))
-                and ser_schema.get('type') == 'function-plain'  # type: ignore
-                and ser_schema.get('info_arg') is False  # type: ignore
-            ):
+        if (
+            self.mode == 'serialization'
+            and (ser_schema := schema['schema'].get('serialization'))
+            and (ser_func := ser_schema.get('function'))
+            and ser_schema.get('type') == 'function-plain'
+            and not ser_schema.get('info_arg')
+            and not (default is None and ser_schema.get('when_used') in ('unless-none', 'json-unless-none'))
+        ):
+            try:
                 default = ser_func(default)  # type: ignore
+            except Exception:
+                # It might be that the provided default needs to be validated (read: parsed) first
+                # (assuming `validate_default` is enabled). However, we can't perform
+                # such validation during JSON Schema generation so we don't support
+                # this pattern for now.
+                # (One example is when using `foo: ByteSize = '1MB'`, which validates and
+                # serializes as an int. In this case, `ser_func` is `int` and `int('1MB')` fails).
+                self.emit_warning(
+                    'non-serializable-default',
+                    f'Unable to serialize value {default!r} with the plain serializer; excluding default from JSON schema',
+                )
+                return json_schema
 
         try:
             encoded_default = self.encode_default(default)
@@ -1845,6 +1870,22 @@ class GenerateJsonSchema:
             # ModelSerSchema
             return self.generate_inner(schema['schema'])
         return None
+
+    def complex_schema(self, schema: core_schema.ComplexSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a complex number.
+
+        JSON has no standard way to represent complex numbers. Complex number is not a numeric
+        type. Here we represent complex number as strings following the rule defined by Python.
+        For instance, '1+2j' is an accepted complex string. Details can be found at
+        https://docs.python.org/3/library/functions.html#complex
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        return {'type': 'string'}
 
     # ### Utility methods
 

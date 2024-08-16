@@ -198,6 +198,47 @@ except ValidationError as exc:
     #> 'callable_type'
 ```
 
+## `complex_str_parsing`
+
+This error is raised when the input value is a string but cannot be parsed as a complex number because
+it does not follow the [rule](https://docs.python.org/3/library/functions.html#complex) in Python:
+
+```py
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    num: complex
+
+
+try:
+    # Complex numbers in json are expected to be valid complex strings.
+    # This value `abc` is not a valid complex string.
+    Model.model_validate_json('{"num": "abc"}')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'complex_str_parsing'
+```
+
+## `complex_type`
+
+This error is raised when the input value cannot be interpreted as a complex number:
+
+```py
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    num: complex
+
+
+try:
+    Model(num=False)
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'complex_type'
+```
+
 ## `dataclass_exact_type`
 
 This error is raised when validating a dataclass with `strict=True` and the input is not an instance of the dataclass:
