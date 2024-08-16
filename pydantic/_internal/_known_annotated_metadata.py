@@ -246,6 +246,11 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                 try:
                     x = handler(value)
                 except ValidationError as ve:
+                    # if the error is about the type, it's likely that the constraint is incompatible the type of the field
+                    # for example, the following invalid schema wouldn't be caught during schema build, but rather at this point
+                    # with a cryptic 'string_type' error coming from the string validator,
+                    # that we'd rather express as a constraint incompatibility error (TypeError)
+                    # Annotated[list[int], Field(pattern='abc')]
                     if 'type' in ve.errors()[0]['type']:
                         raise TypeError(
                             f"Unable to apply constraint '{constraint}' to supplied value {value} for schema of type '{schema_type}'"  # noqa: B023
