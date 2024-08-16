@@ -61,9 +61,7 @@ class _ModelNamespaceDict(dict):
 
 
 def NoInitField(
-    default: Any = PydanticUndefined,
     *,
-    default_factory: typing.Callable[[], Any] | None = None,
     init: Literal[False] = False,
 ) -> Any:
     """Only for typing purpose. Used as default value of `__pydantic_fields_set__`,
