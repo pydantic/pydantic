@@ -464,7 +464,6 @@ def test_model_serializer_wrap_info():
     assert m.model_dump_json(exclude={'a'}) == '{"b":"boom","info":"mode=json exclude={\'a\'}"}'
 
 
-@pytest.mark.xfail(reason='requires updated pydantic core')
 def test_model_serializer_plain_json_return_type():
     class MyModel(BaseModel):
         a: int
@@ -1248,17 +1247,16 @@ def smart_union_serialization() -> None:
     assert type(json.loads(int_then_float.model_dump_json())['value']) is int
 
 
-@pytest.mark.xfail(reason='Waiting for union serialization fixes via https://github.com/pydantic/pydantic/issues/9688')
 def test_serialize_with_custom_ser() -> None:
     class Item(BaseModel):
         id: int
 
         @model_serializer
-        def dump(self) -> dict[str, Any]:
+        def dump(self) -> Dict[str, Any]:
             return {'id': self.id}
 
     class ItemContainer(BaseModel):
-        item_or_items: Item | list[Item]
+        item_or_items: Union[Item, List[Item]]
 
     items = [Item(id=i) for i in range(5)]
     assert (

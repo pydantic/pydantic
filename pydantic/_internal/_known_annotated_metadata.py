@@ -50,6 +50,7 @@ TIMEDELTA_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
 TIME_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
 LAX_OR_STRICT_CONSTRAINTS = STRICT
 ENUM_CONSTRAINTS = STRICT
+COMPLEX_CONSTRAINTS = STRICT
 
 UNION_CONSTRAINTS = {'union_mode'}
 URL_CONSTRAINTS = {
@@ -87,6 +88,7 @@ constraint_schema_pairings: list[tuple[set[str], tuple[str, ...]]] = [
     (LAX_OR_STRICT_CONSTRAINTS, ('lax-or-strict',)),
     (ENUM_CONSTRAINTS, ('enum',)),
     (DECIMAL_CONSTRAINTS, ('decimal',)),
+    (COMPLEX_CONSTRAINTS, ('complex',)),
 ]
 
 for constraints, schemas in constraint_schema_pairings:

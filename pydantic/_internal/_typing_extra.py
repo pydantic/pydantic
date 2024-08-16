@@ -167,9 +167,22 @@ def is_finalvar(ann_type: Any) -> bool:
     return _check_finalvar(ann_type) or _check_finalvar(get_origin(ann_type))
 
 
+_DEFAULT_GLOBALS = {
+    '__name__',
+    '__doc__',
+    '__package__',
+    '__loader__',
+    '__spec__',
+    '__annotations__',
+    '__builtins__',
+    '__file__',
+    '__cached__',
+}
+
+
 def _remove_default_globals_from_ns(namespace: dict[str, Any]) -> dict[str, Any]:
     """Remove default globals like __name__, __doc__, etc that aren't needed for type evaluation."""
-    return {k: v for k, v in namespace.items() if not k.startswith(('__', '@'))}
+    return {k: v for k, v in namespace.items() if k not in _DEFAULT_GLOBALS}
 
 
 def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
@@ -207,17 +220,13 @@ def add_module_globals(obj: Any, globalns: dict[str, Any] | None = None) -> dict
             module_globalns = sys.modules[module_name].__dict__
         except KeyError:
             # happens occasionally, see https://github.com/pydantic/pydantic/issues/2363
-            pass
+            ns = {}
         else:
-            if globalns:
-                return {**module_globalns, **globalns}
-            else:
-                # copy module globals to make sure it can't be updated later
-                return module_globalns.copy()
+            ns = {**module_globalns, **globalns} if globalns else module_globalns.copy()
+    else:
+        ns = globalns or {}
 
-    if globalns:
-        return _remove_default_globals_from_ns(globalns)
-    return {}
+    return _remove_default_globals_from_ns(ns)
 
 
 def get_cls_types_namespace(cls: type[Any], parent_namespace: dict[str, Any] | None = None) -> dict[str, Any]:
