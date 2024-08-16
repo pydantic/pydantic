@@ -1664,6 +1664,23 @@ def test_schema_ref_template_key_error():
         models_json_schema([(Bar, 'validation'), (Baz, 'validation')], ref_template='/schemas/{bad_name}.json#/')
 
 
+def test_external_ref():
+    """https://github.com/pydantic/pydantic/issues/9783"""
+
+    class Model(BaseModel):
+        json_schema: Annotated[
+            dict,
+            WithJsonSchema({'$ref': 'https://json-schema.org/draft/2020-12/schema'}),
+        ]
+
+    assert Model.model_json_schema() == {
+        'properties': {'json_schema': {'$ref': 'https://json-schema.org/draft/2020-12/schema', 'title': 'Json Schema'}},
+        'required': ['json_schema'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 def test_schema_no_definitions():
     keys_map, model_schema = models_json_schema([], title='Schema without definitions')
     assert keys_map == {}
