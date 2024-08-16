@@ -3,7 +3,6 @@
 from __future__ import annotations as _annotations
 
 import builtins
-import inspect
 import operator
 import sys
 import typing
@@ -441,9 +440,11 @@ def inspect_namespace(  # noqa C901
             if isinstance(ann_type, str):
                 # Walking up the frames to get the module namespace where the model is defined
                 # (as the model class wasn't created yet, we unfortunately can't use `cls.__module__`):
-                module = inspect.getmodule(sys._getframe(2))
-                if module is not None:
-                    ann_type = eval_type_backport(ForwardRef(ann_type), globalns=module.__dict__)
+                frame = sys._getframe(2)
+                if frame is not None:
+                    ann_type = eval_type_backport(
+                        ForwardRef(ann_type), globalns=frame.f_globals, localns=frame.f_locals
+                    )
             if is_annotated(ann_type):
                 _, *metadata = typing_extensions.get_args(ann_type)
                 private_attr = next((v for v in metadata if isinstance(v, ModelPrivateAttr)), None)
