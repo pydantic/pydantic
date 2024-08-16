@@ -348,7 +348,7 @@ jobs:
           pattern: coverage-*
           path: coverage
 
-      - name: List all files
+      - name: List coverage files
         run: |
           echo "Current directory:"
           ls -la
@@ -361,7 +361,7 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MERGE_COVERAGE_FILES: true
-          COVERAGE_PATH: coverage
+          COVERAGE_PATH: coverage/
 
       - name: Debug coverage output
         run: |
