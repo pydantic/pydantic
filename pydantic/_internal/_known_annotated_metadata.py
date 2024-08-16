@@ -240,7 +240,9 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
         #  else, apply a function after validator to the schema to enforce the corresponding constraint
         if constraint in chain_schema_constraints:
 
-            def _apply_constraint_with_incompatibility_info(value: Any, handler: cs.ValidatorFunctionWrapHandler):
+            def _apply_constraint_with_incompatibility_info(
+                value: Any, handler: cs.ValidatorFunctionWrapHandler
+            ) -> Any:
                 try:
                     x = handler(value)
                 except ValidationError as ve:

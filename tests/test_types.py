@@ -1802,14 +1802,7 @@ def test_enum_with_no_cases() -> None:
 @pytest.mark.parametrize(
     'kwargs,type_,a',
     [
-        pytest.param(
-            {'pattern': '^foo$'},
-            int,
-            1,
-            marks=pytest.mark.xfail(
-                reason='int cannot be used with pattern but we do not currently validate that at schema build time'
-            ),
-        ),
+        ({'pattern': '^foo$'}, int, 1),
         ({'gt': 0}, conlist(int, min_length=4), [1, 2, 3, 4, 5]),
         ({'gt': 0}, conset(int, min_length=4), {1, 2, 3, 4, 5}),
         ({'gt': 0}, confrozenset(int, min_length=4), frozenset({1, 2, 3, 4, 5})),
