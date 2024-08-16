@@ -318,16 +318,10 @@ jobs:
       - run: coverage report
       - run: coverage html --show-contexts --title "pydantic coverage for ${{ github.sha }}"
 
-      - name: Store coverage data
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-data
-          path: .coverage
-
       - name: Store coverage html
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-html
+          name: html-coverage
           path: htmlcov
 
   coverage-pr-comment:
