@@ -137,7 +137,7 @@ class WrapFieldValidator(BaseModel):
     def valid_no_info(cls, value: Any, handler: ValidatorFunctionWrapHandler) -> Any:
         """TODO this should be valid."""
 
-    @field_validator('foo', mode='wrap')
+    @field_validator('foo', mode='wrap', input_type=int)
     @classmethod
     def valid_with_info(cls, value: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo) -> Any: ...
 
