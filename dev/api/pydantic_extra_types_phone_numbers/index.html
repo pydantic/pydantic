@@ -2319,6 +2319,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.phone_numbers.PhoneNumberValidator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PhoneNumberValidator
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3470,6 +3481,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.phone_numbers.PhoneNumberValidator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PhoneNumberValidator
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3680,6 +3702,129 @@ is a Python port of Google's <a href="https://github.com/google/libphonenumber/"
 
 </div>
 
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_extra_types.phone_numbers.PhoneNumberValidator" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">PhoneNumberValidator</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+<a href="#pydantic_extra_types.phone_numbers.PhoneNumberValidator" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">PhoneNumberValidator</span><span class="p">(</span>
+    <span class="n">default_region</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">number_format</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;RFC3966&quot;</span><span class="p">,</span>
+    <span class="n">supported_regions</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Sequence" href="https://docs.python.org/3/library/typing.html#typing.Sequence">Sequence</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+      <p>A pydantic before validator for phone numbers using the <a href="https://pypi.org/project/phonenumbers/">phonenumbers</a> package,
+a Python port of Google's <a href="https://github.com/google/libphonenumber/">libphonenumber</a>.</p>
+<p>Intended to be used to create custom pydantic data types using the <code>typing.Annotated</code> type construct.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>default_region</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The default region code to use when parsing phone numbers without an international prefix.
+If <code>None</code> (default), the region must be supplied in the phone number as an international prefix.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>number_format</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The format of the phone number to return. See <code>phonenumbers.PhoneNumberFormat</code> for valid values.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;RFC3966&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>supported_regions</code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The supported regions. If empty, all regions are supported (default).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+      <p>Returns:
+    str: The formatted phone number.</p>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <p>MyNumberType = Annotated[
+    Union[str, phonenumbers.PhoneNumber],
+    PhoneNumberValidator()
+]
+USNumberType = Annotated[
+    Union[str, phonenumbers.PhoneNumber],
+    PhoneNumberValidator(supported_regions=['US'], default_region='US')
+]</p>
+<p>class SomeModel(BaseModel):
+    phone_number: MyNumberType
+    us_number: USNumberType</p>
+</details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
 
 
 
@@ -3745,7 +3890,7 @@ is a Python port of Google's <a href="https://github.com/google/libphonenumber/"
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.9.0a1", "pydantic-core==2.22.0", "pydantic-extra-types==2.9.0"]
+    window.mkdocs_run_deps = ["pydantic==2.9.0a1", "pydantic-core==2.23.0", "pydantic-extra-types==2.9.0"]
     </script>
 
               </article>

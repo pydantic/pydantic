@@ -10770,7 +10770,7 @@ this method.</p>
     <span class="p">]</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;serialization&#39;</span><span class="p">:</span>
         <span class="n">named_required_fields</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name_required_computed_fields</span><span class="p">(</span><span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;computed_fields&#39;</span><span class="p">,</span> <span class="p">[])))</span>
-    <span class="bp">cls</span> <span class="o">=</span> <span class="n">_get_typed_dict_cls</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+    <span class="bp">cls</span> <span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;cls&#39;</span><span class="p">)</span>
     <span class="n">config</span> <span class="o">=</span> <span class="n">_get_typed_dict_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
     <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config_wrapper_stack</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
         <span class="n">json_schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_named_required_fields_schema</span><span class="p">(</span><span class="n">named_required_fields</span><span class="p">)</span>
@@ -15768,7 +15768,7 @@ If <code>False</code>, fields will be serialized according to their attribute na
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.9.0a1", "pydantic-core==2.22.0", "pydantic-extra-types==2.9.0"]
+    window.mkdocs_run_deps = ["pydantic==2.9.0a1", "pydantic-core==2.23.0", "pydantic-extra-types==2.9.0"]
     </script>
 
               </article>
