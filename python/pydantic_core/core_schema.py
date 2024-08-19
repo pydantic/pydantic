@@ -2818,6 +2818,7 @@ def typed_dict_field(
 class TypedDictSchema(TypedDict, total=False):
     type: Required[Literal['typed-dict']]
     fields: Required[Dict[str, TypedDictField]]
+    cls: Type[TypedDict]
     computed_fields: List[ComputedField]
     strict: bool
     extras_schema: CoreSchema
@@ -2834,6 +2835,7 @@ class TypedDictSchema(TypedDict, total=False):
 def typed_dict_schema(
     fields: Dict[str, TypedDictField],
     *,
+    cls: Type[TypedDict] | None = None,
     computed_fields: list[ComputedField] | None = None,
     strict: bool | None = None,
     extras_schema: CoreSchema | None = None,
@@ -2849,10 +2851,15 @@ def typed_dict_schema(
     Returns a schema that matches a typed dict, e.g.:
 
     ```py
+    from typing_extensions import TypedDict
+
     from pydantic_core import SchemaValidator, core_schema
 
+    class MyTypedDict(TypedDict):
+        a: str
+
     wrapper_schema = core_schema.typed_dict_schema(
-        {'a': core_schema.typed_dict_field(core_schema.str_schema())}
+        {'a': core_schema.typed_dict_field(core_schema.str_schema())}, cls=MyTypedDict
     )
     v = SchemaValidator(wrapper_schema)
     assert v.validate_python({'a': 'hello'}) == {'a': 'hello'}
@@ -2860,6 +2867,7 @@ def typed_dict_schema(
 
     Args:
         fields: The fields to use for the typed dict
+        cls: The class to use for the typed dict
         computed_fields: Computed fields to use when serializing the model, only applies when directly inside a model
         strict: Whether the typed dict is strict
         extras_schema: The extra validator to use for the typed dict
@@ -2873,6 +2881,7 @@ def typed_dict_schema(
     return _dict_not_none(
         type='typed-dict',
         fields=fields,
+        cls=cls,
         computed_fields=computed_fields,
         strict=strict,
         extras_schema=extras_schema,
