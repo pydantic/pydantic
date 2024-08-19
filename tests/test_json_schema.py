@@ -2311,7 +2311,7 @@ def test_literal_schema():
             'b': {'const': 'a', 'enum': ['a'], 'title': 'B', 'type': 'string'},
             'c': {'enum': ['a', 1], 'title': 'C'},
             'd': {'enum': ['a', 'b', 1, 2], 'title': 'D'},
-            'e': {'const': 1.0, 'enum': [1.0], 'title': 'E', 'type': 'numeric'},
+            'e': {'const': 1.0, 'enum': [1.0], 'title': 'E', 'type': 'number'},
             'f': {'const': ['a', 1], 'enum': [['a', 1]], 'title': 'F', 'type': 'array'},
         },
         'required': ['a', 'b', 'c', 'd', 'e', 'f'],
@@ -2366,7 +2366,7 @@ def test_literal_types() -> None:
     # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
         '$defs': {
-            'FloatEnum': {'enum': [123.0, 123.1], 'title': 'FloatEnum', 'type': 'numeric'},
+            'FloatEnum': {'enum': [123.0, 123.1], 'title': 'FloatEnum', 'type': 'number'},
             'ListEnum': {'enum': [[123], [456]], 'title': 'ListEnum', 'type': 'array'},
         },
         'properties': {
