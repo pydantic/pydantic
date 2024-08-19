@@ -48,6 +48,7 @@ from pydantic import (
     ImportString,
     InstanceOf,
     PlainSerializer,
+    PlainValidator,
     PydanticDeprecatedSince20,
     PydanticUserError,
     RootModel,
@@ -6383,3 +6384,19 @@ def test_ta_and_bm_same_json_schema() -> None:
 def test_min_and_max_in_schema() -> None:
     TSeq = TypeAdapter(Annotated[Sequence[int], Field(min_length=2, max_length=5)])
     assert TSeq.json_schema() == {'items': {'type': 'integer'}, 'maxItems': 5, 'minItems': 2, 'type': 'array'}
+
+
+def test_plain_field_validator_serialization() -> None:
+    """`PlainValidator` internally creates a wrap ser. schema. This tests that we can
+    still generate a JSON Schema in `'serialization'` mode.
+    """
+
+    class Foo(BaseModel):
+        a: Annotated[int, PlainValidator(lambda x: x)]
+
+    assert Foo.model_json_schema(mode='serialization') == {
+        'properties': {'a': {'title': 'A', 'type': 'integer'}},
+        'required': ['a'],
+        'title': 'Foo',
+        'type': 'object',
+    }

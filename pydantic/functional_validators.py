@@ -162,7 +162,11 @@ class PlainValidator:
 
         try:
             schema = handler(source_type)
-            serialization = core_schema.wrap_serializer_function_ser_schema(function=lambda v, h: h(v), schema=schema)
+            serialization = core_schema.wrap_serializer_function_ser_schema(
+                function=lambda v, h: h(v),
+                schema=schema,
+                return_schema=schema,
+            )
         except PydanticSchemaGenerationError:
             serialization = None
 
