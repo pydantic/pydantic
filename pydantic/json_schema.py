@@ -2452,7 +2452,8 @@ class Examples:
             if isinstance(self.examples, list):
                 warnings.warn(
                     'Updating existing JSON Schema examples of type dict with examples of type list. '
-                    'Only the existing examples values will be retained.',
+                    'Only the existing examples values will be retained. Note that dict support for '
+                    'examples is deprecated and will be removed in v3.0.',
                     UserWarning,
                 )
                 json_schema['examples'] = to_jsonable_python(
@@ -2466,7 +2467,8 @@ class Examples:
             elif isinstance(self.examples, dict):
                 warnings.warn(
                     'Updating existing JSON Schema examples of type list with examples of type dict. '
-                    'Only the examples values will be retained.',
+                    'Only the examples values will be retained. Note that dict support for '
+                    'examples is deprecated and will be removed in v3.0.',
                     UserWarning,
                 )
                 json_schema['examples'] = to_jsonable_python(
