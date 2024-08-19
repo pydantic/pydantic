@@ -13,8 +13,10 @@ from typing import Any, Optional
 
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
+from jsonschema import Draft202012Validator, SchemaError
 
 from pydantic import GenerateSchema
+from pydantic.json_schema import GenerateJsonSchema
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -127,7 +129,7 @@ class CallCounter:
 
 
 @pytest.fixture
-def generate_schema_calls(monkeypatch) -> CallCounter:
+def generate_schema_calls(monkeypatch: pytest.MonkeyPatch) -> CallCounter:
     orig_generate_schema = GenerateSchema.generate_schema
     counter = CallCounter()
     depth = 0  # generate_schema can be called recursively
@@ -143,3 +145,20 @@ def generate_schema_calls(monkeypatch) -> CallCounter:
 
     monkeypatch.setattr(GenerateSchema, 'generate_schema', generate_schema_call_counter)
     return counter
+
+
+@pytest.fixture(scope='function', autouse=True)
+def validate_json_schemas(monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest) -> None:
+    orig_generate = GenerateJsonSchema.generate
+
+    def generate(*args: Any, **kwargs: Any) -> Any:
+        json_schema = orig_generate(*args, **kwargs)
+        if not request.node.get_closest_marker('skip_json_schema_validation'):
+            try:
+                Draft202012Validator.check_schema(json_schema)
+            except SchemaError:
+                pytest.fail('Failed to validate the JSON Schema against the Draft 2020-12 spec')
+
+        return json_schema
+
+    monkeypatch.setattr(GenerateJsonSchema, 'generate', generate)
