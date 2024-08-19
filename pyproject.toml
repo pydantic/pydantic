@@ -50,7 +50,7 @@ dependencies = [
     'typing-extensions>=4.6.1; python_version < "3.13"',
     'typing-extensions>=4.12.2; python_version >= "3.13"',
     'annotated-types>=0.4.0',
-    "pydantic-core==2.22.0",
+    "pydantic-core==2.23.0",
     # See: https://docs.python.org/3/library/zoneinfo.html#data-sources
     'tzdata; python_version >= "3.9"',
 ]

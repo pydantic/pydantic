@@ -1,7 +1,7 @@
 from __future__ import annotations as _annotations
 
 import typing
-from typing import Any
+from typing import Any, cast
 
 import typing_extensions
 
@@ -30,8 +30,6 @@ class CoreMetadata(typing_extensions.TypedDict, total=False):
     # prefer positional over keyword arguments for an 'arguments' schema.
     pydantic_js_prefer_positional_arguments: bool | None
 
-    pydantic_typed_dict_cls: type[Any] | None  # TODO: Consider moving this into the pydantic-core TypedDictSchema
-
 
 class CoreMetadataHandler:
     """Because the metadata field in pydantic_core is of type `Any`, we can't assume much about its contents.
@@ -47,7 +45,7 @@ class CoreMetadataHandler:
 
         metadata = schema.get('metadata')
         if metadata is None:
-            schema['metadata'] = CoreMetadata()
+            schema['metadata'] = CoreMetadata()  # type: ignore
         elif not isinstance(metadata, dict):
             raise TypeError(f'CoreSchema metadata should be a dict; got {metadata!r}.')
 
@@ -58,10 +56,10 @@ class CoreMetadataHandler:
         """
         metadata = self._schema.get('metadata')
         if metadata is None:
-            self._schema['metadata'] = metadata = CoreMetadata()
+            self._schema['metadata'] = metadata = CoreMetadata()  # type: ignore
         if not isinstance(metadata, dict):
             raise TypeError(f'CoreSchema metadata should be a dict; got {metadata!r}.')
-        return metadata
+        return cast(CoreMetadata, metadata)
 
 
 def build_metadata_dict(
@@ -69,7 +67,6 @@ def build_metadata_dict(
     js_functions: list[GetJsonSchemaFunction] | None = None,
     js_annotation_functions: list[GetJsonSchemaFunction] | None = None,
     js_prefer_positional_arguments: bool | None = None,
-    typed_dict_cls: type[Any] | None = None,
     initial_metadata: Any | None = None,
 ) -> Any:
     """Builds a dict to use as the metadata field of a CoreSchema object in a manner that is consistent
@@ -82,7 +79,6 @@ def build_metadata_dict(
         pydantic_js_functions=js_functions or [],
         pydantic_js_annotation_functions=js_annotation_functions or [],
         pydantic_js_prefer_positional_arguments=js_prefer_positional_arguments,
-        pydantic_typed_dict_cls=typed_dict_cls,
     )
     metadata = {k: v for k, v in metadata.items() if v is not None}
 
