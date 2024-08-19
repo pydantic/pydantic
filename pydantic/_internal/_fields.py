@@ -99,6 +99,7 @@ def collect_model_fields(  # noqa: C901
             - If there is a field other than `root` in `RootModel`.
             - If a field shadows an attribute in the parent model.
     """
+    BaseModel = import_cached_base_model()
     FieldInfo_ = import_cached_field_info()
 
     type_hints = get_cls_type_hints_lenient(cls, types_namespace)
@@ -119,8 +120,6 @@ def collect_model_fields(  # noqa: C901
             if ann_name.startswith(protected_namespace):
                 for b in bases:
                     if hasattr(b, ann_name):
-                        BaseModel = import_cached_base_model()
-
                         if not (issubclass(b, BaseModel) and ann_name in b.model_fields):
                             raise NameError(
                                 f'Field "{ann_name}" conflicts with member {getattr(b, ann_name)}'

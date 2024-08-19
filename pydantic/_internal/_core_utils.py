@@ -212,6 +212,7 @@ class _WalkCoreSchema:
     def _handle_ser_schemas(self, ser_schema: core_schema.SerSchema, f: Walk) -> core_schema.SerSchema:
         schema: core_schema.CoreSchema | None = ser_schema.get('schema', None)
         if schema is not None:
+            ser_schema = ser_schema.copy()
             ser_schema['schema'] = self.walk(schema, f)  # type: ignore
         return_schema: core_schema.CoreSchema | None = ser_schema.get('return_schema', None)
         if return_schema is not None:

@@ -11,7 +11,7 @@ import warnings
 from collections.abc import Callable
 from functools import partial
 from types import GetSetDescriptorType
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, Iterable
 
 from typing_extensions import Annotated, Literal, TypeAliasType, TypeGuard, deprecated, get_args, get_origin
 
@@ -167,6 +167,24 @@ def is_finalvar(ann_type: Any) -> bool:
     return _check_finalvar(ann_type) or _check_finalvar(get_origin(ann_type))
 
 
+_DEFAULT_GLOBALS = {
+    '__name__',
+    '__doc__',
+    '__package__',
+    '__loader__',
+    '__spec__',
+    '__annotations__',
+    '__builtins__',
+    '__file__',
+    '__cached__',
+}
+
+
+def _remove_default_globals_from_ns(namespace: dict[str, Any]) -> dict[str, Any]:
+    """Remove default globals like __name__, __doc__, etc that aren't needed for type evaluation."""
+    return {k: v for k, v in namespace.items() if k not in _DEFAULT_GLOBALS}
+
+
 def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
     """We allow use of items in parent namespace to get around the issue with `get_type_hints` only looking in the
     global module namespace. See https://github.com/pydantic/pydantic/issues/2678#issuecomment-1008139014 -> Scope
@@ -178,13 +196,21 @@ def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
     WARNING 2: this only looks in the parent namespace, not other parents since (AFAIK) there's no way to collect a
     dict of exactly what's in scope. Using `f_back` would work sometimes but would be very wrong and confusing in many
     other cases. See https://discuss.python.org/t/is-there-a-way-to-access-parent-nested-namespaces/20659.
+
+    This function returns None if the parent frame is at the top module level. This is because the class' __module__
+    attribute can be used to access the parent namespace. This is done in `_typing_extra.add_module_globals`.
+    There's no need to cache the parent frame namespace in this case.
     """
     frame = sys._getframe(parent_depth)
-    # if f_back is None, it's the global module namespace and we don't need to include it here
-    if frame.f_back is None:
+    # if either of the following conditions are true, the class is defined at the top module level
+    # to better understand why we need both of these checks, see
+    # https://github.com/pydantic/pydantic/pull/10113#discussion_r1714981531
+    if frame.f_back is None or frame.f_code.co_name == '<module>':
         return None
     else:
-        return frame.f_locals
+        if f_locals := frame.f_locals:
+            return _remove_default_globals_from_ns(f_locals)
+        return f_locals
 
 
 def add_module_globals(obj: Any, globalns: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -194,15 +220,13 @@ def add_module_globals(obj: Any, globalns: dict[str, Any] | None = None) -> dict
             module_globalns = sys.modules[module_name].__dict__
         except KeyError:
             # happens occasionally, see https://github.com/pydantic/pydantic/issues/2363
-            pass
+            ns = {}
         else:
-            if globalns:
-                return {**module_globalns, **globalns}
-            else:
-                # copy module globals to make sure it can't be updated later
-                return module_globalns.copy()
+            ns = {**module_globalns, **globalns} if globalns else module_globalns.copy()
+    else:
+        ns = globalns or {}
 
-    return globalns or {}
+    return _remove_default_globals_from_ns(ns)
 
 
 def get_cls_types_namespace(cls: type[Any], parent_namespace: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -211,13 +235,17 @@ def get_cls_types_namespace(cls: type[Any], parent_namespace: dict[str, Any] | N
     return ns
 
 
-def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None) -> dict[str, Any]:
+def get_cls_type_hints_lenient(
+    obj: Any, globalns: dict[str, Any] | None = None, mro: Iterable[type[Any]] | None = None
+) -> dict[str, Any]:
     """Collect annotations from a class, including those from parent classes.
 
     Unlike `typing.get_type_hints`, this function will not error if a forward reference is not resolvable.
     """
     hints = {}
-    for base in reversed(obj.__mro__):
+    if mro is None:
+        mro = reversed(obj.__mro__)
+    for base in mro:
         ann = base.__dict__.get('__annotations__')
         localns = dict(vars(base))
         if ann is not None and ann is not GetSetDescriptorType:

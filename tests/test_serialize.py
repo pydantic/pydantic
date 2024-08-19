@@ -482,10 +482,14 @@ def test_model_serializer_plain_json_return_type():
 
     m = MyModel(a=666)
     assert m.model_dump() == {'a': 666}
-    with pytest.warns(UserWarning, match='Expected `str` but got `int` - serialized value may not be as expected'):
+    with pytest.warns(
+        UserWarning, match='Expected `str` but got `int` with value `666` - serialized value may not be as expected'
+    ):
         assert m.model_dump(mode='json') == 666
 
-    with pytest.warns(UserWarning, match='Expected `str` but got `int` - serialized value may not be as expected'):
+    with pytest.warns(
+        UserWarning, match='Expected `str` but got `int` with value `666` - serialized value may not be as expected'
+    ):
         assert m.model_dump_json() == '666'
 
 
@@ -1243,17 +1247,16 @@ def smart_union_serialization() -> None:
     assert type(json.loads(int_then_float.model_dump_json())['value']) is int
 
 
-@pytest.mark.xfail(reason='Waiting for union serialization fixes via https://github.com/pydantic/pydantic/issues/9688')
 def test_serialize_with_custom_ser() -> None:
     class Item(BaseModel):
         id: int
 
         @model_serializer
-        def dump(self) -> dict[str, Any]:
+        def dump(self) -> Dict[str, Any]:
             return {'id': self.id}
 
     class ItemContainer(BaseModel):
-        item_or_items: Item | list[Item]
+        item_or_items: Union[Item, List[Item]]
 
     items = [Item(id=i) for i in range(5)]
     assert (

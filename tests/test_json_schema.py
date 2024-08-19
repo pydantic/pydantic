@@ -831,6 +831,18 @@ def test_date_constrained_types(field_type, expected_schema):
     }
 
 
+def test_complex_types():
+    class Model(BaseModel):
+        a: complex
+
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }
+
+
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
@@ -1300,14 +1312,10 @@ def test_callable_type_with_fallback(default_value, properties):
 def test_byte_size_type():
     class Model(BaseModel):
         a: ByteSize
-        b: ByteSize = Field('1MB', validate_default=True)
+        b: ByteSize = ByteSize(1000000)
+        c: ByteSize = Field(default='1MB', validate_default=True)
 
-    model_json_schema_validation = Model.model_json_schema(mode='validation')
-    model_json_schema_serialization = Model.model_json_schema(mode='serialization')
-
-    print(model_json_schema_serialization)
-
-    assert model_json_schema_validation == {
+    assert Model.model_json_schema(mode='validation') == {
         'properties': {
             'a': {
                 'anyOf': [
@@ -1321,8 +1329,16 @@ def test_byte_size_type():
                     {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
                     {'minimum': 0, 'type': 'integer'},
                 ],
-                'default': '1MB',
+                'default': 1000000,
                 'title': 'B',
+            },
+            'c': {
+                'anyOf': [
+                    {'pattern': '^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?', 'type': 'string'},
+                    {'minimum': 0, 'type': 'integer'},
+                ],
+                'default': '1MB',
+                'title': 'C',
             },
         },
         'required': ['a'],
@@ -1330,15 +1346,22 @@ def test_byte_size_type():
         'type': 'object',
     }
 
-    assert model_json_schema_serialization == {
-        'properties': {
-            'a': {'minimum': 0, 'title': 'A', 'type': 'integer'},
-            'b': {'default': '1MB', 'minimum': 0, 'title': 'B', 'type': 'integer'},
-        },
-        'required': ['a'],
-        'title': 'Model',
-        'type': 'object',
-    }
+    with pytest.warns(
+        PydanticJsonSchemaWarning,
+        match=re.escape(
+            "Unable to serialize value '1MB' with the plain serializer; excluding default from JSON schema"
+        ),
+    ):
+        assert Model.model_json_schema(mode='serialization') == {
+            'properties': {
+                'a': {'minimum': 0, 'title': 'A', 'type': 'integer'},
+                'b': {'default': 1000000, 'minimum': 0, 'title': 'B', 'type': 'integer'},
+                'c': {'minimum': 0, 'title': 'C', 'type': 'integer'},
+            },
+            'required': ['a'],
+            'title': 'Model',
+            'type': 'object',
+        }
 
 
 @pytest.mark.parametrize(
@@ -1639,6 +1662,23 @@ def test_schema_ref_template_key_error():
 
     with pytest.raises(KeyError):
         models_json_schema([(Bar, 'validation'), (Baz, 'validation')], ref_template='/schemas/{bad_name}.json#/')
+
+
+def test_external_ref():
+    """https://github.com/pydantic/pydantic/issues/9783"""
+
+    class Model(BaseModel):
+        json_schema: Annotated[
+            dict,
+            WithJsonSchema({'$ref': 'https://json-schema.org/draft/2020-12/schema'}),
+        ]
+
+    assert Model.model_json_schema() == {
+        'properties': {'json_schema': {'$ref': 'https://json-schema.org/draft/2020-12/schema', 'title': 'Json Schema'}},
+        'required': ['json_schema'],
+        'title': 'Model',
+        'type': 'object',
+    }
 
 
 def test_schema_no_definitions():
@@ -2271,7 +2311,7 @@ def test_literal_schema():
             'b': {'const': 'a', 'enum': ['a'], 'title': 'B', 'type': 'string'},
             'c': {'enum': ['a', 1], 'title': 'C'},
             'd': {'enum': ['a', 'b', 1, 2], 'title': 'D'},
-            'e': {'const': 1.0, 'enum': [1.0], 'title': 'E', 'type': 'numeric'},
+            'e': {'const': 1.0, 'enum': [1.0], 'title': 'E', 'type': 'number'},
             'f': {'const': ['a', 1], 'enum': [['a', 1]], 'title': 'F', 'type': 'array'},
         },
         'required': ['a', 'b', 'c', 'd', 'e', 'f'],
@@ -2326,7 +2366,7 @@ def test_literal_types() -> None:
     # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
         '$defs': {
-            'FloatEnum': {'enum': [123.0, 123.1], 'title': 'FloatEnum', 'type': 'numeric'},
+            'FloatEnum': {'enum': [123.0, 123.1], 'title': 'FloatEnum', 'type': 'number'},
             'ListEnum': {'enum': [[123], [456]], 'title': 'ListEnum', 'type': 'array'},
         },
         'properties': {
@@ -6252,6 +6292,36 @@ def test_plain_serializer_applies_to_default() -> None:
     }
     assert Model.model_json_schema(mode='serialization') == {
         'properties': {'custom_str': {'default': 'serialized-foo', 'title': 'Custom Str', 'type': 'string'}},
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_plain_serializer_does_not_apply_with_unless_none() -> None:
+    """Test plain serializers aren't used to compute the JSON Schema default if mode is 'json-unless-none'
+    and default value is `None`."""
+
+    class Model(BaseModel):
+        custom_decimal_json_unless_none: Annotated[
+            Optional[Decimal], PlainSerializer(lambda x: float(x), when_used='json-unless-none', return_type=float)
+        ] = None
+        custom_decimal_unless_none: Annotated[
+            Optional[Decimal], PlainSerializer(lambda x: float(x), when_used='unless-none', return_type=float)
+        ] = None
+
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': {
+            'custom_decimal_json_unless_none': {
+                'anyOf': [{'type': 'null'}, {'type': 'number'}],
+                'default': None,
+                'title': 'Custom Decimal Json Unless None',
+            },
+            'custom_decimal_unless_none': {
+                'anyOf': [{'type': 'null'}, {'type': 'number'}],
+                'default': None,
+                'title': 'Custom Decimal Unless None',
+            },
+        },
         'title': 'Model',
         'type': 'object',
     }
