@@ -10,7 +10,7 @@ from pydantic_core import CoreSchema, SchemaValidator
 from pydantic_core import core_schema as cs
 from typing_extensions import Annotated
 
-from pydantic import BaseModel, PlainValidator
+from pydantic import BaseModel
 from pydantic._internal._core_utils import (
     HAS_INVALID_SCHEMAS_METADATA_KEY,
     Walk,
@@ -220,11 +220,27 @@ def test_walk_core_schema_copies_ser_schema() -> None:
     resulting in the mutation of the original `__pydantic_core_schema__` dict of a model.
     """
 
+    class MyPlainValidator:
+        """A new change to `PlainValidator` made it so that the issue
+        does not reproduce anymore. This class replicates the old behavior.
+        """
+
+        def __init__(self, func):
+            self.func = func
+
+        def __get_pydantic_core_schema__(self, source_type, handler):
+            return cs.no_info_plain_validator_function(
+                self.func,
+                serialization=cs.wrap_serializer_function_ser_schema(
+                    function=lambda v, h: h(v), schema=handler(source_type)
+                ),
+            )
+
     class Model1(BaseModel):
         pass
 
     class Model2(BaseModel):
-        model1: Annotated[Model1, PlainValidator(lambda _: Model1())]
+        model1: Annotated[Model1, MyPlainValidator(lambda _: Model1())]
 
     ser_schema_type = Model2.__pydantic_core_schema__['schema']['fields']['model1']['schema']['serialization'][
         'schema'
@@ -247,4 +263,4 @@ def test_walk_core_schema_copies_ser_schema() -> None:
         'schema'
     ]['type']
 
-    assert ser_schema_type == 'model'  # 'definition-ref' without the dict copy.
+    assert ser_schema_type == 'model'  # 'definition-ref' without the schema copy when walking through the schema.
