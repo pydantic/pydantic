@@ -2609,6 +2609,7 @@ def test_typeddict_with_json_schema_extra():
     }
 
 
+@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
 def test_typeddict_with__callable_json_schema_extra():
     def json_schema_extra(schema, model_class):
         schema.pop('properties')
@@ -3238,6 +3239,7 @@ def test_conflicting_names():
     }
 
 
+@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
 def test_schema_for_generic_field():
     T = TypeVar('T')
 
@@ -3445,7 +3447,7 @@ def test_advanced_generic_schema():  # noqa: C901
             field_schema = handler(core_schema)
             field_schema.pop('minItems')
             field_schema.pop('maxItems')
-            field_schema.update(examples='examples')
+            field_schema.update(examples=[['a', 'e0add881-8b94-4368-8286-f8607928924e']])
             return field_schema
 
     class CustomType(Enum):
@@ -3486,7 +3488,7 @@ def test_advanced_generic_schema():  # noqa: C901
             },
             'data2': {
                 'description': 'Data 2',
-                'examples': 'examples',
+                'examples': [['a', 'e0add881-8b94-4368-8286-f8607928924e']],
                 'prefixItems': [{'$ref': '#/$defs/CustomType'}, {'format': 'uuid4', 'type': 'string'}],
                 'title': 'Data2 title',
                 'type': 'array',
@@ -4706,6 +4708,7 @@ def test_model_with_schema_extra():
     }
 
 
+@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
 def test_model_with_schema_extra_callable():
     class Model(BaseModel):
         name: str = None
@@ -4721,6 +4724,7 @@ def test_model_with_schema_extra_callable():
     assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
 
 
+@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
 def test_model_with_schema_extra_callable_no_model_class():
     class Model(BaseModel):
         name: str = None
@@ -4735,6 +4739,7 @@ def test_model_with_schema_extra_callable_no_model_class():
     assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
 
 
+@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
 def test_model_with_schema_extra_callable_config_class():
     with pytest.warns(PydanticDeprecatedSince20, match='use ConfigDict instead'):
 
@@ -4751,6 +4756,7 @@ def test_model_with_schema_extra_callable_config_class():
     assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
 
 
+@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
 def test_model_with_schema_extra_callable_no_model_class_config_class():
     with pytest.warns(PydanticDeprecatedSince20):
 
@@ -4766,6 +4772,7 @@ def test_model_with_schema_extra_callable_no_model_class_config_class():
         assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
 
 
+@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
 def test_model_with_schema_extra_callable_classmethod():
     with pytest.warns(PydanticDeprecatedSince20):
 
@@ -4784,6 +4791,7 @@ def test_model_with_schema_extra_callable_classmethod():
         assert Model.model_json_schema() == {'title': 'Model', 'type': 'foo'}
 
 
+@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
 def test_model_with_schema_extra_callable_instance_method():
     with pytest.warns(PydanticDeprecatedSince20):
 
@@ -5071,9 +5079,9 @@ def test_arbitrary_type_json_schema(field_schema, model_schema, instance_of):
     'metadata,json_schema',
     [
         (
-            WithJsonSchema({'type': 'float'}),
+            WithJsonSchema({'type': 'number'}),
             {
-                'properties': {'x': {'anyOf': [{'type': 'float'}, {'type': 'null'}], 'title': 'X'}},
+                'properties': {'x': {'anyOf': [{'type': 'number'}, {'type': 'null'}], 'title': 'X'}},
                 'required': ['x'],
                 'title': 'Model',
                 'type': 'object',
@@ -5384,6 +5392,7 @@ def test_examples_annotation() -> None:
     }
 
 
+@pytest.mark.skip_json_schema_validation(reason='Uses old examples format, planned for removal in v3.0.')
 def test_examples_annotation_dict() -> None:
     with pytest.warns(PydanticDeprecatedSince29):
         ListWithExamples = Annotated[
@@ -5621,7 +5630,7 @@ def test_custom_type_gets_unpacked_ref() -> None:
             Annotated[int, Field(gt=0), Field(lt=100)],
             {'type': 'integer', 'exclusiveMinimum': 0, 'exclusiveMaximum': 100},
         ),
-        (Annotated[int, Field(examples={'number': 1})], {'type': 'integer', 'examples': {'number': 1}}),
+        (Annotated[int, Field(examples=[1])], {'type': 'integer', 'examples': [1]}),
     ],
     ids=repr,
 )

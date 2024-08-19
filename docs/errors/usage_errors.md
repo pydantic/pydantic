@@ -90,7 +90,7 @@ try:
     class Model(BaseModel):
         @classmethod
         def __modify_schema__(cls, field_schema):
-            field_schema.update(examples='examples')
+            field_schema.update(examples=['example'])
 
 except PydanticUserError as exc_info:
     assert exc_info.code == 'custom-json-schema'
@@ -115,13 +115,13 @@ class Model(BaseModel):
     ) -> Dict[str, Any]:
         json_schema = super().__get_pydantic_json_schema__(core_schema, handler)
         json_schema = handler.resolve_ref_schema(json_schema)
-        json_schema.update(examples='examples')
+        json_schema.update(examples=['example'])
         return json_schema
 
 
 print(Model.model_json_schema())
 """
-{'examples': 'examples', 'properties': {}, 'title': 'Model', 'type': 'object'}
+{'examples': ['example'], 'properties': {}, 'title': 'Model', 'type': 'object'}
 """
 ```
 
