@@ -1280,7 +1280,7 @@ class GenerateJsonSchema:
         ]
         if self.mode == 'serialization':
             named_required_fields.extend(self._name_required_computed_fields(schema.get('computed_fields', [])))
-        cls = _get_typed_dict_cls(schema)
+        cls = schema.get('cls')
         config = _get_typed_dict_config(cls)
         with self._config_wrapper_stack.push(config):
             json_schema = self._named_required_fields_schema(named_required_fields)
@@ -2524,12 +2524,6 @@ else:
 
         def __hash__(self) -> int:
             return hash(type(self))
-
-
-def _get_typed_dict_cls(schema: core_schema.TypedDictSchema) -> type[Any] | None:
-    metadata = _core_metadata.CoreMetadataHandler(schema).metadata
-    cls = metadata.get('pydantic_typed_dict_cls')
-    return cls
 
 
 def _get_typed_dict_config(cls: type[Any] | None) -> ConfigDict:

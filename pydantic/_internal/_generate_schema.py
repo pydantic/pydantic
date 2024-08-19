@@ -1507,10 +1507,10 @@ class GenerateSchema:
                 title = self._get_model_title_from_config(typed_dict_cls, ConfigWrapper(config))
                 metadata = build_metadata_dict(
                     js_functions=[partial(modify_model_json_schema, cls=typed_dict_cls, title=title)],
-                    typed_dict_cls=typed_dict_cls,
                 )
                 td_schema = core_schema.typed_dict_schema(
                     fields,
+                    cls=typed_dict_cls,
                     computed_fields=[
                         self._computed_field_schema(d, decorators.field_serializers)
                         for d in decorators.computed_fields.values()
