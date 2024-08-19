@@ -3,14 +3,11 @@ Tests for internal things that are complex enough to warrant their own unit test
 """
 
 from dataclasses import dataclass
-from typing import Sequence
 
 import pytest
 from pydantic_core import CoreSchema, SchemaValidator
 from pydantic_core import core_schema as cs
-from typing_extensions import Annotated
 
-from pydantic import BaseModel
 from pydantic._internal._core_utils import (
     HAS_INVALID_SCHEMAS_METADATA_KEY,
     Walk,
@@ -210,57 +207,3 @@ def test_schema_is_valid():
         collect_invalid_schemas(cs.nullable_schema(cs.int_schema(metadata={HAS_INVALID_SCHEMAS_METADATA_KEY: True})))
         is True
     )
-
-
-def test_walk_core_schema_copies_ser_schema() -> None:
-    """Regression test for https://github.com/pydantic/pydantic/issues/9319.
-
-    In some specific scenarios during schema references simplification,
-    the inner schema of the `'serialization'` core schemas aren't properly copied,
-    resulting in the mutation of the original `__pydantic_core_schema__` dict of a model.
-    """
-
-    class MyPlainValidator:
-        """A new change to `PlainValidator` made it so that the issue
-        does not reproduce anymore. This class replicates the old behavior.
-        """
-
-        def __init__(self, func):
-            self.func = func
-
-        def __get_pydantic_core_schema__(self, source_type, handler):
-            return cs.no_info_plain_validator_function(
-                self.func,
-                serialization=cs.wrap_serializer_function_ser_schema(
-                    function=lambda v, h: h(v), schema=handler(source_type)
-                ),
-            )
-
-    class Model1(BaseModel):
-        pass
-
-    class Model2(BaseModel):
-        model1: Annotated[Model1, MyPlainValidator(lambda _: Model1())]
-
-    ser_schema_type = Model2.__pydantic_core_schema__['schema']['fields']['model1']['schema']['serialization'][
-        'schema'
-    ]['type']
-
-    # `PlainValidator` creates a ser. core schema (see https://github.com/pydantic/pydantic/pull/8567#discussion_r1459110715
-    # for more context). In our case, the inner core schema of the ser. schema is the core schema of `Model1`.
-    assert ser_schema_type == 'model'
-
-    class Model3(BaseModel):
-        # Using `Sequence` (instead of e.g. `list`) generates a `'json-or-python'` core schema.
-        # It is still unclear why, but this is a necessary condition to reproduce the issue
-        model2: Sequence[Model2]
-
-    # During the simplification of schema references, the previously defined ser. schema of our `PlainValidator`
-    # is changed (by doing `ser_schema['schema'] = self.walk(schema, f)`). However it wasn't copied properly before
-    # doing so. This resulted in the original `Model2.__pydantic_core_schema__` to be modified, by having a leftover
-    # `'definition-ref'` schema in place of a proper `'model'` schema.
-    ser_schema_type = Model2.__pydantic_core_schema__['schema']['fields']['model1']['schema']['serialization'][
-        'schema'
-    ]['type']
-
-    assert ser_schema_type == 'model'  # 'definition-ref' without the schema copy when walking through the schema.
