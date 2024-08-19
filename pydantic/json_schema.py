@@ -748,7 +748,7 @@ class GenerateJsonSchema:
         elif types == {int}:
             result['type'] = 'integer'
         elif types == {float}:
-            result['type'] = 'numeric'
+            result['type'] = 'number'
         elif types == {bool}:
             result['type'] = 'boolean'
         elif types == {list}:
@@ -787,7 +787,7 @@ class GenerateJsonSchema:
         elif isinstance(enum_type, int) or types == {int}:
             result['type'] = 'integer'
         elif isinstance(enum_type, float) or types == {float}:
-            result['type'] = 'numeric'
+            result['type'] = 'number'
         elif types == {bool}:
             result['type'] = 'boolean'
         elif types == {list}:
