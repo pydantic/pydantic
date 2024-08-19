@@ -104,7 +104,6 @@ nav:
   - Conversion Table: concepts/conversion_table.md
   - Settings Management: concepts/pydantic_settings.md
   - Performance: concepts/performance.md
-  - Pydantic Plugins: concepts/plugins.md
   - Experimental: concepts/experimental.md
 - API Documentation:
   - Pydantic:
@@ -124,7 +123,6 @@ nav:
     - Pydantic Types: api/types.md
     - Network Types: api/networks.md
     - Version Information: api/version.md
-    - Pydantic Plugins: api/plugin.md
     - Annotated Handlers: api/annotated_handlers.md
     - Experimental: api/experimental.md
   - Pydantic Core:
