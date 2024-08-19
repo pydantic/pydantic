@@ -1,7 +1,7 @@
 from __future__ import annotations as _annotations
 
 import typing
-from typing import Any
+from typing import Any, cast
 
 import typing_extensions
 
@@ -45,7 +45,7 @@ class CoreMetadataHandler:
 
         metadata = schema.get('metadata')
         if metadata is None:
-            schema['metadata'] = CoreMetadata()
+            schema['metadata'] = CoreMetadata()  # type: ignore
         elif not isinstance(metadata, dict):
             raise TypeError(f'CoreSchema metadata should be a dict; got {metadata!r}.')
 
@@ -56,10 +56,10 @@ class CoreMetadataHandler:
         """
         metadata = self._schema.get('metadata')
         if metadata is None:
-            self._schema['metadata'] = metadata = CoreMetadata()
+            self._schema['metadata'] = metadata = CoreMetadata()  # type: ignore
         if not isinstance(metadata, dict):
             raise TypeError(f'CoreSchema metadata should be a dict; got {metadata!r}.')
-        return metadata
+        return cast(CoreMetadata, metadata)
 
 
 def build_metadata_dict(
