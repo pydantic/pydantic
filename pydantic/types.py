@@ -23,7 +23,6 @@ from typing import (
     List,
     Pattern,
     Set,
-    TypeVar,
     Union,
     cast,
     get_args,
@@ -34,7 +33,7 @@ from uuid import UUID
 import annotated_types
 from annotated_types import BaseMetadata, MaxLen, MinLen
 from pydantic_core import CoreSchema, PydanticCustomError, core_schema
-from typing_extensions import Annotated, Literal, Protocol, TypeAlias, TypeAliasType, deprecated
+from typing_extensions import Annotated, Literal, Protocol, TypeAlias, TypeAliasType, TypeVar, deprecated
 
 from ._internal import _core_utils, _fields, _internal_dataclass, _typing_extra, _utils, _validators
 from ._migration import getattr_migration
@@ -898,7 +897,7 @@ def conlist(
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~ IMPORT STRING TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-AnyType = TypeVar('AnyType')
+AnyType = TypeVar('AnyType', default=Any)
 if TYPE_CHECKING:
     ImportString = Annotated[AnyType, ...]
 else:
