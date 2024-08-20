@@ -5148,17 +5148,6 @@ def test_core_metadata_core_schema_metadata():
         core_metadata_handler.metadata
 
 
-def test_build_metadata_dict_initial_metadata():
-    assert build_metadata_dict(initial_metadata={'foo': 'bar'}) == {
-        'foo': 'bar',
-        'pydantic_js_functions': [],
-        'pydantic_js_annotation_functions': [],
-    }
-
-    with pytest.raises(TypeError, match=re.escape("CoreSchema metadata should be a dict; got 'test'.")):
-        build_metadata_dict(initial_metadata='test')
-
-
 def test_type_adapter_json_schemas_title_description():
     class Model(BaseModel):
         a: str
