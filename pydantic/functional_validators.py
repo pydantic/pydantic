@@ -92,8 +92,8 @@ class BeforeValidator:
 
     Attributes:
         func: The validator function.
-        input_type: The input type of the function. This is only used to generate the appropriate JSON Schema
-            (in validation mode).
+        json_schema_input_type: The input type of the function. This is only used to generate the appropriate
+            JSON Schema (in validation mode).
 
     Example:
         ```py
@@ -118,11 +118,15 @@ class BeforeValidator:
     """
 
     func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
-    input_type: Any = PydanticUndefined
+    json_schema_input_type: Any = PydanticUndefined
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
-        input_schema = None if self.input_type is PydanticUndefined else handler.generate_schema(self.input_type)
+        input_schema = (
+            None
+            if self.json_schema_input_type is PydanticUndefined
+            else handler.generate_schema(self.json_schema_input_type)
+        )
         metadata = {'input_schema': input_schema}
 
         info_arg = _inspect_validator(self.func, 'before')
@@ -142,7 +146,7 @@ class BeforeValidator:
     def _from_decorator(cls, decorator: _decorators.Decorator[_decorators.FieldValidatorDecoratorInfo]) -> Self:
         return cls(
             func=decorator.func,
-            input_type=decorator.info.input_type,
+            json_schema_input_type=decorator.info.json_schema_input_type,
         )
 
 
@@ -154,8 +158,8 @@ class PlainValidator:
 
     Attributes:
         func: The validator function.
-        input_type: The input type of the function. This is only used to generate the appropriate JSON Schema
-            (in validation mode).
+        json_schema_input_type: The input type of the function. This is only used to generate the appropriate
+            JSON Schema (in validation mode).
 
     Example:
         ```py
@@ -174,7 +178,7 @@ class PlainValidator:
     """
 
     func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
-    input_type: Any = PydanticUndefined
+    json_schema_input_type: Any = PydanticUndefined
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         # Note that for some valid uses of PlainValidator, it is not possible to generate a core schema for the
@@ -194,7 +198,11 @@ class PlainValidator:
         except PydanticSchemaGenerationError:
             serialization = None
 
-        input_schema = None if self.input_type is PydanticUndefined else handler.generate_schema(self.input_type)
+        input_schema = (
+            None
+            if self.json_schema_input_type is PydanticUndefined
+            else handler.generate_schema(self.json_schema_input_type)
+        )
         metadata = {'input_schema': input_schema}
 
         info_arg = _inspect_validator(self.func, 'plain')
@@ -214,7 +222,7 @@ class PlainValidator:
     def _from_decorator(cls, decorator: _decorators.Decorator[_decorators.FieldValidatorDecoratorInfo]) -> Self:
         return cls(
             func=decorator.func,
-            input_type=decorator.info.input_type,
+            json_schema_input_type=decorator.info.json_schema_input_type,
         )
 
 
@@ -226,8 +234,8 @@ class WrapValidator:
 
     Attributes:
         func: The validator function.
-        input_type: The input type of the function. This is only used to generate the appropriate JSON Schema
-            (in validation mode).
+        json_schema_input_type: The input type of the function. This is only used to generate the appropriate
+            JSON Schema (in validation mode).
 
     ```py
     from datetime import datetime
@@ -259,11 +267,15 @@ class WrapValidator:
     """
 
     func: core_schema.NoInfoWrapValidatorFunction | core_schema.WithInfoWrapValidatorFunction
-    input_type: Any = PydanticUndefined
+    json_schema_input_type: Any = PydanticUndefined
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
-        input_schema = None if self.input_type is PydanticUndefined else handler.generate_schema(self.input_type)
+        input_schema = (
+            None
+            if self.json_schema_input_type is PydanticUndefined
+            else handler.generate_schema(self.json_schema_input_type)
+        )
         metadata = {'input_schema': input_schema}
 
         info_arg = _inspect_validator(self.func, 'wrap')
@@ -287,7 +299,7 @@ class WrapValidator:
     def _from_decorator(cls, decorator: _decorators.Decorator[_decorators.FieldValidatorDecoratorInfo]) -> Self:
         return cls(
             func=decorator.func,
-            input_type=decorator.info.input_type,
+            json_schema_input_type=decorator.info.json_schema_input_type,
         )
 
 
@@ -339,7 +351,7 @@ def field_validator(
     *fields: str,
     mode: Literal['wrap'],
     check_fields: bool | None = ...,
-    input_type: Any = ...,
+    json_schema_input_type: Any = ...,
 ) -> Callable[[_V2WrapValidatorType], _V2WrapValidatorType]: ...
 
 
@@ -350,7 +362,7 @@ def field_validator(
     *fields: str,
     mode: Literal['before', 'plain'],
     check_fields: bool | None = ...,
-    input_type: Any = ...,
+    json_schema_input_type: Any = ...,
 ) -> Callable[[_V2BeforeAfterOrPlainValidatorType], _V2BeforeAfterOrPlainValidatorType]: ...
 
 
@@ -370,7 +382,7 @@ def field_validator(
     *fields: str,
     mode: FieldValidatorModes = 'after',
     check_fields: bool | None = None,
-    input_type: Any = PydanticUndefined,
+    json_schema_input_type: Any = PydanticUndefined,
 ) -> Callable[[Any], Any]:
     """Usage docs: https://docs.pydantic.dev/2.9/concepts/validators/#field-validators
 
@@ -418,7 +430,7 @@ def field_validator(
         *fields: Additional field(s) the `field_validator` should be called on.
         mode: Specifies whether to validate the fields before or after validation.
         check_fields: Whether to check that the fields actually exist on the model.
-        input_type: The input type of the function. This is only used to generate
+        json_schema_input_type: The input type of the function. This is only used to generate
             the appropriate JSON Schema (in validation mode) and can only specified
             when `mode` is either `'before'`, `'plain'` or `'wrap'`.
 
@@ -438,9 +450,9 @@ def field_validator(
             code='validator-no-fields',
         )
 
-    if mode not in ('before', 'plain', 'wrap') and input_type is not PydanticUndefined:
+    if mode not in ('before', 'plain', 'wrap') and json_schema_input_type is not PydanticUndefined:
         raise PydanticUserError(
-            f"`input_type` can't be used when mode is set to {mode!r}",
+            f"`json_schema_input_type` can't be used when mode is set to {mode!r}",
             code='validator-input-type',
         )
 
@@ -464,7 +476,7 @@ def field_validator(
         f = _decorators.ensure_classmethod_based_on_signature(f)
 
         dec_info = _decorators.FieldValidatorDecoratorInfo(
-            fields=fields, mode=mode, check_fields=check_fields, input_type=input_type
+            fields=fields, mode=mode, check_fields=check_fields, json_schema_input_type=json_schema_input_type
         )
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 

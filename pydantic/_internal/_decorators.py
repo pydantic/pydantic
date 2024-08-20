@@ -56,7 +56,7 @@ class FieldValidatorDecoratorInfo:
         fields: A tuple of field names the validator should be called on.
         mode: The proposed validator mode.
         check_fields: Whether to check that the fields actually exist on the model.
-        input_type: The input type of the function. This is only used to generate
+        json_schema_input_type: The input type of the function. This is only used to generate
             the appropriate JSON Schema (in validation mode) and can only specified
             when `mode` is either `'before'`, `'plain'` or `'wrap'`.
     """
@@ -66,7 +66,7 @@ class FieldValidatorDecoratorInfo:
     fields: tuple[str, ...]
     mode: FieldValidatorModes
     check_fields: bool | None
-    input_type: Any
+    json_schema_input_type: Any
 
 
 @dataclass(**slots_true)

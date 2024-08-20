@@ -733,9 +733,9 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'validator-instance-method'
 ```
 
-## `input_type` is {#validator-input-type}
+## `json_schema_input_type` used with the wrong mode {#validator-input-type}
 
-This error is raised when you explicitly specify a value for the `input_type`
+This error is raised when you explicitly specify a value for the `json_schema_input_type`
 argument and `mode` isn't set to either `'before'`, `'plain'` or `'wrap'`.
 
 ```py
@@ -746,7 +746,7 @@ try:
     class Model(BaseModel):
         a: int = 1
 
-        @field_validator('a', mode='after', input_type=int)
+        @field_validator('a', mode='after', json_schema_input_type=int)
         @classmethod
         def check_a(self, value):
             return value

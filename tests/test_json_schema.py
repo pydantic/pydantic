@@ -6468,17 +6468,17 @@ def test_plain_field_validator_serialization() -> None:
 
 def test_field_validator_input_type() -> None:
     class Model(BaseModel):
-        a: Annotated[int, BeforeValidator(lambda v: v, input_type=Union[int, str])]
-        b: Annotated[int, WrapValidator(lambda v, h: h(v), input_type=Union[int, str])]
-        c: Annotated[int, PlainValidator(lambda v: v, input_type=Union[int, str])]
+        a: Annotated[int, BeforeValidator(lambda v: v, json_schema_input_type=Union[int, str])]
+        b: Annotated[int, WrapValidator(lambda v, h: h(v), json_schema_input_type=Union[int, str])]
+        c: Annotated[int, PlainValidator(lambda v: v, json_schema_input_type=Union[int, str])]
         d: int
         e: int
 
-        @field_validator('d', mode='before', input_type=Union[int, str])
+        @field_validator('d', mode='before', json_schema_input_type=Union[int, str])
         @classmethod
         def validate_d(cls, value: Any) -> int: ...
 
-        @field_validator('d', mode='wrap', input_type=Union[int, str])
+        @field_validator('e', mode='wrap', json_schema_input_type=Union[int, str])
         @classmethod
         def validate_e(cls, value: Any, handler: ValidatorFunctionWrapHandler) -> int: ...
 
