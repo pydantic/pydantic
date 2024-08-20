@@ -437,7 +437,19 @@ def test_json_schema():
         return sum(numbers)
 
     assert foo(1, 2, 3) == 6
-    assert TypeAdapter(foo).json_schema() == {'items': {'type': 'integer'}, 'prefixItems': [], 'type': 'array'}
+    assert TypeAdapter(foo).json_schema() == {'items': {'type': 'integer'}, 'type': 'array'}
+
+    @validate_call
+    def foo(a: int, *numbers: int) -> int:
+        return a + sum(numbers)
+
+    assert foo(1, 2, 3) == 6
+    assert TypeAdapter(foo).json_schema() == {
+        'items': {'type': 'integer'},
+        'prefixItems': [{'title': 'A', 'type': 'integer'}],
+        'minItems': 1,
+        'type': 'array',
+    }
 
     @validate_call
     def foo(**scores: int) -> str:
