@@ -687,9 +687,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        json_schema = {'type': 'string', 'format': 'date'}
-        self.update_with_validations(json_schema, schema, self.ValidationsMapping.date)
-        return json_schema
+        return {'type': 'string', 'format': 'date'}
 
     def time_schema(self, schema: core_schema.TimeSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a time value.
@@ -2135,12 +2133,6 @@ class GenerateJsonSchema:
         object = {
             'min_length': 'minProperties',
             'max_length': 'maxProperties',
-        }
-        date = {
-            'le': 'maximum',
-            'ge': 'minimum',
-            'lt': 'exclusiveMaximum',
-            'gt': 'exclusiveMinimum',
         }
 
     def get_flattened_anyof(self, schemas: list[JsonSchemaValue]) -> JsonSchemaValue:
