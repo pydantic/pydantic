@@ -1,4 +1,6 @@
-import importlib
+from __future__ import annotations
+
+import importlib.util
 import inspect
 import os
 import re
@@ -8,8 +10,8 @@ import sys
 import textwrap
 from dataclasses import dataclass
 from pathlib import Path
-from types import FunctionType
-from typing import Any, Optional
+from types import FunctionType, ModuleType
+from typing import Any, Callable
 
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
@@ -24,7 +26,7 @@ def pytest_addoption(parser: pytest.Parser):
     parser.addoption('--update-mypy', action='store_true', help='update mypy tests')
 
 
-def _extract_source_code_from_function(function):
+def _extract_source_code_from_function(function: FunctionType):
     if function.__code__.co_argcount:
         raise RuntimeError(f'function {function.__qualname__} cannot have any arguments')
 
@@ -40,7 +42,7 @@ def _extract_source_code_from_function(function):
     return textwrap.dedent(code_lines)
 
 
-def _create_module_file(code, tmp_path, name):
+def _create_module_file(code: str, tmp_path: Path, name: str) -> tuple[str, str]:
     name = f'{name}_{secrets.token_hex(5)}'
     path = tmp_path / f'{name}.py'
     path.write_text(code)
@@ -55,8 +57,14 @@ def disable_error_urls():
 
 
 @pytest.fixture
-def create_module(tmp_path, request):
-    def run(source_code_or_function, rewrite_assertions=True, module_name_prefix=None):
+def create_module(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> Callable[[FunctionType | str, bool, str | None], ModuleType]:
+    def run(
+        source_code_or_function: FunctionType | str,
+        rewrite_assertions: bool = True,
+        module_name_prefix: str | None = None,
+    ) -> ModuleType:
         """
         Create module object, execute it and return
         Can be used as a decorator of the function from the source code of which the module will be constructed
@@ -82,8 +90,8 @@ def create_module(tmp_path, request):
             loader = None
 
         spec = importlib.util.spec_from_file_location(module_name, filename, loader=loader)
-        sys.modules[module_name] = module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
+        sys.modules[module_name] = module = importlib.util.module_from_spec(spec)  # pyright: ignore[reportArgumentType]
+        spec.loader.exec_module(module)  # pyright: ignore[reportOptionalMemberAccess]
         return module
 
     return run
@@ -108,7 +116,7 @@ def subprocess_run_code(tmp_path: Path):
 @dataclass
 class Err:
     message: str
-    errors: Optional[Any] = None
+    errors: Any | None = None
 
     def __repr__(self):
         if self.errors:
