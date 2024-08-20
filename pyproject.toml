@@ -140,6 +140,7 @@ testing = [
     # TODO: remove bound once pytest-codspeed supports 3.13, blocked by `python-cffi`
     "pytest-codspeed~=2.2.0; python_version < '3.13'",
     "packaging>=23.2",
+    "jsonschema>=4.23.0",
 ]
 testing-extra = [
     # used when generate devtools docs example
@@ -173,6 +174,9 @@ addopts = [
     '--benchmark-group-by', 'group',
     '--benchmark-warmup', 'on',
     '--benchmark-disable',  # this is enabled by `make benchmark` when you actually want to run benchmarks
+]
+markers = [
+    'skip_json_schema_validation: Disable JSON Schema validation.',
 ]
 
 # configuring https://github.com/pydantic/hooky

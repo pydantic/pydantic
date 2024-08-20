@@ -378,14 +378,14 @@ def test_resolve_ref_schema_recursive_model():
         ) -> JsonSchemaValue:
             json_schema = super().__get_pydantic_json_schema__(core_schema, handler)
             json_schema = handler.resolve_ref_schema(json_schema)
-            json_schema['examples'] = {'foo': {'mini_me': None}}
+            json_schema['examples'] = [{'foo': {'mini_me': None}}]
             return json_schema
 
     # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
         '$defs': {
             'Model': {
-                'examples': {'foo': {'mini_me': None}},
+                'examples': [{'foo': {'mini_me': None}}],
                 'properties': {'mini_me': {'anyOf': [{'$ref': '#/$defs/Model'}, {'type': 'null'}]}},
                 'required': ['mini_me'],
                 'title': 'Model',
