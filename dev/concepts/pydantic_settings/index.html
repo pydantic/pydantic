@@ -1488,6 +1488,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </li>
         
           <li class="md-nav__item">
+  <a href="#cli-boolean-flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CLI Boolean Flags
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#change-whether-cli-should-exit-on-error" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3965,6 +3976,17 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </li>
         
           <li class="md-nav__item">
+  <a href="#cli-boolean-flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CLI Boolean Flags
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#change-whether-cli-should-exit-on-error" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5019,6 +5041,71 @@ the name of the currently executing program from <code>sys.argv[0]</code>, just 
 <span class="sd">options:</span>
 <span class="sd">  -h, --help  show this help message and exit</span>
 <span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+<h4 id="cli-boolean-flags">CLI Boolean Flags<a class="headerlink" href="#cli-boolean-flags" title="Permanent link">&para;</a></h4>
+<p>Change whether boolean fields should be explicit or implicit by default using the <code>cli_implicit_flags</code> setting. By
+default, boolean fields are "explicit", meaning a boolean value must be explicitly provided on the CLI, e.g.
+<code>--flag=True</code>. Conversely, boolean fields that are "implicit" derive the value from the flag itself, e.g.
+<code>--flag,--no-flag</code>, which removes the need for an explicit value to be passed.</p>
+<p>Additionally, the provided <code>CliImplicitFlag</code> and <code>CliExplicitFlag</code> annotations can be used for more granular control
+when necessary.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+</div>
+<p>For <code>python &lt; 3.9</code>:
+  * The <code>--no-flag</code> option is not generated due to an underlying <code>argparse</code> limitation.
+  * The <code>CliImplicitFlag</code> and <code>CliExplicitFlag</code> annotations can only be applied to optional bool fields.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">CliExplicitFlag</span><span class="p">,</span> <span class="n">CliImplicitFlag</span>
+
+
+<span class="k">class</span> <span class="nc">ExplicitSettings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">,</span> <span class="n">cli_parse_args</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Boolean fields are explicit by default.&quot;&quot;&quot;</span>
+
+    <span class="n">explicit_req</span><span class="p">:</span> <span class="nb">bool</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    --explicit_req bool   (required)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">explicit_opt</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    --explicit_opt bool   (default: False)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Booleans are explicit by default, so must override implicit flags with annotation</span>
+    <span class="n">implicit_req</span><span class="p">:</span> <span class="n">CliImplicitFlag</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    --implicit_req, --no-implicit_req (required)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">implicit_opt</span><span class="p">:</span> <span class="n">CliImplicitFlag</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    --implicit_opt, --no-implicit_opt (default: False)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">ImplicitSettings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">,</span> <span class="n">cli_parse_args</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cli_implicit_flags</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;With cli_implicit_flags=True, boolean fields are implicit by default.&quot;&quot;&quot;</span>
+
+    <span class="c1"># Booleans are implicit by default, so must override explicit flags with annotation</span>
+    <span class="n">explicit_req</span><span class="p">:</span> <span class="n">CliExplicitFlag</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    --explicit_req bool   (required)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">explicit_opt</span><span class="p">:</span> <span class="n">CliExplicitFlag</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    --explicit_opt bool   (default: False)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">implicit_req</span><span class="p">:</span> <span class="nb">bool</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    --implicit_req, --no-implicit_req (required)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">implicit_opt</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    --implicit_opt, --no-implicit_opt (default: False)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <h4 id="change-whether-cli-should-exit-on-error">Change Whether CLI Should Exit on Error<a class="headerlink" href="#change-whether-cli-should-exit-on-error" title="Permanent link">&para;</a></h4>
 <p>Change whether the CLI internal parser will exit on error or raise a <code>SettingsError</code> exception by using
