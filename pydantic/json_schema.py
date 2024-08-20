@@ -1706,7 +1706,9 @@ class GenerateJsonSchema:
                 # I believe this is true, but I am not 100% sure
                 min_items += 1
 
-        json_schema: JsonSchemaValue = {'type': 'array', 'prefixItems': prefix_items}
+        json_schema: JsonSchemaValue = {'type': 'array'}
+        if prefix_items:
+            json_schema['prefixItems'] = prefix_items
         if min_items:
             json_schema['minItems'] = min_items
 
