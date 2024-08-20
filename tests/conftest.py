@@ -165,7 +165,11 @@ def validate_json_schemas(monkeypatch: pytest.MonkeyPatch, request: pytest.Fixtu
             try:
                 Draft202012Validator.check_schema(json_schema)
             except SchemaError:
-                pytest.fail('Failed to validate the JSON Schema against the Draft 2020-12 spec')
+                pytest.fail(
+                    'Failed to validate the JSON Schema against the Draft 2020-12 spec. '
+                    'If this is expected, you can mark the test function with the `skip_json_schema_validation` '
+                    'marker. Note that this validation only takes place during tests, and is not active at runtime.'
+                )
 
         return json_schema
 
