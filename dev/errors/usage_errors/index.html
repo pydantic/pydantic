@@ -4364,7 +4364,7 @@ encounter when working with Pydantic, along with suggestions for addressing the 
     <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
         <span class="nd">@classmethod</span>
         <span class="k">def</span> <span class="nf">__modify_schema__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">field_schema</span><span class="p">):</span>
-            <span class="n">field_schema</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">examples</span><span class="o">=</span><span class="s1">&#39;examples&#39;</span><span class="p">)</span>
+            <span class="n">field_schema</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;example&#39;</span><span class="p">])</span>
 
 <span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;custom-json-schema&#39;</span>
@@ -4386,13 +4386,13 @@ below:</p>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="n">json_schema</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__get_pydantic_json_schema__</span><span class="p">(</span><span class="n">core_schema</span><span class="p">,</span> <span class="n">handler</span><span class="p">)</span>
         <span class="n">json_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="o">.</span><span class="n">resolve_ref_schema</span><span class="p">(</span><span class="n">json_schema</span><span class="p">)</span>
-        <span class="n">json_schema</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">examples</span><span class="o">=</span><span class="s1">&#39;examples&#39;</span><span class="p">)</span>
+        <span class="n">json_schema</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;example&#39;</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">json_schema</span>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">())</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">{&#39;examples&#39;: &#39;examples&#39;, &#39;properties&#39;: {}, &#39;title&#39;: &#39;Model&#39;, &#39;type&#39;: &#39;object&#39;}</span>
+<span class="sd">{&#39;examples&#39;: [&#39;example&#39;], &#39;properties&#39;: {}, &#39;title&#39;: &#39;Model&#39;, &#39;type&#39;: &#39;object&#39;}</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 <h2 id="decorator-missing-field">Decorator on missing field<a class="headerlink" href="#decorator-missing-field" title="Permanent link">&para;</a></h2>
