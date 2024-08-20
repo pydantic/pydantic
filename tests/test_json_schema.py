@@ -811,24 +811,23 @@ def test_date_types(field_type, expected_schema):
 
 
 @pytest.mark.parametrize(
-    'field_type,expected_schema',
+    'field_type',
     [
-        (condate(), {}),
-        (
-            condate(gt=date(2010, 1, 1), lt=date(2021, 2, 2)),
-            {'exclusiveMinimum': date(2010, 1, 1), 'exclusiveMaximum': date(2021, 2, 2)},
-        ),
-        (condate(ge=date(2010, 1, 1), le=date(2021, 2, 2)), {'minimum': date(2010, 1, 1), 'maximum': date(2021, 2, 2)}),
+        condate(),
+        condate(gt=date(2010, 1, 1), lt=date(2021, 2, 2)),
+        condate(ge=date(2010, 1, 1), le=date(2021, 2, 2)),
     ],
 )
-def test_date_constrained_types(field_type, expected_schema):
+def test_date_constrained_types_no_constraints(field_type):
+    """No constraints added, see https://github.com/json-schema-org/json-schema-spec/issues/116."""
+
     class Model(BaseModel):
         a: field_type
 
     assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'date', **expected_schema}},
+        'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'date'}},
         'required': ['a'],
     }
 
