@@ -2410,8 +2410,8 @@ class WithJsonSchema:
 class Examples:
     """Add examples to a JSON schema.
 
-    Examples should be a map of example names (strings)
-    to example values (any valid JSON).
+    If the JSON Schema already contains examples, the provided examples
+    will be appended.
 
     If `mode` is set this will only apply to that schema generation mode,
     allowing you to add different examples for validation and serialization.
