@@ -35,7 +35,7 @@ from uuid import UUID
 import pytest
 from dirty_equals import HasRepr
 from packaging.version import Version
-from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_json
+from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_jsonable_python
 from typing_extensions import Annotated, Literal, Self, TypedDict, deprecated
 
 import pydantic
@@ -50,6 +50,7 @@ from pydantic import (
     PlainSerializer,
     PlainValidator,
     PydanticDeprecatedSince20,
+    PydanticDeprecatedSince29,
     PydanticUserError,
     RootModel,
     ValidationError,
@@ -5080,11 +5081,11 @@ def test_arbitrary_type_json_schema(field_schema, model_schema, instance_of):
             },
         ),
         (
-            Examples({'Custom Example': [1, 2, 3]}),
+            Examples([1, 2, 3]),
             {
                 'properties': {
                     'x': {
-                        'anyOf': [{'examples': {'Custom Example': [1, 2, 3]}, 'type': 'integer'}, {'type': 'null'}],
+                        'anyOf': [{'examples': [1, 2, 3], 'type': 'integer'}, {'type': 'null'}],
                         'title': 'X',
                     }
                 },
@@ -5266,14 +5267,14 @@ def test_override_enum_json_schema():
 def test_json_schema_extras_on_ref() -> None:
     @dataclass
     class JsonSchemaExamples:
-        examples: Dict[str, Any]
+        examples: List[Any]
 
         def __get_pydantic_json_schema__(
             self, core_schema: CoreSchema, handler: GetJsonSchemaHandler
         ) -> JsonSchemaValue:
             json_schema = handler(core_schema)
             assert json_schema.keys() == {'$ref'}
-            json_schema['examples'] = to_json(self.examples)
+            json_schema['examples'] = to_jsonable_python(self.examples)
             return json_schema
 
     @dataclass
@@ -5292,9 +5293,7 @@ def test_json_schema_extras_on_ref() -> None:
         name: str
         age: int
 
-    ta = TypeAdapter(
-        Annotated[Model, JsonSchemaExamples({'foo': Model(name='John', age=28)}), JsonSchemaTitle('ModelTitle')]
-    )
+    ta = TypeAdapter(Annotated[Model, JsonSchemaExamples([Model(name='John', age=28)]), JsonSchemaTitle('ModelTitle')])
 
     # insert_assert(ta.json_schema())
     assert ta.json_schema() == {
@@ -5307,7 +5306,7 @@ def test_json_schema_extras_on_ref() -> None:
             }
         },
         '$ref': '#/$defs/Model',
-        'examples': b'{"foo":{"name":"John","age":28}}',
+        'examples': [{'name': 'John', 'age': 28}],
         'title': 'ModelTitle',
     }
 
@@ -5361,8 +5360,37 @@ def test_resolve_def_schema_from_core_schema() -> None:
 def test_examples_annotation() -> None:
     ListWithExamples = Annotated[
         List[float],
-        Examples({'Fibonacci': [1, 1, 2, 3, 5]}),
+        Examples([[1, 1, 2, 3, 5], [1, 2, 3]]),
     ]
+
+    ta = TypeAdapter(ListWithExamples)
+
+    assert ta.json_schema() == {
+        'examples': [[1, 1, 2, 3, 5], [1, 2, 3]],
+        'items': {'type': 'number'},
+        'type': 'array',
+    }
+
+    ListWithExtraExample = Annotated[
+        ListWithExamples,
+        Examples([[3.14, 2.71]]),
+    ]
+
+    ta = TypeAdapter(ListWithExtraExample)
+
+    assert ta.json_schema() == {
+        'examples': [[1, 1, 2, 3, 5], [1, 2, 3], [3.14, 2.71]],
+        'items': {'type': 'number'},
+        'type': 'array',
+    }
+
+
+def test_examples_annotation_dict() -> None:
+    with pytest.warns(PydanticDeprecatedSince29):
+        ListWithExamples = Annotated[
+            List[float],
+            Examples({'Fibonacci': [1, 1, 2, 3, 5]}),
+        ]
 
     ta = TypeAdapter(ListWithExamples)
 
@@ -5373,26 +5401,62 @@ def test_examples_annotation() -> None:
         'type': 'array',
     }
 
-    ListWithMoreExamples = Annotated[
-        ListWithExamples,
-        Examples(
-            {
-                'Constants': [
-                    3.14,
-                    2.71,
-                ]
-            }
-        ),
-    ]
+    with pytest.warns(PydanticDeprecatedSince29):
+        ListWithMoreExamples = Annotated[
+            ListWithExamples,
+            Examples(
+                {
+                    'Constants': [
+                        3.14,
+                        2.71,
+                    ]
+                }
+            ),
+        ]
 
     ta = TypeAdapter(ListWithMoreExamples)
 
-    # insert_assert(ta.json_schema())
     assert ta.json_schema() == {
         'examples': {'Constants': [3.14, 2.71], 'Fibonacci': [1, 1, 2, 3, 5]},
         'items': {'type': 'number'},
         'type': 'array',
     }
+
+
+def test_examples_mixed_types() -> None:
+    with pytest.warns(PydanticDeprecatedSince29):
+        ListThenDict = Annotated[
+            int,
+            Examples([1, 2]),
+            Examples({'some_example': [3, 4]}),
+        ]
+
+        DictThenList = Annotated[
+            int,
+            Examples({'some_example': [3, 4]}),
+            Examples([1, 2]),
+        ]
+
+    list_then_dict_ta = TypeAdapter(ListThenDict)
+    dict_then_list_ta = TypeAdapter(DictThenList)
+
+    with pytest.warns(
+        UserWarning,
+        match=re.escape('Updating existing JSON Schema examples of type list with examples of type dict.'),
+    ):
+        assert list_then_dict_ta.json_schema() == {
+            'examples': [1, 2, 3, 4],
+            'type': 'integer',
+        }
+
+    with pytest.warns(
+        UserWarning,
+        match=re.escape('Updating existing JSON Schema examples of type dict with examples of type list.'),
+    ):
+        assert dict_then_list_ta.json_schema() == {
+            'examples': [3, 4, 1, 2],
+            'type': 'integer',
+        }
 
 
 def test_skip_json_schema_annotation() -> None:

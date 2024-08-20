@@ -60,6 +60,13 @@ class PydanticDeprecatedSince26(PydanticDeprecationWarning):
         super().__init__(message, *args, since=(2, 6), expected_removal=(3, 0))
 
 
+class PydanticDeprecatedSince29(PydanticDeprecationWarning):
+    """A specific `PydanticDeprecationWarning` subclass defining functionality deprecated since Pydantic 2.9."""
+
+    def __init__(self, message: str, *args: object) -> None:
+        super().__init__(message, *args, since=(2, 9), expected_removal=(3, 0))
+
+
 class GenericBeforeBaseModelWarning(Warning):
     pass
 

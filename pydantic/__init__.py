@@ -49,6 +49,7 @@ if typing.TYPE_CHECKING:
     from .warnings import (
         PydanticDeprecatedSince20,
         PydanticDeprecatedSince26,
+        PydanticDeprecatedSince29,
         PydanticDeprecationWarning,
         PydanticExperimentalWarning,
     )
@@ -210,6 +211,7 @@ __all__ = (
     # warnings
     'PydanticDeprecatedSince20',
     'PydanticDeprecatedSince26',
+    'PydanticDeprecatedSince29',
     'PydanticDeprecationWarning',
     'PydanticExperimentalWarning',
     # annotated handlers
@@ -364,6 +366,7 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     # warnings
     'PydanticDeprecatedSince20': (__spec__.parent, '.warnings'),
     'PydanticDeprecatedSince26': (__spec__.parent, '.warnings'),
+    'PydanticDeprecatedSince29': (__spec__.parent, '.warnings'),
     'PydanticDeprecationWarning': (__spec__.parent, '.warnings'),
     'PydanticExperimentalWarning': (__spec__.parent, '.warnings'),
     # annotated handlers

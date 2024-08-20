@@ -35,6 +35,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    overload,
 )
 
 import pydantic_core
@@ -42,7 +43,7 @@ from pydantic_core import CoreSchema, PydanticOmit, core_schema, to_jsonable_pyt
 from pydantic_core.core_schema import ComputedField
 from typing_extensions import Annotated, Literal, TypeAlias, assert_never, deprecated, final
 
-from pydantic.warnings import PydanticDeprecatedSince26
+from pydantic.warnings import PydanticDeprecatedSince26, PydanticDeprecatedSince29
 
 from ._internal import (
     _config,
@@ -2406,19 +2407,36 @@ class WithJsonSchema:
         return hash(type(self.mode))
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
 class Examples:
     """Add examples to a JSON schema.
 
-    Examples should be a map of example names (strings)
-    to example values (any valid JSON).
+    If the JSON Schema already contains examples, the provided examples
+    will be appended.
 
     If `mode` is set this will only apply to that schema generation mode,
     allowing you to add different examples for validation and serialization.
     """
 
-    examples: dict[str, Any]
-    mode: Literal['validation', 'serialization'] | None = None
+    @overload
+    @deprecated('Using a dict for `examples` is deprecated since v2.9 and will be removed in v3.0. Use a list instead.')
+    def __init__(
+        self, examples: dict[str, Any], mode: Literal['validation', 'serialization'] | None = None
+    ) -> None: ...
+
+    @overload
+    def __init__(self, examples: list[Any], mode: Literal['validation', 'serialization'] | None = None) -> None: ...
+
+    def __init__(
+        self, examples: dict[str, Any] | list[Any], mode: Literal['validation', 'serialization'] | None = None
+    ) -> None:
+        if isinstance(examples, dict):
+            warnings.warn(
+                'Using a dict for `examples` is deprecated, use a list instead.',
+                PydanticDeprecatedSince29,
+                stacklevel=2,
+            )
+        self.examples = examples
+        self.mode = mode
 
     def __get_pydantic_json_schema__(
         self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
@@ -2427,9 +2445,36 @@ class Examples:
         json_schema = handler(core_schema)
         if mode != handler.mode:
             return json_schema
-        examples = json_schema.get('examples', {})
-        examples.update(to_jsonable_python(self.examples))
-        json_schema['examples'] = examples
+        examples = json_schema.get('examples')
+        if examples is None:
+            json_schema['examples'] = to_jsonable_python(self.examples)
+        if isinstance(examples, dict):
+            if isinstance(self.examples, list):
+                warnings.warn(
+                    'Updating existing JSON Schema examples of type dict with examples of type list. '
+                    'Only the existing examples values will be retained. Note that dict support for '
+                    'examples is deprecated and will be removed in v3.0.',
+                    UserWarning,
+                )
+                json_schema['examples'] = to_jsonable_python(
+                    [ex for value in examples.values() for ex in value] + self.examples
+                )
+            else:
+                json_schema['examples'] = to_jsonable_python({**examples, **self.examples})
+        if isinstance(examples, list):
+            if isinstance(self.examples, list):
+                json_schema['examples'] = to_jsonable_python(examples + self.examples)
+            elif isinstance(self.examples, dict):
+                warnings.warn(
+                    'Updating existing JSON Schema examples of type list with examples of type dict. '
+                    'Only the examples values will be retained. Note that dict support for '
+                    'examples is deprecated and will be removed in v3.0.',
+                    UserWarning,
+                )
+                json_schema['examples'] = to_jsonable_python(
+                    examples + [ex for value in self.examples.values() for ex in value]
+                )
+
         return json_schema
 
     def __hash__(self) -> int:
