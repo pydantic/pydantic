@@ -4,9 +4,7 @@ Today, Pydantic is downloaded <span id="download-count">many</span> times a mont
 
 It's hard to know why so many people have adopted Pydantic since its inception six years ago, but here are a few guesses.
 
-{% raw %}
 ## Type hints powering schema validation {#type-hints}
-{% endraw %}
 
 The schema that Pydantic validates against is generally defined by Python type hints.
 
@@ -213,9 +211,7 @@ Pydantic generates [JSON Schema version 2020-12](https://json-schema.org/draft/2
 !!! tip "Learn more"
     See the [documentation on JSON Schema](concepts/json_schema.md).
 
-{% raw %}
 ## Strict mode and data coercion {#strict-lax}
-{% endraw %}
 
 By default, Pydantic is tolerant to common incorrect types and coerces data to the right type &mdash; e.g. a numeric string passed to an `int` field will be parsed as an `int`.
 
@@ -264,9 +260,7 @@ To solve this, Pydantic can parse and validate JSON in one step. This allows sen
 !!! tip "Learn more"
     See the [documentation on strict mode](concepts/strict_mode.md).
 
-{% raw %}
 ## Dataclasses, TypedDicts, and more {#typeddict}
-{% endraw %}
 
 Pydantic provides four ways to create schemas and perform validation and serialization:
 
@@ -364,7 +358,6 @@ Some notable libraries that depend on Pydantic:
 
 More libraries using Pydantic can be found at [`Kludex/awesome-pydantic`](https://github.com/Kludex/awesome-pydantic).
 
-{% raw %}
 ## Organisations using Pydantic {#using-pydantic}
 
 Some notable companies and organisations using Pydantic together with comments on why/how we know they're using Pydantic.
@@ -378,4 +371,3 @@ The organisations below are included because they match one or more of the follo
 We've included some extra detail where appropriate and already in the public domain.
 
 {{ organisations }}
-{% endraw %}

@@ -1,8 +1,6 @@
 Pydantic attempts to provide useful errors. The following sections provide details on common errors developers may
 encounter when working with Pydantic, along with suggestions for addressing the error condition.
 
-<!-- Note: raw tag is used to avoid rendering of jinja2 template tags in the docs. -->
-{% raw %}
 ## Class not fully defined {#class-not-fully-defined}
 
 This error is raised when a type referenced in an annotation of a pydantic-validated type
@@ -1165,4 +1163,3 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'dataclass-on-model'
 ```
 
-{% endraw %}
