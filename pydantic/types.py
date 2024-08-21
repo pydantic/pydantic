@@ -1291,7 +1291,7 @@ class PathType:
                     raise PydanticCustomError('path_too_long', 'Path name is too long')
                 else:
                     raise  # Do not swallow other types of OSError?
-(       elif is_posix and parent_dir_exists and os.statvfs(parent).f_namemax < len(path.name):
+        elif is_posix and parent_dir_exists and os.statvfs(parent).f_namemax < len(path.name):
             raise PydanticCustomError('path_too_long', 'Path name is too long')
         elif path.exists():
             raise PydanticCustomError('path_exists', 'Path already exists')
