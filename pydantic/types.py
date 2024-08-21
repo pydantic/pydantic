@@ -4,11 +4,12 @@ from __future__ import annotations as _annotations
 
 import base64
 import dataclasses as _dataclasses
+import os
 import re
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
-from pathlib import Path
+from pathlib import Path, PosixPath
 from types import ModuleType
 from typing import (
     TYPE_CHECKING,
@@ -1276,7 +1277,9 @@ class PathType:
 
     @staticmethod
     def validate_new(path: Path, _: core_schema.ValidationInfo) -> Path:
-        if path.exists():
+        if isinstance(path, PosixPath) and os.statvfs(path.parent).f_namemax < len(path.name):
+            raise PydanticCustomError('path_too_long', 'Path name is too long')
+        elif path.exists():
             raise PydanticCustomError('path_exists', 'Path already exists')
         elif not path.parent.exists():
             raise PydanticCustomError('parent_does_not_exist', 'Parent directory does not exist')
