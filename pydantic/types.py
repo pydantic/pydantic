@@ -1277,7 +1277,7 @@ class PathType:
 
     @staticmethod
     def validate_new(path: Path, _: core_schema.ValidationInfo) -> Path:
-        if isinstance(path, PosixPath) and os.statvfs(path.parent).f_namemax < len(path.name):
+        if isinstance(path, PosixPath) and path.parent.exists() and os.statvfs(path.parent).f_namemax < len(path.name):
             raise PydanticCustomError('path_too_long', 'Path name is too long')
         elif path.exists():
             raise PydanticCustomError('path_exists', 'Path already exists')
