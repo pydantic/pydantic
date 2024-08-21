@@ -2201,6 +2201,7 @@ class GenerateSchema:
             else:
                 ref = typing.cast('str|None', schema.get('ref', None))
                 if ref is not None:
+                    self.defs.definitions[ref] = schema
                     schema = core_schema.definition_reference_schema(ref)
 
             # use the last serializer to make it easy to override a serializer set on a parent model
