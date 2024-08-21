@@ -1263,14 +1263,18 @@ class PathType:
 
     @staticmethod
     def validate_file(path: Path, _: core_schema.ValidationInfo) -> Path:
-        if path.is_file():
+        if isinstance(path, PosixPath) and os.statvfs(path.parent).f_namemax < len(path.name):
+            raise PydanticCustomError('path_too_long', 'Path name is too long')
+        elif path.is_file():
             return path
         else:
             raise PydanticCustomError('path_not_file', 'Path does not point to a file')
 
     @staticmethod
     def validate_directory(path: Path, _: core_schema.ValidationInfo) -> Path:
-        if path.is_dir():
+        if isinstance(path, PosixPath) and path.exists() and os.statvfs(path).f_namemax < len(path.name):
+            raise PydanticCustomError('path_too_long', 'Path name is too long')
+        elif path.is_dir():
             return path
         else:
             raise PydanticCustomError('path_not_directory', 'Path does not point to a directory')
