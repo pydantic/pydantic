@@ -5,7 +5,7 @@
 groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "testing-extra"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:61fcc293656d68a5c7c263fdaff9733357e0308e154ae9e706709bded249140f"
+content_hash = "sha256:0e81124dab45100ba65495984444d92cca6155098073443dc5b7e2ca94cf72be"
 
 [[metadata.targets]]
 requires_python = ">=3.8"
@@ -101,16 +101,6 @@ dependencies = [
 files = [
     {file = "Babel-2.15.0-py3-none-any.whl", hash = "sha256:08706bdad8d0a3413266ab61bd6c34d0c28d6e1e7badf40a2cebe67644e2e1fb"},
     {file = "babel-2.15.0.tar.gz", hash = "sha256:8daf0e265d05768bc6c7a314cf1321e9a123afc328cc635c18622a2f30a04413"},
-]
-
-[[package]]
-name = "backports-strenum"
-version = "1.3.1"
-requires_python = ">=3.8.6,<3.11"
-summary = "Base class for creating enumerated constants that are also subclasses of str"
-files = [
-    {file = "backports_strenum-1.3.1-py3-none-any.whl", hash = "sha256:cdcfe36dc897e2615dc793b7d3097f54d359918fc448754a517e6f23044ccf83"},
-    {file = "backports_strenum-1.3.1.tar.gz", hash = "sha256:77c52407342898497714f0596e86188bb7084f89063226f4ba66863482f42414"},
 ]
 
 [[package]]
@@ -684,7 +674,7 @@ files = [
 
 [[package]]
 name = "griffe"
-version = "0.49.0"
+version = "1.1.1"
 requires_python = ">=3.8"
 summary = "Signatures for entire Python programs. Extract the structure, the frame, the skeleton of your project, to generate API documentation or find breaking changes in your API."
 dependencies = [
@@ -692,8 +682,8 @@ dependencies = [
     "colorama>=0.4",
 ]
 files = [
-    {file = "griffe-0.49.0-py3-none-any.whl", hash = "sha256:c0d505f2a444ac342b22f4647d6444c8db64964b6a379c14f401fc467c0741a3"},
-    {file = "griffe-0.49.0.tar.gz", hash = "sha256:a7e1235c27d8139e0fd24a5258deef6061bc876a9fda8117a5cf7b53ee940a91"},
+    {file = "griffe-1.1.1-py3-none-any.whl", hash = "sha256:0c469411e8d671a545725f5c0851a746da8bd99d354a79fdc4abd45219252efb"},
+    {file = "griffe-1.1.1.tar.gz", hash = "sha256:faeb78764c0b2bd010719d6e015d07709b0f260258b5d4dd6c88343d9702aa30"},
 ]
 
 [[package]]
@@ -984,10 +974,7 @@ files = [
 
 [[package]]
 name = "mike"
-version = "2.2.0.dev0"
-git = "https://github.com/jimporter/mike.git"
-ref = "master"
-revision = "3b425156dec71bd7cd3440f42f41b99c7013a9ce"
+version = "2.1.3"
 summary = "Manage multiple versions of your MkDocs-powered documentation"
 dependencies = [
     "importlib-metadata",
@@ -998,6 +985,10 @@ dependencies = [
     "pyyaml-env-tag",
     "pyyaml>=5.1",
     "verspec",
+]
+files = [
+    {file = "mike-2.1.3-py3-none-any.whl", hash = "sha256:d90c64077e84f06272437b464735130d380703a76a5738b152932884c60c062a"},
+    {file = "mike-2.1.3.tar.gz", hash = "sha256:abd79b8ea483fb0275b7972825d3082e5ae67a41820f8d8a0dc7a3f49944e810"},
 ]
 
 [[package]]
@@ -1039,20 +1030,6 @@ dependencies = [
 files = [
     {file = "mkdocs_autorefs-1.0.1-py3-none-any.whl", hash = "sha256:aacdfae1ab197780fb7a2dac92ad8a3d8f7ca8049a9cbe56a4218cd52e8da570"},
     {file = "mkdocs_autorefs-1.0.1.tar.gz", hash = "sha256:f684edf847eced40b570b57846b15f0bf57fb93ac2c510450775dcf16accb971"},
-]
-
-[[package]]
-name = "mkdocs-embed-external-markdown"
-version = "2.3.0"
-requires_python = ">=3.6.2,<4.0.0"
-summary = "Mkdocs plugin that allow to inject external markdown or markdown section from given url"
-dependencies = [
-    "Jinja2<4.0.0,>=3.0.3",
-    "requests<3.0.0,>=2.27.1",
-]
-files = [
-    {file = "mkdocs-embed-external-markdown-2.3.0.tar.gz", hash = "sha256:543ecbaf1d1b62bb6b557714d20ac76b7c24b2b76adc5243a406e636964a8d45"},
-    {file = "mkdocs_embed_external_markdown-2.3.0-py3-none-any.whl", hash = "sha256:a14918a2beacf50ba215670e802fee75de3013bb9db8d8e8d23dd6978004b5bc"},
 ]
 
 [[package]]
@@ -1126,18 +1103,6 @@ dependencies = [
 files = [
     {file = "mkdocs-redirects-1.2.1.tar.gz", hash = "sha256:9420066d70e2a6bb357adf86e67023dcdca1857f97f07c7fe450f8f1fb42f861"},
     {file = "mkdocs_redirects-1.2.1-py3-none-any.whl", hash = "sha256:497089f9e0219e7389304cffefccdfa1cac5ff9509f2cb706f4c9b221726dffb"},
-]
-
-[[package]]
-name = "mkdocs-simple-hooks"
-version = "0.1.5"
-summary = "Define your own hooks for mkdocs, without having to create a new package."
-dependencies = [
-    "mkdocs>=1.2",
-]
-files = [
-    {file = "mkdocs-simple-hooks-0.1.5.tar.gz", hash = "sha256:dddbdf151a18723c9302a133e5cf79538be8eb9d274e8e07d2ac3ac34890837c"},
-    {file = "mkdocs_simple_hooks-0.1.5-py3-none-any.whl", hash = "sha256:efeabdbb98b0850a909adee285f3404535117159d5cb3a34f541d6eaa644d50a"},
 ]
 
 [[package]]
