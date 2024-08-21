@@ -7,7 +7,6 @@ import re
 import textwrap
 from pathlib import Path
 from textwrap import indent
-from typing import TYPE_CHECKING
 
 import autoflake
 import pyupgrade._main as pyupgrade_main  # type: ignore
@@ -25,9 +24,13 @@ DOCS_DIR = THIS_DIR.parent
 PROJECT_ROOT = DOCS_DIR.parent
 
 
-if TYPE_CHECKING:
+try:
     from .conversion_table import conversion_table
-else:
+except ImportError:
+    # Due to how MkDocs requires this file to be specified (as a path and not a
+    # dot-separated module name), relative imports don't work:
+    # MkDocs is adding the dir. of this file to `sys.path` and uses
+    # `importlib.spec_from_file_location` and `module_from_spec`, which isn't ideal.
     from conversion_table import conversion_table
 
 # Start definition of MkDocs hooks
