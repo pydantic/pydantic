@@ -1285,17 +1285,17 @@ class PathType:
         is_posix = isinstance(path, PosixPath)
         if is_posix:
             try:
-                parent_dir_exists = parent.exists()
+                parent.exists()
             except OSError as osexc:
                 if osexc.errno == 36:
                     raise PydanticCustomError('path_too_long', 'Path name is too long')
                 else:
                     raise  # Do not swallow other types of OSError?
-        elif is_posix and parent_dir_exists and os.statvfs(parent).f_namemax < len(path.name):
+        if is_posix and parent.exists() and os.statvfs(parent).f_namemax < len(path.name):
             raise PydanticCustomError('path_too_long', 'Path name is too long')
         elif path.exists():
             raise PydanticCustomError('path_exists', 'Path already exists')
-        elif not parent_dir_exists:
+        elif not parent.exists():
             raise PydanticCustomError('parent_does_not_exist', 'Parent directory does not exist')
         else:
             return path
