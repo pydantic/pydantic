@@ -108,7 +108,7 @@ class BeforeFieldValidator(BaseModel):
     @classmethod
     def invalid_with_info(cls, value: Any, info: int) -> Any: ...
 
-    @field_validator('foo', mode='before', json_schema_input_type=int)  # `input_type` allowed here.
+    @field_validator('foo', mode='before', json_schema_input_type=int)  # `json_schema_input_type` allowed here.
     @classmethod
     def valid_with_info(cls, value: Any, info: ValidationInfo) -> Any: ...
 
@@ -137,7 +137,7 @@ class WrapFieldValidator(BaseModel):
     def valid_no_info(cls, value: Any, handler: ValidatorFunctionWrapHandler) -> Any:
         """TODO this should be valid."""
 
-    @field_validator('foo', mode='wrap', json_schema_input_type=int)
+    @field_validator('foo', mode='wrap', json_schema_input_type=int)  # `json_schema_input_type` allowed here.
     @classmethod
     def valid_with_info(cls, value: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo) -> Any: ...
 

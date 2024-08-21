@@ -755,6 +755,10 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'validator-input-type'
 ```
 
+Documenting the JSON Schema input type is only possible for validators where the given
+value can be anything. That is why it isn't available for `after` validators, where
+the value is first validated against the type annotation.
+
 ## Root validator, `pre`, `skip_on_failure` {#root-validator-pre-skip}
 
 If you use `@root_validator` with `pre=False` (the default) you MUST specify `skip_on_failure=True`.
