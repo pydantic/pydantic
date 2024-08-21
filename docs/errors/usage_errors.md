@@ -1162,4 +1162,3 @@ try:
 except PydanticUserError as exc_info:
     assert exc_info.code == 'dataclass-on-model'
 ```
-
