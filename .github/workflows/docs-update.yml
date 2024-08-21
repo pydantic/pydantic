@@ -10,7 +10,6 @@ on:
 
 env:
   COLUMNS: 150
-  PDM_DEPS: 'urllib3<2'
 
 jobs:
   lint:

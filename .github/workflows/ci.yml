@@ -10,8 +10,6 @@ on:
 
 env:
   COLUMNS: 150
-  PDM_DEPS: 'urllib3<2'
-  FINDPYTHON_GET_VERSION_TIMEOUT: 30
 
 jobs:
   lint:
