@@ -188,6 +188,9 @@ markdown_extensions:
 watch:
 - pydantic
 
+hooks:
+- 'docs/plugins/main.py'
+
 plugins:
 - mike:
     alias_type: symlink
@@ -215,11 +218,6 @@ plugins:
             - docs/plugins/griffe_doclinks.py
         import:
           - https://docs.python.org/3/objects.inv
-- mkdocs-simple-hooks:
-    hooks:
-      on_pre_build: 'docs.plugins.main:on_pre_build'
-      on_files: 'docs.plugins.main:on_files'
-      on_page_markdown: 'docs.plugins.main:on_page_markdown'
 - redirects:
     redirect_maps:
       'usage/mypy.md': 'integrations/mypy.md'
@@ -289,4 +287,3 @@ plugins:
       'blog/pydantic-v2-alpha.md': 'https://blog.pydantic.dev/blog/2023/04/03/pydantic-v2-pre-release/'
       'blog/pydantic-v2-final.md': 'https://blog.pydantic.dev/blog/2023/06/30/pydantic-v2-is-here/'
       'blog/pydantic-v2.md': 'https://blog.pydantic.dev/blog/2022/07/10/pydantic-v2-plan/'
-- external-markdown:

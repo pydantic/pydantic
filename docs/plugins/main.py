@@ -10,6 +10,7 @@ from textwrap import indent
 
 import autoflake
 import pyupgrade._main as pyupgrade_main  # type: ignore
+import requests
 import tomli
 import yaml
 from jinja2 import Template  # type: ignore
@@ -17,12 +18,22 @@ from mkdocs.config import Config
 from mkdocs.structure.files import Files
 from mkdocs.structure.pages import Page
 
-from .conversion_table import conversion_table
-
 logger = logging.getLogger('mkdocs.plugin')
 THIS_DIR = Path(__file__).parent
 DOCS_DIR = THIS_DIR.parent
 PROJECT_ROOT = DOCS_DIR.parent
+
+
+try:
+    from .conversion_table import conversion_table
+except ImportError:
+    # Due to how MkDocs requires this file to be specified (as a path and not a
+    # dot-separated module name), relative imports don't work:
+    # MkDocs is adding the dir. of this file to `sys.path` and uses
+    # `importlib.spec_from_file_location` and `module_from_spec`, which isn't ideal.
+    from conversion_table import conversion_table
+
+# Start definition of MkDocs hooks
 
 
 def on_pre_build(config: Config) -> None:
@@ -51,6 +62,8 @@ def on_page_markdown(markdown: str, page: Page, config: Config, files: Files) ->
         return md
     if md := render_why(markdown, page):
         return md
+    if md := render_pydantic_settings(markdown, page):
+        return md
     elif md := build_schema_mappings(markdown, page):
         return md
     elif md := build_conversion_table(markdown, page):
@@ -61,6 +74,9 @@ def on_page_markdown(markdown: str, page: Page, config: Config, files: Files) ->
         return md
     else:
         return markdown
+
+
+# End definition of MkDocs hooks
 
 
 def add_changelog() -> None:
@@ -255,6 +271,22 @@ def render_why(markdown: str, page: Page) -> str | None:
         for org in get_orgs_data()
     ]
     return re.sub(r'{{ *organisations *}}', '\n\n'.join(elements), markdown)
+
+
+def render_pydantic_settings(markdown: str, page: Page) -> str | None:
+    if page.file.src_uri != 'concepts/pydantic_settings.md':
+        return None
+
+    req = requests.get('https://raw.githubusercontent.com/pydantic/pydantic-settings/main/docs/index.md')
+    if req.status_code != 200:
+        logger.warning(
+            'Got HTTP status %d when trying to fetch content of the `pydantic-settings` docs', req.status_code
+        )
+        return
+
+    docs_content = req.text.strip()
+
+    return re.sub(r'{{ *pydantic_settings *}}', docs_content, markdown)
 
 
 def _generate_table_row(col_values: list[str]) -> str:
