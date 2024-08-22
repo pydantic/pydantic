@@ -49,8 +49,8 @@ print(m.dimensions)
 - **Powered by type hints** &mdash; with Pydantic, schema validation and serialization are controlled by type annotations; less to learn, less code to write, and integration with your IDE and static analysis tools. [Learn more…](why.md#type-hints)
 - **Speed** &mdash; Pydantic's core validation logic is written in Rust. As a result, Pydantic is among the fastest data validation libraries for Python. [Learn more…](why.md#performance)
 - **JSON Schema** &mdash; Pydantic models can emit JSON Schema, allowing for easy integration with other tools. [Learn more…](why.md#json-schema)
-- **Strict** and **Lax** mode &mdash; Pydantic can run in either `strict=True` mode (where data is not converted) or `strict=False` mode where Pydantic tries to coerce data to the correct type where appropriate. [Learn more…](why.md#strict-lax)
-- **Dataclasses**, **TypedDicts** and more &mdash; Pydantic supports validation of many standard library types including `dataclass` and `TypedDict`. [Learn more…](why.md#typeddict)
+- **Strict** and **Lax** mode &mdash; Pydantic can run in either strict mode (where data is not converted) or lax mode where Pydantic tries to coerce data to the correct type where appropriate. [Learn more…](why.md#strict-lax)
+- **Dataclasses**, **TypedDicts** and more &mdash; Pydantic supports validation of many standard library types including `dataclass` and `TypedDict`. [Learn more…](why.md#dataclasses-typeddict-more)
 - **Customisation** &mdash; Pydantic allows custom validators and serializers to alter how data is processed in many powerful ways. [Learn more…](why.md#customisation)
 - **Ecosystem** &mdash; around 8,000 packages on PyPI use Pydantic, including massively popular libraries like
   _FastAPI_, _huggingface_, _Django Ninja_, _SQLModel_, & _LangChain_. [Learn more…](why.md#ecosystem)
@@ -101,17 +101,20 @@ print(user.model_dump())  # (10)!
 ```
 
 1. `id` is of type `int`; the annotation-only declaration tells Pydantic that this field is required. Strings,
-  bytes, or floats will be coerced to ints if possible; otherwise an exception will be raised.
+   bytes, or floats will be coerced to integers if possible; otherwise an exception will be raised.
 2. `name` is a string; because it has a default, it is not required.
-3. `signup_ts` is a `datetime` field that is required, but the value `None` may be provided;
-  Pydantic will process either a unix timestamp int (e.g. `1496498400`) or a string representing the date and time.
-4. `tastes` is a dictionary with string keys and positive integer values. The `PositiveInt` type is shorthand for `Annotated[int, annotated_types.Gt(0)]`.
-5. The input here is an ISO8601 formatted datetime, Pydantic will convert it to a `datetime` object.
+3. `signup_ts` is a [`datetime`][datetime.datetime] field that is required, but the value `None` may be provided;
+   Pydantic will process either a [Unix timestamp](https://en.wikipedia.org/wiki/Unix_time) integer (e.g. `1496498400`)
+   or a string representing the date and time.
+4. `tastes` is a dictionary with string keys and positive integer values. The `PositiveInt` type is
+   shorthand for `Annotated[int, annotated_types.Gt(0)]`.
+5. The input here is an [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) formatted datetime, but Pydantic will
+   convert it to a [`datetime`][datetime.datetime] object.
 6. The key here is `bytes`, but Pydantic will take care of coercing it to a string.
-7. Similarly, Pydantic will coerce the string `'1'` to an integer `1`.
-8. Here we create instance of `User` by passing our external data to `User` as keyword arguments
-9. We can access fields as attributes of the model
-10. We can convert the model to a dictionary with `model_dump()`
+7. Similarly, Pydantic will coerce the string `'1'` to the integer `1`.
+8. We create instance of `User` by passing our external data to `User` as keyword arguments.
+9. We can access fields as attributes of the model.
+10. We can convert the model to a dictionary with [`model_dump()`][pydantic.BaseModel.model_dump].
 
 If validation fails, Pydantic will raise an error with a breakdown of what was wrong:
 
@@ -154,8 +157,8 @@ except ValidationError as e:
     """
 ```
 
-1. The input data is wrong here &mdash; `id` is not a valid integer, and `signup_ts` is missing
-2. `User(...)` will raise a `ValidationError` with a list of errors
+1. The input data is wrong here &mdash; `id` is not a valid integer, and `signup_ts` is missing.
+2. Trying to instantiate `User` will raise a [`ValidationError`][pydantic_core.ValidationError] with a list of errors.
 
 ## Who is using Pydantic?
 

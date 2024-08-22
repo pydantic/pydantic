@@ -23,7 +23,7 @@ conda install pydantic -c conda-forge
 
 Pydantic has the following optional dependencies:
 
-* If you require email validation, you can add [email-validator](https://github.com/JoshData/python-email-validator).
+* Email validation provided by the [email-validator](https://pypi.org/project/email-validator/) package.
 
 To install optional dependencies along with Pydantic:
 
@@ -39,6 +39,6 @@ And if you prefer to install Pydantic directly from the repository:
 
 ```bash
 pip install git+https://github.com/pydantic/pydantic@main#egg=pydantic
-# or with extras
+# or with the `email` extra:
 pip install git+https://github.com/pydantic/pydantic@main#egg=pydantic[email]
 ```
