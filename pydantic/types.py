@@ -1289,8 +1289,6 @@ class PathType:
             except OSError as osexc:
                 if osexc.errno == 36:
                     raise PydanticCustomError('path_too_long', 'Path name is too long')
-                else:
-                    raise  # Do not swallow other types of OSError?
         if is_posix and parent.exists() and os.statvfs(parent).f_namemax < len(path.name):
             raise PydanticCustomError('path_too_long', 'Path name is too long')
         elif path.exists():
