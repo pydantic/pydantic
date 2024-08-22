@@ -981,7 +981,8 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        if self._mode == 'validation' and (input_schema := schema.get('metadata', {}).get('input_schema')):
+        metadata = _core_metadata.CoreMetadataHandler(schema).metadata
+        if self._mode == 'validation' and (input_schema := metadata.get('pydantic_js_input_core_schema')):
             return self.generate_inner(input_schema)
 
         return self.generate_inner(schema['schema'])
@@ -1006,7 +1007,8 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        if self._mode == 'validation' and (input_schema := schema.get('metadata', {}).get('input_schema')):
+        metadata = _core_metadata.CoreMetadataHandler(schema).metadata
+        if self._mode == 'validation' and (input_schema := metadata.get('pydantic_js_input_core_schema')):
             return self.generate_inner(input_schema)
 
         return self.handle_invalid_for_json_schema(
@@ -1022,7 +1024,8 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        if self._mode == 'validation' and (input_schema := schema.get('metadata', {}).get('input_schema')):
+        metadata = _core_metadata.CoreMetadataHandler(schema).metadata
+        if self._mode == 'validation' and (input_schema := metadata.get('pydantic_js_input_core_schema')):
             return self.generate_inner(input_schema)
 
         return self.generate_inner(schema['schema'])

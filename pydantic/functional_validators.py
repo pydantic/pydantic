@@ -127,7 +127,7 @@ class BeforeValidator:
             if self.json_schema_input_type is PydanticUndefined
             else handler.generate_schema(self.json_schema_input_type)
         )
-        metadata = {'input_schema': input_schema}
+        metadata = _core_metadata.build_metadata_dict(js_input_core_schema=input_schema)
 
         info_arg = _inspect_validator(self.func, 'before')
         if info_arg:
@@ -159,7 +159,7 @@ class PlainValidator:
     Attributes:
         func: The validator function.
         json_schema_input_type: The input type of the function. This is only used to generate the appropriate
-            JSON Schema (in validation mode).
+            JSON Schema (in validation mode). If not provided, will default to `Any`.
 
     Example:
         ```py
@@ -178,7 +178,7 @@ class PlainValidator:
     """
 
     func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
-    json_schema_input_type: Any = PydanticUndefined
+    json_schema_input_type: Any = Any
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         # Note that for some valid uses of PlainValidator, it is not possible to generate a core schema for the
@@ -198,12 +198,8 @@ class PlainValidator:
         except PydanticSchemaGenerationError:
             serialization = None
 
-        input_schema = (
-            None
-            if self.json_schema_input_type is PydanticUndefined
-            else handler.generate_schema(self.json_schema_input_type)
-        )
-        metadata = {'input_schema': input_schema}
+        input_schema = handler.generate_schema(self.json_schema_input_type)
+        metadata = _core_metadata.build_metadata_dict(js_input_core_schema=input_schema)
 
         info_arg = _inspect_validator(self.func, 'plain')
         if info_arg:
@@ -276,7 +272,7 @@ class WrapValidator:
             if self.json_schema_input_type is PydanticUndefined
             else handler.generate_schema(self.json_schema_input_type)
         )
-        metadata = {'input_schema': input_schema}
+        metadata = _core_metadata.build_metadata_dict(js_input_core_schema=input_schema)
 
         info_arg = _inspect_validator(self.func, 'wrap')
         if info_arg:
@@ -455,6 +451,9 @@ def field_validator(
             f"`json_schema_input_type` can't be used when mode is set to {mode!r}",
             code='validator-input-type',
         )
+
+    if json_schema_input_type is PydanticUndefined and mode == 'plain':
+        json_schema_input_type = Any
 
     fields = field, *fields
     if not all(isinstance(field, str) for field in fields):

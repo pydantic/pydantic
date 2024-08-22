@@ -6,10 +6,10 @@ from typing import Any, cast
 import typing_extensions
 
 if typing.TYPE_CHECKING:
+    from pydantic_core import CoreSchema
+
     from ._schema_generation_shared import (
-        CoreSchemaOrField as CoreSchemaOrField,
-    )
-    from ._schema_generation_shared import (
+        CoreSchemaOrField,
         GetJsonSchemaFunction,
     )
 
@@ -29,6 +29,7 @@ class CoreMetadata(typing_extensions.TypedDict, total=False):
     # If `pydantic_js_prefer_positional_arguments` is True, the JSON schema generator will
     # prefer positional over keyword arguments for an 'arguments' schema.
     pydantic_js_prefer_positional_arguments: bool | None
+    pydantic_js_input_core_schema: CoreSchema | None
 
 
 class CoreMetadataHandler:
@@ -71,11 +72,13 @@ def build_metadata_dict(
     js_functions: list[GetJsonSchemaFunction] | None = None,
     js_annotation_functions: list[GetJsonSchemaFunction] | None = None,
     js_prefer_positional_arguments: bool | None = None,
+    js_input_core_schema: CoreSchema | None = None,
 ) -> dict[str, Any]:
     """Builds a dict to use as the metadata field of a CoreSchema object in a manner that is consistent with the `CoreMetadataHandler` class."""
     metadata = CoreMetadata(
         pydantic_js_functions=js_functions or [],
         pydantic_js_annotation_functions=js_annotation_functions or [],
         pydantic_js_prefer_positional_arguments=js_prefer_positional_arguments,
+        pydantic_js_input_core_schema=js_input_core_schema,
     )
     return {k: v for k, v in metadata.items() if v is not None}
