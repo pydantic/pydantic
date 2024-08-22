@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use core::fmt;
 
 use pyo3::exceptions::PyKeyError;
 use pyo3::prelude::*;
@@ -96,15 +96,6 @@ pub enum ReprOutput<'py> {
     Fallback(String),
 }
 
-impl ReprOutput<'_> {
-    pub fn to_cow(&self) -> Cow<'_, str> {
-        match self {
-            ReprOutput::Python(s) => s.to_string_lossy(),
-            ReprOutput::Fallback(s) => s.into(),
-        }
-    }
-}
-
 impl std::fmt::Display for ReprOutput<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -122,6 +113,15 @@ pub fn safe_repr<'py>(v: &Bound<'py, PyAny>) -> ReprOutput<'py> {
     } else {
         ReprOutput::Fallback("<unprintable object>".to_owned())
     }
+}
+
+pub fn truncate_safe_repr(v: &Bound<'_, PyAny>, max_len: Option<usize>) -> String {
+    let max_len = max_len.unwrap_or(50); // default to 100 bytes
+    let input_str = safe_repr(v);
+    let mut limited_str = String::with_capacity(max_len);
+    write_truncated_to_limited_bytes(&mut limited_str, &input_str.to_string(), max_len)
+        .expect("Writing to a `String` failed");
+    limited_str
 }
 
 pub fn extract_i64(v: &Bound<'_, PyAny>) -> Option<i64> {
@@ -144,5 +144,49 @@ pub(crate) fn new_py_string<'py>(py: Python<'py>, s: &str, cache_str: StringCach
         cached_py_string(py, s, ascii_only)
     } else {
         pystring_fast_new(py, s, ascii_only)
+    }
+}
+
+// TODO: is_utf8_char_boundary, floor_char_boundary and ceil_char_boundary
+// with builtin methods once https://github.com/rust-lang/rust/issues/93743 is resolved
+// These are just copy pasted from the current implementation
+const fn is_utf8_char_boundary(value: u8) -> bool {
+    // This is bit magic equivalent to: b < 128 || b >= 192
+    (value as i8) >= -0x40
+}
+
+pub fn floor_char_boundary(value: &str, index: usize) -> usize {
+    if index >= value.len() {
+        value.len()
+    } else {
+        let lower_bound = index.saturating_sub(3);
+        let new_index = value.as_bytes()[lower_bound..=index]
+            .iter()
+            .rposition(|b| is_utf8_char_boundary(*b));
+
+        // SAFETY: we know that the character boundary will be within four bytes
+        unsafe { lower_bound + new_index.unwrap_unchecked() }
+    }
+}
+
+pub fn ceil_char_boundary(value: &str, index: usize) -> usize {
+    let upper_bound = Ord::min(index + 4, value.len());
+    value.as_bytes()[index..upper_bound]
+        .iter()
+        .position(|b| is_utf8_char_boundary(*b))
+        .map_or(upper_bound, |pos| pos + index)
+}
+
+pub fn write_truncated_to_limited_bytes<F: fmt::Write>(f: &mut F, val: &str, max_len: usize) -> std::fmt::Result {
+    if val.len() > max_len {
+        let mid_point = max_len.div_ceil(2);
+        write!(
+            f,
+            "{}...{}",
+            &val[0..floor_char_boundary(val, mid_point)],
+            &val[ceil_char_boundary(val, val.len() - (mid_point - 1))..]
+        )
+    } else {
+        write!(f, "{val}")
     }
 }

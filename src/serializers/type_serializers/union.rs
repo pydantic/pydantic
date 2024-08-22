@@ -8,10 +8,9 @@ use std::borrow::Cow;
 use crate::build_tools::py_schema_err;
 use crate::common::union::{Discriminator, SMALL_UNION_THRESHOLD};
 use crate::definitions::DefinitionsBuilder;
-use crate::errors::write_truncated_to_50_bytes;
 use crate::lookup_key::LookupKey;
 use crate::serializers::type_serializers::py_err_se_err;
-use crate::tools::{safe_repr, SchemaDict};
+use crate::tools::{truncate_safe_repr, SchemaDict};
 use crate::PydanticSerializationUnexpectedValue;
 
 use super::{
@@ -446,15 +445,10 @@ impl TaggedUnionSerializer {
             Discriminator::Function(func) => func.call1(py, (value,)).ok(),
         };
         if discriminator_value.is_none() {
-            let input_str = safe_repr(value);
-            let mut value_str = String::with_capacity(100);
-            value_str.push_str("with value `");
-            write_truncated_to_50_bytes(&mut value_str, input_str.to_cow()).expect("Writing to a `String` failed");
-            value_str.push('`');
-
+            let value_str = truncate_safe_repr(value, None);
             extra.warnings.custom_warning(
                 format!(
-                    "Failed to get discriminator value for tagged union serialization {value_str} - defaulting to left to right union serialization."
+                    "Failed to get discriminator value for tagged union serialization with value `{value_str}` - defaulting to left to right union serialization."
                 )
             );
         }

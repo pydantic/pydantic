@@ -9,6 +9,7 @@ use smallvec::SmallVec;
 
 use crate::serializers::extra::SerCheck;
 use crate::serializers::DuckTypingSerMode;
+use crate::tools::truncate_safe_repr;
 use crate::PydanticSerializationUnexpectedValue;
 
 use super::computed_fields::ComputedFields;
@@ -210,7 +211,24 @@ impl GeneralFieldsSerializer {
             // Check for missing fields, we can't have extra fields here
             && self.required_fields > used_req_fields
         {
-            Err(PydanticSerializationUnexpectedValue::new_err(None))
+            let required_fields = self.required_fields;
+            let type_name = match extra.model {
+                Some(model) => model
+                    .get_type()
+                    .qualname()
+                    .ok()
+                    .unwrap_or_else(|| PyString::new_bound(py, "<unknown python object>"))
+                    .to_string(),
+                None => "<unknown python object>".to_string(),
+            };
+            let field_value = match extra.model {
+                Some(model) => truncate_safe_repr(model, Some(100)),
+                None => "<unknown python object>".to_string(),
+            };
+
+            Err(PydanticSerializationUnexpectedValue::new_err(Some(format!(
+                "Expected {required_fields} fields but got {used_req_fields} for type `{type_name}` with value `{field_value}` - serialized value may not be as expected."
+            ))))
         } else {
             Ok(output_dict)
         }

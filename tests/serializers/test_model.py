@@ -13,7 +13,13 @@ except ImportError:
 import pytest
 from dirty_equals import IsJson
 
-from pydantic_core import PydanticSerializationError, SchemaSerializer, SchemaValidator, core_schema
+from pydantic_core import (
+    PydanticSerializationError,
+    PydanticSerializationUnexpectedValue,
+    SchemaSerializer,
+    SchemaValidator,
+    core_schema,
+)
 
 from ..conftest import plain_repr
 
@@ -1084,20 +1090,68 @@ def test_extra_custom_serializer():
 
 
 def test_no_warn_on_exclude() -> None:
-    warnings.simplefilter('error')
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+
+        s = SchemaSerializer(
+            core_schema.model_schema(
+                BasicModel,
+                core_schema.model_fields_schema(
+                    {
+                        'a': core_schema.model_field(core_schema.int_schema()),
+                        'b': core_schema.model_field(core_schema.int_schema()),
+                    }
+                ),
+            )
+        )
+
+        value = BasicModel(a=0, b=1)
+        assert s.to_python(value, exclude={'b'}) == {'a': 0}
+        assert s.to_python(value, mode='json', exclude={'b'}) == {'a': 0}
+
+
+def test_warn_on_missing_field() -> None:
+    class AModel(BasicModel): ...
+
+    class BModel(BasicModel): ...
 
     s = SchemaSerializer(
         core_schema.model_schema(
             BasicModel,
             core_schema.model_fields_schema(
                 {
-                    'a': core_schema.model_field(core_schema.int_schema()),
-                    'b': core_schema.model_field(core_schema.int_schema()),
+                    'root': core_schema.model_field(
+                        core_schema.tagged_union_schema(
+                            choices={
+                                'a': core_schema.model_schema(
+                                    AModel,
+                                    core_schema.model_fields_schema(
+                                        {
+                                            'type': core_schema.model_field(core_schema.literal_schema(['a'])),
+                                            'a': core_schema.model_field(core_schema.int_schema()),
+                                        }
+                                    ),
+                                ),
+                                'b': core_schema.model_schema(
+                                    BModel,
+                                    core_schema.model_fields_schema(
+                                        {
+                                            'type': core_schema.model_field(core_schema.literal_schema(['b'])),
+                                            'b': core_schema.model_field(core_schema.int_schema()),
+                                        }
+                                    ),
+                                ),
+                            },
+                            discriminator='type',
+                        )
+                    ),
                 }
             ),
         )
     )
 
-    value = BasicModel(a=0, b=1)
-    assert s.to_python(value, exclude={'b'}) == {'a': 0}
-    assert s.to_python(value, mode='json', exclude={'b'}) == {'a': 0}
+    with pytest.raises(
+        PydanticSerializationUnexpectedValue, match='Expected 2 fields but got 1 for type `.*AModel` with value `.*`.+'
+    ):
+        value = BasicModel(root=AModel(type='a'))
+        s.to_python(value)
