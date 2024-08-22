@@ -1,3 +1,10 @@
+## v1.10.18 (2024-08-22)
+
+* Eval type fix in V1 by @sydney-runkle in https://github.com/pydantic/pydantic/pull/9751
+* Add `to_lower_camel` to `__all__` in `utils.py` by @sydney-runkle (direct commit)
+* Fix `mypy` v1 plugin for mypy 1.11 release by @flaeppe in https://github.com/pydantic/pydantic/pull/10139
+* Fix discriminator key used when discriminator has alias and `.schema(by_alias=False)` by @exs-dwoodward in https://github.com/pydantic/pydantic/pull/10146
+
 ## v1.10.17 (2024-06-20)
 
 * Advertise Python 3.12 for 1.10.x! Part Deux by @vfazio in https://github.com/pydantic/pydantic/pull/9644
