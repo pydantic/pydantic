@@ -5,7 +5,7 @@ from copy import copy
 from functools import lru_cache, partial
 from typing import TYPE_CHECKING, Any, Callable, Iterable
 
-from pydantic_core import CoreSchema, PydanticCustomError, ValidationError, to_jsonable_python
+from pydantic_core import CoreSchema, PydanticCustomError, PydanticKnownError, ValidationError, to_jsonable_python
 from pydantic_core import core_schema as cs
 
 from ._fields import PydanticMetadata
@@ -312,6 +312,40 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                 return v
 
             schema = cs.no_info_after_validator_function(val_func, schema)
+        elif isinstance(annotation, at.Not):
+            if hasattr(annotation.func, '__qualname__'):
+                func_name = annotation.func.__qualname__
+
+                def val_func(v: Any) -> Any:
+                    if annotation.func(v):  # noqa: B023
+                        raise PydanticCustomError(
+                            'not_operation_failed',
+                            f'Not of {func_name} failed',  # type: ignore  # noqa: B023
+                        )
+
+                    return v
+
+                schema = cs.no_info_after_validator_function(val_func, schema)
+            elif hasattr(annotation.func, '__class__'):
+                class_name = annotation.func.__class__.__qualname__
+
+                if (annotation_type := type(annotation.func)) in (at_to_constraint_map := _get_at_to_constraint_map()):
+                    constraint = at_to_constraint_map[annotation_type]
+
+                    def val_func(v: Any) -> Any:
+                        try:
+                            if get_constraint_validator(constraint)(v, getattr(annotation.func, constraint)) is v:  # noqa: B023
+                                raise PydanticCustomError(
+                                    'not_operation_failed',
+                                    f'Not of {class_name} failed',  # type: ignore  # noqa: B023
+                                )
+                        except PydanticKnownError:
+                            pass
+
+                        return v
+
+                    schema = cs.no_info_after_validator_function(val_func, schema)
+
         else:
             # ignore any other unknown metadata
             return None
