@@ -48,6 +48,7 @@ PydanticErrorCodes = Literal[
     'validator-no-fields',
     'validator-invalid-fields',
     'validator-instance-method',
+    'validator-input-type',
     'root-validator-pre-skip',
     'model-serializer-instance-method',
     'validator-field-config-info',

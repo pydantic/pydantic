@@ -36,12 +36,14 @@ import pytest
 from dirty_equals import HasRepr
 from packaging.version import Version
 from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_jsonable_python
+from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from typing_extensions import Annotated, Literal, Self, TypedDict, deprecated
 
 import pydantic
 from pydantic import (
     AfterValidator,
     BaseModel,
+    BeforeValidator,
     Field,
     GetCoreSchemaHandler,
     GetJsonSchemaHandler,
@@ -55,6 +57,7 @@ from pydantic import (
     RootModel,
     ValidationError,
     WithJsonSchema,
+    WrapValidator,
     computed_field,
     field_serializer,
     field_validator,
@@ -6460,4 +6463,87 @@ def test_plain_field_validator_serialization() -> None:
         'required': ['a'],
         'title': 'Foo',
         'type': 'object',
+    }
+
+
+def test_annotated_field_validator_input_type() -> None:
+    class Model(BaseModel):
+        # `json_schema_input_type` defaults to `PydanticUndefined`, so `int` will be used to generate the JSON Schema:
+        a: Annotated[int, BeforeValidator(lambda v: v)]
+        b: Annotated[int, WrapValidator(lambda v, h: h(v))]
+        # `json_schema_input_type` defaults to `Any`:
+        c: Annotated[int, PlainValidator(lambda v: v)]
+
+        d: Annotated[int, BeforeValidator(lambda v: v, json_schema_input_type=Union[int, str])]
+        e: Annotated[int, WrapValidator(lambda v, h: h(v), json_schema_input_type=Union[int, str])]
+        f: Annotated[int, PlainValidator(lambda v: v, json_schema_input_type=Union[int, str])]
+
+    assert Model.model_json_schema(mode='validation')['properties'] == {
+        'a': {'type': 'integer', 'title': 'A'},
+        'b': {'type': 'integer', 'title': 'B'},
+        'c': {'title': 'C'},
+        'd': {'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'title': 'D'},
+        'e': {'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'title': 'E'},
+        'f': {'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'title': 'F'},
+    }
+
+    assert Model.model_json_schema(mode='serialization')['properties'] == {
+        'a': {'title': 'A', 'type': 'integer'},
+        'b': {'title': 'B', 'type': 'integer'},
+        'c': {'title': 'C', 'type': 'integer'},
+        'd': {'title': 'D', 'type': 'integer'},
+        'e': {'title': 'E', 'type': 'integer'},
+        'f': {'title': 'F', 'type': 'integer'},
+    }
+
+
+def test_decorator_field_validator_input_type() -> None:
+    class Model(BaseModel):
+        a: int
+        b: int
+        c: int
+        d: int
+        e: int
+        f: int
+
+        @field_validator('a', mode='before')
+        @classmethod
+        def validate_a(cls, value: Any) -> int: ...
+
+        @field_validator('b', mode='wrap')
+        @classmethod
+        def validate_b(cls, value: Any, handler: ValidatorFunctionWrapHandler) -> int: ...
+
+        @field_validator('c', mode='plain')
+        @classmethod
+        def validate_c(cls, value: Any) -> int: ...
+
+        @field_validator('d', mode='before', json_schema_input_type=Union[int, str])
+        @classmethod
+        def validate_d(cls, value: Any) -> int: ...
+
+        @field_validator('e', mode='wrap', json_schema_input_type=Union[int, str])
+        @classmethod
+        def validate_e(cls, value: Any, handler: ValidatorFunctionWrapHandler) -> int: ...
+
+        @field_validator('f', mode='plain', json_schema_input_type=Union[int, str])
+        @classmethod
+        def validate_f(cls, value: Any) -> int: ...
+
+    assert Model.model_json_schema(mode='validation')['properties'] == {
+        'a': {'type': 'integer', 'title': 'A'},
+        'b': {'type': 'integer', 'title': 'B'},
+        'c': {'title': 'C'},
+        'd': {'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'title': 'D'},
+        'e': {'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'title': 'E'},
+        'f': {'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'title': 'F'},
+    }
+
+    assert Model.model_json_schema(mode='serialization')['properties'] == {
+        'a': {'title': 'A', 'type': 'integer'},
+        'b': {'title': 'B', 'type': 'integer'},
+        'c': {'title': 'C', 'type': 'integer'},
+        'd': {'title': 'D', 'type': 'integer'},
+        'e': {'title': 'E', 'type': 'integer'},
+        'f': {'title': 'F', 'type': 'integer'},
     }

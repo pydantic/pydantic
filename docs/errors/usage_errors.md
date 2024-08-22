@@ -726,12 +726,38 @@ try:
         a: int = 1
 
         @field_validator('a')
-        def check_a(self, values):
-            return values
+        def check_a(self, value):
+            return value
 
 except PydanticUserError as exc_info:
     assert exc_info.code == 'validator-instance-method'
 ```
+
+## `json_schema_input_type` used with the wrong mode {#validator-input-type}
+
+This error is raised when you explicitly specify a value for the `json_schema_input_type`
+argument and `mode` isn't set to either `'before'`, `'plain'` or `'wrap'`.
+
+```py
+from pydantic import BaseModel, PydanticUserError, field_validator
+
+try:
+
+    class Model(BaseModel):
+        a: int = 1
+
+        @field_validator('a', mode='after', json_schema_input_type=int)
+        @classmethod
+        def check_a(self, value):
+            return value
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'validator-input-type'
+```
+
+Documenting the JSON Schema input type is only possible for validators where the given
+value can be anything. That is why it isn't available for `after` validators, where
+the value is first validated against the type annotation.
 
 ## Root validator, `pre`, `skip_on_failure` {#root-validator-pre-skip}
 

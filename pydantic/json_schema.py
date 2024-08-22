@@ -972,20 +972,6 @@ class GenerateJsonSchema:
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.object)
         return json_schema
 
-    def _function_schema(
-        self,
-        schema: _core_utils.AnyFunctionSchema,
-    ) -> JsonSchemaValue:
-        if _core_utils.is_function_with_inner_schema(schema):
-            # This could be wrong if the function's mode is 'before', but in practice will often be right, and when it
-            # isn't, I think it would be hard to automatically infer what the desired schema should be.
-            return self.generate_inner(schema['schema'])
-
-        # function-plain
-        return self.handle_invalid_for_json_schema(
-            schema, f'core_schema.PlainValidatorFunctionSchema ({schema["function"]})'
-        )
-
     def function_before_schema(self, schema: core_schema.BeforeValidatorFunctionSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a function-before schema.
 
@@ -995,7 +981,11 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        return self._function_schema(schema)
+        metadata = _core_metadata.CoreMetadataHandler(schema).metadata
+        if self._mode == 'validation' and (input_schema := metadata.get('pydantic_js_input_core_schema')):
+            return self.generate_inner(input_schema)
+
+        return self.generate_inner(schema['schema'])
 
     def function_after_schema(self, schema: core_schema.AfterValidatorFunctionSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a function-after schema.
@@ -1006,7 +996,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        return self._function_schema(schema)
+        return self.generate_inner(schema['schema'])
 
     def function_plain_schema(self, schema: core_schema.PlainValidatorFunctionSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a function-plain schema.
@@ -1017,7 +1007,13 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        return self._function_schema(schema)
+        metadata = _core_metadata.CoreMetadataHandler(schema).metadata
+        if self._mode == 'validation' and (input_schema := metadata.get('pydantic_js_input_core_schema')):
+            return self.generate_inner(input_schema)
+
+        return self.handle_invalid_for_json_schema(
+            schema, f'core_schema.PlainValidatorFunctionSchema ({schema["function"]})'
+        )
 
     def function_wrap_schema(self, schema: core_schema.WrapValidatorFunctionSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a function-wrap schema.
@@ -1028,7 +1024,11 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        return self._function_schema(schema)
+        metadata = _core_metadata.CoreMetadataHandler(schema).metadata
+        if self._mode == 'validation' and (input_schema := metadata.get('pydantic_js_input_core_schema')):
+            return self.generate_inner(input_schema)
+
+        return self.generate_inner(schema['schema'])
 
     def default_schema(self, schema: core_schema.WithDefaultSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema with a default value.
