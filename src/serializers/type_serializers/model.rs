@@ -167,9 +167,9 @@ impl TypeSerializer for ModelSerializer {
     ) -> PyResult<PyObject> {
         let model = Some(value);
         let duck_typing_ser_mode = extra.duck_typing_ser_mode.next_mode();
+
         let model_extra = Extra {
             model,
-            field_name: None,
             duck_typing_ser_mode,
             ..*extra
         };
@@ -221,7 +221,6 @@ impl TypeSerializer for ModelSerializer {
         let duck_typing_ser_mode = extra.duck_typing_ser_mode.next_mode();
         let model_extra = Extra {
             model,
-            field_name: None,
             duck_typing_ser_mode,
             ..*extra
         };
