@@ -88,7 +88,9 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
                 return core_schema.definition_reference_schema(ref)
             return schema
         else:  # ref_mode = 'unpack
-            return self.resolve_ref_schema(schema)
+            resolved_schema = self.resolve_ref_schema(schema)
+            self._generate_schema._definition_reference_count -= 1
+            return resolved_schema
 
     def _get_types_namespace(self) -> dict[str, Any] | None:
         return self._generate_schema._types_namespace

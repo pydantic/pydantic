@@ -570,12 +570,12 @@ def complete_model_class(
         return False
 
     core_config = config_wrapper.core_config(cls)
-
-    try:
-        schema = gen_schema.clean_schema(schema)
-    except gen_schema.CollectedInvalid:
-        set_model_mocks(cls, cls_name)
-        return False
+    if gen_schema._definition_reference_count > 0:
+        try:
+            schema = gen_schema.clean_schema(schema)
+        except gen_schema.CollectedInvalid:
+            set_model_mocks(cls, cls_name)
+            return False
 
     # debug(schema)
     cls.__pydantic_core_schema__ = schema

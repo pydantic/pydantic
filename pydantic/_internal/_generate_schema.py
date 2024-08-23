@@ -360,6 +360,7 @@ class GenerateSchema:
         '_config_wrapper_stack',
         '_types_namespace_stack',
         '_typevars_map',
+        '_definition_reference_count',
         'field_name_stack',
         'model_type_stack',
         'defs',
@@ -375,6 +376,7 @@ class GenerateSchema:
         self._config_wrapper_stack = ConfigWrapperStack(config_wrapper)
         self._types_namespace_stack = TypesNamespaceStack(types_namespace)
         self._typevars_map = typevars_map
+        self._definition_reference_count = 0
         self.field_name_stack = _FieldNameStack()
         self.model_type_stack = _ModelTypeStack()
         self.defs = _Definitions()
@@ -393,6 +395,7 @@ class GenerateSchema:
         obj._types_namespace_stack = types_namespace_stack
         obj.model_type_stack = model_type_stack
         obj._typevars_map = typevars_map
+        obj._definition_reference_count = 0
         obj.field_name_stack = _FieldNameStack()
         obj.defs = defs
         return obj
@@ -688,7 +691,7 @@ class GenerateSchema:
             model_validators = decorators.model_validators.values()
 
             with self._config_wrapper_stack.push(config_wrapper), self._types_namespace_stack.push(cls):
-                self = self._current_generate_schema
+                new_self = self._current_generate_schema
 
                 extras_schema = None
                 if core_config.get('extra_fields_behavior') == 'allow':
@@ -704,23 +707,23 @@ class GenerateSchema:
                                     _typing_extra._make_forward_ref(
                                         extras_annotation, is_argument=False, is_class=True
                                     ),
-                                    self._types_namespace,
+                                    new_self._types_namespace,
                                 )
                             tp = get_origin(extras_annotation)
                             if tp not in (Dict, dict):
                                 raise PydanticSchemaGenerationError(
                                     'The type annotation for `__pydantic_extra__` must be `Dict[str, ...]`'
                                 )
-                            extra_items_type = self._get_args_resolving_forward_refs(
+                            extra_items_type = new_self._get_args_resolving_forward_refs(
                                 extras_annotation,
                                 required=True,
                             )[1]
                             if extra_items_type is not Any:
-                                extras_schema = self.generate_schema(extra_items_type)
+                                extras_schema = new_self.generate_schema(extra_items_type)
                                 break
 
                 if cls.__pydantic_root_model__:
-                    root_field = self._common_field_schema('root', fields['root'], decorators)
+                    root_field = new_self._common_field_schema('root', fields['root'], decorators)
                     inner_schema = root_field['schema']
                     inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
                     model_schema = core_schema.model_schema(
@@ -735,9 +738,9 @@ class GenerateSchema:
                     )
                 else:
                     fields_schema: core_schema.CoreSchema = core_schema.model_fields_schema(
-                        {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
+                        {k: new_self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
                         computed_fields=[
-                            self._computed_field_schema(d, decorators.field_serializers)
+                            new_self._computed_field_schema(d, decorators.field_serializers)
                             for d in computed_fields.values()
                         ],
                         extras_schema=extras_schema,
@@ -760,10 +763,12 @@ class GenerateSchema:
                         metadata=metadata,
                     )
 
-                schema = self._apply_model_serializers(model_schema, decorators.model_serializers.values())
+                schema = new_self._apply_model_serializers(model_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, model_validators, 'outer')
-                self.defs.definitions[model_ref] = schema
-                return core_schema.definition_reference_schema(model_ref)
+                new_self.defs.definitions[model_ref] = schema
+
+            self._definition_reference_count += new_self._definition_reference_count + 1
+            return core_schema.definition_reference_schema(model_ref)
 
     @staticmethod
     def _get_model_title_from_config(
@@ -808,6 +813,7 @@ class GenerateSchema:
             obj = self.model_type_stack.get()
         with self.defs.get_schema_or_ref(obj) as (_, maybe_schema):
             if maybe_schema is not None:
+                self._definition_reference_count += 1
                 return maybe_schema
         if obj is source:
             ref_mode = 'unpack'
@@ -837,6 +843,8 @@ class GenerateSchema:
             return None
 
         schema = self._unpack_refs_defs(schema)
+        if schema['type'] == 'definition-ref':
+            self._definition_reference_count += 1
 
         if is_function_with_inner_schema(schema):
             ref = schema['schema'].pop('ref', None)  # pyright: ignore[reportCallIssue, reportArgumentType]
@@ -847,6 +855,7 @@ class GenerateSchema:
 
         if ref:
             self.defs.definitions[ref] = schema
+            self._definition_reference_count += 1
             return core_schema.definition_reference_schema(ref)
 
         return schema
@@ -923,6 +932,7 @@ class GenerateSchema:
                 return self._model_schema(obj)
 
         if isinstance(obj, PydanticRecursiveRef):
+            self._definition_reference_count += 1
             return core_schema.definition_reference_schema(schema_ref=obj.type_ref)
 
         return self.match_type(obj)
@@ -1412,6 +1422,7 @@ class GenerateSchema:
                 assert schema['type'] != 'definitions'
                 schema['ref'] = ref  # type: ignore
             self.defs.definitions[ref] = schema
+            self._definition_reference_count += 1
             return core_schema.definition_reference_schema(ref)
 
     def _literal_schema(self, literal_type: Any) -> CoreSchema:
@@ -1470,7 +1481,7 @@ class GenerateSchema:
             with self._config_wrapper_stack.push(config), self._types_namespace_stack.push(typed_dict_cls):
                 core_config = self._config_wrapper.core_config(typed_dict_cls)
 
-                self = self._current_generate_schema
+                new_self = self._current_generate_schema
 
                 required_keys: frozenset[str] = typed_dict_cls.__required_keys__
 
@@ -1478,24 +1489,26 @@ class GenerateSchema:
 
                 decorators = DecoratorInfos.build(typed_dict_cls)
 
-                if self._config_wrapper.use_attribute_docstrings:
+                if new_self._config_wrapper.use_attribute_docstrings:
                     field_docstrings = extract_docstrings_from_cls(typed_dict_cls, use_inspect=True)
                 else:
                     field_docstrings = None
 
-                for field_name, annotation in get_cls_type_hints_lenient(typed_dict_cls, self._types_namespace).items():
+                for field_name, annotation in get_cls_type_hints_lenient(
+                    typed_dict_cls, new_self._types_namespace
+                ).items():
                     annotation = replace_types(annotation, typevars_map)
                     required = field_name in required_keys
 
                     if get_origin(annotation) == _typing_extra.Required:
                         required = True
-                        annotation = self._get_args_resolving_forward_refs(
+                        annotation = new_self._get_args_resolving_forward_refs(
                             annotation,
                             required=True,
                         )[0]
                     elif get_origin(annotation) == _typing_extra.NotRequired:
                         required = False
-                        annotation = self._get_args_resolving_forward_refs(
+                        annotation = new_self._get_args_resolving_forward_refs(
                             annotation,
                             required=True,
                         )[0]
@@ -1507,12 +1520,14 @@ class GenerateSchema:
                         and field_name in field_docstrings
                     ):
                         field_info.description = field_docstrings[field_name]
-                    self._apply_field_title_generator_to_field_info(self._config_wrapper, field_info, field_name)
-                    fields[field_name] = self._generate_td_field_schema(
+                    new_self._apply_field_title_generator_to_field_info(
+                        new_self._config_wrapper, field_info, field_name
+                    )
+                    fields[field_name] = new_self._generate_td_field_schema(
                         field_name, field_info, decorators, required=required
                     )
 
-                title = self._get_model_title_from_config(typed_dict_cls, ConfigWrapper(config))
+                title = new_self._get_model_title_from_config(typed_dict_cls, ConfigWrapper(config))
                 metadata = build_metadata_dict(
                     js_functions=[partial(modify_model_json_schema, cls=typed_dict_cls, title=title)],
                 )
@@ -1520,7 +1535,7 @@ class GenerateSchema:
                     fields,
                     cls=typed_dict_cls,
                     computed_fields=[
-                        self._computed_field_schema(d, decorators.field_serializers)
+                        new_self._computed_field_schema(d, decorators.field_serializers)
                         for d in decorators.computed_fields.values()
                     ],
                     ref=typed_dict_ref,
@@ -1528,10 +1543,12 @@ class GenerateSchema:
                     config=core_config,
                 )
 
-                schema = self._apply_model_serializers(td_schema, decorators.model_serializers.values())
+                schema = new_self._apply_model_serializers(td_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, decorators.model_validators.values(), 'all')
-                self.defs.definitions[typed_dict_ref] = schema
-                return core_schema.definition_reference_schema(typed_dict_ref)
+                new_self.defs.definitions[typed_dict_ref] = schema
+
+            self._definition_reference_count += 1
+            return core_schema.definition_reference_schema(typed_dict_ref)
 
     def _namedtuple_schema(self, namedtuple_cls: Any, origin: Any) -> core_schema.CoreSchema:
         """Generate schema for a NamedTuple."""
@@ -1785,7 +1802,7 @@ class GenerateSchema:
 
                 core_config = self._config_wrapper.core_config(dataclass)
 
-                self = self._current_generate_schema
+                new_self = self._current_generate_schema
 
                 from ..dataclasses import is_pydantic_dataclass
 
@@ -1793,16 +1810,16 @@ class GenerateSchema:
                     fields = deepcopy(dataclass.__pydantic_fields__)
                     if typevars_map:
                         for field in fields.values():
-                            field.apply_typevars_map(typevars_map, self._types_namespace)
+                            field.apply_typevars_map(typevars_map, new_self._types_namespace)
                 else:
                     fields = collect_dataclass_fields(
                         dataclass,
-                        self._types_namespace,
+                        new_self._types_namespace,
                         typevars_map=typevars_map,
                     )
 
                 # disallow combination of init=False on a dataclass field and extra='allow' on a dataclass
-                if self._config_wrapper_stack.tail.extra == 'allow':
+                if new_self._config_wrapper_stack.tail.extra == 'allow':
                     # disallow combination of init=False on a dataclass field and extra='allow' on a dataclass
                     for field_name, field in fields.items():
                         if field.init is False:
@@ -1816,7 +1833,7 @@ class GenerateSchema:
                 # Move kw_only=False args to the start of the list, as this is how vanilla dataclasses work.
                 # Note that when kw_only is missing or None, it is treated as equivalent to kw_only=True
                 args = sorted(
-                    (self._generate_dc_field_schema(k, v, decorators) for k, v in fields.items()),
+                    (new_self._generate_dc_field_schema(k, v, decorators) for k, v in fields.items()),
                     key=lambda a: a.get('kw_only') is not False,
                 )
                 has_post_init = hasattr(dataclass, '__post_init__')
@@ -1826,7 +1843,7 @@ class GenerateSchema:
                     dataclass.__name__,
                     args,
                     computed_fields=[
-                        self._computed_field_schema(d, decorators.field_serializers)
+                        new_self._computed_field_schema(d, decorators.field_serializers)
                         for d in decorators.computed_fields.values()
                     ],
                     collect_init_only=has_post_init,
@@ -1837,7 +1854,7 @@ class GenerateSchema:
                 model_validators = decorators.model_validators.values()
                 inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
 
-                title = self._get_model_title_from_config(dataclass, ConfigWrapper(config))
+                title = new_self._get_model_title_from_config(dataclass, ConfigWrapper(config))
                 metadata = build_metadata_dict(
                     js_functions=[partial(modify_model_json_schema, cls=dataclass, title=title)]
                 )
@@ -1853,12 +1870,14 @@ class GenerateSchema:
                     metadata=metadata,
                     # we don't use a custom __setattr__ for dataclasses, so we must
                     # pass along the frozen config setting to the pydantic-core schema
-                    frozen=self._config_wrapper_stack.tail.frozen,
+                    frozen=new_self._config_wrapper_stack.tail.frozen,
                 )
-                schema = self._apply_model_serializers(dc_schema, decorators.model_serializers.values())
+                schema = new_self._apply_model_serializers(dc_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, model_validators, 'outer')
-                self.defs.definitions[dataclass_ref] = schema
-                return core_schema.definition_reference_schema(dataclass_ref)
+                new_self.defs.definitions[dataclass_ref] = schema
+
+            self._definition_reference_count += 1
+            return core_schema.definition_reference_schema(dataclass_ref)
 
             # Type checkers seem to assume ExitStack may suppress exceptions and therefore
             # control flow can exit the `with` block without returning.
@@ -2210,6 +2229,7 @@ class GenerateSchema:
                 ref = typing.cast('str|None', schema.get('ref', None))
                 if ref is not None:
                     self.defs.definitions[ref] = schema
+                    self._definition_reference_count += 1
                     schema = core_schema.definition_reference_schema(ref)
 
             # use the last serializer to make it easy to override a serializer set on a parent model
