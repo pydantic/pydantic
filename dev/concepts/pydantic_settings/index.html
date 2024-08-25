@@ -1180,6 +1180,15 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </li>
       
         <li class="md-nav__item">
+  <a href="#nested-model-default-partial-updates" class="md-nav__link">
+    <span class="md-ellipsis">
+      Nested model default partial updates
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dotenv-env-support" class="md-nav__link">
     <span class="md-ellipsis">
       Dotenv (.env) support
@@ -3176,6 +3185,15 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </li>
       
         <li class="md-nav__item">
+  <a href="#nested-model-default-partial-updates" class="md-nav__link">
+    <span class="md-ellipsis">
+      Nested model default partial updates
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dotenv-env-support" class="md-nav__link">
     <span class="md-ellipsis">
       Dotenv (.env) support
@@ -3845,6 +3863,35 @@ collects values for sub model fields separately, and you may get unexpected resu
 <span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="c1">#&gt; {&#39;numbers&#39;: [1, 2, 3]}</span>
 </code></pre></div>
+<h2 id="nested-model-default-partial-updates">Nested model default partial updates<a class="headerlink" href="#nested-model-default-partial-updates" title="Permanent link">&para;</a></h2>
+<p>By default, Pydantic settings does not allow partial updates to nested model default objects. This behavior can be
+overriden by setting the <code>nested_model_default_partial_update</code> flag to <code>True</code>, which will allow partial updates on
+nested model default object fields.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+
+
+<span class="k">class</span> <span class="nc">SubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">val</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">flag</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span>
+        <span class="n">env_nested_delimiter</span><span class="o">=</span><span class="s1">&#39;__&#39;</span><span class="p">,</span> <span class="n">nested_model_default_partial_update</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+    <span class="n">nested_model</span><span class="p">:</span> <span class="n">SubModel</span> <span class="o">=</span> <span class="n">SubModel</span><span class="p">()</span>
+
+
+<span class="c1"># Apply a partial update to the default object using environment variables</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;NESTED_MODEL__FLAG&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;True&#39;</span>
+
+<span class="k">assert</span> <span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;nested_model&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;val&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;flag&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}}</span>
+</code></pre></div>
 <h2 id="dotenv-env-support">Dotenv (.env) support<a class="headerlink" href="#dotenv-env-support" title="Permanent link">&para;</a></h2>
 <p>Dotenv files (generally named <code>.env</code>) are a common pattern that make it easy to use environment variables in a
 platform-independent manner.</p>
@@ -3931,7 +3978,8 @@ models. There are two primary use cases for Pydantic settings CLI:</p>
 </ol>
 <p>By default, the experience is tailored towards use case #1 and builds on the foundations established in <a href="#parsing-environment-variable-values">parsing
 environment variables</a>. If your use case primarily falls into #2, you will likely
-want to enable <a href="#enforce-required-arguments-at-cli">enforcing required arguments at the CLI</a>.</p>
+want to enable <a href="#enforce-required-arguments-at-cli">enforcing required arguments at the CLI</a> and <a href="#nested-model-default-partial-updates">nested model default
+partial updates</a>.</p>
 <h3 id="the-basics">The Basics<a class="headerlink" href="#the-basics" title="Permanent link">&para;</a></h3>
 <p>To get started, let's revisit the example presented in <a href="#parsing-environment-variable-values">parsing environment
 variables</a> but using a Pydantic settings CLI:</p>
