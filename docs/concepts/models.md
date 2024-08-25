@@ -2,12 +2,12 @@
     [`pydantic.main.BaseModel`][pydantic.main.BaseModel]<br>
 
 One of the primary ways of defining schema in Pydantic is via models. Models are simply classes which inherit from
-[`pydantic.BaseModel`][pydantic.main.BaseModel] and define fields as annotated attributes.
+[`BaseModel`][pydantic.main.BaseModel] and define fields as annotated attributes.
 
 You can think of models as similar to structs in languages like C, or as the requirements of a single endpoint
 in an API.
 
-Models share many similarities with Python's dataclasses, but have been designed with some subtle-yet-important
+Models share many similarities with Python's [dataclasses][dataclasses], but have been designed with some subtle-yet-important
 differences that streamline certain workflows related to validation, serialization, and JSON schema generation.
 You can find more discussion of this in the [Dataclasses](dataclasses.md) section of the docs.
 
@@ -66,49 +66,47 @@ In this example, `User` is a model with two fields:
 * `id`, which is an integer and is required
 * `name`, which is a string and is not required (it has a default value).
 
+The model can then be instantiated:
+
 ```py group="basic-model"
 user = User(id='123')
 ```
 
-In this example, `user` is an instance of `User`.
-Initialization of the object will perform all parsing and validation.
-If no `ValidationError` is raised, you know the resulting model instance is valid.
+`user` is an instance of `User`. Initialization of the object will perform all parsing and validation.
+If no [`ValidationError`][pydantic_core.ValidationError] exception is raised,
+you know the resulting model instance is valid.
+
+Fields of a model can be accessed as normal attributes of the `user` object:
 
 ```py group="basic-model"
+assert user.name == 'Jane Doe'  # (1)!
 assert user.id == 123
 assert isinstance(user.id, int)
-# Note that '123' was coerced to an int and its value is 123
 ```
 
-More details on pydantic's coercion logic can be found in [Data Conversion](#data-conversion).
-Fields of a model can be accessed as normal attributes of the `user` object.
-The string `'123'` has been converted into an int as per the field type.
+1. `name` wasn't set when `user` was initialized, so the default value was used.
+   The [`model_fields_set`][pydantic.BaseModel.model_fields_set] attribute can be
+   inspected to check the field names explicity set during instantiation.
 
-```py group="basic-model"
-assert user.name == 'Jane Doe'
-```
+Note that the string `'123'` was coerced to an integer and its value is `123`.
+More details on Pydantic's coercion logic can be found in the [Data Conversion](#data-conversion) section.
 
-`name` wasn't set when `user` was initialized, so it has the default value.
-
-```py group="basic-model"
-assert user.model_fields_set == {'id'}
-```
-
-The fields which were supplied when user was initialized.
+The model instance can be serialized using the [`model_dump`][pydantic.BaseModel.model_dump] method:
 
 ```py group="basic-model"
 assert user.model_dump() == {'id': 123, 'name': 'Jane Doe'}
 ```
 
-Either `.model_dump()` or `dict(user)` will provide a dict of fields, but `.model_dump()` can take numerous other
-arguments. (Note that `dict(user)` will not recursively convert nested models into dicts, but `.model_dump()` will.)
+Calling [dict][] on the instance will also provide a dictionary, but nested fields will not be
+recursively converted into dictionaries. [`model_dump`][pydantic.BaseModel.model_dump] also
+provides numerous arguments to customize the serialization result.
+
+By default, models are mutable and field values can be changed through attribute assignment:
 
 ```py group="basic-model"
 user.id = 321
 assert user.id == 321
 ```
-
-By default, models are mutable and field values can be changed through attribute assignment.
 
 ### Model methods and properties
 
