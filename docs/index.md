@@ -121,7 +121,8 @@ If validation fails, Pydantic will raise an error with a breakdown of what was w
 ```py upgrade="skip" title="Validation Error" test="skip" lint="skip"
 # continuing the above example...
 
-from pydantic import ValidationError
+from datetime import datetime
+from pydantic import BaseModel, PositiveInt, ValidationError
 
 
 class User(BaseModel):
