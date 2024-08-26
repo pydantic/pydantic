@@ -22,6 +22,7 @@
 * Allow `WithJsonSchema` to inject `$ref`s w/ `http` or `https` links by @dAIsySHEng1 in [#9863](https://github.com/pydantic/pydantic/pull/9863)
 * Allow validators to customize validation JSON schema by @Viicos in [#10094](https://github.com/pydantic/pydantic/pull/10094)
 * Support parametrized `PathLike` types by @nix010 in [#9764](https://github.com/pydantic/pydantic/pull/9764)
+* Add tagged union serializer that attempts to use `str` or `callable` discriminators to select the correct serializer by @sydney-runkle in in [pydantic/pydantic-core#1397](https://github.com/pydantic/pydantic-core/pull/1397)
 
 #### Changes
 
@@ -34,6 +35,9 @@
 * Remove `typed_dict_cls` data from `CoreMetadata` by @sydney-runkle in [#10180](https://github.com/pydantic/pydantic/pull/10180)
 * Deprecate passing a dict to the `Examples` class by @Viicos in [#10181](https://github.com/pydantic/pydantic/pull/10181)
 * Remove `initial_metadata` from internal metadata construct by @sydney-runkle in [#10194](https://github.com/pydantic/pydantic/pull/10194)
+* Use `re.Pattern.search` instead of `re.Pattern.match` for consistency with `rust` behavior by @tinez in [pydantic/pydantic-core#1368](https://github.com/pydantic/pydantic-core/pull/1368)
+* Show value of wrongly typed data in `pydantic-core` serialization warning by @BoxyUwU in [pydantic/pydantic-core#1377](https://github.com/pydantic/pydantic-core/pull/1377)
+* Breaking Change: in `pydantic-core`, change `metadata` type hint in core schemas from `Any` -> `Dict[str, Any] | None` by @sydney-runkle in [pydantic/pydantic-core#1411](https://github.com/pydantic/pydantic-core/pull/1411)
 
 #### Performance
 
@@ -99,6 +103,11 @@
 * Add 'wss' for allowed schemes in NatsDsn by @swelborn in [#10224](https://github.com/pydantic/pydantic/pull/10224)
 * Fix `Mapping` and `MutableMapping` annotations to use mapping schema instead of dict schema by @sydney-runkle in [#10020](https://github.com/pydantic/pydantic/pull/10020)
 * Fix JSON Schema generation for constrained dates by @Viicos in [#10185](https://github.com/pydantic/pydantic/pull/10185)
+* Fix discriminated union bug regression when using enums by @kfreezen in [pydantic/pydantic-core#1286](https://github.com/pydantic/pydantic-core/pull/1286)
+* Fix `field_serializer` with computed field when using `*` by @nix010 in [pydantic/pydantic-core#1349](https://github.com/pydantic/pydantic-core/pull/1349)
+* Try each option in `Union` serializer before inference by @sydney-runkle in [pydantic/pydantic-core#1398](https://github.com/pydantic/pydantic-core/pull/1398)
+* Fix `float` serialization behavior in `strict` mode by @sydney-runkle in [pydantic/pydantic-core#1400](https://github.com/pydantic/pydantic-core/pull/1400)
+* Introduce `exactness` into Decimal validation logic to improve union validation behavior by @sydney-runkle in in [pydantic/pydantic-core#1405](https://github.com/pydantic/pydantic-core/pull/1405)
 
 ### New Contributors
 
