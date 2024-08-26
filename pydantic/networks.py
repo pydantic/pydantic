@@ -339,7 +339,8 @@ KafkaDsn = Annotated[Url, UrlConstraints(allowed_schemes=['kafka'], default_host
 * Host required
 """
 NatsDsn = Annotated[
-    MultiHostUrl, UrlConstraints(allowed_schemes=['nats', 'tls', 'ws'], default_host='localhost', default_port=4222)
+    MultiHostUrl,
+    UrlConstraints(allowed_schemes=['nats', 'tls', 'ws', 'wss'], default_host='localhost', default_port=4222),
 ]
 """A type that will accept any NATS DSN.
 
