@@ -111,6 +111,8 @@
 
 ### New Contributors
 
+#### `pydantic`
+
 * @kwint made their first contribution in [#9787](https://github.com/pydantic/pydantic/pull/9787)
 * @seekinginfiniteloop made their first contribution in [#9822](https://github.com/pydantic/pydantic/pull/9822)
 * @a-alexander made their first contribution in [#9848](https://github.com/pydantic/pydantic/pull/9848)
@@ -128,6 +130,17 @@
 * @aditkumar72 made their first contribution in [#10128](https://github.com/pydantic/pydantic/pull/10128)
 * @changhc made their first contribution in [#9654](https://github.com/pydantic/pydantic/pull/9654)
 * @insumanth made their first contribution in [#10229](https://github.com/pydantic/pydantic/pull/10229)
+
+
+#### `pydantic-core`
+
+* @kfreezen made their first contribution in [pydantic/pydantic-core#1286](https://github.com/pydantic/pydantic-core/pull/1286)
+* @tinez made their first contribution in [pydantic/pydantic-core#1368](https://github.com/pydantic/pydantic-core/pull/1368)
+* @fft001 made their first contribution in [pydantic/pydantic-core#1362](https://github.com/pydantic/pydantic-core/pull/1362)
+* @nix010 made their first contribution in [pydantic/pydantic-core#1349](https://github.com/pydantic/pydantic-core/pull/1349)
+* @BoxyUwU made their first contribution in [pydantic/pydantic-core#1379](https://github.com/pydantic/pydantic-core/pull/1379)
+* @candleindark made their first contribution in [pydantic/pydantic-core#1404](https://github.com/pydantic/pydantic-core/pull/1404)
+* @changhc made their first contribution in [pydantic/pydantic-core#1331](https://github.com/pydantic/pydantic-core/pull/1331)
 
 ## v2.8.2 (2024-07-03)
 
