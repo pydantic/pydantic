@@ -6,7 +6,7 @@ import dataclasses as _dataclasses
 import re
 from importlib.metadata import version
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, NewType
 
 from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
 from typing_extensions import Annotated, Self, TypeAlias
@@ -424,7 +424,7 @@ def import_email_validator() -> None:
 
 
 if TYPE_CHECKING:
-    EmailStr = Annotated[str, ...]
+    EmailStr = NewType("EmailStr", str)
 else:
 
     class EmailStr:
