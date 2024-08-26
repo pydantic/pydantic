@@ -424,7 +424,7 @@ def import_email_validator() -> None:
 
 
 if TYPE_CHECKING:
-    EmailStr = NewType("EmailStr", str)
+    EmailStr = NewType('EmailStr', str)
 else:
 
     class EmailStr:
