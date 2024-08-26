@@ -51,12 +51,18 @@ def main():
 
     citation_path = root_dir / 'CITATION.cff'
     citation_text = citation_path.read_text()
-    citation_text = re.sub(r'(?<=\nversion: ).*', f'v{new_version}', citation_text)
-    citation_text = re.sub(r'(?<=date-released: ).*', date_today_str, citation_text)
-    citation_path.write_text(citation_text)
-    print(
-        f'SUCCESS: updated version=v{new_version} and date-released={date_today_str} in {citation_path.relative_to(root_dir)}'
-    )
+
+    if not (alpha_version := 'a' in new_version) and not (beta_version := 'b' in new_version):
+        citation_text = re.sub(r'(?<=\nversion: ).*', f'v{new_version}', citation_text)
+        citation_text = re.sub(r'(?<=date-released: ).*', date_today_str, citation_text)
+        citation_path.write_text(citation_text)
+        print(
+            f'SUCCESS: updated version=v{new_version} and date-released={date_today_str} in {citation_path.relative_to(root_dir)}'
+        )
+    else:
+        print(
+            f'WARNING: not updating CITATION.cff because version is {"alpha" if alpha_version else "beta"} version {new_version}'
+        )
 
 
 def get_notes(new_version: str) -> str:
