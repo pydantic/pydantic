@@ -217,7 +217,8 @@ plugins:
           extensions:
             - docs/plugins/griffe_doclinks.py
         import:
-          - https://docs.python.org/3/objects.inv
+          - url: https://docs.python.org/3/objects.inv
+            domains: [py, std]
 - redirects:
     redirect_maps:
       'usage/mypy.md': 'integrations/mypy.md'
