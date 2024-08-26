@@ -88,16 +88,15 @@ Fields of a model can be accessed as normal attributes of the `user` object:
 
 ```py group="basic-model"
 assert user.name == 'Jane Doe'  # (1)!
-assert user.id == 123
+assert user.id == 123  # (2)!
 assert isinstance(user.id, int)
 ```
 
 1. `name` wasn't set when `user` was initialized, so the default value was used.
    The [`model_fields_set`][pydantic.BaseModel.model_fields_set] attribute can be
    inspected to check the field names explicitly set during instantiation.
-
-Note that the string `'123'` was coerced to an integer and its value is `123`.
-More details on Pydantic's coercion logic can be found in the [Data Conversion](#data-conversion) section.
+2. Note that the string `'123'` was coerced to an integer and its value is `123`.
+   More details on Pydantic's coercion logic can be found in the [Data Conversion](#data-conversion) section.
 
 The model instance can be serialized using the [`model_dump`][pydantic.BaseModel.model_dump] method:
 
@@ -142,8 +141,8 @@ assert user.id == 321
 The example above only shows the tip of the iceberg of what models can do.
 Models possess the following methods and attributes:
 
-* [`model_validate()`][pydantic.main.BaseModel.model_validate]: Validates any object into a model. See [Validating data](#validating-data).
-* [`model_validate_json()`][pydantic.main.BaseModel.model_validate_json]: Validates the given JSON data into a model. See
+* [`model_validate()`][pydantic.main.BaseModel.model_validate]: Validates the given object against the Pydantic model. See [Validating data](#validating-data).
+* [`model_validate_json()`][pydantic.main.BaseModel.model_validate_json]: Validates the given JSON data against the Pydantic model. See
     [Validating data](#validating-data).
 * [`model_construct()`][pydantic.main.BaseModel.model_construct]: Creates models without running validation. See
     [Creating models without validation](#creating-models-without-validation).
@@ -160,7 +159,7 @@ Models possess the following methods and attributes:
 * [`model_parametrized_name()`][pydantic.main.BaseModel.model_parametrized_name]: Computes the class name for parametrizations of generic classes.
 * [`model_post_init()`][pydantic.main.BaseModel.model_post_init]: Performs additional actions after the model is initialized.
 * [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild]: Rebuilds the model schema, which also supports building recursive generic models.
-    See [Rebuilding the model](#rebuilding-the-model).
+    See [Rebuilding model schema](#rebuilding-model-schema).
 
 !!! note
     See the API documentation of [`BaseModel`][pydantic.main.BaseModel] for the class definition including a full list of methods and attributes.
@@ -210,13 +209,13 @@ print(m.model_dump())
 
 Self-referencing models are supported. For more details, see [postponed annotations](postponed_annotations.md#self-referencing-or-recursive-models).
 
-## Rebuilding the model
+## Rebuilding model schema
 
-When you define a model class in your code, Pydantic will analyze the body of the class to collect a number of information
-required to perform validation and serialization. Notably, the type annotations are evaluated to understand the valid types
-for each field (more information can be found in the [Architecture](../architecture.md) documentation). However, it might be
-that annotations refers to symbols not defined when the model class is being created. To circumvent this issue, the
-[`model_rebuild()`][pydantic.main.BaseModel.model_rebuild] method can be used:
+When you define a model class in your code, Pydantic will analyze the body of the class to collect a variety of information
+required to perform validation and serialization, gathered in a core schema. Notably, the model's type annotations are evaluated to
+understand the valid types for each field (more information can be found in the [Architecture](../architecture.md) documentation).
+However, it might be the case that annotations refers to symbols not defined when the model class is being created.
+To circumvent this issue, the [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild] method can be used:
 
 ```py
 from pydantic import BaseModel, PydanticUserError
@@ -416,9 +415,6 @@ except ValidationError as e:
 
 ## Validating data
 
-!!! note
-    Learn more about JSON parsing in the [JSON](../concepts/json.md) section of the docs.
-
 Pydantic provides three methods on models classes for parsing data:
 
 * [`model_validate()`][pydantic.main.BaseModel.model_validate]: this is very similar to the `__init__` method of the model,
@@ -426,6 +422,7 @@ Pydantic provides three methods on models classes for parsing data:
   or if it's not a dictionary or instance of the model in question, a [`ValidationError`][pydantic_core.ValidationError] will be raised.
 * [`model_validate_json()`][pydantic.main.BaseModel.model_validate_json]: this validates the provided data as a JSON string or `bytes` object.
   If your incoming data is a JSON payload, this is generally considered faster (instead of manually parsing the data as a dictionary).
+  Learn more about JSON parsing in the [JSON](../concepts/json.md) section of the docs.
 * [`model_validate_strings()`][pydantic.main.BaseModel.model_validate_strings]: this takes a dictionary (can be nested) with string keys and values and validates the data in JSON mode so that said strings can be coerced into the correct types.
 
 ```py
@@ -567,6 +564,11 @@ This can be useful in at least a few cases:
 * when one or more of the validator functions are non-idempotent
 * when one or more of the validator functions have side effects that you don't want to be triggered.
 
+!!! warning
+    [`model_construct()`][pydantic.main.BaseModel.model_construct] does not do any validation, meaning it can create
+    models which are invalid. **You should only ever use the [`model_construct()`][pydantic.main.BaseModel.model_construct]
+    method with data which has already been validated, or that you definitely trust.**
+
 !!! note
     In Pydantic V2, the performance gap between validation (either with direct instantiation or the `model_validate*` methods)
     and [`model_construct()`][pydantic.main.BaseModel.model_construct] has been narrowed
@@ -599,7 +601,7 @@ Pydantic supports the creation of generic models to make it easier to reuse a co
 In order to declare a generic model, you should follow the following steps:
 
 1. Declare one or more [type variables][typing.TypeVar] to use to parameterize your model.
-2. Declare a pydantic model that inherits from [`BaseModel`][pydantic.BaseModel] and [`typing.Generic`][],
+2. Declare a pydantic model that inherits from [`BaseModel`][pydantic.BaseModel] and [`typing.Generic`][] (in this specific order),
   and add the list of type variables you declared previously as parameters to the [`Generic`][typing.Generic] parent.
 3. Use the type variables as annotations where you will want to replace them with other types.
 
@@ -643,9 +645,9 @@ except ValidationError as e:
     """
 ```
 
-1. Refers to the step 1 described above.
-2. Refers to the step 2 described above.
-3. Refers to the step 3 described above.
+1. Refers to step 1 described above.
+2. Refers to step 2 described above.
+3. Refers to step 3 described above.
 
 Any [configuration](./config.md), [validation](./validators.md) or [serialization](./serialization.md) logic
 set on the generic model will also be applied to the parametrized classes, in the same way as when inheriting from
@@ -655,7 +657,7 @@ Generic models also integrate properly with type checkers, so you get all the ty
 you would expect if you were to declare a distinct type for each parametrization.
 
 !!! note
-    Internally, Pydantic creates subclasses of the generic model at runtime when they are parametrized.
+    Internally, Pydantic creates subclasses of the generic model at runtime when the generic model class is parametrized.
     These classes are cached, so there should be minimal overhead introduced by the use of generics models.
 
 To inherit from a generic model and preserve the fact that it is generic, the subclass must also inherit from
@@ -682,7 +684,7 @@ print(ChildClass[int](X=1))
 #> X=1
 ```
 
-You can also create a generic subclass of a model that partially or fully replaces the type parameters in the
+You can also create a generic subclass of a model that partially or fully replaces the type variables in the
 superclass:
 
 ```py
@@ -869,7 +871,7 @@ except ValidationError as exc:
 
 !!! warning
 
-    If a subtype of the type variable upper bound, constraints or default is being used and the model isn't explicitly parametrized, the resulting type **will not be** the one being provided. In the case of type variables bound to Pydantic models, this can lead to a data loss:
+    In some cases, validation against an unparametrized generic model can lead to data loss. Specifically, if a subtype of the type variable upper bound, constraints, or default is being used and the model isn't explicitly parametrized, the resulting type **will not be** the one being provided:
 
     ```py
     from typing import Generic, TypeVar
@@ -906,7 +908,7 @@ except ValidationError as exc:
 
 ### Serialization of unparametrized type variables
 
-The behavior of serialization differs when using type variables with [upper bounds](https://typing.readthedocs.io/en/latest/reference/generics.html#type-variables-with-upper-bounds) or [constraints](https://typing.readthedocs.io/en/latest/reference/generics.html#type-variables-with-constraints)/a default value:
+The behavior of serialization differs when using type variables with [upper bounds](https://typing.readthedocs.io/en/latest/reference/generics.html#type-variables-with-upper-bounds), [constraints](https://typing.readthedocs.io/en/latest/reference/generics.html#type-variables-with-constraints), or a default value:
 
 If a Pydantic model is used in a type variable upper bound and the type variable is never parametrized, then Pydantic will use the upper bound for validation but treat the value as [`Any`][typing.Any] in terms of serialization:
 
