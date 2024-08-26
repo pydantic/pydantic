@@ -654,6 +654,40 @@ def test_ser_json_inf_nan_with_list_of_any() -> None:
     assert s.to_json([nan]) == b'[null]'
 
 
+def test_ser_json_int_subclass_value_larger_than_i64():
+    class IntSubclass(int):
+        pass
+
+    schema = core_schema.model_schema(
+        MyModel,
+        core_schema.model_fields_schema(
+            dict(
+                stuff=core_schema.model_field(
+                    core_schema.dict_schema(
+                        keys_schema=core_schema.str_schema(),
+                        values_schema=core_schema.any_schema(),
+                    )
+                )
+            )
+        ),
+    )
+    s = SchemaSerializer(schema)
+
+    assert (
+        s.to_json(
+            MyModel(stuff={'value': IntSubclass(9_223_372_036_854_775_809)}),
+        )
+        == b'{"stuff":{"value":9223372036854775809}}'
+    )
+
+    assert str(
+        s.to_python(
+            MyModel(stuff={'value': IntSubclass(9_223_372_036_854_775_809)}),
+            mode='json',
+        )
+    ) == str({'stuff': {'value': 9223372036854775809}})
+
+
 def test_simple_any_ser_schema_repr():
     assert (
         plain_repr(SchemaSerializer(core_schema.simple_ser_schema('any')))
