@@ -1,18 +1,18 @@
 from __future__ import annotations
 
 import ast
-import logging
 import re
 from functools import partial
 from pathlib import Path
+from typing import Any
 
-from griffe import Extension, ObjectNode
+from griffe import Extension, Inspector, ObjectNode, Visitor, get_logger
 from griffe import Object as GriffeObject
 from pymdownx.slugs import slugify
 
 DOCS_PATH = Path(__file__).parent.parent
 slugifier = slugify(case='lower')
-logger = logging.getLogger('griffe_docklinks')
+logger = get_logger('griffe_docklinks')
 
 
 def find_heading(content: str, slug: str, file_path: Path) -> tuple[str, int]:
@@ -80,6 +80,8 @@ def update_docstring(obj: GriffeObject) -> str:
 
 
 class UpdateDocstringsExtension(Extension):
-    def on_instance(self, *, node: ast.AST | ObjectNode, obj: GriffeObject) -> None:
+    def on_instance(
+        self, *, node: ast.AST | ObjectNode, obj: GriffeObject, agent: Visitor | Inspector, **kwargs: Any
+    ) -> None:
         if not obj.is_alias and obj.docstring is not None:
-            update_docstring(obj)
+            obj.docstring.value = update_docstring(obj)

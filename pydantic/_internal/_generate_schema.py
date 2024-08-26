@@ -58,6 +58,7 @@ from ..aliases import AliasChoices, AliasGenerator, AliasPath
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from ..config import ConfigDict, JsonDict, JsonEncoder
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
+from ..functional_validators import AfterValidator, BeforeValidator, FieldValidatorModes, PlainValidator, WrapValidator
 from ..json_schema import JsonSchemaValue
 from ..version import version_short
 from ..warnings import PydanticDeprecatedSince20
@@ -103,7 +104,6 @@ if TYPE_CHECKING:
     from ..fields import ComputedFieldInfo, FieldInfo
     from ..main import BaseModel
     from ..types import Discriminator
-    from ..validators import FieldValidatorModes
     from ._dataclasses import StandardDataclass
     from ._schema_generation_shared import GetJsonSchemaFunction
 
@@ -148,6 +148,10 @@ MAPPING_TYPES = [
     typing.Counter,
 ]
 DEQUE_TYPES: list[type] = [collections.deque, typing.Deque]
+
+_mode_to_validator: dict[
+    FieldValidatorModes, type[BeforeValidator | AfterValidator | PlainValidator | WrapValidator]
+] = {'before': BeforeValidator, 'after': AfterValidator, 'plain': PlainValidator, 'wrap': WrapValidator}
 
 
 def check_validator_fields_against_field_name(
@@ -1289,13 +1293,20 @@ class GenerateSchema:
             schema = self._apply_discriminator_to_union(schema, field_info.discriminator)
             return schema
 
+        # Convert `@field_validator` decorators to `Before/After/Plain/WrapValidator` instances:
+        validators_from_decorators = []
+        for decorator in filter_field_decorator_info_by_field(decorators.field_validators.values(), name):
+            validators_from_decorators.append(_mode_to_validator[decorator.info.mode]._from_decorator(decorator))
+
         with self.field_name_stack.push(name):
             if field_info.discriminator is not None:
-                schema = self._apply_annotations(source_type, annotations, transform_inner_schema=set_discriminator)
+                schema = self._apply_annotations(
+                    source_type, annotations + validators_from_decorators, transform_inner_schema=set_discriminator
+                )
             else:
                 schema = self._apply_annotations(
                     source_type,
-                    annotations,
+                    annotations + validators_from_decorators,
                 )
 
         # This V1 compatibility shim should eventually be removed
@@ -1309,10 +1320,7 @@ class GenerateSchema:
         this_field_validators = [v for v in this_field_validators if v not in each_item_validators]
         schema = apply_each_item_validators(schema, each_item_validators, name)
 
-        schema = apply_validators(schema, filter_field_decorator_info_by_field(this_field_validators, name), name)
-        schema = apply_validators(
-            schema, filter_field_decorator_info_by_field(decorators.field_validators.values(), name), name
-        )
+        schema = apply_validators(schema, this_field_validators, name)
 
         # the default validator needs to go outside of any other validators
         # so that it is the topmost validator for the field validator
@@ -1507,10 +1515,10 @@ class GenerateSchema:
                 title = self._get_model_title_from_config(typed_dict_cls, ConfigWrapper(config))
                 metadata = build_metadata_dict(
                     js_functions=[partial(modify_model_json_schema, cls=typed_dict_cls, title=title)],
-                    typed_dict_cls=typed_dict_cls,
                 )
                 td_schema = core_schema.typed_dict_schema(
                     fields,
+                    cls=typed_dict_cls,
                     computed_fields=[
                         self._computed_field_schema(d, decorators.field_serializers)
                         for d in decorators.computed_fields.values()
@@ -2201,6 +2209,7 @@ class GenerateSchema:
             else:
                 ref = typing.cast('str|None', schema.get('ref', None))
                 if ref is not None:
+                    self.defs.definitions[ref] = schema
                     schema = core_schema.definition_reference_schema(ref)
 
             # use the last serializer to make it easy to override a serializer set on a parent model
@@ -2304,6 +2313,8 @@ _VALIDATOR_F_MATCH: Mapping[
 }
 
 
+# TODO V3: this function is only used for deprecated decorators. It should
+# be removed once we drop support for those.
 def apply_validators(
     schema: core_schema.CoreSchema,
     validators: Iterable[Decorator[RootValidatorDecoratorInfo]]

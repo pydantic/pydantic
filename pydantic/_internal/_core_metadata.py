@@ -1,15 +1,15 @@
 from __future__ import annotations as _annotations
 
 import typing
-from typing import Any
+from typing import Any, cast
 
 import typing_extensions
 
 if typing.TYPE_CHECKING:
+    from pydantic_core import CoreSchema
+
     from ._schema_generation_shared import (
-        CoreSchemaOrField as CoreSchemaOrField,
-    )
-    from ._schema_generation_shared import (
+        CoreSchemaOrField,
         GetJsonSchemaFunction,
     )
 
@@ -29,15 +29,18 @@ class CoreMetadata(typing_extensions.TypedDict, total=False):
     # If `pydantic_js_prefer_positional_arguments` is True, the JSON schema generator will
     # prefer positional over keyword arguments for an 'arguments' schema.
     pydantic_js_prefer_positional_arguments: bool | None
-
-    pydantic_typed_dict_cls: type[Any] | None  # TODO: Consider moving this into the pydantic-core TypedDictSchema
+    pydantic_js_input_core_schema: CoreSchema | None
 
 
 class CoreMetadataHandler:
-    """Because the metadata field in pydantic_core is of type `Any`, we can't assume much about its contents.
+    """Because the metadata field in pydantic_core is of type `Dict[str, Any]`, we can't assume much about its contents.
 
-    This class is used to interact with the metadata field on a CoreSchema object in a consistent
-    way throughout pydantic.
+    This class is used to interact with the metadata field on a CoreSchema object in a consistent way throughout pydantic.
+
+    TODO: We'd like to refactor the storage of json related metadata to be more explicit, and less functionally oriented.
+    This should make its way into our v2.10 release. It's inevitable that we need to store some json schema related information
+    on core schemas, given that we generate JSON schemas directly from core schemas. That being said, debugging related
+    issues is quite difficult when JSON schema information is disguised via dynamically defined functions.
     """
 
     __slots__ = ('_schema',)
@@ -47,7 +50,7 @@ class CoreMetadataHandler:
 
         metadata = schema.get('metadata')
         if metadata is None:
-            schema['metadata'] = CoreMetadata()
+            schema['metadata'] = CoreMetadata()  # type: ignore
         elif not isinstance(metadata, dict):
             raise TypeError(f'CoreSchema metadata should be a dict; got {metadata!r}.')
 
@@ -58,10 +61,10 @@ class CoreMetadataHandler:
         """
         metadata = self._schema.get('metadata')
         if metadata is None:
-            self._schema['metadata'] = metadata = CoreMetadata()
+            self._schema['metadata'] = metadata = CoreMetadata()  # type: ignore
         if not isinstance(metadata, dict):
             raise TypeError(f'CoreSchema metadata should be a dict; got {metadata!r}.')
-        return metadata
+        return cast(CoreMetadata, metadata)
 
 
 def build_metadata_dict(
@@ -69,24 +72,13 @@ def build_metadata_dict(
     js_functions: list[GetJsonSchemaFunction] | None = None,
     js_annotation_functions: list[GetJsonSchemaFunction] | None = None,
     js_prefer_positional_arguments: bool | None = None,
-    typed_dict_cls: type[Any] | None = None,
-    initial_metadata: Any | None = None,
-) -> Any:
-    """Builds a dict to use as the metadata field of a CoreSchema object in a manner that is consistent
-    with the CoreMetadataHandler class.
-    """
-    if initial_metadata is not None and not isinstance(initial_metadata, dict):
-        raise TypeError(f'CoreSchema metadata should be a dict; got {initial_metadata!r}.')
-
+    js_input_core_schema: CoreSchema | None = None,
+) -> dict[str, Any]:
+    """Builds a dict to use as the metadata field of a CoreSchema object in a manner that is consistent with the `CoreMetadataHandler` class."""
     metadata = CoreMetadata(
         pydantic_js_functions=js_functions or [],
         pydantic_js_annotation_functions=js_annotation_functions or [],
         pydantic_js_prefer_positional_arguments=js_prefer_positional_arguments,
-        pydantic_typed_dict_cls=typed_dict_cls,
+        pydantic_js_input_core_schema=js_input_core_schema,
     )
-    metadata = {k: v for k, v in metadata.items() if v is not None}
-
-    if initial_metadata is not None:
-        metadata = {**initial_metadata, **metadata}
-
-    return metadata
+    return {k: v for k, v in metadata.items() if v is not None}

@@ -8,11 +8,10 @@ from functools import partialmethod
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, cast, overload
 
-from pydantic_core import core_schema
+from pydantic_core import PydanticUndefined, core_schema
 from pydantic_core import core_schema as _core_schema
-from typing_extensions import Annotated, Literal, TypeAlias
+from typing_extensions import Annotated, Literal, Self, TypeAlias
 
-from . import GetCoreSchemaHandler as _GetCoreSchemaHandler
 from ._internal import _core_metadata, _decorators, _generics, _internal_dataclass
 from .annotated_handlers import GetCoreSchemaHandler
 from .errors import PydanticUserError
@@ -70,7 +69,7 @@ class AfterValidator:
 
     func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
 
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
         info_arg = _inspect_validator(self.func, 'after')
         if info_arg:
@@ -79,6 +78,10 @@ class AfterValidator:
         else:
             func = cast(core_schema.NoInfoValidatorFunction, self.func)
             return core_schema.no_info_after_validator_function(func, schema=schema)
+
+    @classmethod
+    def _from_decorator(cls, decorator: _decorators.Decorator[_decorators.FieldValidatorDecoratorInfo]) -> Self:
+        return cls(func=decorator.func)
 
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
@@ -89,6 +92,8 @@ class BeforeValidator:
 
     Attributes:
         func: The validator function.
+        json_schema_input_type: The input type of the function. This is only used to generate the appropriate
+            JSON Schema (in validation mode).
 
     Example:
         ```py
@@ -113,16 +118,36 @@ class BeforeValidator:
     """
 
     func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
+    json_schema_input_type: Any = PydanticUndefined
 
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
+        input_schema = (
+            None
+            if self.json_schema_input_type is PydanticUndefined
+            else handler.generate_schema(self.json_schema_input_type)
+        )
+        metadata = _core_metadata.build_metadata_dict(js_input_core_schema=input_schema)
+
         info_arg = _inspect_validator(self.func, 'before')
         if info_arg:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
-            return core_schema.with_info_before_validator_function(func, schema=schema, field_name=handler.field_name)
+            return core_schema.with_info_before_validator_function(
+                func,
+                schema=schema,
+                field_name=handler.field_name,
+                metadata=metadata,
+            )
         else:
             func = cast(core_schema.NoInfoValidatorFunction, self.func)
-            return core_schema.no_info_before_validator_function(func, schema=schema)
+            return core_schema.no_info_before_validator_function(func, schema=schema, metadata=metadata)
+
+    @classmethod
+    def _from_decorator(cls, decorator: _decorators.Decorator[_decorators.FieldValidatorDecoratorInfo]) -> Self:
+        return cls(
+            func=decorator.func,
+            json_schema_input_type=decorator.info.json_schema_input_type,
+        )
 
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
@@ -133,6 +158,8 @@ class PlainValidator:
 
     Attributes:
         func: The validator function.
+        json_schema_input_type: The input type of the function. This is only used to generate the appropriate
+            JSON Schema (in validation mode). If not provided, will default to `Any`.
 
     Example:
         ```py
@@ -151,8 +178,9 @@ class PlainValidator:
     """
 
     func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
+    json_schema_input_type: Any = Any
 
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         # Note that for some valid uses of PlainValidator, it is not possible to generate a core schema for the
         # source_type, so calling `handler(source_type)` will error, which prevents us from generating a proper
         # serialization schema. To work around this for use cases that will not involve serialization, we simply
@@ -162,19 +190,36 @@ class PlainValidator:
 
         try:
             schema = handler(source_type)
-            serialization = core_schema.wrap_serializer_function_ser_schema(function=lambda v, h: h(v), schema=schema)
+            serialization = core_schema.wrap_serializer_function_ser_schema(
+                function=lambda v, h: h(v),
+                schema=schema,
+                return_schema=schema,
+            )
         except PydanticSchemaGenerationError:
             serialization = None
+
+        input_schema = handler.generate_schema(self.json_schema_input_type)
+        metadata = _core_metadata.build_metadata_dict(js_input_core_schema=input_schema)
 
         info_arg = _inspect_validator(self.func, 'plain')
         if info_arg:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
             return core_schema.with_info_plain_validator_function(
-                func, field_name=handler.field_name, serialization=serialization
+                func,
+                field_name=handler.field_name,
+                serialization=serialization,
+                metadata=metadata,
             )
         else:
             func = cast(core_schema.NoInfoValidatorFunction, self.func)
-            return core_schema.no_info_plain_validator_function(func, serialization=serialization)
+            return core_schema.no_info_plain_validator_function(func, serialization=serialization, metadata=metadata)
+
+    @classmethod
+    def _from_decorator(cls, decorator: _decorators.Decorator[_decorators.FieldValidatorDecoratorInfo]) -> Self:
+        return cls(
+            func=decorator.func,
+            json_schema_input_type=decorator.info.json_schema_input_type,
+        )
 
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
@@ -185,6 +230,8 @@ class WrapValidator:
 
     Attributes:
         func: The validator function.
+        json_schema_input_type: The input type of the function. This is only used to generate the appropriate
+            JSON Schema (in validation mode).
 
     ```py
     from datetime import datetime
@@ -216,16 +263,40 @@ class WrapValidator:
     """
 
     func: core_schema.NoInfoWrapValidatorFunction | core_schema.WithInfoWrapValidatorFunction
+    json_schema_input_type: Any = PydanticUndefined
 
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
+        input_schema = (
+            None
+            if self.json_schema_input_type is PydanticUndefined
+            else handler.generate_schema(self.json_schema_input_type)
+        )
+        metadata = _core_metadata.build_metadata_dict(js_input_core_schema=input_schema)
+
         info_arg = _inspect_validator(self.func, 'wrap')
         if info_arg:
             func = cast(core_schema.WithInfoWrapValidatorFunction, self.func)
-            return core_schema.with_info_wrap_validator_function(func, schema=schema, field_name=handler.field_name)
+            return core_schema.with_info_wrap_validator_function(
+                func,
+                schema=schema,
+                field_name=handler.field_name,
+                metadata=metadata,
+            )
         else:
             func = cast(core_schema.NoInfoWrapValidatorFunction, self.func)
-            return core_schema.no_info_wrap_validator_function(func, schema=schema)
+            return core_schema.no_info_wrap_validator_function(
+                func,
+                schema=schema,
+                metadata=metadata,
+            )
+
+    @classmethod
+    def _from_decorator(cls, decorator: _decorators.Decorator[_decorators.FieldValidatorDecoratorInfo]) -> Self:
+        return cls(
+            func=decorator.func,
+            json_schema_input_type=decorator.info.json_schema_input_type,
+        )
 
 
 if TYPE_CHECKING:
@@ -266,15 +337,7 @@ if TYPE_CHECKING:
     )
     _V2WrapValidatorType = TypeVar('_V2WrapValidatorType', bound=Union[_V2WrapValidator, _PartialClsOrStaticMethod])
 
-
-@overload
-def field_validator(
-    field: str,
-    /,
-    *fields: str,
-    mode: Literal['before', 'after', 'plain'] = ...,
-    check_fields: bool | None = ...,
-) -> Callable[[_V2BeforeAfterOrPlainValidatorType], _V2BeforeAfterOrPlainValidatorType]: ...
+FieldValidatorModes: TypeAlias = Literal['before', 'after', 'wrap', 'plain']
 
 
 @overload
@@ -284,10 +347,29 @@ def field_validator(
     *fields: str,
     mode: Literal['wrap'],
     check_fields: bool | None = ...,
+    json_schema_input_type: Any = ...,
 ) -> Callable[[_V2WrapValidatorType], _V2WrapValidatorType]: ...
 
 
-FieldValidatorModes: TypeAlias = Literal['before', 'after', 'wrap', 'plain']
+@overload
+def field_validator(
+    field: str,
+    /,
+    *fields: str,
+    mode: Literal['before', 'plain'],
+    check_fields: bool | None = ...,
+    json_schema_input_type: Any = ...,
+) -> Callable[[_V2BeforeAfterOrPlainValidatorType], _V2BeforeAfterOrPlainValidatorType]: ...
+
+
+@overload
+def field_validator(
+    field: str,
+    /,
+    *fields: str,
+    mode: Literal['after'] = ...,
+    check_fields: bool | None = ...,
+) -> Callable[[_V2BeforeAfterOrPlainValidatorType], _V2BeforeAfterOrPlainValidatorType]: ...
 
 
 def field_validator(
@@ -296,6 +378,7 @@ def field_validator(
     *fields: str,
     mode: FieldValidatorModes = 'after',
     check_fields: bool | None = None,
+    json_schema_input_type: Any = PydanticUndefined,
 ) -> Callable[[Any], Any]:
     """Usage docs: https://docs.pydantic.dev/2.9/concepts/validators/#field-validators
 
@@ -343,6 +426,9 @@ def field_validator(
         *fields: Additional field(s) the `field_validator` should be called on.
         mode: Specifies whether to validate the fields before or after validation.
         check_fields: Whether to check that the fields actually exist on the model.
+        json_schema_input_type: The input type of the function. This is only used to generate
+            the appropriate JSON Schema (in validation mode) and can only specified
+            when `mode` is either `'before'`, `'plain'` or `'wrap'`.
 
     Returns:
         A decorator that can be used to decorate a function to be used as a field_validator.
@@ -359,6 +445,16 @@ def field_validator(
             "E.g. usage should be `@validator('<field_name>', ...)`",
             code='validator-no-fields',
         )
+
+    if mode not in ('before', 'plain', 'wrap') and json_schema_input_type is not PydanticUndefined:
+        raise PydanticUserError(
+            f"`json_schema_input_type` can't be used when mode is set to {mode!r}",
+            code='validator-input-type',
+        )
+
+    if json_schema_input_type is PydanticUndefined and mode == 'plain':
+        json_schema_input_type = Any
+
     fields = field, *fields
     if not all(isinstance(field, str) for field in fields):
         raise PydanticUserError(
@@ -378,7 +474,9 @@ def field_validator(
         # auto apply the @classmethod decorator
         f = _decorators.ensure_classmethod_based_on_signature(f)
 
-        dec_info = _decorators.FieldValidatorDecoratorInfo(fields=fields, mode=mode, check_fields=check_fields)
+        dec_info = _decorators.FieldValidatorDecoratorInfo(
+            fields=fields, mode=mode, check_fields=check_fields, json_schema_input_type=json_schema_input_type
+        )
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     return dec

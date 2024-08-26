@@ -14,8 +14,6 @@ If you're using Pydantic prior to **v2.0** please use:
 ```bash
 python -c "import pydantic.utils; print(pydantic.utils.version_info())"
 ```
-If you're using Pydantic prior to **v1.3** (when `version_info()` was added), please manually include OS, Python
-version and pydantic version.
 
 Please try to always include the above unless you're unable to install Pydantic or **know** it's not relevant
 to your question or feature request.
@@ -32,7 +30,7 @@ creating a pull request.
     Pydantic v1 is in maintenance mode, meaning that only bug fixes and security fixes will be accepted.
     New features should be targeted at Pydantic v2.
 
-    To submit a fix to Pydantic v1, use the `1.10.X-fixes` branch.
+    To submit a fix to Pydantic v1, use the `1.10.X-fixes` as a target branch.
 
 If you're looking for something to get your teeth into, check out the
 ["help wanted"](https://github.com/pydantic/pydantic/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)
@@ -43,14 +41,14 @@ Pydantic has few dependencies, doesn't require compiling and tests don't need ac
 Because of this, setting up and running the tests should be very simple.
 
 !!! tip
-    **tl;dr**: use `make format` to fix formatting, `make` to run tests and linting & `make docs`
+    **tl;dr**: use `make format` to fix formatting, `make` to run tests and linting and `make docs`
     to build the docs.
 
 ### Prerequisites
 
 You'll need the following prerequisites:
 
-- Any Python version between **Python 3.8 and 3.11**
+- Any Python version between **Python 3.9 and 3.12**
 - **virtualenv** or other virtual environment tool
 - **git**
 - **make**
@@ -124,9 +122,6 @@ Please follow the pull request template and fill in as much information as possi
 
 When your pull request is ready for review, add a comment with the message "please review" and we'll take a look as soon as we can.
 
-## Code style and requirements
-
-TODO
 
 ## Documentation style
 
@@ -174,7 +169,7 @@ def bar(self, baz: int) -> str:
     return 'bar'
 ```
 
-You may include example code in docstrings. This code should be complete, self-contained, and runnable. Docstring examples are tested using [doctest](https://docs.python.org/3/library/doctest.html), so make sure they are correct and complete. See [FieldInfo.from_annotated_attribute()][pydantic.fields.FieldInfo.from_annotated_attribute] for an example.
+You may include example code in docstrings. This code should be complete, self-contained, and runnable. Docstring examples are tested, so make sure they are correct and complete. See [`FieldInfo.from_annotated_attribute`][pydantic.fields.FieldInfo.from_annotated_attribute] for an example.
 
 !!! note "Class and instance attributes"
     Class attributes should be documented in the class docstring.

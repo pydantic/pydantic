@@ -1,8 +1,6 @@
 Pydantic attempts to provide useful errors. The following sections provide details on common errors developers may
 encounter when working with Pydantic, along with suggestions for addressing the error condition.
 
-<!-- Note: raw tag is used to avoid rendering of jinja2 template tags in the docs. -->
-{% raw %}
 ## Class not fully defined {#class-not-fully-defined}
 
 This error is raised when a type referenced in an annotation of a pydantic-validated type
@@ -90,7 +88,7 @@ try:
     class Model(BaseModel):
         @classmethod
         def __modify_schema__(cls, field_schema):
-            field_schema.update(examples='examples')
+            field_schema.update(examples=['example'])
 
 except PydanticUserError as exc_info:
     assert exc_info.code == 'custom-json-schema'
@@ -115,13 +113,13 @@ class Model(BaseModel):
     ) -> Dict[str, Any]:
         json_schema = super().__get_pydantic_json_schema__(core_schema, handler)
         json_schema = handler.resolve_ref_schema(json_schema)
-        json_schema.update(examples='examples')
+        json_schema.update(examples=['example'])
         return json_schema
 
 
 print(Model.model_json_schema())
 """
-{'examples': 'examples', 'properties': {}, 'title': 'Model', 'type': 'object'}
+{'examples': ['example'], 'properties': {}, 'title': 'Model', 'type': 'object'}
 """
 ```
 
@@ -728,12 +726,38 @@ try:
         a: int = 1
 
         @field_validator('a')
-        def check_a(self, values):
-            return values
+        def check_a(self, value):
+            return value
 
 except PydanticUserError as exc_info:
     assert exc_info.code == 'validator-instance-method'
 ```
+
+## `json_schema_input_type` used with the wrong mode {#validator-input-type}
+
+This error is raised when you explicitly specify a value for the `json_schema_input_type`
+argument and `mode` isn't set to either `'before'`, `'plain'` or `'wrap'`.
+
+```py
+from pydantic import BaseModel, PydanticUserError, field_validator
+
+try:
+
+    class Model(BaseModel):
+        a: int = 1
+
+        @field_validator('a', mode='after', json_schema_input_type=int)
+        @classmethod
+        def check_a(self, value):
+            return value
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'validator-input-type'
+```
+
+Documenting the JSON Schema input type is only possible for validators where the given
+value can be anything. That is why it isn't available for `after` validators, where
+the value is first validated against the type annotation.
 
 ## Root validator, `pre`, `skip_on_failure` {#root-validator-pre-skip}
 
@@ -1164,5 +1188,3 @@ try:
 except PydanticUserError as exc_info:
     assert exc_info.code == 'dataclass-on-model'
 ```
-
-{% endraw %}

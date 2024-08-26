@@ -1263,3 +1263,24 @@ def test_serialize_with_custom_ser() -> None:
         ItemContainer(item_or_items=items).model_dump_json()
         == '{"item_or_items":[{"id":0},{"id":1},{"id":2},{"id":3},{"id":4}]}'
     )
+
+
+def test_field_serializers_use_enum_ref() -> None:
+    """See https://github.com/pydantic/pydantic/issues/9394 for the original issue."""
+
+    class MyEnum(Enum):
+        A = 'a'
+        B = 'b'
+
+    class MyModel(BaseModel):
+        @computed_field
+        @property
+        def computed_a_or_b(self) -> MyEnum:
+            return MyEnum.B
+
+        @field_serializer('computed_a_or_b')
+        def serialize_my_enum(self, a_or_b: MyEnum) -> str:
+            return a_or_b.value
+
+    m = MyModel()
+    assert m.model_dump()['computed_a_or_b'] == 'b'

@@ -299,17 +299,25 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                 partial(get_constraint_validator(constraint), {constraint: getattr(annotation, constraint)}), schema
             )
             continue
-        elif isinstance(annotation, at.Predicate):
-            predicate_name = f'{annotation.func.__qualname__} ' if hasattr(annotation.func, '__qualname__') else ''
+        elif isinstance(annotation, (at.Predicate, at.Not)):
+            predicate_name = f'{annotation.func.__qualname__}' if hasattr(annotation.func, '__qualname__') else ''
 
             def val_func(v: Any) -> Any:
+                predicate_satisfied = annotation.func(v)  # noqa: B023
+
                 # annotation.func may also raise an exception, let it pass through
-                if not annotation.func(v):  # noqa: B023
-                    raise PydanticCustomError(
-                        'predicate_failed',
-                        f'Predicate {predicate_name}failed',  # type: ignore  # noqa: B023
-                    )
-                return v
+                if isinstance(annotation, at.Predicate):  # noqa: B023
+                    if not predicate_satisfied:
+                        raise PydanticCustomError(
+                            'predicate_failed',
+                            f'Predicate {predicate_name} failed',  # type: ignore  # noqa: B023
+                        )
+                else:
+                    if predicate_satisfied:
+                        raise PydanticCustomError(
+                            'not_operation_failed',
+                            f'Not of {predicate_name} failed',  # type: ignore  # noqa: B023
+                        )
 
             schema = cs.no_info_after_validator_function(val_func, schema)
         else:

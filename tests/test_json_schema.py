@@ -35,24 +35,29 @@ from uuid import UUID
 import pytest
 from dirty_equals import HasRepr
 from packaging.version import Version
-from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_json
+from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_jsonable_python
+from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from typing_extensions import Annotated, Literal, Self, TypedDict, deprecated
 
 import pydantic
 from pydantic import (
     AfterValidator,
     BaseModel,
+    BeforeValidator,
     Field,
     GetCoreSchemaHandler,
     GetJsonSchemaHandler,
     ImportString,
     InstanceOf,
     PlainSerializer,
+    PlainValidator,
     PydanticDeprecatedSince20,
+    PydanticDeprecatedSince29,
     PydanticUserError,
     RootModel,
     ValidationError,
     WithJsonSchema,
+    WrapValidator,
     computed_field,
     field_serializer,
     field_validator,
@@ -809,24 +814,23 @@ def test_date_types(field_type, expected_schema):
 
 
 @pytest.mark.parametrize(
-    'field_type,expected_schema',
+    'field_type',
     [
-        (condate(), {}),
-        (
-            condate(gt=date(2010, 1, 1), lt=date(2021, 2, 2)),
-            {'exclusiveMinimum': date(2010, 1, 1), 'exclusiveMaximum': date(2021, 2, 2)},
-        ),
-        (condate(ge=date(2010, 1, 1), le=date(2021, 2, 2)), {'minimum': date(2010, 1, 1), 'maximum': date(2021, 2, 2)}),
+        condate(),
+        condate(gt=date(2010, 1, 1), lt=date(2021, 2, 2)),
+        condate(ge=date(2010, 1, 1), le=date(2021, 2, 2)),
     ],
 )
-def test_date_constrained_types(field_type, expected_schema):
+def test_date_constrained_types_no_constraints(field_type):
+    """No constraints added, see https://github.com/json-schema-org/json-schema-spec/issues/116."""
+
     class Model(BaseModel):
         a: field_type
 
     assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'date', **expected_schema}},
+        'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'date'}},
         'required': ['a'],
     }
 
@@ -2608,6 +2612,7 @@ def test_typeddict_with_json_schema_extra():
     }
 
 
+@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
 def test_typeddict_with__callable_json_schema_extra():
     def json_schema_extra(schema, model_class):
         schema.pop('properties')
@@ -3237,6 +3242,7 @@ def test_conflicting_names():
     }
 
 
+@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
 def test_schema_for_generic_field():
     T = TypeVar('T')
 
@@ -3444,7 +3450,7 @@ def test_advanced_generic_schema():  # noqa: C901
             field_schema = handler(core_schema)
             field_schema.pop('minItems')
             field_schema.pop('maxItems')
-            field_schema.update(examples='examples')
+            field_schema.update(examples=[['a', 'e0add881-8b94-4368-8286-f8607928924e']])
             return field_schema
 
     class CustomType(Enum):
@@ -3485,7 +3491,7 @@ def test_advanced_generic_schema():  # noqa: C901
             },
             'data2': {
                 'description': 'Data 2',
-                'examples': 'examples',
+                'examples': [['a', 'e0add881-8b94-4368-8286-f8607928924e']],
                 'prefixItems': [{'$ref': '#/$defs/CustomType'}, {'format': 'uuid4', 'type': 'string'}],
                 'title': 'Data2 title',
                 'type': 'array',
@@ -4705,6 +4711,7 @@ def test_model_with_schema_extra():
     }
 
 
+@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
 def test_model_with_schema_extra_callable():
     class Model(BaseModel):
         name: str = None
@@ -4720,6 +4727,7 @@ def test_model_with_schema_extra_callable():
     assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
 
 
+@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
 def test_model_with_schema_extra_callable_no_model_class():
     class Model(BaseModel):
         name: str = None
@@ -4734,6 +4742,7 @@ def test_model_with_schema_extra_callable_no_model_class():
     assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
 
 
+@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
 def test_model_with_schema_extra_callable_config_class():
     with pytest.warns(PydanticDeprecatedSince20, match='use ConfigDict instead'):
 
@@ -4750,6 +4759,7 @@ def test_model_with_schema_extra_callable_config_class():
     assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
 
 
+@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
 def test_model_with_schema_extra_callable_no_model_class_config_class():
     with pytest.warns(PydanticDeprecatedSince20):
 
@@ -4765,6 +4775,7 @@ def test_model_with_schema_extra_callable_no_model_class_config_class():
         assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
 
 
+@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
 def test_model_with_schema_extra_callable_classmethod():
     with pytest.warns(PydanticDeprecatedSince20):
 
@@ -4783,6 +4794,7 @@ def test_model_with_schema_extra_callable_classmethod():
         assert Model.model_json_schema() == {'title': 'Model', 'type': 'foo'}
 
 
+@pytest.mark.skip_json_schema_validation(reason='Custom type used.')
 def test_model_with_schema_extra_callable_instance_method():
     with pytest.warns(PydanticDeprecatedSince20):
 
@@ -5070,20 +5082,20 @@ def test_arbitrary_type_json_schema(field_schema, model_schema, instance_of):
     'metadata,json_schema',
     [
         (
-            WithJsonSchema({'type': 'float'}),
+            WithJsonSchema({'type': 'number'}),
             {
-                'properties': {'x': {'anyOf': [{'type': 'float'}, {'type': 'null'}], 'title': 'X'}},
+                'properties': {'x': {'anyOf': [{'type': 'number'}, {'type': 'null'}], 'title': 'X'}},
                 'required': ['x'],
                 'title': 'Model',
                 'type': 'object',
             },
         ),
         (
-            Examples({'Custom Example': [1, 2, 3]}),
+            Examples([1, 2, 3]),
             {
                 'properties': {
                     'x': {
-                        'anyOf': [{'examples': {'Custom Example': [1, 2, 3]}, 'type': 'integer'}, {'type': 'null'}],
+                        'anyOf': [{'examples': [1, 2, 3], 'type': 'integer'}, {'type': 'null'}],
                         'title': 'X',
                     }
                 },
@@ -5137,17 +5149,6 @@ def test_core_metadata_core_schema_metadata():
     core_metadata_handler._schema = {'metadata': 'test'}
     with pytest.raises(TypeError, match=re.escape("CoreSchema metadata should be a dict; got 'test'.")):
         core_metadata_handler.metadata
-
-
-def test_build_metadata_dict_initial_metadata():
-    assert build_metadata_dict(initial_metadata={'foo': 'bar'}) == {
-        'foo': 'bar',
-        'pydantic_js_functions': [],
-        'pydantic_js_annotation_functions': [],
-    }
-
-    with pytest.raises(TypeError, match=re.escape("CoreSchema metadata should be a dict; got 'test'.")):
-        build_metadata_dict(initial_metadata='test')
 
 
 def test_type_adapter_json_schemas_title_description():
@@ -5265,14 +5266,14 @@ def test_override_enum_json_schema():
 def test_json_schema_extras_on_ref() -> None:
     @dataclass
     class JsonSchemaExamples:
-        examples: Dict[str, Any]
+        examples: List[Any]
 
         def __get_pydantic_json_schema__(
             self, core_schema: CoreSchema, handler: GetJsonSchemaHandler
         ) -> JsonSchemaValue:
             json_schema = handler(core_schema)
             assert json_schema.keys() == {'$ref'}
-            json_schema['examples'] = to_json(self.examples)
+            json_schema['examples'] = to_jsonable_python(self.examples)
             return json_schema
 
     @dataclass
@@ -5291,9 +5292,7 @@ def test_json_schema_extras_on_ref() -> None:
         name: str
         age: int
 
-    ta = TypeAdapter(
-        Annotated[Model, JsonSchemaExamples({'foo': Model(name='John', age=28)}), JsonSchemaTitle('ModelTitle')]
-    )
+    ta = TypeAdapter(Annotated[Model, JsonSchemaExamples([Model(name='John', age=28)]), JsonSchemaTitle('ModelTitle')])
 
     # insert_assert(ta.json_schema())
     assert ta.json_schema() == {
@@ -5306,7 +5305,7 @@ def test_json_schema_extras_on_ref() -> None:
             }
         },
         '$ref': '#/$defs/Model',
-        'examples': b'{"foo":{"name":"John","age":28}}',
+        'examples': [{'name': 'John', 'age': 28}],
         'title': 'ModelTitle',
     }
 
@@ -5360,8 +5359,38 @@ def test_resolve_def_schema_from_core_schema() -> None:
 def test_examples_annotation() -> None:
     ListWithExamples = Annotated[
         List[float],
-        Examples({'Fibonacci': [1, 1, 2, 3, 5]}),
+        Examples([[1, 1, 2, 3, 5], [1, 2, 3]]),
     ]
+
+    ta = TypeAdapter(ListWithExamples)
+
+    assert ta.json_schema() == {
+        'examples': [[1, 1, 2, 3, 5], [1, 2, 3]],
+        'items': {'type': 'number'},
+        'type': 'array',
+    }
+
+    ListWithExtraExample = Annotated[
+        ListWithExamples,
+        Examples([[3.14, 2.71]]),
+    ]
+
+    ta = TypeAdapter(ListWithExtraExample)
+
+    assert ta.json_schema() == {
+        'examples': [[1, 1, 2, 3, 5], [1, 2, 3], [3.14, 2.71]],
+        'items': {'type': 'number'},
+        'type': 'array',
+    }
+
+
+@pytest.mark.skip_json_schema_validation(reason='Uses old examples format, planned for removal in v3.0.')
+def test_examples_annotation_dict() -> None:
+    with pytest.warns(PydanticDeprecatedSince29):
+        ListWithExamples = Annotated[
+            List[float],
+            Examples({'Fibonacci': [1, 1, 2, 3, 5]}),
+        ]
 
     ta = TypeAdapter(ListWithExamples)
 
@@ -5372,26 +5401,62 @@ def test_examples_annotation() -> None:
         'type': 'array',
     }
 
-    ListWithMoreExamples = Annotated[
-        ListWithExamples,
-        Examples(
-            {
-                'Constants': [
-                    3.14,
-                    2.71,
-                ]
-            }
-        ),
-    ]
+    with pytest.warns(PydanticDeprecatedSince29):
+        ListWithMoreExamples = Annotated[
+            ListWithExamples,
+            Examples(
+                {
+                    'Constants': [
+                        3.14,
+                        2.71,
+                    ]
+                }
+            ),
+        ]
 
     ta = TypeAdapter(ListWithMoreExamples)
 
-    # insert_assert(ta.json_schema())
     assert ta.json_schema() == {
         'examples': {'Constants': [3.14, 2.71], 'Fibonacci': [1, 1, 2, 3, 5]},
         'items': {'type': 'number'},
         'type': 'array',
     }
+
+
+def test_examples_mixed_types() -> None:
+    with pytest.warns(PydanticDeprecatedSince29):
+        ListThenDict = Annotated[
+            int,
+            Examples([1, 2]),
+            Examples({'some_example': [3, 4]}),
+        ]
+
+        DictThenList = Annotated[
+            int,
+            Examples({'some_example': [3, 4]}),
+            Examples([1, 2]),
+        ]
+
+    list_then_dict_ta = TypeAdapter(ListThenDict)
+    dict_then_list_ta = TypeAdapter(DictThenList)
+
+    with pytest.warns(
+        UserWarning,
+        match=re.escape('Updating existing JSON Schema examples of type list with examples of type dict.'),
+    ):
+        assert list_then_dict_ta.json_schema() == {
+            'examples': [1, 2, 3, 4],
+            'type': 'integer',
+        }
+
+    with pytest.warns(
+        UserWarning,
+        match=re.escape('Updating existing JSON Schema examples of type dict with examples of type list.'),
+    ):
+        assert dict_then_list_ta.json_schema() == {
+            'examples': [3, 4, 1, 2],
+            'type': 'integer',
+        }
 
 
 def test_skip_json_schema_annotation() -> None:
@@ -5557,7 +5622,7 @@ def test_custom_type_gets_unpacked_ref() -> None:
             Annotated[int, Field(gt=0), Field(lt=100)],
             {'type': 'integer', 'exclusiveMinimum': 0, 'exclusiveMaximum': 100},
         ),
-        (Annotated[int, Field(examples={'number': 1})], {'type': 'integer', 'examples': {'number': 1}}),
+        (Annotated[int, Field(examples=[1])], {'type': 'integer', 'examples': [1]}),
     ],
     ids=repr,
 )
@@ -6383,3 +6448,102 @@ def test_ta_and_bm_same_json_schema() -> None:
 def test_min_and_max_in_schema() -> None:
     TSeq = TypeAdapter(Annotated[Sequence[int], Field(min_length=2, max_length=5)])
     assert TSeq.json_schema() == {'items': {'type': 'integer'}, 'maxItems': 5, 'minItems': 2, 'type': 'array'}
+
+
+def test_plain_field_validator_serialization() -> None:
+    """`PlainValidator` internally creates a wrap ser. schema. This tests that we can
+    still generate a JSON Schema in `'serialization'` mode.
+    """
+
+    class Foo(BaseModel):
+        a: Annotated[int, PlainValidator(lambda x: x)]
+
+    assert Foo.model_json_schema(mode='serialization') == {
+        'properties': {'a': {'title': 'A', 'type': 'integer'}},
+        'required': ['a'],
+        'title': 'Foo',
+        'type': 'object',
+    }
+
+
+def test_annotated_field_validator_input_type() -> None:
+    class Model(BaseModel):
+        # `json_schema_input_type` defaults to `PydanticUndefined`, so `int` will be used to generate the JSON Schema:
+        a: Annotated[int, BeforeValidator(lambda v: v)]
+        b: Annotated[int, WrapValidator(lambda v, h: h(v))]
+        # `json_schema_input_type` defaults to `Any`:
+        c: Annotated[int, PlainValidator(lambda v: v)]
+
+        d: Annotated[int, BeforeValidator(lambda v: v, json_schema_input_type=Union[int, str])]
+        e: Annotated[int, WrapValidator(lambda v, h: h(v), json_schema_input_type=Union[int, str])]
+        f: Annotated[int, PlainValidator(lambda v: v, json_schema_input_type=Union[int, str])]
+
+    assert Model.model_json_schema(mode='validation')['properties'] == {
+        'a': {'type': 'integer', 'title': 'A'},
+        'b': {'type': 'integer', 'title': 'B'},
+        'c': {'title': 'C'},
+        'd': {'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'title': 'D'},
+        'e': {'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'title': 'E'},
+        'f': {'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'title': 'F'},
+    }
+
+    assert Model.model_json_schema(mode='serialization')['properties'] == {
+        'a': {'title': 'A', 'type': 'integer'},
+        'b': {'title': 'B', 'type': 'integer'},
+        'c': {'title': 'C', 'type': 'integer'},
+        'd': {'title': 'D', 'type': 'integer'},
+        'e': {'title': 'E', 'type': 'integer'},
+        'f': {'title': 'F', 'type': 'integer'},
+    }
+
+
+def test_decorator_field_validator_input_type() -> None:
+    class Model(BaseModel):
+        a: int
+        b: int
+        c: int
+        d: int
+        e: int
+        f: int
+
+        @field_validator('a', mode='before')
+        @classmethod
+        def validate_a(cls, value: Any) -> int: ...
+
+        @field_validator('b', mode='wrap')
+        @classmethod
+        def validate_b(cls, value: Any, handler: ValidatorFunctionWrapHandler) -> int: ...
+
+        @field_validator('c', mode='plain')
+        @classmethod
+        def validate_c(cls, value: Any) -> int: ...
+
+        @field_validator('d', mode='before', json_schema_input_type=Union[int, str])
+        @classmethod
+        def validate_d(cls, value: Any) -> int: ...
+
+        @field_validator('e', mode='wrap', json_schema_input_type=Union[int, str])
+        @classmethod
+        def validate_e(cls, value: Any, handler: ValidatorFunctionWrapHandler) -> int: ...
+
+        @field_validator('f', mode='plain', json_schema_input_type=Union[int, str])
+        @classmethod
+        def validate_f(cls, value: Any) -> int: ...
+
+    assert Model.model_json_schema(mode='validation')['properties'] == {
+        'a': {'type': 'integer', 'title': 'A'},
+        'b': {'type': 'integer', 'title': 'B'},
+        'c': {'title': 'C'},
+        'd': {'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'title': 'D'},
+        'e': {'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'title': 'E'},
+        'f': {'anyOf': [{'type': 'integer'}, {'type': 'string'}], 'title': 'F'},
+    }
+
+    assert Model.model_json_schema(mode='serialization')['properties'] == {
+        'a': {'title': 'A', 'type': 'integer'},
+        'b': {'title': 'B', 'type': 'integer'},
+        'c': {'title': 'C', 'type': 'integer'},
+        'd': {'title': 'D', 'type': 'integer'},
+        'e': {'title': 'E', 'type': 'integer'},
+        'f': {'title': 'F', 'type': 'integer'},
+    }

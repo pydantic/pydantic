@@ -10,7 +10,6 @@ on:
 
 env:
   COLUMNS: 150
-  PDM_DEPS: 'urllib3<2'
 
 jobs:
   lint:
@@ -74,9 +73,9 @@ jobs:
         run: |
           pdm venv create --with-pip --force $PYTHON
           pdm install -G docs
-          pdm run python -m pip install https://files.scolvin.com/${MKDOCS_TOKEN}/mkdocs_material-9.5.17+insiders.4.53.5-py3-none-any.whl
+          pdm run python -m pip install --extra-index-url https://pydantic:${PPPR_TOKEN}@pppr.pydantic.dev/simple/ mkdocs-material
         env:
-          MKDOCS_TOKEN: ${{ secrets.MKDOCS_TOKEN }}
+          PPPR_TOKEN: ${{ secrets.PPPR_TOKEN }}
 
       - run: pdm run python -c 'import docs.plugins.main'
 

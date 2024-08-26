@@ -2898,3 +2898,16 @@ def test_validator_with_default_values() -> None:
 
     with pytest.raises(ValidationError):
         Model(x=-1)
+
+
+def test_field_validator_input_type_invalid_mode() -> None:
+    with pytest.raises(
+        PydanticUserError, match=re.escape("`json_schema_input_type` can't be used when mode is set to 'after'")
+    ):
+
+        class Model(BaseModel):
+            a: int
+
+            @field_validator('a', mode='after', json_schema_input_type=Union[int, str])  # pyright: ignore
+            @classmethod
+            def validate_a(cls, value: Any) -> Any: ...

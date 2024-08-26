@@ -35,6 +35,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    overload,
 )
 
 import pydantic_core
@@ -42,7 +43,7 @@ from pydantic_core import CoreSchema, PydanticOmit, core_schema, to_jsonable_pyt
 from pydantic_core.core_schema import ComputedField
 from typing_extensions import Annotated, Literal, TypeAlias, assert_never, deprecated, final
 
-from pydantic.warnings import PydanticDeprecatedSince26
+from pydantic.warnings import PydanticDeprecatedSince26, PydanticDeprecatedSince29
 
 from ._internal import (
     _config,
@@ -686,9 +687,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        json_schema = {'type': 'string', 'format': 'date'}
-        self.update_with_validations(json_schema, schema, self.ValidationsMapping.date)
-        return json_schema
+        return {'type': 'string', 'format': 'date'}
 
     def time_schema(self, schema: core_schema.TimeSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a time value.
@@ -973,20 +972,6 @@ class GenerateJsonSchema:
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.object)
         return json_schema
 
-    def _function_schema(
-        self,
-        schema: _core_utils.AnyFunctionSchema,
-    ) -> JsonSchemaValue:
-        if _core_utils.is_function_with_inner_schema(schema):
-            # This could be wrong if the function's mode is 'before', but in practice will often be right, and when it
-            # isn't, I think it would be hard to automatically infer what the desired schema should be.
-            return self.generate_inner(schema['schema'])
-
-        # function-plain
-        return self.handle_invalid_for_json_schema(
-            schema, f'core_schema.PlainValidatorFunctionSchema ({schema["function"]})'
-        )
-
     def function_before_schema(self, schema: core_schema.BeforeValidatorFunctionSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a function-before schema.
 
@@ -996,7 +981,11 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        return self._function_schema(schema)
+        metadata = _core_metadata.CoreMetadataHandler(schema).metadata
+        if self._mode == 'validation' and (input_schema := metadata.get('pydantic_js_input_core_schema')):
+            return self.generate_inner(input_schema)
+
+        return self.generate_inner(schema['schema'])
 
     def function_after_schema(self, schema: core_schema.AfterValidatorFunctionSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a function-after schema.
@@ -1007,7 +996,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        return self._function_schema(schema)
+        return self.generate_inner(schema['schema'])
 
     def function_plain_schema(self, schema: core_schema.PlainValidatorFunctionSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a function-plain schema.
@@ -1018,7 +1007,13 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        return self._function_schema(schema)
+        metadata = _core_metadata.CoreMetadataHandler(schema).metadata
+        if self._mode == 'validation' and (input_schema := metadata.get('pydantic_js_input_core_schema')):
+            return self.generate_inner(input_schema)
+
+        return self.handle_invalid_for_json_schema(
+            schema, f'core_schema.PlainValidatorFunctionSchema ({schema["function"]})'
+        )
 
     def function_wrap_schema(self, schema: core_schema.WrapValidatorFunctionSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a function-wrap schema.
@@ -1029,7 +1024,11 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        return self._function_schema(schema)
+        metadata = _core_metadata.CoreMetadataHandler(schema).metadata
+        if self._mode == 'validation' and (input_schema := metadata.get('pydantic_js_input_core_schema')):
+            return self.generate_inner(input_schema)
+
+        return self.generate_inner(schema['schema'])
 
     def default_schema(self, schema: core_schema.WithDefaultSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema with a default value.
@@ -1280,7 +1279,7 @@ class GenerateJsonSchema:
         ]
         if self.mode == 'serialization':
             named_required_fields.extend(self._name_required_computed_fields(schema.get('computed_fields', [])))
-        cls = _get_typed_dict_cls(schema)
+        cls = schema.get('cls')
         config = _get_typed_dict_config(cls)
         with self._config_wrapper_stack.push(config):
             json_schema = self._named_required_fields_schema(named_required_fields)
@@ -1707,7 +1706,9 @@ class GenerateJsonSchema:
                 # I believe this is true, but I am not 100% sure
                 min_items += 1
 
-        json_schema: JsonSchemaValue = {'type': 'array', 'prefixItems': prefix_items}
+        json_schema: JsonSchemaValue = {'type': 'array'}
+        if prefix_items:
+            json_schema['prefixItems'] = prefix_items
         if min_items:
             json_schema['minItems'] = min_items
 
@@ -2135,12 +2136,6 @@ class GenerateJsonSchema:
             'min_length': 'minProperties',
             'max_length': 'maxProperties',
         }
-        date = {
-            'le': 'maximum',
-            'ge': 'minimum',
-            'lt': 'exclusiveMaximum',
-            'gt': 'exclusiveMinimum',
-        }
 
     def get_flattened_anyof(self, schemas: list[JsonSchemaValue]) -> JsonSchemaValue:
         members = []
@@ -2406,19 +2401,36 @@ class WithJsonSchema:
         return hash(type(self.mode))
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
 class Examples:
     """Add examples to a JSON schema.
 
-    Examples should be a map of example names (strings)
-    to example values (any valid JSON).
+    If the JSON Schema already contains examples, the provided examples
+    will be appended.
 
     If `mode` is set this will only apply to that schema generation mode,
     allowing you to add different examples for validation and serialization.
     """
 
-    examples: dict[str, Any]
-    mode: Literal['validation', 'serialization'] | None = None
+    @overload
+    @deprecated('Using a dict for `examples` is deprecated since v2.9 and will be removed in v3.0. Use a list instead.')
+    def __init__(
+        self, examples: dict[str, Any], mode: Literal['validation', 'serialization'] | None = None
+    ) -> None: ...
+
+    @overload
+    def __init__(self, examples: list[Any], mode: Literal['validation', 'serialization'] | None = None) -> None: ...
+
+    def __init__(
+        self, examples: dict[str, Any] | list[Any], mode: Literal['validation', 'serialization'] | None = None
+    ) -> None:
+        if isinstance(examples, dict):
+            warnings.warn(
+                'Using a dict for `examples` is deprecated, use a list instead.',
+                PydanticDeprecatedSince29,
+                stacklevel=2,
+            )
+        self.examples = examples
+        self.mode = mode
 
     def __get_pydantic_json_schema__(
         self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
@@ -2427,9 +2439,36 @@ class Examples:
         json_schema = handler(core_schema)
         if mode != handler.mode:
             return json_schema
-        examples = json_schema.get('examples', {})
-        examples.update(to_jsonable_python(self.examples))
-        json_schema['examples'] = examples
+        examples = json_schema.get('examples')
+        if examples is None:
+            json_schema['examples'] = to_jsonable_python(self.examples)
+        if isinstance(examples, dict):
+            if isinstance(self.examples, list):
+                warnings.warn(
+                    'Updating existing JSON Schema examples of type dict with examples of type list. '
+                    'Only the existing examples values will be retained. Note that dict support for '
+                    'examples is deprecated and will be removed in v3.0.',
+                    UserWarning,
+                )
+                json_schema['examples'] = to_jsonable_python(
+                    [ex for value in examples.values() for ex in value] + self.examples
+                )
+            else:
+                json_schema['examples'] = to_jsonable_python({**examples, **self.examples})
+        if isinstance(examples, list):
+            if isinstance(self.examples, list):
+                json_schema['examples'] = to_jsonable_python(examples + self.examples)
+            elif isinstance(self.examples, dict):
+                warnings.warn(
+                    'Updating existing JSON Schema examples of type list with examples of type dict. '
+                    'Only the examples values will be retained. Note that dict support for '
+                    'examples is deprecated and will be removed in v3.0.',
+                    UserWarning,
+                )
+                json_schema['examples'] = to_jsonable_python(
+                    examples + [ex for value in self.examples.values() for ex in value]
+                )
+
         return json_schema
 
     def __hash__(self) -> int:
@@ -2524,12 +2563,6 @@ else:
 
         def __hash__(self) -> int:
             return hash(type(self))
-
-
-def _get_typed_dict_cls(schema: core_schema.TypedDictSchema) -> type[Any] | None:
-    metadata = _core_metadata.CoreMetadataHandler(schema).metadata
-    cls = metadata.get('pydantic_typed_dict_cls')
-    return cls
 
 
 def _get_typed_dict_config(cls: type[Any] | None) -> ConfigDict:

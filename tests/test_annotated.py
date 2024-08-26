@@ -5,7 +5,7 @@ from typing import Any, Callable, Generic, Iterator, List, Optional, Set, TypeVa
 
 import pytest
 import pytz
-from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt, Predicate
+from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt, Not, Predicate
 from pydantic_core import CoreSchema, PydanticUndefined, core_schema
 from typing_extensions import Annotated
 
@@ -398,6 +398,23 @@ def test_predicate_error_python() -> None:
             'loc': (),
             'msg': 'Predicate test_predicate_error_python.<locals>.<lambda> failed',
             'input': -1,
+        }
+    ]
+
+
+def test_not_operation_error_python() -> None:
+    ta = TypeAdapter(Annotated[int, Not(lambda x: x > 5)])
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python(6)
+
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'not_operation_failed',
+            'loc': (),
+            'msg': 'Not of test_not_operation_error_python.<locals>.<lambda> failed',
+            'input': 6,
         }
     ]
 

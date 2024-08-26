@@ -290,7 +290,7 @@ class CustomPath(PurePath):
 
 DynamicModel = create_model('DynamicModel')
 
-examples = Examples({})
+examples = Examples([])
 
 
 def double(value: Any, handler: Any) -> int:
