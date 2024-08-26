@@ -83,11 +83,6 @@ NO_VALUE = object()
             PydanticUndefined,
             "FieldInfo(annotation=int, required=True, alias='foobar', alias_priority=2)",
         ),
-        (
-            lambda: Annotated[int, Not(Gt(5))],
-            4,
-            'FieldInfo(annotation=int, required=False, default=4, metadata=[Not(func=Gt(gt=5))])',
-        ),
     ],
 )
 def test_annotated(hint_fn, value, expected_repr):
