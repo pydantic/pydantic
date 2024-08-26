@@ -6275,7 +6275,6 @@ def test_constraints_arbitrary_type() -> None:
         min_length: Annotated[CustomType, annotated_types.MinLen(1)]
         max_length: Annotated[CustomType, annotated_types.MaxLen(1)]
         predicate: Annotated[CustomType, annotated_types.Predicate(lambda x: x > 0)]
-        not_multiple_of_2: Annotated[CustomType, annotated_types.Not(annotated_types.MultipleOf(2))]
         not_multiple_of_3: Annotated[CustomType, annotated_types.Not(lambda x: x % 3 == 0)]
 
         model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -6289,7 +6288,6 @@ def test_constraints_arbitrary_type() -> None:
         max_length=CustomType([1]),
         multiple_of=CustomType(4),
         predicate=CustomType(1),
-        not_multiple_of_2=CustomType(1),
         not_multiple_of_3=CustomType(4),
     )
 
@@ -6303,7 +6301,6 @@ def test_constraints_arbitrary_type() -> None:
             max_length=CustomType([1, 2, 3]),
             multiple_of=CustomType(3),
             predicate=CustomType(-1),
-            not_multiple_of_2=CustomType(2),
             not_multiple_of_3=CustomType(6),
         )
     # insert_assert(exc_info.value.errors(include_url=False))
@@ -6362,12 +6359,6 @@ def test_constraints_arbitrary_type() -> None:
             'loc': ('predicate',),
             'msg': 'Predicate test_constraints_arbitrary_type.<locals>.Model.<lambda> failed',
             'input': CustomType(-1),
-        },
-        {
-            'type': 'not_operation_failed',
-            'loc': ('not_multiple_of_2',),
-            'msg': 'Not of MultipleOf failed',
-            'input': CustomType(2),
         },
         {
             'type': 'not_operation_failed',

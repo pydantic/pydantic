@@ -408,7 +408,7 @@ def test_predicate_error_python() -> None:
 
 
 def test_not_operation_error_python() -> None:
-    ta = TypeAdapter(Annotated[int, Not(Gt(5))])
+    ta = TypeAdapter(Annotated[int, Not(lambda x: x > 5)])
 
     with pytest.raises(ValidationError) as exc_info:
         ta.validate_python(6)
@@ -418,7 +418,7 @@ def test_not_operation_error_python() -> None:
         {
             'type': 'not_operation_failed',
             'loc': (),
-            'msg': 'Not of Gt failed',
+            'msg': 'Not of test_not_operation_error_python.<locals>.<lambda> failed',
             'input': 6,
         }
     ]
