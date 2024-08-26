@@ -2933,7 +2933,7 @@ def test_generic_mro_multi():
     class B(A[int, T2], BaseModel, Generic[T2]): ...
 
     assert A[int, T2][str].__mro__ == (A[int, T2][str], A, BaseModel, Generic, object)
-    assert B[str].__mro__ == (B[str], B, A[int, T2][str], A[int, T2], A, BaseModel, Generic, object)
+    assert B[str].__mro__ == (B[str], B, A[int, T2][str], A, BaseModel, Generic, object)
 
     # 2.
     class A(BaseModel, Generic[T1, T2]): ...
@@ -2953,13 +2953,13 @@ def test_generic_mro_multi():
     class B2(A[T2], Generic[T1, T2]): ...
 
     assert B1[T1, str].__mro__ == (B1[T1, str], B1, A, BaseModel, Generic, object)
-    assert B2[T1, str].__mro__ == (B2[T1, str], B2, A[str], A[T2], A, BaseModel, Generic, object)
+    assert B2[T1, str].__mro__ == (B2[T1, str], B2, A[str], A, BaseModel, Generic, object)
 
     assert B1[T1, str][int].__mro__ == (B1[T1, str][int], B1, A[int], A, BaseModel, Generic, object)
-    assert B2[T1, str][int].__mro__ == (B2[T1, str][int], B2, A[str], A[T2], A, BaseModel, Generic, object)
+    assert B2[T1, str][int].__mro__ == (B2[T1, str][int], B2, A[str], A, BaseModel, Generic, object)
 
     assert B1[int, str].__mro__ == (B1[int, str], B1, A[int], A, BaseModel, Generic, object)
-    assert B2[int, str].__mro__ == (B2[int, str], B2, A[str], A[T2], A, BaseModel, Generic, object)
+    assert B2[int, str].__mro__ == (B2[int, str], B2, A[str], A, BaseModel, Generic, object)
 
     # 4.
 
@@ -2971,35 +2971,26 @@ def test_generic_mro_multi():
 
     class C2(B[T3], Generic[T3, T2]): ...
 
-    assert C1[int, str].__mro__ == (
-        C1[int, str],
-        C1,
-        B[int],
-        B[T3],
-        B,
-        A[int],
-        A[T3],
-        A[T2],
-        A,
-        BaseModel,
-        Generic,
-        object,
-    )
+    assert C1[int, str].__mro__ == (C1[int, str], C1, B[int], B, A[int], A, BaseModel, Generic, object)
+    assert C2[int, str].__mro__ == (C2[int, str], C2, B[int], B, A[int], A, BaseModel, Generic, object)
 
-    assert C2[int, str].__mro__ == (
-        C2[int, str],
-        C2,
-        B[int],
-        B[T3],
-        B,
-        A[int],
-        A[T3],
-        A[T2],
-        A,
-        BaseModel,
-        Generic,
-        object,
-    )
+
+def test_generic_mro_circular_typevar():
+    T1 = TypeVar('T1')
+    T2 = TypeVar('T2')
+    T3 = TypeVar('T3')
+
+    class A(BaseModel, Generic[T1]): ...
+
+    class B(A[T2], Generic[T2]): ...
+
+    class C(B[T3], Generic[T3]): ...
+
+    class D(C[T1], Generic[T1]): ...
+
+    class E(D[T2], Generic[T2]): ...
+
+    assert E[int].__mro__ == (E[int], E, D[int], D, C[int], C, B[int], B, A[int], A, BaseModel, Generic, object)
 
 
 def test_generic_mro_swap():
@@ -3012,35 +3003,12 @@ def test_generic_mro_swap():
 
     class BSwap(B[T2, T1], Generic[T1, T2]): ...
 
-    assert BSwap[T1, str].__mro__ == (
-        BSwap[T1, str],
-        BSwap,
-        B[str, T1],
-        B[T2, T1],
-        B,
-        A[str],
-        A[T2],
-        A,
-        BaseModel,
-        Generic,
-        object,
-    )
+    C = BSwap[T1, str]
 
-    assert BSwap[T1, str][int].__mro__ == (
-        BSwap[T1, str][int],
-        BSwap,
-        B[str, int],
-        B[T2, T1],
-        B,
-        A[str],
-        A[T2],
-        A,
-        BaseModel,
-        Generic,
-        object,
-    )
+    assert C.__mro__ == (C, BSwap, B[str, T1], B, A[str], A, BaseModel, Generic, object)
+    assert C[int].__mro__ == (C[int], BSwap, B[str, int], B, A[str], A, BaseModel, Generic, object)
 
-    assert BSwap[int, str].__mro__[1:] == BSwap[T1, str][int].__mro__[1:]
+    assert BSwap[int, str].__mro__[1:] == C[int].__mro__[1:]
 
 
 def test_generic_field():
