@@ -6942,5 +6942,5 @@ def test_ser_ip_with_union() -> None:
 def test_ser_ip_with_unexpected_value() -> None:
     ta = TypeAdapter(ipaddress.IPv4Address)
 
-    with pytest.raises(UserWarning, match='serialized value may not be as expected.'):
+    with pytest.warns(UserWarning, match='serialized value may not be as expected.'):
         assert ta.dump_python(123)
