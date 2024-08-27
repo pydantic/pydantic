@@ -481,7 +481,6 @@ jobs:
           version = os.getenv("VERSION").strip('"')
 
           if "b" in version:
-              # replace anything after the b
               official_version = version[:version.index("b")]
               tweet = os.getenv("BETA_TWEET").format(version=version, official_version=official_version)
           else:
