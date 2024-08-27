@@ -2771,7 +2771,7 @@ def test_model_metaclass_on_other_class() -> None:
 
 
 @pytest.mark.xfail(
-    'waiting on a union cache fix, see https://github.com/python/cpython/issues/103749 and https://github.com/pydantic/pydantic/pull/10244#issuecomment-2312796647'
+    reason='waiting on a union cache fix, see https://github.com/python/cpython/issues/103749 and https://github.com/pydantic/pydantic/pull/10244#issuecomment-2312796647'
 )
 def test_union_order_cache_behaior() -> None:
     class Model1(BaseModel):
