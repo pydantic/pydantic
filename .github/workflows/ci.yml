@@ -486,6 +486,9 @@ jobs:
           TWEET: |
             Pydantic version {version} is out! 🎉
 
+            Please try v{version} in the next week before we release an official version,
+            and let us know if you encounter any issues!
+
             https://github.com/pydantic/pydantic/releases/tag/v{version}
           TWITTER_CONSUMER_KEY: ${{ secrets.TWITTER_CONSUMER_KEY }}
           TWITTER_CONSUMER_SECRET: ${{ secrets.TWITTER_CONSUMER_SECRET }}
