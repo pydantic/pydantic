@@ -44,6 +44,7 @@ from pydantic import (
     root_validator,
     validator,
 )
+from pydantic._internal._model_construction import ModelMetaclass
 from pydantic.fields import Field, computed_field
 from pydantic.functional_serializers import (
     field_serializer,
@@ -2753,3 +2754,13 @@ def test_eq_with_cached_property():
     obj1.cached
     # Ensure the objects still compare equals after caching a property
     assert obj1 == obj2
+
+
+def test_model_metaclass_on_other_class() -> None:
+    """Test that `ModelMetaclass` can be used as a metaclass on an unrelated class.
+
+    This is done by some libraries to offer compatibility between Pydantic versions.
+    """
+
+    class OtherClass(metaclass=ModelMetaclass):
+        pass
