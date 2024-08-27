@@ -497,20 +497,23 @@ def test_recursive_list_error():
 
 def test_list_unions():
     class Model(BaseModel):
-        v: List[Union[int, int]] = ...
+        v: List[Union[int, str]]
 
     assert Model(v=[123, '456', 'foobar']).v == [123, '456', 'foobar']
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 2, None])
 
+    # the reason that we need to do an unordered list comparison here is that previous tests use Union[str, int]
+    # and Python's cache makes it such that the above Model has `v` associated with a List[Union[str, int]] instead
+    # of the expected List[Union[int, str]]
+    # for more info, see  https://github.com/python/cpython/issues/103749 and
+    # https://github.com/pydantic/pydantic/pull/10244#issuecomment-2312796647'
     errors = exc_info.value.errors(include_url=False)
-
     expected_errors = [
         {'input': None, 'loc': ('v', 2, 'int'), 'msg': 'Input should be a valid integer', 'type': 'int_type'},
         {'input': None, 'loc': ('v', 2, 'str'), 'msg': 'Input should be a valid string', 'type': 'string_type'},
     ]
-
     assert sorted(errors, key=str) == sorted(expected_errors, key=str)
 
 
@@ -2768,30 +2771,3 @@ def test_model_metaclass_on_other_class() -> None:
 
     class OtherClass(metaclass=ModelMetaclass):
         pass
-
-
-@pytest.mark.xfail(
-    reason='waiting on a union cache fix, see https://github.com/python/cpython/issues/103749 and https://github.com/pydantic/pydantic/pull/10244#issuecomment-2312796647'
-)
-def test_union_order_cache_behaior() -> None:
-    class Model1(BaseModel):
-        v: List[Union[str, int]]
-
-    class Model2(BaseModel):
-        v: List[Union[int, str]]
-
-    assert Model2(v=[123, '456', 'foobar']).v == [123, '456', 'foobar']
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model2(v=[1, 2, None])
-
-    errors = exc_info.value.errors(include_url=False)
-
-    # the errors should be in this order, but they're not bc the cache for union types is flawed, and the
-    # __annotations__ attribute on Model2 reflects Union[str, int] instead of Union[int, str] as it is currently defined
-    expected_errors = [
-        {'input': None, 'loc': ('v', 2, 'int'), 'msg': 'Input should be a valid integer', 'type': 'int_type'},
-        {'input': None, 'loc': ('v', 2, 'str'), 'msg': 'Input should be a valid string', 'type': 'string_type'},
-    ]
-
-    assert sorted(errors, key=str) == sorted(expected_errors, key=str)
