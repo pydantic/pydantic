@@ -243,7 +243,10 @@ class ModelMetaclass(ABCMeta):
         else:
             # These are instance variables, but have been assigned to `NoInitField` to trick the type checker.
             for instance_slot in '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__':
-                del namespace[instance_slot]
+                namespace.pop(
+                    instance_slot,
+                    None,  # In case the metaclass is used with a class other than `BaseModel`.
+                )
             namespace.get('__annotations__', {}).clear()
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
