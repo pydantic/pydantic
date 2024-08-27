@@ -508,7 +508,7 @@ def test_list_unions():
     # and Python's cache makes it such that the above Model has `v` associated with a List[Union[str, int]] instead
     # of the expected List[Union[int, str]]
     # for more info, see  https://github.com/python/cpython/issues/103749 and
-    # https://github.com/pydantic/pydantic/pull/10244#issuecomment-2312796647'
+    # https://github.com/pydantic/pydantic/pull/10244#issuecomment-2312796647
     errors = exc_info.value.errors(include_url=False)
     expected_errors = [
         {'input': None, 'loc': ('v', 2, 'int'), 'msg': 'Input should be a valid integer', 'type': 'int_type'},
