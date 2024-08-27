@@ -4191,6 +4191,8 @@ is customised</a>:</p>
 <p>Subcommands and positional arguments are expressed using the <code>CliSubCommand</code> and <code>CliPositionalArg</code> annotations. These
 annotations can only be applied to required fields (i.e. fields that do not have a default value). Furthermore,
 subcommands must be a valid type derived from either a pydantic <code>BaseModel</code> or pydantic.dataclasses <code>dataclass</code>.</p>
+<p>Parsed subcommands can be retrieved from model instances using the <code>get_subcommand</code> utility function. If a subcommand is
+not required, set the <code>is_required</code> flag to <code>False</code> to disable raising an error if no subcommand is found.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>CLI settings subcommands are limited to a single subparser per model. In other words, all subcommands for a model
@@ -4204,114 +4206,59 @@ subcommands</a>.</p>
 </div>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">sys</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
-<span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 <span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">BaseSettings</span><span class="p">,</span>
     <span class="n">CliPositionalArg</span><span class="p">,</span>
     <span class="n">CliSubCommand</span><span class="p">,</span>
+    <span class="n">SettingsError</span><span class="p">,</span>
+    <span class="n">get_subcommand</span><span class="p">,</span>
 <span class="p">)</span>
 
 
-<span class="nd">@dataclass</span>
-<span class="k">class</span> <span class="nc">FooPlugin</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;git-plugins-foo - Extra deep foo plugin command&quot;&quot;&quot;</span>
-
-    <span class="n">x_feature</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Enable &quot;X&quot; feature&#39;</span><span class="p">)</span>
-
-
-<span class="nd">@dataclass</span>
-<span class="k">class</span> <span class="nc">BarPlugin</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;git-plugins-bar - Extra deep bar plugin command&quot;&quot;&quot;</span>
-
-    <span class="n">y_feature</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Enable &quot;Y&quot; feature&#39;</span><span class="p">)</span>
-
-
-<span class="nd">@dataclass</span>
-<span class="k">class</span> <span class="nc">Plugins</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;git-plugins - Fake plugins for GIT&quot;&quot;&quot;</span>
-
-    <span class="n">foo</span><span class="p">:</span> <span class="n">CliSubCommand</span><span class="p">[</span><span class="n">FooPlugin</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Foo is fake plugin&#39;</span><span class="p">)</span>
-
-    <span class="n">bar</span><span class="p">:</span> <span class="n">CliSubCommand</span><span class="p">[</span><span class="n">BarPlugin</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Bar is fake plugin&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Init</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">directory</span><span class="p">:</span> <span class="n">CliPositionalArg</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 
 
 <span class="k">class</span> <span class="nc">Clone</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;git-clone - Clone a repository into a new directory&quot;&quot;&quot;</span>
-
-    <span class="n">repository</span><span class="p">:</span> <span class="n">CliPositionalArg</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;The repo ...&#39;</span><span class="p">)</span>
-
-    <span class="n">directory</span><span class="p">:</span> <span class="n">CliPositionalArg</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;The dir ...&#39;</span><span class="p">)</span>
-
-    <span class="n">local</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;When the repo ...&#39;</span><span class="p">)</span>
+    <span class="n">repository</span><span class="p">:</span> <span class="n">CliPositionalArg</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">directory</span><span class="p">:</span> <span class="n">CliPositionalArg</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 
 
-<span class="k">class</span> <span class="nc">Git</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">,</span> <span class="n">cli_parse_args</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cli_prog_name</span><span class="o">=</span><span class="s1">&#39;git&#39;</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;git - The stupid content tracker&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">Git</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">,</span> <span class="n">cli_parse_args</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cli_exit_on_error</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">clone</span><span class="p">:</span> <span class="n">CliSubCommand</span><span class="p">[</span><span class="n">Clone</span><span class="p">]</span>
+    <span class="n">init</span><span class="p">:</span> <span class="n">CliSubCommand</span><span class="p">[</span><span class="n">Init</span><span class="p">]</span>
 
-    <span class="n">clone</span><span class="p">:</span> <span class="n">CliSubCommand</span><span class="p">[</span><span class="n">Clone</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Clone a repo ...&#39;</span><span class="p">)</span>
 
-    <span class="n">plugins</span><span class="p">:</span> <span class="n">CliSubCommand</span><span class="p">[</span><span class="n">Plugins</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Fake GIT plugins&#39;</span><span class="p">)</span>
-
+<span class="c1"># Run without subcommands</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">]</span>
+<span class="n">cmd</span> <span class="o">=</span> <span class="n">Git</span><span class="p">()</span>
+<span class="k">assert</span> <span class="n">cmd</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;clone&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;init&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;--help&#39;</span><span class="p">]</span>
-    <span class="n">Git</span><span class="p">()</span>
-<span class="k">except</span> <span class="ne">SystemExit</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-    <span class="c1">#&gt; 0</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">usage: git [-h] {clone,plugins} ...</span>
+    <span class="c1"># Will raise an error since no subcommand was provided</span>
+    <span class="n">get_subcommand</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span>
+<span class="k">except</span> <span class="n">SettingsError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">err</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;Error: CLI subcommand is required {clone, init}&#39;</span>
 
-<span class="sd">git - The stupid content tracker</span>
-
-<span class="sd">options:</span>
-<span class="sd">  -h, --help       show this help message and exit</span>
-
-<span class="sd">subcommands:</span>
-<span class="sd">  {clone,plugins}</span>
-<span class="sd">    clone          Clone a repo ...</span>
-<span class="sd">    plugins        Fake GIT plugins</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1"># Will not raise an error since subcommand is not required</span>
+<span class="k">assert</span> <span class="n">get_subcommand</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">is_required</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
 
 
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;clone&#39;</span><span class="p">,</span> <span class="s1">&#39;--help&#39;</span><span class="p">]</span>
-    <span class="n">Git</span><span class="p">()</span>
-<span class="k">except</span> <span class="ne">SystemExit</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-    <span class="c1">#&gt; 0</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">usage: git clone [-h] [--local bool] [--shared bool] REPOSITORY DIRECTORY</span>
+<span class="c1"># Run the clone subcommand</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;clone&#39;</span><span class="p">,</span> <span class="s1">&#39;repo&#39;</span><span class="p">,</span> <span class="s1">&#39;dest&#39;</span><span class="p">]</span>
+<span class="n">cmd</span> <span class="o">=</span> <span class="n">Git</span><span class="p">()</span>
+<span class="k">assert</span> <span class="n">cmd</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span>
+    <span class="s1">&#39;clone&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;repository&#39;</span><span class="p">:</span> <span class="s1">&#39;repo&#39;</span><span class="p">,</span> <span class="s1">&#39;directory&#39;</span><span class="p">:</span> <span class="s1">&#39;dest&#39;</span><span class="p">},</span>
+    <span class="s1">&#39;init&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">}</span>
 
-<span class="sd">git-clone - Clone a repository into a new directory</span>
-
-<span class="sd">positional arguments:</span>
-<span class="sd">  REPOSITORY    The repo ...</span>
-<span class="sd">  DIRECTORY     The dir ...</span>
-
-<span class="sd">options:</span>
-<span class="sd">  -h, --help    show this help message and exit</span>
-<span class="sd">  --local bool  When the repo ... (default: False)</span>
-<span class="sd">&quot;&quot;&quot;</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;plugins&#39;</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="s1">&#39;--help&#39;</span><span class="p">]</span>
-    <span class="n">Git</span><span class="p">()</span>
-<span class="k">except</span> <span class="ne">SystemExit</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-    <span class="c1">#&gt; 0</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">usage: git plugins bar [-h] [--my_feature bool]</span>
-
-<span class="sd">git-plugins-bar - Extra deep bar plugin command</span>
-
-<span class="sd">options:</span>
-<span class="sd">  -h, --help        show this help message and exit</span>
-<span class="sd">  --y_feature bool  Enable &quot;Y&quot; feature (default: False)</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1"># Returns the subcommand model instance (in this case, &#39;clone&#39;)</span>
+<span class="k">assert</span> <span class="n">get_subcommand</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span>
+    <span class="s1">&#39;directory&#39;</span><span class="p">:</span> <span class="s1">&#39;dest&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;repository&#39;</span><span class="p">:</span> <span class="s1">&#39;repo&#39;</span><span class="p">,</span>
+<span class="p">}</span>
 </code></pre></div>
 <h3 id="customizing-the-cli-experience">Customizing the CLI Experience<a class="headerlink" href="#customizing-the-cli-experience" title="Permanent link">&para;</a></h3>
 <p>The below flags can be used to customise the CLI experience to your needs.</p>
