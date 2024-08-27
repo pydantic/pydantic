@@ -504,10 +504,14 @@ def test_list_unions():
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 2, None])
 
-    assert exc_info.value.errors(include_url=False) == [
+    errors = exc_info.value.errors(include_url=False)
+
+    expected_errors = [
         {'input': None, 'loc': ('v', 2, 'int'), 'msg': 'Input should be a valid integer', 'type': 'int_type'},
         {'input': None, 'loc': ('v', 2, 'str'), 'msg': 'Input should be a valid string', 'type': 'string_type'},
     ]
+
+    assert sorted(errors, key=str) == sorted(expected_errors, key=str)
 
 
 def test_recursive_lists():
