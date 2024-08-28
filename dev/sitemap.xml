@@ -2,397 +2,397 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://docs.pydantic.dev/latest/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/architecture/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/changelog/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/contributing/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/help_with_pydantic/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/install/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/migration/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/pydantic_people/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/version-policy/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/why/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/aliases/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/annotated_handlers/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/base_model/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/config/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/dataclasses/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/errors/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/experimental/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/fields/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/functional_serializers/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/functional_validators/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/json_schema/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/networks/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/pydantic_core/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/pydantic_core_schema/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_color/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_coordinate/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_country/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_currency_code/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_isbn/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_language_code/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_mac_address/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_payment/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_pendulum_dt/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_phone_numbers/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_routing_numbers/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_script_code/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_semantic_version/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_timezone_name/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_ulid/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/pydantic_settings/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/root_model/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/standard_library_types/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/type_adapter/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/types/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/validate_call/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/version/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/concepts/alias/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/concepts/config/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/concepts/conversion_table/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/concepts/dataclasses/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/concepts/experimental/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/concepts/fields/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/concepts/json/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/concepts/json_schema/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/concepts/models/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/concepts/performance/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/concepts/postponed_annotations/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/concepts/pydantic_settings/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/concepts/serialization/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/concepts/strict_mode/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/concepts/type_adapter/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/concepts/types/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/concepts/unions/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/concepts/validation_decorator/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/concepts/validators/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/errors/errors/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/errors/usage_errors/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/errors/validation_errors/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/examples/secrets/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/examples/validators/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/integrations/aws_lambda/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/integrations/datamodel_code_generator/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/integrations/devtools/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/integrations/hypothesis/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/integrations/linting/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/integrations/mypy/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/integrations/pycharm/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/integrations/rich/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/integrations/visual_studio_code/</loc>
-         <lastmod>2024-08-27</lastmod>
+         <lastmod>2024-08-28</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>
