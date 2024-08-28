@@ -58,10 +58,10 @@
 
 #### Fixes
 
-* Respect `use_enum_values` on Literal types by @kwint in [#9787](https://github.com/pydantic/pydantic/pull/9787)
+* Respect `use_enum_values` on `Literal` types by @kwint in [#9787](https://github.com/pydantic/pydantic/pull/9787)
 * Prevent type error for exotic `BaseModel/RootModel` inheritance by @dmontagu in [#9913](https://github.com/pydantic/pydantic/pull/9913)
 * Fix typing issue with field_validator-decorated methods by @dmontagu in [#9914](https://github.com/pydantic/pydantic/pull/9914)
-* Replace str type annotation with Any in validator factories in documentation on validators by @maximilianfellhuber in [#9885](https://github.com/pydantic/pydantic/pull/9885)
+* Replace `str` type annotation with `Any` in validator factories in documentation on validators by @maximilianfellhuber in [#9885](https://github.com/pydantic/pydantic/pull/9885)
 * Fix `ComputedFieldInfo.wrapped_property` pointer when a property setter is assigned by @tlambert03 in [#9892](https://github.com/pydantic/pydantic/pull/9892)
 * Fix recursive typing of `main.IncEnx` by @tlambert03 in [#9924](https://github.com/pydantic/pydantic/pull/9924)
 * Allow usage of `type[Annotated[...]]` by @Viicos in [#9932](https://github.com/pydantic/pydantic/pull/9932)
