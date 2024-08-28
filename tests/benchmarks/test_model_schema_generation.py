@@ -1,11 +1,20 @@
-from typing import Dict, Generic, List, Literal, Optional, TypeVar, Union, get_origin
+from typing import Any, Dict, Generic, List, Literal, Optional, TypeVar, Union, get_origin
 
 import pytest
 from typing_extensions import Annotated
 
-from pydantic import BaseModel, Discriminator, Field, create_model, field_validator, model_validator, ValidationInfo, ValidatorFunctionWrapHandler
-from pydantic.functional_validators import WrapValidator
+from pydantic import (
+    BaseModel,
+    Discriminator,
+    Field,
+    ValidationInfo,
+    ValidatorFunctionWrapHandler,
+    create_model,
+    field_validator,
+    model_validator,
+)
 from pydantic.dataclasses import dataclass
+from pydantic.functional_validators import WrapValidator
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
