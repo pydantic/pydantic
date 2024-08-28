@@ -461,7 +461,7 @@ except ValidationError as e:
     return type of the decorated method.
     In the context of the above example, you could also use `def check_passwords_match(self: 'UserModel') -> 'UserModel'` to indicate that the method returns an instance of the model.
 
-!!! warning "On not returning `self`
+!!! warning "On not returning `self`"
     If you fail to return `self` at the end of a `@model_validator` method (either, returning `None` or returning something other than `self`),
     you may encounter unexpected behavior.
 
