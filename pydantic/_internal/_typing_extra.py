@@ -180,9 +180,13 @@ _DEFAULT_GLOBALS = {
 }
 
 
-def _remove_default_globals_from_ns(namespace: dict[str, Any]) -> dict[str, Any]:
-    """Remove default globals like __name__, __doc__, etc that aren't needed for type evaluation."""
-    return {k: v for k, v in namespace.items() if k not in _DEFAULT_GLOBALS}
+def _remove_default_globals_from_ns(namespace: dict[str, Any]) -> None:
+    """Remove default globals like __name__, __doc__, etc that aren't needed for type evaluation.
+
+    Modifies the namespace in place in order to avoid unnecessary memory allocations.
+    """
+    for dg in _DEFAULT_GLOBALS:
+        namespace.pop(dg, None)
 
 
 def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
@@ -208,8 +212,8 @@ def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
     if frame.f_back is None or frame.f_code.co_name == '<module>':
         return None
     else:
-        if f_locals := frame.f_locals:
-            return _remove_default_globals_from_ns(f_locals)
+        f_locals = frame.f_locals.copy()
+        _remove_default_globals_from_ns(f_locals)
         return f_locals
 
 
@@ -226,7 +230,8 @@ def add_module_globals(obj: Any, globalns: dict[str, Any] | None = None) -> dict
     else:
         ns = globalns or {}
 
-    return _remove_default_globals_from_ns(ns)
+    _remove_default_globals_from_ns(ns)
+    return ns
 
 
 def get_cls_types_namespace(cls: type[Any], parent_namespace: dict[str, Any] | None = None) -> dict[str, Any]:
