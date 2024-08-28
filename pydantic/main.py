@@ -534,8 +534,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             else:
                 if _parent_namespace_depth > 0:
                     frame_parent_ns = (
-                        _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth, force_fetch=True)
-                        or {}
+                        _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth, force=True) or {}
                     )
                     cls_parent_ns = (
                         _model_construction.unpack_lenient_weakvaluedict(cls.__pydantic_parent_namespace__) or {}
