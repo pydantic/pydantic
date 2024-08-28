@@ -1,6 +1,5 @@
 use std::borrow::Cow;
 
-use num_bigint::BigInt;
 use pyo3::exceptions::PyTypeError;
 use pyo3::intern;
 use pyo3::prelude::*;
@@ -12,7 +11,7 @@ use serde::ser::{Error, Serialize, SerializeMap, SerializeSeq, Serializer};
 
 use crate::input::{EitherTimedelta, Int};
 use crate::serializers::type_serializers;
-use crate::tools::{extract_i64, py_err, safe_repr};
+use crate::tools::{extract_int, py_err, safe_repr};
 use crate::url::{PyMultiHostUrl, PyUrl};
 
 use super::config::InfNanMode;
@@ -118,10 +117,8 @@ pub(crate) fn infer_to_python_known(
             ObType::None | ObType::Bool | ObType::Int | ObType::Str => value.into_py(py),
             // have to do this to make sure subclasses of for example str are upcast to `str`
             ObType::IntSubclass => {
-                if let Some(v) = extract_i64(value) {
-                    v.into_py(py)
-                } else if let Ok(b) = value.extract::<BigInt>() {
-                    b.into_py(py)
+                if let Some(i) = extract_int(value) {
+                    i.into_py(py)
                 } else {
                     return py_err!(PyTypeError; "Expected int, got {}", safe_repr(value));
                 }

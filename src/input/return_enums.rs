@@ -20,7 +20,7 @@ use crate::errors::{
     py_err_string, ErrorType, ErrorTypeDefaults, InputValue, ToErrorValue, ValError, ValLineError, ValResult,
 };
 use crate::py_gc::PyGcTraverse;
-use crate::tools::{extract_i64, new_py_string, py_err};
+use crate::tools::{extract_i64, extract_int, new_py_string, py_err};
 use crate::validators::{CombinedValidator, Exactness, ValidationState, Validator};
 
 use super::{py_error_on_minusone, BorrowInput, Input};
@@ -662,6 +662,15 @@ pub enum Int {
     Big(BigInt),
 }
 
+impl IntoPy<PyObject> for Int {
+    fn into_py(self, py: Python<'_>) -> PyObject {
+        match self {
+            Self::I64(i) => i.into_py(py),
+            Self::Big(big_i) => big_i.into_py(py),
+        }
+    }
+}
+
 // The default serialization for BigInt is some internal representation which roundtrips efficiently
 // but is not the JSON value which users would expect to see.
 fn serialize_bigint_as_number<S>(big_int: &BigInt, serializer: S) -> Result<S::Ok, S::Error>
@@ -706,12 +715,9 @@ impl<'a> Rem for &'a Int {
 
 impl FromPyObject<'_> for Int {
     fn extract_bound(obj: &Bound<'_, PyAny>) -> PyResult<Self> {
-        if let Some(i) = extract_i64(obj) {
-            Ok(Int::I64(i))
-        } else if let Ok(b) = obj.extract::<BigInt>() {
-            Ok(Int::Big(b))
-        } else {
-            py_err!(PyTypeError; "Expected int, got {}", obj.get_type())
+        match extract_int(obj) {
+            Some(i) => Ok(i),
+            None => py_err!(PyTypeError; "Expected int, got {}", obj.get_type()),
         }
     }
 }
