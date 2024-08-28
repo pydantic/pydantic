@@ -605,6 +605,10 @@ In order to declare a generic model, you should follow the following steps:
   and add the list of type variables you declared previously as parameters to the [`Generic`][typing.Generic] parent.
 3. Use the type variables as annotations where you will want to replace them with other types.
 
+!!! warning "PEP 695 support"
+    Pydantic does not support the new syntax for generic classes (introduced by [PEP 695](https://peps.python.org/pep-0695/)),
+    available since Python 3.12. Progress can be tracked in [this issue](https://github.com/pydantic/pydantic/issues/9782).
+
 Here is an example using a generic Pydantic model to create an easily-reused HTTP response payload wrapper:
 
 ```py
