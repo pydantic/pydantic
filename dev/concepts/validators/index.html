@@ -3452,8 +3452,40 @@ However, in most cases where you want to perform validation using multiple field
 <p>Methods decorated with <code>@model_validator</code> should return the self instance at the end of the method.
 For type checking purposes, you can use <code>Self</code> from either <code>typing</code> or the <code>typing_extensions</code> backport as the
 return type of the decorated method.
-In the context of the above example, you could also use <code>def check_passwords_match(self: 'UserModel') -&gt; 'UserModel'</code> to indicate that
-the method returns an instance of the model.</p>
+In the context of the above example, you could also use <code>def check_passwords_match(self: 'UserModel') -&gt; 'UserModel'</code> to indicate that the method returns an instance of the model.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">On not returning <code>self</code></p>
+<p>If you fail to return <code>self</code> at the end of a <code>@model_validator</code> method (either, returning <code>None</code> or returning something other than <code>self</code>),
+you may encounter unexpected behavior.</p>
+<p>Specifically, for nested models, if you return <code>None</code> (or equivalently, don't include a <code>return</code> statement),
+despite a potentially successful validation, the nested model will be <code>None</code> in the parent model.</p>
+<p>Returning a value other than <code>self</code> causes unexpected behavior at the top level of validation when validating via <code>__init__</code>.
+In order to avoid this, we recommend one of:
+1. Simply mutate and return <code>self</code> at the end of the method.
+2. If you must return a value other than <code>self</code>, use a method like <code>model_validate</code> where you can directly fetch the return value.</p>
+<p>Here's an example of the unexpected behavior, and the warning you'll receive:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span> <span class="nn">pydantic.functional_validators</span> <span class="kn">import</span> <span class="n">model_validator</span>
+
+
+<span class="k">class</span> <span class="nc">Child</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;after&#39;</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+    <span class="k">def</span> <span class="nf">validate_model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Child&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Child</span><span class="o">.</span><span class="n">model_construct</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;different!&#39;</span><span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">Child</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">)))</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">UserWarning: A custom validator is returning a value other than `self`.</span>
+<span class="sd">Returning anything other than `self` from a top level model validator isn&#39;t supported when validating via `__init__`.</span>
+<span class="sd">See the `model_validator` docs (https://docs.pydantic.dev/latest/concepts/validators/#model-validators) for more details.</span>
+
+<span class="sd">Child(name=&#39;foo&#39;)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
 </div>
 <div class="admonition note">
 <p class="admonition-title">On Inheritance</p>
