@@ -202,12 +202,12 @@ def parent_frame_namespace(*, parent_depth: int = 2, force_fetch: bool = False) 
     There's no need to cache the parent frame namespace in this case.
     """
     frame = sys._getframe(parent_depth)
-    # if either of the following conditions are true, the class is defined at the top module level
-    # to better understand why we need both of these checks, see
-    # https://github.com/pydantic/pydantic/pull/10113#discussion_r1714981531
     if force_fetch:
         return _remove_default_globals_from_ns(frame.f_locals)
 
+    # if either of the following conditions are true, the class is defined at the top module level
+    # to better understand why we need both of these checks, see
+    # https://github.com/pydantic/pydantic/pull/10113#discussion_r1714981531
     if frame.f_back is None or frame.f_back.f_code.co_name == '<module>':
         return None
 
