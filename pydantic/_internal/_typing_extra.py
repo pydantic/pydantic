@@ -185,7 +185,7 @@ def _remove_default_globals_from_ns(namespace: dict[str, Any]) -> dict[str, Any]
     return {k: v for k, v in namespace.items() if k not in _DEFAULT_GLOBALS}
 
 
-def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
+def parent_frame_namespace(*, parent_depth: int = 2, force_fetch: bool = False) -> dict[str, Any] | None:
     """We allow use of items in parent namespace to get around the issue with `get_type_hints` only looking in the
     global module namespace. See https://github.com/pydantic/pydantic/issues/2678#issuecomment-1008139014 -> Scope
     and suggestion at the end of the next comment by @gvanrossum.
@@ -205,12 +205,13 @@ def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
     # if either of the following conditions are true, the class is defined at the top module level
     # to better understand why we need both of these checks, see
     # https://github.com/pydantic/pydantic/pull/10113#discussion_r1714981531
-    if frame.f_back is None or frame.f_code.co_name == '<module>':
+    if force_fetch:
+        return _remove_default_globals_from_ns(frame.f_locals)
+
+    if frame.f_back is None or frame.f_back.f_code.co_name == '<module>':
         return None
-    else:
-        if f_locals := frame.f_locals:
-            return _remove_default_globals_from_ns(f_locals)
-        return f_locals
+
+    return _remove_default_globals_from_ns(frame.f_locals)
 
 
 def add_module_globals(obj: Any, globalns: dict[str, Any] | None = None) -> dict[str, Any]:
