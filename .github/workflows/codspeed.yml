@@ -26,6 +26,22 @@ jobs:
           pdm venv create --with-pip --force $PYTHON
           pdm install -G testing -G testing-extra -G email
 
+      # override pydantic-core from git - to report benchmarks
+      # FIXME DO NOT MERGE THIS
+
+      - uses: actions/checkout@v4
+        with:
+          repository: pydantic/pydantic-core
+          ref: boxy/validator_serializer_reuse
+          path: pydantic-core
+
+      - name: install rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - run: pdm run pip install ./pydantic-core
+
+      # END
+
       - name: Run CodSpeed benchmarks
         uses: CodSpeedHQ/action@v3
         with:
