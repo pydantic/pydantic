@@ -3,7 +3,8 @@ from typing import Dict, Generic, List, Literal, Optional, TypeVar, Union, get_o
 import pytest
 from typing_extensions import Annotated
 
-from pydantic import BaseModel, Discriminator, Field, create_model
+from pydantic import BaseModel, Discriminator, Field, create_model, field_validator, model_validator, ValidationInfo, ValidatorFunctionWrapHandler
+from pydantic.functional_validators import WrapValidator
 from pydantic.dataclasses import dataclass
 
 
@@ -154,3 +155,73 @@ def test_lots_of_models_with_lots_of_fields():
         model_name = f'Model_{i}'
         model = create_model(model_name, **model_fields)
         globals()[model_name] = model
+
+
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_custom_field_validators(benchmark):
+    def schema_gen():
+        def wrap_validator_field4(v: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo) -> str:
+            if ' ' in v:
+                raise ValueError('field4 must not contain spaces')
+            return v
+
+        class ModelWithFieldValidators(BaseModel):
+            field1: int
+            field2: int
+            field3: str
+            field4: Annotated[str, WrapValidator(wrap_validator_field4)]
+
+            @field_validator('field1', mode='before')
+            def validate_before(cls, v):
+                return v
+
+            @field_validator('field2', mode='after')
+            def validate_after(cls, v):
+                return v
+
+            @field_validator('field3', mode='plain')
+            def validate_plain(cls, v):
+                if ' ' in v:
+                    raise ValueError('field3 must not contain spaces')
+                return v
+
+    benchmark(schema_gen)
+
+
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_custom_model_validators(benchmark):
+    def schema_gen():
+        class ModelWithModelValidators(BaseModel):
+            field1: int
+            field2: str
+            field3: float
+            field4: bool
+
+            @model_validator(mode='before')
+            @classmethod
+            def validate_model_before(cls, data):
+                if isinstance(data, dict):
+                    data['field1'] = data.get('field1', 0) + 1
+                return data
+
+            @model_validator(mode='after')
+            def validate_model_after(self):
+                self.field2 = self.field2.upper()
+                return self
+
+            @model_validator(mode='wrap')
+            def validate_model_wrap(cls, values, handler):
+                # Perform some validation before the default validation
+                if values.get('field4') is True and values.get('field3', 0) < 0:
+                    raise ValueError('field3 must be non-negative when field4 is True')
+
+                # Call the default validation
+                instance = handler(values)
+
+                # Perform some validation after the default validation
+                if instance.field1 > 100:
+                    instance.field2 += '!'
+
+                return instance
+
+    benchmark(schema_gen)
