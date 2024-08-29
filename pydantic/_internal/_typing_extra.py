@@ -189,6 +189,8 @@ def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> dic
     """
     frame = sys._getframe(parent_depth)
 
+    # note, we don't copy frame.f_locals here (or during the last return call), because we don't expect the namespace to be modified down the line
+    # if this becomes a problem, we could implement some sort of frozen mapping structure to enforce this
     if force:
         return frame.f_locals
 
