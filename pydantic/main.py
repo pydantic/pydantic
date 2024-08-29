@@ -254,7 +254,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             an error if extra values are passed, but they will be ignored.
 
         Args:
-            _fields_set: The set of field names accepted for the Model instance.
+            _fields_set: A set of field names that were originally explicitly set during instantiation. If provided,
+                this is directly used for the [`model_fields_set`][pydantic.BaseModel.model_fields_set] attribute.
+                Otherwise, the field names from the `values` argument will be used.
             values: Trusted or pre-validated data dictionary.
 
         Returns:
