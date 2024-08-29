@@ -167,24 +167,6 @@ def is_finalvar(ann_type: Any) -> bool:
     return _check_finalvar(ann_type) or _check_finalvar(get_origin(ann_type))
 
 
-_DEFAULT_GLOBALS = {
-    '__name__',
-    '__doc__',
-    '__package__',
-    '__loader__',
-    '__spec__',
-    '__annotations__',
-    '__builtins__',
-    '__file__',
-    '__cached__',
-}
-
-
-def _remove_default_globals_from_ns(namespace: dict[str, Any]) -> dict[str, Any]:
-    """Remove default globals like __name__, __doc__, etc that aren't needed for type evaluation."""
-    return {k: v for k, v in namespace.items() if k not in _DEFAULT_GLOBALS}
-
-
 def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> dict[str, Any] | None:
     """We allow use of items in parent namespace to get around the issue with `get_type_hints` only looking in the
     global module namespace. See https://github.com/pydantic/pydantic/issues/2678#issuecomment-1008139014 -> Scope
@@ -207,8 +189,10 @@ def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> dic
     """
     frame = sys._getframe(parent_depth)
 
+    # note, we don't copy frame.f_locals here (or during the last return call), because we don't expect the namespace to be modified down the line
+    # if this becomes a problem, we could implement some sort of frozen mapping structure to enforce this
     if force:
-        return _remove_default_globals_from_ns(frame.f_locals)
+        return frame.f_locals
 
     # if either of the following conditions are true, the class is defined at the top module level
     # to better understand why we need both of these checks, see
@@ -216,7 +200,7 @@ def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> dic
     if frame.f_back is None or frame.f_code.co_name == '<module>':
         return None
 
-    return _remove_default_globals_from_ns(frame.f_locals)
+    return frame.f_locals
 
 
 def add_module_globals(obj: Any, globalns: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -232,7 +216,7 @@ def add_module_globals(obj: Any, globalns: dict[str, Any] | None = None) -> dict
     else:
         ns = globalns or {}
 
-    return _remove_default_globals_from_ns(ns)
+    return ns
 
 
 def get_cls_types_namespace(cls: type[Any], parent_namespace: dict[str, Any] | None = None) -> dict[str, Any]:
