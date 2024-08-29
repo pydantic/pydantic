@@ -3784,7 +3784,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   </span>
 
 <a href="#pydantic.config.ConfigDict.model_title_generator" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">model_title_generator</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">model_title_generator</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-type">type</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4506,7 +4506,7 @@ a basic callable:</p>
   </span>
 
 <a href="#pydantic.config.ConfigDict.ignored_types" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">ignored_types</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">ignored_types</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-type">type</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4593,7 +4593,7 @@ class without an annotation and has a type that is not in this tuple (or otherwi
   </span>
 
 <a href="#pydantic.config.ConfigDict.json_encoders" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">json_encoders</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#object">object</a></span><span class="p">],</span> <span class="n"><span title="pydantic.config.JsonEncoder">JsonEncoder</span></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">json_encoders</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/2to3.html#to3fixer-dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-type">type</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-object">object</a></span><span class="p">],</span> <span class="n"><span title="pydantic.config.JsonEncoder">JsonEncoder</span></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -5238,7 +5238,7 @@ be removed or changed in the future in a minor release.</p>
   </span>
 
 <a href="#pydantic.config.ConfigDict.plugin_settings" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">plugin_settings</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#object">object</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">plugin_settings</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/2to3.html#to3fixer-dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-object">object</a></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -5266,7 +5266,7 @@ be removed or changed in the future in a minor release.</p>
   </span>
 
 <a href="#pydantic.config.ConfigDict.schema_generator" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">schema_generator</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#type">type</a></span><span class="p">[</span><span class="n"><span title="pydantic._internal._generate_schema.GenerateSchema">GenerateSchema</span></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">schema_generator</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-type">type</a></span><span class="p">[</span><span class="n"><span title="pydantic._internal._generate_schema.GenerateSchema">GenerateSchema</span></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
