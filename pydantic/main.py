@@ -209,7 +209,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
         validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
-        if self != validated_self:
+        if self is not validated_self:
             warnings.warn(
                 'A custom validator is returning a value other than `self`.\n'
                 "Returning anything other than `self` from a top level model validator isn't supported when validating via `__init__`.\n"
