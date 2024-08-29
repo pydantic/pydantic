@@ -2918,7 +2918,9 @@ def test_non_self_return_val_warns() -> None:
 
         @model_validator(mode='after')  # type: ignore
         def validate_model(self) -> 'Child':
-            return Child.model_construct(name='different!')
+            return Child.model_construct(name='different')
 
     with pytest.warns(UserWarning, match='A custom validator is returning a value other than `self`'):
-        Child(name='foo')
+        c = Child(name='name')
+        # confirmation of behavior: non-self return value is ignored
+        assert c.name == 'name'
