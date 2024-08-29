@@ -189,7 +189,7 @@ def _remove_default_globals_from_ns(namespace: dict[str, Any]) -> None:
         namespace.pop(dg, None)
 
 
-def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
+def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> dict[str, Any] | None:
     """We allow use of items in parent namespace to get around the issue with `get_type_hints` only looking in the
     global module namespace. See https://github.com/pydantic/pydantic/issues/2678#issuecomment-1008139014 -> Scope
     and suggestion at the end of the next comment by @gvanrossum.
@@ -201,20 +201,30 @@ def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
     dict of exactly what's in scope. Using `f_back` would work sometimes but would be very wrong and confusing in many
     other cases. See https://discuss.python.org/t/is-there-a-way-to-access-parent-nested-namespaces/20659.
 
-    This function returns None if the parent frame is at the top module level. This is because the class' __module__
-    attribute can be used to access the parent namespace. This is done in `_typing_extra.add_module_globals`.
-    There's no need to cache the parent frame namespace in this case.
+    There are some cases where we want to force fetching the parent namespace, ex: during a `model_rebuild` call.
+    In this case, we want both the namespace of the class' module, if applicable, and the parent namespace of the
+    module where the rebuild is called.
+
+    In other cases, like during initial schema build, if a class is defined at the top module level, we don't need to
+    fetch that module's namespace, because the class' __module__ attribute can be used to access the parent namespace.
+    This is done in `_typing_extra.add_module_globals`. Thus, there's no need to cache the parent frame namespace in this case.
     """
     frame = sys._getframe(parent_depth)
+    # TODO: do we need to do a copy() call here?
+    f_locals = frame.f_locals
+
+    if force:
+        _remove_default_globals_from_ns(f_locals)
+        return f_locals
+
     # if either of the following conditions are true, the class is defined at the top module level
     # to better understand why we need both of these checks, see
     # https://github.com/pydantic/pydantic/pull/10113#discussion_r1714981531
     if frame.f_back is None or frame.f_code.co_name == '<module>':
         return None
-    else:
-        f_locals = frame.f_locals.copy()
-        _remove_default_globals_from_ns(f_locals)
-        return f_locals
+
+    _remove_default_globals_from_ns(f_locals)
+    return f_locals
 
 
 def add_module_globals(obj: Any, globalns: dict[str, Any] | None = None) -> dict[str, Any]:
