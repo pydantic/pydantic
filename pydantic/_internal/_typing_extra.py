@@ -167,28 +167,6 @@ def is_finalvar(ann_type: Any) -> bool:
     return _check_finalvar(ann_type) or _check_finalvar(get_origin(ann_type))
 
 
-_DEFAULT_GLOBALS = {
-    '__name__',
-    '__doc__',
-    '__package__',
-    '__loader__',
-    '__spec__',
-    '__annotations__',
-    '__builtins__',
-    '__file__',
-    '__cached__',
-}
-
-
-def _remove_default_globals_from_ns(namespace: dict[str, Any]) -> None:
-    """Remove default globals like __name__, __doc__, etc that aren't needed for type evaluation.
-
-    Modifies the namespace in place in order to avoid unnecessary memory allocations.
-    """
-    for dg in _DEFAULT_GLOBALS:
-        namespace.pop(dg, None)
-
-
 def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> dict[str, Any] | None:
     """We allow use of items in parent namespace to get around the issue with `get_type_hints` only looking in the
     global module namespace. See https://github.com/pydantic/pydantic/issues/2678#issuecomment-1008139014 -> Scope
@@ -210,12 +188,9 @@ def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> dic
     This is done in `_typing_extra.add_module_globals`. Thus, there's no need to cache the parent frame namespace in this case.
     """
     frame = sys._getframe(parent_depth)
-    # TODO: do we need to do a copy() call here?
-    f_locals = frame.f_locals
 
     if force:
-        _remove_default_globals_from_ns(f_locals)
-        return f_locals
+        return frame.f_locals
 
     # if either of the following conditions are true, the class is defined at the top module level
     # to better understand why we need both of these checks, see
@@ -223,8 +198,7 @@ def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> dic
     if frame.f_back is None or frame.f_code.co_name == '<module>':
         return None
 
-    _remove_default_globals_from_ns(f_locals)
-    return f_locals
+    return frame.f_locals
 
 
 def add_module_globals(obj: Any, globalns: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -240,7 +214,6 @@ def add_module_globals(obj: Any, globalns: dict[str, Any] | None = None) -> dict
     else:
         ns = globalns or {}
 
-    _remove_default_globals_from_ns(ns)
     return ns
 
 
