@@ -336,8 +336,7 @@ class TypesNamespaceStack:
 
     @contextmanager
     def push(self, for_type: type[Any]):
-        # we already copy the namespace in get_cls_types_namespace, so we don't need to create a new dict here
-        types_namespace = _typing_extra.get_cls_types_namespace(for_type)
+        types_namespace = _typing_extra.get_module_ns_of(for_type).copy()
         types_namespace.update(self.tail or {})
         self._types_namespace_stack.append(types_namespace)
         try:
