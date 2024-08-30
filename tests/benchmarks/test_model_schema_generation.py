@@ -167,26 +167,36 @@ def test_lots_of_models_with_lots_of_fields():
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_field_validators(benchmark):
+def test_custom_field_validator_before(benchmark):
     def schema_gen():
-        def wrap_validator_field4(v: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo) -> str:
-            if ' ' in v:
-                raise ValueError('field4 must not contain spaces')
-            return v
-
-        class ModelWithFieldValidators(BaseModel):
+        class ModelWithBeforeValidator(BaseModel):
             field1: int
-            field2: int
-            field3: str
-            field4: Annotated[str, WrapValidator(wrap_validator_field4)]
 
             @field_validator('field1', mode='before')
             def validate_before(cls, v):
                 return v
 
+    benchmark(schema_gen)
+
+
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_custom_field_validator_after(benchmark):
+    def schema_gen():
+        class ModelWithAfterValidator(BaseModel):
+            field2: int
+
             @field_validator('field2', mode='after')
             def validate_after(cls, v):
                 return v
+
+    benchmark(schema_gen)
+
+
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_custom_field_validator_plain(benchmark):
+    def schema_gen():
+        class ModelWithPlainValidator(BaseModel):
+            field3: str
 
             @field_validator('field3', mode='plain')
             def validate_plain(cls, v):
@@ -198,13 +208,24 @@ def test_custom_field_validators(benchmark):
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_model_validators(benchmark):
+def test_custom_field_validator_wrap(benchmark):
     def schema_gen():
-        class ModelWithModelValidators(BaseModel):
+        def wrap_validator_field4(v: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo) -> str:
+            if ' ' in v:
+                raise ValueError('field4 must not contain spaces')
+            return v
+
+        class ModelWithWrapValidator(BaseModel):
+            field4: Annotated[str, WrapValidator(wrap_validator_field4)]
+
+    benchmark(schema_gen)
+
+
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_custom_model_validator_before(benchmark):
+    def schema_gen():
+        class ModelWithBeforeValidator(BaseModel):
             field1: int
-            field2: str
-            field3: float
-            field4: bool
 
             @model_validator(mode='before')
             @classmethod
@@ -213,10 +234,31 @@ def test_custom_model_validators(benchmark):
                     data['field1'] = data.get('field1', 0) + 1
                 return data
 
+    benchmark(schema_gen)
+
+
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_custom_model_validator_after(benchmark):
+    def schema_gen():
+        class ModelWithAfterValidator(BaseModel):
+            field2: str
+
             @model_validator(mode='after')
             def validate_model_after(self):
                 self.field2 = self.field2.upper()
                 return self
+
+    benchmark(schema_gen)
+
+
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_custom_model_validator_wrap(benchmark):
+    def schema_gen():
+        class ModelWithWrapValidator(BaseModel):
+            field1: int
+            field2: str
+            field3: float
+            field4: bool
 
             @model_validator(mode='wrap')
             def validate_model_wrap(cls, values, handler):
