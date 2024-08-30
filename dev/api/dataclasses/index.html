@@ -3701,7 +3701,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">types_namespace</span> <span class="o">=</span> <span class="p">{}</span>
 
-            <span class="n">types_namespace</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">get_cls_types_namespace</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">types_namespace</span><span class="p">)</span>
+            <span class="n">types_namespace</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">merge_cls_and_parent_ns</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">types_namespace</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">_pydantic_dataclasses</span><span class="o">.</span><span class="n">complete_dataclass</span><span class="p">(</span>
             <span class="bp">cls</span><span class="p">,</span>
             <span class="n">_config</span><span class="o">.</span><span class="n">ConfigWrapper</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_config__</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>

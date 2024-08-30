@@ -5230,7 +5230,7 @@ is set to <code>'allow'</code>.</p>
                         <span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_parent_namespace__</span>
                     <span class="p">)</span>
 
-                <span class="n">types_namespace</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">get_cls_types_namespace</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">types_namespace</span><span class="p">)</span>
+                <span class="n">types_namespace</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">merge_cls_and_parent_ns</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">types_namespace</span><span class="p">)</span>
 
             <span class="c1"># manually override defer_build so complete_model_class doesn&#39;t skip building the model again</span>
             <span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="bp">cls</span><span class="o">.</span><span class="n">model_config</span><span class="p">,</span> <span class="s1">&#39;defer_build&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
@@ -8147,7 +8147,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
                     <span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_parent_namespace__</span>
                 <span class="p">)</span>
 
-            <span class="n">types_namespace</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">get_cls_types_namespace</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">types_namespace</span><span class="p">)</span>
+            <span class="n">types_namespace</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">merge_cls_and_parent_ns</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">types_namespace</span><span class="p">)</span>
 
         <span class="c1"># manually override defer_build so complete_model_class doesn&#39;t skip building the model again</span>
         <span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="bp">cls</span><span class="o">.</span><span class="n">model_config</span><span class="p">,</span> <span class="s1">&#39;defer_build&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
