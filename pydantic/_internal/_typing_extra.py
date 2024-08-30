@@ -221,7 +221,8 @@ def get_module_ns_of(obj: Any) -> dict[str, Any]:
 
 def merge_cls_and_parent_ns(cls: type[Any], parent_namespace: dict[str, Any] | None = None) -> dict[str, Any]:
     ns = get_module_ns_of(cls).copy()
-    ns.update(parent_namespace or {})
+    if parent_namespace is not None:
+        ns.update(parent_namespace)
     ns[cls.__name__] = cls
     return ns
 
