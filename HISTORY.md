@@ -1,3 +1,35 @@
+## v2.9.0b2 (2024-08-30)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.9.0b2)
+
+### What's Changed
+
+#### Packaging
+
+* Bump `pydantic-core` to `v2.23.1` and other minor version bumps by @sydney-runkle in [#10269](https://github.com/pydantic/pydantic/pull/10269)
+
+#### Changes
+
+* Raise helpful warning when `self` isn't returned from model validator by @sydney-runkle in [#10255](https://github.com/pydantic/pydantic/pull/10255)
+
+#### Performance
+
+* Update ns stack with already copied ns by @sydney-runkle in [#10267](https://github.com/pydantic/pydantic/pull/10267)
+
+#### Fixes
+
+* Fix new warnings assertions to use `pytest.warns()` by @mgorny in [#10241](https://github.com/pydantic/pydantic/pull/10241)
+* Fix a crash when cleaning the namespace in `ModelMetaclass` by @Viicos in [#10242](https://github.com/pydantic/pydantic/pull/10242)
+* Fix parent namespace issue with model rebuilds by @sydney-runkle in [#10257](https://github.com/pydantic/pydantic/pull/10257)
+* Remove defaults filter for namespace by @sydney-runkle in [#10261](https://github.com/pydantic/pydantic/pull/10261)
+* Use identity instead of equality after validating model in `__init__` by @Viicos in [#10264](https://github.com/pydantic/pydantic/pull/10264)
+* Support `BigInt` serialization for `int` subclasses by @kxx317 in [pydantic/pydantic-core#1417](https://github.com/pydantic/pydantic-core/pull/1417)
+
+### New Contributors
+
+* @AdolfoVillalobos made their first contribution in [#10240](https://github.com/pydantic/pydantic/pull/10240)
+* @bllchmbrs made their first contribution in [#10270](https://github.com/pydantic/pydantic/pull/10270)
+
 ## v2.9.0b1 (2024-08-26)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.9.0b1)
