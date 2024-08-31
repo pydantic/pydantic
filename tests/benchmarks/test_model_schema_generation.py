@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generic, List, Literal, Optional, TypeVar, Union, get_origin
+from typing import Any, Callable, Dict, Generic, List, Literal, Optional, TypeVar, Union, get_origin
 
 import pytest
 from typing_extensions import Annotated
@@ -10,7 +10,6 @@ from pydantic import (
     Discriminator,
     Field,
     PlainValidator,
-    ValidationInfo,
     ValidatorFunctionWrapHandler,
     WrapValidator,
     create_model,
@@ -172,7 +171,7 @@ def test_lots_of_models_with_lots_of_fields():
 @pytest.mark.parametrize('validator_mode', ['before', 'after', 'plain'])
 @pytest.mark.benchmark(group='model_schema_generation')
 def test_custom_field_validator_via_decorator(benchmark, validator_mode) -> None:
-    def schema_gen():
+    def schema_gen() -> None:
         class ModelWithFieldValidator(BaseModel):
             field: Any
 
@@ -186,7 +185,7 @@ def test_custom_field_validator_via_decorator(benchmark, validator_mode) -> None
 
 @pytest.mark.benchmark(group='model_schema_generation')
 def test_custom_wrap_field_validator_via_decorator(benchmark) -> None:
-    def schema_gen():
+    def schema_gen() -> None:
         class ModelWithWrapFieldValidator(BaseModel):
             field: Any
 
@@ -204,7 +203,7 @@ def test_custom_field_validator_via_annotation(benchmark, validator_constructor)
     def validate_field(v: Any) -> Any:
         return v
 
-    def schema_gen(validation_func):
+    def schema_gen(validation_func) -> None:
         class ModelWithFieldValidator(BaseModel):
             field: Annotated[Any, validator_constructor(validation_func)]
 
@@ -216,28 +215,16 @@ def test_custom_wrap_field_validator_via_annotation(benchmark) -> None:
     def validate_field(v: Any, handler: ValidatorFunctionWrapHandler) -> Any:
         return handler(v)
 
-    def schema_gen(validation_func):
+    def schema_gen(validator_func: Callable) -> None:
         class ModelWithWrapFieldValidator(BaseModel):
-            field: Annotated[Any, WrapValidator(validation_func)]
+            field: Annotated[Any, WrapValidator(validator_func)]
 
     benchmark(schema_gen, validate_field)
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_field_validator_wrap(benchmark) -> None:
-    def schema_gen():
-        def wrap_validator_field4(v: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo) -> str:
-            return handler(v)
-
-        class ModelWithWrapValidator(BaseModel):
-            field4: Annotated[str, WrapValidator(wrap_validator_field4)]
-
-    benchmark(schema_gen)
-
-
-@pytest.mark.benchmark(group='model_schema_generation')
 def test_custom_model_validator_before(benchmark, validator_mode):
-    def schema_gen():
+    def schema_gen() -> None:
         class ModelWithBeforeValidator(BaseModel):
             field: Any
 
@@ -251,7 +238,7 @@ def test_custom_model_validator_before(benchmark, validator_mode):
 
 @pytest.mark.benchmark(group='model_schema_generation')
 def test_custom_model_validator_after(benchmark) -> None:
-    def schema_gen():
+    def schema_gen() -> None:
         class ModelWithAfterValidator(BaseModel):
             field: Any
 
@@ -264,7 +251,7 @@ def test_custom_model_validator_after(benchmark) -> None:
 
 @pytest.mark.benchmark(group='model_schema_generation')
 def test_custom_model_validator_wrap(benchmark) -> None:
-    def schema_gen():
+    def schema_gen() -> None:
         class ModelWithWrapValidator(BaseModel):
             field: Any
 
