@@ -132,10 +132,9 @@ class WrapFieldValidator(BaseModel):
     @classmethod
     def invalid_handler(cls, value: Any, handler: int) -> Any: ...
 
-    @field_validator('foo', mode='wrap')  # pyright: ignore[reportArgumentType]
+    @field_validator('foo', mode='wrap')
     @classmethod
-    def valid_no_info(cls, value: Any, handler: ValidatorFunctionWrapHandler) -> Any:
-        """TODO this should be valid."""
+    def valid_no_info(cls, value: Any, handler: ValidatorFunctionWrapHandler) -> Any: ...
 
     @field_validator('foo', mode='wrap', json_schema_input_type=int)  # `json_schema_input_type` allowed here.
     @classmethod
