@@ -9,7 +9,6 @@ from pydantic import (
     BeforeValidator,
     Discriminator,
     Field,
-    ModelWrapValidatorHandler,
     PlainValidator,
     ValidatorFunctionWrapHandler,
     WrapValidator,
@@ -18,6 +17,7 @@ from pydantic import (
     model_validator,
 )
 from pydantic.dataclasses import dataclass
+from pydantic.functional_validators import ModelWrapValidatorHandler
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
