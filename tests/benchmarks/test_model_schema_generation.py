@@ -175,7 +175,7 @@ def test_custom_field_validator_via_decorator(benchmark, validator_mode) -> None
         class ModelWithFieldValidator(BaseModel):
             field: Any
 
-            @field_validator('field1', mode=validator_mode)
+            @field_validator('field', mode=validator_mode)
             @classmethod
             def validate_field(cls, v: Any):
                 return v
@@ -189,7 +189,7 @@ def test_custom_wrap_field_validator_via_decorator(benchmark) -> None:
         class ModelWithWrapFieldValidator(BaseModel):
             field: Any
 
-            @field_validator('field1', mode='wrap')
+            @field_validator('field', mode='wrap')
             @classmethod
             def validate_field(cls, v: Any, handler: ValidatorFunctionWrapHandler) -> Any:
                 return handler(v)
@@ -223,7 +223,7 @@ def test_custom_wrap_field_validator_via_annotation(benchmark) -> None:
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_model_validator_before(benchmark, validator_mode):
+def test_custom_model_validator_before(benchmark):
     def schema_gen() -> None:
         class ModelWithBeforeValidator(BaseModel):
             field: Any
