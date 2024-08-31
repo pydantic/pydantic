@@ -1,7 +1,7 @@
 from typing import Any, Callable, Dict, Generic, List, Literal, Optional, TypeVar, Union, get_origin
 
 import pytest
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Self
 
 from pydantic import (
     AfterValidator,
@@ -9,6 +9,7 @@ from pydantic import (
     BeforeValidator,
     Discriminator,
     Field,
+    ModelWrapValidatorHandler,
     PlainValidator,
     ValidatorFunctionWrapHandler,
     WrapValidator,
@@ -256,7 +257,8 @@ def test_custom_model_validator_wrap(benchmark) -> None:
             field: Any
 
             @model_validator(mode='wrap')
-            def validate_model_wrap(cls, values: Any, handler: ValidatorFunctionWrapHandler) -> Any:
+            @classmethod
+            def validate_model_wrap(cls, values: Any, handler: ModelWrapValidatorHandler[Self]) -> Any:
                 return handler(values)
 
     benchmark(schema_gen)
