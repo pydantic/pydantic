@@ -331,7 +331,14 @@ if TYPE_CHECKING:
         _V2WrapValidatorClsMethod,
         _core_schema.WithInfoWrapValidatorFunction,
         _OnlyValueWrapValidatorClsMethod,
-        _core_schema.NoInfoWrapValidatorFunction,
+        # TODO: figure out why we can't add this
+        # For some reason, it makes it such that this case is allowed:
+        #
+        # @field_validator('foo', mode='wrap')  # pyright: ignore[reportArgumentType]
+        # @classmethod
+        # def invalid_missing_handler(cls, value: Any) -> Any: ...
+        #
+        # _core_schema.NoInfoWrapValidatorFunction,
     ]
 
     _PartialClsOrStaticMethod: TypeAlias = Union[classmethod[Any, Any, Any], staticmethod[Any, Any], partialmethod[Any]]
