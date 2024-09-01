@@ -167,7 +167,7 @@ The [`nsacyber/WALKOFF`](https://github.com/nsacyber/WALKOFF) repo depends on Py
 key = "nvidia"
 name = "NVIDIA"
 description = """
-[Mupltiple repos](https://github.com/search?q=org%3ANVIDIA%20pydantic&type=code) in the `NVIDIA`
+[Multiple repositories](https://github.com/search?q=org%3ANVIDIA%20pydantic&type=code) in the `NVIDIA`
 GitHub org depend on Pydantic.
 
 Their "Omniverse Services" depends on Pydantic according to
