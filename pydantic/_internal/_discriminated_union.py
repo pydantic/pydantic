@@ -55,7 +55,7 @@ def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSche
             s = apply_discriminator(s, discriminator, global_definitions)
         return s
 
-    return _core_utils.walk_core_schema(schema, inner)
+    return _core_utils.walk_core_schema(schema, inner, copy=False)
 
 
 def apply_discriminator(
