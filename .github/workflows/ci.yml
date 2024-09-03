@@ -316,6 +316,7 @@ jobs:
         with:
           name: coverage-data
           path: .coverage
+          include-hidden-files: true
 
       - name: Store coverage html
         uses: actions/upload-artifact@v4
