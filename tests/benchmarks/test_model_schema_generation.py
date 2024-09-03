@@ -277,7 +277,7 @@ def test_custom_field_serializer(benchmark, mode) -> None:
             field1: int
 
             @field_serializer('field1', mode=mode)
-            def serialize_field(cls, v):
+            def serialize_field(cls, v: int) -> str:
                 return str(v)
 
     benchmark(schema_gen)
