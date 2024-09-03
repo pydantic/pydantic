@@ -307,6 +307,9 @@ if TYPE_CHECKING:
     class _V2ValidatorClsMethod(Protocol):
         def __call__(self, cls: Any, value: Any, info: _core_schema.ValidationInfo, /) -> Any: ...
 
+    class _OnlyValueWrapValidatorClsMethod(Protocol):
+        def __call__(self, cls: Any, value: Any, handler: _core_schema.ValidatorFunctionWrapHandler, /) -> Any: ...
+
     class _V2WrapValidatorClsMethod(Protocol):
         def __call__(
             self,
@@ -327,6 +330,8 @@ if TYPE_CHECKING:
     _V2WrapValidator = Union[
         _V2WrapValidatorClsMethod,
         _core_schema.WithInfoWrapValidatorFunction,
+        _OnlyValueWrapValidatorClsMethod,
+        _core_schema.NoInfoWrapValidatorFunction,
     ]
 
     _PartialClsOrStaticMethod: TypeAlias = Union[classmethod[Any, Any, Any], staticmethod[Any, Any], partialmethod[Any]]
