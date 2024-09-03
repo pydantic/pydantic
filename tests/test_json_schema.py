@@ -1778,10 +1778,13 @@ def test_model_default():
     'ser_json_timedelta,properties',
     [
         ('float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
+        ('millisecond', {'duration': {'default': 300000.0, 'title': 'Duration', 'type': 'number'}}),
         ('iso8601', {'duration': {'default': 'PT5M', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
     ],
 )
-def test_model_default_timedelta(ser_json_timedelta: Literal['float', 'iso8601'], properties: typing.Dict[str, Any]):
+def test_model_default_timedelta(
+    ser_json_timedelta: Literal['float', 'iso8601', 'millisecond'], properties: typing.Dict[str, Any]
+):
     class Model(BaseModel):
         model_config = ConfigDict(ser_json_timedelta=ser_json_timedelta)
 
@@ -1820,11 +1823,12 @@ def test_model_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], properti
     'ser_json_timedelta,properties',
     [
         ('float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
+        ('millisecond', {'duration': {'default': 300000.0, 'title': 'Duration', 'type': 'number'}}),
         ('iso8601', {'duration': {'default': 'PT5M', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
     ],
 )
 def test_dataclass_default_timedelta(
-    ser_json_timedelta: Literal['float', 'iso8601'], properties: typing.Dict[str, Any]
+    ser_json_timedelta: Literal['float', 'iso8601', 'millisecond'], properties: typing.Dict[str, Any]
 ):
     @dataclass(config=ConfigDict(ser_json_timedelta=ser_json_timedelta))
     class Dataclass:
@@ -1862,11 +1866,12 @@ def test_dataclass_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], prop
     'ser_json_timedelta,properties',
     [
         ('float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
+        ('millisecond', {'duration': {'default': 300000.0, 'title': 'Duration', 'type': 'number'}}),
         ('iso8601', {'duration': {'default': 'PT5M', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
     ],
 )
 def test_typeddict_default_timedelta(
-    ser_json_timedelta: Literal['float', 'iso8601'], properties: typing.Dict[str, Any]
+    ser_json_timedelta: Literal['float', 'iso8601', 'millisecond'], properties: typing.Dict[str, Any]
 ):
     class MyTypedDict(TypedDict):
         __pydantic_config__ = ConfigDict(ser_json_timedelta=ser_json_timedelta)
