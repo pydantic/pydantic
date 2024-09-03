@@ -2453,12 +2453,20 @@ def test_rebuild_dataclass():
 
     assert rebuild_dataclass(MyDataClass) is None
 
-    @pydantic.dataclasses.dataclass()
+    @pydantic.dataclasses.dataclass
     class MyDataClass1:
         d2: Optional['Foo'] = None  # noqa F821
 
     with pytest.raises(PydanticUndefinedAnnotation, match="name 'Foo' is not defined"):
         rebuild_dataclass(MyDataClass1, _parent_namespace_depth=0)
+
+    @pydantic.dataclasses.dataclass
+    class MyDataClass2:
+        x: 'Foo'  # noqa F821
+
+    assert not MyDataClass2.__pydantic_complete__
+    assert rebuild_dataclass(MyDataClass2, _types_namespace={'Foo': int})
+    assert MyDataClass2.__pydantic_complete__
 
 
 @pytest.mark.parametrize(
