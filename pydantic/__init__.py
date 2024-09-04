@@ -17,7 +17,6 @@ if typing.TYPE_CHECKING:
     )
 
     from . import dataclasses
-    from ._internal._generate_schema import GenerateSchema as GenerateSchema
     from .aliases import AliasChoices, AliasGenerator, AliasPath
     from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
     from .config import ConfigDict, with_config
@@ -217,8 +216,6 @@ __all__ = (
     # annotated handlers
     'GetCoreSchemaHandler',
     'GetJsonSchemaHandler',
-    # generate schema from ._internal
-    'GenerateSchema',
     # pydantic_core
     'ValidationError',
     'ValidationInfo',
@@ -372,8 +369,6 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     # annotated handlers
     'GetCoreSchemaHandler': (__spec__.parent, '.annotated_handlers'),
     'GetJsonSchemaHandler': (__spec__.parent, '.annotated_handlers'),
-    # generate schema from ._internal
-    'GenerateSchema': (__spec__.parent, '._internal._generate_schema'),
     # pydantic_core stuff
     'ValidationError': ('pydantic_core', '.'),
     'ValidationInfo': ('pydantic_core', '.core_schema'),

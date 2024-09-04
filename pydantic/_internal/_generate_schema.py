@@ -372,7 +372,7 @@ class GenerateSchema:
         types_namespace: dict[str, Any] | None,
         typevars_map: dict[Any, Any] | None = None,
     ) -> None:
-        # we need a stack for recursing into child models
+        # we need a stack for recursing into nested models
         self._config_wrapper_stack = ConfigWrapperStack(config_wrapper)
         self._types_namespace_stack = TypesNamespaceStack(types_namespace)
         self._typevars_map = typevars_map
@@ -408,7 +408,7 @@ class GenerateSchema:
 
     @property
     def _current_generate_schema(self) -> GenerateSchema:
-        cls = self._config_wrapper.schema_generator or GenerateSchema
+        cls = GenerateSchema
         return cls.__from_parent(
             self._config_wrapper_stack,
             self._types_namespace_stack,
@@ -420,10 +420,6 @@ class GenerateSchema:
     @property
     def _arbitrary_types(self) -> bool:
         return self._config_wrapper.arbitrary_types_allowed
-
-    def str_schema(self) -> CoreSchema:
-        """Generate a CoreSchema for `str`"""
-        return core_schema.str_schema()
 
     # the following methods can be overridden but should be considered
     # unstable / private APIs
@@ -942,7 +938,7 @@ class GenerateSchema:
         as they get requested and we figure out what the right API for them is.
         """
         if obj is str:
-            return self.str_schema()
+            return core_schema.str_schema()
         elif obj is bytes:
             return core_schema.bytes_schema()
         elif obj is int:

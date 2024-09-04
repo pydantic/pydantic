@@ -35,7 +35,6 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    GenerateSchema,
     GetCoreSchemaHandler,
     PrivateAttr,
     PydanticUndefinedAnnotation,
@@ -3131,62 +3130,7 @@ def test_cannot_use_leading_underscore_field_names():
             ___: int = Field(default=1)
 
 
-def test_schema_generator_customize_type() -> None:
-    class LaxStrGenerator(GenerateSchema):
-        def str_schema(self) -> CoreSchema:
-            return core_schema.no_info_plain_validator_function(str)
-
-    class Model(BaseModel):
-        x: str
-        model_config = ConfigDict(schema_generator=LaxStrGenerator)
-
-    assert Model(x=1).x == '1'
-
-
-def test_schema_generator_customize_type_constraints() -> None:
-    class LaxStrGenerator(GenerateSchema):
-        def str_schema(self) -> CoreSchema:
-            return core_schema.no_info_plain_validator_function(str)
-
-    class Model(BaseModel):
-        x: Annotated[str, Field(pattern='^\\d+$')]
-        y: Annotated[float, Field(gt=0)]
-        z: Annotated[List[int], Field(min_length=1)]
-        model_config = ConfigDict(schema_generator=LaxStrGenerator)
-
-    # insert_assert(Model(x='123', y=1, z=[-1]).model_dump())
-    assert Model(x='123', y=1, z=[-1]).model_dump() == {'x': '123', 'y': 1.0, 'z': [-1]}
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(x='abc', y=-1, z=[])
-
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'string_pattern_mismatch',
-            'loc': ('x',),
-            'msg': "String should match pattern '^\\d+$'",
-            'input': 'abc',
-            'ctx': {'pattern': '^\\d+$'},
-        },
-        {
-            'type': 'greater_than',
-            'loc': ('y',),
-            'msg': 'Input should be greater than 0',
-            'input': -1,
-            'ctx': {'gt': 0.0},
-        },
-        {
-            'type': 'too_short',
-            'loc': ('z',),
-            'msg': 'List should have at least 1 item after validation, not 0',
-            'input': [],
-            'ctx': {'field_type': 'List', 'min_length': 1, 'actual_length': 0},
-        },
-    ]
-
-
-def test_schema_generator_customize_type_constraints_order() -> None:
+def test_customize_type_constraints_order() -> None:
     class Model(BaseModel):
         # whitespace will be stripped first, then max length will be checked, should pass on ' 1 '
         x: Annotated[str, AfterValidator(lambda x: x.strip()), StringConstraints(max_length=1)]
