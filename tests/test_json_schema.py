@@ -3266,7 +3266,7 @@ def test_schema_for_generic_field():
         ) -> core_schema.PlainValidatorFunctionSchema:
             source_args = getattr(source, '__args__', [Any])
             param = source_args[0]
-            metadata = build_metadata_dict(js_functions=[lambda _c, h: h(handler.generate_schema(param))])
+            metadata = build_metadata_dict(json_functions=[lambda _c, h: h(handler.generate_schema(param))])
             return core_schema.with_info_plain_validator_function(
                 GenModel,
                 metadata=metadata,
@@ -3351,7 +3351,7 @@ def test_namedtuple_modify_schema():
         @classmethod
         def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
             schema = handler(source)
-            schema['arguments_schema']['metadata']['pydantic_js_prefer_positional_arguments'] = False
+            schema['arguments_schema']['metadata']['pydantic_json_prefer_positional_arguments'] = False
             return schema
 
     class Location(BaseModel):
@@ -3400,7 +3400,7 @@ def test_advanced_generic_schema():  # noqa: C901
 
                 return core_schema.with_info_plain_validator_function(
                     Gen,
-                    metadata={'pydantic_js_annotation_functions': [js_func]},
+                    metadata={'pydantic_json_annotation_functions': [js_func]},
                 )
             else:
                 return handler(source)
@@ -3436,7 +3436,7 @@ def test_advanced_generic_schema():  # noqa: C901
         ) -> core_schema.CoreSchema:
             if hasattr(source, '__args__'):
                 # the js_function ignores the schema we were given and gets a new Tuple CoreSchema
-                metadata = build_metadata_dict(js_functions=[lambda _c, h: h(handler(Tuple[source.__args__]))])
+                metadata = build_metadata_dict(json_functions=[lambda _c, h: h(handler(Tuple[source.__args__]))])
                 return core_schema.with_info_plain_validator_function(
                     GenTwoParams,
                     metadata=metadata,

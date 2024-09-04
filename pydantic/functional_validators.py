@@ -127,7 +127,7 @@ class BeforeValidator:
             if self.json_schema_input_type is PydanticUndefined
             else handler.generate_schema(self.json_schema_input_type)
         )
-        metadata = _core_metadata.build_metadata_dict(js_input_core_schema=input_schema)
+        metadata = _core_metadata.build_metadata_dict(json_input_core_schema=input_schema)
 
         info_arg = _inspect_validator(self.func, 'before')
         if info_arg:
@@ -199,7 +199,7 @@ class PlainValidator:
             serialization = None
 
         input_schema = handler.generate_schema(self.json_schema_input_type)
-        metadata = _core_metadata.build_metadata_dict(js_input_core_schema=input_schema)
+        metadata = _core_metadata.build_metadata_dict(json_input_core_schema=input_schema)
 
         info_arg = _inspect_validator(self.func, 'plain')
         if info_arg:
@@ -272,7 +272,7 @@ class WrapValidator:
             if self.json_schema_input_type is PydanticUndefined
             else handler.generate_schema(self.json_schema_input_type)
         )
-        metadata = _core_metadata.build_metadata_dict(js_input_core_schema=input_schema)
+        metadata = _core_metadata.build_metadata_dict(json_input_core_schema=input_schema)
 
         info_arg = _inspect_validator(self.func, 'wrap')
         if info_arg:
@@ -788,7 +788,7 @@ else:
         @classmethod
         def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
             original_schema = handler(source)
-            metadata = _core_metadata.build_metadata_dict(js_annotation_functions=[lambda _c, h: h(original_schema)])
+            metadata = _core_metadata.build_metadata_dict(json_annotation_functions=[lambda _c, h: h(original_schema)])
             return core_schema.any_schema(
                 metadata=metadata,
                 serialization=core_schema.wrap_serializer_function_ser_schema(

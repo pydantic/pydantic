@@ -1675,7 +1675,7 @@ class _SecretField(_SecretBase[SecretType]):
         return core_schema.lax_or_strict_schema(
             lax_schema=get_secret_schema(strict=False),
             strict_schema=get_secret_schema(strict=True),
-            metadata={'pydantic_js_functions': [get_json_schema]},
+            metadata={'pydantic_json_functions': [get_json_schema]},
         )
 
 

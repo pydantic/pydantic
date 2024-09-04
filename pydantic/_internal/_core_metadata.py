@@ -22,19 +22,20 @@ class CoreMetadata(typing_extensions.TypedDict, total=False):
     of `json_schema_extra` or similar patterns, not for changes like adding / modifying `title`.
 
     Attributes:
-        pydantic_js_functions: List of JSON schema modification functions.
-        pydantic_js_annotation_functions: List of JSON schema modification functions
+        pydantic_json_functions: List of JSON schema modification functions.
+        pydantic_json_annotation_functions: List of JSON schema modification functions
             associated with field annotations like 'title', 'description', etc.
-        pydantic_js_prefer_positional_arguments: Whether JSON schema generator will
+        pydantic_json_prefer_positional_arguments: Whether JSON schema generator will
             prefer positional over keyword arguments for an 'arguments' schema.
-        pydantic_js_input_core_schema: Core schema to use in JSON schema generation
+        pydantic_json_input_core_schema: Core schema to use in JSON schema generation
             for fields with custom validators, in 'validation' mode.
     """
 
-    pydantic_js_functions: list[GetJsonSchemaFunction]
-    pydantic_js_annotation_functions: list[GetJsonSchemaFunction]
-    pydantic_js_prefer_positional_arguments: bool | None
-    pydantic_js_input_core_schema: CoreSchema | None
+    # TODO: replace (or mimic) with variables for consistency across files
+    pydantic_json_functions: list[GetJsonSchemaFunction]
+    pydantic_json_annotation_functions: list[GetJsonSchemaFunction]
+    pydantic_json_prefer_positional_arguments: bool | None
+    pydantic_json_input_core_schema: CoreSchema | None
 
 
 class CoreMetadataHandler:
@@ -74,16 +75,16 @@ class CoreMetadataHandler:
 
 def build_metadata_dict(
     *,  # force keyword arguments to make it easier to modify this signature in a backwards-compatible way
-    js_functions: list[GetJsonSchemaFunction] | None = None,
-    js_annotation_functions: list[GetJsonSchemaFunction] | None = None,
-    js_prefer_positional_arguments: bool | None = None,
-    js_input_core_schema: CoreSchema | None = None,
+    json_functions: list[GetJsonSchemaFunction] | None = None,
+    json_annotation_functions: list[GetJsonSchemaFunction] | None = None,
+    json_prefer_positional_arguments: bool | None = None,
+    json_input_core_schema: CoreSchema | None = None,
 ) -> dict[str, Any]:
     """Builds a dict to use as the metadata field of a CoreSchema object in a manner that is consistent with the `CoreMetadataHandler` class."""
     metadata = CoreMetadata(
-        pydantic_js_functions=js_functions or [],
-        pydantic_js_annotation_functions=js_annotation_functions or [],
-        pydantic_js_prefer_positional_arguments=js_prefer_positional_arguments,
-        pydantic_js_input_core_schema=js_input_core_schema,
+        pydantic_json_functions=json_functions or [],
+        pydantic_json_annotation_functions=json_annotation_functions or [],
+        pydantic_json_prefer_positional_arguments=json_prefer_positional_arguments,
+        pydantic_json_input_core_schema=json_input_core_schema,
     )
     return {k: v for k, v in metadata.items() if v is not None}

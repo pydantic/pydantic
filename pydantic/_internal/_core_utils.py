@@ -476,8 +476,8 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
         if 'metadata' in s:
             metadata = s['metadata']
             for k in (
-                'pydantic_js_functions',
-                'pydantic_js_annotation_functions',
+                'pydantic_json_functions',
+                'pydantic_json_annotation_functions',
                 'pydantic.internal.union_discriminator',
             ):
                 if k in metadata:

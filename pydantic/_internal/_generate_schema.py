@@ -482,7 +482,7 @@ class GenerateSchema:
                 sub_type=sub_type,
                 missing=None if default_missing else enum_type._missing_,
                 ref=enum_ref,
-                metadata={'pydantic_js_functions': [get_json_schema]},
+                metadata={'pydantic_json_functions': [get_json_schema]},
             )
 
             if self._config_wrapper.use_enum_values:
@@ -508,7 +508,7 @@ class GenerateSchema:
             # so that we can still generate a valid json schema.
             return core_schema.is_instance_schema(
                 enum_type,
-                metadata={'pydantic_js_functions': [get_json_schema_no_cases]},
+                metadata={'pydantic_json_functions': [get_json_schema_no_cases]},
             )
 
     def _ip_schema(self, tp: Any) -> CoreSchema:
@@ -538,7 +538,7 @@ class GenerateSchema:
             ),
             serialization=core_schema.plain_serializer_function_ser_schema(ser_ip),
             metadata=build_metadata_dict(
-                js_functions=[lambda _1, _2: {'type': 'string', 'format': ip_type_json_schema_format[tp]}]
+                json_functions=[lambda _1, _2: {'type': 'string', 'format': ip_type_json_schema_format[tp]}]
             ),
         )
 
@@ -608,14 +608,14 @@ class GenerateSchema:
 
     def _add_js_function(self, metadata_schema: CoreSchema, js_function: Callable[..., Any]) -> None:
         metadata = CoreMetadataHandler(metadata_schema).metadata
-        pydantic_js_functions = metadata.setdefault('pydantic_js_functions', [])
+        pydantic_json_functions = metadata.setdefault('pydantic_json_functions', [])
         # because of how we generate core schemas for nested generic models
         # we can end up adding `BaseModel.__get_pydantic_json_schema__` multiple times
         # this check may fail to catch duplicates if the function is a `functools.partial`
         # or something like that
         # but if it does it'll fail by inserting the duplicate
-        if js_function not in pydantic_js_functions:
-            pydantic_js_functions.append(js_function)
+        if js_function not in pydantic_json_functions:
+            pydantic_json_functions.append(js_function)
 
     def generate_schema(
         self,
@@ -684,7 +684,7 @@ class GenerateSchema:
             config_wrapper = ConfigWrapper(cls.model_config, check=False)
             core_config = config_wrapper.core_config(cls)
             title = self._get_model_title_from_config(cls, config_wrapper)
-            metadata = build_metadata_dict(js_functions=[partial(modify_model_json_schema, cls=cls, title=title)])
+            metadata = build_metadata_dict(json_functions=[partial(modify_model_json_schema, cls=cls, title=title)])
 
             model_validators = decorators.model_validators.values()
 
@@ -1345,7 +1345,7 @@ class GenerateSchema:
         json_schema_extra = field_info.json_schema_extra
 
         metadata = build_metadata_dict(
-            js_annotation_functions=[get_json_schema_update_func(json_schema_updates, json_schema_extra)]
+            json_annotation_functions=[get_json_schema_update_func(json_schema_updates, json_schema_extra)]
         )
 
         alias_generator = self._config_wrapper.alias_generator
@@ -1515,7 +1515,7 @@ class GenerateSchema:
 
                 title = self._get_model_title_from_config(typed_dict_cls, ConfigWrapper(config))
                 metadata = build_metadata_dict(
-                    js_functions=[partial(modify_model_json_schema, cls=typed_dict_cls, title=title)],
+                    json_functions=[partial(modify_model_json_schema, cls=typed_dict_cls, title=title)],
                 )
                 td_schema = core_schema.typed_dict_schema(
                     fields,
@@ -1564,7 +1564,7 @@ class GenerateSchema:
                     )
                     for field_name, annotation in annotations.items()
                 ],
-                metadata=build_metadata_dict(js_prefer_positional_arguments=True),
+                metadata=build_metadata_dict(json_prefer_positional_arguments=True),
             )
             return core_schema.call_schema(arguments_schema, namedtuple_cls, ref=namedtuple_ref)
 
@@ -1657,7 +1657,7 @@ class GenerateSchema:
             except (ZoneInfoNotFoundError, ValueError):
                 raise PydanticCustomError('zoneinfo_str', 'invalid timezone: {value}', {'value': value})
 
-        metadata = build_metadata_dict(js_functions=[lambda _1, _2: {'type': 'string', 'format': 'zoneinfo'}])
+        metadata = build_metadata_dict(json_functions=[lambda _1, _2: {'type': 'string', 'format': 'zoneinfo'}])
         return core_schema.no_info_plain_validator_function(
             validate_str_is_valid_iana_tz,
             serialization=core_schema.to_string_ser_schema(),
@@ -1724,7 +1724,7 @@ class GenerateSchema:
     def _pattern_schema(self, pattern_type: Any) -> core_schema.CoreSchema:
         from . import _validators
 
-        metadata = build_metadata_dict(js_functions=[lambda _1, _2: {'type': 'string', 'format': 'regex'}])
+        metadata = build_metadata_dict(json_functions=[lambda _1, _2: {'type': 'string', 'format': 'regex'}])
         ser = core_schema.plain_serializer_function_ser_schema(
             attrgetter('pattern'), when_used='json', return_schema=core_schema.str_schema()
         )
@@ -1840,7 +1840,7 @@ class GenerateSchema:
 
                 title = self._get_model_title_from_config(dataclass, ConfigWrapper(config))
                 metadata = build_metadata_dict(
-                    js_functions=[partial(modify_model_json_schema, cls=dataclass, title=title)]
+                    json_functions=[partial(modify_model_json_schema, cls=dataclass, title=title)]
                 )
 
                 dc_schema = core_schema.dataclass_schema(
@@ -2009,7 +2009,7 @@ class GenerateSchema:
 
             return json_schema
 
-        metadata = build_metadata_dict(js_annotation_functions=[set_computed_field_metadata])
+        metadata = build_metadata_dict(json_annotation_functions=[set_computed_field_metadata])
         return core_schema.computed_field(
             d.cls_var_name, return_schema=return_type_schema, alias=d.info.alias, metadata=metadata
         )
@@ -2082,7 +2082,7 @@ class GenerateSchema:
         # that to the schema after the fact. It also seems odd to me that we're bubbling up all of the annotations
         # to the top level, effectively?
 
-        pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
+        pydantic_json_annotation_functions: list[GetJsonSchemaFunction] = []
 
         def inner_handler(obj: Any) -> CoreSchema:
             from_property = self._generate_schema_from_property(obj, source_type)
@@ -2103,13 +2103,13 @@ class GenerateSchema:
             if annotation is None:
                 continue
             get_inner_schema = self._get_wrapped_inner_schema(
-                get_inner_schema, annotation, pydantic_js_annotation_functions
+                get_inner_schema, annotation, pydantic_json_annotation_functions
             )
 
         schema = get_inner_schema(source_type)
-        if pydantic_js_annotation_functions:
+        if pydantic_json_annotation_functions:
             metadata = CoreMetadataHandler(schema).metadata
-            metadata.setdefault('pydantic_js_annotation_functions', []).extend(pydantic_js_annotation_functions)
+            metadata.setdefault('pydantic_json_annotation_functions', []).extend(pydantic_json_annotation_functions)
         return _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, source_type, schema)
 
     def _apply_single_annotation(self, schema: core_schema.CoreSchema, metadata: Any) -> core_schema.CoreSchema:
@@ -2174,7 +2174,7 @@ class GenerateSchema:
 
             json_schema_extra = metadata.json_schema_extra
             if json_schema_update or json_schema_extra:
-                CoreMetadataHandler(schema).metadata.setdefault('pydantic_js_annotation_functions', []).append(
+                CoreMetadataHandler(schema).metadata.setdefault('pydantic_json_annotation_functions', []).append(
                     get_json_schema_update_func(json_schema_update, json_schema_extra)
                 )
         return schema
@@ -2183,7 +2183,7 @@ class GenerateSchema:
         self,
         get_inner_schema: GetCoreSchemaHandler,
         annotation: Any,
-        pydantic_js_annotation_functions: list[GetJsonSchemaFunction],
+        pydantic_json_annotation_functions: list[GetJsonSchemaFunction],
     ) -> CallbackGetCoreSchemaHandler:
         metadata_get_schema: GetCoreSchemaFunction = getattr(annotation, '__get_pydantic_core_schema__', None) or (
             lambda source, handler: handler(source)
@@ -2196,7 +2196,7 @@ class GenerateSchema:
 
             metadata_js_function = _extract_get_pydantic_json_schema(annotation, schema)
             if metadata_js_function is not None:
-                pydantic_js_annotation_functions.append(metadata_js_function)
+                pydantic_json_annotation_functions.append(metadata_js_function)
             return schema
 
         return CallbackGetCoreSchemaHandler(new_handler, self)

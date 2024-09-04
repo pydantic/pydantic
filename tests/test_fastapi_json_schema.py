@@ -48,7 +48,7 @@ class FastAPIGenerateJsonSchema(GenerateJsonSchema):
     def handle_invalid_for_json_schema(self, schema: CoreSchemaOrField, error_info: str) -> JsonSchemaValue:
         # NOTE: I think it may be a good idea to rework this method to either not use CoreMetadataHandler,
         #    and/or to make CoreMetadataHandler a public API.
-        if CoreMetadataHandler(schema).metadata.get('pydantic_js_modify_function') is not None:
+        if CoreMetadataHandler(schema).metadata.get('pydantic_json_annotation_functions') is not None:
             # Since there is a json schema modify function, assume that this type is meant to be handled,
             # and the modify function will set all properties as appropriate
             return {}
