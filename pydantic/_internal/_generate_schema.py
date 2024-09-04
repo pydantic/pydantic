@@ -29,6 +29,7 @@ from typing import (
     Dict,
     Final,
     ForwardRef,
+    Generator,
     Iterable,
     Iterator,
     Mapping,
@@ -352,6 +353,9 @@ def _get_first_non_null(a: Any, b: Any) -> Any:
     This function will return serialization_alias, which is the first argument, even though it is an empty string.
     """
     return a if a is not None else b
+
+
+ANNOTATIONS_CACHE: dict[int, tuple[core_schema.CoreSchema, dict[str, core_schema.CoreSchema]]] = {}
 
 
 class GenerateSchema:
@@ -2060,11 +2064,14 @@ class GenerateSchema:
         else:
             return None
 
+    def _get_cache_key(self, source_type, *annotations):
+        return hash(source_type, *annotations)
+
     def _apply_annotations(
         self,
         source_type: Any,
         annotations: list[Any],
-        transform_inner_schema: Callable[[CoreSchema], CoreSchema] = lambda x: x,
+        transform_inner_schema: Callable[[CoreSchema], CoreSchema] | None = None,
     ) -> CoreSchema:
         """Apply arguments from `Annotated` or from `FieldInfo` to a schema.
 
@@ -2073,39 +2080,63 @@ class GenerateSchema:
         (in other words, `GenerateSchema._annotated_schema` just unpacks `Annotated`, this process it).
         """
         annotations = list(_known_annotated_metadata.expand_grouped_metadata(annotations))
-        res = self._get_prepare_pydantic_annotations_for_known_type(source_type, tuple(annotations))
-        if res is not None:
-            source_type, annotations = res
+        try:
+            cache_key_hash = self._get_cache_key(source_type, *annotations)
+        except Exception:
+            cache_key_hash = None
+        else:
+            if cache_key_hash in ANNOTATIONS_CACHE:
+                schema, defs = ANNOTATIONS_CACHE[cache_key_hash]
+                self.defs.definitions.update(defs)
+                return schema
 
-        pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
-
-        def inner_handler(obj: Any) -> CoreSchema:
-            from_property = self._generate_schema_from_property(obj, source_type)
-            if from_property is None:
-                schema = self._generate_schema_inner(obj)
+        with ExitStack() as stack:
+            if cache_key_hash is not None:
+                if self.defs.recording:
+                    # A parent instance of `GenerateSchema` gave its `Definitions` instance:
+                    recorded = self.defs.recorded
+                else:
+                    recorded = stack.enter_context(self.defs.record())
             else:
-                schema = from_property
-            metadata_js_function = _extract_get_pydantic_json_schema(obj, schema)
-            if metadata_js_function is not None:
-                metadata_schema = resolve_original_schema(schema, self.defs.definitions)
-                if metadata_schema is not None:
-                    self._add_js_function(metadata_schema, metadata_js_function)
-            return transform_inner_schema(schema)
+                recorded = None
 
-        get_inner_schema = CallbackGetCoreSchemaHandler(inner_handler, self)
+            res = self._get_prepare_pydantic_annotations_for_known_type(source_type, tuple(annotations))
+            if res is not None:
+                source_type, annotations = res
 
-        for annotation in annotations:
-            if annotation is None:
-                continue
-            get_inner_schema = self._get_wrapped_inner_schema(
-                get_inner_schema, annotation, pydantic_js_annotation_functions
-            )
+            pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
 
-        schema = get_inner_schema(source_type)
-        if pydantic_js_annotation_functions:
-            metadata = CoreMetadataHandler(schema).metadata
-            metadata.setdefault('pydantic_js_annotation_functions', []).extend(pydantic_js_annotation_functions)
-        return _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, source_type, schema)
+            def inner_handler(obj: Any) -> CoreSchema:
+                from_property = self._generate_schema_from_property(obj, source_type)
+                if from_property is None:
+                    schema = self._generate_schema_inner(obj)
+                else:
+                    schema = from_property
+                metadata_js_function = _extract_get_pydantic_json_schema(obj, schema)
+                if metadata_js_function is not None:
+                    metadata_schema = resolve_original_schema(schema, self.defs.definitions)
+                    if metadata_schema is not None:
+                        self._add_js_function(metadata_schema, metadata_js_function)
+                return transform_inner_schema(schema) if transform_inner_schema is not None else schema
+
+            get_inner_schema = CallbackGetCoreSchemaHandler(inner_handler, self)
+
+            for annotation in annotations:
+                if annotation is None:
+                    continue
+                get_inner_schema = self._get_wrapped_inner_schema(
+                    get_inner_schema, annotation, pydantic_js_annotation_functions
+                )
+
+            schema = get_inner_schema(source_type)
+            if pydantic_js_annotation_functions:
+                metadata = CoreMetadataHandler(schema).metadata
+                metadata.setdefault('pydantic_js_annotation_functions', []).extend(pydantic_js_annotation_functions)
+
+            if cache_key_hash is not None and recorded is not None:
+                ANNOTATIONS_CACHE[cache_key_hash] = (schema, recorded)
+
+            return _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, source_type, schema)
 
     def _apply_single_annotation(self, schema: core_schema.CoreSchema, metadata: Any) -> core_schema.CoreSchema:
         FieldInfo = import_cached_field_info()
@@ -2507,12 +2538,25 @@ def _common_field(
     }
 
 
+class RecordingDict(dict[str, core_schema.CoreSchema]):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.recorded: dict[str, core_schema.CoreSchema] | None = {}
+
+    def __setitem__(self, item: str, value: core_schema.CoreSchema) -> None:
+        if self.recorded is not None:
+            self.recorded[item] = value
+        return super().__setitem__(item, value)
+
+
 class _Definitions:
     """Keeps track of references and definitions."""
 
     def __init__(self) -> None:
         self.seen: set[str] = set()
-        self.definitions: dict[str, core_schema.CoreSchema] = {}
+        self.definitions = RecordingDict()
+        self.recording = False
+        self.recorded: dict[str, core_schema.CoreSchema] = {}
 
     @contextmanager
     def get_schema_or_ref(self, tp: Any) -> Iterator[tuple[str, None] | tuple[str, CoreSchema]]:
@@ -2537,6 +2581,8 @@ class _Definitions:
         ref = get_type_ref(tp)
         # return the reference if we're either (1) in a cycle or (2) it was already defined
         if ref in self.seen or ref in self.definitions:
+            if ref in self.definitions and self.recording:
+                self.recorded[ref] = self.definitions[ref]
             yield (ref, core_schema.definition_reference_schema(ref))
         else:
             self.seen.add(ref)
@@ -2544,6 +2590,15 @@ class _Definitions:
                 yield (ref, None)
             finally:
                 self.seen.discard(ref)
+
+    @contextmanager
+    def record(self) -> Generator[dict[str, core_schema.CoreSchema]]:
+        self.recorded = {}
+        self.recording = True
+        self.definitions.recorded = self.recorded
+        yield self.recorded
+        self.recording = False
+        self.definitions.recorded = None
 
 
 def resolve_original_schema(schema: CoreSchema, definitions: dict[str, CoreSchema]) -> CoreSchema | None:

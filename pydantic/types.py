@@ -1172,7 +1172,7 @@ class UuidVersion:
             return schema
 
     def __hash__(self) -> int:
-        return hash(type(self.uuid_version))
+        return hash(self.uuid_version)
 
 
 UUID1 = Annotated[UUID, UuidVersion(1)]
