@@ -124,18 +124,23 @@ class AfterFieldValidator(BaseModel):
 
 
 class WrapFieldValidator(BaseModel):
-    @field_validator('foo', mode='wrap')  # pyright: ignore[reportArgumentType]
+    @field_validator('foo', mode='wrap')
     @classmethod
-    def invalid_missing_handler(cls, value: Any) -> Any: ...
+    def invalid_missing_handler(cls, value: Any) -> Any:
+        """TODO This shouldn't be valid.
+
+        At runtime, `check_decorator_fields_exist` raises an error, as the `handler` argument is missing.
+        However, there's no type checking error as the provided signature matches
+        `pydantic_core.core_schema.NoInfoWrapValidatorFunction`.
+        """
 
     @field_validator('foo', mode='wrap')  # pyright: ignore[reportArgumentType]
     @classmethod
     def invalid_handler(cls, value: Any, handler: int) -> Any: ...
 
-    @field_validator('foo', mode='wrap')  # pyright: ignore[reportArgumentType]
+    @field_validator('foo', mode='wrap')
     @classmethod
-    def valid_no_info(cls, value: Any, handler: ValidatorFunctionWrapHandler) -> Any:
-        """TODO this should be valid."""
+    def valid_no_info(cls, value: Any, handler: ValidatorFunctionWrapHandler) -> Any: ...
 
     @field_validator('foo', mode='wrap', json_schema_input_type=int)  # `json_schema_input_type` allowed here.
     @classmethod

@@ -169,6 +169,7 @@ jobs:
       with:
         name: coverage-${{ matrix.os }}-${{ matrix.python-version }}
         path: coverage
+        include-hidden-files: true
 
   test-fastapi:
     # If some tests start failing due to out-of-date schemas/validation errors/etc.,
@@ -285,6 +286,7 @@ jobs:
       with:
         name: coverage-${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
         path: coverage
+        include-hidden-files: true
 
   coverage-combine:
     needs: [test, test-mypy]
@@ -316,6 +318,7 @@ jobs:
         with:
           name: coverage-data
           path: .coverage
+          include-hidden-files: true
 
       - name: Store coverage html
         uses: actions/upload-artifact@v4
@@ -479,12 +482,25 @@ jobs:
               consumer_secret=os.getenv("TWITTER_CONSUMER_SECRET"),
           )
           version = os.getenv("VERSION").strip('"')
-          tweet = os.getenv("TWEET").format(version=version)
+
+          if "b" in version:
+              official_version = version[:version.index("b")]
+              tweet = os.getenv("BETA_TWEET").format(version=version, official_version=official_version)
+          else:
+              tweet = os.getenv("TWEET").format(version=version)
+
           client.create_tweet(text=tweet)
         env:
           VERSION: ${{ needs.release.outputs.pydantic-version }}
           TWEET: |
             Pydantic version {version} is out! 🎉
+
+            https://github.com/pydantic/pydantic/releases/tag/v{version}
+          BETA_TWEET: |
+            Pydantic beta version {version} is out! 🚀
+
+            Please try v{version} in the next week before we release v{official_version},
+            and let us know if you encounter any issues!
 
             https://github.com/pydantic/pydantic/releases/tag/v{version}
           TWITTER_CONSUMER_KEY: ${{ secrets.TWITTER_CONSUMER_KEY }}

@@ -167,25 +167,7 @@ def is_finalvar(ann_type: Any) -> bool:
     return _check_finalvar(ann_type) or _check_finalvar(get_origin(ann_type))
 
 
-_DEFAULT_GLOBALS = {
-    '__name__',
-    '__doc__',
-    '__package__',
-    '__loader__',
-    '__spec__',
-    '__annotations__',
-    '__builtins__',
-    '__file__',
-    '__cached__',
-}
-
-
-def _remove_default_globals_from_ns(namespace: dict[str, Any]) -> dict[str, Any]:
-    """Remove default globals like __name__, __doc__, etc that aren't needed for type evaluation."""
-    return {k: v for k, v in namespace.items() if k not in _DEFAULT_GLOBALS}
-
-
-def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
+def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> dict[str, Any] | None:
     """We allow use of items in parent namespace to get around the issue with `get_type_hints` only looking in the
     global module namespace. See https://github.com/pydantic/pydantic/issues/2678#issuecomment-1008139014 -> Scope
     and suggestion at the end of the next comment by @gvanrossum.
@@ -197,40 +179,50 @@ def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
     dict of exactly what's in scope. Using `f_back` would work sometimes but would be very wrong and confusing in many
     other cases. See https://discuss.python.org/t/is-there-a-way-to-access-parent-nested-namespaces/20659.
 
-    This function returns None if the parent frame is at the top module level. This is because the class' __module__
-    attribute can be used to access the parent namespace. This is done in `_typing_extra.add_module_globals`.
-    There's no need to cache the parent frame namespace in this case.
+    There are some cases where we want to force fetching the parent namespace, ex: during a `model_rebuild` call.
+    In this case, we want both the namespace of the class' module, if applicable, and the parent namespace of the
+    module where the rebuild is called.
+
+    In other cases, like during initial schema build, if a class is defined at the top module level, we don't need to
+    fetch that module's namespace, because the class' __module__ attribute can be used to access the parent namespace.
+    This is done in `_typing_extra.get_module_ns_of`. Thus, there's no need to cache the parent frame namespace in this case.
     """
     frame = sys._getframe(parent_depth)
+
+    # note, we don't copy frame.f_locals here (or during the last return call), because we don't expect the namespace to be modified down the line
+    # if this becomes a problem, we could implement some sort of frozen mapping structure to enforce this
+    if force:
+        return frame.f_locals
+
     # if either of the following conditions are true, the class is defined at the top module level
     # to better understand why we need both of these checks, see
     # https://github.com/pydantic/pydantic/pull/10113#discussion_r1714981531
     if frame.f_back is None or frame.f_code.co_name == '<module>':
         return None
-    else:
-        if f_locals := frame.f_locals:
-            return _remove_default_globals_from_ns(f_locals)
-        return f_locals
+
+    return frame.f_locals
 
 
-def add_module_globals(obj: Any, globalns: dict[str, Any] | None = None) -> dict[str, Any]:
+def get_module_ns_of(obj: Any) -> dict[str, Any]:
+    """Get the namespace of the module where the object is defined.
+
+    Caution: this function does not return a copy of the module namespace, so it should not be mutated.
+    The burden of enforcing this is on the caller.
+    """
     module_name = getattr(obj, '__module__', None)
     if module_name:
         try:
-            module_globalns = sys.modules[module_name].__dict__
+            return sys.modules[module_name].__dict__
         except KeyError:
             # happens occasionally, see https://github.com/pydantic/pydantic/issues/2363
-            ns = {}
-        else:
-            ns = {**module_globalns, **globalns} if globalns else module_globalns.copy()
-    else:
-        ns = globalns or {}
-
-    return _remove_default_globals_from_ns(ns)
+            return {}
+    return {}
 
 
-def get_cls_types_namespace(cls: type[Any], parent_namespace: dict[str, Any] | None = None) -> dict[str, Any]:
-    ns = add_module_globals(cls, parent_namespace)
+def merge_cls_and_parent_ns(cls: type[Any], parent_namespace: dict[str, Any] | None = None) -> dict[str, Any]:
+    ns = get_module_ns_of(cls).copy()
+    if parent_namespace is not None:
+        ns.update(parent_namespace)
     ns[cls.__name__] = cls
     return ns
 
@@ -373,7 +365,7 @@ def get_function_type_hints(
             type_hints.setdefault('return', function)
         return type_hints
 
-    globalns = add_module_globals(function)
+    globalns = get_module_ns_of(function)
     type_hints = {}
     type_params: tuple[Any] = getattr(function, '__type_params__', ())  # type: ignore
     for name, value in annotations.items():

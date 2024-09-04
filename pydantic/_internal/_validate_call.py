@@ -42,7 +42,7 @@ class ValidateCallWrapper:
             self.__qualname__ = function.__qualname__
             self.__module__ = function.__module__
 
-        global_ns = _typing_extra.add_module_globals(function, None)
+        global_ns = _typing_extra.get_module_ns_of(function)
         # TODO: this is a bit of a hack, we should probably have a better way to handle this
         # specifically, we shouldn't be pumping the namespace full of type_params
         # when we take namespace and type_params arguments in eval_type_backport

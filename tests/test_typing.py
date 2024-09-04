@@ -111,6 +111,7 @@ def test_parent_frame_namespace(mocker):
     @dataclass
     class MockedFrame:
         f_back = None
+        f_locals = {}
 
     mocker.patch('sys._getframe', return_value=MockedFrame())
     assert parent_frame_namespace() is None

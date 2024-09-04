@@ -44,6 +44,7 @@ from pydantic import (
     root_validator,
     validator,
 )
+from pydantic._internal._model_construction import ModelMetaclass
 from pydantic.fields import Field, computed_field
 from pydantic.functional_serializers import (
     field_serializer,
@@ -496,17 +497,24 @@ def test_recursive_list_error():
 
 def test_list_unions():
     class Model(BaseModel):
-        v: List[Union[int, str]] = ...
+        v: List[Union[int, str]]
 
     assert Model(v=[123, '456', 'foobar']).v == [123, '456', 'foobar']
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 2, None])
 
-    assert exc_info.value.errors(include_url=False) == [
+    # the reason that we need to do an unordered list comparison here is that previous tests use Union[str, int]
+    # and Python's cache makes it such that the above Model has `v` associated with a List[Union[str, int]] instead
+    # of the expected List[Union[int, str]]
+    # for more info, see  https://github.com/python/cpython/issues/103749 and
+    # https://github.com/pydantic/pydantic/pull/10244#issuecomment-2312796647
+    errors = exc_info.value.errors(include_url=False)
+    expected_errors = [
         {'input': None, 'loc': ('v', 2, 'int'), 'msg': 'Input should be a valid integer', 'type': 'int_type'},
         {'input': None, 'loc': ('v', 2, 'str'), 'msg': 'Input should be a valid string', 'type': 'string_type'},
     ]
+    assert sorted(errors, key=str) == sorted(expected_errors, key=str)
 
 
 def test_recursive_lists():
@@ -2753,3 +2761,13 @@ def test_eq_with_cached_property():
     obj1.cached
     # Ensure the objects still compare equals after caching a property
     assert obj1 == obj2
+
+
+def test_model_metaclass_on_other_class() -> None:
+    """Test that `ModelMetaclass` can be used as a metaclass on an unrelated class.
+
+    This is done by some libraries to offer compatibility between Pydantic versions.
+    """
+
+    class OtherClass(metaclass=ModelMetaclass):
+        pass

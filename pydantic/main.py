@@ -208,7 +208,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
-        self.__pydantic_validator__.validate_python(data, self_instance=self)
+        validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+        if self is not validated_self:
+            warnings.warn(
+                'A custom validator is returning a value other than `self`.\n'
+                "Returning anything other than `self` from a top level model validator isn't supported when validating via `__init__`.\n"
+                'See the `model_validator` docs (https://docs.pydantic.dev/latest/concepts/validators/#model-validators) for more details.',
+                category=None,
+            )
 
     # The following line sets a flag that we use to determine when `__init__` gets overridden by the user
     __init__.__pydantic_base_init__ = True  # pyright: ignore[reportFunctionMemberAccess]
@@ -247,7 +254,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             an error if extra values are passed, but they will be ignored.
 
         Args:
-            _fields_set: The set of field names accepted for the Model instance.
+            _fields_set: A set of field names that were originally explicitly set during instantiation. If provided,
+                this is directly used for the [`model_fields_set`][pydantic.BaseModel.model_fields_set] attribute.
+                Otherwise, the field names from the `values` argument will be used.
             values: Trusted or pre-validated data dictionary.
 
         Returns:
@@ -533,7 +542,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 types_namespace: dict[str, Any] | None = _types_namespace.copy()
             else:
                 if _parent_namespace_depth > 0:
-                    frame_parent_ns = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth) or {}
+                    frame_parent_ns = (
+                        _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth, force=True) or {}
+                    )
                     cls_parent_ns = (
                         _model_construction.unpack_lenient_weakvaluedict(cls.__pydantic_parent_namespace__) or {}
                     )
@@ -544,7 +555,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                         cls.__pydantic_parent_namespace__
                     )
 
-                types_namespace = _typing_extra.get_cls_types_namespace(cls, types_namespace)
+                types_namespace = _typing_extra.merge_cls_and_parent_ns(cls, types_namespace)
 
             # manually override defer_build so complete_model_class doesn't skip building the model again
             config = {**cls.model_config, 'defer_build': False}
@@ -1500,7 +1511,7 @@ def create_model(  # noqa: C901
             if `None`, the value is taken from `sys._getframe(1)`
         __validators__: A dictionary of methods that validate fields. The keys are the names of the validation methods to
             be added to the model, and the values are the validation methods themselves. You can read more about functional
-            validators [here](https://docs.pydantic.dev/2.8/concepts/validators/#field-validators).
+            validators [here](https://docs.pydantic.dev/2.9/concepts/validators/#field-validators).
         __cls_kwargs__: A dictionary of keyword arguments for class creation, such as `metaclass`.
         __slots__: Deprecated. Should not be passed to `create_model`.
         **field_definitions: Attributes of the new model. They should be passed in the format:

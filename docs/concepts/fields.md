@@ -564,7 +564,7 @@ print(Model.model_validate({'pet': {'pet_type': 'cat', 'age': 12}}))  # (1)!
 #> pet=Cat(pet_type='cat', age=12)
 ```
 
-1. See more about [Helper Functions] in the [Models] page.
+1. See more about [Validating data] in the [Models] page.
 
 The following example shows how to use the `discriminator` keyword argument with a `Discriminator` instance:
 
@@ -863,7 +863,7 @@ class Box(BaseModel):
 
 [JSON Schema Draft 2020-12]: https://json-schema.org/understanding-json-schema/reference/numeric.html#numeric-types
 [Discriminated Unions]: ../concepts/unions.md#discriminated-unions
-[Helper Functions]: models.md#helper-functions
+[Validating data]: models.md#validating-data
 [Models]: models.md
 [init-only field]: https://docs.python.org/3/library/dataclasses.html#init-only-variables
 [frozen dataclass documentation]: https://docs.python.org/3/library/dataclasses.html#frozen-instances

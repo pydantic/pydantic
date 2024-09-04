@@ -336,7 +336,8 @@ class TypesNamespaceStack:
 
     @contextmanager
     def push(self, for_type: type[Any]):
-        types_namespace = {**_typing_extra.get_cls_types_namespace(for_type), **(self.tail or {})}
+        types_namespace = _typing_extra.get_module_ns_of(for_type).copy()
+        types_namespace.update(self.tail or {})
         self._types_namespace_stack.append(types_namespace)
         try:
             yield

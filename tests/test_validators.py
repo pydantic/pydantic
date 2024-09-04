@@ -1542,8 +1542,6 @@ def test_root_validator_returns_none_exception():
 
 
 def test_model_validator_returns_ignore():
-    # This is weird, and I don't understand entirely why it's happening, but it kind of makes sense
-
     class Model(BaseModel):
         a: int = 1
 
@@ -1551,7 +1549,8 @@ def test_model_validator_returns_ignore():
         def model_validator_return_none(self) -> None:
             return None
 
-    m = Model(a=2)
+    with pytest.warns(UserWarning, match='A custom validator is returning a value other than `self`'):
+        m = Model(a=2)
     assert m.model_dump() == {'a': 2}
 
 
@@ -2911,3 +2910,17 @@ def test_field_validator_input_type_invalid_mode() -> None:
             @field_validator('a', mode='after', json_schema_input_type=Union[int, str])  # pyright: ignore
             @classmethod
             def validate_a(cls, value: Any) -> Any: ...
+
+
+def test_non_self_return_val_warns() -> None:
+    class Child(BaseModel):
+        name: str
+
+        @model_validator(mode='after')  # type: ignore
+        def validate_model(self) -> 'Child':
+            return Child.model_construct(name='different')
+
+    with pytest.warns(UserWarning, match='A custom validator is returning a value other than `self`'):
+        c = Child(name='name')
+        # confirmation of behavior: non-self return value is ignored
+        assert c.name == 'name'

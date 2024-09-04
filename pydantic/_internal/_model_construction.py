@@ -31,9 +31,9 @@ from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._signature import generate_pydantic_signature
 from ._typing_extra import (
     eval_type_backport,
-    get_cls_types_namespace,
     is_annotated,
     is_classvar,
+    merge_cls_and_parent_ns,
     parent_frame_namespace,
 )
 from ._utils import ClassAttribute, SafeGetItemProxy
@@ -216,7 +216,7 @@ class ModelMetaclass(ABCMeta):
             if isinstance(parent_namespace, dict):
                 parent_namespace = unpack_lenient_weakvaluedict(parent_namespace)
 
-            types_namespace = get_cls_types_namespace(cls, parent_namespace)
+            types_namespace = merge_cls_and_parent_ns(cls, parent_namespace)
             set_model_fields(cls, bases, config_wrapper, types_namespace)
 
             if config_wrapper.frozen and '__hash__' not in namespace:
@@ -245,7 +245,10 @@ class ModelMetaclass(ABCMeta):
         else:
             # These are instance variables, but have been assigned to `NoInitField` to trick the type checker.
             for instance_slot in '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__':
-                del namespace[instance_slot]
+                namespace.pop(
+                    instance_slot,
+                    None,  # In case the metaclass is used with a class other than `BaseModel`.
+                )
             namespace.get('__annotations__', {}).clear()
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
