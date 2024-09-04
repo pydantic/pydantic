@@ -2077,6 +2077,11 @@ class GenerateSchema:
         if res is not None:
             source_type, annotations = res
 
+        # TODO: it seems like a dangerous idea to create a list of json schema modification functions,
+        #  pass that to a schema generation function, modify that in place, and then attach
+        # that to the schema after the fact. It also seems odd to me that we're bubbling up all of the annotations
+        # to the top level, effectively?
+
         pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
 
         def inner_handler(obj: Any) -> CoreSchema:
@@ -2457,6 +2462,7 @@ def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSch
     return js_modify_function
 
 
+# TODO: I'd like to remove the use of this function internally, if possible.
 def get_json_schema_update_func(
     json_schema_update: JsonSchemaValue, json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
 ) -> GetJsonSchemaFunction:
