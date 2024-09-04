@@ -191,6 +191,7 @@ def complete_dataclass(
 
         cls.__setattr__ = validated_setattr.__get__(None, cls)  # type: ignore
 
+    cls.__pydantic_complete__ = True
     return True
 
 
