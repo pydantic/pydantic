@@ -169,6 +169,7 @@ jobs:
       with:
         name: coverage-${{ matrix.os }}-${{ matrix.python-version }}
         path: coverage
+        include-hidden-files: true
 
   test-fastapi:
     # If some tests start failing due to out-of-date schemas/validation errors/etc.,
@@ -285,6 +286,7 @@ jobs:
       with:
         name: coverage-${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
         path: coverage
+        include-hidden-files: true
 
   coverage-combine:
     needs: [test, test-mypy]
