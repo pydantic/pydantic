@@ -70,14 +70,18 @@ class SchemaValidator:
     `CombinedValidator` which may in turn own more `CombinedValidator`s which make up the full schema validator.
     """
 
-    def __new__(cls, schema: CoreSchema, config: CoreConfig | None = None) -> Self:
-        """
-        Create a new SchemaValidator.
+    # note: pyo3 currently supports __new__, but not __init__, though we include __init__ stubs
+    # and docstrings here (and in the following classes) for documentation purposes
+
+    def __init__(self, schema: CoreSchema, config: CoreConfig | None = None) -> None:
+        """Initializes the `SchemaValidator`.
 
         Arguments:
-            schema: The [`CoreSchema`][pydantic_core.core_schema.CoreSchema] to use for validation.
+            schema: The `CoreSchema` to use for validation.
             config: Optionally a [`CoreConfig`][pydantic_core.core_schema.CoreConfig] to configure validation.
         """
+
+    def __new__(cls, schema: CoreSchema, config: CoreConfig | None = None) -> Self: ...
     @property
     def title(self) -> str:
         """
@@ -242,14 +246,15 @@ class SchemaSerializer:
     `CombinedSerializer` which may in turn own more `CombinedSerializer`s which make up the full schema serializer.
     """
 
-    def __new__(cls, schema: CoreSchema, config: CoreConfig | None = None) -> Self:
-        """
-        Create a new SchemaSerializer.
+    def __init__(self, schema: CoreSchema, config: CoreConfig | None = None) -> None:
+        """Initializes the `SchemaSerializer`.
 
         Arguments:
-            schema: The [`CoreSchema`][pydantic_core.core_schema.CoreSchema] to use for serialization.
+            schema: The `CoreSchema` to use for serialization.
             config: Optionally a [`CoreConfig`][pydantic_core.core_schema.CoreConfig] to to configure serialization.
         """
+
+    def __new__(cls, schema: CoreSchema, config: CoreConfig | None = None) -> Self: ...
     def to_python(
         self,
         value: Any,
@@ -471,9 +476,8 @@ class Url(SupportsAllComparisons):
     by Mozilla.
     """
 
-    def __new__(cls, url: str) -> Self:
-        """
-        Create a new `Url` instance.
+    def __init__(self, url: str) -> None:
+        """Initializes the `Url`.
 
         Args:
             url: String representation of a URL.
@@ -484,6 +488,8 @@ class Url(SupportsAllComparisons):
         Raises:
             ValidationError: If the URL is invalid.
         """
+
+    def __new__(cls, url: str) -> Self: ...
     @property
     def scheme(self) -> str:
         """
@@ -607,9 +613,8 @@ class MultiHostUrl(SupportsAllComparisons):
     by Mozilla.
     """
 
-    def __new__(cls, url: str) -> Self:
-        """
-        Create a new `MultiHostUrl` instance.
+    def __init__(self, url: str) -> None:
+        """Initializes the `MultiHostUrl`.
 
         Args:
             url: String representation of a URL.
@@ -620,6 +625,8 @@ class MultiHostUrl(SupportsAllComparisons):
         Raises:
             ValidationError: If the URL is invalid.
         """
+
+    def __new__(cls, url: str) -> Self: ...
     @property
     def scheme(self) -> str:
         """
@@ -822,54 +829,290 @@ class ValidationError(ValueError):
 
 @final
 class PydanticCustomError(ValueError):
+    """A custom exception providing flexible error handling for Pydantic validators.
+
+    You can raise this error in custom validators when you'd like flexibility in regards to the error type, message, and context.
+
+    Example:
+        ```py
+        from pydantic_core import PydanticCustomError
+
+        def custom_validator(v) -> None:
+            if v <= 10:
+                raise PydanticCustomError('custom_value_error', 'Value must be greater than {value}', {'value': 10, 'extra_context': 'extra_data'})
+            return v
+        ```
+    """
+
+    def __init__(
+        self, error_type: LiteralString, message_template: LiteralString, context: dict[str, Any] | None = None
+    ) -> None:
+        """Initializes the `PydanticCustomError`.
+
+        Arguments:
+            error_type: The error type.
+            message_template: The message template.
+            context: The data to inject into the message template.
+        """
+
     def __new__(
         cls, error_type: LiteralString, message_template: LiteralString, context: dict[str, Any] | None = None
     ) -> Self: ...
     @property
-    def context(self) -> dict[str, Any] | None: ...
+    def context(self) -> dict[str, Any] | None:
+        """Values which are required to render the error message, and could hence be useful in passing error data forward."""
+
     @property
-    def type(self) -> str: ...
+    def type(self) -> str:
+        """The error type associated with the error. For consistency with Pydantic, this is typically a snake_case string."""
+
     @property
-    def message_template(self) -> str: ...
-    def message(self) -> str: ...
+    def message_template(self) -> str:
+        """The message template associated with the error. This is a string that can be formatted with context variables in `{curly_braces}`."""
+
+    def message(self) -> str:
+        """The formatted message associated with the error. This presents as the message template with context variables appropriately injected."""
 
 @final
 class PydanticKnownError(ValueError):
+    """A helper class for raising exceptions that mimic Pydantic's built-in exceptions, with more flexibility in regards to context.
+
+    Unlike [`PydanticCustomError`][pydantic_core.PydanticCustomError], the `error_type` argument must be a known `ErrorType`.
+
+    Example:
+        ```py
+        from pydantic_core import PydanticKnownError
+
+        def custom_validator(v) -> None:
+            if v <= 10:
+                raise PydanticKnownError(error_type='greater_than', context={'gt': 10})
+            return v
+        ```
+    """
+
+    def __init__(self, error_type: ErrorType, context: dict[str, Any] | None = None) -> None:
+        """Initializes the `PydanticKnownError`.
+
+        Arguments:
+            error_type: The error type.
+            context: The data to inject into the message template.
+        """
+
     def __new__(cls, error_type: ErrorType, context: dict[str, Any] | None = None) -> Self: ...
     @property
-    def context(self) -> dict[str, Any] | None: ...
+    def context(self) -> dict[str, Any] | None:
+        """Values which are required to render the error message, and could hence be useful in passing error data forward."""
+
     @property
-    def type(self) -> ErrorType: ...
+    def type(self) -> ErrorType:
+        """The type of the error."""
+
     @property
-    def message_template(self) -> str: ...
-    def message(self) -> str: ...
+    def message_template(self) -> str:
+        """The message template associated with the provided error type. This is a string that can be formatted with context variables in `{curly_braces}`."""
+
+    def message(self) -> str:
+        """The formatted message associated with the error. This presents as the message template with context variables appropriately injected."""
 
 @final
 class PydanticOmit(Exception):
+    """An exception to signal that a field should be omitted from a generated result.
+
+    This could span from omitting a field from a JSON Schema to omitting a field from a serialized result.
+    Upcoming: more robust support for using PydanticOmit in custom serializers is still in development.
+    Right now, this is primarily used in the JSON Schema generation process.
+
+    Example:
+        ```py
+        from typing import Callable
+
+        from pydantic_core import PydanticOmit
+
+        from pydantic import BaseModel
+        from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
+
+
+        class MyGenerateJsonSchema(GenerateJsonSchema):
+            def handle_invalid_for_json_schema(self, schema, error_info) -> JsonSchemaValue:
+                raise PydanticOmit
+
+
+        class Predicate(BaseModel):
+            name: str = 'no-op'
+            func: Callable = lambda x: x
+
+
+        instance_example = Predicate()
+
+        validation_schema = instance_example.model_json_schema(schema_generator=MyGenerateJsonSchema, mode='validation')
+        print(validation_schema)
+        '''
+        {'properties': {'name': {'default': 'no-op', 'title': 'Name', 'type': 'string'}}, 'title': 'Predicate', 'type': 'object'}
+        '''
+        ```
+
+    For a more in depth example / explanation, see the [customizing JSON schema](../concepts/json_schema.md#customizing-the-json-schema-generation-process) docs.
+    """
+
     def __new__(cls) -> Self: ...
 
 @final
 class PydanticUseDefault(Exception):
+    """An exception to signal that standard validation either failed or should be skipped, and the default value should be used instead.
+
+    This warning can be raised in custom valiation functions to redirect the flow of validation.
+
+    Example:
+        ```py
+        from pydantic_core import PydanticUseDefault
+        from datetime import datetime
+        from pydantic import BaseModel, field_validator
+
+
+        class Event(BaseModel):
+            name: str = 'meeting'
+            time: datetime
+
+            @field_validator('name', mode='plain')
+            def name_must_be_present(cls, v) -> str:
+                if not v or not isinstance(v, str):
+                    raise PydanticUseDefault()
+                return v
+
+
+        event1 = Event(name='party', time=datetime(2024, 1, 1, 12, 0, 0))
+        print(repr(event1))
+        # > Event(name='party', time=datetime.datetime(2024, 1, 1, 12, 0))
+        event2 = Event(time=datetime(2024, 1, 1, 12, 0, 0))
+        print(repr(event2))
+        # > Event(name='meeting', time=datetime.datetime(2024, 1, 1, 12, 0))
+        ```
+
+    For an additional example, seethe [validating partial json data](../concepts/json.md#partial-json-parsing) section of the Pydantic documentation.
+    """
+
     def __new__(cls) -> Self: ...
 
 @final
 class PydanticSerializationError(ValueError):
+    """An error raised when an issue occurs during serialization.
+
+    In custom serializers, this error can be used to indicate that serialization has failed.
+    """
+
+    def __init__(self, message: str) -> None:
+        """Initializes the `PydanticSerializationError`.
+
+        Arguments:
+            message: The message associated with the error.
+        """
+
     def __new__(cls, message: str) -> Self: ...
 
 @final
 class PydanticSerializationUnexpectedValue(ValueError):
+    """An error raised when an unexpected value is encountered during serialization.
+
+    This error is often caught and coerced into a warning, as `pydantic-core` generally makes a best attempt
+    at serializing values, in contrast with validation where errors are eagerly raised.
+
+    Example:
+        ```py
+        from pydantic import BaseModel, field_serializer
+        from pydantic_core import PydanticSerializationUnexpectedValue
+
+        class BasicPoint(BaseModel):
+            x: int
+            y: int
+
+            @field_serializer('*')
+            def serialize(self, v):
+                if not isinstance(v, int):
+                    raise PydanticSerializationUnexpectedValue(f'Expected type `int`, got {type(v)} with value {v}')
+                return v
+
+        point = BasicPoint(x=1, y=2)
+        # some sort of mutation
+        point.x = 'a'
+
+        print(point.model_dump())
+        '''
+        UserWarning: Pydantic serializer warnings:
+        PydanticSerializationUnexpectedValue(Expected type `int`, got <class 'str'> with value a)
+        return self.__pydantic_serializer__.to_python(
+        {'x': 'a', 'y': 2}
+        '''
+        ```
+
+    This is often used internally in `pydantic-core` when unexpected types are encountered during serialization,
+    but it can also be used by users in custom serializers, as seen above.
+    """
+
+    def __init__(self, message: str) -> None:
+        """Initializes the `PydanticSerializationUnexpectedValue`.
+
+        Arguments:
+            message: The message associated with the unexpected value.
+        """
+
     def __new__(cls, message: str | None = None) -> Self: ...
 
 @final
 class ArgsKwargs:
+    """A construct used to store arguments and keyword arguments for a function call.
+
+    This data structure is generally used to store information for core schemas associated with functions (like in an arguments schema).
+    This data structure is also currently used for some validation against dataclasses.
+
+    Example:
+        ```py
+        from pydantic.dataclasses import dataclass
+        from pydantic import model_validator
+
+
+        @dataclass
+        class Model:
+            a: int
+            b: int
+
+            @model_validator(mode="before")
+            @classmethod
+            def no_op_validator(cls, values):
+                print(values)
+                return values
+
+        Model(1, b=2)
+        #> ArgsKwargs((1,), {"b": 2})
+
+        Model(1, 2)
+        #> ArgsKwargs((1, 2), {})
+
+        Model(a=1, b=2)
+        #> ArgsKwargs((), {"a": 1, "b": 2})
+        ```
+    """
+
+    def __init__(self, args: tuple[Any, ...], kwargs: dict[str, Any] | None = None) -> None:
+        """Initializes the `ArgsKwargs`.
+
+        Arguments:
+            args: The arguments (inherently ordered) for a function call.
+            kwargs: The keyword arguments for a function call
+        """
+
     def __new__(cls, args: tuple[Any, ...], kwargs: dict[str, Any] | None = None) -> Self: ...
     @property
-    def args(self) -> tuple[Any, ...]: ...
+    def args(self) -> tuple[Any, ...]:
+        """The arguments (inherently ordered) for a function call."""
+
     @property
-    def kwargs(self) -> dict[str, Any] | None: ...
+    def kwargs(self) -> dict[str, Any] | None:
+        """The keyword arguments for a function call."""
 
 @final
 class PydanticUndefinedType:
+    """A type used as a sentinel for undefined values."""
+
     def __copy__(self) -> Self: ...
     def __deepcopy__(self, memo: Any) -> Self: ...
 
@@ -884,14 +1127,37 @@ def list_all_errors() -> list[ErrorTypeInfo]:
     """
 @final
 class TzInfo(datetime.tzinfo):
-    def tzname(self, _dt: datetime.datetime | None) -> str | None: ...
-    def utcoffset(self, _dt: datetime.datetime | None) -> datetime.timedelta: ...
-    def dst(self, _dt: datetime.datetime | None) -> datetime.timedelta: ...
-    def fromutc(self, dt: datetime.datetime) -> datetime.datetime: ...
+    """An `pydantic-core` implementation of the abstract [`datetime.tzinfo`] class."""
+
+    # Docstrings for attributes sourced from the abstract base class, [`datetime.tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo).
+
+    def tzname(self, dt: datetime.datetime | None) -> str | None:
+        """Return the time zone name corresponding to the [`datetime`][datetime.datetime] object _dt_, as a string.
+
+        For more info, see [`tzinfo.tzname`][datetime.tzinfo.tzname].
+        """
+
+    def utcoffset(self, dt: datetime.datetime | None) -> datetime.timedelta | None:
+        """Return offset of local time from UTC, as a [`timedelta`][datetime.timedelta] object that is positive east of UTC. If local time is west of UTC, this should be negative.
+
+        More info can be found at [`tzinfo.utcoffset`][datetime.tzinfo.utcoffset].
+        """
+
+    def dst(self, dt: datetime.datetime | None) -> datetime.timedelta | None:
+        """Return the daylight saving time (DST) adjustment, as a [`timedelta`][datetime.timedelta] object or `None` if DST information isn’t known.
+
+        More info can be found at[`tzinfo.dst`][datetime.tzinfo.dst]."""
+
+    def fromutc(self, dt: datetime.datetime) -> datetime.datetime:
+        """Adjust the date and time data associated datetime object _dt_, returning an equivalent datetime in self’s local time.
+
+        More info can be found at [`tzinfo.fromutc`][datetime.tzinfo.fromutc]."""
+
     def __deepcopy__(self, _memo: dict[Any, Any]) -> TzInfo: ...
 
 def validate_core_schema(schema: CoreSchema, *, strict: bool | None = None) -> CoreSchema:
-    """Validate a CoreSchema
+    """Validate a core schema.
+
     This currently uses lax mode for validation (i.e. will coerce strings to dates and such)
     but may use strict mode in the future.
     We may also remove this function altogether, do not rely on it being present if you are

@@ -516,15 +516,18 @@ impl TzInfo {
         Self::try_from(seconds.trunc() as i32)
     }
 
-    fn utcoffset<'py>(&self, py: Python<'py>, _dt: &Bound<'_, PyAny>) -> PyResult<Bound<'py, PyDelta>> {
+    #[allow(unused_variables)]
+    fn utcoffset<'py>(&self, py: Python<'py>, dt: &Bound<'_, PyAny>) -> PyResult<Bound<'py, PyDelta>> {
         PyDelta::new_bound(py, 0, self.seconds, 0, true)
     }
 
-    fn tzname(&self, _dt: &Bound<'_, PyAny>) -> String {
+    #[allow(unused_variables)]
+    fn tzname(&self, dt: &Bound<'_, PyAny>) -> String {
         self.__str__()
     }
 
-    fn dst(&self, _dt: &Bound<'_, PyAny>) -> Option<&PyDelta> {
+    #[allow(unused_variables)]
+    fn dst(&self, dt: &Bound<'_, PyAny>) -> Option<&PyDelta> {
         None
     }
 
