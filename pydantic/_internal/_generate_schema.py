@@ -380,24 +380,6 @@ class GenerateSchema:
         self.model_type_stack = _ModelTypeStack()
         self.defs = _Definitions()
 
-    @classmethod
-    def __from_parent(
-        cls,
-        config_wrapper_stack: ConfigWrapperStack,
-        types_namespace_stack: TypesNamespaceStack,
-        model_type_stack: _ModelTypeStack,
-        typevars_map: dict[Any, Any] | None,
-        defs: _Definitions,
-    ) -> GenerateSchema:
-        obj = cls.__new__(cls)
-        obj._config_wrapper_stack = config_wrapper_stack
-        obj._types_namespace_stack = types_namespace_stack
-        obj.model_type_stack = model_type_stack
-        obj._typevars_map = typevars_map
-        obj.field_name_stack = _FieldNameStack()
-        obj.defs = defs
-        return obj
-
     @property
     def _config_wrapper(self) -> ConfigWrapper:
         return self._config_wrapper_stack.tail
@@ -405,17 +387,6 @@ class GenerateSchema:
     @property
     def _types_namespace(self) -> dict[str, Any] | None:
         return self._types_namespace_stack.tail
-
-    @property
-    def _current_generate_schema(self) -> GenerateSchema:
-        cls = GenerateSchema
-        return cls.__from_parent(
-            self._config_wrapper_stack,
-            self._types_namespace_stack,
-            self.model_type_stack,
-            self._typevars_map,
-            self.defs,
-        )
 
     @property
     def _arbitrary_types(self) -> bool:
@@ -685,8 +656,6 @@ class GenerateSchema:
             model_validators = decorators.model_validators.values()
 
             with self._config_wrapper_stack.push(config_wrapper), self._types_namespace_stack.push(cls):
-                self = self._current_generate_schema
-
                 extras_schema = None
                 if core_config.get('extra_fields_behavior') == 'allow':
                     assert cls.__mro__[0] is cls
@@ -1467,8 +1436,6 @@ class GenerateSchema:
             with self._config_wrapper_stack.push(config), self._types_namespace_stack.push(typed_dict_cls):
                 core_config = self._config_wrapper.core_config(typed_dict_cls)
 
-                self = self._current_generate_schema
-
                 required_keys: frozenset[str] = typed_dict_cls.__required_keys__
 
                 fields: dict[str, core_schema.TypedDictField] = {}
@@ -1781,8 +1748,6 @@ class GenerateSchema:
                         dataclass_bases_stack.enter_context(self._config_wrapper_stack.push(config))
 
                 core_config = self._config_wrapper.core_config(dataclass)
-
-                self = self._current_generate_schema
 
                 from ..dataclasses import is_pydantic_dataclass
 
