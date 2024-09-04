@@ -2169,6 +2169,8 @@ class GenerateSchema:
                 json_schema_update['description'] = metadata.description
             if metadata.examples:
                 json_schema_update['examples'] = to_jsonable_python(metadata.examples)
+            if metadata.deprecated and (bool(metadata.deprecated) or metadata.deprecated == ''):
+                json_schema_update['deprecated'] = True
 
             json_schema_extra = metadata.json_schema_extra
             if json_schema_update or json_schema_extra:
@@ -2462,7 +2464,6 @@ def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSch
     return js_modify_function
 
 
-# TODO: I'd like to remove the use of this function internally, if possible.
 def get_json_schema_update_func(
     json_schema_update: JsonSchemaValue, json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
 ) -> GetJsonSchemaFunction:
