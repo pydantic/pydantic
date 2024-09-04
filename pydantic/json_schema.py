@@ -1877,8 +1877,8 @@ class GenerateJsonSchema:
 
         JSON has no standard way to represent complex numbers. Complex number is not a numeric
         type. Here we represent complex number as strings following the rule defined by Python.
-        For instance, '1+2j' is an accepted complex string. Details can be found at
-        https://docs.python.org/3/library/functions.html#complex
+        For instance, '1+2j' is an accepted complex string. Details can be found in
+        [Python's `complex` documentation](https://docs.python.org/3/library/functions.html#complex).
 
         Args:
             schema: The core schema.
