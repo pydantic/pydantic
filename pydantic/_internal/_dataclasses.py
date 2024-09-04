@@ -115,7 +115,7 @@ def complete_dataclass(
         )
 
     if types_namespace is None:
-        types_namespace = _typing_extra.get_cls_types_namespace(cls)
+        types_namespace = _typing_extra.merge_cls_and_parent_ns(cls)
 
     set_dataclass_fields(cls, types_namespace, config_wrapper=config_wrapper)
 

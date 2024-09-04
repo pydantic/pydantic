@@ -209,7 +209,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
         validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
-        if self != validated_self:
+        if self is not validated_self:
             warnings.warn(
                 'A custom validator is returning a value other than `self`.\n'
                 "Returning anything other than `self` from a top level model validator isn't supported when validating via `__init__`.\n"
@@ -555,7 +555,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                         cls.__pydantic_parent_namespace__
                     )
 
-                types_namespace = _typing_extra.get_cls_types_namespace(cls, types_namespace)
+                types_namespace = _typing_extra.merge_cls_and_parent_ns(cls, types_namespace)
 
             # manually override defer_build so complete_model_class doesn't skip building the model again
             config = {**cls.model_config, 'defer_build': False}
