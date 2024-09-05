@@ -1745,15 +1745,6 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </li>
         
           <li class="md-nav__item">
-  <a href="#pydantic.config.ConfigDict.schema_generator" class="md-nav__link">
-    <span class="md-ellipsis">
-      schema_generator
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#pydantic.config.ConfigDict.json_schema_serialization_defaults_required" class="md-nav__link">
     <span class="md-ellipsis">
       json_schema_serialization_defaults_required
@@ -3538,15 +3529,6 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </li>
         
           <li class="md-nav__item">
-  <a href="#pydantic.config.ConfigDict.schema_generator" class="md-nav__link">
-    <span class="md-ellipsis">
-      schema_generator
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#pydantic.config.ConfigDict.json_schema_serialization_defaults_required" class="md-nav__link">
     <span class="md-ellipsis">
       json_schema_serialization_defaults_required
@@ -5257,37 +5239,6 @@ be removed or changed in the future in a minor release.</p>
 
 
 
-<h3 id="pydantic.config.ConfigDict.schema_generator" class="doc doc-heading">
-            <span class="doc doc-object-name doc-attribute-name">schema_generator</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
-  </span>
-
-<a href="#pydantic.config.ConfigDict.schema_generator" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">schema_generator</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-type">type</a></span><span class="p">[</span><span class="n"><span title="pydantic._internal._generate_schema.GenerateSchema">GenerateSchema</span></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>A custom core schema generator class to use when generating JSON schemas.
-Useful if you want to change the way types are validated across an entire model/schema. Defaults to <code>None</code>.</p>
-<p>The <code>GenerateSchema</code> interface is subject to change, currently only the <code>string_schema</code> method is public.</p>
-<p>See <a href="https://github.com/pydantic/pydantic/pull/6737">#6737</a> for details.</p>
-    </div>
-
-</div>
-
-
-
-
-
-
-<div class="doc doc-object doc-attribute">
-
-
-
 <h3 id="pydantic.config.ConfigDict.json_schema_serialization_defaults_required" class="doc doc-heading">
             <span class="doc doc-object-name doc-attribute-name">json_schema_serialization_defaults_required</span>
 
@@ -5727,7 +5678,19 @@ especially with <code>TypedDict</code>.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/config.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1019</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1007</span>
+<span class="normal">1008</span>
+<span class="normal">1009</span>
+<span class="normal">1010</span>
+<span class="normal">1011</span>
+<span class="normal">1012</span>
+<span class="normal">1013</span>
+<span class="normal">1014</span>
+<span class="normal">1015</span>
+<span class="normal">1016</span>
+<span class="normal">1017</span>
+<span class="normal">1018</span>
+<span class="normal">1019</span>
 <span class="normal">1020</span>
 <span class="normal">1021</span>
 <span class="normal">1022</span>
@@ -5755,19 +5718,7 @@ especially with <code>TypedDict</code>.</p>
 <span class="normal">1044</span>
 <span class="normal">1045</span>
 <span class="normal">1046</span>
-<span class="normal">1047</span>
-<span class="normal">1048</span>
-<span class="normal">1049</span>
-<span class="normal">1050</span>
-<span class="normal">1051</span>
-<span class="normal">1052</span>
-<span class="normal">1053</span>
-<span class="normal">1054</span>
-<span class="normal">1055</span>
-<span class="normal">1056</span>
-<span class="normal">1057</span>
-<span class="normal">1058</span>
-<span class="normal">1059</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
+<span class="normal">1047</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.9/concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict</span>
 
 <span class="sd">    A convenience decorator to set a [Pydantic configuration](config.md) on a `TypedDict` or a `dataclass` from the standard library.</span>
