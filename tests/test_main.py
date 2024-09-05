@@ -47,6 +47,7 @@ from pydantic import (
     constr,
     field_validator,
 )
+from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._mock_val_ser import MockCoreSchema
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 
@@ -3312,3 +3313,9 @@ def test_model_construct_with_model_post_init_and_model_copy() -> None:
 
     assert m == copy
     assert id(m) != id(copy)
+
+
+def test_subclassing_gen_schema_warns() -> None:
+    with pytest.warns(UserWarning, match='Subclassing `GenerateSchema` is not supported.'):
+
+        class MyGenSchema(GenerateSchema): ...

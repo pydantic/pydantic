@@ -383,7 +383,7 @@ class GenerateSchema:
     def __init_subclass__(cls, **kwargs) -> None:
         super().__init_subclass__(**kwargs)
         warnings.warn(
-            f'Subclassing {cls.__name__} is not supported. The API is highly subject to change in minor versions.',
+            'Subclassing `GenerateSchema` is not supported. The API is highly subject to change in minor versions.',
             UserWarning,
         )
 
