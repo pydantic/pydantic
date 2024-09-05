@@ -381,11 +381,10 @@ class GenerateSchema:
         self.defs = _Definitions()
 
     def __init_subclass__(cls) -> None:
-        super().__init_subclass__(**kwargs)
+        super().__init_subclass__()
         warnings.warn(
             'Subclassing `GenerateSchema` is not supported. The API is highly subject to change in minor versions.',
             UserWarning,
-            stack_level=2,
         )
 
     @property
