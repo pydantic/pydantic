@@ -5,7 +5,7 @@
 groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "testing-extra"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:45f8c82d3cadfc9650934637c003cd47f88b5cf9487a09801e06c847690abc01"
+content_hash = "sha256:a35cfb3d1aa9400acb86d7b2a4727c0d4dd0998e3a00cd7cccd5d26893211f31"
 
 [[metadata.targets]]
 requires_python = ">=3.8"
