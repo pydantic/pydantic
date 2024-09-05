@@ -557,7 +557,6 @@ class GenerateSchema:
             ),
             # use str serialization to guarantee round trip behavior
             serialization=core_schema.to_string_ser_schema(when_used='always'),
-            # TODO: figure out if this is actually how to represent fractions in JSON schema
             metadata=build_metadata_dict(
                 js_functions=[lambda _1, _2: {'type': 'string', 'format': 'fraction'}],
             ),
