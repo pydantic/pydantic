@@ -385,6 +385,7 @@ class GenerateSchema:
         warnings.warn(
             'Subclassing `GenerateSchema` is not supported. The API is highly subject to change in minor versions.',
             UserWarning,
+            stacklevel=2,
         )
 
     @property
