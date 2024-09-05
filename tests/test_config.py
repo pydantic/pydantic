@@ -738,6 +738,35 @@ def test_config_model_defer_build(
 
 
 @pytest.mark.parametrize('defer_build_mode', [None, tuple(), ('model',), ('type_adapter',), ('model', 'type_adapter')])
+def test_config_dataclass_defer_build(
+    defer_build_mode: Optional[Tuple[Literal['model', 'type_adapter'], ...]], generate_schema_calls: CallCounter
+):
+    config = ConfigDict(defer_build=True)
+    if defer_build_mode is not None:
+        config['experimental_defer_build_mode'] = defer_build_mode
+
+    @pydantic_dataclass(config=config)
+    class MyDataclass:
+        x: int
+
+    if defer_build_mode is None or 'model' in defer_build_mode:
+        assert isinstance(MyDataclass.__pydantic_validator__, MockValSer)
+        assert isinstance(MyDataclass.__pydantic_serializer__, MockValSer)
+        assert generate_schema_calls.count == 0, 'Should respect experimental_defer_build_mode'
+    else:
+        assert isinstance(MyDataclass.__pydantic_validator__, SchemaValidator)
+        assert isinstance(MyDataclass.__pydantic_serializer__, SchemaSerializer)
+        assert generate_schema_calls.count == 1, 'Should respect experimental_defer_build_mode'
+
+    m = MyDataclass(x=1)
+    assert m.x == 1
+
+    assert isinstance(MyDataclass.__pydantic_validator__, SchemaValidator)
+    assert isinstance(MyDataclass.__pydantic_serializer__, SchemaSerializer)
+    assert generate_schema_calls.count == 1, 'Should not build duplicated core schemas'
+
+
+@pytest.mark.parametrize('defer_build_mode', [None, tuple(), ('model',), ('type_adapter',), ('model', 'type_adapter')])
 def test_config_model_type_adapter_defer_build(
     defer_build_mode: Optional[Tuple[Literal['model', 'type_adapter'], ...]], generate_schema_calls: CallCounter
 ):
@@ -889,7 +918,7 @@ def test_model_config_as_model_field_raises():
     assert exc_info.value.code == 'model-config-invalid-field-name'
 
 
-def test_dataclass_allowes_model_config_as_model_field():
+def test_dataclass_allows_model_config_as_model_field():
     config_title = 'from_config'
     field_title = 'from_field'
 

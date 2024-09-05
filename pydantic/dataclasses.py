@@ -321,9 +321,12 @@ def rebuild_dataclass(
                 types_namespace = {}
 
             types_namespace = _typing_extra.merge_cls_and_parent_ns(cls, types_namespace)
+
+        # manually override defer_build so complete_model_class doesn't skip building the model again
+        config = {**cls.__pydantic_config__, 'defer_build': False}
         return _pydantic_dataclasses.complete_dataclass(
             cls,
-            _config.ConfigWrapper(cls.__pydantic_config__, check=False),
+            _config.ConfigWrapper(config, check=False),
             raise_errors=raise_errors,
             types_namespace=types_namespace,
         )
