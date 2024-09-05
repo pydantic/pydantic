@@ -396,7 +396,11 @@ _getattr_migration = getattr_migration(__name__)
 
 def __getattr__(attr_name: str) -> object:
     if attr_name in _deprecated_dynamic_imports:
-        warn(f'Importing {attr_name} from `pydantic` is deprecated.', DeprecationWarning, stacklevel=2)
+        warn(
+            f'Importing {attr_name} from `pydantic` is deprecated. This feature is either no longer supported, or is not public.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     dynamic_attr = _dynamic_imports.get(attr_name)
     if dynamic_attr is None:
