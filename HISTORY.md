@@ -1,3 +1,17 @@
+## v2.9.0 (2024-09-05)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.9.0)
+
+### What's Changed
+
+#### Fixes
+
+* Add benchmarks for schema generation with custom validators by @AdolfoVillalobos in [#10271](https://github.com/pydantic/pydantic/pull/10271)
+* Support signature for wrap validators without `info` by @sydney-runkle in [#10277](https://github.com/pydantic/pydantic/pull/10277)
+* Ensure coverage data artifact is correctly uploaded by @Viicos in [#10292](https://github.com/pydantic/pydantic/pull/10292)
+* Ensure `__pydantic_complete__` is set when rebuilding dataclasses by @Viicos in [#10291](https://github.com/pydantic/pydantic/pull/10291)
+* Respect `schema_generator` config value in `TypeAdapter` by @sydney-runkle in [#10300](https://github.com/pydantic/pydantic/pull/10300)
+
 ## v2.9.0b2 (2024-08-30)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.9.0b2)
