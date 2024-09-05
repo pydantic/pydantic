@@ -380,6 +380,13 @@ class GenerateSchema:
         self.model_type_stack = _ModelTypeStack()
         self.defs = _Definitions()
 
+    def __init_subclass__(cls, **kwargs) -> None:
+        super().__init_subclass__(**kwargs)
+        warnings.warn(
+            f'Subclassing {cls.__name__} is not supported. The API is highly subject to change in minor versions.',
+            UserWarning,
+        )
+
     @property
     def _config_wrapper(self) -> ConfigWrapper:
         return self._config_wrapper_stack.tail
