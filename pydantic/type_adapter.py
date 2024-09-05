@@ -322,7 +322,9 @@ class TypeAdapter(Generic[T]):
 
     def _defer_build(self) -> bool:
         config = self._config if self._config is not None else self._model_config()
-        return config.get('defer_build') is True if config else False
+        if config:
+            return config.get('defer_build') is True
+        return False
 
     def _model_config(self) -> ConfigDict | None:
         type_: Any = _typing_extra.annotated_type(self._type) or self._type  # Eg FastAPI heavily uses Annotated

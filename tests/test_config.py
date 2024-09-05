@@ -730,7 +730,7 @@ def test_config_model_defer_build(defer_build: bool, generate_schema_calls: Call
 
 @pytest.mark.parametrize('defer_build', [True, False])
 def test_config_model_type_adapter_defer_build(defer_build: bool, generate_schema_calls: CallCounter):
-    config = ConfigDict(defer_build=True)
+    config = ConfigDict(defer_build=defer_build)
 
     class MyModel(BaseModel):
         model_config = config
