@@ -16,6 +16,7 @@ from contextlib import ExitStack, contextmanager
 from copy import copy, deepcopy
 from decimal import Decimal
 from enum import Enum
+from fractions import Fraction
 from functools import partial
 from inspect import Parameter, _ParameterKind, signature
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
@@ -517,6 +518,25 @@ class GenerateSchema:
             ),
         )
 
+    def _fraction_schema(self) -> CoreSchema:
+        """Support for [`fractions.Fraction`][fractions.Fraction]."""
+        from ._validators import fraction_validator
+
+        # TODO: note, this is a fairly common pattern, re lax / strict for attempted type coercion,
+        # can we use a helper function to reduce boilerplate?
+        return core_schema.lax_or_strict_schema(
+            lax_schema=core_schema.no_info_plain_validator_function(fraction_validator),
+            strict_schema=core_schema.json_or_python_schema(
+                json_schema=core_schema.no_info_plain_validator_function(fraction_validator),
+                python_schema=core_schema.is_instance_schema(Fraction),
+            ),
+            # use str serialization to guarantee round trip behavior
+            serialization=core_schema.to_string_ser_schema(when_used='always'),
+            metadata=build_metadata_dict(
+                js_functions=[lambda _1, _2: {'type': 'string', 'format': 'fraction'}],
+            ),
+        )
+
     def _arbitrary_type_schema(self, tp: Any) -> CoreSchema:
         if not isinstance(tp, type):
             warn(
@@ -942,6 +962,8 @@ class GenerateSchema:
             return core_schema.uuid_schema()
         elif obj is Url:
             return core_schema.url_schema()
+        elif obj is Fraction:
+            return self._fraction_schema()
         elif obj is MultiHostUrl:
             return core_schema.multi_host_url_schema()
         elif obj is None or obj is _typing_extra.NoneType:
