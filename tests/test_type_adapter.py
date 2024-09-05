@@ -5,11 +5,10 @@ from datetime import date, datetime
 from typing import Any, Dict, ForwardRef, Generic, List, NamedTuple, Optional, Tuple, TypeVar, Union
 
 import pytest
-from pydantic_core import ValidationError, core_schema
+from pydantic_core import ValidationError
 from typing_extensions import Annotated, TypeAlias, TypedDict
 
 from pydantic import BaseModel, Field, TypeAdapter, ValidationInfo, create_model, field_validator
-from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._typing_extra import annotated_type
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass as pydantic_dataclass
@@ -568,11 +567,3 @@ def test_core_schema_respects_defer_build(model: Any, config: ConfigDict, method
     assert type_adapter._core_schema is not None, 'Should be initialized after the usage'
     assert type_adapter._validator is not None, 'Should be initialized after the usage'
     assert type_adapter._serializer is not None, 'Should be initialized after the usage'
-
-
-def test_custom_schema_gen_respected() -> None:
-    class LaxStrGenerator(GenerateSchema):
-        def str_schema(self) -> core_schema.CoreSchema:
-            return core_schema.no_info_plain_validator_function(str)
-
-    assert TypeAdapter(str, config=ConfigDict(schema_generator=LaxStrGenerator)).validate_python(1) == '1'

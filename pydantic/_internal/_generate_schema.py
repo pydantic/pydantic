@@ -372,7 +372,7 @@ class GenerateSchema:
         types_namespace: dict[str, Any] | None,
         typevars_map: dict[Any, Any] | None = None,
     ) -> None:
-        # we need a stack for recursing into child models
+        # we need a stack for recursing into nested models
         self._config_wrapper_stack = ConfigWrapperStack(config_wrapper)
         self._types_namespace_stack = TypesNamespaceStack(types_namespace)
         self._typevars_map = typevars_map
@@ -380,23 +380,13 @@ class GenerateSchema:
         self.model_type_stack = _ModelTypeStack()
         self.defs = _Definitions()
 
-    @classmethod
-    def __from_parent(
-        cls,
-        config_wrapper_stack: ConfigWrapperStack,
-        types_namespace_stack: TypesNamespaceStack,
-        model_type_stack: _ModelTypeStack,
-        typevars_map: dict[Any, Any] | None,
-        defs: _Definitions,
-    ) -> GenerateSchema:
-        obj = cls.__new__(cls)
-        obj._config_wrapper_stack = config_wrapper_stack
-        obj._types_namespace_stack = types_namespace_stack
-        obj.model_type_stack = model_type_stack
-        obj._typevars_map = typevars_map
-        obj.field_name_stack = _FieldNameStack()
-        obj.defs = defs
-        return obj
+    def __init_subclass__(cls) -> None:
+        super().__init_subclass__()
+        warnings.warn(
+            'Subclassing `GenerateSchema` is not supported. The API is highly subject to change in minor versions.',
+            UserWarning,
+            stacklevel=2,
+        )
 
     @property
     def _config_wrapper(self) -> ConfigWrapper:
@@ -407,23 +397,8 @@ class GenerateSchema:
         return self._types_namespace_stack.tail
 
     @property
-    def _current_generate_schema(self) -> GenerateSchema:
-        cls = self._config_wrapper.schema_generator or GenerateSchema
-        return cls.__from_parent(
-            self._config_wrapper_stack,
-            self._types_namespace_stack,
-            self.model_type_stack,
-            self._typevars_map,
-            self.defs,
-        )
-
-    @property
     def _arbitrary_types(self) -> bool:
         return self._config_wrapper.arbitrary_types_allowed
-
-    def str_schema(self) -> CoreSchema:
-        """Generate a CoreSchema for `str`"""
-        return core_schema.str_schema()
 
     # the following methods can be overridden but should be considered
     # unstable / private APIs
@@ -689,8 +664,6 @@ class GenerateSchema:
             model_validators = decorators.model_validators.values()
 
             with self._config_wrapper_stack.push(config_wrapper), self._types_namespace_stack.push(cls):
-                self = self._current_generate_schema
-
                 extras_schema = None
                 if core_config.get('extra_fields_behavior') == 'allow':
                     assert cls.__mro__[0] is cls
@@ -942,7 +915,7 @@ class GenerateSchema:
         as they get requested and we figure out what the right API for them is.
         """
         if obj is str:
-            return self.str_schema()
+            return core_schema.str_schema()
         elif obj is bytes:
             return core_schema.bytes_schema()
         elif obj is int:
@@ -1471,8 +1444,6 @@ class GenerateSchema:
             with self._config_wrapper_stack.push(config), self._types_namespace_stack.push(typed_dict_cls):
                 core_config = self._config_wrapper.core_config(typed_dict_cls)
 
-                self = self._current_generate_schema
-
                 required_keys: frozenset[str] = typed_dict_cls.__required_keys__
 
                 fields: dict[str, core_schema.TypedDictField] = {}
@@ -1785,8 +1756,6 @@ class GenerateSchema:
                         dataclass_bases_stack.enter_context(self._config_wrapper_stack.push(config))
 
                 core_config = self._config_wrapper.core_config(dataclass)
-
-                self = self._current_generate_schema
 
                 from ..dataclasses import is_pydantic_dataclass
 

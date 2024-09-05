@@ -17,7 +17,7 @@ import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
 from jsonschema import Draft202012Validator, SchemaError
 
-from pydantic import GenerateSchema
+from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.json_schema import GenerateJsonSchema
 
 

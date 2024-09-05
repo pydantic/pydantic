@@ -11,7 +11,6 @@ from .aliases import AliasGenerator
 from .errors import PydanticUserError
 
 if TYPE_CHECKING:
-    from ._internal._generate_schema import GenerateSchema as _GenerateSchema
     from .fields import ComputedFieldInfo, FieldInfo
 
 __all__ = ('ConfigDict', 'with_config')
@@ -762,18 +761,7 @@ class ConfigDict(TypedDict, total=False):
     """
 
     plugin_settings: dict[str, object] | None
-    """A `dict` of settings for plugins. Defaults to `None`.
-    """
-
-    schema_generator: type[_GenerateSchema] | None
-    """
-    A custom core schema generator class to use when generating JSON schemas.
-    Useful if you want to change the way types are validated across an entire model/schema. Defaults to `None`.
-
-    The `GenerateSchema` interface is subject to change, currently only the `string_schema` method is public.
-
-    See [#6737](https://github.com/pydantic/pydantic/pull/6737) for details.
-    """
+    """A `dict` of settings for plugins. Defaults to `None`."""
 
     json_schema_serialization_defaults_required: bool
     """
