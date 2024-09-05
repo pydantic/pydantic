@@ -1816,19 +1816,6 @@ class GenerateJsonSchema:
         """
         return {'type': 'string', 'format': 'uuid'}
 
-    def fraction_schema(self, schema_: core_schema.CoreSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a [`Fraction`][`fractions.Fraction`].
-
-        Args:
-            schema: The core schema.
-
-        Returns:
-            The generated JSON schema.
-        """
-
-        # TODO: figure out if this is the right way to represent fractions in JSON Schema
-        return {'type': 'string', 'format': 'fraction'}
-
     def definitions_schema(self, schema: core_schema.DefinitionsSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a JSON object with definitions.
 
