@@ -32,7 +32,6 @@ from pydantic import (
     ConfigDict,
     GetCoreSchemaHandler,
     PydanticDeprecatedSince20,
-    PydanticInvalidForJsonSchema,
     PydanticSchemaGenerationError,
     RootModel,
     TypeAdapter,
@@ -2107,17 +2106,34 @@ def test_hashable_serialization():
         m.model_dump_json()
 
 
+def test_hashable_validate_json():
+    class Model(BaseModel):
+        v: Hashable
+
+    ta = TypeAdapter(Model)
+
+    # Test a large nested dict
+    for validate in (Model.model_validate_json, ta.validate_json):
+        for testcase in (
+            '{"v": "a"}',
+            '{"v": 1}',
+            '{"v": 1.0}',
+            '{"v": true}',
+            '{"v": null}',
+        ):
+            assert hash(validate(testcase).v) == hash(validate(testcase).v)
+
+
 def test_hashable_json_schema():
     class Model(BaseModel):
         v: Hashable
 
-    with pytest.raises(
-        PydanticInvalidForJsonSchema,
-        match=re.escape(
-            "Cannot generate a JsonSchema for core_schema.IsInstanceSchema (<class 'collections.abc.Hashable'>)"
-        ),
-    ):
-        Model.model_json_schema()
+    assert Model.model_json_schema() == {
+        'properties': {'v': {'title': 'V'}},
+        'required': ['v'],
+        'title': 'Model',
+        'type': 'object',
+    }
 
 
 def test_default_factory_called_once():
