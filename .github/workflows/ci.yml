@@ -53,9 +53,12 @@ jobs:
       # Unlike the docs build, we don't use mkdocs_material-insiders
       # Because the secret for accessing the library is not accessible from forks, but we still want to run
       # this job on public CI runs.
+      # note, we manually override the pydantic-core version to use `main` for the docs build,
+      # but we don't want to change this in pyproject.toml bc the version should be bound there (and in pdm.lock)
       run: |
         pdm venv create --with-pip --force $PYTHON
         pdm install -G docs
+        pdm run python -m pip install git+https://github.com/pydantic/pydantic-core.git@main
 
     - run: pdm run python -c 'import docs.plugins.main'
 
