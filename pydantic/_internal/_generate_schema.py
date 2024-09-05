@@ -12,6 +12,7 @@ import re
 import sys
 import typing
 import warnings
+from collections import UserDict
 from contextlib import ExitStack, contextmanager
 from copy import copy, deepcopy
 from decimal import Decimal
@@ -2092,11 +2093,7 @@ class GenerateSchema:
 
         with ExitStack() as stack:
             if cache_key_hash is not None:
-                if self.defs.recording:
-                    # A parent instance of `GenerateSchema` gave its `Definitions` instance:
-                    recorded = self.defs.recorded
-                else:
-                    recorded = stack.enter_context(self.defs.record())
+                recorded = stack.enter_context(self.defs.record())
             else:
                 recorded = None
 
@@ -2538,14 +2535,41 @@ def _common_field(
     }
 
 
-class RecordingDict(dict[str, core_schema.CoreSchema]):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.recorded: dict[str, core_schema.CoreSchema] | None = {}
 
-    def __setitem__(self, item: str, value: core_schema.CoreSchema) -> None:
-        if self.recorded is not None:
-            self.recorded[item] = value
+class RecordingStack:
+    __slots__ = ('_stack',)
+
+    def __init__(self) -> None:
+        self._stack: list[dict[str, CoreSchema]] = []
+
+    def __setitem__(self, item: str, value: CoreSchema) -> None:
+        for recorded in self._stack:
+            recorded[item] = value
+
+    def __len__(self) -> int:
+        return len(self._stack)
+
+    @property
+    def tail(self) -> dict[str, CoreSchema]:
+        return self._stack[-1]
+
+    @contextmanager
+    def record(self) -> Generator[dict[str, CoreSchema]]:
+        recorded: dict[str, CoreSchema] = {}
+        self._stack.append(recorded)
+        yield recorded
+        self._stack.pop()
+
+
+
+class RecordingDict(UserDict[str, CoreSchema]):
+    recording_stack: RecordingStack
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+
+    def __setitem__(self, item: str, value: CoreSchema) -> None:
+        self.recording_stack[item] = value
         return super().__setitem__(item, value)
 
 
@@ -2554,9 +2578,9 @@ class _Definitions:
 
     def __init__(self) -> None:
         self.seen: set[str] = set()
+        self.recording_stack = RecordingStack()
         self.definitions = RecordingDict()
-        self.recording = False
-        self.recorded: dict[str, core_schema.CoreSchema] = {}
+        self.definitions.recording_stack = self.recording_stack
 
     @contextmanager
     def get_schema_or_ref(self, tp: Any) -> Iterator[tuple[str, None] | tuple[str, CoreSchema]]:
@@ -2581,8 +2605,8 @@ class _Definitions:
         ref = get_type_ref(tp)
         # return the reference if we're either (1) in a cycle or (2) it was already defined
         if ref in self.seen or ref in self.definitions:
-            if ref in self.definitions and self.recording:
-                self.recorded[ref] = self.definitions[ref]
+            if ref in self.definitions:
+                self.recording_stack[ref] = self.definitions[ref]
             yield (ref, core_schema.definition_reference_schema(ref))
         else:
             self.seen.add(ref)
@@ -2593,12 +2617,8 @@ class _Definitions:
 
     @contextmanager
     def record(self) -> Generator[dict[str, core_schema.CoreSchema]]:
-        self.recorded = {}
-        self.recording = True
-        self.definitions.recorded = self.recorded
-        yield self.recorded
-        self.recording = False
-        self.definitions.recorded = None
+        with self.recording_stack.record() as recorded:
+            yield recorded
 
 
 def resolve_original_schema(schema: CoreSchema, definitions: dict[str, CoreSchema]) -> CoreSchema | None:

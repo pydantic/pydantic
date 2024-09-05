@@ -120,8 +120,7 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
                     ' Maybe you tried to call resolve_ref_schema from within a recursive model?'
                 )
             definition = self._generate_schema.defs.definitions[ref]
-            if self._generate_schema.defs.recording:
-                self._generate_schema.defs.recorded[ref] = definition
+            self._generate_schema.defs.recording_stack[ref] = definition
             return definition
         elif maybe_ref_schema['type'] == 'definitions':
             return self.resolve_ref_schema(maybe_ref_schema['schema'])
