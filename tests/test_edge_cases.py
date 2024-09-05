@@ -2124,6 +2124,27 @@ def test_hashable_validate_json():
             assert hash(validate(testcase).v) == hash(validate(testcase).v)
 
 
+@pytest.mark.parametrize(
+    'non_hashable',
+    [
+        '{"v": []}',
+        '{"v": {"a": 0}}',
+    ],
+)
+def test_hashable_invalid_json(non_hashable) -> None:
+    """This is primarily included in order to document the behavior / limitations of the `Hashable` type's validation logic.
+
+    Specifically, we don't do any coercions to arrays / dicts when loading from JSON, and thus they are not considered hashable.
+    This would be different if we, for example, coerced arrays to tuples.
+    """
+
+    class Model(BaseModel):
+        v: Hashable
+
+    with pytest.raises(ValidationError):
+        Model.model_validate_json(non_hashable)
+
+
 def test_hashable_json_schema():
     class Model(BaseModel):
         v: Hashable
