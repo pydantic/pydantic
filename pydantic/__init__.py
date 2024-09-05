@@ -1,5 +1,6 @@
 import typing
 from importlib import import_module
+from warnings import warn
 
 from ._migration import getattr_migration
 from .version import VERSION
@@ -384,14 +385,19 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'parse_obj_as': (__spec__.parent, '.deprecated.tools'),
     'schema_of': (__spec__.parent, '.deprecated.tools'),
     'schema_json_of': (__spec__.parent, '.deprecated.tools'),
+    # deprecated dynamic imports
     'FieldValidationInfo': ('pydantic_core', '.core_schema'),
+    'GenerateSchema': (__spec__.parent, '._internal._generate_schema'),
 }
-_deprecated_dynamic_imports = {'FieldValidationInfo'}
+_deprecated_dynamic_imports = {'FieldValidationInfo', 'GenerateSchema'}
 
 _getattr_migration = getattr_migration(__name__)
 
 
 def __getattr__(attr_name: str) -> object:
+    if attr_name in _deprecated_dynamic_imports:
+        warn('Importing {module_name} from `pydantic` is deprecated.', DeprecationWarning, stacklevel=2)
+
     dynamic_attr = _dynamic_imports.get(attr_name)
     if dynamic_attr is None:
         return _getattr_migration(attr_name)
