@@ -269,16 +269,28 @@ def test_custom_model_validator_wrap(benchmark) -> None:
     benchmark(schema_gen)
 
 
-@pytest.mark.parametrize('mode', ['plain', 'wrap'])
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_field_serializer(benchmark, mode) -> None:
+def test_custom_field_serializer_plain(benchmark) -> None:
     def schema_gen() -> None:
         class ModelWithFieldSerializer(BaseModel):
             field1: int
 
-            @field_serializer('field1', mode=mode)
+            @field_serializer('field1', mode='plain')
             def serialize_field(cls, v: int) -> str:
                 return str(v)
+
+    benchmark(schema_gen)
+
+
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_custom_field_serializer_wrap(benchmark) -> None:
+    def schema_gen() -> None:
+        class ModelWithFieldSerializer(BaseModel):
+            field1: int
+
+            @field_serializer('field1', mode='wrap')
+            def serialize_field(cls, v: int, nxt: SerializerFunctionWrapHandler) -> str:
+                return nxt(v)
 
     benchmark(schema_gen)
 
