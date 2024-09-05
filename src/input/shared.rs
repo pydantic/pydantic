@@ -122,6 +122,22 @@ fn clean_int_str(mut s: &str) -> Option<Cow<str>> {
         s = suffix;
     }
 
+    // Remember if the number is negative
+    // the `strip_leading_zeros` function will not strip leading zeros for negative numbers
+    // therefore we simply "take away" the unary minus sign temporarily and add it back before
+    // returning. This allows consistent handling of leading zeros for both positive and negative numbers.
+    let mut is_negative = false;
+    if let Some(suffix) = s.strip_prefix('-') {
+        // Invalidate "--" and "-+" as an integer prefix by returning None
+        if suffix.starts_with('-') | suffix.starts_with('+') {
+            return None;
+        }
+
+        is_negative = true;
+        // Continue as usual without the unary minus sign
+        s = suffix;
+    }
+
     // strip loading zeros
     s = strip_leading_zeros(s)?;
 
@@ -136,12 +152,19 @@ fn clean_int_str(mut s: &str) -> Option<Cow<str>> {
 
     // remove underscores
     if let Some(str_stripped) = strip_underscores(s) {
-        Some(str_stripped.into())
-    } else {
-        match len_before == s.len() {
-            true => None,
-            false => Some(s.into()),
+        match is_negative {
+            true => return Some(("-".to_string() + &str_stripped).into()),
+            false => return Some(str_stripped.into()),
         }
+    }
+
+    if len_before == s.len() {
+        return None;
+    }
+
+    match is_negative {
+        true => Some(("-".to_string() + s).into()),
+        false => Some(s.into()),
     }
 }
 
