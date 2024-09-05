@@ -1826,6 +1826,7 @@ class GenerateJsonSchema:
             The generated JSON schema.
         """
 
+        # TODO: figure out if this is the right way to represent fractions in JSON Schema
         return {'type': 'string', 'format': 'fraction'}
 
     def definitions_schema(self, schema: core_schema.DefinitionsSchema) -> JsonSchemaValue:

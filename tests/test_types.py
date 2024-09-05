@@ -6969,3 +6969,8 @@ def test_fraction_serialization() -> None:
     ta = TypeAdapter(Fraction)
     assert ta.dump_python(Fraction(1, 3)) == '1/3'
     assert ta.dump_json(Fraction(1, 3)) == b'"1/3"'
+
+
+def test_fraction_json_schema() -> None:
+    ta = TypeAdapter(Fraction)
+    assert ta.json_schema() == {'type': 'string', 'format': 'fraction'}
