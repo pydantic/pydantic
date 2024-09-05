@@ -1630,6 +1630,24 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#complex" class="md-nav__link">
+    <span class="md-ellipsis">
+      complex
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fractionsfraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      fractions.Fraction
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3354,6 +3372,24 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#complex" class="md-nav__link">
+    <span class="md-ellipsis">
+      complex
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fractionsfraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      fractions.Fraction
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3986,6 +4022,16 @@ You can use a custom serializer to override this behavior if desired. For exampl
 <li>Using <a class="autorefs autorefs-internal" href="../base_model/#pydantic.BaseModel.model_dump"><code>model_dump</code></a> with <code>mode='json'</code>, <code>x</code> is serialized as a <code>string</code>, and <code>y</code> is serialized as a <code>float</code> because of the custom serializer applied.</li>
 <li>Using <a class="autorefs autorefs-internal" href="../base_model/#pydantic.BaseModel.model_dump_json"><code>model_dump_json</code></a>, <code>x</code> is serialized as a <code>string</code>, and <code>y</code> is serialized as a <code>float</code> because of the custom serializer applied.</li>
 </ol>
+<h3 id="complex"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#complex"><code>complex</code></a><a class="headerlink" href="#complex" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Validation: Pydantic supports <code>complex</code> types or <code>str</code> values that can be converted to a <code>complex</code> type.</li>
+<li>Serialization: Pydantic serializes <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#complex"><code>complex</code></a> types as strings.</li>
+</ul>
+<h3 id="fractionsfraction"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/fractions.html#fractions.Fraction"><code>fractions.Fraction</code></a><a class="headerlink" href="#fractionsfraction" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Validation: Pydantic attempts to convert the value to a <code>Fraction</code> using <code>Fraction(v)</code>.</li>
+<li>Serialization: Pydantic serializes <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/fractions.html#fractions.Fraction"><code>Fraction</code></a> types as strings.</li>
+</ul>
 <h2 id="enum"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/enum.html#enum.Enum"><code>Enum</code></a><a class="headerlink" href="#enum" title="Permanent link">&para;</a></h2>
 <p>Pydantic uses Python's standard <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/enum.html#module-enum"><code>enum</code></a> classes to define choices.</p>
 <p><code>enum.Enum</code> checks that the value is a valid <code>Enum</code> instance.
