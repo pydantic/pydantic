@@ -90,6 +90,7 @@ def complete_dataclass(
     *,
     raise_errors: bool = True,
     types_namespace: dict[str, Any] | None,
+    _force_build: bool = False,
 ) -> bool:
     """Finish building a pydantic dataclass.
 
@@ -102,6 +103,8 @@ def complete_dataclass(
         config_wrapper: The config wrapper instance.
         raise_errors: Whether to raise errors, defaults to `True`.
         types_namespace: The types namespace.
+        _force_build: Whether to force building the dataclass, no matter if
+            [`defer_build`][pydantic.config.ConfigDict.defer_build] is set.
 
     Returns:
         `True` if building a pydantic dataclass is successfully completed, `False` otherwise.
@@ -111,7 +114,8 @@ def complete_dataclass(
     """
     original_init = cls.__init__
 
-    # dataclass.__init__ must be defined here so its `__qualname__` can be changed since functions can't be copied.
+    # dataclass.__init__ must be defined here so its `__qualname__` can be changed since functions can't be copied,
+    # and so that the mock validator is used if building was deferred:
     def __init__(__dataclass_self__: PydanticDataclass, *args: Any, **kwargs: Any) -> None:
         __tracebackhide__ = True
         s = __dataclass_self__
@@ -120,10 +124,9 @@ def complete_dataclass(
     __init__.__qualname__ = f'{cls.__qualname__}.__init__'
 
     cls.__init__ = __init__  # type: ignore
-    if not hasattr(cls, '__pydantic_config__'):
-        cls.__pydantic_config__ = config_wrapper.config_dict  # type: ignore
+    cls.__pydantic_config__ = config_wrapper.config_dict  # type: ignore
 
-    if config_wrapper.defer_build and 'model' in config_wrapper.experimental_defer_build_mode:
+    if not _force_build and config_wrapper.defer_build and 'model' in config_wrapper.experimental_defer_build_mode:
         set_dataclass_mocks(cls, cls.__name__)
         return False
 
