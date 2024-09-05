@@ -12,7 +12,7 @@ The code released in v2.9.0 is practically identical to that of v2.9.0b2.
 * Bump `pydantic-extra-types` to `v2.9.0` by @sydney-runkle in [#9832](https://github.com/pydantic/pydantic/pull/9832)
 * Support compatibility with `pdm v2.18.1` by @Viicos in [#10138](https://github.com/pydantic/pydantic/pull/10138)
 * Bump `v1` version stub to `v1.10.18` by @sydney-runkle in [#10214](https://github.com/pydantic/pydantic/pull/10214)
-* Bump `pydantic-core` to `v2.23.2` by @sydney-runkle in [#10269](https://github.com/pydantic/pydantic/pull/10269)
+* Bump `pydantic-core` to `v2.23.2` by @sydney-runkle in [#10311](https://github.com/pydantic/pydantic/pull/10311)
 
 #### New Features
 
