@@ -2811,17 +2811,21 @@ channel:</p>
 <h2 id="optional-dependencies">Optional dependencies<a class="headerlink" href="#optional-dependencies" title="Permanent link">&para;</a></h2>
 <p>Pydantic has the following optional dependencies:</p>
 <ul>
-<li>Email validation provided by the <a href="https://pypi.org/project/email-validator/">email-validator</a> package.</li>
+<li><code>email</code>: Email validation provided by the <a href="https://pypi.org/project/email-validator/">email-validator</a> package.</li>
+<li><code>timezone</code>: Fallback IANA time zone database provided by the <a href="https://pypi.org/project/tzdata/">tzdata</a> package.</li>
 </ul>
 <p>To install optional dependencies along with Pydantic:</p>
-<div class="language-bash highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>pydantic<span class="o">[</span>email<span class="o">]</span>
+<div class="language-bash highlight"><pre><span></span><code><span class="c1"># with the `email` extra:</span>
+pip<span class="w"> </span>install<span class="w"> </span>pydantic<span class="o">[</span>email<span class="o">]</span>
+<span class="c1"># or with `email` and `timezone` extras:</span>
+pip<span class="w"> </span>install<span class="w"> </span>pydantic<span class="o">[</span>email,timezone<span class="o">]</span>
 </code></pre></div>
-<p>Of course, you can also install requirements manually with <code>pip install email-validator</code>.</p>
+<p>Of course, you can also install requirements manually with <code>pip install email-validator tzdata</code>.</p>
 <h2 id="install-from-repository">Install from repository<a class="headerlink" href="#install-from-repository" title="Permanent link">&para;</a></h2>
 <p>And if you prefer to install Pydantic directly from the repository:</p>
 <div class="language-bash highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/pydantic/pydantic@main#egg<span class="o">=</span>pydantic
-<span class="c1"># or with the `email` extra:</span>
-pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/pydantic/pydantic@main#egg<span class="o">=</span>pydantic<span class="o">[</span>email<span class="o">]</span>
+<span class="c1"># or with `email` and `timezone` extras:</span>
+pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/pydantic/pydantic@main#egg<span class="o">=</span>pydantic<span class="o">[</span>email,timezone<span class="o">]</span>
 </code></pre></div>
 
 
