@@ -12,7 +12,7 @@ import re
 import sys
 import typing
 import warnings
-from contextlib import ExitStack, contextmanager
+from contextlib import contextmanager
 from copy import copy, deepcopy
 from decimal import Decimal
 from enum import Enum
@@ -322,30 +322,6 @@ def _add_custom_serialization_from_json_encoders(
     return schema
 
 
-TypesNamespace = Union[Dict[str, Any], None]
-
-
-class TypesNamespaceStack:
-    """A stack of types namespaces."""
-
-    def __init__(self, types_namespace: TypesNamespace):
-        self._types_namespace_stack: list[TypesNamespace] = [types_namespace]
-
-    @property
-    def tail(self) -> TypesNamespace:
-        return self._types_namespace_stack[-1]
-
-    @contextmanager
-    def push(self, for_type: type[Any]):
-        types_namespace = _typing_extra.get_module_ns_of(for_type).copy()
-        types_namespace.update(self.tail or {})
-        self._types_namespace_stack.append(types_namespace)
-        try:
-            yield
-        finally:
-            self._types_namespace_stack.pop()
-
-
 def _get_first_non_null(a: Any, b: Any) -> Any:
     """Return the first argument if it is not None, otherwise return the second argument.
 
@@ -360,7 +336,7 @@ class GenerateSchema:
 
     __slots__ = (
         '_config_wrapper_stack',
-        '_types_namespace_stack',
+        '_types_namespace',
         '_typevars_map',
         'field_name_stack',
         'model_type_stack',
@@ -375,7 +351,7 @@ class GenerateSchema:
     ) -> None:
         # we need a stack for recursing into nested models
         self._config_wrapper_stack = ConfigWrapperStack(config_wrapper)
-        self._types_namespace_stack = TypesNamespaceStack(types_namespace)
+        self._types_namespace = types_namespace or {}
         self._typevars_map = typevars_map
         self.field_name_stack = _FieldNameStack()
         self.model_type_stack = _ModelTypeStack()
@@ -392,10 +368,6 @@ class GenerateSchema:
     @property
     def _config_wrapper(self) -> ConfigWrapper:
         return self._config_wrapper_stack.tail
-
-    @property
-    def _types_namespace(self) -> dict[str, Any] | None:
-        return self._types_namespace_stack.tail
 
     @property
     def _arbitrary_types(self) -> bool:
@@ -683,7 +655,7 @@ class GenerateSchema:
 
             model_validators = decorators.model_validators.values()
 
-            with self._config_wrapper_stack.push(config_wrapper), self._types_namespace_stack.push(cls):
+            with self._config_wrapper_stack.push(config_wrapper):
                 extras_schema = None
                 if core_config.get('extra_fields_behavior') == 'allow':
                     assert cls.__mro__[0] is cls
@@ -1262,7 +1234,7 @@ class GenerateSchema:
         if has_instance_in_type(field_info.annotation, ForwardRef):
             types_namespace = self._types_namespace
             if self._typevars_map:
-                types_namespace = (types_namespace or {}).copy()
+                types_namespace = types_namespace.copy()
                 # Ensure that typevars get mapped to their concrete types:
                 types_namespace.update({k.__name__: v for k, v in self._typevars_map.items()})
 
@@ -1401,12 +1373,16 @@ class GenerateSchema:
             annotation = origin.__value__
             typevars_map = get_standard_typevars_map(obj)
 
-            with self._types_namespace_stack.push(origin):
-                annotation = _typing_extra.eval_type_lenient(annotation, self._types_namespace)
-                annotation = replace_types(annotation, typevars_map)
-                schema = self.generate_schema(annotation)
-                assert schema['type'] != 'definitions'
-                schema['ref'] = ref  # type: ignore
+            namespace = {**self._types_namespace, **_typing_extra.get_module_ns_of(obj)}
+
+            annotation = _typing_extra.eval_type_lenient(annotation, namespace)
+            annotation = replace_types(annotation, typevars_map)
+            schema = self.generate_schema(annotation)
+            assert schema['type'] != 'definitions'
+            schema['ref'] = ref  # type: ignore
+            # TODO: why do we have to change this, would prefer to not mutate
+            self._types_namespace = namespace
+
             self.defs.definitions[ref] = schema
             return core_schema.definition_reference_schema(ref)
 
@@ -1463,7 +1439,7 @@ class GenerateSchema:
             except AttributeError:
                 config = None
 
-            with self._config_wrapper_stack.push(config), self._types_namespace_stack.push(typed_dict_cls):
+            with self._config_wrapper_stack.push(config):
                 core_config = self._config_wrapper.core_config(typed_dict_cls)
 
                 required_keys: frozenset[str] = typed_dict_cls.__required_keys__
@@ -1769,18 +1745,9 @@ class GenerateSchema:
             if origin is not None:
                 dataclass = origin
 
-            with ExitStack() as dataclass_bases_stack:
-                # Pushing a namespace prioritises items already in the stack, so iterate though the MRO forwards
-                for dataclass_base in dataclass.__mro__:
-                    if dataclasses.is_dataclass(dataclass_base):
-                        dataclass_bases_stack.enter_context(self._types_namespace_stack.push(dataclass_base))
-
-                # Pushing a config overwrites the previous config, so iterate though the MRO backwards
-                config = None
-                for dataclass_base in reversed(dataclass.__mro__):
-                    if dataclasses.is_dataclass(dataclass_base):
-                        config = getattr(dataclass_base, '__pydantic_config__', None)
-                        dataclass_bases_stack.enter_context(self._config_wrapper_stack.push(config))
+            config = getattr(dataclass, '__pydantic_config__', None)
+            with self._config_wrapper_stack.push(config):
+                # TODO: fix dataclass MRO stuff...
 
                 core_config = self._config_wrapper.core_config(dataclass)
 

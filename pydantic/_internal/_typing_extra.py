@@ -316,6 +316,16 @@ def _eval_type_backport(
             ) from e
 
         return eval_type_backport(value, globalns, localns, try_default=False)
+    except NameError:
+        return _eval_type(
+            value,
+            {
+                **get_module_ns_of(value),
+                **(globalns or {}),
+            },
+            localns,
+            type_params,
+        )
 
 
 def _eval_type(
