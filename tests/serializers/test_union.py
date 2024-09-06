@@ -711,3 +711,62 @@ def test_custom_serializer() -> None:
     print(s)
     assert s.to_python([{'id': 1}, {'id': 2}]) == [1, 2]
     assert s.to_python({'id': 1}) == 1
+
+
+def test_tagged_union_with_aliases() -> None:
+    @dataclasses.dataclass
+    class ModelA:
+        field: int
+        tag: Literal['a'] = 'a'
+
+    @dataclasses.dataclass
+    class ModelB:
+        field: int
+        tag: Literal['b'] = 'b'
+
+    s = SchemaSerializer(
+        core_schema.tagged_union_schema(
+            choices={
+                'a': core_schema.dataclass_schema(
+                    ModelA,
+                    core_schema.dataclass_args_schema(
+                        'ModelA',
+                        [
+                            core_schema.dataclass_field(name='field', schema=core_schema.int_schema()),
+                            core_schema.dataclass_field(
+                                name='tag',
+                                schema=core_schema.literal_schema(['a']),
+                                validation_alias='TAG',
+                                serialization_alias='TAG',
+                            ),
+                        ],
+                    ),
+                    ['field', 'tag'],
+                ),
+                'b': core_schema.dataclass_schema(
+                    ModelB,
+                    core_schema.dataclass_args_schema(
+                        'ModelB',
+                        [
+                            core_schema.dataclass_field(name='field', schema=core_schema.int_schema()),
+                            core_schema.dataclass_field(
+                                name='tag',
+                                schema=core_schema.literal_schema(['b']),
+                                validation_alias='TAG',
+                                serialization_alias='TAG',
+                            ),
+                        ],
+                    ),
+                    ['field', 'tag'],
+                ),
+            },
+            discriminator=[['tag'], ['TAG']],
+        )
+    )
+
+    assert 'TaggedUnionSerializer' in repr(s)
+
+    model_a = ModelA(field=1)
+    model_b = ModelB(field=1)
+    assert s.to_python(model_a) == {'field': 1, 'TAG': 'a'}
+    assert s.to_python(model_b) == {'field': 1, 'TAG': 'b'}

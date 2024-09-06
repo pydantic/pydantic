@@ -8,7 +8,6 @@ use std::borrow::Cow;
 use crate::build_tools::py_schema_err;
 use crate::common::union::{Discriminator, SMALL_UNION_THRESHOLD};
 use crate::definitions::DefinitionsBuilder;
-use crate::lookup_key::LookupKey;
 use crate::serializers::type_serializers::py_err_se_err;
 use crate::tools::{truncate_safe_repr, SchemaDict};
 use crate::PydanticSerializationUnexpectedValue;
@@ -438,10 +437,10 @@ impl TaggedUnionSerializer {
     fn get_discriminator_value(&self, value: &Bound<'_, PyAny>, extra: &Extra) -> Option<Py<PyAny>> {
         let py = value.py();
         let discriminator_value = match &self.discriminator {
-            Discriminator::LookupKey(lookup_key) => match lookup_key {
-                LookupKey::Simple { py_key, .. } => value.getattr(py_key).ok().map(|obj| obj.to_object(py)),
-                _ => None,
-            },
+            Discriminator::LookupKey(lookup_key) => lookup_key
+                .simple_py_get_attr(value)
+                .ok()
+                .and_then(|opt| opt.map(|(_, bound)| bound.to_object(py))),
             Discriminator::Function(func) => func.call1(py, (value,)).ok(),
         };
         if discriminator_value.is_none() {
