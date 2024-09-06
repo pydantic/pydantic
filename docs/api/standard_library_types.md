@@ -1067,6 +1067,10 @@ print(type(Meal(dessert={'kind': 'cake'}).dessert).__name__)
 
 Allows any value, including `None`.
 
+## [`typing.Hashable`][]
+
+* From Python, supports any data that passes an `isinstance(v, Hashable)` check.
+* From JSON, first loads the data via an `Any` validator, then checks if the data is hashable with `isinstance(v, Hashable)`.
 
 ## [`typing.Annotated`][]
 
