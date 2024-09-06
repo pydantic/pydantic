@@ -85,7 +85,7 @@ def test_complex_strict(input_value, expected):
 
 
 @pytest.mark.xfail(
-    platform.python_implementation() == 'PyPy' and sys.version_info < (3, 10),
+    platform.python_implementation() == 'PyPy' and sys.pypy_version_info < (7, 3, 17),
     reason='PyPy cannot process this string due to a bug, even if this string is considered valid in python',
 )
 def test_valid_complex_string_with_space():
