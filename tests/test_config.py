@@ -787,7 +787,7 @@ def test_config_model_defer_build_nested(defer_build: bool, generate_schema_call
     expected_schema_count = 1 if defer_build is True else 2
     assert generate_schema_calls.count == expected_schema_count, 'Should respect experimental_defer_build_mode'
 
-    if defer_build is True:
+    if defer_build:
         assert isinstance(MyNestedModel.__pydantic_validator__, MockValSer)
         assert isinstance(MyNestedModel.__pydantic_serializer__, MockValSer)
     else:
@@ -800,7 +800,7 @@ def test_config_model_defer_build_nested(defer_build: bool, generate_schema_call
     assert m.model_validate({'y': {'x': 1}}).y.x == 1
     assert m.model_json_schema()['type'] == 'object'
 
-    if defer_build is True:
+    if defer_build:
         assert isinstance(MyNestedModel.__pydantic_validator__, MockValSer)
         assert isinstance(MyNestedModel.__pydantic_serializer__, MockValSer)
     else:
