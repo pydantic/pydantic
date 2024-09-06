@@ -237,7 +237,7 @@ class SchemaValidator:
             `None` if the schema has no default value, otherwise a [`Some`][pydantic_core.Some] containing the default.
         """
 
-_IncEx: TypeAlias = set[int] | set[str] | dict[int, _IncEx] | dict[str, _IncEx] | None
+_IncEx: TypeAlias = set[int] | set[str] | dict[int, _IncEx | bool] | dict[str, _IncEx | bool]
 
 @final
 class SchemaSerializer:
@@ -260,8 +260,8 @@ class SchemaSerializer:
         value: Any,
         *,
         mode: str | None = None,
-        include: _IncEx = None,
-        exclude: _IncEx = None,
+        include: _IncEx | None = None,
+        exclude: _IncEx | None = None,
         by_alias: bool = True,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
@@ -306,8 +306,8 @@ class SchemaSerializer:
         value: Any,
         *,
         indent: int | None = None,
-        include: _IncEx = None,
-        exclude: _IncEx = None,
+        include: _IncEx | None = None,
+        exclude: _IncEx | None = None,
         by_alias: bool = True,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
@@ -351,8 +351,8 @@ def to_json(
     value: Any,
     *,
     indent: int | None = None,
-    include: _IncEx = None,
-    exclude: _IncEx = None,
+    include: _IncEx | None = None,
+    exclude: _IncEx | None = None,
     by_alias: bool = True,
     exclude_none: bool = False,
     round_trip: bool = False,
@@ -426,8 +426,8 @@ def from_json(
 def to_jsonable_python(
     value: Any,
     *,
-    include: _IncEx = None,
-    exclude: _IncEx = None,
+    include: _IncEx | None = None,
+    exclude: _IncEx | None = None,
     by_alias: bool = True,
     exclude_none: bool = False,
     round_trip: bool = False,
