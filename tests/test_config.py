@@ -708,7 +708,7 @@ def test_config_model_defer_build(defer_build: bool, generate_schema_calls: Call
         model_config = config
         x: int
 
-    if defer_build is True:
+    if defer_build:
         assert isinstance(MyModel.__pydantic_validator__, MockValSer)
         assert isinstance(MyModel.__pydantic_serializer__, MockValSer)
         assert generate_schema_calls.count == 0, 'Should respect defer_build'
