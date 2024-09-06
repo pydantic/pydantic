@@ -2,10 +2,10 @@
 # It is not intended for manual editing.
 
 [metadata]
-groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "testing-extra"]
+groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "testing-extra", "timezone"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:a35cfb3d1aa9400acb86d7b2a4727c0d4dd0998e3a00cd7cccd5d26893211f31"
+content_hash = "sha256:3a584a7e92099980d8871eb23c5549630f86f8e2284884ab3042dd043ddf50f8"
 
 [[metadata.targets]]
 requires_python = ">=3.8"
