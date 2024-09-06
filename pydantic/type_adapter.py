@@ -157,13 +157,6 @@ class TypeAdapter(Generic[T]):
 
     **Note:** `TypeAdapter` instances are not types, and cannot be used as type annotations for fields.
 
-    **Note:** By default, `TypeAdapter` does not respect the
-    [`defer_build=True`][pydantic.config.ConfigDict.defer_build] setting in the
-    [`model_config`][pydantic.BaseModel.model_config] or in the `TypeAdapter` constructor `config`. You need to also
-    explicitly set [`experimental_defer_build_mode=('model', 'type_adapter')`][pydantic.config.ConfigDict.experimental_defer_build_mode] of the
-    config to defer the model validator and serializer construction. Thus, this feature is opt-in to ensure backwards
-    compatibility.
-
     Attributes:
         core_schema: The core schema for the type.
         validator (SchemaValidator): The schema validator for the type.
@@ -329,21 +322,15 @@ class TypeAdapter(Generic[T]):
 
     def _defer_build(self) -> bool:
         config = self._config if self._config is not None else self._model_config()
-        return self._is_defer_build_config(config) if config is not None else False
+        if config:
+            return config.get('defer_build') is True
+        return False
 
     def _model_config(self) -> ConfigDict | None:
         type_: Any = _typing_extra.annotated_type(self._type) or self._type  # Eg FastAPI heavily uses Annotated
         if _utils.lenient_issubclass(type_, BaseModel):
             return type_.model_config
         return getattr(type_, '__pydantic_config__', None)
-
-    @staticmethod
-    def _is_defer_build_config(config: ConfigDict) -> bool:
-        # TODO reevaluate this logic when we have a better understanding of how defer_build should work with TypeAdapter
-        # Should we drop the special experimental_defer_build_mode check?
-        return config.get('defer_build', False) is True and 'type_adapter' in config.get(
-            'experimental_defer_build_mode', ()
-        )
 
     @_frame_depth(1)
     def validate_python(
