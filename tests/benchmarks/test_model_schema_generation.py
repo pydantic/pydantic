@@ -11,18 +11,13 @@ from pydantic import (
     Field,
     PlainSerializer,
     PlainValidator,
-    SerializerFunctionWrapHandler,
-    ValidatorFunctionWrapHandler,
     WrapSerializer,
     WrapValidator,
     create_model,
-    field_serializer,
-    field_validator,
     model_serializer,
     model_validator,
 )
 from pydantic.dataclasses import dataclass, rebuild_dataclass
-from pydantic.functional_validators import ModelWrapValidatorHandler
 
 
 class DeferredModel(BaseModel):
@@ -192,59 +187,22 @@ def test_lots_of_models_with_lots_of_fields(benchmark):
     benchmark(rebuild_models, models)
 
 
-@pytest.mark.parametrize('validator_mode', ['before', 'after', 'plain'])
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_field_validator_via_decorator(benchmark, validator_mode) -> None:
-    class ModelWithFieldValidator(DeferredModel):
-        field: Any
+def test_field_validators_serializers(benchmark) -> None:
+    class ModelWithFieldValidatorsSerializers(DeferredModel):
+        field1: Annotated[Any, BeforeValidator(lambda v: v)]
+        field2: Annotated[Any, AfterValidator(lambda v: v)]
+        field3: Annotated[Any, PlainValidator(lambda v: v)]
+        field4: Annotated[Any, WrapValidator(lambda v, h: h(v))]
+        field5: Annotated[Any, PlainSerializer(lambda x: x, return_type=Any)]
+        field6: Annotated[Any, WrapSerializer(lambda x, nxt: nxt(x), when_used='json')]
 
-        @field_validator('field', mode=validator_mode)
-        @classmethod
-        def validate_field(cls, v: Any):
-            return v
-
-    benchmark(rebuild_model, ModelWithFieldValidator)
-
-
-@pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_wrap_field_validator_via_decorator(benchmark) -> None:
-    class ModelWithWrapFieldValidator(DeferredModel):
-        field: Any
-
-        @field_validator('field', mode='wrap')
-        @classmethod
-        def validate_field(cls, v: Any, handler: ValidatorFunctionWrapHandler) -> Any:
-            return handler(v)
-
-    benchmark(rebuild_model, ModelWithWrapFieldValidator)
-
-
-@pytest.mark.parametrize('validator_constructor', [BeforeValidator, AfterValidator, PlainValidator])
-@pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_field_validator_via_annotation(benchmark, validator_constructor) -> None:
-    def validate_field(v: Any) -> Any:
-        return v
-
-    class ModelWithFieldValidator(DeferredModel):
-        field: Annotated[Any, validator_constructor(validate_field)]
-
-    benchmark(rebuild_model, ModelWithFieldValidator)
+    benchmark(rebuild_model, ModelWithFieldValidatorsSerializers)
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_wrap_field_validator_via_annotation(benchmark) -> None:
-    def validate_field(v: Any, handler: ValidatorFunctionWrapHandler) -> Any:
-        return handler(v)
-
-    class ModelWithWrapFieldValidator(DeferredModel):
-        field: Annotated[Any, WrapValidator(validate_field)]
-
-    benchmark(rebuild_model, ModelWithWrapFieldValidator)
-
-
-@pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_model_validator_before(benchmark):
-    class ModelWithBeforeValidator(DeferredModel):
+def test_model_validators_serializers(benchmark):
+    class ModelWithValidator(DeferredModel):
         field: Any
 
         @model_validator(mode='before')
@@ -252,81 +210,12 @@ def test_custom_model_validator_before(benchmark):
         def validate_model_before(cls, data: Any) -> Any:
             return data
 
-    benchmark(rebuild_model, ModelWithBeforeValidator)
-
-
-@pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_model_validator_after(benchmark) -> None:
-    class ModelWithAfterValidator(DeferredModel):
-        field: Any
-
         @model_validator(mode='after')
         def validate_model_after(self) -> Self:
             return self
 
-    benchmark(rebuild_model, ModelWithAfterValidator)
-
-
-@pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_model_validator_wrap(benchmark) -> None:
-    class ModelWithWrapValidator(DeferredModel):
-        field: Any
-
-        @model_validator(mode='wrap')
-        @classmethod
-        def validate_model_wrap(cls, values: Any, handler: ModelWrapValidatorHandler[Self]) -> Any:
-            return handler(values)
-
-    benchmark(rebuild_model, ModelWithWrapValidator)
-
-
-@pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_field_serializer_plain(benchmark) -> None:
-    class ModelWithFieldSerializer(DeferredModel):
-        field1: int
-
-        @field_serializer('field1', mode='plain')
-        def serialize_field(cls, v: int) -> str:
-            return str(v)
-
-    benchmark(rebuild_model, ModelWithFieldSerializer)
-
-
-@pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_field_serializer_wrap(benchmark) -> None:
-    class ModelWithFieldSerializer(DeferredModel):
-        field1: int
-
-        @field_serializer('field1', mode='wrap')
-        def serialize_field(cls, v: int, nxt: SerializerFunctionWrapHandler) -> str:
-            return nxt(v)
-
-    benchmark(rebuild_model, ModelWithFieldSerializer)
-
-
-@pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_model_serializer_decorator(benchmark) -> None:
-    class ModelWithModelSerializer(DeferredModel):
-        field1: Any
-
         @model_serializer
         def serialize_model(self) -> Any:
-            return self.field1
+            return self.field
 
-    benchmark(rebuild_model, ModelWithModelSerializer)
-
-
-@pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_serializer_plain_annotated(benchmark) -> None:
-    class ModelWithAnnotatedSerializer(DeferredModel):
-        field: Annotated[List, PlainSerializer(lambda x: x, return_type=Any)]
-
-    benchmark(rebuild_model, ModelWithAnnotatedSerializer)
-
-
-@pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_serializer_wrap_annotated(benchmark) -> None:
-    class ModelWithAnnotatedSerializer(DeferredModel):
-        field: Annotated[List, WrapSerializer(lambda x, nxt: nxt(x), when_used='json')]
-
-    benchmark(rebuild_model, ModelWithAnnotatedSerializer)
+    benchmark(rebuild_model, ModelWithValidator)
