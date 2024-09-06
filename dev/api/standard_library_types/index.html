@@ -2014,6 +2014,15 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </li>
       
         <li class="md-nav__item">
+  <a href="#typinghashable" class="md-nav__link">
+    <span class="md-ellipsis">
+      typing.Hashable
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#typingannotated" class="md-nav__link">
     <span class="md-ellipsis">
       typing.Annotated
@@ -3756,6 +3765,15 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </li>
       
         <li class="md-nav__item">
+  <a href="#typinghashable" class="md-nav__link">
+    <span class="md-ellipsis">
+      typing.Hashable
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#typingannotated" class="md-nav__link">
     <span class="md-ellipsis">
       typing.Annotated
@@ -4758,6 +4776,11 @@ without needing to declare custom validators:</p>
 </code></pre></div>
 <h2 id="typingany"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Any"><code>typing.Any</code></a><a class="headerlink" href="#typingany" title="Permanent link">&para;</a></h2>
 <p>Allows any value, including <code>None</code>.</p>
+<h2 id="typinghashable"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Hashable"><code>typing.Hashable</code></a><a class="headerlink" href="#typinghashable" title="Permanent link">&para;</a></h2>
+<ul>
+<li>From Python, supports any data that passes an <code>isinstance(v, Hashable)</code> check.</li>
+<li>From JSON, first loads the data via an <code>Any</code> validator, then checks if the data is hashable with <code>isinstance(v, Hashable)</code>.</li>
+</ul>
 <h2 id="typingannotated"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>typing.Annotated</code></a><a class="headerlink" href="#typingannotated" title="Permanent link">&para;</a></h2>
 <p>Allows wrapping another type with arbitrary metadata, as per <a href="https://www.python.org/dev/peps/pep-0593/">PEP-593</a>. The <code>Annotated</code> hint may contain a single call to the <a href="../../concepts/types/#composing-types-via-annotated"><code>Field</code> function</a>, but otherwise the additional metadata is ignored and the root type is used.</p>
 <h2 id="typingpattern"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Pattern"><code>typing.Pattern</code></a><a class="headerlink" href="#typingpattern" title="Permanent link">&para;</a></h2>
