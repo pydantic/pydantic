@@ -191,34 +191,10 @@ impl LookupKey {
         }
     }
 
-    pub fn py_get_attr<'py, 's>(
+    pub fn simple_py_get_attr<'py, 's>(
         &'s self,
         obj: &Bound<'py, PyAny>,
-        kwargs: Option<&Bound<'py, PyDict>>,
-    ) -> ValResult<Option<(&'s LookupPath, Bound<'py, PyAny>)>> {
-        match self._py_get_attr(obj, kwargs) {
-            Ok(v) => Ok(v),
-            Err(err) => {
-                let error = py_err_string(obj.py(), err);
-                Err(ValError::new(
-                    ErrorType::GetAttributeError { error, context: None },
-                    obj,
-                ))
-            }
-        }
-    }
-
-    pub fn _py_get_attr<'py, 's>(
-        &'s self,
-        obj: &Bound<'py, PyAny>,
-        kwargs: Option<&Bound<'py, PyDict>>,
     ) -> PyResult<Option<(&'s LookupPath, Bound<'py, PyAny>)>> {
-        if let Some(dict) = kwargs {
-            if let Ok(Some(item)) = self.py_get_dict_item(dict) {
-                return Ok(Some(item));
-            }
-        }
-
         match self {
             Self::Simple { py_key, path, .. } => match py_get_attrs(obj, py_key)? {
                 Some(value) => Ok(Some((path, value))),
@@ -256,6 +232,29 @@ impl LookupKey {
                 }
                 // got to the end of path_choices, without a match, return None
                 Ok(None)
+            }
+        }
+    }
+
+    pub fn py_get_attr<'py, 's>(
+        &'s self,
+        obj: &Bound<'py, PyAny>,
+        kwargs: Option<&Bound<'py, PyDict>>,
+    ) -> ValResult<Option<(&'s LookupPath, Bound<'py, PyAny>)>> {
+        if let Some(dict) = kwargs {
+            if let Ok(Some(item)) = self.py_get_dict_item(dict) {
+                return Ok(Some(item));
+            }
+        }
+
+        match self.simple_py_get_attr(obj) {
+            Ok(v) => Ok(v),
+            Err(err) => {
+                let error = py_err_string(obj.py(), err);
+                Err(ValError::new(
+                    ErrorType::GetAttributeError { error, context: None },
+                    obj,
+                ))
             }
         }
     }
