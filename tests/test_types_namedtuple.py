@@ -136,6 +136,24 @@ def test_namedtuple_postponed_annotation():
         Model.model_validate({'t': [-1]})
 
 
+def test_namedtuple_different_module(create_module) -> None:
+    """https://github.com/pydantic/pydantic/issues/10336"""
+
+    @create_module
+    def other_module():
+        from typing import NamedTuple
+
+        TestIntOtherModule = int
+
+        class Tup(NamedTuple):
+            f: 'TestIntOtherModule'
+
+    class Model(BaseModel):
+        tup: other_module.Tup
+
+    assert Model(tup={'f': 1}).tup.f == 1
+
+
 def test_namedtuple_arbitrary_type():
     class CustomClass:
         pass

@@ -1546,27 +1546,30 @@ class GenerateSchema:
             if origin is not None:
                 namedtuple_cls = origin
 
-            annotations: dict[str, Any] = get_cls_type_hints_lenient(namedtuple_cls, self._types_namespace)
-            if not annotations:
-                # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
-                annotations = {k: Any for k in namedtuple_cls._fields}
+            with self._types_namespace_stack.push(namedtuple_cls):
+                annotations: dict[str, Any] = get_cls_type_hints_lenient(namedtuple_cls, self._types_namespace)
+                if not annotations:
+                    # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
+                    annotations = {k: Any for k in namedtuple_cls._fields}
 
-            if typevars_map:
-                annotations = {
-                    field_name: replace_types(annotation, typevars_map)
-                    for field_name, annotation in annotations.items()
-                }
+                if typevars_map:
+                    annotations = {
+                        field_name: replace_types(annotation, typevars_map)
+                        for field_name, annotation in annotations.items()
+                    }
 
-            arguments_schema = core_schema.arguments_schema(
-                [
-                    self._generate_parameter_schema(
-                        field_name, annotation, default=namedtuple_cls._field_defaults.get(field_name, Parameter.empty)
-                    )
-                    for field_name, annotation in annotations.items()
-                ],
-                metadata=build_metadata_dict(js_prefer_positional_arguments=True),
-            )
-            return core_schema.call_schema(arguments_schema, namedtuple_cls, ref=namedtuple_ref)
+                arguments_schema = core_schema.arguments_schema(
+                    [
+                        self._generate_parameter_schema(
+                            field_name,
+                            annotation,
+                            default=namedtuple_cls._field_defaults.get(field_name, Parameter.empty),
+                        )
+                        for field_name, annotation in annotations.items()
+                    ],
+                    metadata=build_metadata_dict(js_prefer_positional_arguments=True),
+                )
+                return core_schema.call_schema(arguments_schema, namedtuple_cls, ref=namedtuple_ref)
 
     def _generate_parameter_schema(
         self,
