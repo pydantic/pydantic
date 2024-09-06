@@ -16,10 +16,8 @@ from typing import (
     Dict,
     Generator,
     Literal,
-    Set,
     Tuple,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -51,13 +49,6 @@ from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMod
 from .plugin._schema_validator import PluggableSchemaValidator
 from .warnings import PydanticDeprecatedSince20
 
-# Always define certain types that are needed to resolve method type hints/annotations
-# (even when not type checking) via typing.get_type_hints.
-ModelT = TypeVar('ModelT', bound='BaseModel')
-TupleGenerator = Generator[Tuple[str, Any], None, None]
-IncEx: TypeAlias = Union[Set[int], Set[str], Dict[int, 'IncEx'], Dict[str, 'IncEx'], None]
-
-
 if TYPE_CHECKING:
     from inspect import Signature
     from pathlib import Path
@@ -73,6 +64,11 @@ else:
     DeprecationWarning = PydanticDeprecatedSince20
 
 __all__ = 'BaseModel', 'create_model'
+
+# Keep these type aliases available at runtime:
+TupleGenerator: TypeAlias = Generator[Tuple[str, Any], None, None]
+# Keep this type alias in sync with the stub definition in `pydantic-core`:
+IncEx: TypeAlias = 'set[int] | set[str] | dict[int, IncEx | bool] | dict[str, IncEx | bool]'
 
 _object_setattr = _model_construction.object_setattr
 
@@ -352,8 +348,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         self,
         *,
         mode: Literal['json', 'python'] | str = 'python',
-        include: IncEx = None,
-        exclude: IncEx = None,
+        include: IncEx | None = None,
+        exclude: IncEx | None = None,
         context: Any | None = None,
         by_alias: bool = False,
         exclude_unset: bool = False,
@@ -405,8 +401,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         self,
         *,
         indent: int | None = None,
-        include: IncEx = None,
-        exclude: IncEx = None,
+        include: IncEx | None = None,
+        exclude: IncEx | None = None,
         context: Any | None = None,
         by_alias: bool = False,
         exclude_unset: bool = False,
@@ -1103,8 +1099,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     def dict(  # noqa: D102
         self,
         *,
-        include: IncEx = None,
-        exclude: IncEx = None,
+        include: IncEx | None = None,
+        exclude: IncEx | None = None,
         by_alias: bool = False,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
@@ -1124,8 +1120,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     def json(  # noqa: D102
         self,
         *,
-        include: IncEx = None,
-        exclude: IncEx = None,
+        include: IncEx | None = None,
+        exclude: IncEx | None = None,
         by_alias: bool = False,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
@@ -1451,6 +1447,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         from .deprecated import copy_internals
 
         return copy_internals._calculate_keys(self, *args, **kwargs)
+
+
+ModelT = TypeVar('ModelT', bound=BaseModel)
 
 
 @overload
