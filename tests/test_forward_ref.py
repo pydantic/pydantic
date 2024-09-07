@@ -581,10 +581,12 @@ from pydantic import BaseModel
 
 class Model(BaseModel):
     a: ClassVar[int]
+    _b: ClassVar[int]
 """
     )
 
-    assert module.Model.__class_vars__ == {'a'}
+    assert module.Model.__class_vars__ == {'a', '_b'}
+    assert module.Model.__private_attributes__ == {}
 
 
 def test_json_encoder_str(create_module):
