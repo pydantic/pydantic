@@ -1,15 +1,20 @@
 from __future__ import annotations as _annotations
 
+import copy
 import inspect
-from functools import partial
-from typing import Any, Awaitable, Callable
+import typing
+from functools import partial, wraps
+from typing import Any, Awaitable, Callable, TypedDict
 
 import pydantic_core
 
 from ..config import ConfigDict
 from ..plugin._schema_validator import create_schema_validator
-from . import _generate_schema, _typing_extra
+from . import _generate_schema, _generics, _typing_extra
 from ._config import ConfigWrapper
+
+if typing.TYPE_CHECKING:
+    from ..main import BaseModel
 
 
 class ValidateCallWrapper:
@@ -29,6 +34,7 @@ class ValidateCallWrapper:
         config: ConfigDict | None,
         validate_return: bool,
         namespace: dict[str, Any] | None,
+        typevars_map: dict[Any, Any] | None = None,
     ):
         if isinstance(function, partial):
             func = function.func
@@ -46,14 +52,14 @@ class ValidateCallWrapper:
         # TODO: this is a bit of a hack, we should probably have a better way to handle this
         # specifically, we shouldn't be pumping the namespace full of type_params
         # when we take namespace and type_params arguments in eval_type_backport
-        type_params = getattr(schema_type, '__type_params__', ())
+        type_params = (namespace or {}).get('__type_params__', ()) + getattr(schema_type, '__type_params__', ())
         namespace = {
             **{param.__name__: param for param in type_params},
             **(global_ns or {}),
             **(namespace or {}),
         }
         config_wrapper = ConfigWrapper(config)
-        gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
+        gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace, typevars_map)
         schema = gen_schema.clean_schema(gen_schema.generate_schema(function))
         core_config = config_wrapper.core_config(self)
 
@@ -97,3 +103,52 @@ class ValidateCallWrapper:
         if self.__return_pydantic_validator__:
             return self.__return_pydantic_validator__(res)
         return res
+
+
+class ValidateCallInfo(TypedDict):
+    validate_return: bool
+    config: ConfigDict | None
+    function: Callable[..., Any]
+
+
+def collect_validate_call_info(namespace: dict[str, Any]):
+    validate_call_infos = {}
+    for k, v in namespace.items():
+        if info := getattr(v, '__pydantic_validate_call_info__', None):
+            validate_call_infos[k] = info
+
+    return validate_call_infos
+
+
+def _copy_func(function: Callable[..., Any]):
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        return function(*args, **kwargs)
+
+    return wrapper
+
+
+def update_generic_validate_call_info(model: type[BaseModel]):
+    """Called when a generic model is subscripted."""
+    origin = model.__pydantic_generic_metadata__['origin']
+    typevars_map: dict[Any, Any] | None = _generics.get_model_typevars_map(model)
+
+    if not origin:
+        return
+
+    for func_name, info in origin.__pydantic_validate_call_infos__.items():
+        info = info.copy()
+        # print(f'original {name}: {info['function']}')
+        function = info['function'] = _copy_func(info['function'])
+        function.__annotations__ = copy.copy(function.__annotations__)
+
+        for name, annotation in function.__annotations__.items():
+            evaluated_annotation = _typing_extra.eval_type_lenient(annotation, _typing_extra.get_module_ns_of(origin))
+            function.__annotations__[name] = _generics.replace_types(evaluated_annotation, typevars_map)
+
+        from ..validate_call_decorator import validate_call
+
+        new_function = validate_call(config=info['config'], validate_return=info['validate_return'])(function)
+        setattr(model, func_name, new_function)
+        info['function'] = new_function
+        model.__pydantic_validate_call_infos__[func_name] = info

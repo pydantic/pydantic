@@ -65,6 +65,7 @@ if TYPE_CHECKING:
     from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
 
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
+    from ._internal._validate_call import ValidateCallInfo
     from .deprecated.parse import Protocol as DeprecatedParseProtocol
     from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
 else:
@@ -168,6 +169,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     __pydantic_validator__: ClassVar[SchemaValidator | PluggableSchemaValidator]
     """The `pydantic-core` `SchemaValidator` used to validate instances of the model."""
+
+    __pydantic_validate_call_infos__: ClassVar[Dict[str, ValidateCallInfo]] = {}  # noqa: UP006
 
     __pydantic_extra__: dict[str, Any] | None = _model_construction.NoInitField(init=False)
     """A dictionary containing extra values, if [`extra`][pydantic.config.ConfigDict.extra] is set to `'allow'`."""

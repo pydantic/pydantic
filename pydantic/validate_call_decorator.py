@@ -61,6 +61,13 @@ def validate_call(
 
         wrapper_function.raw_function = function  # type: ignore
 
+        info = _validate_call.ValidateCallInfo(
+            validate_return=validate_return,
+            config=config,
+            function=function,
+        )
+        wrapper_function.__pydantic_validate_call_info__ = info  # type: ignore
+
         return wrapper_function  # type: ignore
 
     if func:

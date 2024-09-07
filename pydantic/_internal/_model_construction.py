@@ -37,7 +37,7 @@ from ._typing_extra import (
     parent_frame_namespace,
 )
 from ._utils import ClassAttribute, SafeGetItemProxy
-from ._validate_call import ValidateCallWrapper
+from ._validate_call import ValidateCallWrapper, collect_validate_call_info
 
 if typing.TYPE_CHECKING:
     from ..fields import Field as PydanticModelField
@@ -200,6 +200,8 @@ class ModelMetaclass(ABCMeta):
                     'args': (),
                     'parameters': parameters,
                 }
+
+            cls.__pydantic_validate_call_infos__ = collect_validate_call_info(namespace)
 
             cls.__pydantic_complete__ = False  # Ensure this specific class gets completed
 

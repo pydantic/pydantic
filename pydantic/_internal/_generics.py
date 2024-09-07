@@ -134,7 +134,7 @@ def create_generic_submodel(
     bases = (origin,)
     meta, ns, kwds = prepare_class(model_name, bases)
     namespace.update(ns)
-    created_model = meta(
+    created_model: type[BaseModel] = meta(
         model_name,
         bases,
         namespace,
@@ -146,6 +146,10 @@ def create_generic_submodel(
         __pydantic_reset_parent_namespace__=False,
         **kwds,
     )
+
+    from ._validate_call import update_generic_validate_call_info
+
+    update_generic_validate_call_info(created_model)
 
     model_module, called_globally = _get_caller_frame_info(depth=3)
     if called_globally:  # create global reference and therefore allow pickling

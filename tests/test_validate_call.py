@@ -4,7 +4,7 @@ import re
 import sys
 from datetime import datetime, timezone
 from functools import partial
-from typing import Any, List, Tuple
+from typing import Any, Generic, List, Literal, Optional, Tuple, TypeVar, Union
 
 import pytest
 from pydantic_core import ArgsKwargs
@@ -818,7 +818,10 @@ def test_eval_type_backport():
     ]
 
 
-@pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+ for PEP 695 syntax with generics')
+REQUIRE_PEP_695 = pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+')
+
+
+@REQUIRE_PEP_695
 def test_validate_call_with_pep_695_syntax() -> None:
     """Note: validate_call still doesn't work properly with generics, see https://github.com/pydantic/pydantic/issues/7796.
 
@@ -846,6 +849,193 @@ def find_max_validate_return[T](args: Iterable[T]) -> T:
 
         with pytest.raises(ValidationError):
             find_max(1)
+
+
+@REQUIRE_PEP_695
+def test_class_type_params():
+    class A[T]:
+        @validate_call
+        def f(self, x: T) -> T:
+            return x
+
+    class B[T, S](BaseModel):
+        @validate_call
+        def f(self, x: T) -> Union[T, List[tuple[S, int]]]:
+            return x
+
+        @validate_call
+        def g[P: int](self, x: P) -> list[P]:
+            return x
+
+
+def test_generic_method():
+    T = TypeVar('T')
+
+    class A(BaseModel, Generic[T]):
+        a: T
+
+        @validate_call(validate_return=True)
+        def f(self, x: T) -> tuple[T, T]:
+            return (self.a, x)
+
+        @validate_call(validate_return=True)
+        def g(self, x: list[T]) -> tuple[T, T]:
+            return (x[0], x[1])
+
+        @validate_call(validate_return=True)
+        def h(self, x: list[T]) -> tuple[T, T]:
+            return None
+
+    def check_A():
+        a_any = A(a=1)
+        assert a_any.f(2) == (1, 2)
+        assert a_any.f('abc') == (1, 'abc')
+        assert a_any.g([1, 'a']) == (1, 'a')
+        with pytest.raises(ValidationError):
+            a_any.h([1])
+
+    check_A()
+
+    a_int = A[int](a=1)
+    assert a_int.f(2) == (1, 2)
+    assert a_int.f('2') == (1, 2)
+    assert a_int.g([1, 2, 3]) == (1, 2)
+    with pytest.raises(ValidationError):
+        a_int.f('abc')
+    with pytest.raises(ValidationError):
+        a_int.f([])
+    with pytest.raises(ValidationError):
+        a_int.g([1, 'abc'])
+
+    # Ensure the subclassed methods will not affect the original methods.
+    check_A()
+
+    class B(A[int], Generic[T]):
+        @validate_call
+        def f1(self, x: Optional[Union[T, Literal['bar']]] = None): ...
+
+        @validate_call(validate_return=True)
+        def f2(self, x: T) -> dict[str, list[Optional[set[T]]]]:
+            # test complicated type as well type conversion
+            return {str(x): [None, (x,)]}
+
+    b_foo = B[Literal['foo']](a=123)
+    b_foo.f1('foo')
+    b_foo.f1('bar')
+    b_foo.f1()
+    with pytest.raises(ValidationError):
+        b_foo.f1('abc')
+    with pytest.raises(ValidationError):
+        b_foo.f1(1234)
+
+    # inherited
+    assert b_foo.g([1, 2, 3]) == (1, 2)
+    with pytest.raises(ValidationError):
+        b_foo.f('abc')
+
+
+GENERIC_MRO_REQUIRED = pytest.mark.xfail(
+    BaseModel.__class__.mro is type.mro,
+    reason='dynamic generic mro (#10100) is not merged yet',
+)
+
+
+@GENERIC_MRO_REQUIRED
+def test_generic_inheritance():
+    T = TypeVar('T')
+
+    class A(BaseModel, Generic[T]):
+        a: T
+
+        @validate_call(validate_return=True)
+        def f(self, x: T) -> str:
+            return str(x)
+
+        # no validate_return
+        @validate_call
+        def g(self, x: list[T]) -> T:
+            return
+
+    class SubA(A[T], Generic[T]):
+        pass
+
+    for cls in (A, SubA):
+        a: A[int] = cls[int](a=1)
+        assert a.f(2) == '2'
+        assert a.g([1, 2, 3]) is None
+        with pytest.raises(ValidationError):
+            a.f('a')
+        with pytest.raises(ValidationError):
+            a.g([1, 'a'])
+
+
+@GENERIC_MRO_REQUIRED
+def test_generic_multi_typevars():
+    T1 = TypeVar('T1')
+    T2 = TypeVar('T2')
+
+    class A(BaseModel, Generic[T1]):
+        @validate_call
+        def f_a(self, x: T1) -> T1:
+            return x
+
+    class B(A[T1], Generic[T1, T2]):
+        @validate_call
+        def f_b(self, x: T1, y: T2) -> tuple[T1, T2]:
+            return x, y
+
+    class BSwap(B[T2, T1], Generic[T1, T2]): ...
+
+    b1 = B[int, str]()
+    assert b1.f_a(123) == 123
+    assert b1.f_b(0, 'abc') == (0, 'abc')
+
+    with pytest.raises(ValidationError):
+        # For this to work, A[int] need to be in B[int, str].__mro__,
+        # which can be solved if #10100 is merged
+        b1.f_a('abc')
+    with pytest.raises(ValidationError):
+        b1.f_b(0, [])
+
+    b2 = BSwap[int, str]()
+    assert b2.f_a('abc') == 'abc'
+    assert b2.f_b('abc', 0) == ('abc', 0)
+    with pytest.raises(ValidationError):
+        b2.f_a([])
+    with pytest.raises(ValidationError):
+        b2.f_b('abc', 'abc')
+
+
+# For normal function or class other than `BaseModel`, we cannot get the parameters at runtime.
+# https://github.com/python/typing/issues/629
+# https://discuss.python.org/t/runtime-access-to-type-parameters/37517
+NO_ACCESS_TO_TYPE_PARAMS = pytest.mark.xfail(reason='no access to type parameters')
+
+
+@NO_ACCESS_TO_TYPE_PARAMS
+def test_generic_func():
+    T = TypeVar('T')
+
+    @validate_call(validate_return=True)
+    def my_func(arg: T) -> T:
+        return 1
+
+    with pytest.raises(ValidationError):
+        my_func('a')
+
+
+@NO_ACCESS_TO_TYPE_PARAMS
+def test_generic_class():
+    T = TypeVar('T')
+
+    class A(Generic[T]):
+        @validate_call(validate_return=True)
+        def my_func(self, arg: T) -> T:
+            return arg
+
+    a = A[int]()
+    with pytest.raises(ValidationError):
+        a.my_func('a')
 
 
 class M0(BaseModel):
