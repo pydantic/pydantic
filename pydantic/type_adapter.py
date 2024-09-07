@@ -7,17 +7,13 @@ from contextlib import contextmanager
 from dataclasses import is_dataclass
 from functools import cached_property, wraps
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Generic,
     Iterable,
     Iterator,
     Literal,
-    Set,
     TypeVar,
-    Union,
     cast,
     final,
     overload,
@@ -27,7 +23,7 @@ from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
 from typing_extensions import Concatenate, ParamSpec, is_typeddict
 
 from pydantic.errors import PydanticUserError
-from pydantic.main import BaseModel
+from pydantic.main import BaseModel, IncEx
 
 from ._internal import _config, _generate_schema, _mock_val_ser, _typing_extra, _utils
 from .config import ConfigDict
@@ -44,11 +40,6 @@ T = TypeVar('T')
 R = TypeVar('R')
 P = ParamSpec('P')
 TypeAdapterT = TypeVar('TypeAdapterT', bound='TypeAdapter')
-
-
-if TYPE_CHECKING:
-    # should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
-    IncEx = Union[Set[int], Set[str], Dict[int, Any], Dict[str, Any]]
 
 
 def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth: int) -> CoreSchema:
