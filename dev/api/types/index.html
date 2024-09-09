@@ -5764,7 +5764,7 @@ Use this class as an annotation via <a href="https://docs.python.org/3/library/t
 <span class="normal">135</span>
 <span class="normal">136</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
 <span class="k">class</span> <span class="nc">Strict</span><span class="p">(</span><span class="n">_fields</span><span class="o">.</span><span class="n">PydanticMetadata</span><span class="p">,</span> <span class="n">BaseMetadata</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.9/concepts/strict_mode/#strict-mode-with-annotated-strict</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.10/concepts/strict_mode/#strict-mode-with-annotated-strict</span>
 
 <span class="sd">    A field metadata class to indicate that a field should be validated in strict mode.</span>
 <span class="sd">    Use this class as an annotation via [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated), as seen below.</span>
@@ -6114,7 +6114,7 @@ from typing_extensions import Annotated</p>
 <span class="normal">738</span>
 <span class="normal">739</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">StringConstraints</span><span class="p">(</span><span class="n">annotated_types</span><span class="o">.</span><span class="n">GroupedMetadata</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.9/concepts/fields/#string-constraints</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.10/concepts/fields/#string-constraints</span>
 
 <span class="sd">    A field metadata class to apply constraints to `str` types.</span>
 <span class="sd">    Use this class as an annotation via [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated), as seen below.</span>
@@ -11347,7 +11347,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2672</span>
 <span class="normal">2673</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">GetPydanticSchema</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.9/concepts/types/#using-getpydanticschema-to-reduce-boilerplate</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.10/concepts/types/#using-getpydanticschema-to-reduce-boilerplate</span>
 
 <span class="sd">    A convenience class for creating an annotation that provides pydantic custom type hooks.</span>
 
@@ -11935,7 +11935,7 @@ than it would be as a normal <code>Union</code>.</p>
 <span class="normal">2914</span>
 <span class="normal">2915</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">Discriminator</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.9/concepts/unions/#discriminated-unions-with-callable-discriminator</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.10/concepts/unions/#discriminated-unions-with-callable-discriminator</span>
 
 <span class="sd">    Provides a way to use a custom callable as the way to extract the value of a union discriminator.</span>
 
@@ -14753,7 +14753,7 @@ See <a href="https://github.com/pydantic/pydantic-core/issues/296">this issue</a
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.9.0", "pydantic-core==2.23.3", "pydantic-extra-types==2.9.0"]
+    window.mkdocs_run_deps = ["pydantic==2.10.0a1", "pydantic-core==2.23.3", "pydantic-extra-types==2.9.0"]
     </script>
 
               </article>
