@@ -582,10 +582,13 @@ from pydantic import BaseModel
 class Model(BaseModel):
     a: ClassVar[int]
     _b: ClassVar[int]
+    _c: ClassVar[Forward]
+
+Forward = int
 """
     )
 
-    assert module.Model.__class_vars__ == {'a', '_b'}
+    assert module.Model.__class_vars__ == {'a', '_b', '_c'}
     assert module.Model.__private_attributes__ == {}
 
 
