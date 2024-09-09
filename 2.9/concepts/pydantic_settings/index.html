@@ -4608,6 +4608,17 @@ From there, <em>pydantic</em> will handle everything for you by loading in your 
 <strong>a dotenv file and environment variables will always take priority over values loaded from the secrets directory</strong>.</p>
 <p>Passing a file path via the <code>_secrets_dir</code> keyword argument on instantiation (method 2) will override
 the value (if any) set on the <code>model_config</code> class.</p>
+<p>If you need to load settings from multiple secrets directories, you can pass multiple paths as a tuple or list. Just like for <code>env_file</code>, values from subsequent paths override previous ones.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="c1"># files in &#39;/run/secrets&#39; take priority over &#39;/var/run&#39;</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">secrets_dir</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;/var/run&#39;</span><span class="p">,</span> <span class="s1">&#39;/run/secrets&#39;</span><span class="p">))</span>
+
+    <span class="n">database_password</span><span class="p">:</span> <span class="nb">str</span>
+</code></pre></div>
+<p>If any of <code>secrets_dir</code> is missing, it is ignored, and warning is shown. If any of <code>secrets_dir</code> is a file, error is raised.</p>
 <h3 id="use-case-docker-secrets">Use Case: Docker Secrets<a class="headerlink" href="#use-case-docker-secrets" title="Permanent link">&para;</a></h3>
 <p>Docker Secrets can be used to provide sensitive configuration to an application running in a Docker container.
 To use these secrets in a <em>pydantic</em> application the process is simple. More information regarding creating, managing
@@ -5125,7 +5136,7 @@ need to add your own custom sources, <code>settings_customise_sources</code> mak
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.9.0", "pydantic-core==2.23.2", "pydantic-extra-types==2.9.0"]
+    window.mkdocs_run_deps = ["pydantic==2.9.1", "pydantic-core==2.23.3", "pydantic-extra-types==2.9.0"]
     </script>
 
               </article>
