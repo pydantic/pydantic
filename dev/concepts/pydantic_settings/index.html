@@ -4202,7 +4202,7 @@ subcommands</a>.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p><code>CliSubCommand</code> and <code>CliPositionalArg</code> are always case sensitive and do not support aliases.</p>
+<p><code>CliSubCommand</code> and <code>CliPositionalArg</code> are always case sensitive.</p>
 </div>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">sys</span>
 
@@ -4260,6 +4260,60 @@ subcommands</a>.</p>
     <span class="s1">&#39;repository&#39;</span><span class="p">:</span> <span class="s1">&#39;repo&#39;</span><span class="p">,</span>
 <span class="p">}</span>
 </code></pre></div>
+<p>The <code>CliSubCommand</code> and <code>CliPositionalArg</code> annotations also support union operations and aliases. For unions of Pydantic
+models, it is important to remember the <a href="https://docs.pydantic.dev/latest/concepts/unions/">nuances</a> that can arise
+during validation. Specifically, for unions of subcommands that are identical in content, it is recommended to break
+them out into separate <code>CliSubCommand</code> fields to avoid any complications. Lastly, the derived subcommand names from
+unions will be the names of the Pydantic model classes themselves.</p>
+<p>When assigning aliases to <code>CliSubCommand</code> or <code>CliPositionalArg</code> fields, only a single alias can be assigned. For
+non-union subcommands, aliasing will change the displayed help text and subcommand name. Conversely, for union
+subcommands, aliasing will have no tangible effect from the perspective of the CLI settings source. Lastly, for
+positional arguments, aliasing will change the CLI help text displayed for the field.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseSettings</span><span class="p">,</span>
+    <span class="n">CliPositionalArg</span><span class="p">,</span>
+    <span class="n">CliSubCommand</span><span class="p">,</span>
+    <span class="n">get_subcommand</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Alpha</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apha Help&quot;&quot;&quot;</span>
+
+    <span class="n">cmd_alpha</span><span class="p">:</span> <span class="n">CliPositionalArg</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;alpha-cmd&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Beta</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Beta Help&quot;&quot;&quot;</span>
+
+    <span class="n">opt_beta</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;opt-beta&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Gamma</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gamma Help&quot;&quot;&quot;</span>
+
+    <span class="n">opt_gamma</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;opt-gamma&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Root</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">,</span> <span class="n">cli_parse_args</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cli_exit_on_error</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">alpha_or_beta</span><span class="p">:</span> <span class="n">CliSubCommand</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Alpha</span><span class="p">,</span> <span class="n">Beta</span><span class="p">]]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;alpha-or-beta-cmd&#39;</span><span class="p">)</span>
+    <span class="n">gamma</span><span class="p">:</span> <span class="n">CliSubCommand</span><span class="p">[</span><span class="n">Gamma</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;gamma-cmd&#39;</span><span class="p">)</span>
+
+
+<span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;Alpha&#39;</span><span class="p">,</span> <span class="s1">&#39;hello&#39;</span><span class="p">]</span>
+<span class="k">assert</span> <span class="n">get_subcommand</span><span class="p">(</span><span class="n">Root</span><span class="p">())</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;cmd_alpha&#39;</span><span class="p">:</span> <span class="s1">&#39;hello&#39;</span><span class="p">}</span>
+
+<span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;Beta&#39;</span><span class="p">,</span> <span class="s1">&#39;--opt-beta=hey&#39;</span><span class="p">]</span>
+<span class="k">assert</span> <span class="n">get_subcommand</span><span class="p">(</span><span class="n">Root</span><span class="p">())</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;opt_beta&#39;</span><span class="p">:</span> <span class="s1">&#39;hey&#39;</span><span class="p">}</span>
+
+<span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;gamma-cmd&#39;</span><span class="p">,</span> <span class="s1">&#39;--opt-gamma=hi&#39;</span><span class="p">]</span>
+<span class="k">assert</span> <span class="n">get_subcommand</span><span class="p">(</span><span class="n">Root</span><span class="p">())</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;opt_gamma&#39;</span><span class="p">:</span> <span class="s1">&#39;hi&#39;</span><span class="p">}</span>
+</code></pre></div>
 <h3 id="customizing-the-cli-experience">Customizing the CLI Experience<a class="headerlink" href="#customizing-the-cli-experience" title="Permanent link">&para;</a></h3>
 <p>The below flags can be used to customise the CLI experience to your needs.</p>
 <h4 id="change-the-displayed-program-name">Change the Displayed Program Name<a class="headerlink" href="#change-the-displayed-program-name" title="Permanent link">&para;</a></h4>
@@ -4296,10 +4350,13 @@ default, boolean fields are "explicit", meaning a boolean value must be explicit
 when necessary.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
+<p>For <code>python &lt; 3.9</code> the <code>--no-flag</code> option is not generated due to an underlying <code>argparse</code> limitation.</p>
 </div>
-<p>For <code>python &lt; 3.9</code>:
-  * The <code>--no-flag</code> option is not generated due to an underlying <code>argparse</code> limitation.
-  * The <code>CliImplicitFlag</code> and <code>CliExplicitFlag</code> annotations can only be applied to optional bool fields.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For <code>python &lt; 3.9</code> the <code>CliImplicitFlag</code> and <code>CliExplicitFlag</code> annotations can only be applied to optional boolean
+fields.</p>
+</div>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">CliExplicitFlag</span><span class="p">,</span> <span class="n">CliImplicitFlag</span>
 
 
