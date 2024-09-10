@@ -174,7 +174,7 @@ def _wrap_validate_call(function: Callable[..., Any], info: ValidateCallInfo) ->
     namespace = info['local_namspace']
 
     locals_name = _add_unique_postfix('locals')
-    parent_name = _add_unique_postfix('tmp1')
+    parent_name = _add_unique_postfix('parent')
     info_name = _add_unique_postfix('info')
     function_name = _add_unique_postfix('function')
     item_name = _add_unique_postfix('item')
