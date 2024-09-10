@@ -253,17 +253,17 @@ class ModelMetaclass(ABCMeta):
             namespace.get('__annotations__', {}).clear()
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
-    def mro(cls):
+    def mro(cls) -> list[type[Any]]:
         original_mro = super().mro()
 
         if cls.__bases__ == (object,):
             return original_mro
 
-        generic_metadata = cls.__dict__.get('__pydantic_generic_metadata__', None)
+        generic_metadata: PydanticGenericMetadata | None = cls.__dict__.get('__pydantic_generic_metadata__')
         if not generic_metadata:
             return original_mro
 
-        assert_err_msg = 'Unexpected error occurred when generating MRO of generic subclass. Please report this issue on github: https://github.com/pydantic/pydantic/issues.'
+        assert_err_msg = 'Unexpected error occurred when generating MRO of generic subclass. Please report this issue on GitHub: https://github.com/pydantic/pydantic/issues.'
 
         origin: type[BaseModel] | None
         origin, args = (
@@ -278,10 +278,12 @@ class ModelMetaclass(ABCMeta):
 
         indexed_origins = {origin}
 
-        new_mro: list[type] = [cls]
+        new_mro: list[type[Any]] = [cls]
         for base in original_mro[1:]:
-            base_origin = getattr(base, '__pydantic_generic_metadata__', {}).get('origin', None)
-            base_params = getattr(base, '__pydantic_generic_metadata__', {}).get('parameters', ())
+            base_origin: type[BaseModel] | None = getattr(base, '__pydantic_generic_metadata__', {}).get('origin')
+            base_params: tuple[type[Any], ...] = getattr(base, '__pydantic_generic_metadata__', {}).get(
+                'parameters', ()
+            )
 
             if base_origin in indexed_origins:
                 continue
