@@ -36,6 +36,7 @@ from pydantic_core import CoreSchema, core_schema
 from typing_extensions import (
     Annotated,
     Literal,
+    Never,
     NotRequired,
     ParamSpec,
     TypedDict,
@@ -2875,3 +2876,16 @@ def test_generic_with_allow_extra():
     # This used to raise an error related to accessing the __annotations__ attribute of the Generic class
     class AllowExtraGeneric(BaseModel, Generic[T], extra='allow'):
         data: T
+
+
+def test_generic_any_or_never() -> None:
+    T = TypeVar('T')
+
+    class GenericModel(BaseModel, Generic[T]):
+        f: Union[T, int]
+
+    any_json_schema = GenericModel[Any].model_json_schema()
+    assert any_json_schema['properties']['f'] == {'title': 'F'}  # any type
+
+    never_json_schema = GenericModel[Never].model_json_schema()
+    assert never_json_schema['properties']['f'] == {'type': 'integer', 'title': 'F'}
