@@ -231,7 +231,7 @@ class _DefinitionsRemapping:
 
 
 class GenerateJsonSchema:
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/json_schema/#customizing-the-json-schema-generation-process
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/json_schema/#customizing-the-json-schema-generation-process
 
     A class for generating JSON schemas.
 
@@ -1877,8 +1877,8 @@ class GenerateJsonSchema:
 
         JSON has no standard way to represent complex numbers. Complex number is not a numeric
         type. Here we represent complex number as strings following the rule defined by Python.
-        For instance, '1+2j' is an accepted complex string. Details can be found at
-        https://docs.python.org/3/library/functions.html#complex
+        For instance, '1+2j' is an accepted complex string. Details can be found in
+        [Python's `complex` documentation][complex].
 
         Args:
             schema: The core schema.
@@ -2369,7 +2369,7 @@ def _sort_json_schema(value: JsonSchemaValue, parent_key: str | None = None) -> 
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
 class WithJsonSchema:
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/json_schema/#withjsonschema-annotation
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/json_schema/#withjsonschema-annotation
 
     Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
     This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
@@ -2504,7 +2504,7 @@ else:
 
     @dataclasses.dataclass(**_internal_dataclass.slots_true)
     class SkipJsonSchema:
-        """Usage docs: https://docs.pydantic.dev/2.9/concepts/json_schema/#skipjsonschema-annotation
+        """Usage docs: https://docs.pydantic.dev/2.10/concepts/json_schema/#skipjsonschema-annotation
 
         Add this as an annotation on a field to skip generating a JSON schema for that field.
 

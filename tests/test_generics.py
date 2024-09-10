@@ -36,6 +36,7 @@ from pydantic_core import CoreSchema, core_schema
 from typing_extensions import (
     Annotated,
     Literal,
+    Never,
     NotRequired,
     ParamSpec,
     TypedDict,
@@ -3029,3 +3030,16 @@ def test_generic_field():
 
     assert C.__mro__ == (C, B[bool], B, A[bool], A, BaseModel, Generic, object)
     assert issubclass(C, A[bool]) and issubclass(C, A[int]) is False
+
+
+def test_generic_any_or_never() -> None:
+    T = TypeVar('T')
+
+    class GenericModel(BaseModel, Generic[T]):
+        f: Union[T, int]
+
+    any_json_schema = GenericModel[Any].model_json_schema()
+    assert any_json_schema['properties']['f'] == {'title': 'F'}  # any type
+
+    never_json_schema = GenericModel[Never].model_json_schema()
+    assert never_json_schema['properties']['f'] == {'type': 'integer', 'title': 'F'}

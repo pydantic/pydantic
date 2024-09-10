@@ -108,7 +108,7 @@ def dataclass(
     kw_only: bool = False,
     slots: bool = False,
 ) -> Callable[[type[_T]], type[PydanticDataclass]] | type[PydanticDataclass]:
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/dataclasses/
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/dataclasses/
 
     A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclass`,
     but with added validation.
@@ -257,10 +257,8 @@ def dataclass(
         cls.__doc__ = original_doc
         cls.__module__ = original_cls.__module__
         cls.__qualname__ = original_cls.__qualname__
-        pydantic_complete = _pydantic_dataclasses.complete_dataclass(
-            cls, config_wrapper, raise_errors=False, types_namespace=None
-        )
-        cls.__pydantic_complete__ = pydantic_complete  # type: ignore
+        cls.__pydantic_complete__ = False  # `complete_dataclass` will set it to `True` if successful.
+        _pydantic_dataclasses.complete_dataclass(cls, config_wrapper, raise_errors=False, types_namespace=None)
         return cls
 
     return create_dataclass if _cls is None else create_dataclass(_cls)

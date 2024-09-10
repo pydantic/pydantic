@@ -9,11 +9,16 @@ from pydantic import (
     BeforeValidator,
     Discriminator,
     Field,
+    PlainSerializer,
     PlainValidator,
+    SerializerFunctionWrapHandler,
     ValidatorFunctionWrapHandler,
+    WrapSerializer,
     WrapValidator,
     create_model,
+    field_serializer,
     field_validator,
+    model_serializer,
     model_validator,
 )
 from pydantic.dataclasses import dataclass
@@ -260,5 +265,68 @@ def test_custom_model_validator_wrap(benchmark) -> None:
             @classmethod
             def validate_model_wrap(cls, values: Any, handler: ModelWrapValidatorHandler[Self]) -> Any:
                 return handler(values)
+
+    benchmark(schema_gen)
+
+
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_custom_field_serializer_plain(benchmark) -> None:
+    def schema_gen() -> None:
+        class ModelWithFieldSerializer(BaseModel):
+            field1: int
+
+            @field_serializer('field1', mode='plain')
+            def serialize_field(cls, v: int) -> str:
+                return str(v)
+
+    benchmark(schema_gen)
+
+
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_custom_field_serializer_wrap(benchmark) -> None:
+    def schema_gen() -> None:
+        class ModelWithFieldSerializer(BaseModel):
+            field1: int
+
+            @field_serializer('field1', mode='wrap')
+            def serialize_field(cls, v: int, nxt: SerializerFunctionWrapHandler) -> str:
+                return nxt(v)
+
+    benchmark(schema_gen)
+
+
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_custom_model_serializer_decorator(benchmark) -> None:
+    def schema_gen() -> None:
+        class ModelWithModelSerializer(BaseModel):
+            field1: Any
+
+            @model_serializer
+            def serialize_model(self) -> Any:
+                return self.field1
+
+    benchmark(schema_gen)
+
+
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_custom_serializer_plain_annotated(benchmark) -> None:
+    def schema_gen() -> None:
+        def serialize_idempotent(x: Any) -> Any:
+            return x
+
+        class ModelWithAnnotatedSerializer(BaseModel):
+            field: Annotated[List, PlainSerializer(serialize_idempotent, return_type=Any)]
+
+    benchmark(schema_gen)
+
+
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_custom_serializer_wrap_annotated(benchmark) -> None:
+    def schema_gen() -> None:
+        def serialize_idempotent(x: Any, nxt: SerializerFunctionWrapHandler) -> Any:
+            return nxt(x)
+
+        class ModelWithAnnotatedSerializer(BaseModel):
+            field: Annotated[List, WrapSerializer(serialize_idempotent, when_used='json')]
 
     benchmark(schema_gen)
