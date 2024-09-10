@@ -2808,3 +2808,21 @@ def test_model_metaclass_on_other_class() -> None:
 
     class OtherClass(metaclass=ModelMetaclass):
         pass
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+')
+def test_nested_type_statement():
+    # https://docs.python.org/3/reference/simple_stmts.html#type
+
+    globs = {}
+    exec(
+        """
+from pydantic import BaseModel
+class A(BaseModel):
+    type Int = int
+    a: Int
+""",
+        globs,
+    )
+    A = globs['A']
+    assert A(a=1).a == 1
