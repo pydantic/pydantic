@@ -155,15 +155,15 @@ class GenericModel(BaseModel):
         if new_params:
             created_model.__parameters__ = new_params
 
+        # Recursively walk class type hints and replace generic typevars
+        # with concrete types that were passed.
+        _prepare_model_fields(created_model, fields, instance_type_hints, typevars_map)
+
         # Save created model in cache so we don't end up creating duplicate
         # models that should be identical.
         _generic_types_cache[_cache_key(params)] = created_model
         if len(params) == 1:
             _generic_types_cache[_cache_key(params[0])] = created_model
-
-        # Recursively walk class type hints and replace generic typevars
-        # with concrete types that were passed.
-        _prepare_model_fields(created_model, fields, instance_type_hints, typevars_map)
 
         return created_model
 
