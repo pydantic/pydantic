@@ -31,6 +31,8 @@ from pydantic import (
 )
 from pydantic.dataclasses import dataclass, rebuild_dataclass
 
+from .shared import StdLibTypes
+
 
 class DeferredModel(BaseModel):
     model_config = {"defer_build": True}
@@ -332,5 +334,15 @@ def test_untagged_union_smart_mode_schema_generation(benchmark):
         class User(BaseModel):
             id: Union[int, str, UUID]
             name: str
+
+    benchmark(generate_schema)
+
+
+@pytest.mark.parametrize('field_type', StdLibTypes)
+@pytest.mark.benchmark(group='stdlib_schema_generation')
+def test_stdlib_type_schema_generation(benchmark, field_type):
+    def generate_schema():
+        class StdlibTypeModel(BaseModel):
+            field: field_type
 
     benchmark(generate_schema)
