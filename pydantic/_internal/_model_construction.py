@@ -741,7 +741,7 @@ def unpack_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | N
 def default_ignored_types() -> tuple[type[Any], ...]:
     from ..fields import ComputedFieldInfo
 
-    return (
+    ignored_types = [
         FunctionType,
         property,
         classmethod,
@@ -749,4 +749,11 @@ def default_ignored_types() -> tuple[type[Any], ...]:
         PydanticDescriptorProxy,
         ComputedFieldInfo,
         ValidateCallWrapper,
-    )
+    ]
+
+    if sys.version_info >= (3, 12):
+        from typing import TypeAliasType
+
+        ignored_types.append(TypeAliasType)
+
+    return tuple(ignored_types)
