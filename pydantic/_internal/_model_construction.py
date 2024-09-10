@@ -133,6 +133,8 @@ class ModelMetaclass(ABCMeta):
 
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
+            if __pydantic_generic_metadata__:
+                namespace['__pydantic_generic_metadata__'] = __pydantic_generic_metadata__
 
             cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
 
@@ -250,6 +252,60 @@ class ModelMetaclass(ABCMeta):
                 )
             namespace.get('__annotations__', {}).clear()
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
+
+    def mro(cls):
+        original_mro = super().mro()
+
+        if cls.__bases__ == (object,):
+            return original_mro
+
+        generic_metadata = cls.__dict__.get('__pydantic_generic_metadata__', None)
+        if not generic_metadata:
+            return original_mro
+
+        assert_err_msg = 'Unexpected error occurred when generating MRO of generic subclass. Please report this issue on github: https://github.com/pydantic/pydantic/issues.'
+
+        origin: type[BaseModel] | None
+        origin, args = (
+            generic_metadata['origin'],
+            generic_metadata['args'],
+        )
+        if not origin:
+            return original_mro
+
+        target_params = origin.__pydantic_generic_metadata__['parameters']
+        param_dict = dict(zip(target_params, args))
+
+        indexed_origins = {origin}
+
+        new_mro: list[type] = [cls]
+        for base in original_mro[1:]:
+            base_origin = getattr(base, '__pydantic_generic_metadata__', {}).get('origin', None)
+            base_params = getattr(base, '__pydantic_generic_metadata__', {}).get('parameters', ())
+
+            if base_origin in indexed_origins:
+                continue
+            elif base not in indexed_origins and base_params:
+                assert set(base_params) <= param_dict.keys(), assert_err_msg
+                new_base_args = tuple(param_dict[param] for param in base_params)
+                new_base = base[new_base_args]  # type: ignore
+                new_mro.append(new_base)
+
+                indexed_origins.add(base_origin or base)
+
+                if base_origin is not None:
+                    # dropped previous indexed origins
+                    continue
+            else:
+                indexed_origins.add(base_origin or base)
+
+            # Avoid redundunt case such as
+            # class A(BaseModel, Generic[T]): ...
+            # A[T] is A  # True
+            if base is not new_mro[-1]:
+                new_mro.append(base)
+
+        return new_mro
 
     if not typing.TYPE_CHECKING:  # pragma: no branch
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
