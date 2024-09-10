@@ -4,7 +4,7 @@ import re
 import sys
 from datetime import datetime, timezone
 from functools import partial
-from typing import TYPE_CHECKING, Any, Generic, Iterable, List, Literal, Optional, Tuple, TypeVar, Union
+from typing import Any, Dict, Generic, Iterable, List, Literal, Optional, Set, Tuple, TypeVar, Union
 
 import pytest
 from pydantic_core import ArgsKwargs
@@ -884,22 +884,6 @@ class B[T, S](BaseModel):
 
         exec(compile(source, '<string>', 'exec'), None, local_ns)
 
-        if TYPE_CHECKING:
-
-            class A[T](BaseModel):
-                @validate_call(validate_return=True)
-                def f(self, x: T) -> T:
-                    return x
-
-            class B[T, S](BaseModel):
-                @validate_call(validate_return=True)
-                def f(self, x: T) -> Union[T, List[tuple[S, int]]]:
-                    return x
-
-                @validate_call(validate_return=True)
-                def g[P: int](self, x: P) -> list[P]:
-                    return (x,)
-
         A = local_ns['A']
         a = A[int]()
         assert a.f(1) == 1
@@ -922,9 +906,9 @@ def test_validate_call_infos():
     class A(BaseModel, Generic[T]):
         class Nested(BaseModel): ...
 
-        def f(self, x: T) -> tuple[T, int]: ...
-        def g(self, x: list[T]) -> Nested: ...
-        def h(self, x: list[T]) -> tuple[T, T]: ...
+        def f(self, x: T) -> Tuple[T, int]: ...
+        def g(self, x: List[T]) -> Nested: ...
+        def h(self, x: List[T]) -> Tuple[T, T]: ...
 
         raw_functions['A.f'] = f
         raw_functions['A.g'] = g
@@ -963,15 +947,15 @@ def test_generic_method():
         a: T
 
         @validate_call(validate_return=True)
-        def f(self, x: T) -> tuple[T, T]:
+        def f(self, x: T) -> Tuple[T, T]:
             return (self.a, x)
 
         @validate_call(validate_return=True)
-        def g(self, x: list[T]) -> tuple[T, T]:
+        def g(self, x: List[T]) -> Tuple[T, T]:
             return (x[0], x[1])
 
         @validate_call(validate_return=True)
-        def h(self, x: list[T]) -> tuple[T, T]:
+        def h(self, x: List[T]) -> Tuple[T, T]:
             return None
 
     def check_A():
@@ -1003,7 +987,7 @@ def test_generic_method():
         def f1(self, x: Optional[Union[T, Literal['bar']]] = None): ...
 
         @validate_call(validate_return=True)
-        def f2(self, x: T) -> dict[str, list[Optional[set[T]]]]:
+        def f2(self, x: T) -> Dict[str, List[Optional[Set[T]]]]:
             # test complicated type as well type conversion
             return {str(x): [None, (x,)]}
 
@@ -1054,7 +1038,7 @@ def test_generic_inheritance():
 
         # no validate_return
         @validate_call
-        def g(self, x: list[T]) -> T:
+        def g(self, x: List[T]) -> T:
             return
 
     class SubA(A[T], Generic[T]):
@@ -1082,7 +1066,7 @@ def test_generic_multi_typevars():
 
     class B(A[T1], Generic[T1, T2]):
         @validate_call
-        def f_b(self, x: T1, y: T2) -> tuple[T1, T2]:
+        def f_b(self, x: T1, y: T2) -> Tuple[T1, T2]:
             return x, y
 
     class BSwap(B[T2, T1], Generic[T1, T2]): ...
