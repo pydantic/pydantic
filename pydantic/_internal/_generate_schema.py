@@ -16,6 +16,7 @@ from contextlib import ExitStack, contextmanager
 from copy import copy, deepcopy
 from decimal import Decimal
 from enum import Enum
+from fractions import Fraction
 from functools import partial
 from inspect import Parameter, _ParameterKind, signature
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
@@ -372,7 +373,7 @@ class GenerateSchema:
         types_namespace: dict[str, Any] | None,
         typevars_map: dict[Any, Any] | None = None,
     ) -> None:
-        # we need a stack for recursing into child models
+        # we need a stack for recursing into nested models
         self._config_wrapper_stack = ConfigWrapperStack(config_wrapper)
         self._types_namespace_stack = TypesNamespaceStack(types_namespace)
         self._typevars_map = typevars_map
@@ -380,23 +381,13 @@ class GenerateSchema:
         self.model_type_stack = _ModelTypeStack()
         self.defs = _Definitions()
 
-    @classmethod
-    def __from_parent(
-        cls,
-        config_wrapper_stack: ConfigWrapperStack,
-        types_namespace_stack: TypesNamespaceStack,
-        model_type_stack: _ModelTypeStack,
-        typevars_map: dict[Any, Any] | None,
-        defs: _Definitions,
-    ) -> GenerateSchema:
-        obj = cls.__new__(cls)
-        obj._config_wrapper_stack = config_wrapper_stack
-        obj._types_namespace_stack = types_namespace_stack
-        obj.model_type_stack = model_type_stack
-        obj._typevars_map = typevars_map
-        obj.field_name_stack = _FieldNameStack()
-        obj.defs = defs
-        return obj
+    def __init_subclass__(cls) -> None:
+        super().__init_subclass__()
+        warnings.warn(
+            'Subclassing `GenerateSchema` is not supported. The API is highly subject to change in minor versions.',
+            UserWarning,
+            stacklevel=2,
+        )
 
     @property
     def _config_wrapper(self) -> ConfigWrapper:
@@ -407,23 +398,8 @@ class GenerateSchema:
         return self._types_namespace_stack.tail
 
     @property
-    def _current_generate_schema(self) -> GenerateSchema:
-        cls = self._config_wrapper.schema_generator or GenerateSchema
-        return cls.__from_parent(
-            self._config_wrapper_stack,
-            self._types_namespace_stack,
-            self.model_type_stack,
-            self._typevars_map,
-            self.defs,
-        )
-
-    @property
     def _arbitrary_types(self) -> bool:
         return self._config_wrapper.arbitrary_types_allowed
-
-    def str_schema(self) -> CoreSchema:
-        """Generate a CoreSchema for `str`"""
-        return core_schema.str_schema()
 
     # the following methods can be overridden but should be considered
     # unstable / private APIs
@@ -539,6 +515,25 @@ class GenerateSchema:
             serialization=core_schema.plain_serializer_function_ser_schema(ser_ip),
             metadata=build_metadata_dict(
                 js_functions=[lambda _1, _2: {'type': 'string', 'format': ip_type_json_schema_format[tp]}]
+            ),
+        )
+
+    def _fraction_schema(self) -> CoreSchema:
+        """Support for [`fractions.Fraction`][fractions.Fraction]."""
+        from ._validators import fraction_validator
+
+        # TODO: note, this is a fairly common pattern, re lax / strict for attempted type coercion,
+        # can we use a helper function to reduce boilerplate?
+        return core_schema.lax_or_strict_schema(
+            lax_schema=core_schema.no_info_plain_validator_function(fraction_validator),
+            strict_schema=core_schema.json_or_python_schema(
+                json_schema=core_schema.no_info_plain_validator_function(fraction_validator),
+                python_schema=core_schema.is_instance_schema(Fraction),
+            ),
+            # use str serialization to guarantee round trip behavior
+            serialization=core_schema.to_string_ser_schema(when_used='always'),
+            metadata=build_metadata_dict(
+                js_functions=[lambda _1, _2: {'type': 'string', 'format': 'fraction'}],
             ),
         )
 
@@ -689,8 +684,6 @@ class GenerateSchema:
             model_validators = decorators.model_validators.values()
 
             with self._config_wrapper_stack.push(config_wrapper), self._types_namespace_stack.push(cls):
-                self = self._current_generate_schema
-
                 extras_schema = None
                 if core_config.get('extra_fields_behavior') == 'allow':
                     assert cls.__mro__[0] is cls
@@ -942,7 +935,7 @@ class GenerateSchema:
         as they get requested and we figure out what the right API for them is.
         """
         if obj is str:
-            return self.str_schema()
+            return core_schema.str_schema()
         elif obj is bytes:
             return core_schema.bytes_schema()
         elif obj is int:
@@ -969,6 +962,8 @@ class GenerateSchema:
             return core_schema.uuid_schema()
         elif obj is Url:
             return core_schema.url_schema()
+        elif obj is Fraction:
+            return self._fraction_schema()
         elif obj is MultiHostUrl:
             return core_schema.multi_host_url_schema()
         elif obj is None or obj is _typing_extra.NoneType:
@@ -1264,7 +1259,7 @@ class GenerateSchema:
         # Update FieldInfo annotation if appropriate:
         FieldInfo = import_cached_field_info()
 
-        if has_instance_in_type(field_info.annotation, (ForwardRef, str)):
+        if has_instance_in_type(field_info.annotation, ForwardRef):
             types_namespace = self._types_namespace
             if self._typevars_map:
                 types_namespace = (types_namespace or {}).copy()
@@ -1471,8 +1466,6 @@ class GenerateSchema:
             with self._config_wrapper_stack.push(config), self._types_namespace_stack.push(typed_dict_cls):
                 core_config = self._config_wrapper.core_config(typed_dict_cls)
 
-                self = self._current_generate_schema
-
                 required_keys: frozenset[str] = typed_dict_cls.__required_keys__
 
                 fields: dict[str, core_schema.TypedDictField] = {}
@@ -1546,27 +1539,30 @@ class GenerateSchema:
             if origin is not None:
                 namedtuple_cls = origin
 
-            annotations: dict[str, Any] = get_cls_type_hints_lenient(namedtuple_cls, self._types_namespace)
-            if not annotations:
-                # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
-                annotations = {k: Any for k in namedtuple_cls._fields}
+            with self._types_namespace_stack.push(namedtuple_cls):
+                annotations: dict[str, Any] = get_cls_type_hints_lenient(namedtuple_cls, self._types_namespace)
+                if not annotations:
+                    # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
+                    annotations = {k: Any for k in namedtuple_cls._fields}
 
-            if typevars_map:
-                annotations = {
-                    field_name: replace_types(annotation, typevars_map)
-                    for field_name, annotation in annotations.items()
-                }
+                if typevars_map:
+                    annotations = {
+                        field_name: replace_types(annotation, typevars_map)
+                        for field_name, annotation in annotations.items()
+                    }
 
-            arguments_schema = core_schema.arguments_schema(
-                [
-                    self._generate_parameter_schema(
-                        field_name, annotation, default=namedtuple_cls._field_defaults.get(field_name, Parameter.empty)
-                    )
-                    for field_name, annotation in annotations.items()
-                ],
-                metadata=build_metadata_dict(js_prefer_positional_arguments=True),
-            )
-            return core_schema.call_schema(arguments_schema, namedtuple_cls, ref=namedtuple_ref)
+                arguments_schema = core_schema.arguments_schema(
+                    [
+                        self._generate_parameter_schema(
+                            field_name,
+                            annotation,
+                            default=namedtuple_cls._field_defaults.get(field_name, Parameter.empty),
+                        )
+                        for field_name, annotation in annotations.items()
+                    ],
+                    metadata=build_metadata_dict(js_prefer_positional_arguments=True),
+                )
+                return core_schema.call_schema(arguments_schema, namedtuple_cls, ref=namedtuple_ref)
 
     def _generate_parameter_schema(
         self,
@@ -1751,7 +1747,12 @@ class GenerateSchema:
 
     def _hashable_schema(self) -> core_schema.CoreSchema:
         return core_schema.custom_error_schema(
-            core_schema.is_instance_schema(collections.abc.Hashable),
+            schema=core_schema.json_or_python_schema(
+                json_schema=core_schema.chain_schema(
+                    [core_schema.any_schema(), core_schema.is_instance_schema(collections.abc.Hashable)]
+                ),
+                python_schema=core_schema.is_instance_schema(collections.abc.Hashable),
+            ),
             custom_error_type='is_hashable',
             custom_error_message='Input should be hashable',
         )
@@ -1785,8 +1786,6 @@ class GenerateSchema:
                         dataclass_bases_stack.enter_context(self._config_wrapper_stack.push(config))
 
                 core_config = self._config_wrapper.core_config(dataclass)
-
-                self = self._current_generate_schema
 
                 from ..dataclasses import is_pydantic_dataclass
 

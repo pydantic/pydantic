@@ -319,6 +319,8 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                             f'Not of {predicate_name} failed',  # type: ignore  # noqa: B023
                         )
 
+                return v
+
             schema = cs.no_info_after_validator_function(val_func, schema)
         else:
             # ignore any other unknown metadata

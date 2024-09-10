@@ -23,15 +23,19 @@ conda install pydantic -c conda-forge
 
 Pydantic has the following optional dependencies:
 
-* Email validation provided by the [email-validator](https://pypi.org/project/email-validator/) package.
+* `email`: Email validation provided by the [email-validator](https://pypi.org/project/email-validator/) package.
+* `timezone`: Fallback IANA time zone database provided by the [tzdata](https://pypi.org/project/tzdata/) package.
 
 To install optional dependencies along with Pydantic:
 
 ```bash
+# with the `email` extra:
 pip install pydantic[email]
+# or with `email` and `timezone` extras:
+pip install pydantic[email,timezone]
 ```
 
-Of course, you can also install requirements manually with `pip install email-validator`.
+Of course, you can also install requirements manually with `pip install email-validator tzdata`.
 
 ## Install from repository
 
@@ -39,6 +43,6 @@ And if you prefer to install Pydantic directly from the repository:
 
 ```bash
 pip install git+https://github.com/pydantic/pydantic@main#egg=pydantic
-# or with the `email` extra:
-pip install git+https://github.com/pydantic/pydantic@main#egg=pydantic[email]
+# or with `email` and `timezone` extras:
+pip install git+https://github.com/pydantic/pydantic@main#egg=pydantic[email,timezone]
 ```
