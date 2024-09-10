@@ -32,7 +32,7 @@ def validate_call(
     config: ConfigDict | None = None,
     validate_return: bool = False,
 ) -> AnyCallableT | Callable[[AnyCallableT], AnyCallableT]:
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/validation_decorator/
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validation_decorator/
 
     Returns a decorated wrapper around the function that validates the arguments and, optionally, the return value.
 
@@ -55,7 +55,7 @@ def validate_call(
         #       but that way won't work for Python 3.12 (which PEP 695 is introduced in).
 
         generic_param_ns = _typing_extra.parent_frame_namespace(parent_depth=3) or {}
-        local_ns = generic_param_ns | local_ns
+        local_ns = {**generic_param_ns, **local_ns}
 
     def validate(function: AnyCallableT) -> AnyCallableT:
         if isinstance(function, (classmethod, staticmethod)):

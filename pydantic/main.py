@@ -51,13 +51,6 @@ from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMod
 from .plugin._schema_validator import PluggableSchemaValidator
 from .warnings import PydanticDeprecatedSince20
 
-# Always define certain types that are needed to resolve method type hints/annotations
-# (even when not type checking) via typing.get_type_hints.
-ModelT = TypeVar('ModelT', bound='BaseModel')
-TupleGenerator = Generator[Tuple[str, Any], None, None]
-IncEx: TypeAlias = Union[Set[int], Set[str], Dict[int, 'IncEx'], Dict[str, 'IncEx'], None]
-
-
 if TYPE_CHECKING:
     from inspect import Signature
     from pathlib import Path
@@ -75,11 +68,16 @@ else:
 
 __all__ = 'BaseModel', 'create_model'
 
+# Keep these type aliases available at runtime:
+TupleGenerator: TypeAlias = Generator[Tuple[str, Any], None, None]
+# Keep this type alias in sync with the stub definition in `pydantic-core`:
+IncEx: TypeAlias = Union[Set[int], Set[str], Dict[int, Union['IncEx', bool]], Dict[str, Union['IncEx', bool]]]
+
 _object_setattr = _model_construction.object_setattr
 
 
 class BaseModel(metaclass=_model_construction.ModelMetaclass):
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/models/
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/models/
 
     A base class for creating Pydantic models.
 
@@ -325,7 +323,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return m
 
     def model_copy(self, *, update: dict[str, Any] | None = None, deep: bool = False) -> Self:
-        """Usage docs: https://docs.pydantic.dev/2.9/concepts/serialization/#model_copy
+        """Usage docs: https://docs.pydantic.dev/2.10/concepts/serialization/#model_copy
 
         Returns a copy of the model.
 
@@ -356,8 +354,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         self,
         *,
         mode: Literal['json', 'python'] | str = 'python',
-        include: IncEx = None,
-        exclude: IncEx = None,
+        include: IncEx | None = None,
+        exclude: IncEx | None = None,
         context: Any | None = None,
         by_alias: bool = False,
         exclude_unset: bool = False,
@@ -367,7 +365,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         serialize_as_any: bool = False,
     ) -> dict[str, Any]:
-        """Usage docs: https://docs.pydantic.dev/2.9/concepts/serialization/#modelmodel_dump
+        """Usage docs: https://docs.pydantic.dev/2.10/concepts/serialization/#modelmodel_dump
 
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
 
@@ -409,8 +407,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         self,
         *,
         indent: int | None = None,
-        include: IncEx = None,
-        exclude: IncEx = None,
+        include: IncEx | None = None,
+        exclude: IncEx | None = None,
         context: Any | None = None,
         by_alias: bool = False,
         exclude_unset: bool = False,
@@ -420,7 +418,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         warnings: bool | Literal['none', 'warn', 'error'] = True,
         serialize_as_any: bool = False,
     ) -> str:
-        """Usage docs: https://docs.pydantic.dev/2.9/concepts/serialization/#modelmodel_dump_json
+        """Usage docs: https://docs.pydantic.dev/2.10/concepts/serialization/#modelmodel_dump_json
 
         Generates a JSON representation of the model using Pydantic's `to_json` method.
 
@@ -608,7 +606,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         strict: bool | None = None,
         context: Any | None = None,
     ) -> Self:
-        """Usage docs: https://docs.pydantic.dev/2.9/concepts/json/#json-parsing
+        """Usage docs: https://docs.pydantic.dev/2.10/concepts/json/#json-parsing
 
         Validate the given JSON data against the Pydantic model.
 
@@ -1107,8 +1105,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     def dict(  # noqa: D102
         self,
         *,
-        include: IncEx = None,
-        exclude: IncEx = None,
+        include: IncEx | None = None,
+        exclude: IncEx | None = None,
         by_alias: bool = False,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
@@ -1128,8 +1126,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     def json(  # noqa: D102
         self,
         *,
-        include: IncEx = None,
-        exclude: IncEx = None,
+        include: IncEx | None = None,
+        exclude: IncEx | None = None,
         by_alias: bool = False,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
@@ -1457,6 +1455,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return copy_internals._calculate_keys(self, *args, **kwargs)
 
 
+ModelT = TypeVar('ModelT', bound=BaseModel)
+
+
 @overload
 def create_model(
     model_name: str,
@@ -1500,7 +1501,7 @@ def create_model(  # noqa: C901
     __slots__: tuple[str, ...] | None = None,
     **field_definitions: Any,
 ) -> type[ModelT]:
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/models/#dynamic-model-creation
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/models/#dynamic-model-creation
 
     Dynamically creates and returns a new Pydantic model, in other words, `create_model` dynamically creates a
     subclass of [`BaseModel`][pydantic.BaseModel].

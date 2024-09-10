@@ -146,7 +146,6 @@ def update_generic_validate_call_info(model: type[BaseModel]):
                 annotation,
                 _typing_extra.get_module_ns_of(origin),
                 info['local_namspace'],
-                # type_params
             )
 
             function.__annotations__[name] = _generics.replace_types(evaluated_annotation, typevars_map)
@@ -158,11 +157,13 @@ def update_generic_validate_call_info(model: type[BaseModel]):
         model.__pydantic_validate_call_infos__[func_name] = info
 
 
-@lru_cache
+@lru_cache(maxsize=None)
 def _add_unique_postfix(name: str):
+    """Used to prevent namespace collision."""
     from uuid import uuid4
 
-    return f'{name}_{str(uuid4()).replace('-', '_')}'
+    postfix = str(uuid4()).replace('-', '_')
+    return f'{name}_{postfix}'
 
 
 def _wrap_validate_call(function: Callable[..., Any], info: ValidateCallInfo) -> Callable[..., Any]:

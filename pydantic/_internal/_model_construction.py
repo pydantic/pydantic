@@ -11,7 +11,7 @@ import weakref
 from abc import ABCMeta
 from functools import lru_cache, partial
 from types import FunctionType
-from typing import Any, Callable, ForwardRef, Generic, Literal, NoReturn
+from typing import Any, Callable, Generic, Literal, NoReturn
 
 import typing_extensions
 from pydantic_core import PydanticUndefined, SchemaSerializer
@@ -30,6 +30,7 @@ from ._mock_val_ser import set_model_mocks
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._signature import generate_pydantic_signature
 from ._typing_extra import (
+    _make_forward_ref,
     eval_type_backport,
     is_annotated,
     is_classvar,
@@ -438,6 +439,8 @@ def inspect_namespace(  # noqa C901
             is_valid_privateattr_name(ann_name)
             and ann_name not in private_attributes
             and ann_name not in ignored_names
+            # This condition is a false negative when `ann_type` is stringified,
+            # but it is handled in `set_model_fields`:
             and not is_classvar(ann_type)
             and ann_type not in all_ignored_types
             and getattr(ann_type, '__module__', None) != 'functools'
@@ -447,9 +450,15 @@ def inspect_namespace(  # noqa C901
                 # (as the model class wasn't created yet, we unfortunately can't use `cls.__module__`):
                 frame = sys._getframe(2)
                 if frame is not None:
-                    ann_type = eval_type_backport(
-                        ForwardRef(ann_type), globalns=frame.f_globals, localns=frame.f_locals
-                    )
+                    try:
+                        ann_type = eval_type_backport(
+                            _make_forward_ref(ann_type, is_argument=False, is_class=True),
+                            globalns=frame.f_globals,
+                            localns=frame.f_locals,
+                        )
+                    except (NameError, TypeError):
+                        pass
+
             if is_annotated(ann_type):
                 _, *metadata = typing_extensions.get_args(ann_type)
                 private_attr = next((v for v in metadata if isinstance(v, ModelPrivateAttr)), None)
