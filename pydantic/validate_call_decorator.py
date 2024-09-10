@@ -47,6 +47,15 @@ def validate_call(
         The decorated function.
     """
     local_ns = _typing_extra.parent_frame_namespace()
+    if local_ns and '__type_params__' in local_ns:
+        # When using PEP 695 syntax, an extra frame is created, which stores the type parameters.
+        # So the `local_ns` above does not contain the TypeVar.
+        #
+        # Note: since Python 3.13, `typing._eval_type` starts accepting `type_params`;
+        #       but that way won't work for Python 3.12 (which PEP 695 is introduced in).
+
+        generic_param_ns = _typing_extra.parent_frame_namespace(parent_depth=3) or {}
+        local_ns = generic_param_ns | local_ns
 
     def validate(function: AnyCallableT) -> AnyCallableT:
         if isinstance(function, (classmethod, staticmethod)):
@@ -65,6 +74,7 @@ def validate_call(
             validate_return=validate_return,
             config=config,
             function=function,
+            local_namspace=local_ns,
         )
         wrapper_function.__pydantic_validate_call_info__ = info  # type: ignore
 

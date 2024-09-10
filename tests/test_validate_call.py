@@ -4,13 +4,14 @@ import re
 import sys
 from datetime import datetime, timezone
 from functools import partial
-from typing import Any, Generic, List, Literal, Optional, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Generic, Iterable, List, Literal, Optional, Tuple, TypeVar, Union
 
 import pytest
 from pydantic_core import ArgsKwargs
 from typing_extensions import Annotated, TypedDict
 
 from pydantic import Field, PydanticInvalidForJsonSchema, TypeAdapter, ValidationError, validate_call
+from pydantic.config import ConfigDict
 from pydantic.main import BaseModel
 
 
@@ -826,11 +827,15 @@ def test_validate_call_with_pep_695_syntax() -> None:
     """Note: validate_call still doesn't work properly with generics, see https://github.com/pydantic/pydantic/issues/7796.
 
     This test is just to ensure that the syntax is accepted and doesn't raise a NameError."""
-    globs = {}
-    exec(
-        """
-from typing import Iterable
-from pydantic import validate_call
+
+    # We use `exec` to check both with and without `from __future__ import annotations`
+    # Note: there is some issue with `exec` namespace: https://github.com/pydantic/pydantic/issues/10366
+    for import_annotations in ('from __future__ import annotations', ''):
+        locals = {'Iterable': Iterable}
+
+        source = f"""
+{import_annotations}
+from pydantic import BaseModel, validate_call
 
 @validate_call
 def find_max_no_validate_return[T](args: Iterable[T]) -> T:
@@ -839,33 +844,116 @@ def find_max_no_validate_return[T](args: Iterable[T]) -> T:
 @validate_call(validate_return=True)
 def find_max_validate_return[T](args: Iterable[T]) -> T:
     return sorted(args, reverse=True)[0]
-        """,
-        globs,
-    )
-    functions = [globs['find_max_no_validate_return'], globs['find_max_validate_return']]
-    for find_max in functions:
-        assert len(find_max.__type_params__) == 1
-        assert find_max([1, 2, 10, 5]) == 10
+            """
+        exec(compile(source, '<string>', 'exec'), None, locals)
 
-        with pytest.raises(ValidationError):
-            find_max(1)
+        functions = [locals['find_max_no_validate_return'], locals['find_max_validate_return']]
+        for find_max in functions:
+            assert len(find_max.__type_params__) == 1
+            assert find_max([1, 2, 10, 5]) == 10
+
+            with pytest.raises(ValidationError):
+                find_max(1)
 
 
 @REQUIRE_PEP_695
-def test_class_type_params():
-    class A[T]:
-        @validate_call
-        def f(self, x: T) -> T:
-            return x
+def test_class_type_params_with_pep_695():
+    """Test both PEP 695 syntax and validation on BaseModel."""
 
-    class B[T, S](BaseModel):
-        @validate_call
-        def f(self, x: T) -> Union[T, List[tuple[S, int]]]:
-            return x
+    local_ns = {}
 
-        @validate_call
-        def g[P: int](self, x: P) -> list[P]:
-            return x
+    for import_annotations in ('from __future__ import annotations', ''):
+        source = f"""
+{import_annotations}
+from pydantic import BaseModel, validate_call
+
+class A[T](BaseModel):
+    @validate_call(validate_return=True)
+    def f(self, x: T) -> T:
+        return x
+
+class B[T, S](BaseModel):
+    @validate_call(validate_return=True)
+    def f(self, x: T) -> Union[T, List[tuple[S, int]]]:
+        return x
+
+    @validate_call(validate_return=True)
+    def g[P: int](self, x: P) -> list[P]:
+        return (x,)
+             """
+
+        exec(compile(source, '<string>', 'exec'), None, local_ns)
+
+        if TYPE_CHECKING:
+
+            class A[T](BaseModel):
+                @validate_call(validate_return=True)
+                def f(self, x: T) -> T:
+                    return x
+
+            class B[T, S](BaseModel):
+                @validate_call(validate_return=True)
+                def f(self, x: T) -> Union[T, List[tuple[S, int]]]:
+                    return x
+
+                @validate_call(validate_return=True)
+                def g[P: int](self, x: P) -> list[P]:
+                    return (x,)
+
+        A = local_ns['A']
+        a = A[int]()
+        assert a.f(1) == 1
+        assert a.f('1') == 1
+        with pytest.raises(ValidationError):
+            a.f('abc')
+
+        B = local_ns['B']
+        b = B[int, str]()
+        assert b.f(0) == 0
+        assert b.g(1) == [1]
+
+
+def test_validate_call_infos():
+    T = TypeVar('T')
+
+    config: ConfigDict = {'strict': False}
+    raw_functions = dict()
+
+    class A(BaseModel, Generic[T]):
+        class Nested(BaseModel): ...
+
+        def f(self, x: T) -> tuple[T, int]: ...
+        def g(self, x: list[T]) -> Nested: ...
+        def h(self, x: list[T]) -> tuple[T, T]: ...
+
+        raw_functions['A.f'] = f
+        raw_functions['A.g'] = g
+        raw_functions['A.h'] = h
+
+        f = validate_call(validate_return=False, config=config)(f)
+        g = validate_call(validate_return=True)(g)
+        h = validate_call(validate_return=True)(h)
+
+    class B(A):
+        def f(self): ...
+
+        raw_functions['B.f'] = f
+        f = validate_call(f)
+
+    A_infos = A.__pydantic_validate_call_infos__
+    assert set(A_infos.keys()) == {'f', 'g', 'h'}
+    assert A_infos['f']['config'] == config
+    assert A_infos['f']['local_namspace'] is A_infos['g']['local_namspace']
+    assert A_infos['f']['validate_return'] is False
+    assert A_infos['g']['validate_return'] is True
+    assert 'Nested' in A_infos['f']['local_namspace'].keys()
+    for name in ('f', 'g', 'h'):
+        assert A_infos[name]['function'] == raw_functions[f'A.{name}']
+
+    B_infos = B.__pydantic_validate_call_infos__
+    assert B_infos['f']['function'] == raw_functions['B.f']
+    assert B_infos['f']['validate_return'] is False
+    assert all(name not in B_infos for name in ('g', 'h'))
 
 
 def test_generic_method():
@@ -934,6 +1022,19 @@ def test_generic_method():
         b_foo.f('abc')
 
 
+def test_generic_strict():
+    T = TypeVar('T')
+
+    class A(BaseModel, Generic[T]):
+        @validate_call(config={'strict': True})
+        def f(self, x: T) -> T:
+            return x
+
+    a = A[int]()
+    with pytest.raises(ValidationError):
+        a.f('123')
+
+
 GENERIC_MRO_REQUIRED = pytest.mark.xfail(
     BaseModel.__class__.mro is type.mro,
     reason='dynamic generic mro (#10100) is not merged yet',
@@ -948,8 +1049,8 @@ def test_generic_inheritance():
         a: T
 
         @validate_call(validate_return=True)
-        def f(self, x: T) -> str:
-            return str(x)
+        def f(self, x: T) -> int:
+            return x
 
         # no validate_return
         @validate_call
@@ -960,11 +1061,11 @@ def test_generic_inheritance():
         pass
 
     for cls in (A, SubA):
-        a: A[int] = cls[int](a=1)
-        assert a.f(2) == '2'
-        assert a.g([1, 2, 3]) is None
+        a: A[str] = cls[str](a=1)
+        assert a.f('1') == 1
+        assert a.g(['a', 'b']) is None
         with pytest.raises(ValidationError):
-            a.f('a')
+            a.f(123)
         with pytest.raises(ValidationError):
             a.g([1, 'a'])
 

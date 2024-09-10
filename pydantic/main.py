@@ -171,6 +171,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     """The `pydantic-core` `SchemaValidator` used to validate instances of the model."""
 
     __pydantic_validate_call_infos__: ClassVar[Dict[str, ValidateCallInfo]] = {}  # noqa: UP006
+    """Metadata containing functions decorated with `validate_call`; not inherited by subclasses."""
 
     __pydantic_extra__: dict[str, Any] | None = _model_construction.NoInitField(init=False)
     """A dictionary containing extra values, if [`extra`][pydantic.config.ConfigDict.extra] is set to `'allow'`."""
