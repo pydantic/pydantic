@@ -14,7 +14,10 @@ from . import _generate_schema, _generics, _typing_extra
 from ._config import ConfigWrapper
 
 if typing.TYPE_CHECKING:
+    from typing import TypeGuard
+
     from ..main import BaseModel
+    from ..validate_call_decorator import ValidateCallFunctionType
 
 
 class ValidateCallWrapper:
@@ -111,13 +114,57 @@ class ValidateCallInfo(TypedDict):
     local_namspace: dict[str, Any] | None
 
 
+def _is_wrapped_by_validate_call(obj: object) -> TypeGuard[ValidateCallFunctionType]:
+    return hasattr(obj, '__pydantic_validate_call_info__')
+
+
 def collect_validate_call_info(namespace: dict[str, Any]):
     validate_call_infos = {}
-    for k, v in namespace.items():
-        if info := getattr(v, '__pydantic_validate_call_info__', None):
-            validate_call_infos[k] = info
+    for name, func in namespace.items():
+        if _is_wrapped_by_validate_call(func):
+            validate_call_infos[name] = func.__pydantic_validate_call_info__
 
     return validate_call_infos
+
+
+@lru_cache(maxsize=None)
+def _add_unique_postfix(name: str):
+    """Used to prevent namespace collision."""
+    from uuid import uuid4
+
+    postfix = str(uuid4()).replace('-', '_')
+    return f'{name}_{postfix}'
+
+
+def _replicate_validate_call(function: Callable[..., Any], info: ValidateCallInfo) -> Callable[..., Any]:
+    """When normally calling `validate_call`, we use the namespace of the frame that called it as local_ns.
+    This function mock that behavior by calling `validate_call` inside a new frame where we have copied all
+    local variables into.
+    """
+    namespace = info['local_namspace']
+
+    locals_name = _add_unique_postfix('locals')
+    parent_name = _add_unique_postfix('parent')
+    info_name = _add_unique_postfix('info')
+    function_name = _add_unique_postfix('function')
+    item_name = _add_unique_postfix('item')
+
+    from ..validate_call_decorator import validate_call
+
+    result_ns = {locals_name: namespace, 'validate_call': validate_call, info_name: info, function_name: function}
+
+    exec(
+        f"""
+def {parent_name}():
+    for {item_name} in {locals_name}.items():
+        locals()[{item_name}[0]] = {item_name}[1]
+    del {item_name}
+    return validate_call(config={info_name}['config'], validate_return={info_name}['validate_return'])({function_name})
+""",
+        result_ns,
+    )
+
+    return result_ns[parent_name]()
 
 
 def _copy_func(function: Callable[..., Any]):
@@ -150,48 +197,8 @@ def update_generic_validate_call_info(model: type[BaseModel]):
 
             function.__annotations__[name] = _generics.replace_types(evaluated_annotation, typevars_map)
 
-        new_function = _wrap_validate_call(function, info)
+        new_function = _replicate_validate_call(function, info)
 
         setattr(model, func_name, new_function)
         info['function'] = new_function
         model.__pydantic_validate_call_infos__[func_name] = info
-
-
-@lru_cache(maxsize=None)
-def _add_unique_postfix(name: str):
-    """Used to prevent namespace collision."""
-    from uuid import uuid4
-
-    postfix = str(uuid4()).replace('-', '_')
-    return f'{name}_{postfix}'
-
-
-def _wrap_validate_call(function: Callable[..., Any], info: ValidateCallInfo) -> Callable[..., Any]:
-    """When normally calling `validate_call`, we use the namespace of the frame that called it as local_ns.
-    This function mock that behavior by calling `validate_call` inside a new frame where we have copied all
-    local variables into.
-    """
-    namespace = info['local_namspace']
-
-    locals_name = _add_unique_postfix('locals')
-    parent_name = _add_unique_postfix('parent')
-    info_name = _add_unique_postfix('info')
-    function_name = _add_unique_postfix('function')
-    item_name = _add_unique_postfix('item')
-
-    from ..validate_call_decorator import validate_call
-
-    result_ns = {locals_name: namespace, 'validate_call': validate_call, info_name: info, function_name: function}
-
-    exec(
-        f"""
-def {parent_name}():
-    for {item_name} in {locals_name}.items():
-        locals()[{item_name}[0]] = {item_name}[1]
-    del {item_name}
-    return validate_call(config={info_name}['config'], validate_return={info_name}['validate_return'])({function_name})
-""",
-        result_ns,
-    )
-
-    return result_ns[parent_name]()
