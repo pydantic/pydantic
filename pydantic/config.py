@@ -571,7 +571,7 @@ class ConfigDict(TypedDict, total=False):
     - `'iso8601'` will serialize timedeltas to ISO 8601 durations.
     - `'float_seconds'` will serialize timedeltas to the total number of seconds.
     - `'float_milliseconds'` will serialize timedeltas to the total number of seconds.
-    - `'float'` will serialize timedeltas to the total number of seconds. 
+    - `'float'` will serialize timedeltas to the total number of seconds.
         NOTE: `'float' is deprecated in favour of `'float_seconds'`
     """
 
