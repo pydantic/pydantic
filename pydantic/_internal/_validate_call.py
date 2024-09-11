@@ -5,7 +5,7 @@ import inspect
 import sys
 import typing
 from functools import lru_cache, partial, wraps
-from typing import Any, Awaitable, Callable, TypedDict
+from typing import Any, Awaitable, Callable, TypeAlias, TypedDict
 
 import pydantic_core
 
@@ -22,9 +22,9 @@ if typing.TYPE_CHECKING:
 
         from ..validate_call_decorator import ValidateCallFunctionType
 
-        IsValidateCallFunctionType = TypeGuard[ValidateCallFunctionType]
+        IsValidateCallFunctionType: TypeAlias = TypeGuard[ValidateCallFunctionType]
     else:
-        IsValidateCallFunctionType = bool
+        IsValidateCallFunctionType: TypeAlias = bool
 
 
 class ValidateCallWrapper:

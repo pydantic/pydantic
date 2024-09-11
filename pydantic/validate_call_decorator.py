@@ -4,7 +4,7 @@ from __future__ import annotations as _annotations
 
 import functools
 import sys
-from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Callable, Generic, TypeAlias, TypeVar, overload
 
 from ._internal import _typing_extra, _validate_call
 
@@ -26,12 +26,12 @@ if TYPE_CHECKING:
 
             def __call__(self, *args: Param.args, **kwds: Param.kwargs) -> ReturnType: ...
 
-        ValidateCallInput = Callable[Param, ReturnType]  # type: ignore
-        ValidateCallOutput = Callable[Param, ReturnType]  # type: ignore
+        ValidateCallInput: TypeAlias = Callable[Param, ReturnType]
+        ValidateCallOutput: TypeAlias = Callable[Param, ReturnType]
     else:
         AnyCallableT = TypeVar('AnyCallableT', bound=Callable[..., Any])
-        ValidateCallInput = AnyCallableT
-        ValidateCallOutput = AnyCallableT
+        ValidateCallInput: TypeAlias = AnyCallableT
+        ValidateCallOutput: TypeAlias = AnyCallableT
 
 
 @overload
