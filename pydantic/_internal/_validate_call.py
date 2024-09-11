@@ -17,15 +17,6 @@ from ._config import ConfigWrapper
 if typing.TYPE_CHECKING:
     from ..main import BaseModel
 
-    if sys.version_info >= (3, 10):
-        from typing import TypeGuard
-
-        from ..validate_call_decorator import ValidateCallFunctionType
-
-        IsValidateCallFunctionType: TypeAlias = TypeGuard[ValidateCallFunctionType]
-    else:
-        IsValidateCallFunctionType: TypeAlias = bool
-
 
 class ValidateCallWrapper:
     """This is a wrapper around a function that validates the arguments passed to it, and optionally the return value."""
@@ -121,8 +112,17 @@ class ValidateCallInfo(TypedDict):
     local_namspace: dict[str, Any] | None
 
 
-def _is_wrapped_by_validate_call(obj: object) -> IsValidateCallFunctionType:
-    return hasattr(obj, '__pydantic_validate_call_info__')
+if sys.version_info >= (3, 10):
+    from typing import TypeGuard
+
+    from ..validate_call_decorator import ValidateCallFunctionType
+
+    def _is_wrapped_by_validate_call(obj: object) -> TypeGuard[ValidateCallFunctionType]:
+        return hasattr(obj, '__pydantic_validate_call_info__')
+else:
+
+    def _is_wrapped_by_validate_call(obj: object) -> bool:
+        return hasattr(obj, '__pydantic_validate_call_info__')
 
 
 def collect_validate_call_info(namespace: dict[str, Any]):
