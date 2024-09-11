@@ -3,52 +3,26 @@
 from __future__ import annotations as _annotations
 
 import functools
-import sys
-from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
 
 from ._internal import _typing_extra, _validate_call
 
 __all__ = ('validate_call',)
 
 if TYPE_CHECKING:
-    from typing import ParamSpec
-
     from .config import ConfigDict
 
     AnyCallableT = TypeVar('AnyCallableT', bound=Callable[..., Any])
 
-    if sys.version_info >= (3, 10):
-        P = ParamSpec('P')
-        R = TypeVar('R')
 
-        class ValidateCallFunctionType(Generic[P, R]):
-            raw_function: Callable[P, R]
-
-            __pydantic_validate_call_info__: _validate_call.ValidateCallInfo
-
-            def __call__(self, *args: P.args, **kwds: P.kwargs) -> R: ...
+@overload
+def validate_call(
+    *, config: ConfigDict | None = None, validate_return: bool = False
+) -> Callable[[AnyCallableT], AnyCallableT]: ...
 
 
-if sys.version_info >= (3, 10):
-
-    @overload
-    def validate_call(
-        *, config: ConfigDict | None = None, validate_return: bool = False
-    ) -> Callable[[Callable[P, R]], ValidateCallFunctionType[P, R]]: ...
-
-    @overload
-    def validate_call(func: Callable[P, R], /) -> ValidateCallFunctionType[P, R]: ...
-
-
-else:
-
-    @overload
-    def validate_call(
-        *, config: ConfigDict | None = None, validate_return: bool = False
-    ) -> Callable[[AnyCallableT], AnyCallableT]: ...
-
-    @overload
-    def validate_call(func: AnyCallableT, /) -> AnyCallableT: ...
+@overload
+def validate_call(func: AnyCallableT, /) -> AnyCallableT: ...
 
 
 def validate_call(
