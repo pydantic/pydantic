@@ -20,17 +20,17 @@ from typing import (
     FrozenSet,
     Iterable,
     List,
-    Literal,
     NamedTuple,
     Optional,
     Sequence,
     Set,
     Tuple,
     Type,
-    TypedDict,
     Union,
 )
 from uuid import UUID, uuid4, uuid5
+
+from typing_extensions import Literal, TypedDict
 
 from pydantic import BaseModel
 
