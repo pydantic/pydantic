@@ -563,13 +563,16 @@ class ConfigDict(TypedDict, total=False):
     3. Using `'never'` we would have gotten `user=SubUser(hobbies=['scuba diving'], sins=['lying'])`.
     """
 
-    ser_json_timedelta: Literal['iso8601', 'float', 'millisecond']
+    ser_json_timedelta: Literal['iso8601', 'float', 'milliseconds_float', 'seconds_float']
     """
     The format of JSON serialized timedeltas. Accepts the string values of `'iso8601'` and
-    `'float'`. Defaults to `'iso8601'`.
+    'float_seconds'`, `'float_milliseconds'` and `'float'`. Defaults to `'iso8601'`.
 
     - `'iso8601'` will serialize timedeltas to ISO 8601 durations.
-    - `'float'` will serialize timedeltas to the total number of seconds.
+    - `'float_seconds'` will serialize timedeltas to the total number of seconds.
+    - `'float_milliseconds'` will serialize timedeltas to the total number of seconds.
+    - `'float'` will serialize timedeltas to the total number of seconds. 
+        NOTE: `'float' is deprecated in favour of `'float_seconds'`
     """
 
     ser_json_bytes: Literal['utf8', 'base64', 'hex']
