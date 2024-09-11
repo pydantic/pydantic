@@ -2,6 +2,7 @@ from __future__ import annotations as _annotations
 
 import copy
 import inspect
+import sys
 import typing
 from functools import lru_cache, partial, wraps
 from typing import Any, Awaitable, Callable, TypedDict
@@ -14,10 +15,16 @@ from . import _generate_schema, _generics, _typing_extra
 from ._config import ConfigWrapper
 
 if typing.TYPE_CHECKING:
-    from typing import TypeGuard
-
     from ..main import BaseModel
-    from ..validate_call_decorator import ValidateCallFunctionType
+
+    if sys.version_info >= (3, 10):
+        from typing import TypeGuard
+
+        from ..validate_call_decorator import ValidateCallFunctionType
+
+        IsValidateCallFunctionType = TypeGuard[ValidateCallFunctionType]
+    else:
+        IsValidateCallFunctionType = bool
 
 
 class ValidateCallWrapper:
@@ -114,7 +121,7 @@ class ValidateCallInfo(TypedDict):
     local_namspace: dict[str, Any] | None
 
 
-def _is_wrapped_by_validate_call(obj: object) -> TypeGuard[ValidateCallFunctionType]:
+def _is_wrapped_by_validate_call(obj: object) -> IsValidateCallFunctionType:
     return hasattr(obj, '__pydantic_validate_call_info__')
 
 

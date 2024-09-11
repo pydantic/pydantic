@@ -16,37 +16,41 @@ if TYPE_CHECKING:
     if sys.version_info >= (3, 10):
         from typing import ParamSpec
 
-        P = ParamSpec('P')
-        R = TypeVar('R')
+        Param = ParamSpec('Param')
+        ReturnType = TypeVar('ReturnType')
 
-        # FunctionType cannot be subclassed, so this is just for type checking
-        class ValidateCallFunctionType(Generic[P, R]):
-            raw_function: Callable[P, R]
+        class ValidateCallFunctionType(Generic[Param, ReturnType]):
+            raw_function: Callable[Param, ReturnType]
 
             __pydantic_validate_call_info__: _validate_call.ValidateCallInfo
 
-            def __call__(self, *args: P.args, **kwds: P.kwargs) -> R: ...
+            def __call__(self, *args: Param.args, **kwds: Param.kwargs) -> ReturnType: ...
+
+        ValidateCallInput = Callable[Param, ReturnType]  # type: ignore
+        ValidateCallOutput = Callable[Param, ReturnType]  # type: ignore
     else:
-        ValidateCallFunctionType = Any
+        AnyCallableT = TypeVar('AnyCallableT', bound=Callable[..., Any])
+        ValidateCallInput = AnyCallableT
+        ValidateCallOutput = AnyCallableT
 
 
 @overload
 def validate_call(
     *, config: ConfigDict | None = None, validate_return: bool = False
-) -> Callable[[Callable[P, R]], ValidateCallFunctionType[P, R]]: ...
+) -> Callable[[ValidateCallInput], ValidateCallOutput]: ...
 
 
 @overload
-def validate_call(func: Callable[P, R], /) -> ValidateCallFunctionType[P, R]: ...
+def validate_call(func: ValidateCallInput, /) -> ValidateCallOutput: ...
 
 
 def validate_call(
-    func: Callable[P, R] | None = None,
+    func: ValidateCallInput | None = None,
     /,
     *,
     config: ConfigDict | None = None,
     validate_return: bool = False,
-) -> ValidateCallFunctionType[P, R] | Callable[[Callable[P, R]], ValidateCallFunctionType[P, R]]:
+) -> ValidateCallOutput | Callable[[ValidateCallInput], ValidateCallOutput]:
     """Usage docs: https://docs.pydantic.dev/2.10/concepts/validation_decorator/
 
     Returns a decorated wrapper around the function that validates the arguments and, optionally, the return value.
@@ -72,7 +76,7 @@ def validate_call(
         generic_param_ns = _typing_extra.parent_frame_namespace(parent_depth=3) or {}
         local_ns = {**generic_param_ns, **local_ns}
 
-    def validate(function: Callable[P, R]) -> ValidateCallFunctionType[P, R]:
+    def validate(function: ValidateCallInput) -> ValidateCallOutput:
         if isinstance(function, (classmethod, staticmethod)):
             name = type(function).__name__
             raise TypeError(f'The `@{name}` decorator should be applied after `@validate_call` (put `@{name}` on top)')
@@ -83,7 +87,7 @@ def validate_call(
         def _wrapper_function(*args, **kwargs):
             return validate_call_wrapper(*args, **kwargs)
 
-        wrapper_function: ValidateCallFunctionType[P, R] = _wrapper_function  # type: ignore
+        wrapper_function: ValidateCallOutput = _wrapper_function  # type: ignore
         wrapper_function.raw_function = function
         wrapper_function.__pydantic_validate_call_info__ = _validate_call.ValidateCallInfo(
             validate_return=validate_return,
