@@ -185,7 +185,6 @@ def _wrap_validate_call(function: Callable[..., Any], info: ValidateCallInfo) ->
 
     exec(
         f"""
-import inspect
 def {parent_name}():
     for {item_name} in {locals_name}.items():
         locals()[{item_name}[0]] = {item_name}[1]
