@@ -1019,19 +1019,10 @@ def test_generic_strict():
         a.f('123')
 
 
-GENERIC_MRO_REQUIRED = pytest.mark.xfail(
-    BaseModel.__class__.mro is type.mro,
-    reason='dynamic generic mro (#10100) is not merged yet',
-)
-
-
-@GENERIC_MRO_REQUIRED
 def test_generic_inheritance():
     T = TypeVar('T')
 
     class A(BaseModel, Generic[T]):
-        a: T
-
         @validate_call(validate_return=True)
         def f(self, x: T) -> int:
             return x
@@ -1045,7 +1036,7 @@ def test_generic_inheritance():
         pass
 
     for cls in (A, SubA):
-        a: A[str] = cls[str](a=1)
+        a: A[str] = cls[str]()
         assert a.f('1') == 1
         assert a.g(['a', 'b']) is None
         with pytest.raises(ValidationError):
@@ -1054,7 +1045,6 @@ def test_generic_inheritance():
             a.g([1, 'a'])
 
 
-@GENERIC_MRO_REQUIRED
 def test_generic_multi_typevars():
     T1 = TypeVar('T1')
     T2 = TypeVar('T2')
