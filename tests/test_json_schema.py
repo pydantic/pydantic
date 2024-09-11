@@ -1804,6 +1804,7 @@ def test_model_default_timedelta(
             }
 
     else:
+
         class Model(BaseModel):
             model_config = ConfigDict(ser_json_timedelta=ser_json_timedelta)
 
@@ -1908,7 +1909,8 @@ def test_dataclass_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], prop
     ],
 )
 def test_typeddict_default_timedelta(
-    ser_json_timedelta: Literal['float', 'iso8601', 'millisecond'], properties: typing.Dict[str, Any]
+    ser_json_timedelta: Literal['float', 'iso8601', 'milliseconds_float', 'seconds_float'],
+    properties: typing.Dict[str, Any],
 ):
     class MyTypedDict(TypedDict):
         __pydantic_config__ = ConfigDict(ser_json_timedelta=ser_json_timedelta)
