@@ -3,35 +3,27 @@
 from __future__ import annotations as _annotations
 
 import functools
-import sys
-from typing import TYPE_CHECKING, Any, Callable, Generic, TypeAlias, TypeVar, overload
+from typing import TYPE_CHECKING, Callable, Generic, TypeVar, overload
 
 from ._internal import _typing_extra, _validate_call
 
 __all__ = ('validate_call',)
 
 if TYPE_CHECKING:
+    from typing import ParamSpec
+
     from .config import ConfigDict
 
-    if sys.version_info >= (3, 10):
-        from typing import ParamSpec
+    P = ParamSpec('P')
+    R = TypeVar('R')
 
-        Param = ParamSpec('Param')
-        ReturnType = TypeVar('ReturnType')
+    # FunctionType cannot be subclassed, so this is just for type checking
+    class ValidateCallFunctionType(Generic[P, R]):
+        raw_function: Callable[P, R]
 
-        class ValidateCallFunctionType(Generic[Param, ReturnType]):
-            raw_function: Callable[Param, ReturnType]
+        __pydantic_validate_call_info__: _validate_call.ValidateCallInfo
 
-            __pydantic_validate_call_info__: _validate_call.ValidateCallInfo
-
-            def __call__(self, *args: Param.args, **kwds: Param.kwargs) -> ReturnType: ...
-
-        ValidateCallInput: TypeAlias = Callable[Param, ReturnType]
-        ValidateCallOutput: TypeAlias = Callable[Param, ReturnType]
-    else:
-        AnyCallableT = TypeVar('AnyCallableT', bound=Callable[..., Any])
-        ValidateCallInput: TypeAlias = AnyCallableT
-        ValidateCallOutput: TypeAlias = AnyCallableT
+        def __call__(self, *args: P.args, **kwds: P.kwargs) -> R: ...
 
 
 @overload
