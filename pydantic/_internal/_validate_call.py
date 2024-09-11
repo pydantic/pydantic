@@ -153,18 +153,23 @@ def _replicate_validate_call(function: Callable[..., Any], info: ValidateCallInf
 
     result_ns = {locals_name: namespace, 'validate_call': validate_call, info_name: info, function_name: function}
 
+    # Note: here the parent scope has to be class, not function, because since Python 3.13
+    #       the `locals()` cannot be mutate inside function frame.
+    # See: https://docs.python.org/3.13/library/functions.html#locals
+    #      https://docs.python.org/3.13/glossary.html#term-optimized-scope
     exec(
         f"""
-def {parent_name}():
+class {parent_name}:
     for {item_name} in {locals_name}.items():
         locals()[{item_name}[0]] = {item_name}[1]
     del {item_name}
-    return validate_call(config={info_name}['config'], validate_return={info_name}['validate_return'])({function_name})
+
+    {function_name} = validate_call(config={info_name}['config'], validate_return={info_name}['validate_return'])({function_name})
 """,
         result_ns,
     )
 
-    return result_ns[parent_name]()
+    return getattr(result_ns[parent_name], function_name)
 
 
 def _copy_func(function: Callable[..., Any]):
