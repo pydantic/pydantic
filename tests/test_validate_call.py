@@ -848,6 +848,42 @@ def find_max_validate_return[T](args: Iterable[T]) -> T:
             find_max(1)
 
 
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+ for PEP 695 syntax with generics')
+def test_pep695_with_class():
+    """Primarily to ensure that the syntax is accepted and doesn't raise a NameError."""
+
+    globs = {}
+    exec(
+        """
+from pydantic import validate_call
+
+class A[T]:
+    @validate_call(validate_return=True)
+    def f(self, a: T) -> T:
+        return str(a)
+
+    def g():
+        @validate_call(validate_return=True)
+        def inner(a: T) -> T: ...
+
+    class B:
+        @validate_call(validate_return=True)
+        def f(a: T) -> T: ...
+
+    class C[S]:
+        @validate_call(validate_return=True)
+        def f(a: T) -> S: ...
+""",
+        globs,
+    )
+
+    A = globs['A']
+    a = A[int]()
+    # these two are undesired behavior, but it's what happens now
+    assert a.f(1) == '1'
+    assert a.f('1') == '1'
+
+
 class M0(BaseModel):
     z: int
 
