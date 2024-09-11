@@ -56,20 +56,23 @@ def validate_call(
 
         validate_call_wrapper = _validate_call.ValidateCallWrapper(function, config, validate_return, local_ns)
 
-        @functools.wraps(function)
-        def wrapper_function(*args, **kwargs):
-            return validate_call_wrapper(*args, **kwargs)
-
-        @functools.wraps(function)
-        async def async_wrapper_function(*args, **kwargs):
-            return await validate_call_wrapper(*args, **kwargs)
-
-        wrapper_function.raw_function = function  # type: ignore
-        async_wrapper_function.raw_function = function  # type: ignore
-
         if inspect.iscoroutinefunction(function):
+
+            @functools.wraps(function)
+            async def async_wrapper_function(*args, **kwargs):
+                return await validate_call_wrapper(*args, **kwargs)
+
+            async_wrapper_function.raw_function = function  # type: ignore
+
             return async_wrapper_function  # type: ignore
         else:
+
+            @functools.wraps(function)
+            def wrapper_function(*args, **kwargs):
+                return validate_call_wrapper(*args, **kwargs)
+
+            wrapper_function.raw_function = function  # type: ignore
+
             return wrapper_function  # type: ignore
 
     if func:
