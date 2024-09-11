@@ -852,9 +852,11 @@ def find_max_validate_return[T](args: Iterable[T]) -> T:
 def test_pep695_with_class():
     """Primarily to ensure that the syntax is accepted and doesn't raise a NameError."""
 
-    globs = {}
-    exec(
-        """
+    for import_annotations in ('from __future__ import annotations', ''):
+        globs = {}
+        exec(
+            f"""
+{import_annotations}
 from pydantic import validate_call
 
 class A[T]:
@@ -862,14 +864,55 @@ class A[T]:
     def f(self, a: T) -> T:
         return str(a)
 
-    def g():
+    """,
+            globs,
+        )
+
+        A = globs['A']
+        a = A[int]()
+        # these two are undesired behavior, but it's what happens now
+        assert a.f(1) == '1'
+        assert a.f('1') == '1'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+ for PEP 695 syntax with generics')
+def test_pep695_with_nested_scopes():
+    """Nested scopes generally cannot be caught by `parent_frame_namespace`,
+    so currently this test is expected to fail.
+    """
+
+    globs = {}
+    exec(
+        """
+from __future__ import annotations
+from pydantic import validate_call
+
+class A[T]:
+    def g(self):
         @validate_call(validate_return=True)
         def inner(a: T) -> T: ...
 
-    def h[S]():
+    def h[S](self):
         @validate_call(validate_return=True)
         def inner(a: T) -> S: ...
 
+""",
+        globs,
+    )
+    A = globs['A']
+    a = A[int]()
+    with pytest.raises(NameError):
+        a.g()
+    with pytest.raises(NameError):
+        a.h()
+
+    with pytest.raises(NameError):
+        exec(
+            """
+from __future__ import annotations
+from pydantic import validate_call
+
+class A[T]:
     class B:
         @validate_call(validate_return=True)
         def f(a: T) -> T: ...
@@ -877,15 +920,8 @@ class A[T]:
     class C[S]:
         @validate_call(validate_return=True)
         def f(a: T) -> S: ...
-""",
-        globs,
-    )
-
-    A = globs['A']
-    a = A[int]()
-    # these two are undesired behavior, but it's what happens now
-    assert a.f(1) == '1'
-    assert a.f('1') == '1'
+    """,
+        )
 
 
 class M0(BaseModel):
