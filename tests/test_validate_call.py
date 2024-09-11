@@ -866,6 +866,11 @@ class A[T]:
         @validate_call(validate_return=True)
         def inner(a: T) -> T: ...
 
+    def h[S]():
+        @validate_call(validate_return=True)
+        def inner(a: T) -> S: ...
+
+
     class B:
         @validate_call(validate_return=True)
         def f(a: T) -> T: ...
