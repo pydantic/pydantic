@@ -292,8 +292,8 @@ def test_async():
         v = await foo(1, 2)
         assert v == 'a=1 b=2'
 
-    # insert_assert(inspect.iscoroutinefunction(foo)==True)
-    assert inspect.iscoroutinefunction(foo)
+    # insert_assert(inspect.iscoroutinefunction(foo) is True)
+    assert inspect.iscoroutinefunction(foo) is True
 
     asyncio.run(run())
     with pytest.raises(ValidationError) as exc_info:
