@@ -10,13 +10,7 @@ import pytest
 from pydantic_core import ArgsKwargs
 from typing_extensions import Annotated, TypedDict
 
-from pydantic import (
-    Field,
-    PydanticInvalidForJsonSchema,
-    TypeAdapter,
-    ValidationError,
-    validate_call,
-)
+from pydantic import Field, PydanticInvalidForJsonSchema, TypeAdapter, ValidationError, validate_call
 from pydantic.main import BaseModel
 
 
@@ -37,18 +31,8 @@ def test_args():
         foo()
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'missing_argument',
-            'loc': ('a',),
-            'msg': 'Missing required argument',
-            'input': ArgsKwargs(()),
-        },
-        {
-            'type': 'missing_argument',
-            'loc': ('b',),
-            'msg': 'Missing required argument',
-            'input': ArgsKwargs(()),
-        },
+        {'type': 'missing_argument', 'loc': ('a',), 'msg': 'Missing required argument', 'input': ArgsKwargs(())},
+        {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs(())},
     ]
 
     with pytest.raises(ValidationError) as exc_info:
@@ -76,18 +60,8 @@ def test_args():
         foo(1, 2, a=3, b=4)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'multiple_argument_values',
-            'loc': ('a',),
-            'msg': 'Got multiple values for argument',
-            'input': 3,
-        },
-        {
-            'type': 'multiple_argument_values',
-            'loc': ('b',),
-            'msg': 'Got multiple values for argument',
-            'input': 4,
-        },
+        {'type': 'multiple_argument_values', 'loc': ('a',), 'msg': 'Got multiple values for argument', 'input': 3},
+        {'type': 'multiple_argument_values', 'loc': ('b',), 'msg': 'Got multiple values for argument', 'input': 4},
     ]
 
 
@@ -103,12 +77,7 @@ def test_optional():
 
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'int_type',
-            'loc': (0,),
-            'msg': 'Input should be a valid integer',
-            'input': None,
-        }
+        {'type': 'int_type', 'loc': (0,), 'msg': 'Input should be a valid integer', 'input': None}
     ]
 
 
@@ -161,18 +130,8 @@ def test_kwargs():
             'msg': 'Missing required keyword only argument',
             'input': ArgsKwargs((1, 'x')),
         },
-        {
-            'type': 'unexpected_positional_argument',
-            'loc': (0,),
-            'msg': 'Unexpected positional argument',
-            'input': 1,
-        },
-        {
-            'type': 'unexpected_positional_argument',
-            'loc': (1,),
-            'msg': 'Unexpected positional argument',
-            'input': 'x',
-        },
+        {'type': 'unexpected_positional_argument', 'loc': (0,), 'msg': 'Unexpected positional argument', 'input': 1},
+        {'type': 'unexpected_positional_argument', 'loc': (1,), 'msg': 'Unexpected positional argument', 'input': 'x'},
     ]
 
 
@@ -246,12 +205,7 @@ def foo(a, b, /, c=None):
             'msg': 'Missing required positional only argument',
             'input': ArgsKwargs((1,), {'b': 2}),
         },
-        {
-            'type': 'unexpected_keyword_argument',
-            'loc': ('b',),
-            'msg': 'Unexpected keyword argument',
-            'input': 2,
-        },
+        {'type': 'unexpected_keyword_argument', 'loc': ('b',), 'msg': 'Unexpected keyword argument', 'input': 2},
     ]
 
     with pytest.raises(ValidationError) as exc_info:
@@ -270,18 +224,8 @@ def foo(a, b, /, c=None):
             'msg': 'Missing required positional only argument',
             'input': ArgsKwargs((), {'a': 1, 'b': 2}),
         },
-        {
-            'type': 'unexpected_keyword_argument',
-            'loc': ('a',),
-            'msg': 'Unexpected keyword argument',
-            'input': 1,
-        },
-        {
-            'type': 'unexpected_keyword_argument',
-            'loc': ('b',),
-            'msg': 'Unexpected keyword argument',
-            'input': 2,
-        },
+        {'type': 'unexpected_keyword_argument', 'loc': ('a',), 'msg': 'Unexpected keyword argument', 'input': 1},
+        {'type': 'unexpected_keyword_argument', 'loc': ('b',), 'msg': 'Unexpected keyword argument', 'input': 2},
     ]
 
 
@@ -300,18 +244,8 @@ def test_args_name():
 
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'unexpected_keyword_argument',
-            'loc': ('apple',),
-            'msg': 'Unexpected keyword argument',
-            'input': 4,
-        },
-        {
-            'type': 'unexpected_keyword_argument',
-            'loc': ('banana',),
-            'msg': 'Unexpected keyword argument',
-            'input': 5,
-        },
+        {'type': 'unexpected_keyword_argument', 'loc': ('apple',), 'msg': 'Unexpected keyword argument', 'input': 4},
+        {'type': 'unexpected_keyword_argument', 'loc': ('banana',), 'msg': 'Unexpected keyword argument', 'input': 5},
     ]
 
     with pytest.raises(ValidationError) as exc_info:
@@ -319,12 +253,7 @@ def test_args_name():
 
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'unexpected_positional_argument',
-            'loc': (2,),
-            'msg': 'Unexpected positional argument',
-            'input': 3,
-        }
+        {'type': 'unexpected_positional_argument', 'loc': (2,), 'msg': 'Unexpected positional argument', 'input': 3}
     ]
 
 
@@ -371,12 +300,7 @@ def test_async():
         asyncio.run(foo('x'))
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'missing_argument',
-            'loc': ('b',),
-            'msg': 'Missing required argument',
-            'input': ArgsKwargs(('x',)),
-        }
+        {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs(('x',))}
     ]
 
 
@@ -398,12 +322,7 @@ def test_string_annotation():
             'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'input': 'x',
         },
-        {
-            'type': 'missing_argument',
-            'loc': ('b',),
-            'msg': 'Missing required argument',
-            'input': ArgsKwargs((['x'],)),
-        },
+        {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs((['x'],))},
     ]
 
 
@@ -449,18 +368,8 @@ def test_item_method():
 
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'missing_argument',
-            'loc': ('a',),
-            'msg': 'Missing required argument',
-            'input': ArgsKwargs((x,)),
-        },
-        {
-            'type': 'missing_argument',
-            'loc': ('b',),
-            'msg': 'Missing required argument',
-            'input': ArgsKwargs((x,)),
-        },
+        {'type': 'missing_argument', 'loc': ('a',), 'msg': 'Missing required argument', 'input': ArgsKwargs((x,))},
+        {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs((x,))},
     ]
 
 
@@ -481,18 +390,8 @@ def test_class_method():
 
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'missing_argument',
-            'loc': ('a',),
-            'msg': 'Missing required argument',
-            'input': ArgsKwargs((X,)),
-        },
-        {
-            'type': 'missing_argument',
-            'loc': ('b',),
-            'msg': 'Missing required argument',
-            'input': ArgsKwargs((X,)),
-        },
+        {'type': 'missing_argument', 'loc': ('a',), 'msg': 'Missing required argument', 'input': ArgsKwargs((X,))},
+        {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs((X,))},
     ]
 
 
@@ -674,18 +573,8 @@ def test_annotated_use_of_alias():
             'msg': 'Missing required argument',
             'input': ArgsKwargs((), {'a': 10, 'c': 12, 'd': 1}),
         },
-        {
-            'type': 'unexpected_keyword_argument',
-            'loc': ('a',),
-            'msg': 'Unexpected keyword argument',
-            'input': 10,
-        },
-        {
-            'type': 'unexpected_keyword_argument',
-            'loc': ('d',),
-            'msg': 'Unexpected keyword argument',
-            'input': 1,
-        },
+        {'type': 'unexpected_keyword_argument', 'loc': ('a',), 'msg': 'Unexpected keyword argument', 'input': 10},
+        {'type': 'unexpected_keyword_argument', 'loc': ('d',), 'msg': 'Unexpected keyword argument', 'input': 1},
     ]
 
 
@@ -932,12 +821,7 @@ def test_eval_type_backport():
         foo('not a list')  # type: ignore
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'list_type',
-            'loc': (0,),
-            'msg': 'Input should be a valid list',
-            'input': 'not a list',
-        }
+        {'type': 'list_type', 'loc': (0,), 'msg': 'Input should be a valid list', 'input': 'not a list'}
     ]
     with pytest.raises(ValidationError) as exc_info:
         foo([{'not a str or int'}])  # type: ignore
