@@ -2,8 +2,8 @@ from __future__ import annotations as _annotations
 
 import inspect
 import typing
-from functools import partial
-from typing import Any, Awaitable, Callable, TypedDict
+from functools import partial, wraps
+from typing import Any, Awaitable, Callable, TypedDict, TypeVar
 
 import pydantic_core
 
@@ -13,7 +13,10 @@ from . import _generate_schema, _generics, _typing_extra
 from ._config import ConfigWrapper
 
 if typing.TYPE_CHECKING:
+    from ..config import ConfigDict
     from ..main import BaseModel
+
+    AnyCallableT = TypeVar('AnyCallableT', bound=Callable[..., Any])
 
 
 class ValidateCallWrapper:
@@ -110,6 +113,41 @@ class ValidateCallInfo(TypedDict):
     local_namespace: dict[str, Any] | None
 
 
+def validate_call_with_namespace(
+    function: AnyCallableT | None = None,
+    config: ConfigDict | None = None,
+    validate_return: bool = False,
+    local_namespace: dict[str, Any] | None = None,
+) -> AnyCallableT | Callable[[AnyCallableT], AnyCallableT]:
+    def validate(function: AnyCallableT) -> AnyCallableT:
+        if isinstance(function, (classmethod, staticmethod)):
+            name = type(function).__name__
+            raise TypeError(f'The `@{name}` decorator should be applied after `@validate_call` (put `@{name}` on top)')
+
+        validate_call_wrapper = ValidateCallWrapper(function, config, validate_return, local_namespace)
+
+        @wraps(function)
+        def wrapper_function(*args, **kwargs):
+            return validate_call_wrapper(*args, **kwargs)
+
+        wrapper_function.raw_function = function  # type: ignore
+
+        info = ValidateCallInfo(
+            validate_return=validate_return,
+            config=config,
+            function=function,
+            local_namespace=local_namespace,
+        )
+        wrapper_function.__pydantic_validate_call_info__ = info  # type: ignore
+
+        return wrapper_function  # type: ignore
+
+    if function:
+        return validate(function)
+    else:
+        return validate
+
+
 def _is_wrapped_by_validate_call(obj: object) -> bool:
     return hasattr(obj, '__pydantic_validate_call_info__')
 
@@ -120,23 +158,6 @@ def collect_validate_call_info(namespace: dict[str, Any]) -> dict[str, ValidateC
         for name, func in namespace.items()
         if _is_wrapped_by_validate_call(func)
     }
-
-
-def _replicate_validate_call(info: ValidateCallInfo) -> Callable[..., Any]:
-    """When normally calling `validate_call`, we use the namespace of the frame that called it as local_ns.
-    This function mock that behavior by calling `validate_call` inside a new frame where we have copied all
-    local variables into.
-    """
-    namespace = info['local_namespace']
-
-    from ..validate_call_decorator import _validate_call_with_namespace
-
-    return _validate_call_with_namespace(
-        func=info['function'],
-        config=info['config'],
-        validate_return=info['validate_return'],
-        local_ns=namespace,
-    )
 
 
 def _update_qualname(function: Callable[..., Any], model: type[BaseModel]) -> None:
@@ -152,7 +173,7 @@ def _update_qualname(function: Callable[..., Any], model: type[BaseModel]) -> No
     function.__qualname__ = qualname.replace(original_postfix, f'{model.__name__}.{name}')
 
 
-def update_generic_validate_call_info(model: type[BaseModel]) -> None:
+def update_generic_validate_calls(model: type[BaseModel]) -> None:
     """Recreate the methods decorated with `validate_call`, replacing any parametrized class scoped type variables."""
     origin = model.__pydantic_generic_metadata__['origin']
     typevars_map = _generics.get_model_typevars_map(model)
@@ -180,7 +201,7 @@ def update_generic_validate_call_info(model: type[BaseModel]) -> None:
 
             function.__annotations__[name] = _generics.replace_types(evaluated_annotation, typevars_map)
 
-        new_function = _replicate_validate_call(info)
+        new_function = validate_call_with_namespace(**info)
 
         function.__qualname__ = original_qualname
         function.__annotations__ = original_annotations

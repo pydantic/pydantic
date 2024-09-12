@@ -2,7 +2,6 @@
 
 from __future__ import annotations as _annotations
 
-import functools
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
 
 from ._internal import _typing_extra, _validate_call
@@ -13,41 +12,6 @@ if TYPE_CHECKING:
     from .config import ConfigDict
 
     AnyCallableT = TypeVar('AnyCallableT', bound=Callable[..., Any])
-
-
-def _validate_call_with_namespace(
-    func: AnyCallableT | None = None,
-    config: ConfigDict | None = None,
-    validate_return: bool = False,
-    local_ns: dict[str, Any] | None = None,
-) -> AnyCallableT | Callable[[AnyCallableT], AnyCallableT]:
-    def validate(function: AnyCallableT) -> AnyCallableT:
-        if isinstance(function, (classmethod, staticmethod)):
-            name = type(function).__name__
-            raise TypeError(f'The `@{name}` decorator should be applied after `@validate_call` (put `@{name}` on top)')
-
-        validate_call_wrapper = _validate_call.ValidateCallWrapper(function, config, validate_return, local_ns)
-
-        @functools.wraps(function)
-        def wrapper_function(*args, **kwargs):
-            return validate_call_wrapper(*args, **kwargs)
-
-        wrapper_function.raw_function = function  # type: ignore
-
-        info = _validate_call.ValidateCallInfo(
-            validate_return=validate_return,
-            config=config,
-            function=function,
-            local_namespace=local_ns,
-        )
-        wrapper_function.__pydantic_validate_call_info__ = info  # type: ignore
-
-        return wrapper_function  # type: ignore
-
-    if func:
-        return validate(func)
-    else:
-        return validate
 
 
 @overload
@@ -91,4 +55,4 @@ def validate_call(
         generic_param_ns = _typing_extra.parent_frame_namespace(parent_depth=3) or {}
         local_ns = {**generic_param_ns, **local_ns}
 
-    return _validate_call_with_namespace(func, config, validate_return, local_ns)
+    return _validate_call.validate_call_with_namespace(func, config, validate_return, local_ns)

@@ -147,9 +147,9 @@ def create_generic_submodel(
         **kwds,
     )
 
-    from ._validate_call import update_generic_validate_call_info
+    from ._validate_call import update_generic_validate_calls
 
-    update_generic_validate_call_info(created_model)
+    update_generic_validate_calls(created_model)
 
     model_module, called_globally = _get_caller_frame_info(depth=3)
     if called_globally:  # create global reference and therefore allow pickling
