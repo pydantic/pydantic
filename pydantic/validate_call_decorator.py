@@ -59,21 +59,16 @@ def validate_call(
         if inspect.iscoroutinefunction(function):
 
             @functools.wraps(function)
-            async def async_wrapper_function(*args, **kwargs):
+            async def wrapper_function(*args, **kwargs):  # type: ignore
                 return await validate_call_wrapper(*args, **kwargs)
-
-            async_wrapper_function.raw_function = function  # type: ignore
-
-            return async_wrapper_function  # type: ignore
         else:
 
             @functools.wraps(function)
             def wrapper_function(*args, **kwargs):
                 return validate_call_wrapper(*args, **kwargs)
 
-            wrapper_function.raw_function = function  # type: ignore
-
-            return wrapper_function  # type: ignore
+        wrapper_function.raw_function = function  # type: ignore
+        return wrapper_function  # type: ignore
 
     if func:
         return validate(func)
