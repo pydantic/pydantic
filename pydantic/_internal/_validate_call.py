@@ -108,20 +108,19 @@ class ValidateCallInfo(TypedDict):
     validate_return: bool
     config: ConfigDict | None
     function: Callable[..., Any]
-    local_namspace: dict[str, Any] | None
+    local_namespace: dict[str, Any] | None
 
 
 def _is_wrapped_by_validate_call(obj: object) -> bool:
     return hasattr(obj, '__pydantic_validate_call_info__')
 
 
-def collect_validate_call_info(namespace: dict[str, Any]):
-    validate_call_infos = {}
-    for name, func in namespace.items():
-        if _is_wrapped_by_validate_call(func):
-            validate_call_infos[name] = func.__pydantic_validate_call_info__
-
-    return validate_call_infos
+def collect_validate_call_info(namespace: dict[str, Any]) -> dict[str, ValidateCallInfo]:
+    return {
+        name: func.__pydantic_validate_call_info__
+        for name, func in namespace.items()
+        if _is_wrapped_by_validate_call(func)
+    }
 
 
 def _replicate_validate_call(info: ValidateCallInfo) -> Callable[..., Any]:
@@ -149,7 +148,7 @@ def _copy_func(function: Callable[..., Any]):
     return wrapper
 
 
-def update_generic_validate_call_info(model: type[BaseModel]):
+def update_generic_validate_call_info(model: type[BaseModel]) -> None:
     """Recreate the methods decorated with `validate_call`, replacing any parametrized class scoped type variables."""
     origin = model.__pydantic_generic_metadata__['origin']
     typevars_map = _generics.get_model_typevars_map(model)
