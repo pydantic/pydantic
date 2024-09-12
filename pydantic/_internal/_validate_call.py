@@ -219,5 +219,4 @@ def update_generic_validate_calls(model: type[BaseModel]) -> None:
         function.__signature__ = original_signature  # type: ignore
 
         setattr(model, func_name, new_function)
-        info['function'] = function
         model.__pydantic_validate_calls__[func_name] = info
