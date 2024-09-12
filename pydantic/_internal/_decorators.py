@@ -587,13 +587,8 @@ def inspect_field_serializer(
             f'Unrecognized field_serializer function signature for {serializer} with `mode={mode}`:{sig}',
             code='field-serializer-signature',
         )
-    if info_arg and computed_field:
-        raise PydanticUserError(
-            'field_serializer on computed_field does not use info signature', code='field-serializer-signature'
-        )
 
-    else:
-        return is_field_serializer, info_arg
+    return is_field_serializer, info_arg
 
 
 def inspect_annotated_serializer(serializer: Callable[..., Any], mode: Literal['plain', 'wrap']) -> bool:
