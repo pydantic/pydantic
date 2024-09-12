@@ -17,6 +17,7 @@ authors = [
     {name = 'Sydney Runkle', email = 'sydneymarierunkle@gmail.com'},
     {name = 'David Hewitt', email = 'mail@davidhewitt.io'},
     {name = 'Alex Hall', email='alex.mojaki@gmail.com'},
+    {name = 'Victorien Plot', email='contact@vctrn.dev'},
 ]
 license = 'MIT'
 classifiers = [

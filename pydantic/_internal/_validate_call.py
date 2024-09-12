@@ -126,9 +126,16 @@ def validate_call_with_namespace(
 
         validate_call_wrapper = ValidateCallWrapper(function, config, validate_return, local_namespace)
 
-        @wraps(function)
-        def wrapper_function(*args, **kwargs):
-            return validate_call_wrapper(*args, **kwargs)
+        if inspect.iscoroutinefunction(function):
+
+            @wraps(function)
+            async def wrapper_function(*args, **kwargs):  # type: ignore
+                return await validate_call_wrapper(*args, **kwargs)
+        else:
+
+            @wraps(function)
+            def wrapper_function(*args, **kwargs):
+                return validate_call_wrapper(*args, **kwargs)
 
         wrapper_function.raw_function = function  # type: ignore
 

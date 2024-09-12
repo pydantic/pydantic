@@ -1522,6 +1522,8 @@ def create_model(  # noqa: C901
         **field_definitions: Attributes of the new model. They should be passed in the format:
             `<name>=(<type>, <default value>)`, `<name>=(<type>, <FieldInfo>)`, or `typing.Annotated[<type>, <FieldInfo>]`.
             Any additional metadata in `typing.Annotated[<type>, <FieldInfo>, ...]` will be ignored.
+            Note, `FieldInfo` instances should be created via `pydantic.Field(...)`.
+            Initializing `FieldInfo` instances directly is not supported.
 
     Returns:
         The new [model][pydantic.BaseModel].
