@@ -33,12 +33,14 @@ def _validate_call_with_namespace(
             return validate_call_wrapper(*args, **kwargs)
 
         wrapper_function.raw_function = function  # type: ignore
-        wrapper_function.__pydantic_validate_call_info__ = _validate_call.ValidateCallInfo(  # type: ignore
+
+        info = _validate_call.ValidateCallInfo(
             validate_return=validate_return,
             config=config,
             function=function,
-            local_namspace=local_ns,
+            local_namespace=local_ns,
         )
+        wrapper_function.__pydantic_validate_call_info__ = info  # type: ignore
 
         return wrapper_function  # type: ignore
 

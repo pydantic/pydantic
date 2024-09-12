@@ -872,17 +872,17 @@ def test_validate_call_infos():
         raw_functions['B.f'] = f
         f = validate_call(f)
 
-    A_infos = A.__pydantic_validate_call_infos__
+    A_infos = A.__pydantic_validate_calls__
     assert set(A_infos.keys()) == {'f', 'g', 'h'}
     assert A_infos['f']['config'] == config
-    assert A_infos['f']['local_namspace'] is A_infos['g']['local_namspace']
+    assert A_infos['f']['local_namespace'] is A_infos['g']['local_namespace']
     assert A_infos['f']['validate_return'] is False
     assert A_infos['g']['validate_return'] is True
-    assert 'Nested' in A_infos['f']['local_namspace'].keys()
+    assert 'Nested' in A_infos['f']['local_namespace'].keys()
     for name in ('f', 'g', 'h'):
         assert A_infos[name]['function'] == raw_functions[f'A.{name}']
 
-    B_infos = B.__pydantic_validate_call_infos__
+    B_infos = B.__pydantic_validate_calls__
     assert B_infos['f']['function'] == raw_functions['B.f']
     assert B_infos['f']['validate_return'] is False
     assert all(name not in B_infos for name in ('g', 'h'))

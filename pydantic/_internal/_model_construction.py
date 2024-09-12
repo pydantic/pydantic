@@ -204,7 +204,7 @@ class ModelMetaclass(ABCMeta):
                     'parameters': parameters,
                 }
 
-            cls.__pydantic_validate_call_infos__ = collect_validate_call_info(namespace)
+            cls.__pydantic_validate_calls__ = collect_validate_call_info(namespace)
 
             cls.__pydantic_complete__ = False  # Ensure this specific class gets completed
 

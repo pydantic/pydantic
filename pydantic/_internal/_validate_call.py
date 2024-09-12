@@ -128,7 +128,7 @@ def _replicate_validate_call(info: ValidateCallInfo) -> Callable[..., Any]:
     This function mock that behavior by calling `validate_call` inside a new frame where we have copied all
     local variables into.
     """
-    namespace = info['local_namspace']
+    namespace = info['local_namespace']
 
     from ..validate_call_decorator import _validate_call_with_namespace
 
@@ -156,7 +156,7 @@ def update_generic_validate_call_info(model: type[BaseModel]) -> None:
     if not origin:
         return
 
-    for func_name, info in origin.__pydantic_validate_call_infos__.items():
+    for func_name, info in origin.__pydantic_validate_calls__.items():
         info = info.copy()
         function = info['function'] = _copy_func(info['function'])
         function.__annotations__ = copy.copy(function.__annotations__)
@@ -165,7 +165,7 @@ def update_generic_validate_call_info(model: type[BaseModel]) -> None:
             evaluated_annotation = _typing_extra.eval_type_lenient(
                 annotation,
                 _typing_extra.get_module_ns_of(origin),
-                info['local_namspace'],
+                info['local_namespace'],
             )
 
             function.__annotations__[name] = _generics.replace_types(evaluated_annotation, typevars_map)
@@ -174,4 +174,4 @@ def update_generic_validate_call_info(model: type[BaseModel]) -> None:
 
         setattr(model, func_name, new_function)
         info['function'] = new_function
-        model.__pydantic_validate_call_infos__[func_name] = info
+        model.__pydantic_validate_calls__[func_name] = info
