@@ -1,86 +1,85 @@
 .DEFAULT_GOAL := all
 sources = pydantic tests docs/plugins
 
-.PHONY: .pdm  ## Check that PDM is installed
-.pdm:
-	@pdm -V || echo 'Please install PDM: https://pdm.fming.dev/latest/#installation'
+.PHONY: .uv  ## Check that UV is installed
+.uv:
+	@uv -V || echo 'Please install UV: https://docs.astral.sh/uv/getting-started/installation/
 
 .PHONY: .pre-commit  ## Check that pre-commit is installed
 .pre-commit:
 	@pre-commit -V || echo 'Please install pre-commit: https://pre-commit.com/'
 
 .PHONY: install  ## Install the package, dependencies, and pre-commit for local development
-install: .pdm .pre-commit
-	pdm info
-	pdm install --group :all
+install: .uv .pre-commit
+	uv sync --frozen --all-extras
 	pre-commit install --install-hooks
 
 .PHONY: refresh-lockfiles  ## Sync lockfiles with requirements files.
-refresh-lockfiles: .pdm
-	pdm update --update-reuse --group :all
+refresh-lockfiles: .uv
+	uv sync --upgrade --all-extras
 
 .PHONY: rebuild-lockfiles  ## Rebuild lockfiles from scratch, updating all dependencies
-rebuild-lockfiles: .pdm
-	pdm update --update-eager --group :all
+rebuild-lockfiles: .uv
+	uv sync --all-extras
 
 .PHONY: format  ## Auto-format python source files
-format: .pdm
-	pdm run ruff check --fix $(sources)
-	pdm run ruff format $(sources)
+format: .uv
+	uv run ruff check --fix $(sources)
+	uv run ruff format $(sources)
 
 .PHONY: lint  ## Lint python source files
-lint: .pdm
-	pdm run ruff check $(sources)
-	pdm run ruff format --check $(sources)
+lint: .uv
+    uv run ruff check $(sources)
+	uv run ruff format --check $(sources)
 
 .PHONY: codespell  ## Use Codespell to do spellchecking
 codespell: .pre-commit
 	pre-commit run codespell --all-files
 
 .PHONY: typecheck  ## Perform type-checking
-typecheck: .pre-commit .pdm
+typecheck: .pre-commit .uv
 	pre-commit run typecheck --all-files
 
 .PHONY: test-mypy  ## Run the mypy integration tests
-test-mypy: .pdm
-	pdm run coverage run -m pytest tests/mypy --test-mypy
+test-mypy: .uv
+	uv run coverage run -m pytest tests/mypy --test-mypy
 
 .PHONY: test-mypy-update  ## Update the mypy integration tests for the current mypy version
-test-mypy-update: .pdm
-	pdm run coverage run -m pytest tests/mypy --test-mypy --update-mypy
+test-mypy-update: .uv
+	uv run coverage run -m pytest tests/mypy --test-mypy --update-mypy
 
 .PHONY: test-mypy-update-all  ## Update the mypy integration tests for all mypy versions
-test-mypy-update-all: .pdm
+test-mypy-update-all: .uv
 	rm -rf tests/mypy/outputs
-	pip install --force mypy==1.0.1 && make test-mypy-update
-	pip install --force mypy==1.1.1 && make test-mypy-update
-	pip install --force mypy==1.2.0 && make test-mypy-update
-	pip install --force mypy==1.4.1 && make test-mypy-update
-	pip install --force mypy==1.5.0 && make test-mypy-update
+	uv pip install --force mypy==1.0.1 && make test-mypy-update
+	uv pip install --force mypy==1.1.1 && make test-mypy-update
+	uv pip install --force mypy==1.2.0 && make test-mypy-update
+	uv pip install --force mypy==1.4.1 && make test-mypy-update
+	uv pip install --force mypy==1.5.0 && make test-mypy-update
 
 .PHONY: test-pyright  ## Run the pyright integration tests
-test-pyright: .pdm
-	pdm run bash -c 'cd tests/pyright && pyright'
+test-pyright: .uv
+	uv run bash -c 'cd tests/pyright && pyright'
 
 .PHONY: test  ## Run all tests, skipping the type-checker integration tests
-test: .pdm
-	pdm run coverage run -m pytest --durations=10
+test: .uv
+	uv run coverage run -m pytest --durations=10
 
 .PHONY: benchmark  ## Run all benchmarks
-benchmark: .pdm
-	pdm run coverage run -m pytest --durations=10 --benchmark-enable tests/benchmarks
+benchmark: .uv
+	uv run coverage run -m pytest --durations=10 --benchmark-enable tests/benchmarks
 
 .PHONY: testcov  ## Run tests and generate a coverage report, skipping the type-checker integration tests
 testcov: test
 	@echo "building coverage html"
-	@pdm run coverage html
+	@uv run coverage html
 	@echo "building coverage lcov"
-	@pdm run coverage lcov
+	@uv run coverage lcov
 
 .PHONY: test-examples  ## Run only the tests from the documentation
-test-examples: .pdm
+test-examples: .uv
 	@echo "running examples"
-	@find docs/examples -type f -name '*.py' | xargs -I'{}' sh -c 'pdm run python {} >/dev/null 2>&1 || (echo "{} failed")'
+	@find docs/examples -type f -name '*.py' | xargs -I'{}' sh -c 'uv run python {} >/dev/null 2>&1 || (echo "{} failed")'
 
 .PHONY: test-fastapi  ## Run the FastAPI tests with this version of pydantic
 test-fastapi:
@@ -88,18 +87,18 @@ test-fastapi:
 	./tests/test_fastapi.sh
 
 .PHONY: test-pydantic-settings  ## Run the pydantic-settings tests with this version of pydantic
-test-pydantic-settings: .pdm
+test-pydantic-settings: .uv
 	git clone https://github.com/pydantic/pydantic-settings.git --single-branch
 	bash ./tests/test_pydantic_settings.sh
 
 .PHONY: test-pydantic-extra-types  ## Run the pydantic-extra-types tests with this version of pydantic
-test-pydantic-extra-types: .pdm
+test-pydantic-extra-types: .uv
 	git clone https://github.com/pydantic/pydantic-extra-types.git --single-branch
 	bash ./tests/test_pydantic_extra_types.sh
 
 .PHONY: test-no-docs  # Run all tests except the docs tests
-test-no-docs: .pdm
-	pdm run pytest tests --ignore=tests/test_docs.py
+test-no-docs: .uv
+	uv run pytest tests --ignore=tests/test_docs.py
 
 .PHONY: all  ## Run the standard set of checks performed in CI
 all: lint typecheck codespell testcov
@@ -127,7 +126,7 @@ clean:
 
 .PHONY: docs  ## Generate the docs
 docs:
-	pdm run mkdocs build --strict
+	uv run mkdocs build --strict
 
 .PHONY: help  ## Display this message
 help:
@@ -138,4 +137,4 @@ help:
 
 .PHONY: update-v1  ## Update V1 namespace
 update-v1:
-	pdm run ./update_v1.sh
+	uv run ./update_v1.sh

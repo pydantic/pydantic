@@ -102,28 +102,8 @@ substitutions = [
     {pattern = '@@', replacement = '@'},
 ]
 
-[tool.pdm.dev-dependencies]
-docs = [
-    "autoflake",
-    "mkdocs",
-    "mkdocs-exclude",
-    "mkdocs-material",
-    "mkdocs-redirects",
-    "mkdocstrings-python",
-    "tomli",
-    "pyupgrade",
-    "mike",
-    "pytest-examples>=0.0.13",
-    "pydantic-settings>=2.0b1",
-    "pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main",
-    "requests",
-]
-linting = [
-    "eval-type-backport>=0.1.3",
-    "ruff==0.5.6",
-    "mypy~=1.1.1",
-]
-testing = [
+[tool.uv]
+dev-dependencies = [
     "cloudpickle",
     "coverage[toml]",
     "pytz",
@@ -139,8 +119,6 @@ testing = [
     "pytest-codspeed~=2.2.0; python_version < '3.13'",
     "packaging>=23.2",
     "jsonschema>=4.23.0",
-]
-testing-extra = [
     # used when generate devtools docs example
     "ansi2html",
     "devtools",
@@ -148,10 +126,29 @@ testing-extra = [
     # TODO: remove bound once sqlalchemy supports 3.13
     "sqlalchemy>=2.0,<3.0; python_version < '3.13'",
     "greenlet>=3.0.0rc3; python_version < '3.13'",
-]
-mypy = [
-    "mypy",
+    # linting
+    "eval-type-backport>=0.1.3",
+    "ruff==0.5.6",
+    # typing
+    "mypy~=1.1.1",
     "pydantic-settings>=2.0.0",
+]
+
+[tool.pdm.dev-dependencies]
+docs = [
+    "autoflake",
+    "mkdocs",
+    "mkdocs-exclude",
+    "mkdocs-material",
+    "mkdocs-redirects",
+    "mkdocstrings-python",
+    "tomli",
+    "pyupgrade",
+    "mike",
+    "pytest-examples>=0.0.13",
+    "pydantic-settings>=2.0b1",
+    "pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main",
+    "requests",
 ]
 # TODO: remove once memray supports 3.13
 memray = ["pytest-memray; python_version < '3.13' and platform_system != 'Windows'"]
