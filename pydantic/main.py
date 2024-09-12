@@ -752,12 +752,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             )  # use dict as ordered set
 
             with _generics.generic_recursion_self_type(origin, args) as maybe_self_type:
-                if maybe_self_type is not None:
-                    return maybe_self_type
-
+                # Check cached first otherwise `mro` may return `PydanticRecursiveRef`
                 cached = _generics.get_cached_generic_type_late(cls, typevar_values, origin, args)
                 if cached is not None:
                     return cached
+
+                if maybe_self_type is not None:
+                    return maybe_self_type
 
                 # Attempt to rebuild the origin in case new types have been defined
                 try:
@@ -1517,6 +1518,8 @@ def create_model(  # noqa: C901
         **field_definitions: Attributes of the new model. They should be passed in the format:
             `<name>=(<type>, <default value>)`, `<name>=(<type>, <FieldInfo>)`, or `typing.Annotated[<type>, <FieldInfo>]`.
             Any additional metadata in `typing.Annotated[<type>, <FieldInfo>, ...]` will be ignored.
+            Note, `FieldInfo` instances should be created via `pydantic.Field(...)`.
+            Initializing `FieldInfo` instances directly is not supported.
 
     Returns:
         The new [model][pydantic.BaseModel].

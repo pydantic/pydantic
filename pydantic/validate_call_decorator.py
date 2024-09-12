@@ -3,6 +3,7 @@
 from __future__ import annotations as _annotations
 
 import functools
+import inspect
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
 
 from ._internal import _typing_extra, _validate_call
@@ -55,12 +56,18 @@ def validate_call(
 
         validate_call_wrapper = _validate_call.ValidateCallWrapper(function, config, validate_return, local_ns)
 
-        @functools.wraps(function)
-        def wrapper_function(*args, **kwargs):
-            return validate_call_wrapper(*args, **kwargs)
+        if inspect.iscoroutinefunction(function):
+
+            @functools.wraps(function)
+            async def wrapper_function(*args, **kwargs):  # type: ignore
+                return await validate_call_wrapper(*args, **kwargs)
+        else:
+
+            @functools.wraps(function)
+            def wrapper_function(*args, **kwargs):
+                return validate_call_wrapper(*args, **kwargs)
 
         wrapper_function.raw_function = function  # type: ignore
-
         return wrapper_function  # type: ignore
 
     if func:
