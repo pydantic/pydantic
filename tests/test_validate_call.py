@@ -819,82 +819,30 @@ def test_eval_type_backport():
     ]
 
 
-REQUIRE_PEP_695 = pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+')
+class M0(BaseModel):
+    z: int
 
 
-@REQUIRE_PEP_695
-def test_validate_call_with_pep_695_syntax() -> None:
-    """Note: validate_call still doesn't work properly with generics, see https://github.com/pydantic/pydantic/issues/7796.
-
-    This test is just to ensure that the syntax is accepted and doesn't raise a NameError."""
-
-    # We use `exec` to check both with and without `from __future__ import annotations`
-    # Note: there is some issue with `exec` namespace: https://github.com/pydantic/pydantic/issues/10366
-    for import_annotations in ('from __future__ import annotations', ''):
-        locals = {'Iterable': Iterable}
-
-        source = f"""
-{import_annotations}
-from pydantic import BaseModel, validate_call
-
-@validate_call
-def find_max_no_validate_return[T](args: Iterable[T]) -> T:
-    return sorted(args, reverse=True)[0]
-
-@validate_call(validate_return=True)
-def find_max_validate_return[T](args: Iterable[T]) -> T:
-    return sorted(args, reverse=True)[0]
-            """
-        exec(compile(source, '<string>', 'exec'), None, locals)
-
-        functions = [locals['find_max_no_validate_return'], locals['find_max_validate_return']]
-        for find_max in functions:
-            assert len(find_max.__type_params__) == 1
-            assert find_max([1, 2, 10, 5]) == 10
-
-            with pytest.raises(ValidationError):
-                find_max(1)
+M = M0
 
 
-@REQUIRE_PEP_695
-def test_class_type_params_with_pep_695():
-    """Test both PEP 695 syntax and validation on BaseModel."""
+def test_uses_local_ns():
+    class M1(BaseModel):
+        y: int
 
-    local_ns = {}
+    M = M1  # noqa: F841
 
-    for import_annotations in ('from __future__ import annotations', ''):
-        source = f"""
-{import_annotations}
-from pydantic import BaseModel, validate_call
+    def foo():
+        class M2(BaseModel):
+            z: int
 
-class A[T](BaseModel):
-    @validate_call(validate_return=True)
-    def f(self, x: T) -> T:
-        return x
+        M = M2
 
-class B[T, S](BaseModel):
-    @validate_call(validate_return=True)
-    def f(self, x: T) -> Union[T, List[tuple[S, int]]]:
-        return x
+        @validate_call
+        def bar(m: M) -> M:
+            return m
 
-    @validate_call(validate_return=True)
-    def g[P: int](self, x: P) -> list[P]:
-        return (x,)
-             """
-
-        exec(compile(source, '<string>', 'exec'), None, local_ns)
-
-        A = local_ns['A']
-        a = A[int]()
-        assert a.f(1) == 1
-        assert a.f('1') == 1
-        with pytest.raises(ValidationError):
-            a.f('abc')
-
-        B = local_ns['B']
-        b = B[int, str]()
-        assert b.f(0) == 0
-        assert b.g(1) == [1]
+        assert bar({'z': 1}) == M2(z=1)
 
 
 def test_validate_call_infos():
@@ -940,73 +888,22 @@ def test_validate_call_infos():
     assert all(name not in B_infos for name in ('g', 'h'))
 
 
-def test_generic_method():
+def test_generic_simple():
     T = TypeVar('T')
 
     class A(BaseModel, Generic[T]):
-        a: T
-
         @validate_call(validate_return=True)
-        def f(self, x: T) -> Tuple[T, T]:
-            return (self.a, x)
+        def f(self, x: T) -> T:
+            return x
 
-        @validate_call(validate_return=True)
-        def g(self, x: List[T]) -> Tuple[T, T]:
-            return (x[0], x[1])
-
-        @validate_call(validate_return=True)
-        def h(self, x: List[T]) -> Tuple[T, T]:
-            return None
-
-    def check_A():
-        a_any = A(a=1)
-        assert a_any.f(2) == (1, 2)
-        assert a_any.f('abc') == (1, 'abc')
-        assert a_any.g([1, 'a']) == (1, 'a')
-        with pytest.raises(ValidationError):
-            a_any.h([1])
-
-    check_A()
-
-    a_int = A[int](a=1)
-    assert a_int.f(2) == (1, 2)
-    assert a_int.f('2') == (1, 2)
-    assert a_int.g([1, 2, 3]) == (1, 2)
+    a = A[int]()
+    assert a.f(1) == 1
+    assert a.f('1') == 1
     with pytest.raises(ValidationError):
-        a_int.f('abc')
-    with pytest.raises(ValidationError):
-        a_int.f([])
-    with pytest.raises(ValidationError):
-        a_int.g([1, 'abc'])
-
-    # Ensure the subclassed methods will not affect the original methods.
-    check_A()
-
-    class B(A[int], Generic[T]):
-        @validate_call
-        def f1(self, x: Optional[Union[T, Literal['bar']]] = None): ...
-
-        @validate_call(validate_return=True)
-        def f2(self, x: T) -> Dict[str, List[Optional[Set[T]]]]:
-            # test complicated type as well type conversion
-            return {str(x): [None, (x,)]}
-
-    b_foo = B[Literal['foo']](a=123)
-    b_foo.f1('foo')
-    b_foo.f1('bar')
-    b_foo.f1()
-    with pytest.raises(ValidationError):
-        b_foo.f1('abc')
-    with pytest.raises(ValidationError):
-        b_foo.f1(1234)
-
-    # inherited
-    assert b_foo.g([1, 2, 3]) == (1, 2)
-    with pytest.raises(ValidationError):
-        b_foo.f('abc')
+        a.f('abc')
 
 
-def test_generic_strict():
+def test_generic_config():
     T = TypeVar('T')
 
     class A(BaseModel, Generic[T]):
@@ -1081,6 +978,72 @@ def test_generic_multi_typevars():
         b2.f_b('abc', 'abc')
 
 
+def test_generic_complex_type():
+    T = TypeVar('T')
+
+    class A(BaseModel, Generic[T]):
+        a: T
+
+        @validate_call(validate_return=True)
+        def f(self, x: T) -> Tuple[T, T]:
+            return (self.a, x)
+
+        @validate_call(validate_return=True)
+        def g(self, x: List[T]) -> Tuple[T, T]:
+            return (x[0], x[1])
+
+        @validate_call(validate_return=True)
+        def h(self, x: List[T]) -> Tuple[T, T]:
+            return None
+
+    def check_A():
+        a_any = A(a=1)
+        assert a_any.f(2) == (1, 2)
+        assert a_any.f('abc') == (1, 'abc')
+        assert a_any.g([1, 'a']) == (1, 'a')
+        with pytest.raises(ValidationError):
+            a_any.h([1])
+
+    check_A()
+
+    a_int = A[int](a=1)
+    assert a_int.f(2) == (1, 2)
+    assert a_int.f('2') == (1, 2)
+    assert a_int.g([1, 2, 3]) == (1, 2)
+    with pytest.raises(ValidationError):
+        a_int.f('abc')
+    with pytest.raises(ValidationError):
+        a_int.f([])
+    with pytest.raises(ValidationError):
+        a_int.g([1, 'abc'])
+
+    # Ensure the subclassed methods will not affect the original methods.
+    check_A()
+
+    class B(A[int], Generic[T]):
+        @validate_call
+        def f1(self, x: Optional[Union[T, Literal['bar']]] = None): ...
+
+        @validate_call(validate_return=True)
+        def f2(self, x: T) -> Dict[str, List[Optional[Set[T]]]]:
+            # test complicated type as well type conversion
+            return {str(x): [None, (x,)]}
+
+    b_foo = B[Literal['foo']](a=123)
+    b_foo.f1('foo')
+    b_foo.f1('bar')
+    b_foo.f1()
+    with pytest.raises(ValidationError):
+        b_foo.f1('abc')
+    with pytest.raises(ValidationError):
+        b_foo.f1(1234)
+
+    # inherited
+    assert b_foo.g([1, 2, 3]) == (1, 2)
+    with pytest.raises(ValidationError):
+        b_foo.f('abc')
+
+
 # For normal function or class other than `BaseModel`, we cannot get the parameters at runtime.
 # https://github.com/python/typing/issues/629
 # https://discuss.python.org/t/runtime-access-to-type-parameters/37517
@@ -1113,27 +1076,79 @@ def test_generic_class():
         a.my_func('a')
 
 
-class M0(BaseModel):
-    z: int
+REQUIRE_PEP_695 = pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+')
 
 
-M = M0
+@REQUIRE_PEP_695
+def test_pep_695_function() -> None:
+    """Note: validate_call still doesn't work properly with generics, see https://github.com/pydantic/pydantic/issues/7796.
+
+    This test is just to ensure that the syntax is accepted and doesn't raise a NameError."""
+
+    # We use `exec` to check both with and without `from __future__ import annotations`
+    # Note: there is some issue with `exec` namespace: https://github.com/pydantic/pydantic/issues/10366
+    for import_annotations in ('from __future__ import annotations', ''):
+        locals = {'Iterable': Iterable}
+
+        source = f"""
+{import_annotations}
+from pydantic import BaseModel, validate_call
+
+@validate_call
+def find_max_no_validate_return[T](args: Iterable[T]) -> T:
+    return sorted(args, reverse=True)[0]
+
+@validate_call(validate_return=True)
+def find_max_validate_return[T](args: Iterable[T]) -> T:
+    return sorted(args, reverse=True)[0]
+            """
+        exec(compile(source, '<string>', 'exec'), None, locals)
+
+        functions = [locals['find_max_no_validate_return'], locals['find_max_validate_return']]
+        for find_max in functions:
+            assert len(find_max.__type_params__) == 1
+            assert find_max([1, 2, 10, 5]) == 10
+
+            with pytest.raises(ValidationError):
+                find_max(1)
 
 
-def test_uses_local_ns():
-    class M1(BaseModel):
-        y: int
+@REQUIRE_PEP_695
+def test_pep_695_class():
+    """Test both PEP 695 syntax and validation on BaseModel."""
 
-    M = M1  # noqa: F841
+    local_ns = {}
 
-    def foo():
-        class M2(BaseModel):
-            z: int
+    for import_annotations in ('from __future__ import annotations', ''):
+        source = f"""
+{import_annotations}
+from pydantic import BaseModel, validate_call
 
-        M = M2
+class A[T](BaseModel):
+    @validate_call(validate_return=True)
+    def f(self, x: T) -> T:
+        return x
 
-        @validate_call
-        def bar(m: M) -> M:
-            return m
+class B[T, S](BaseModel):
+    @validate_call(validate_return=True)
+    def f(self, x: T) -> Union[T, List[tuple[S, int]]]:
+        return x
 
-        assert bar({'z': 1}) == M2(z=1)
+    @validate_call(validate_return=True)
+    def g[P: int](self, x: P) -> list[P]:
+        return (x,)
+             """
+
+        exec(compile(source, '<string>', 'exec'), None, local_ns)
+
+        A = local_ns['A']
+        a = A[int]()
+        assert a.f(1) == 1
+        assert a.f('1') == 1
+        with pytest.raises(ValidationError):
+            a.f('abc')
+
+        B = local_ns['B']
+        b = B[int, str]()
+        assert b.f(0) == 0
+        assert b.g(1) == [1]
