@@ -851,7 +851,7 @@ def find_max_validate_return[T](args: Iterable[T]) -> T:
 @pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+ for PEP 695 syntax with generics')
 def test_pep695_with_class():
     """Primarily to ensure that the syntax is accepted and doesn't raise a `NameError` with `T`.
-    The undesired behavior is expected currently."""
+    The validation is not expected to work properly when parameterized at this point."""
 
     for import_annotations in ('from __future__ import annotations', ''):
         globs = {}
