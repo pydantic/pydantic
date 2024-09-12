@@ -15,6 +15,39 @@ if TYPE_CHECKING:
     AnyCallableT = TypeVar('AnyCallableT', bound=Callable[..., Any])
 
 
+def _validate_call_with_namespace(
+    func: AnyCallableT | None = None,
+    config: ConfigDict | None = None,
+    validate_return: bool = False,
+    local_ns: dict[str, Any] | None = None,
+) -> AnyCallableT | Callable[[AnyCallableT], AnyCallableT]:
+    def validate(function: AnyCallableT) -> AnyCallableT:
+        if isinstance(function, (classmethod, staticmethod)):
+            name = type(function).__name__
+            raise TypeError(f'The `@{name}` decorator should be applied after `@validate_call` (put `@{name}` on top)')
+
+        validate_call_wrapper = _validate_call.ValidateCallWrapper(function, config, validate_return, local_ns)
+
+        @functools.wraps(function)
+        def wrapper_function(*args, **kwargs):
+            return validate_call_wrapper(*args, **kwargs)
+
+        wrapper_function.raw_function = function  # type: ignore
+        wrapper_function.__pydantic_validate_call_info__ = _validate_call.ValidateCallInfo(  # type: ignore
+            validate_return=validate_return,
+            config=config,
+            function=function,
+            local_namspace=local_ns,
+        )
+
+        return wrapper_function  # type: ignore
+
+    if func:
+        return validate(func)
+    else:
+        return validate
+
+
 @overload
 def validate_call(
     *, config: ConfigDict | None = None, validate_return: bool = False
@@ -46,8 +79,7 @@ def validate_call(
     Returns:
         The decorated function.
     """
-    local_ns = _typing_extra.parent_frame_namespace()
-    if local_ns and '__type_params__' in local_ns:
+    if (local_ns := _typing_extra.parent_frame_namespace()) and '__type_params__' in local_ns:
         # When using PEP 695 syntax, an extra frame is created, which stores the type parameters.
         # So the `local_ns` above does not contain the TypeVar.
         #
@@ -57,28 +89,4 @@ def validate_call(
         generic_param_ns = _typing_extra.parent_frame_namespace(parent_depth=3) or {}
         local_ns = {**generic_param_ns, **local_ns}
 
-    def validate(function: AnyCallableT) -> AnyCallableT:
-        if isinstance(function, (classmethod, staticmethod)):
-            name = type(function).__name__
-            raise TypeError(f'The `@{name}` decorator should be applied after `@validate_call` (put `@{name}` on top)')
-
-        validate_call_wrapper = _validate_call.ValidateCallWrapper(function, config, validate_return, local_ns)
-
-        @functools.wraps(function)
-        def wrapper_function(*args, **kwargs):
-            return validate_call_wrapper(*args, **kwargs)
-
-        wrapper_function.raw_function = function  # type: ignore
-        wrapper_function.__pydantic_validate_call_info__ = _validate_call.ValidateCallInfo(  # type: ignore
-            validate_return=validate_return,
-            config=config,
-            function=function,
-            local_namspace=local_ns,
-        )
-
-        return wrapper_function  # type: ignore
-
-    if func:
-        return validate(func)
-    else:
-        return validate
+    return _validate_call_with_namespace(func, config, validate_return, local_ns)

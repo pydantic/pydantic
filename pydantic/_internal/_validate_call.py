@@ -3,7 +3,7 @@ from __future__ import annotations as _annotations
 import copy
 import inspect
 import typing
-from functools import lru_cache, partial, wraps
+from functools import partial, wraps
 from typing import Any, Awaitable, Callable, TypedDict
 
 import pydantic_core
@@ -124,49 +124,21 @@ def collect_validate_call_info(namespace: dict[str, Any]):
     return validate_call_infos
 
 
-@lru_cache(maxsize=None)
-def _add_unique_postfix(name: str):
-    """Used to prevent namespace collision."""
-    from uuid import uuid4
-
-    postfix = str(uuid4()).replace('-', '_')
-    return f'{name}_{postfix}'
-
-
-def _replicate_validate_call(function: Callable[..., Any], info: ValidateCallInfo) -> Callable[..., Any]:
+def _replicate_validate_call(info: ValidateCallInfo) -> Callable[..., Any]:
     """When normally calling `validate_call`, we use the namespace of the frame that called it as local_ns.
     This function mock that behavior by calling `validate_call` inside a new frame where we have copied all
     local variables into.
     """
     namespace = info['local_namspace']
 
-    locals_name = _add_unique_postfix('locals')
-    parent_name = _add_unique_postfix('parent')
-    info_name = _add_unique_postfix('info')
-    function_name = _add_unique_postfix('function')
-    item_name = _add_unique_postfix('item')
+    from ..validate_call_decorator import _validate_call_with_namespace
 
-    from ..validate_call_decorator import validate_call
-
-    result_ns = {locals_name: namespace, 'validate_call': validate_call, info_name: info, function_name: function}
-
-    # Note: here the parent scope has to be class, not function, because since Python 3.13
-    #       the `locals()` cannot be mutate inside function frame.
-    # See: https://docs.python.org/3.13/library/functions.html#locals
-    #      https://docs.python.org/3.13/glossary.html#term-optimized-scope
-    exec(
-        f"""
-class {parent_name}:
-    for {item_name} in {locals_name}.items():
-        locals()[{item_name}[0]] = {item_name}[1]
-    del {item_name}
-
-    {function_name} = validate_call(config={info_name}['config'], validate_return={info_name}['validate_return'])({function_name})
-""",
-        result_ns,
+    return _validate_call_with_namespace(
+        func=info['function'],
+        config=info['config'],
+        validate_return=info['validate_return'],
+        local_ns=namespace,
     )
-
-    return getattr(result_ns[parent_name], function_name)
 
 
 def _copy_func(function: Callable[..., Any]):
@@ -199,7 +171,7 @@ def update_generic_validate_call_info(model: type[BaseModel]):
 
             function.__annotations__[name] = _generics.replace_types(evaluated_annotation, typevars_map)
 
-        new_function = _replicate_validate_call(function, info)
+        new_function = _replicate_validate_call(info)
 
         setattr(model, func_name, new_function)
         info['function'] = new_function
