@@ -963,8 +963,6 @@ def test_generic_multi_typevars():
     assert b1.f_b(0, 'abc') == (0, 'abc')
 
     with pytest.raises(ValidationError):
-        # For this to work, A[int] need to be in B[int, str].__mro__,
-        # which can be solved if #10100 is merged
         b1.f_a('abc')
     with pytest.raises(ValidationError):
         b1.f_b(0, [])
