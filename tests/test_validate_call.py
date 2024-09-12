@@ -873,14 +873,16 @@ def test_validate_call_infos():
         f = validate_call(f)
 
     A_infos = A.__pydantic_validate_calls__
-    assert set(A_infos.keys()) == {'f', 'g', 'h'}
-    assert A_infos['f']['config'] == config
-    assert A_infos['f']['local_namespace'] is A_infos['g']['local_namespace']
-    assert A_infos['f']['validate_return'] is False
-    assert A_infos['g']['validate_return'] is True
-    assert 'Nested' in A_infos['f']['local_namespace'].keys()
-    for name in ('f', 'g', 'h'):
-        assert A_infos[name]['function'] == raw_functions[f'A.{name}']
+    A_int_infos = A[int].__pydantic_validate_calls__
+    for infos in (A_infos, A_int_infos):
+        assert set(infos.keys()) == {'f', 'g', 'h'}
+        assert infos['f']['config'] == config
+        assert infos['f']['local_namespace'] is infos['g']['local_namespace']
+        assert infos['f']['validate_return'] is False
+        assert infos['g']['validate_return'] is True
+        assert 'Nested' in infos['f']['local_namespace'].keys()
+        for name in ('f', 'g', 'h'):
+            assert infos[name]['function'] == raw_functions[f'A.{name}']
 
     B_infos = B.__pydantic_validate_calls__
     assert B_infos['f']['function'] == raw_functions['B.f']
@@ -940,6 +942,35 @@ def test_generic_inheritance():
             a.f(123)
         with pytest.raises(ValidationError):
             a.g([1, 'a'])
+
+
+def test_generic_wraps():
+    T = TypeVar('T')
+
+    class A(BaseModel, Generic[T]):
+        @validate_call(validate_return=True)
+        def f(self, x: T) -> T:
+            return x
+
+    # the raw functions is the same object
+    assert len(set(id(f.raw_function) for f in (A.f, A[int].f, A[str].f))) == 1
+
+    a = A()
+    a_int = A[int]()
+    a_str = A[str]()
+    assert a.f([]) == []
+
+    assert a_int.f(1) == 1
+    assert a_int.f('1') == 1
+
+    assert a_str.f('1') == '1'
+    assert a_str.f('a') == 'a'
+    assert a_str.f(b'a') == 'a'
+
+    for func, type, model in zip((A.f, A[int].f, A[str].f), (T, int, str), (A, A[int], A[str])):
+        qualname = f'test_generic_wraps.<locals>.{model.__name__}.f'
+        assert func.__qualname__ == qualname
+        assert func.__annotations__ == {'x': type, 'return': type}
 
 
 def test_generic_multi_typevars():

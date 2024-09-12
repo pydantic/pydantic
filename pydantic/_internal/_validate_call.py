@@ -1,9 +1,8 @@
 from __future__ import annotations as _annotations
 
-import copy
 import inspect
 import typing
-from functools import partial, wraps
+from functools import partial
 from typing import Any, Awaitable, Callable, TypedDict
 
 import pydantic_core
@@ -140,12 +139,17 @@ def _replicate_validate_call(info: ValidateCallInfo) -> Callable[..., Any]:
     )
 
 
-def _copy_func(function: Callable[..., Any]):
-    @wraps(function)
-    def wrapper(*args, **kwargs):
-        return function(*args, **kwargs)
+def _update_qualname(function: Callable[..., Any], model: type[BaseModel]) -> None:
+    origin = model.__pydantic_generic_metadata__['origin']
+    if not origin:
+        return
 
-    return wrapper
+    name = function.__name__
+    qualname = function.__qualname__
+
+    original_postfix = f'{origin.__name__}.{name}'
+    assert qualname.endswith(original_postfix)
+    function.__qualname__ = qualname.replace(original_postfix, f'{model.__name__}.{name}')
 
 
 def update_generic_validate_call_info(model: type[BaseModel]) -> None:
@@ -158,8 +162,14 @@ def update_generic_validate_call_info(model: type[BaseModel]) -> None:
 
     for func_name, info in origin.__pydantic_validate_calls__.items():
         info = info.copy()
-        function = info['function'] = _copy_func(info['function'])
-        function.__annotations__ = copy.copy(function.__annotations__)
+        function = info['function']
+
+        original_qualname = function.__qualname__
+        _update_qualname(function, model)
+
+        # we want to temporarily reassign the annotations to generate schema
+        original_annotations = function.__annotations__
+        function.__annotations__ = original_annotations.copy()
 
         for name, annotation in function.__annotations__.items():
             evaluated_annotation = _typing_extra.eval_type_lenient(
@@ -172,6 +182,9 @@ def update_generic_validate_call_info(model: type[BaseModel]) -> None:
 
         new_function = _replicate_validate_call(info)
 
+        function.__qualname__ = original_qualname
+        function.__annotations__ = original_annotations
+
         setattr(model, func_name, new_function)
-        info['function'] = new_function
+        info['function'] = function
         model.__pydantic_validate_calls__[func_name] = info
