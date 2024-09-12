@@ -49,6 +49,8 @@ from pydantic_core import (
     PydanticCustomError,
     PydanticSerializationUnexpectedValue,
     PydanticUndefined,
+    SchemaSerializer,
+    SchemaValidator,
     Url,
     core_schema,
     to_jsonable_python,
@@ -359,6 +361,7 @@ class GenerateSchema:
     """Generate core schema for a Pydantic model, dataclass and types like `str`, `datetime`, ... ."""
 
     __slots__ = (
+        '_disable_nested_schema_usage',
         '_config_wrapper_stack',
         '_types_namespace_stack',
         '_typevars_map',
@@ -373,6 +376,11 @@ class GenerateSchema:
         types_namespace: dict[str, Any] | None,
         typevars_map: dict[Any, Any] | None = None,
     ) -> None:
+        # We must not use `nested` core schemas inside of union choices, this
+        # field is set to `True` when building schema for unions allowing us to avoid
+        # using `nested` schemas instead falling back to pre-#10246 behaviour
+        # of inlining the nested model's core schema.
+        self._disable_nested_schema_usage = False
         # we need a stack for recursing into nested models
         self._config_wrapper_stack = ConfigWrapperStack(config_wrapper)
         self._types_namespace_stack = TypesNamespaceStack(types_namespace)
@@ -714,7 +722,11 @@ class GenerateSchema:
                                 break
 
                 if cls.__pydantic_root_model__:
+                    old = self._disable_nested_schema_usage
+                    self._disable_nested_schema_usage = True
                     root_field = self._common_field_schema('root', fields['root'], decorators)
+                    self._disable_nested_schema_usage = old
+
                     inner_schema = root_field['schema']
                     inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
                     model_schema = core_schema.model_schema(
@@ -800,6 +812,42 @@ class GenerateSchema:
         # avoid calling `__get_pydantic_core_schema__` if we've already visited this object
         if is_self_type(obj):
             obj = self.model_type_stack.get()
+
+        BaseModel = import_cached_base_model()
+
+        # When encountering a model inside of another model we want to use a `nested` schema
+        # as it is more efficient than inlining the models core schema into the schema we are currently
+        # building. Unfortunately there are some edge cases where this does not work so there is a bit
+        # of complexity here special casing various situations:
+        if (
+            # If its not a model we cant reuse its core schema (yet)
+            lenient_issubclass(obj, BaseModel)
+            # When generating schema for some `class Foo(BaseModel)` we do not want to use a `nested`
+            # schema for `Foo` as we are generating the schema that should be reused by `nested`.  This
+            # is not a perfectly accurate check as a `TypeAdapter(list[Foo])` would not use a `nested`
+            # for the reference to `Foo`. 
+            and len(self.model_type_stack._stack) > 0
+            # Using `nested` schemas has been disabled for some reason, one possible reason could be that
+            # we are building schema for a union choice. Union choices cannot support `nested` schemas as
+            # `apply_discriminators` needs to be able to recurse into models.
+            and not self._disable_nested_schema_usage
+            # If a model has a field such as `x: BaseModel` dont use a `nested` schema
+            and not obj == BaseModel
+            # If the model has generic parameters then do not use a `nested` schema as there are some obscure
+            # bugs with generic models that would start getting hit more frequently: tracking in pydantic/pydantic#10279
+            and not obj.__pydantic_generic_metadata__['args']
+        ):
+            def get_model_info() -> tuple[CoreSchema, SchemaValidator, SchemaSerializer]:
+                # If we are reusing schema from a model with forward references it may not have been built yet. In
+                # this case we automatically trigger a rebuild instead of erroring and requiring the user to do it 
+                # manually (it would also be a breaking change to do so)
+                if obj.__pydantic_core_schema__ is None or MockCoreSchema:
+                    obj.model_rebuild()
+
+                return (obj.__pydantic_core_schema__, obj.__pydantic_validator__, obj.__pydantic_serializer__)
+
+            return core_schema.nested_schema(cls=obj, get_info=get_model_info)
+
         with self.defs.get_schema_or_ref(obj) as (_, maybe_schema):
             if maybe_schema is not None:
                 return maybe_schema
@@ -1296,9 +1344,12 @@ class GenerateSchema:
 
         with self.field_name_stack.push(name):
             if field_info.discriminator is not None:
+                old = self._disable_nested_schema_usage
+                self._disable_nested_schema_usage = True
                 schema = self._apply_annotations(
                     source_type, annotations + validators_from_decorators, transform_inner_schema=set_discriminator
                 )
+                self._disable_nested_schema_usage = old
             else:
                 schema = self._apply_annotations(
                     source_type,
@@ -1366,11 +1417,17 @@ class GenerateSchema:
         args = self._get_args_resolving_forward_refs(union_type, required=True)
         choices: list[CoreSchema] = []
         nullable = False
+        # Don't use `nested` schemas for union choices as optimizing the returned CoreSchema
+        # requires being able to access the CoreSchema for all nested models which is not possible
+        # in the case of cycles with a model that may contain this union
+        old = self._disable_nested_schema_usage
+        self._disable_nested_schema_usage = True
         for arg in args:
             if arg is None or arg is _typing_extra.NoneType:
                 nullable = True
             else:
                 choices.append(self.generate_schema(arg))
+        self._disable_nested_schema_usage = old
 
         if len(choices) == 1:
             s = choices[0]

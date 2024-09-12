@@ -800,14 +800,10 @@ def test_config_model_defer_build_nested(defer_build: bool, generate_schema_call
     assert m.model_validate({'y': {'x': 1}}).y.x == 1
     assert m.model_json_schema()['type'] == 'object'
 
-    if defer_build:
-        assert isinstance(MyNestedModel.__pydantic_validator__, MockValSer)
-        assert isinstance(MyNestedModel.__pydantic_serializer__, MockValSer)
-    else:
-        assert isinstance(MyNestedModel.__pydantic_validator__, SchemaValidator)
-        assert isinstance(MyNestedModel.__pydantic_serializer__, SchemaSerializer)
-
-    assert generate_schema_calls.count == expected_schema_count, 'Should not build duplicated core schemas'
+    # validating `MyModel` requires building `MyNestedModel` as its validator/serializer is reused.
+    assert isinstance(MyNestedModel.__pydantic_validator__, SchemaValidator)
+    assert isinstance(MyNestedModel.__pydantic_serializer__, SchemaSerializer)
+    assert generate_schema_calls.count == 2, 'Should not build duplicated core schemas'
 
 
 def test_config_model_defer_build_ser_first():
