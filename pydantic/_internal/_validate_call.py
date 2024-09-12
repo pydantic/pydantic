@@ -152,7 +152,7 @@ def _copy_func(function: Callable[..., Any]):
 def update_generic_validate_call_info(model: type[BaseModel]):
     """Called when a generic model is subscripted."""
     origin = model.__pydantic_generic_metadata__['origin']
-    typevars_map: dict[Any, Any] | None = _generics.get_model_typevars_map(model)
+    typevars_map = _generics.get_model_typevars_map(model)
 
     if not origin:
         return
