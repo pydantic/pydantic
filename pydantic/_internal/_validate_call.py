@@ -150,7 +150,7 @@ def _copy_func(function: Callable[..., Any]):
 
 
 def update_generic_validate_call_info(model: type[BaseModel]):
-    """Called when a generic model is subscripted."""
+    """Recreate the methods decorated with `validate_call`, replacing any parametrized class scoped type variables."""
     origin = model.__pydantic_generic_metadata__['origin']
     typevars_map = _generics.get_model_typevars_map(model)
 
