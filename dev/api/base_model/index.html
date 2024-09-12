@@ -9200,7 +9200,9 @@ validators <a href="https://docs.pydantic.dev/2.9/concepts/validators/#field-val
               <div class="doc-md-description">
                 <p>Attributes of the new model. They should be passed in the format:
 <code>&lt;name&gt;=(&lt;type&gt;, &lt;default value&gt;)</code>, <code>&lt;name&gt;=(&lt;type&gt;, &lt;FieldInfo&gt;)</code>, or <code>typing.Annotated[&lt;type&gt;, &lt;FieldInfo&gt;]</code>.
-Any additional metadata in <code>typing.Annotated[&lt;type&gt;, &lt;FieldInfo&gt;, ...]</code> will be ignored.</p>
+Any additional metadata in <code>typing.Annotated[&lt;type&gt;, &lt;FieldInfo&gt;, ...]</code> will be ignored.
+Note, <code>FieldInfo</code> instances should be created via <code>pydantic.Field(...)</code>.
+Initializing <code>FieldInfo</code> instances directly is not supported.</p>
               </div>
             </td>
             <td>
@@ -9375,7 +9377,9 @@ Any additional metadata in <code>typing.Annotated[&lt;type&gt;, &lt;FieldInfo&gt
 <span class="normal">1602</span>
 <span class="normal">1603</span>
 <span class="normal">1604</span>
-<span class="normal">1605</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+<span class="normal">1605</span>
+<span class="normal">1606</span>
+<span class="normal">1607</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -9408,6 +9412,8 @@ Any additional metadata in <code>typing.Annotated[&lt;type&gt;, &lt;FieldInfo&gt
 <span class="sd">        **field_definitions: Attributes of the new model. They should be passed in the format:</span>
 <span class="sd">            `&lt;name&gt;=(&lt;type&gt;, &lt;default value&gt;)`, `&lt;name&gt;=(&lt;type&gt;, &lt;FieldInfo&gt;)`, or `typing.Annotated[&lt;type&gt;, &lt;FieldInfo&gt;]`.</span>
 <span class="sd">            Any additional metadata in `typing.Annotated[&lt;type&gt;, &lt;FieldInfo&gt;, ...]` will be ignored.</span>
+<span class="sd">            Note, `FieldInfo` instances should be created via `pydantic.Field(...)`.</span>
+<span class="sd">            Initializing `FieldInfo` instances directly is not supported.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        The new [model][pydantic.BaseModel].</span>
