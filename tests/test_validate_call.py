@@ -971,6 +971,8 @@ def test_generic_wraps():
         qualname = f'test_generic_wraps.<locals>.{model.__name__}.f'
         assert func.__qualname__ == qualname
         assert func.__annotations__ == {'x': type, 'return': type}
+        assert inspect.signature(func).parameters['x'].annotation is type
+        assert inspect.signature(func).return_annotation is type
 
 
 def test_generic_multi_typevars():
