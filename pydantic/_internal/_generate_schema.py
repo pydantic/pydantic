@@ -1657,7 +1657,7 @@ class GenerateSchema:
                 return value
             try:
                 return ZoneInfo(value)
-            except (ZoneInfoNotFoundError, ValueError):
+            except (ZoneInfoNotFoundError, ValueError, TypeError):
                 raise PydanticCustomError('zoneinfo_str', 'invalid timezone: {value}', {'value': value})
 
         metadata = build_metadata_dict(js_functions=[lambda _1, _2: {'type': 'string', 'format': 'zoneinfo'}])
