@@ -3031,3 +3031,13 @@ def test_warns_on_double_frozen() -> None:
         @pydantic.dataclasses.dataclass(frozen=True, config=ConfigDict(frozen=True))
         class DC:
             x: int
+
+
+def test_warns_on_double_config() -> None:
+    with pytest.warns(
+        UserWarning, match='`config` is set via both the `dataclass` decorator and `__pydantic_config__`'
+    ):
+
+        @pydantic.dataclasses.dataclass(config=ConfigDict(title='from decorator'))
+        class Foo:
+            __pydantic_config__ = ConfigDict(title='from __pydantic_config__')

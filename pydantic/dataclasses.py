@@ -202,6 +202,13 @@ def dataclass(
         original_cls = cls
 
         # if config is not explicitly provided, try to read it from the type
+        if config and getattr(cls, '__pydantic_config__', None):
+            warn(
+                f'`config` is set via both the `dataclass` decorator and `__pydantic_config__` for dataclass {cls.__name__}. '
+                f'This is not supported. The `config` specification from `dataclass` decorator will take priority.',
+                category=UserWarning,
+                stacklevel=2,
+            )
         config_dict = config if config is not None else getattr(cls, '__pydantic_config__', None)
         config_wrapper = _config.ConfigWrapper(config_dict)
         decorators = _decorators.DecoratorInfos.build(cls)
