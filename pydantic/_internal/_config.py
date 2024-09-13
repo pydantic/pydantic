@@ -69,7 +69,7 @@ class ConfigWrapper:
     strict: bool
     # whether instances of models and dataclasses (including subclass instances) should re-validate, default 'never'
     revalidate_instances: Literal['always', 'never', 'subclass-instances']
-    ser_json_timedelta: Literal['iso8601', 'float', 'milliseconds_float', 'seconds_float']
+    ser_json_timedelta: Literal['iso8601', 'milliseconds_float', 'seconds_float']
     ser_json_bytes: Literal['utf8', 'base64', 'hex']
     val_json_bytes: Literal['utf8', 'base64', 'hex']
     ser_json_inf_nan: Literal['null', 'constants', 'strings']
@@ -171,10 +171,11 @@ class ConfigWrapper:
 
         if config.get('ser_json_timedelta') == 'float':
             warnings.warn(
-                'Using a `float` as an option for `ser_json_timedelta` is deprecated, use a `float_seconds` instead.',
+                'The `float` option for `ser_json_timedelta` has been deprecated in favor of `seconds_float`. Please use this setting instead.',
                 PydanticDeprecatedSince210,
                 stacklevel=2,
             )
+            config['ser_json_timedelta'] = 'seconds_float'
 
         core_config_values = {
             'title': config.get('title') or (obj and obj.__name__),

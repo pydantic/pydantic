@@ -1292,11 +1292,11 @@ files = [
 
 [[package]]
 name = "pydantic-core"
-version = "2.23.2"
+version = "2.23.3"
 requires_python = ">=3.8"
 git = "https://github.com/ollz272/pydantic-core"
 ref = "add-millisecond"
-revision = "4af46251c1658752f782ac74d6188d0ca4092a26"
+revision = "a3900f60a76c36da79502d4f549c8b3ded90df11"
 summary = "Core functionality for Pydantic validation and serialization"
 dependencies = [
     "typing-extensions!=4.7.0,>=4.6.0",
