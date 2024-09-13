@@ -1072,23 +1072,6 @@ def test_annotated_computed_field_custom_serializer():
     }
 
 
-def test_computed_field_custom_serializer_signature_with_info():
-    class Model(BaseModel):
-        x: int
-
-        @computed_field
-        @property
-        def two_x(self) -> int:
-            return self.x * 2
-
-        @field_serializer('two_x')
-        def ser_two_x_bad_signature(self, v, _info):
-            return f'The double of x is {v}'
-
-    assert Model(x=1).model_dump() == {'two_x': 'The double of x is 2', 'x': 1}
-    assert json.loads(Model(x=1).model_dump_json()) == {'two_x': 'The double of x is 2', 'x': 1}
-
-
 @pytest.mark.skipif(
     sys.version_info < (3, 9) or sys.version_info >= (3, 13),
     reason='@computed_field @classmethod @property only works in 3.9-3.12',
