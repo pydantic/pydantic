@@ -6553,4 +6553,4 @@ def test_title_strip() -> None:
     class Model(BaseModel):
         some_field: str = Field(alias='_some_field')
 
-    assert Model.model_json_schema()['properties']['some_field']['title'] == 'Some Field'
+    assert Model.model_json_schema()['properties']['_some_field']['title'] == 'Some Field'
