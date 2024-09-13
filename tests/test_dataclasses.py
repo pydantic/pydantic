@@ -2487,13 +2487,17 @@ def test_model_config(dataclass_decorator: Any) -> None:
 
 
 def test_model_config_override_in_decorator() -> None:
-    @pydantic.dataclasses.dataclass(config=ConfigDict(str_to_lower=False, str_strip_whitespace=True))
-    class Model:
-        x: str
-        __pydantic_config__ = ConfigDict(str_to_lower=True)
+    with pytest.warns(
+        UserWarning, match='`config` is set via both the `dataclass` decorator and `__pydantic_config__`'
+    ):
 
-    ta = TypeAdapter(Model)
-    assert ta.validate_python({'x': 'ABC '}).x == 'ABC'
+        @pydantic.dataclasses.dataclass(config=ConfigDict(str_to_lower=False, str_strip_whitespace=True))
+        class Model:
+            x: str
+            __pydantic_config__ = ConfigDict(str_to_lower=True)
+
+        ta = TypeAdapter(Model)
+        assert ta.validate_python({'x': 'ABC '}).x == 'ABC'
 
 
 def test_model_config_override_in_decorator_empty_config() -> None:
