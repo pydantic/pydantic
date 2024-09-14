@@ -335,9 +335,12 @@ def rebuild_dataclass(
 
             types_namespace = _typing_extra.merge_cls_and_parent_ns(cls, types_namespace)
 
+        existing_config = getattr(cls, '__pydantic_config__', {})
+        new_config = {**existing_config, 'defer_build': False}
+
         return _pydantic_dataclasses.complete_dataclass(
             cls,
-            _config.ConfigWrapper(cls.__pydantic_config__, check=False),
+            _config.ConfigWrapper(new_config, check=False),
             raise_errors=raise_errors,
             types_namespace=types_namespace,
         )
