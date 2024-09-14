@@ -320,6 +320,8 @@ def rebuild_dataclass(
     if not force and cls.__pydantic_complete__:
         return None
     else:
+        if '__pydantic_core_schema__' in cls.__dict__:
+            delattr(cls, '__pydantic_core_schema__')  # delete cached value to ensure full rebuild happens
         if _types_namespace is not None:
             types_namespace: dict[str, Any] | None = _types_namespace.copy()
         else:
@@ -338,11 +340,6 @@ def rebuild_dataclass(
             _config.ConfigWrapper(cls.__pydantic_config__, check=False),
             raise_errors=raise_errors,
             types_namespace=types_namespace,
-            # We could provide a different config instead (with `'defer_build'` set to `True`)
-            # but this doesn't play well in some cases as unlike Pydantic models, Pydantic dataclasses
-            # can have the config coming from the `config` argument or from the `__pydantic_config__`
-            # property. So we use an explicit argument:
-            _force_build=True,
         )
 
 

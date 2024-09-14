@@ -614,7 +614,7 @@ def complete_model_class(
         PydanticUndefinedAnnotation: If `PydanticUndefinedAnnotation` occurs in`__get_pydantic_core_schema__`
             and `raise_errors=True`.
     """
-    if config_wrapper.defer_build and 'model' in config_wrapper.experimental_defer_build_mode:
+    if config_wrapper.defer_build:
         set_model_mocks(cls, cls_name)
         return False
 
@@ -630,10 +630,6 @@ def complete_model_class(
         gen_schema,
         ref_mode='unpack',
     )
-
-    if config_wrapper.defer_build:
-        set_model_mocks(cls, cls_name)
-        return False
 
     try:
         schema = cls.__get_pydantic_core_schema__(cls, handler)
