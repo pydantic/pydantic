@@ -337,7 +337,6 @@ def rebuild_dataclass(
 
         existing_config = getattr(cls, '__pydantic_config__', {})
         new_config = {**existing_config, 'defer_build': False}
-
         return _pydantic_dataclasses.complete_dataclass(
             cls,
             _config.ConfigWrapper(new_config, check=False),

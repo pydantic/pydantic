@@ -27,6 +27,7 @@ from pydantic._internal._mock_val_ser import MockValSer
 from pydantic._internal._typing_extra import get_type_hints
 from pydantic.config import ConfigDict, JsonValue
 from pydantic.dataclasses import dataclass as pydantic_dataclass
+from pydantic.dataclasses import rebuild_dataclass
 from pydantic.errors import PydanticUserError
 from pydantic.fields import ComputedFieldInfo, FieldInfo
 from pydantic.type_adapter import TypeAdapter
@@ -751,6 +752,23 @@ def test_config_dataclass_defer_build(defer_build: bool, generate_schema_calls: 
     assert isinstance(MyDataclass.__pydantic_validator__, SchemaValidator)
     assert isinstance(MyDataclass.__pydantic_serializer__, SchemaSerializer)
     assert generate_schema_calls.count == 1, 'Should not build duplicated core schemas'
+
+
+def test_dataclass_defer_build_override_on_rebuild_dataclass(generate_schema_calls: CallCounter) -> None:
+    config = ConfigDict(defer_build=True)
+
+    @pydantic_dataclass(config=config)
+    class MyDataclass:
+        x: int
+
+    assert isinstance(MyDataclass.__pydantic_validator__, MockValSer)
+    assert isinstance(MyDataclass.__pydantic_serializer__, MockValSer)
+    assert generate_schema_calls.count == 0, 'Should respect experimental_defer_build_mode'
+
+    rebuild_dataclass(MyDataclass, force=True)
+    assert isinstance(MyDataclass.__pydantic_validator__, SchemaValidator)
+    assert isinstance(MyDataclass.__pydantic_serializer__, SchemaSerializer)
+    assert generate_schema_calls.count == 1, 'Should have called generate_schema once'
 
 
 @pytest.mark.parametrize('defer_build', [True, False])
