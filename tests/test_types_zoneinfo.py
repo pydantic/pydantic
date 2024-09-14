@@ -1,6 +1,9 @@
+from datetime import timezone
+from typing import Union
+
 import pytest
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ConfigDict, TypeAdapter, ValidationError
 
 zoneinfo = pytest.importorskip('zoneinfo', reason='zoneinfo requires >=3.9')
 
@@ -48,3 +51,8 @@ def test_zoneinfo_json_schema():
         'properties': {'tz': {'type': 'string', 'format': 'zoneinfo', 'title': 'Tz'}},
         'required': ['tz'],
     }
+
+
+def test_zoneinfo_union() -> None:
+    ta = TypeAdapter(Union[zoneinfo.ZoneInfo, timezone], config=ConfigDict(arbitrary_types_allowed=True))
+    assert ta.validate_python(timezone.utc) is timezone.utc

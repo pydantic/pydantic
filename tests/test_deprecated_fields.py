@@ -229,3 +229,24 @@ def test_deprecated_with_boolean() -> None:
     instance = Model(a=1, b=1)
 
     pytest.warns(DeprecationWarning, lambda: instance.a, match='deprecated')
+
+
+def test_computed_field_deprecated_class_access() -> None:
+    class Model(BaseModel):
+        @computed_field(deprecated=True)
+        def prop(self) -> int:
+            return 1
+
+    assert isinstance(Model.prop, property)
+
+
+def test_computed_field_deprecated_subclass() -> None:
+    """https://github.com/pydantic/pydantic/issues/10384"""
+
+    class Base(BaseModel):
+        @computed_field(deprecated=True)
+        def prop(self) -> int:
+            return 1
+
+    class Sub(Base):
+        pass

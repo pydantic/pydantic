@@ -17,6 +17,7 @@ authors = [
     {name = 'Sydney Runkle', email = 'sydneymarierunkle@gmail.com'},
     {name = 'David Hewitt', email = 'mail@davidhewitt.io'},
     {name = 'Alex Hall', email='alex.mojaki@gmail.com'},
+    {name = 'Victorien Plot', email='contact@vctrn.dev'},
 ]
 license = 'MIT'
 classifiers = [
@@ -49,15 +50,17 @@ requires-python = '>=3.8'
 dependencies = [
     'typing-extensions>=4.6.1; python_version < "3.13"',
     'typing-extensions>=4.12.2; python_version >= "3.13"',
-    'annotated-types>=0.4.0',
-    "pydantic-core==2.23.1",
-    # See: https://docs.python.org/3/library/zoneinfo.html#data-sources
-    'tzdata; python_version >= "3.9"',
+    'annotated-types>=0.6.0',
+    "pydantic-core==2.23.3",
 ]
 dynamic = ['version', 'readme']
 
 [project.optional-dependencies]
 email = ['email-validator>=2.0.0']
+timezone = [
+    # See: https://docs.python.org/3/library/zoneinfo.html#data-sources
+    'tzdata; python_version >= "3.9" and sys_platform == "win32"',
+]
 
 [project.urls]
 Homepage = 'https://github.com/pydantic/pydantic'

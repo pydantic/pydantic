@@ -11,7 +11,7 @@ import weakref
 from abc import ABCMeta
 from functools import lru_cache, partial
 from types import FunctionType
-from typing import Any, Callable, ForwardRef, Generic, Literal, NoReturn
+from typing import Any, Callable, Generic, Literal, NoReturn
 
 import typing_extensions
 from pydantic_core import PydanticUndefined, SchemaSerializer
@@ -30,6 +30,7 @@ from ._mock_val_ser import set_model_mocks
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._signature import generate_pydantic_signature
 from ._typing_extra import (
+    _make_forward_ref,
     eval_type_backport,
     is_annotated,
     is_classvar,
@@ -132,6 +133,8 @@ class ModelMetaclass(ABCMeta):
 
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
+            if __pydantic_generic_metadata__:
+                namespace['__pydantic_generic_metadata__'] = __pydantic_generic_metadata__
 
             cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
 
@@ -249,6 +252,62 @@ class ModelMetaclass(ABCMeta):
                 )
             namespace.get('__annotations__', {}).clear()
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
+
+    def mro(cls) -> list[type[Any]]:
+        original_mro = super().mro()
+
+        if cls.__bases__ == (object,):
+            return original_mro
+
+        generic_metadata: PydanticGenericMetadata | None = cls.__dict__.get('__pydantic_generic_metadata__')
+        if not generic_metadata:
+            return original_mro
+
+        assert_err_msg = 'Unexpected error occurred when generating MRO of generic subclass. Please report this issue on GitHub: https://github.com/pydantic/pydantic/issues.'
+
+        origin: type[BaseModel] | None
+        origin, args = (
+            generic_metadata['origin'],
+            generic_metadata['args'],
+        )
+        if not origin:
+            return original_mro
+
+        target_params = origin.__pydantic_generic_metadata__['parameters']
+        param_dict = dict(zip(target_params, args))
+
+        indexed_origins = {origin}
+
+        new_mro: list[type[Any]] = [cls]
+        for base in original_mro[1:]:
+            base_origin: type[BaseModel] | None = getattr(base, '__pydantic_generic_metadata__', {}).get('origin')
+            base_params: tuple[type[Any], ...] = getattr(base, '__pydantic_generic_metadata__', {}).get(
+                'parameters', ()
+            )
+
+            if base_origin in indexed_origins:
+                continue
+            elif base not in indexed_origins and base_params:
+                assert set(base_params) <= param_dict.keys(), assert_err_msg
+                new_base_args = tuple(param_dict[param] for param in base_params)
+                new_base = base[new_base_args]  # type: ignore
+                new_mro.append(new_base)
+
+                indexed_origins.add(base_origin or base)
+
+                if base_origin is not None:
+                    # dropped previous indexed origins
+                    continue
+            else:
+                indexed_origins.add(base_origin or base)
+
+            # Avoid redundunt case such as
+            # class A(BaseModel, Generic[T]): ...
+            # A[T] is A  # True
+            if base is not new_mro[-1]:
+                new_mro.append(base)
+
+        return new_mro
 
     if not typing.TYPE_CHECKING:  # pragma: no branch
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
@@ -436,6 +495,8 @@ def inspect_namespace(  # noqa C901
             is_valid_privateattr_name(ann_name)
             and ann_name not in private_attributes
             and ann_name not in ignored_names
+            # This condition is a false negative when `ann_type` is stringified,
+            # but it is handled in `set_model_fields`:
             and not is_classvar(ann_type)
             and ann_type not in all_ignored_types
             and getattr(ann_type, '__module__', None) != 'functools'
@@ -445,9 +506,15 @@ def inspect_namespace(  # noqa C901
                 # (as the model class wasn't created yet, we unfortunately can't use `cls.__module__`):
                 frame = sys._getframe(2)
                 if frame is not None:
-                    ann_type = eval_type_backport(
-                        ForwardRef(ann_type), globalns=frame.f_globals, localns=frame.f_locals
-                    )
+                    try:
+                        ann_type = eval_type_backport(
+                            _make_forward_ref(ann_type, is_argument=False, is_class=True),
+                            globalns=frame.f_globals,
+                            localns=frame.f_locals,
+                        )
+                    except (NameError, TypeError):
+                        pass
+
             if is_annotated(ann_type):
                 _, *metadata = typing_extensions.get_args(ann_type)
                 private_attr = next((v for v in metadata if isinstance(v, ModelPrivateAttr)), None)
@@ -564,6 +631,10 @@ def complete_model_class(
         ref_mode='unpack',
     )
 
+    if config_wrapper.defer_build:
+        set_model_mocks(cls, cls_name)
+        return False
+
     try:
         schema = cls.__get_pydantic_core_schema__(cls, handler)
     except PydanticUndefinedAnnotation as e:
@@ -623,7 +694,7 @@ def set_deprecated_descriptors(cls: type[BaseModel]) -> None:
 
 
 class _DeprecatedFieldDescriptor:
-    """Data descriptor used to emit a runtime deprecation warning before accessing a deprecated field.
+    """Read-only data descriptor used to emit a runtime deprecation warning before accessing a deprecated field.
 
     Attributes:
         msg: The deprecation message to be emitted.
@@ -642,6 +713,8 @@ class _DeprecatedFieldDescriptor:
 
     def __get__(self, obj: BaseModel | None, obj_type: type[BaseModel] | None = None) -> Any:
         if obj is None:
+            if self.wrapped_property is not None:
+                return self.wrapped_property.__get__(None, obj_type)
             raise AttributeError(self.field_name)
 
         warnings.warn(self.msg, builtins.DeprecationWarning, stacklevel=2)
@@ -650,7 +723,7 @@ class _DeprecatedFieldDescriptor:
             return self.wrapped_property.__get__(obj, obj_type)
         return obj.__dict__[self.field_name]
 
-    # Defined to take precedence over the instance's dictionary
+    # Defined to make it a data descriptor and take precedence over the instance's dictionary.
     # Note that it will not be called when setting a value on a model instance
     # as `BaseModel.__setattr__` is defined and takes priority.
     def __set__(self, obj: Any, value: Any) -> NoReturn:
@@ -732,7 +805,7 @@ def unpack_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | N
 def default_ignored_types() -> tuple[type[Any], ...]:
     from ..fields import ComputedFieldInfo
 
-    return (
+    ignored_types = [
         FunctionType,
         property,
         classmethod,
@@ -740,4 +813,11 @@ def default_ignored_types() -> tuple[type[Any], ...]:
         PydanticDescriptorProxy,
         ComputedFieldInfo,
         ValidateCallWrapper,
-    )
+    ]
+
+    if sys.version_info >= (3, 12):
+        from typing import TypeAliasType
+
+        ignored_types.append(TypeAliasType)
+
+    return tuple(ignored_types)
