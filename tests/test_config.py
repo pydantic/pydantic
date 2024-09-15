@@ -888,3 +888,10 @@ def test_with_config_disallowed_with_model():
         @with_config({'coerce_numbers_to_str': True})
         class Model(BaseModel):
             pass
+
+
+def test_empty_config_with_annotations():
+    class Model(BaseModel):
+        model_config: ConfigDict = {}
+
+    assert Model.model_config == {}
