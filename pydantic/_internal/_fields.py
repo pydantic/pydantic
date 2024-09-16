@@ -220,7 +220,6 @@ def collect_model_fields(  # noqa: C901
             field.apply_typevars_map(typevars_map, types_namespace)
 
     _update_fields_from_docstrings(cls, fields, config_wrapper)
-
     return fields, class_vars
 
 

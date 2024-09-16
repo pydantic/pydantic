@@ -1899,7 +1899,7 @@ class GenerateJsonSchema:
         Returns:
             The title.
         """
-        return name.title().replace('_', ' ')
+        return name.title().replace('_', ' ').strip()
 
     def field_title_should_be_set(self, schema: CoreSchemaOrField) -> bool:
         """Returns true if a field with the given schema should have a title set based on the field name.

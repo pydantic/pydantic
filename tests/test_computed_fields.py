@@ -10,6 +10,7 @@ from typing_extensions import TypedDict
 from pydantic import (
     BaseModel,
     Field,
+    FieldSerializationInfo,
     GetCoreSchemaHandler,
     PrivateAttr,
     TypeAdapter,
@@ -798,3 +799,19 @@ def test_computed_field_excluded_from_model_dump_recursive() -> None:
 
     m = Model(bar=42)
     assert m.model_dump() == {'bar': 42, 'id': 'id: {"bar":42}'}
+
+
+def test_computed_field_with_field_serializer():
+    class MyModel(BaseModel):
+        other_field: int = 42
+
+        @computed_field
+        @property
+        def my_field(self) -> str:
+            return 'foo'
+
+        @field_serializer('*')
+        def my_field_serializer(self, value: Any, info: FieldSerializationInfo) -> Any:
+            return f'{info.field_name} = {value}'
+
+    assert MyModel().model_dump() == {'my_field': 'my_field = foo', 'other_field': 'other_field = 42'}

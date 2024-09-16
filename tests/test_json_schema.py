@@ -6547,3 +6547,10 @@ def test_decorator_field_validator_input_type() -> None:
         'e': {'title': 'E', 'type': 'integer'},
         'f': {'title': 'F', 'type': 'integer'},
     }
+
+
+def test_title_strip() -> None:
+    class Model(BaseModel):
+        some_field: str = Field(alias='_some_field')
+
+    assert Model.model_json_schema()['properties']['_some_field']['title'] == 'Some Field'
