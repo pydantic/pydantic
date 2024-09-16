@@ -189,6 +189,7 @@ def update_generic_validate_calls(model: type[BaseModel]) -> None:
     if not origin:
         return
 
+    updated_funcs: dict[str, Any] = {}
     for func_name, info in origin.__pydantic_validate_calls__.items():
         info = info.copy()
         function = info['function']
@@ -220,5 +221,6 @@ def update_generic_validate_calls(model: type[BaseModel]) -> None:
         function.__signature__ = original_signature  # type: ignore
 
         setattr(model, func_name, new_function)
+        updated_funcs[func_name] = new_function
 
-    model.__pydantic_validate_calls__ = collect_validate_call_info(model.__dict__)
+    model.__pydantic_validate_calls__ = collect_validate_call_info(updated_funcs)
