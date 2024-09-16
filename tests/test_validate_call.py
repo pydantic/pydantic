@@ -875,6 +875,11 @@ def test_validate_call_infos():
         raw_functions['B.f'] = f
         f = validate_call(f)
 
+    for cls in (A, A[int]):
+        for name in ('f', 'g', 'h'):
+            infos = cls.__pydantic_validate_calls__
+            assert getattr(cls, name).__pydantic_validate_call_info__ is infos[name]
+
     A_infos = A.__pydantic_validate_calls__
     A_int_infos = A[int].__pydantic_validate_calls__
     for infos in (A_infos, A_int_infos):

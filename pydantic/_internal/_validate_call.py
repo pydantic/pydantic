@@ -2,6 +2,7 @@ from __future__ import annotations as _annotations
 
 import inspect
 import typing
+from collections.abc import Mapping
 from functools import partial, wraps
 from typing import Any, Awaitable, Callable, TypedDict, TypeVar
 
@@ -159,7 +160,7 @@ def _is_wrapped_by_validate_call(obj: object) -> bool:
     return hasattr(obj, '__pydantic_validate_call_info__')
 
 
-def collect_validate_call_info(namespace: dict[str, Any]) -> dict[str, ValidateCallInfo]:
+def collect_validate_call_info(namespace: Mapping[str, Any]) -> dict[str, ValidateCallInfo]:
     return {
         name: func.__pydantic_validate_call_info__
         for name, func in namespace.items()
@@ -197,9 +198,9 @@ def update_generic_validate_calls(model: type[BaseModel]) -> None:
         original_qualname = function.__qualname__
         original_signature = inspect.signature(function)
 
-        _update_qualname(function, model)
         function.__annotations__ = original_annotations.copy()
         function.__dict__.pop('__signature__', None)
+        _update_qualname(function, model)
 
         for name, annotation in function.__annotations__.items():
             evaluated_annotation = _typing_extra.eval_type_lenient(
@@ -210,7 +211,7 @@ def update_generic_validate_calls(model: type[BaseModel]) -> None:
 
             function.__annotations__[name] = _generics.replace_types(evaluated_annotation, typevars_map)
 
-        # Note: `__signature__` of raw function will be updated too, so we need to update it back
+        # Note: `__signature__` of raw function will be updated, so we need to reset it later
         new_function = validate_call_with_namespace(**info)
         new_function.__signature__ = inspect.signature(function)  # type: ignore
 
@@ -219,4 +220,5 @@ def update_generic_validate_calls(model: type[BaseModel]) -> None:
         function.__signature__ = original_signature  # type: ignore
 
         setattr(model, func_name, new_function)
-        model.__pydantic_validate_calls__[func_name] = info
+
+    model.__pydantic_validate_calls__ = collect_validate_call_info(model.__dict__)
