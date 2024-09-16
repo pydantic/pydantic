@@ -6554,3 +6554,19 @@ def test_title_strip() -> None:
         some_field: str = Field(alias='_some_field')
 
     assert Model.model_json_schema()['properties']['_some_field']['title'] == 'Some Field'
+
+
+def test_arbitrary_ref_in_json_schema() -> None:
+    """See https://github.com/pydantic/pydantic/issues/9981."""
+
+    class Test(BaseModel):
+        x: dict = Field(examples={'$ref': '#/components/schemas/Pet'})
+
+    assert Test.model_json_schema() == {
+        'properties': {'x': {'examples': {'$ref': '#/components/schemas/Pet'}, 'title': 'X', 'type': 'object'}},
+        'required': ['x'],
+        'title': 'Test',
+        'type': 'object',
+    }
+
+    # raises KeyError: '#/components/schemas/Pet'

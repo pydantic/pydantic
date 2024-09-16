@@ -2172,7 +2172,9 @@ class GenerateJsonSchema:
                         if not json_ref.startswith(('http://', 'https://')):
                             raise
 
-                for v in schema.values():
+                for k, v in schema.items():
+                    if k == 'examples':
+                        continue  # skip refs processing for examples, allow arbitrary values / refs
                     _add_json_refs(v)
             elif isinstance(schema, list):
                 for v in schema:
@@ -2484,6 +2486,8 @@ def _get_all_json_refs(item: Any) -> set[JsonRef]:
         current = stack.pop()
         if isinstance(current, dict):
             for key, value in current.items():
+                if key == 'examples':
+                    continue  # skip examples, allow arbitrary values / refs
                 if key == '$ref' and isinstance(value, str):
                     refs.add(JsonRef(value))
                 elif isinstance(value, dict):
