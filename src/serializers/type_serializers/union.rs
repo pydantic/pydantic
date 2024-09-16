@@ -8,9 +8,7 @@ use std::borrow::Cow;
 use crate::build_tools::py_schema_err;
 use crate::common::union::{Discriminator, SMALL_UNION_THRESHOLD};
 use crate::definitions::DefinitionsBuilder;
-use crate::serializers::type_serializers::py_err_se_err;
 use crate::tools::{truncate_safe_repr, SchemaDict};
-use crate::PydanticSerializationUnexpectedValue;
 
 use super::{
     infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, Extra, SerCheck,
@@ -77,7 +75,6 @@ fn to_python(
     exclude: Option<&Bound<'_, PyAny>>,
     extra: &Extra,
     choices: &[CombinedSerializer],
-    name: &str,
     retry_with_lax_check: bool,
 ) -> PyResult<PyObject> {
     // try the serializers in left to right order with error_on fallback=true
@@ -88,22 +85,15 @@ fn to_python(
     for comb_serializer in choices {
         match comb_serializer.to_python(value, include, exclude, &new_extra) {
             Ok(v) => return Ok(v),
-            Err(err) => match err.is_instance_of::<PydanticSerializationUnexpectedValue>(value.py()) {
-                true => (),
-                false => errors.push(err),
-            },
+            Err(err) => errors.push(err),
         }
     }
 
     if retry_with_lax_check {
         new_extra.check = SerCheck::Lax;
         for comb_serializer in choices {
-            match comb_serializer.to_python(value, include, exclude, &new_extra) {
-                Ok(v) => return Ok(v),
-                Err(err) => match err.is_instance_of::<PydanticSerializationUnexpectedValue>(value.py()) {
-                    true => (),
-                    false => errors.push(err),
-                },
+            if let Ok(v) = comb_serializer.to_python(value, include, exclude, &new_extra) {
+                return Ok(v);
             }
         }
     }
@@ -112,7 +102,6 @@ fn to_python(
         extra.warnings.custom_warning(err.to_string());
     }
 
-    extra.warnings.on_fallback_py(name, value, extra)?;
     infer_to_python(value, include, exclude, extra)
 }
 
@@ -120,7 +109,6 @@ fn json_key<'a>(
     key: &'a Bound<'_, PyAny>,
     extra: &Extra,
     choices: &[CombinedSerializer],
-    name: &str,
     retry_with_lax_check: bool,
 ) -> PyResult<Cow<'a, str>> {
     let mut new_extra = extra.clone();
@@ -130,22 +118,15 @@ fn json_key<'a>(
     for comb_serializer in choices {
         match comb_serializer.json_key(key, &new_extra) {
             Ok(v) => return Ok(v),
-            Err(err) => match err.is_instance_of::<PydanticSerializationUnexpectedValue>(key.py()) {
-                true => (),
-                false => errors.push(err),
-            },
+            Err(err) => errors.push(err),
         }
     }
 
     if retry_with_lax_check {
         new_extra.check = SerCheck::Lax;
         for comb_serializer in choices {
-            match comb_serializer.json_key(key, &new_extra) {
-                Ok(v) => return Ok(v),
-                Err(err) => match err.is_instance_of::<PydanticSerializationUnexpectedValue>(key.py()) {
-                    true => (),
-                    false => errors.push(err),
-                },
+            if let Ok(v) = comb_serializer.json_key(key, &new_extra) {
+                return Ok(v);
             }
         }
     }
@@ -154,7 +135,6 @@ fn json_key<'a>(
         extra.warnings.custom_warning(err.to_string());
     }
 
-    extra.warnings.on_fallback_py(name, key, extra)?;
     infer_json_key(key, extra)
 }
 
@@ -166,7 +146,6 @@ fn serde_serialize<S: serde::ser::Serializer>(
     exclude: Option<&Bound<'_, PyAny>>,
     extra: &Extra,
     choices: &[CombinedSerializer],
-    name: &str,
     retry_with_lax_check: bool,
 ) -> Result<S::Ok, S::Error> {
     let py = value.py();
@@ -177,22 +156,15 @@ fn serde_serialize<S: serde::ser::Serializer>(
     for comb_serializer in choices {
         match comb_serializer.to_python(value, include, exclude, &new_extra) {
             Ok(v) => return infer_serialize(v.bind(py), serializer, None, None, extra),
-            Err(err) => match err.is_instance_of::<PydanticSerializationUnexpectedValue>(py) {
-                true => (),
-                false => errors.push(err),
-            },
+            Err(err) => errors.push(err),
         }
     }
 
     if retry_with_lax_check {
         new_extra.check = SerCheck::Lax;
         for comb_serializer in choices {
-            match comb_serializer.to_python(value, include, exclude, &new_extra) {
-                Ok(v) => return infer_serialize(v.bind(py), serializer, None, None, extra),
-                Err(err) => match err.is_instance_of::<PydanticSerializationUnexpectedValue>(py) {
-                    true => (),
-                    false => errors.push(err),
-                },
+            if let Ok(v) = comb_serializer.to_python(value, include, exclude, &new_extra) {
+                return infer_serialize(v.bind(py), serializer, None, None, extra);
             }
         }
     }
@@ -201,7 +173,6 @@ fn serde_serialize<S: serde::ser::Serializer>(
         extra.warnings.custom_warning(err.to_string());
     }
 
-    extra.warnings.on_fallback_ser::<S>(name, value, extra)?;
     infer_serialize(value, serializer, include, exclude, extra)
 }
 
@@ -219,13 +190,12 @@ impl TypeSerializer for UnionSerializer {
             exclude,
             extra,
             &self.choices,
-            self.get_name(),
             self.retry_with_lax_check(),
         )
     }
 
     fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
-        json_key(key, extra, &self.choices, self.get_name(), self.retry_with_lax_check())
+        json_key(key, extra, &self.choices, self.retry_with_lax_check())
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
@@ -243,7 +213,6 @@ impl TypeSerializer for UnionSerializer {
             exclude,
             extra,
             &self.choices,
-            self.get_name(),
             self.retry_with_lax_check(),
         )
     }
@@ -313,8 +282,6 @@ impl TypeSerializer for TaggedUnionSerializer {
         exclude: Option<&Bound<'_, PyAny>>,
         extra: &Extra,
     ) -> PyResult<PyObject> {
-        let py = value.py();
-
         let mut new_extra = extra.clone();
         new_extra.check = SerCheck::Strict;
 
@@ -325,15 +292,14 @@ impl TypeSerializer for TaggedUnionSerializer {
 
                 match serializer.to_python(value, include, exclude, &new_extra) {
                     Ok(v) => return Ok(v),
-                    Err(err) => match err.is_instance_of::<PydanticSerializationUnexpectedValue>(py) {
-                        true => {
-                            if self.retry_with_lax_check() {
-                                new_extra.check = SerCheck::Lax;
-                                return serializer.to_python(value, include, exclude, &new_extra);
+                    Err(_) => {
+                        if self.retry_with_lax_check() {
+                            new_extra.check = SerCheck::Lax;
+                            if let Ok(v) = serializer.to_python(value, include, exclude, &new_extra) {
+                                return Ok(v);
                             }
                         }
-                        false => return Err(err),
-                    },
+                    }
                 }
             }
         }
@@ -344,13 +310,11 @@ impl TypeSerializer for TaggedUnionSerializer {
             exclude,
             extra,
             &self.choices,
-            self.get_name(),
             self.retry_with_lax_check(),
         )
     }
 
     fn json_key<'a>(&self, key: &'a Bound<'_, PyAny>, extra: &Extra) -> PyResult<Cow<'a, str>> {
-        let py = key.py();
         let mut new_extra = extra.clone();
         new_extra.check = SerCheck::Strict;
 
@@ -361,20 +325,19 @@ impl TypeSerializer for TaggedUnionSerializer {
 
                 match serializer.json_key(key, &new_extra) {
                     Ok(v) => return Ok(v),
-                    Err(err) => match err.is_instance_of::<PydanticSerializationUnexpectedValue>(py) {
-                        true => {
-                            if self.retry_with_lax_check() {
-                                new_extra.check = SerCheck::Lax;
-                                return serializer.json_key(key, &new_extra);
+                    Err(_) => {
+                        if self.retry_with_lax_check() {
+                            new_extra.check = SerCheck::Lax;
+                            if let Ok(v) = serializer.json_key(key, &new_extra) {
+                                return Ok(v);
                             }
                         }
-                        false => return Err(err),
-                    },
+                    }
                 }
             }
         }
 
-        json_key(key, extra, &self.choices, self.get_name(), self.retry_with_lax_check())
+        json_key(key, extra, &self.choices, self.retry_with_lax_check())
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
@@ -396,18 +359,14 @@ impl TypeSerializer for TaggedUnionSerializer {
 
                 match selected_serializer.to_python(value, include, exclude, &new_extra) {
                     Ok(v) => return infer_serialize(v.bind(py), serializer, None, None, extra),
-                    Err(err) => match err.is_instance_of::<PydanticSerializationUnexpectedValue>(py) {
-                        true => {
-                            if self.retry_with_lax_check() {
-                                new_extra.check = SerCheck::Lax;
-                                match selected_serializer.to_python(value, include, exclude, &new_extra) {
-                                    Ok(v) => return infer_serialize(v.bind(py), serializer, None, None, extra),
-                                    Err(err) => return Err(py_err_se_err(err)),
-                                }
+                    Err(_) => {
+                        if self.retry_with_lax_check() {
+                            new_extra.check = SerCheck::Lax;
+                            if let Ok(v) = selected_serializer.to_python(value, include, exclude, &new_extra) {
+                                return infer_serialize(v.bind(py), serializer, None, None, extra);
                             }
                         }
-                        false => return Err(py_err_se_err(err)),
-                    },
+                    }
                 }
             }
         }
@@ -419,7 +378,6 @@ impl TypeSerializer for TaggedUnionSerializer {
             exclude,
             extra,
             &self.choices,
-            self.get_name(),
             self.retry_with_lax_check(),
         )
     }
