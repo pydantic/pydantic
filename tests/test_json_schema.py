@@ -6563,7 +6563,7 @@ def test_arbitrary_ref_in_json_schema() -> None:
         x: dict = Field(examples=[{'$ref': '#/components/schemas/Pet'}])
 
     assert Test.model_json_schema() == {
-        'properties': {'x': {'examples': {'$ref': '#/components/schemas/Pet'}, 'title': 'X', 'type': 'object'}},
+        'properties': {'x': {'examples': [{'$ref': '#/components/schemas/Pet'}], 'title': 'X', 'type': 'object'}},
         'required': ['x'],
         'title': 'Test',
         'type': 'object',
