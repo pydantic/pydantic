@@ -999,13 +999,6 @@ def test_bare_type_type_validation_fails(bare_type):
     ]
 
 
-def test_annotation_field_name_shadows_attribute():
-    with pytest.raises(NameError):
-        # When defining a model that has an attribute with the name of a built-in attribute, an exception is raised
-        class BadModel(BaseModel):
-            model_json_schema: str  # This conflicts with the BaseModel's model_json_schema() class method
-
-
 def test_value_field_name_shadows_attribute():
     with pytest.raises(PydanticUserError, match="A non-annotated attribute was detected: `model_json_schema = 'abc'`"):
 
@@ -2587,20 +2580,22 @@ def test_recursion_loop_error():
 
 def test_protected_namespace_default():
     with pytest.warns(
-        UserWarning, match='Field "model_prefixed_field" in Model has conflict with protected namespace "model_"'
+        UserWarning, match='Field "model_dump_something" in Model has conflict with protected namespace "model_dump_"'
     ):
 
         class Model(BaseModel):
-            model_prefixed_field: str
+            model_dump_something: str
 
 
-def test_protected_namespace_real_conflict():
+def test_conflict_with_existing_method():
     with pytest.raises(
-        NameError, match=r'Field "model_validate" conflicts with member .* of protected namespace "model_"\.'
+        UserWarning,
+        match=r'`model_validate` is a pydantic method. Overriding this method in `.+` may lead to unexpected behavior.',
     ):
 
         class Model(BaseModel):
-            model_validate: str
+            def model_validate(self) -> None:
+                pass
 
 
 def test_custom_protected_namespace():

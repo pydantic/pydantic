@@ -610,10 +610,12 @@ class ConfigDict(TypedDict, total=False):
     protected_namespaces: tuple[str, ...]
     """
     A `tuple` of strings that prevent model to have field which conflict with them.
-    Defaults to `('model_', )`).
+    Defaults to `('model_validate_', 'model_dump_')`).
 
-    Pydantic prevents collisions between model attributes and `BaseModel`'s own methods by
-    namespacing them with the prefix `model_`.
+    Before v2.10, Pydantic used `('model_',)` as the default value for this setting to
+    prevent collisions between model attributes and `BaseModel`'s own methods. This was changed
+    in v2.10 given feedback that this restriction was limiting in AI and data science contexts,
+    where it is common to have fields with names like `model_id`, `model_input`, `model_output`, etc.
 
     ```py
     import warnings
@@ -625,14 +627,14 @@ class ConfigDict(TypedDict, total=False):
     try:
 
         class Model(BaseModel):
-            model_prefixed_field: str
+            model_dump_something: str
 
     except UserWarning as e:
         print(e)
         '''
-        Field "model_prefixed_field" in Model has conflict with protected namespace "model_".
+        Field "model_dump_something" in Model has conflict with protected namespace "model_dump_".
 
-        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ()`.
+        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('model_validate_',)`.
         '''
     ```
 
@@ -674,6 +676,8 @@ class ConfigDict(TypedDict, total=False):
 
         class Model(BaseModel):
             model_validate: str
+
+            model_config = ConfigDict(protected_namespaces=('model_',))
 
     except NameError as e:
         print(e)
