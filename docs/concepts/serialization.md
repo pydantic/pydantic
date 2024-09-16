@@ -700,7 +700,7 @@ print(t.model_dump(include={'id': True, 'user': {'id'}}))
 #> {'id': '1234567890', 'user': {'id': 42}}
 ```
 
-The `True` indicates that we want to exclude or include an entire key, just as if we included it in a set.
+Using `True` indicates that we want to exclude or include an entire key, just as if we included it in a set (note that using `False` isn't supported).
 This can be done at any depth level.
 
 Special care must be taken when including or excluding fields from a list or tuple of submodels or dictionaries.
