@@ -6556,12 +6556,11 @@ def test_title_strip() -> None:
     assert Model.model_json_schema()['properties']['_some_field']['title'] == 'Some Field'
 
 
-@pytest.mark.skip_json_schema_validation(reason='Custom ref used.')
 def test_arbitrary_ref_in_json_schema() -> None:
     """See https://github.com/pydantic/pydantic/issues/9981."""
 
     class Test(BaseModel):
-        x: dict = Field(examples={'$ref': '#/components/schemas/Pet'})
+        x: dict = Field(examples=[{'$ref': '#/components/schemas/Pet'}])
 
     assert Test.model_json_schema() == {
         'properties': {'x': {'examples': {'$ref': '#/components/schemas/Pet'}, 'title': 'X', 'type': 'object'}},
