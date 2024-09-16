@@ -15,7 +15,6 @@ from dirty_equals import IsJson
 
 from pydantic_core import (
     PydanticSerializationError,
-    PydanticSerializationUnexpectedValue,
     SchemaSerializer,
     SchemaValidator,
     core_schema,
@@ -1150,8 +1149,6 @@ def test_warn_on_missing_field() -> None:
         )
     )
 
-    with pytest.raises(
-        PydanticSerializationUnexpectedValue, match='Expected 2 fields but got 1 for type `.*AModel` with value `.*`.+'
-    ):
+    with pytest.warns(UserWarning, match='Expected 2 fields but got 1 for type `.*AModel` with value `.*`.+'):
         value = BasicModel(root=AModel(type='a'))
         s.to_python(value)
