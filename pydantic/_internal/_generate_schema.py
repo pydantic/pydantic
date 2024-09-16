@@ -1882,6 +1882,7 @@ class GenerateSchema:
         arguments_list: list[core_schema.ArgumentsParameter] = []
         var_args_schema: core_schema.CoreSchema | None = None
         var_kwargs_schema: core_schema.CoreSchema | None = None
+        var_kwargs_mode: core_schema.VarKwargsMode | None = None
 
         for name, p in sig.parameters.items():
             if p.annotation is sig.empty:
@@ -1897,7 +1898,22 @@ class GenerateSchema:
                 var_args_schema = self.generate_schema(annotation)
             else:
                 assert p.kind == Parameter.VAR_KEYWORD, p.kind
-                var_kwargs_schema = self.generate_schema(annotation)
+
+                unpack_type = _typing_extra.unpack_type(annotation)
+                if unpack_type is not None:
+                    if not is_typeddict(unpack_type):
+                        raise PydanticUserError(
+                            f'Expected a `TypedDict` class, got {unpack_type}', code='unpack-typed-dict'
+                        )
+
+                    var_kwargs_mode = 'unpacked-typed-dict'
+                    # TODO: does it work without resolving?
+                    var_kwargs_schema = resolve_original_schema(
+                        self._typed_dict_schema(unpack_type, None), self.defs.definitions
+                    )
+                else:
+                    var_kwargs_mode = 'single'
+                    var_kwargs_schema = self.generate_schema(annotation)
 
         return_schema: core_schema.CoreSchema | None = None
         config_wrapper = self._config_wrapper
@@ -1910,6 +1926,7 @@ class GenerateSchema:
             core_schema.arguments_schema(
                 arguments_list,
                 var_args_schema=var_args_schema,
+                var_kwargs_mode=var_kwargs_mode,
                 var_kwargs_schema=var_kwargs_schema,
                 populate_by_name=config_wrapper.populate_by_name,
             ),

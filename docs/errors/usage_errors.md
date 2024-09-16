@@ -1151,7 +1151,6 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'model-config-invalid-field-name'
 ```
 
-
 ## [`with_config`][pydantic.config.with_config] is used on a `BaseModel` subclass {#with-config-on-model}
 
 This error is raised when the [`with_config`][pydantic.config.with_config]  decorator is used on a class which is already a Pydantic model (use the `model_config` attribute instead).
@@ -1168,7 +1167,6 @@ try:
 except PydanticUserError as exc_info:
     assert exc_info.code == 'with-config-on-model'
 ```
-
 
 ## `dataclass` is used on a `BaseModel` subclass {#dataclass-on-model}
 
@@ -1188,3 +1186,27 @@ try:
 except PydanticUserError as exc_info:
     assert exc_info.code == 'dataclass-on-model'
 ```
+
+## [`Unpack`][typing.Unpack] used without a [`TypedDict`][typing.TypedDict] {#unpack-typed-dict}
+
+This error is raised when [`Unpack`][typing.Unpack] is used with something else than
+a [`TypedDict`][typing.TypedDict] class object to type hint variadic keyword arguments.
+
+For reference, see the [related specification section] and [PEP 692].
+
+```py
+from typing_extensions import Unpack
+
+from pydantic import validate_call
+
+try:
+
+    @validate_call
+    def func(**kwargs: Unpack[int]):
+        pass
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'unpack-typed-dict'
+```
+
+[related specification section]: https://typing.readthedocs.io/en/latest/spec/callables.html#unpack-for-keyword-arguments
+[PEP 692]: https://peps.python.org/pep-0692/
