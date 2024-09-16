@@ -3842,7 +3842,7 @@ sets or dictionaries. This allows nested selection of which fields to export:</p
 <span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;user&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">}}))</span>
 <span class="c1">#&gt; {&#39;id&#39;: &#39;1234567890&#39;, &#39;user&#39;: {&#39;id&#39;: 42}}</span>
 </code></pre></div>
-<p>The <code>True</code> indicates that we want to exclude or include an entire key, just as if we included it in a set.
+<p>Using <code>True</code> indicates that we want to exclude or include an entire key, just as if we included it in a set (note that using <code>False</code> isn't supported).
 This can be done at any depth level.</p>
 <p>Special care must be taken when including or excluding fields from a list or tuple of submodels or dictionaries.
 In this scenario, <code>model_dump</code> and related methods expect integer keys for element-wise inclusion or exclusion.
@@ -4152,7 +4152,7 @@ by context:</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.10.0a1", "pydantic-core==2.23.3", "pydantic-extra-types==2.9.0"]
+    window.mkdocs_run_deps = ["pydantic==2.10.0a1", "pydantic-core==2.23.4", "pydantic-extra-types==2.9.0"]
     </script>
 
               </article>
