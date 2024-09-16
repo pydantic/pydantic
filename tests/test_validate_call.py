@@ -4,7 +4,7 @@ import re
 import sys
 from datetime import datetime, timezone
 from functools import partial
-from typing import Any, Dict, Generic, Iterable, List, Literal, Optional, Set, Tuple, TypeVar, Union
+from typing import Any, Dict, Generic, List, Literal, Optional, Set, Tuple, TypeVar, Union
 
 import pytest
 from pydantic_core import ArgsKwargs
@@ -852,77 +852,6 @@ def find_max_validate_return[T](args: Iterable[T]) -> T:
             find_max(1)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+ for PEP 695 syntax with generics')
-def test_pep695_with_class(create_module):
-    """Primarily to ensure that the syntax is accepted and doesn't raise a `NameError` with `T`.
-    The validation is not expected to work properly when parameterized at this point."""
-
-    for import_annotations in ('from __future__ import annotations', ''):
-        module = create_module(
-            f"""
-{import_annotations}
-from pydantic import validate_call
-
-class A[T]:
-    @validate_call(validate_return=True)
-    def f(self, a: T) -> T:
-        return str(a)
-            """
-        )
-        A = module.A
-        a = A[int]()
-        # these two are undesired behavior, but it's what happens now
-        assert a.f(1) == '1'
-        assert a.f('1') == '1'
-
-
-@pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+ for PEP 695 syntax with generics')
-def test_pep695_with_nested_scopes(create_module):
-    """Nested scopes generally cannot be caught by `parent_frame_namespace`,
-    so currently this test is expected to fail.
-    """
-
-    module = create_module(
-        """
-from __future__ import annotations
-from pydantic import validate_call
-
-class A[T]:
-    def g(self):
-        @validate_call(validate_return=True)
-        def inner(a: T) -> T: ...
-
-    def h[S](self):
-        @validate_call(validate_return=True)
-        def inner(a: T) -> S: ...
-        """
-    )
-
-    A = module.A
-    a = A[int]()
-    with pytest.raises(NameError):
-        a.g()
-    with pytest.raises(NameError):
-        a.h()
-
-    with pytest.raises(NameError):
-        create_module(
-            """
-from __future__ import annotations
-from pydantic import validate_call
-
-class A[T]:
-    class B:
-        @validate_call(validate_return=True)
-        def f(a: T) -> T: ...
-
-    class C[S]:
-        @validate_call(validate_return=True)
-        def f(a: T) -> S: ...
-            """
-        )
-
-
 class M0(BaseModel):
     z: int
 
@@ -1220,18 +1149,17 @@ REQUIRE_PEP_695 = pytest.mark.skipif(sys.version_info < (3, 12), reason='require
 
 
 @REQUIRE_PEP_695
-def test_pep_695_function() -> None:
+def test_pep_695_function(create_module) -> None:
     """Note: validate_call still doesn't work properly with generics, see https://github.com/pydantic/pydantic/issues/7796.
 
     This test is just to ensure that the syntax is accepted and doesn't raise a NameError."""
 
-    # We use `exec` to check both with and without `from __future__ import annotations`
-    # Note: there is some issue with `exec` namespace: https://github.com/pydantic/pydantic/issues/10366
     for import_annotations in ('from __future__ import annotations', ''):
-        locals = {'Iterable': Iterable}
+        # locals = {'Iterable': Iterable}
 
         source = f"""
 {import_annotations}
+from typing import Iterable
 from pydantic import BaseModel, validate_call
 
 @validate_call
@@ -1242,9 +1170,9 @@ def find_max_no_validate_return[T](args: Iterable[T]) -> T:
 def find_max_validate_return[T](args: Iterable[T]) -> T:
     return sorted(args, reverse=True)[0]
             """
-        exec(compile(source, '<string>', 'exec'), None, locals)
+        module = create_module(source)
 
-        functions = [locals['find_max_no_validate_return'], locals['find_max_validate_return']]
+        functions = [module.find_max_no_validate_return, module.find_max_validate_return]
         for find_max in functions:
             assert len(find_max.__type_params__) == 1
             assert find_max([1, 2, 10, 5]) == 10
@@ -1254,14 +1182,13 @@ def find_max_validate_return[T](args: Iterable[T]) -> T:
 
 
 @REQUIRE_PEP_695
-def test_pep_695_class():
+def test_pep_695_class(create_module):
     """Test both PEP 695 syntax and validation on BaseModel."""
-
-    local_ns = {}
 
     for import_annotations in ('from __future__ import annotations', ''):
         source = f"""
 {import_annotations}
+from typing import Union, List, Tuple
 from pydantic import BaseModel, validate_call
 
 class A[T](BaseModel):
@@ -1278,17 +1205,87 @@ class B[T, S](BaseModel):
     def g[P: int](self, x: P) -> list[P]:
         return (x,)
              """
+        module = create_module(source)
 
-        exec(compile(source, '<string>', 'exec'), None, local_ns)
-
-        A = local_ns['A']
+        A = module.A
         a = A[int]()
         assert a.f(1) == 1
         assert a.f('1') == 1
         with pytest.raises(ValidationError):
             a.f('abc')
 
-        B = local_ns['B']
+        B = module.B
         b = B[int, str]()
         assert b.f(0) == 0
         assert b.g(1) == [1]
+
+
+@REQUIRE_PEP_695
+def test_pep695_with_normal_class(create_module):
+    """Primarily to ensure that the syntax is accepted and doesn't raise a `NameError` with `T`.
+    The validation is not expected to work properly when parameterized at this point."""
+
+    for import_annotations in ('from __future__ import annotations', ''):
+        module = create_module(
+            f"""
+{import_annotations}
+from pydantic import validate_call
+
+class A[T]:
+    @validate_call(validate_return=True)
+    def f(self, a: T) -> T:
+        return str(a)
+            """
+        )
+        A = module.A
+        a = A[int]()
+        # these two are undesired behavior, but it's what happens now
+        assert a.f(1) == '1'
+        assert a.f('1') == '1'
+
+
+@REQUIRE_PEP_695
+def test_pep695_with_nested_scopes(create_module):
+    """Nested scopes generally cannot be caught by `parent_frame_namespace`,
+    so currently this test is expected to fail.
+    """
+
+    module = create_module(
+        """
+from __future__ import annotations
+from pydantic import validate_call
+
+class A[T]:
+    def g(self):
+        @validate_call(validate_return=True)
+        def inner(a: T) -> T: ...
+
+    def h[S](self):
+        @validate_call(validate_return=True)
+        def inner(a: T) -> S: ...
+        """
+    )
+
+    A = module.A
+    a = A[int]()
+    with pytest.raises(NameError):
+        a.g()
+    with pytest.raises(NameError):
+        a.h()
+
+    with pytest.raises(NameError):
+        create_module(
+            """
+from __future__ import annotations
+from pydantic import validate_call
+
+class A[T]:
+    class B:
+        @validate_call(validate_return=True)
+        def f(a: T) -> T: ...
+
+    class C[S]:
+        @validate_call(validate_return=True)
+        def f(a: T) -> S: ...
+            """
+        )
