@@ -3725,6 +3725,57 @@ def test_new_path_validation_success(value, result):
     assert Model(foo=value).foo == result
 
 
+@pytest.mark.parametrize('value', ('x' * 10000, Path('x' * 10000)))
+def test_existing_path_file_name_too_long(value):
+    class Model(BaseModel):
+        foo: FilePath
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=value)
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'path_too_long',
+            'loc': ('foo',),
+            'msg': 'Path name is too long',
+            'input': value,
+        }
+    ]
+
+
+@pytest.mark.parametrize('value', ('x' * 10000, Path('x' * 10000)))
+def test_example_new_path_file_name_too_long(value):
+    class Model(BaseModel):
+        foo: NewPath
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=value)
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'path_too_long',
+            'loc': ('foo',),
+            'msg': 'Path name is too long',
+            'input': value,
+        }
+    ]
+
+
+@pytest.mark.parametrize('value', (f"{'a' * 1000}/{'b' * 1000}", Path(f"{'a' * 1000}/{'b' * 1000}")))
+def test_example_new_path_dir_and_file_names_too_long(value):
+    class Model(BaseModel):
+        foo: NewPath
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=value)
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'path_too_long',
+            'loc': ('foo',),
+            'msg': 'Path name is too long',
+            'input': value,
+        }
+    ]
+
+
 def test_number_gt():
     class Model(BaseModel):
         a: conint(gt=-1) = 0
