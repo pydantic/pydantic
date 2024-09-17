@@ -197,7 +197,7 @@ class PlainValidator:
                 core_schema.wrap_serializer_function_ser_schema(
                     function=lambda v, h: h(v),
                     schema=schema,
-                    return_schema=schema,
+                    return_schema=handler.generate_schema(source_type),
                 ),
             )
         except PydanticSchemaGenerationError:
