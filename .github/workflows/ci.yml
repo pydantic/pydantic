@@ -186,7 +186,7 @@ jobs:
     - name: store coverage files
       uses: actions/upload-artifact@v4
       with:
-        name: coverage
+        name: coverage-linux-compiled-${{ matrix.python-version }}
         path: coverage
         include-hidden-files: true
 
@@ -312,7 +312,7 @@ jobs:
     - name: store coverage files
       uses: actions/upload-artifact@v4
       with:
-        name: coverage
+        name: coverage-${{ matrix.os }}-${{ matrix.python-version }}
         path: coverage
         include-hidden-files: true
 
@@ -354,7 +354,7 @@ jobs:
     - name: store coverage files
       uses: actions/upload-artifact@v4
       with:
-        name: coverage
+        name: coverage-mypy${{ matrix.mypy-version }}
         path: coverage
         include-hidden-files: true
 
@@ -372,7 +372,7 @@ jobs:
       - name: get coverage files
         uses: actions/download-artifact@v4
         with:
-          name: coverage
+          name: coverage-*
           path: coverage
 
       - run: pip install coverage
