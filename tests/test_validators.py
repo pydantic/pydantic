@@ -2869,6 +2869,26 @@ def test_plain_validator_plain_serializer() -> None:
     assert isinstance(data['bar'], ser_type)
 
 
+def test_plain_validator_plain_serializer_single_ser_call() -> None:
+    """https://github.com/pydantic/pydantic/issues/10385"""
+
+    ser_count = 0
+
+    def ser(v):
+        nonlocal ser_count
+        ser_count += 1
+        return v
+
+    class Model(BaseModel):
+        foo: Annotated[bool, PlainSerializer(ser), PlainValidator(lambda v: v)]
+
+    model = Model(foo=True)
+    data = model.model_dump()
+
+    assert data == {'foo': True}
+    assert ser_count == 1
+
+
 def test_plain_validator_with_unsupported_type() -> None:
     class UnsupportedClass:
         pass
