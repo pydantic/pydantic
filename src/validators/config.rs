@@ -1,8 +1,9 @@
 use std::borrow::Cow;
 use std::str::FromStr;
 
-use base64::engine::general_purpose::{STANDARD, URL_SAFE};
-use base64::{DecodeError, Engine};
+use base64::engine::general_purpose::GeneralPurpose;
+use base64::engine::{DecodePaddingMode, GeneralPurposeConfig};
+use base64::{alphabet, DecodeError, Engine};
 use pyo3::types::{PyDict, PyString};
 use pyo3::{intern, prelude::*};
 
@@ -10,6 +11,15 @@ use crate::errors::ErrorType;
 use crate::input::EitherBytes;
 use crate::serializers::BytesMode;
 use crate::tools::SchemaDict;
+
+const URL_SAFE_OPTIONAL_PADDING: GeneralPurpose = GeneralPurpose::new(
+    &alphabet::URL_SAFE,
+    GeneralPurposeConfig::new().with_decode_padding_mode(DecodePaddingMode::Indifferent),
+);
+const STANDARD_OPTIONAL_PADDING: GeneralPurpose = GeneralPurpose::new(
+    &alphabet::STANDARD,
+    GeneralPurposeConfig::new().with_decode_padding_mode(DecodePaddingMode::Indifferent),
+);
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ValBytesMode {
@@ -29,10 +39,10 @@ impl ValBytesMode {
     pub fn deserialize_string<'py>(self, s: &str) -> Result<EitherBytes<'_, 'py>, ErrorType> {
         match self.ser {
             BytesMode::Utf8 => Ok(EitherBytes::Cow(Cow::Borrowed(s.as_bytes()))),
-            BytesMode::Base64 => URL_SAFE
+            BytesMode::Base64 => URL_SAFE_OPTIONAL_PADDING
                 .decode(s)
                 .or_else(|err| match err {
-                    DecodeError::InvalidByte(_, b'/' | b'+') => STANDARD.decode(s),
+                    DecodeError::InvalidByte(_, b'/' | b'+') => STANDARD_OPTIONAL_PADDING.decode(s),
                     _ => Err(err),
                 })
                 .map(EitherBytes::from)

@@ -401,6 +401,12 @@ def test_json_bytes_base64_round_trip():
     assert v.validate_json(b'{"key":' + encoded_url + b'}') == {'key': data}
 
 
+def test_json_bytes_base64_no_padding():
+    v = SchemaValidator({'type': 'bytes'}, {'val_json_bytes': 'base64'})
+    base_64_without_padding = 'bm8tcGFkZGluZw'
+    assert v.validate_json(json.dumps(base_64_without_padding)) == b'no-padding'
+
+
 def test_json_bytes_base64_invalid():
     v = SchemaValidator({'type': 'bytes'}, {'val_json_bytes': 'base64'})
     wrong_input = 'wrong!'
