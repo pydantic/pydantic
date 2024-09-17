@@ -184,10 +184,11 @@ jobs:
         CONTEXT: linux-py${{ matrix.python-version }}-compiled
 
     - name: store coverage files
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: coverage
         path: coverage
+        include-hidden-files: true
 
 # We cannot use tracing on 3.12 without Cython 3+, which makes the coverage useless.
 # However, we can at least make sure tests run to completion on a cythonized build.
@@ -309,10 +310,11 @@ jobs:
         CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
 
     - name: store coverage files
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: coverage
         path: coverage
+        include-hidden-files: true
 
   test-old-mypy:
     name: test mypy v${{ matrix.mypy-version }}
@@ -350,10 +352,11 @@ jobs:
         CONTEXT: linux-py3.10-mypy${{ matrix.mypy-version }}
 
     - name: store coverage files
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: coverage
         path: coverage
+        include-hidden-files: true
 
   coverage-combine:
     needs: [test-linux-compiled, test-not-compiled, test-old-mypy]
@@ -367,7 +370,7 @@ jobs:
           python-version: '3.8'
 
       - name: get coverage files
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: coverage
           path: coverage
