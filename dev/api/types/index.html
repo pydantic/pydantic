@@ -6095,10 +6095,12 @@ Use this class as an annotation via <a href="https://docs.python.org/3/library/t
 
 <details class="example" open>
   <summary>Example</summary>
-  <p>```python
-from typing_extensions import Annotated</p>
-<p>from pydantic.types import StringConstraints</p>
-<p>ConstrainedStr = Annotated[str, StringConstraints(min_length=1, max_length=10)]</p>
+  <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic.types</span> <span class="kn">import</span> <span class="n">StringConstraints</span>
+
+<span class="n">ConstrainedStr</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">StringConstraints</span><span class="p">(</span><span class="n">min_length</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">)]</span>
+</code></pre></div>
 </details>
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
@@ -6153,7 +6155,8 @@ from typing_extensions import Annotated</p>
 <span class="normal">737</span>
 <span class="normal">738</span>
 <span class="normal">739</span>
-<span class="normal">740</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="normal">740</span>
+<span class="normal">741</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">StringConstraints</span><span class="p">(</span><span class="n">annotated_types</span><span class="o">.</span><span class="n">GroupedMetadata</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.10/concepts/fields/#string-constraints</span>
 
@@ -6176,6 +6179,7 @@ from typing_extensions import Annotated</p>
 <span class="sd">        from pydantic.types import StringConstraints</span>
 
 <span class="sd">        ConstrainedStr = Annotated[str, StringConstraints(min_length=1, max_length=10)]</span>
+<span class="sd">        ```</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">strip_whitespace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
@@ -6315,8 +6319,7 @@ print(m)</p>
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 907</span>
-<span class="normal"> 908</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 908</span>
 <span class="normal"> 909</span>
 <span class="normal"> 910</span>
 <span class="normal"> 911</span>
@@ -6438,7 +6441,8 @@ print(m)</p>
 <span class="normal">1027</span>
 <span class="normal">1028</span>
 <span class="normal">1029</span>
-<span class="normal">1030</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ImportString</span><span class="p">:</span>
+<span class="normal">1030</span>
+<span class="normal">1031</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ImportString</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A type that can be used to import a type from a string.</span>
 
 <span class="sd">    `ImportString` expects a string and loads the Python object importable at that dotted path.</span>
@@ -6644,8 +6648,7 @@ print(m)</p>
 </details>
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1134</span>
-<span class="normal">1135</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1135</span>
 <span class="normal">1136</span>
 <span class="normal">1137</span>
 <span class="normal">1138</span>
@@ -6686,7 +6689,8 @@ print(m)</p>
 <span class="normal">1173</span>
 <span class="normal">1174</span>
 <span class="normal">1175</span>
-<span class="normal">1176</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">)</span>
+<span class="normal">1176</span>
+<span class="normal">1177</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">UuidVersion</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A field metadata class to indicate a [UUID](https://docs.python.org/3/library/uuid.html) version.</span>
 
@@ -6835,8 +6839,7 @@ not the original JSON string. However, you can use the argument <code>round_trip
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1397</span>
-<span class="normal">1398</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1398</span>
 <span class="normal">1399</span>
 <span class="normal">1400</span>
 <span class="normal">1401</span>
@@ -6928,7 +6931,8 @@ not the original JSON string. However, you can use the argument <code>round_trip
 <span class="normal">1487</span>
 <span class="normal">1488</span>
 <span class="normal">1489</span>
-<span class="normal">1490</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Json</span><span class="p">:</span>
+<span class="normal">1490</span>
+<span class="normal">1491</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Json</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A special type wrapper which loads JSON before parsing.</span>
 
 <span class="sd">    You can use the `Json` data type to make Pydantic first load a raw JSON string before</span>
@@ -7113,8 +7117,7 @@ ways of using <code>Secret</code> to create a new secret type.</p>
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1526</span>
-<span class="normal">1527</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1527</span>
 <span class="normal">1528</span>
 <span class="normal">1529</span>
 <span class="normal">1530</span>
@@ -7216,7 +7219,8 @@ ways of using <code>Secret</code> to create a new secret type.</p>
 <span class="normal">1626</span>
 <span class="normal">1627</span>
 <span class="normal">1628</span>
-<span class="normal">1629</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Secret</span><span class="p">(</span><span class="n">_SecretBase</span><span class="p">[</span><span class="n">SecretType</span><span class="p">]):</span>
+<span class="normal">1629</span>
+<span class="normal">1630</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Secret</span><span class="p">(</span><span class="n">_SecretBase</span><span class="p">[</span><span class="n">SecretType</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A generic base class used for defining a field with sensitive information that you do not want to be visible in logging or tracebacks.</span>
 
 <span class="sd">    You may either directly parametrize `Secret` with a type, or subclass from `Secret` with a parametrized type. The benefit of subclassing</span>
@@ -7380,8 +7384,7 @@ calls to <code>repr()</code> and <code>str()</code>. If the value <em>is</em> em
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1693</span>
-<span class="normal">1694</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1694</span>
 <span class="normal">1695</span>
 <span class="normal">1696</span>
 <span class="normal">1697</span>
@@ -7411,7 +7414,8 @@ calls to <code>repr()</code> and <code>str()</code>. If the value <em>is</em> em
 <span class="normal">1721</span>
 <span class="normal">1722</span>
 <span class="normal">1723</span>
-<span class="normal">1724</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">SecretStr</span><span class="p">(</span><span class="n">_SecretField</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+<span class="normal">1724</span>
+<span class="normal">1725</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">SecretStr</span><span class="p">(</span><span class="n">_SecretField</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A string used for storing sensitive information that you do not want to be visible in logging or tracebacks.</span>
 
 <span class="sd">    When the secret value is nonempty, it is displayed as `&#39;**********&#39;` instead of the underlying value in</span>
@@ -7502,8 +7506,7 @@ calls to <code>repr()</code> and <code>str()</code>. If the value <em>is</em> em
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1727</span>
-<span class="normal">1728</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1728</span>
 <span class="normal">1729</span>
 <span class="normal">1730</span>
 <span class="normal">1731</span>
@@ -7532,7 +7535,8 @@ calls to <code>repr()</code> and <code>str()</code>. If the value <em>is</em> em
 <span class="normal">1754</span>
 <span class="normal">1755</span>
 <span class="normal">1756</span>
-<span class="normal">1757</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">SecretBytes</span><span class="p">(</span><span class="n">_SecretField</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]):</span>
+<span class="normal">1757</span>
+<span class="normal">1758</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">SecretBytes</span><span class="p">(</span><span class="n">_SecretField</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A bytes used for storing sensitive information that you do not want to be visible in logging or tracebacks.</span>
 
 <span class="sd">    It displays `b&#39;**********&#39;` instead of the string value on `repr()` and `str()` calls.</span>
@@ -7606,8 +7610,7 @@ calls to <code>repr()</code> and <code>str()</code>. If the value <em>is</em> em
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1773</span>
-<span class="normal">1774</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1774</span>
 <span class="normal">1775</span>
 <span class="normal">1776</span>
 <span class="normal">1777</span>
@@ -7711,7 +7714,8 @@ calls to <code>repr()</code> and <code>str()</code>. If the value <em>is</em> em
 <span class="normal">1875</span>
 <span class="normal">1876</span>
 <span class="normal">1877</span>
-<span class="normal">1878</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@deprecated</span><span class="p">(</span>
+<span class="normal">1878</span>
+<span class="normal">1879</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@deprecated</span><span class="p">(</span>
     <span class="s1">&#39;The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types` instead. &#39;</span>
     <span class="s1">&#39;See https://docs.pydantic.dev/latest/api/pydantic_extra_types_payment/#pydantic_extra_types.payment.PaymentCardNumber.&#39;</span><span class="p">,</span>
     <span class="n">category</span><span class="o">=</span><span class="n">PydanticDeprecatedSince20</span><span class="p">,</span>
@@ -7901,10 +7905,10 @@ calls to <code>repr()</code> and <code>str()</code>. If the value <em>is</em> em
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1806</span>
-<span class="normal">1807</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1807</span>
 <span class="normal">1808</span>
-<span class="normal">1809</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">1809</span>
+<span class="normal">1810</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">input_value</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PaymentCardNumber</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate the card number and return a `PaymentCardNumber` instance.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">input_value</span><span class="p">)</span>
@@ -7935,11 +7939,11 @@ calls to <code>repr()</code> and <code>str()</code>. If the value <em>is</em> em
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1821</span>
-<span class="normal">1822</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1822</span>
 <span class="normal">1823</span>
 <span class="normal">1824</span>
-<span class="normal">1825</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">1825</span>
+<span class="normal">1826</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">validate_digits</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">card_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate that the card number is all digits.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">card_number</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
@@ -7971,8 +7975,7 @@ calls to <code>repr()</code> and <code>str()</code>. If the value <em>is</em> em
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1827</span>
-<span class="normal">1828</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1828</span>
 <span class="normal">1829</span>
 <span class="normal">1830</span>
 <span class="normal">1831</span>
@@ -7987,7 +7990,8 @@ calls to <code>repr()</code> and <code>str()</code>. If the value <em>is</em> em
 <span class="normal">1840</span>
 <span class="normal">1841</span>
 <span class="normal">1842</span>
-<span class="normal">1843</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">1843</span>
+<span class="normal">1844</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">validate_luhn_check_digit</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">card_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Based on: https://en.wikipedia.org/wiki/Luhn_algorithm.&quot;&quot;&quot;</span>
     <span class="n">sum_</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">card_number</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
@@ -8032,8 +8036,7 @@ https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1845</span>
-<span class="normal">1846</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1846</span>
 <span class="normal">1847</span>
 <span class="normal">1848</span>
 <span class="normal">1849</span>
@@ -8065,7 +8068,8 @@ https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(
 <span class="normal">1875</span>
 <span class="normal">1876</span>
 <span class="normal">1877</span>
-<span class="normal">1878</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">1878</span>
+<span class="normal">1879</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">validate_brand</span><span class="p">(</span><span class="n">card_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PaymentCardBrand</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate length based on BIN for major brands:</span>
 <span class="sd">    https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN).</span>
@@ -8163,8 +8167,7 @@ rather than a power of 10 (so, for example, <code>'1 MB'</code> is treated as <c
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1884</span>
-<span class="normal">1885</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1885</span>
 <span class="normal">1886</span>
 <span class="normal">1887</span>
 <span class="normal">1888</span>
@@ -8320,7 +8323,8 @@ rather than a power of 10 (so, for example, <code>'1 MB'</code> is treated as <c
 <span class="normal">2038</span>
 <span class="normal">2039</span>
 <span class="normal">2040</span>
-<span class="normal">2041</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ByteSize</span><span class="p">(</span><span class="nb">int</span><span class="p">):</span>
+<span class="normal">2041</span>
+<span class="normal">2042</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ByteSize</span><span class="p">(</span><span class="nb">int</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts a string representing a number of bytes with units (such as `&#39;1KB&#39;` or `&#39;11.5MiB&#39;`) into an integer.</span>
 
 <span class="sd">    You can use the `ByteSize` data type to (case-insensitively) convert a string representation of a number of bytes into</span>
@@ -8579,8 +8583,7 @@ rather than a power of 10 (so, for example, <code>'1 MB'</code> is treated as <c
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1993</span>
-<span class="normal">1994</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1994</span>
 <span class="normal">1995</span>
 <span class="normal">1996</span>
 <span class="normal">1997</span>
@@ -8608,7 +8611,8 @@ rather than a power of 10 (so, for example, <code>'1 MB'</code> is treated as <c
 <span class="normal">2019</span>
 <span class="normal">2020</span>
 <span class="normal">2021</span>
-<span class="normal">2022</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">human_readable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">decimal</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">separator</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">2022</span>
+<span class="normal">2023</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">human_readable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">decimal</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">separator</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts a byte size to a human readable string.</span>
 
 <span class="sd">    Args:</span>
@@ -8716,8 +8720,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2024</span>
-<span class="normal">2025</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2025</span>
 <span class="normal">2026</span>
 <span class="normal">2027</span>
 <span class="normal">2028</span>
@@ -8733,7 +8736,8 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2038</span>
 <span class="normal">2039</span>
 <span class="normal">2040</span>
-<span class="normal">2041</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unit</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="normal">2041</span>
+<span class="normal">2042</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unit</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts a byte size to another unit, including both byte and bit units.</span>
 
 <span class="sd">    Args:</span>
@@ -8783,8 +8787,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2057</span>
-<span class="normal">2058</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2058</span>
 <span class="normal">2059</span>
 <span class="normal">2060</span>
 <span class="normal">2061</span>
@@ -8800,7 +8803,8 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2071</span>
 <span class="normal">2072</span>
 <span class="normal">2073</span>
-<span class="normal">2074</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PastDate</span><span class="p">:</span>
+<span class="normal">2074</span>
+<span class="normal">2075</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PastDate</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A date in the past.&quot;&quot;&quot;</span>
 
     <span class="nd">@classmethod</span>
@@ -8859,8 +8863,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2076</span>
-<span class="normal">2077</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2077</span>
 <span class="normal">2078</span>
 <span class="normal">2079</span>
 <span class="normal">2080</span>
@@ -8876,7 +8879,8 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2090</span>
 <span class="normal">2091</span>
 <span class="normal">2092</span>
-<span class="normal">2093</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">FutureDate</span><span class="p">:</span>
+<span class="normal">2093</span>
+<span class="normal">2094</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">FutureDate</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A date in the future.&quot;&quot;&quot;</span>
 
     <span class="nd">@classmethod</span>
@@ -8935,8 +8939,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2133</span>
-<span class="normal">2134</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2134</span>
 <span class="normal">2135</span>
 <span class="normal">2136</span>
 <span class="normal">2137</span>
@@ -8952,7 +8955,8 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2147</span>
 <span class="normal">2148</span>
 <span class="normal">2149</span>
-<span class="normal">2150</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">AwareDatetime</span><span class="p">:</span>
+<span class="normal">2150</span>
+<span class="normal">2151</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">AwareDatetime</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A datetime that requires timezone info.&quot;&quot;&quot;</span>
 
     <span class="nd">@classmethod</span>
@@ -9011,8 +9015,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2152</span>
-<span class="normal">2153</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2153</span>
 <span class="normal">2154</span>
 <span class="normal">2155</span>
 <span class="normal">2156</span>
@@ -9028,7 +9031,8 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2166</span>
 <span class="normal">2167</span>
 <span class="normal">2168</span>
-<span class="normal">2169</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">NaiveDatetime</span><span class="p">:</span>
+<span class="normal">2169</span>
+<span class="normal">2170</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">NaiveDatetime</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A datetime that doesn&#39;t require timezone info.&quot;&quot;&quot;</span>
 
     <span class="nd">@classmethod</span>
@@ -9087,8 +9091,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2171</span>
-<span class="normal">2172</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2172</span>
 <span class="normal">2173</span>
 <span class="normal">2174</span>
 <span class="normal">2175</span>
@@ -9104,7 +9107,8 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2185</span>
 <span class="normal">2186</span>
 <span class="normal">2187</span>
-<span class="normal">2188</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PastDatetime</span><span class="p">:</span>
+<span class="normal">2188</span>
+<span class="normal">2189</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PastDatetime</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A datetime that must be in the past.&quot;&quot;&quot;</span>
 
     <span class="nd">@classmethod</span>
@@ -9163,8 +9167,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2190</span>
-<span class="normal">2191</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2191</span>
 <span class="normal">2192</span>
 <span class="normal">2193</span>
 <span class="normal">2194</span>
@@ -9180,7 +9183,8 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2204</span>
 <span class="normal">2205</span>
 <span class="normal">2206</span>
-<span class="normal">2207</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">FutureDatetime</span><span class="p">:</span>
+<span class="normal">2207</span>
+<span class="normal">2208</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">FutureDatetime</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A datetime that must be in the future.&quot;&quot;&quot;</span>
 
     <span class="nd">@classmethod</span>
@@ -9241,8 +9245,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2213</span>
-<span class="normal">2214</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2214</span>
 <span class="normal">2215</span>
 <span class="normal">2216</span>
 <span class="normal">2217</span>
@@ -9275,7 +9278,8 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2244</span>
 <span class="normal">2245</span>
 <span class="normal">2246</span>
-<span class="normal">2247</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">EncoderProtocol</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+<span class="normal">2247</span>
+<span class="normal">2248</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">EncoderProtocol</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Protocol for encoding and decoding data to and from bytes.&quot;&quot;&quot;</span>
 
     <span class="nd">@classmethod</span>
@@ -9398,8 +9402,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2216</span>
-<span class="normal">2217</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2217</span>
 <span class="normal">2218</span>
 <span class="normal">2219</span>
 <span class="normal">2220</span>
@@ -9408,7 +9411,8 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2223</span>
 <span class="normal">2224</span>
 <span class="normal">2225</span>
-<span class="normal">2226</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">2226</span>
+<span class="normal">2227</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode the data using the encoder.</span>
 
@@ -9498,8 +9502,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2228</span>
-<span class="normal">2229</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2229</span>
 <span class="normal">2230</span>
 <span class="normal">2231</span>
 <span class="normal">2232</span>
@@ -9508,7 +9511,8 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2235</span>
 <span class="normal">2236</span>
 <span class="normal">2237</span>
-<span class="normal">2238</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">2238</span>
+<span class="normal">2239</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Encode the data using the encoder.</span>
 
@@ -9569,14 +9573,14 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2240</span>
-<span class="normal">2241</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2241</span>
 <span class="normal">2242</span>
 <span class="normal">2243</span>
 <span class="normal">2244</span>
 <span class="normal">2245</span>
 <span class="normal">2246</span>
-<span class="normal">2247</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">2247</span>
+<span class="normal">2248</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">get_json_format</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the JSON format for the encoded data.</span>
 
@@ -9618,8 +9622,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2250</span>
-<span class="normal">2251</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2251</span>
 <span class="normal">2252</span>
 <span class="normal">2253</span>
 <span class="normal">2254</span>
@@ -9655,7 +9658,8 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2284</span>
 <span class="normal">2285</span>
 <span class="normal">2286</span>
-<span class="normal">2287</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Base64Encoder</span><span class="p">(</span><span class="n">EncoderProtocol</span><span class="p">):</span>
+<span class="normal">2287</span>
+<span class="normal">2288</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Base64Encoder</span><span class="p">(</span><span class="n">EncoderProtocol</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Standard (non-URL-safe) Base64 encoder.&quot;&quot;&quot;</span>
 
     <span class="nd">@classmethod</span>
@@ -9781,8 +9785,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2253</span>
-<span class="normal">2254</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2254</span>
 <span class="normal">2255</span>
 <span class="normal">2256</span>
 <span class="normal">2257</span>
@@ -9794,7 +9797,8 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2263</span>
 <span class="normal">2264</span>
 <span class="normal">2265</span>
-<span class="normal">2266</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">2266</span>
+<span class="normal">2267</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode the data from base64 encoded bytes to original bytes data.</span>
 
@@ -9887,8 +9891,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2268</span>
-<span class="normal">2269</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2269</span>
 <span class="normal">2270</span>
 <span class="normal">2271</span>
 <span class="normal">2272</span>
@@ -9897,7 +9900,8 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2275</span>
 <span class="normal">2276</span>
 <span class="normal">2277</span>
-<span class="normal">2278</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">2278</span>
+<span class="normal">2279</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Encode the data from bytes to a base64 encoded bytes.</span>
 
@@ -9958,14 +9962,14 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2280</span>
-<span class="normal">2281</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2281</span>
 <span class="normal">2282</span>
 <span class="normal">2283</span>
 <span class="normal">2284</span>
 <span class="normal">2285</span>
 <span class="normal">2286</span>
-<span class="normal">2287</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">2287</span>
+<span class="normal">2288</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">get_json_format</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;base64&#39;</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the JSON format for the encoded data.</span>
 
@@ -10007,8 +10011,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2290</span>
-<span class="normal">2291</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2291</span>
 <span class="normal">2292</span>
 <span class="normal">2293</span>
 <span class="normal">2294</span>
@@ -10044,7 +10047,8 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2324</span>
 <span class="normal">2325</span>
 <span class="normal">2326</span>
-<span class="normal">2327</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Base64UrlEncoder</span><span class="p">(</span><span class="n">EncoderProtocol</span><span class="p">):</span>
+<span class="normal">2327</span>
+<span class="normal">2328</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Base64UrlEncoder</span><span class="p">(</span><span class="n">EncoderProtocol</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;URL-safe Base64 encoder.&quot;&quot;&quot;</span>
 
     <span class="nd">@classmethod</span>
@@ -10170,8 +10174,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2293</span>
-<span class="normal">2294</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2294</span>
 <span class="normal">2295</span>
 <span class="normal">2296</span>
 <span class="normal">2297</span>
@@ -10183,7 +10186,8 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2303</span>
 <span class="normal">2304</span>
 <span class="normal">2305</span>
-<span class="normal">2306</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">2306</span>
+<span class="normal">2307</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode the data from base64 encoded bytes to original bytes data.</span>
 
@@ -10276,8 +10280,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2308</span>
-<span class="normal">2309</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2309</span>
 <span class="normal">2310</span>
 <span class="normal">2311</span>
 <span class="normal">2312</span>
@@ -10286,7 +10289,8 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2315</span>
 <span class="normal">2316</span>
 <span class="normal">2317</span>
-<span class="normal">2318</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">2318</span>
+<span class="normal">2319</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Encode the data from bytes to a base64 encoded bytes.</span>
 
@@ -10347,14 +10351,14 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2320</span>
-<span class="normal">2321</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2321</span>
 <span class="normal">2322</span>
 <span class="normal">2323</span>
 <span class="normal">2324</span>
 <span class="normal">2325</span>
 <span class="normal">2326</span>
-<span class="normal">2327</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">2327</span>
+<span class="normal">2328</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">get_json_format</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;base64url&#39;</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the JSON format for the encoded data.</span>
 
@@ -10445,8 +10449,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2330</span>
-<span class="normal">2331</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2331</span>
 <span class="normal">2332</span>
 <span class="normal">2333</span>
 <span class="normal">2334</span>
@@ -10539,7 +10542,8 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2421</span>
 <span class="normal">2422</span>
 <span class="normal">2423</span>
-<span class="normal">2424</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">)</span>
+<span class="normal">2424</span>
+<span class="normal">2425</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">EncodedBytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A bytes type that is encoded and decoded using the specified encoder.</span>
 
@@ -10718,8 +10722,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2401</span>
-<span class="normal">2402</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2402</span>
 <span class="normal">2403</span>
 <span class="normal">2404</span>
 <span class="normal">2405</span>
@@ -10727,7 +10730,8 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2407</span>
 <span class="normal">2408</span>
 <span class="normal">2409</span>
-<span class="normal">2410</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="normal">2410</span>
+<span class="normal">2411</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode the data using the specified encoder.</span>
 
 <span class="sd">    Args:</span>
@@ -10812,8 +10816,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2412</span>
-<span class="normal">2413</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2413</span>
 <span class="normal">2414</span>
 <span class="normal">2415</span>
 <span class="normal">2416</span>
@@ -10821,7 +10824,8 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2418</span>
 <span class="normal">2419</span>
 <span class="normal">2420</span>
-<span class="normal">2421</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="normal">2421</span>
+<span class="normal">2422</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Encode the data using the specified encoder.</span>
 
 <span class="sd">    Args:</span>
@@ -10916,8 +10920,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2427</span>
-<span class="normal">2428</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2428</span>
 <span class="normal">2429</span>
 <span class="normal">2430</span>
 <span class="normal">2431</span>
@@ -11001,7 +11004,8 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2509</span>
 <span class="normal">2510</span>
 <span class="normal">2511</span>
-<span class="normal">2512</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">)</span>
+<span class="normal">2512</span>
+<span class="normal">2513</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">EncodedStr</span><span class="p">(</span><span class="n">EncodedBytes</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A str type that is encoded and decoded using the specified encoder.</span>
 
@@ -11171,8 +11175,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2489</span>
-<span class="normal">2490</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2490</span>
 <span class="normal">2491</span>
 <span class="normal">2492</span>
 <span class="normal">2493</span>
@@ -11180,7 +11183,8 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2495</span>
 <span class="normal">2496</span>
 <span class="normal">2497</span>
-<span class="normal">2498</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">decode_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">2498</span>
+<span class="normal">2499</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">decode_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode the data using the specified encoder.</span>
 
 <span class="sd">    Args:</span>
@@ -11265,8 +11269,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2500</span>
-<span class="normal">2501</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2501</span>
 <span class="normal">2502</span>
 <span class="normal">2503</span>
 <span class="normal">2504</span>
@@ -11274,7 +11277,8 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2506</span>
 <span class="normal">2507</span>
 <span class="normal">2508</span>
-<span class="normal">2509</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">encode_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">2509</span>
+<span class="normal">2510</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">encode_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Encode the data using the specified encoder.</span>
 
 <span class="sd">    Args:</span>
@@ -11341,8 +11345,7 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2639</span>
-<span class="normal">2640</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2640</span>
 <span class="normal">2641</span>
 <span class="normal">2642</span>
 <span class="normal">2643</span>
@@ -11386,7 +11389,8 @@ kibit, mibit, gibit, tibit, pibit, eibit (bit units).</p>
 <span class="normal">2681</span>
 <span class="normal">2682</span>
 <span class="normal">2683</span>
-<span class="normal">2684</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">)</span>
+<span class="normal">2684</span>
+<span class="normal">2685</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">GetPydanticSchema</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.10/concepts/types/#using-getpydanticschema-to-reduce-boilerplate</span>
 
@@ -11543,8 +11547,7 @@ callable <code>Discriminator</code>. Failing to do so will result in a <code>Pyd
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2687</span>
-<span class="normal">2688</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2688</span>
 <span class="normal">2689</span>
 <span class="normal">2690</span>
 <span class="normal">2691</span>
@@ -11628,7 +11631,8 @@ callable <code>Discriminator</code>. Failing to do so will result in a <code>Pyd
 <span class="normal">2769</span>
 <span class="normal">2770</span>
 <span class="normal">2771</span>
-<span class="normal">2772</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="normal">2772</span>
+<span class="normal">2773</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">Tag</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Provides a way to specify the expected tag to use for a case of a (callable) discriminated union.</span>
 
@@ -11823,8 +11827,7 @@ than it would be as a normal <code>Union</code>.</p>
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2775</span>
-<span class="normal">2776</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2776</span>
 <span class="normal">2777</span>
 <span class="normal">2778</span>
 <span class="normal">2779</span>
@@ -11974,7 +11977,8 @@ than it would be as a normal <code>Union</code>.</p>
 <span class="normal">2923</span>
 <span class="normal">2924</span>
 <span class="normal">2925</span>
-<span class="normal">2926</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="normal">2926</span>
+<span class="normal">2927</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">_internal_dataclass</span><span class="o">.</span><span class="n">slots_true</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">Discriminator</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.10/concepts/unions/#discriminated-unions-with-callable-discriminator</span>
 
@@ -12294,8 +12298,7 @@ validation will be more performant with the caveat that you get less information
 
               <details class="quote">
                 <summary>Source code in <code>pydantic/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3055</span>
-<span class="normal">3056</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3056</span>
 <span class="normal">3057</span>
 <span class="normal">3058</span>
 <span class="normal">3059</span>
@@ -12324,7 +12327,8 @@ validation will be more performant with the caveat that you get less information
 <span class="normal">3082</span>
 <span class="normal">3083</span>
 <span class="normal">3084</span>
-<span class="normal">3085</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
+<span class="normal">3085</span>
+<span class="normal">3086</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
 <span class="k">class</span> <span class="nc">FailFast</span><span class="p">(</span><span class="n">_fields</span><span class="o">.</span><span class="n">PydanticMetadata</span><span class="p">,</span> <span class="n">BaseMetadata</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A `FailFast` annotation can be used to specify that validation should stop at the first error.</span>
 
@@ -13503,8 +13507,7 @@ validation will be more performant with the caveat that you get less information
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">743</span>
-<span class="normal">744</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">744</span>
 <span class="normal">745</span>
 <span class="normal">746</span>
 <span class="normal">747</span>
@@ -13582,7 +13585,8 @@ validation will be more performant with the caveat that you get less information
 <span class="normal">819</span>
 <span class="normal">820</span>
 <span class="normal">821</span>
-<span class="normal">822</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">constr</span><span class="p">(</span>
+<span class="normal">822</span>
+<span class="normal">823</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">constr</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">strip_whitespace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">to_upper</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -13770,8 +13774,7 @@ validation will be more performant with the caveat that you get less information
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">833</span>
-<span class="normal">834</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">834</span>
 <span class="normal">835</span>
 <span class="normal">836</span>
 <span class="normal">837</span>
@@ -13783,7 +13786,8 @@ validation will be more performant with the caveat that you get less information
 <span class="normal">843</span>
 <span class="normal">844</span>
 <span class="normal">845</span>
-<span class="normal">846</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">conset</span><span class="p">(</span>
+<span class="normal">846</span>
+<span class="normal">847</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">conset</span><span class="p">(</span>
     <span class="n">item_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">HashableItemType</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">min_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="nb">set</span><span class="p">[</span><span class="n">HashableItemType</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A wrapper around `typing.Set` that allows for additional constraints.</span>
@@ -13905,8 +13909,7 @@ validation will be more performant with the caveat that you get less information
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">849</span>
-<span class="normal">850</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">850</span>
 <span class="normal">851</span>
 <span class="normal">852</span>
 <span class="normal">853</span>
@@ -13918,7 +13921,8 @@ validation will be more performant with the caveat that you get less information
 <span class="normal">859</span>
 <span class="normal">860</span>
 <span class="normal">861</span>
-<span class="normal">862</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">confrozenset</span><span class="p">(</span>
+<span class="normal">862</span>
+<span class="normal">863</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">confrozenset</span><span class="p">(</span>
     <span class="n">item_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">HashableItemType</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">min_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="nb">frozenset</span><span class="p">[</span><span class="n">HashableItemType</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A wrapper around `typing.FrozenSet` that allows for additional constraints.</span>
@@ -14060,8 +14064,7 @@ See <a href="https://github.com/pydantic/pydantic-core/issues/296">this issue</a
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">868</span>
-<span class="normal">869</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">869</span>
 <span class="normal">870</span>
 <span class="normal">871</span>
 <span class="normal">872</span>
@@ -14089,7 +14092,8 @@ See <a href="https://github.com/pydantic/pydantic-core/issues/296">this issue</a
 <span class="normal">894</span>
 <span class="normal">895</span>
 <span class="normal">896</span>
-<span class="normal">897</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">conlist</span><span class="p">(</span>
+<span class="normal">897</span>
+<span class="normal">898</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">conlist</span><span class="p">(</span>
     <span class="n">item_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">AnyItemType</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">min_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -14352,8 +14356,7 @@ See <a href="https://github.com/pydantic/pydantic-core/issues/296">this issue</a
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1036</span>
-<span class="normal">1037</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1037</span>
 <span class="normal">1038</span>
 <span class="normal">1039</span>
 <span class="normal">1040</span>
@@ -14444,7 +14447,8 @@ See <a href="https://github.com/pydantic/pydantic-core/issues/296">this issue</a
 <span class="normal">1125</span>
 <span class="normal">1126</span>
 <span class="normal">1127</span>
-<span class="normal">1128</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">condecimal</span><span class="p">(</span>
+<span class="normal">1128</span>
+<span class="normal">1129</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">condecimal</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">gt</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">Decimal</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -14675,8 +14679,7 @@ See <a href="https://github.com/pydantic/pydantic-core/issues/296">this issue</a
 
             <details class="quote">
               <summary>Source code in <code>pydantic/types.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2096</span>
-<span class="normal">2097</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2097</span>
 <span class="normal">2098</span>
 <span class="normal">2099</span>
 <span class="normal">2100</span>
@@ -14699,7 +14702,8 @@ See <a href="https://github.com/pydantic/pydantic-core/issues/296">this issue</a
 <span class="normal">2117</span>
 <span class="normal">2118</span>
 <span class="normal">2119</span>
-<span class="normal">2120</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">condate</span><span class="p">(</span>
+<span class="normal">2120</span>
+<span class="normal">2121</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">condate</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">gt</span><span class="p">:</span> <span class="n">date</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
