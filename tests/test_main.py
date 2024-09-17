@@ -2300,7 +2300,6 @@ def test_field_by_default_is_not_final():
 
 
 def test_warn_on_nested_v2_model() -> None:
-
     class Inner:
         # mock core schema to trigger warning
         __pydantic_core_schema__ = {}
