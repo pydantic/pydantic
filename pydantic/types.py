@@ -709,6 +709,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
         from pydantic.types import StringConstraints
 
         ConstrainedStr = Annotated[str, StringConstraints(min_length=1, max_length=10)]
+        ```
     """
 
     strip_whitespace: bool | None = None
