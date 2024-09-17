@@ -2297,3 +2297,20 @@ def test_field_by_default_is_not_final():
         a: int
 
     assert not Model.__fields__['a'].final
+
+
+def test_warn_on_nested_v2_model() -> None:
+
+    class Inner:
+        # mock core schema to trigger warning
+        __pydantic_core_schema__ = {}
+
+    with pytest.warns(UserWarning, match='Mixing V1 and V2 models is not supported.'):
+        try:
+
+            class Model(BaseModel):
+                inner: Inner
+
+        except RuntimeError:
+            # known that schema is invalid here, we just want to catch the warning
+            pass
