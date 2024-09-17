@@ -764,5 +764,5 @@ def find_validators(  # noqa: C901 (ignore complexity)
         yield make_arbitrary_type_validator(type_)
     else:
         if hasattr(type_, '__pydantic_core_schema__'):
-            warn('Mixing V1 and V2 models is not supported. `{type_}` is a V2 model.', UserWarning)
+            warn(f'Mixing V1 and V2 models is not supported. `{type_.__name__}` is a V2 model.', UserWarning)
         raise RuntimeError(f'no validator found for {type_}, see `arbitrary_types_allowed` in Config')
