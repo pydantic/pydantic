@@ -3199,6 +3199,18 @@ For your <code>Union</code>, you can set the discriminator in its value: <code>F
 <p>In the case of a <code>Union</code> with multiple models, sometimes there isn't a single uniform field
 across all models that you can use as a discriminator.
 This is the perfect use case for a callable <code>Discriminator</code>.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>When you're designing callable discriminators, remember that you might have to account
+for both <code>dict</code> and model type inputs. This pattern is similar to that of <code>mode='before'</code> validators,
+where you have to anticipate various forms of input.</p>
+<p>But wait! You ask, I only anticipate passing in <code>dict</code> types, why do I need to account for models?
+Pydantic uses callable discriminators for serialization as well, at which point the input to your callable is
+very likely to be a model instance.</p>
+<p>In the following examples, you'll see that the callable discriminators are designed to handle both <code>dict</code> and model inputs.
+If you don't follow this practice, it's likely that you'll, in the best case, get warnings during serialization,
+and in the worst case, get runtime errors during validation.</p>
+</div>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
@@ -3619,7 +3631,7 @@ This is especially useful when you have complex types like those in this example
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.9.1", "pydantic-core==2.23.3", "pydantic-extra-types==2.9.0"]
+    window.mkdocs_run_deps = ["pydantic==2.9.2", "pydantic-core==2.23.4", "pydantic-extra-types==2.9.0"]
     </script>
 
               </article>
