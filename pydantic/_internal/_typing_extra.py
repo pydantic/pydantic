@@ -67,7 +67,7 @@ if hasattr(typing, 'Literal'):
 
 UNPACK_TYPES: set[Any] = {Unpack}
 if hasattr(typing, 'Unpack'):
-    UNPACK_TYPES.add(typing.Unpack)
+    UNPACK_TYPES.add(typing.Unpack)  # pyright: ignore[reportAttributeAccessIssue]
 
 # Check if `deprecated` is a type to prevent errors when using typing_extensions < 4.9.0
 DEPRECATED_TYPES: tuple[Any, ...] = (deprecated,) if isinstance(deprecated, type) else ()

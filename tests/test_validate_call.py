@@ -8,14 +8,14 @@ from typing import Any, List, Tuple
 
 import pytest
 from pydantic_core import ArgsKwargs
-from typing_extensions import Annotated, TypedDict, Unpack, Required
+from typing_extensions import Annotated, Required, TypedDict, Unpack
 
 from pydantic import (
     BaseModel,
     Field,
     PydanticInvalidForJsonSchema,
-    TypeAdapter,
     PydanticUserError,
+    TypeAdapter,
     ValidationError,
     validate_call,
 )
