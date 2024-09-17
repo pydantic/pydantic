@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Any, Union
 
 from pydantic_core import core_schema
 
+from ._internal import _typing_extra
+
 if TYPE_CHECKING:
     from .json_schema import JsonSchemaMode, JsonSchemaValue
 
@@ -116,6 +118,6 @@ class GetCoreSchemaHandler:
         """Get the name of the closest field to this validator."""
         raise NotImplementedError
 
-    def _get_types_namespace(self) -> dict[str, Any] | None:
+    def _get_types_namespace(self) -> _typing_extra.NsResolver:
         """Internal method used during type resolution for serializer annotations."""
         raise NotImplementedError

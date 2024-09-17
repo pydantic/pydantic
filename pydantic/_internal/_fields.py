@@ -3,7 +3,6 @@
 from __future__ import annotations as _annotations
 
 import dataclasses
-import sys
 import warnings
 from copy import copy
 from functools import lru_cache
@@ -18,7 +17,7 @@ from ._config import ConfigWrapper
 from ._docs_extraction import extract_docstrings_from_cls
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._repr import Representation
-from ._typing_extra import get_cls_type_hints_lenient, is_classvar, is_finalvar
+from ._typing_extra import NsResolver, get_cls_type_hints_lenient, is_classvar, is_finalvar
 
 if TYPE_CHECKING:
     from annotated_types import BaseMetadata
@@ -73,7 +72,7 @@ def collect_model_fields(  # noqa: C901
     cls: type[BaseModel],
     bases: tuple[type[Any], ...],
     config_wrapper: ConfigWrapper,
-    types_namespace: dict[str, Any] | None,
+    types_namespace: NsResolver | None,
     *,
     typevars_map: dict[Any, Any] | None = None,
 ) -> tuple[dict[str, FieldInfo], set[str]]:
@@ -254,7 +253,7 @@ def _is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:
 
 def collect_dataclass_fields(
     cls: type[StandardDataclass],
-    types_namespace: dict[str, Any] | None,
+    types_namespace: NsResolver | None,
     *,
     typevars_map: dict[Any, Any] | None = None,
     config_wrapper: ConfigWrapper | None = None,
@@ -274,14 +273,12 @@ def collect_dataclass_fields(
 
     fields: dict[str, FieldInfo] = {}
     dataclass_fields: dict[str, dataclasses.Field] = cls.__dataclass_fields__
-    cls_localns = dict(vars(cls))  # this matches get_cls_type_hints_lenient, but all tests pass with `= None` instead
-
-    source_module = sys.modules.get(cls.__module__)
-    if source_module is not None:
-        types_namespace = {**source_module.__dict__, **(types_namespace or {})}
 
     for ann_name, dataclass_field in dataclass_fields.items():
-        ann_type = _typing_extra.eval_type_lenient(dataclass_field.type, types_namespace, cls_localns)
+        ann_type = _typing_extra.eval_type_lenient(
+            dataclass_field.type,
+            types_namespace=NsResolver(NsResolver.from_module_ns_of(cls), types_namespace, NsResolver(dict(vars(cls)))),
+        )
         if is_classvar(ann_type):
             continue
 

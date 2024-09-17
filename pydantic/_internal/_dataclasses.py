@@ -68,7 +68,7 @@ else:
 
 def set_dataclass_fields(
     cls: type[StandardDataclass],
-    types_namespace: dict[str, Any] | None = None,
+    types_namespace: _typing_extra.NsResolver | None = None,
     config_wrapper: _config.ConfigWrapper | None = None,
 ) -> None:
     """Collect and set `cls.__pydantic_fields__`.
@@ -89,7 +89,7 @@ def complete_dataclass(
     config_wrapper: _config.ConfigWrapper,
     *,
     raise_errors: bool = True,
-    types_namespace: dict[str, Any] | None,
+    types_namespace: _typing_extra.NsResolver | None,
     _force_build: bool = False,
 ) -> bool:
     """Finish building a pydantic dataclass.

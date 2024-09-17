@@ -596,7 +596,9 @@ class FieldInfo(_repr.Representation):
             # Annotated arguments must be a tuple
             return typing_extensions.Annotated[(self.annotation, *self.metadata)]  # type: ignore
 
-    def apply_typevars_map(self, typevars_map: dict[Any, Any] | None, types_namespace: dict[str, Any] | None) -> None:
+    def apply_typevars_map(
+        self, typevars_map: dict[Any, Any] | None, types_namespace: _typing_extra.NsResolver | None
+    ) -> None:
         """Apply a `typevars_map` to the annotation.
 
         This method is used when analyzing parametrized generic types to replace typevars with their concrete types.

@@ -9,6 +9,7 @@ from typing_extensions import Literal, get_origin
 from pydantic import BaseModel, Field  # noqa: F401
 from pydantic._internal._typing_extra import (
     NoneType,
+    NsResolver,
     eval_type_lenient,
     get_function_type_hints,
     is_classvar,
@@ -64,7 +65,7 @@ def test_is_none_type():
     'union',
     [
         typing.Union[int, str],
-        eval_type_lenient('int | str'),
+        eval_type_lenient('int | str', types_namespace=NsResolver(sys.modules[__name__].__dict__)),
         *([int | str] if sys.version_info >= (3, 10) else []),
     ],
 )
@@ -157,6 +158,7 @@ def test_func_ns_excludes_default_globals() -> None:
 
 
 module_foo = 'global_foo'
+module_bar = 'global_bar'
 module_ns = parent_frame_namespace(parent_depth=1)
 
 
@@ -172,3 +174,31 @@ def test_exotic_localns() -> None:
         foo: __foo_annotation__
 
     assert Model.model_fields['foo'].annotation == str
+
+
+def test_ns_resolver_init():
+    resolver = NsResolver(
+        {'Foo': str},
+        {'Foo': int, 'Bar': float},
+    )
+    assert resolver.resolve_namespace() == {'Foo': int, 'Bar': float}
+    assert resolver.resolve_name('Foo') == int
+    with pytest.raises(KeyError):
+        resolver.resolve_name('Unknown')
+
+
+def test_ns_resolver_push(create_module):
+    @create_module
+    def module():
+        Foo = int  # noqa F841
+        Bar = float  # noqa F841
+
+        class SomeClass:
+            pass
+
+    resolver = NsResolver({'Foo': str})
+    with resolver.push(module.SomeClass):
+        ns = resolver.resolve_namespace()
+        assert ns['Foo'] == str, 'Should not get overwritten by module content'
+        assert ns['Bar'] == float
+    assert resolver.resolve_namespace() == {'Foo': str}

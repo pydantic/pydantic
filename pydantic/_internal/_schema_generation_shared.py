@@ -8,6 +8,7 @@ from pydantic_core import core_schema
 from typing_extensions import Literal
 
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
+from . import _typing_extra
 
 if TYPE_CHECKING:
     from ..json_schema import GenerateJsonSchema, JsonSchemaValue
@@ -90,7 +91,7 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
         else:  # ref_mode = 'unpack
             return self.resolve_ref_schema(schema)
 
-    def _get_types_namespace(self) -> dict[str, Any] | None:
+    def _get_types_namespace(self) -> _typing_extra.NsResolver:
         return self._generate_schema._types_namespace
 
     def generate_schema(self, source_type: Any, /) -> core_schema.CoreSchema:

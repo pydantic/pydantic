@@ -323,17 +323,15 @@ def rebuild_dataclass(
         if '__pydantic_core_schema__' in cls.__dict__:
             delattr(cls, '__pydantic_core_schema__')  # delete cached value to ensure full rebuild happens
         if _types_namespace is not None:
-            types_namespace: dict[str, Any] | None = _types_namespace.copy()
+            types_namespace = _typing_extra.NsResolver(_types_namespace)
         else:
+            frame_parent_ns: _typing_extra.NsResolver | None = None
             if _parent_namespace_depth > 0:
-                frame_parent_ns = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth) or {}
+                frame_parent_ns = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth)
                 # Note: we may need to add something similar to cls.__pydantic_parent_namespace__ from BaseModel
                 #   here when implementing handling of recursive generics. See BaseModel.model_rebuild for reference.
-                types_namespace = frame_parent_ns
-            else:
-                types_namespace = {}
 
-            types_namespace = _typing_extra.merge_cls_and_parent_ns(cls, types_namespace)
+            types_namespace = _typing_extra.merge_cls_and_parent_ns(cls, frame_parent_ns)
 
         return _pydantic_dataclasses.complete_dataclass(
             cls,

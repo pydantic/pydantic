@@ -1,6 +1,7 @@
 from __future__ import annotations as _annotations
 
 import inspect
+import typing
 from functools import partial
 from typing import Any, Awaitable, Callable
 
@@ -28,7 +29,7 @@ class ValidateCallWrapper:
         function: Callable[..., Any],
         config: ConfigDict | None,
         validate_return: bool,
-        namespace: dict[str, Any] | None,
+        namespace: _typing_extra.NsResolver | None,
     ):
         if isinstance(function, partial):
             func = function.func
@@ -42,18 +43,22 @@ class ValidateCallWrapper:
             self.__qualname__ = function.__qualname__
             self.__module__ = function.__module__
 
-        global_ns = _typing_extra.get_module_ns_of(function)
+        global_ns = _typing_extra.NsResolver.from_module_ns_of(function)
         # TODO: this is a bit of a hack, we should probably have a better way to handle this
         # specifically, we shouldn't be pumping the namespace full of type_params
         # when we take namespace and type_params arguments in eval_type_backport
-        type_params = (namespace or {}).get('__type_params__', ()) + getattr(schema_type, '__type_params__', ())
-        namespace = {
-            **{param.__name__: param for param in type_params},
-            **(global_ns or {}),
-            **(namespace or {}),
-        }
+        type_params_ns: typing.Mapping[str, Any] | None = None
+        if namespace:
+            type_params = (
+                namespace['__type_params__']
+                if '__type_params__' in namespace
+                else getattr(schema_type, '__type_params__', ())
+            )
+            type_params_ns = {param.__name__: param for param in type_params}
+        ns_resolver = _typing_extra.NsResolver(type_params_ns, global_ns, namespace)
+
         config_wrapper = ConfigWrapper(config)
-        gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
+        gen_schema = _generate_schema.GenerateSchema(config_wrapper, ns_resolver)
         schema = gen_schema.clean_schema(gen_schema.generate_schema(function))
         core_config = config_wrapper.core_config(self)
 
@@ -70,7 +75,7 @@ class ValidateCallWrapper:
         if validate_return:
             signature = inspect.signature(function)
             return_type = signature.return_annotation if signature.return_annotation is not signature.empty else Any
-            gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
+            gen_schema = _generate_schema.GenerateSchema(config_wrapper, ns_resolver)
             schema = gen_schema.clean_schema(gen_schema.generate_schema(return_type))
             validator = create_schema_validator(
                 schema,
