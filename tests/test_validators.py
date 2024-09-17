@@ -2889,6 +2889,25 @@ def test_plain_validator_plain_serializer_single_ser_call() -> None:
     assert ser_count == 1
 
 
+@pytest.mark.xfail(reason='https://github.com/pydantic/pydantic/issues/10428')
+def test_plain_validator_with_filter_dict_schema() -> None:
+    class MyDict:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source, handler):
+            return core_schema.dict_schema(
+                keys_schema=handler.generate_schema(str),
+                values_schema=handler.generate_schema(int),
+                serialization=core_schema.filter_dict_schema(
+                    include={'a'},
+                ),
+            )
+
+    class Model(BaseModel):
+        f: Annotated[MyDict, PlainValidator(lambda v: v)]
+
+    assert Model(f={'a': 1, 'b': 1}).model_dump() == {'f': {'a': 1}}
+
+
 def test_plain_validator_with_unsupported_type() -> None:
     class UnsupportedClass:
         pass
