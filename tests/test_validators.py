@@ -2869,6 +2869,45 @@ def test_plain_validator_plain_serializer() -> None:
     assert isinstance(data['bar'], ser_type)
 
 
+def test_plain_validator_plain_serializer_single_ser_call() -> None:
+    """https://github.com/pydantic/pydantic/issues/10385"""
+
+    ser_count = 0
+
+    def ser(v):
+        nonlocal ser_count
+        ser_count += 1
+        return v
+
+    class Model(BaseModel):
+        foo: Annotated[bool, PlainSerializer(ser), PlainValidator(lambda v: v)]
+
+    model = Model(foo=True)
+    data = model.model_dump()
+
+    assert data == {'foo': True}
+    assert ser_count == 1
+
+
+@pytest.mark.xfail(reason='https://github.com/pydantic/pydantic/issues/10428')
+def test_plain_validator_with_filter_dict_schema() -> None:
+    class MyDict:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source, handler):
+            return core_schema.dict_schema(
+                keys_schema=handler.generate_schema(str),
+                values_schema=handler.generate_schema(int),
+                serialization=core_schema.filter_dict_schema(
+                    include={'a'},
+                ),
+            )
+
+    class Model(BaseModel):
+        f: Annotated[MyDict, PlainValidator(lambda v: v)]
+
+    assert Model(f={'a': 1, 'b': 1}).model_dump() == {'f': {'a': 1}}
+
+
 def test_plain_validator_with_unsupported_type() -> None:
     class UnsupportedClass:
         pass
