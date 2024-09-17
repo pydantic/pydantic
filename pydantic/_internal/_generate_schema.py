@@ -825,7 +825,7 @@ class GenerateSchema:
 
             if issubclass(obj, BaseModelV1):
                 warn(
-                    f'Nesting V1 models inside V2 models is not supported. Please upgrade {obj.__name__} to V2.',
+                    f'Nesting V1 models inside V2 models is not supported. Please upgrade `{obj.__name__}` to V2.',
                     UserWarning,
                 )
             else:
