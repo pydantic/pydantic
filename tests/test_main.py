@@ -50,6 +50,7 @@ from pydantic import (
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._mock_val_ser import MockCoreSchema
 from pydantic.dataclasses import dataclass as pydantic_dataclass
+from pydantic.v1 import BaseModel as BaseModelV1
 
 
 def test_success():
@@ -3319,3 +3320,13 @@ def test_subclassing_gen_schema_warns() -> None:
     with pytest.warns(UserWarning, match='Subclassing `GenerateSchema` is not supported.'):
 
         class MyGenSchema(GenerateSchema): ...
+
+
+def test_nested_v1_model_warns() -> None:
+    with pytest.warns(UserWarning, match='Nesting V1 models inside V2 models is not supported.'):
+
+        class V1Model(BaseModelV1):
+            a: int
+
+        class V2Model(BaseModel):
+            inner: V1Model
