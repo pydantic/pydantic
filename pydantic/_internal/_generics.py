@@ -275,7 +275,6 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
 
     type_args = get_args(type_)
     origin_type = get_origin(type_)
-
     if origin_type is typing_extensions.Annotated:
         annotated_type, *annotations = type_args
         annotated = replace_types(annotated_type, type_map)
@@ -291,6 +290,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
             # If all arguments are the same, there is no need to modify the
             # type or create a new object at all
             return type_
+
         if (
             origin_type is not None
             and isinstance(type_, typing_base)
@@ -302,6 +302,16 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
             # See: https://www.python.org/dev/peps/pep-0585
             origin_type = getattr(typing, type_._name)
         assert origin_type is not None
+
+        if origin_type is typing.Union or sys.version_info >= (3, 10) and origin_type is types.UnionType:
+            if any(arg is Any for arg in resolved_type_args):
+                # `Any | T` ~ `Any`:
+                resolved_type_args = (Any,)
+            # `Never | T` ~ `T`:
+            resolved_type_args = tuple(
+                arg for arg in resolved_type_args if arg not in (typing.NoReturn, typing_extensions.Never)
+            )
+
         # PEP-604 syntax (Ex.: list | str) is represented with a types.UnionType object that does not have __getitem__.
         # We also cannot use isinstance() since we have to compare types.
         if sys.version_info >= (3, 10) and origin_type is types.UnionType:

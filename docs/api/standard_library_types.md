@@ -212,6 +212,16 @@ print(my_model.model_dump_json())  # (3)!
 2. Using [`model_dump`][pydantic.main.BaseModel.model_dump] with `mode='json'`, `x` is serialized as a `string`, and `y` is serialized as a `float` because of the custom serializer applied.
 3. Using [`model_dump_json`][pydantic.main.BaseModel.model_dump_json], `x` is serialized as a `string`, and `y` is serialized as a `float` because of the custom serializer applied.
 
+### [`complex`][]
+
+* Validation: Pydantic supports `complex` types or `str` values that can be converted to a `complex` type.
+* Serialization: Pydantic serializes [`complex`][] types as strings.
+
+### [`fractions.Fraction`][fractions.Fraction]
+
+* Validation: Pydantic attempts to convert the value to a `Fraction` using `Fraction(v)`.
+* Serialization: Pydantic serializes [`Fraction`][fractions.Fraction] types as strings.
+
 ## [`Enum`][enum.Enum]
 
 Pydantic uses Python's standard [`enum`][] classes to define choices.
@@ -1057,6 +1067,10 @@ print(type(Meal(dessert={'kind': 'cake'}).dessert).__name__)
 
 Allows any value, including `None`.
 
+## [`typing.Hashable`][]
+
+* From Python, supports any data that passes an `isinstance(v, Hashable)` check.
+* From JSON, first loads the data via an `Any` validator, then checks if the data is hashable with `isinstance(v, Hashable)`.
 
 ## [`typing.Annotated`][]
 

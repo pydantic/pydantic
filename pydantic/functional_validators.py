@@ -26,7 +26,7 @@ _inspect_validator = _decorators.inspect_validator
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class AfterValidator:
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **after** the inner validation logic.
 
@@ -86,7 +86,7 @@ class AfterValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class BeforeValidator:
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **before** the inner validation logic.
 
@@ -152,7 +152,7 @@ class BeforeValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class PlainValidator:
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **instead** of the inner validation logic.
 
@@ -190,10 +190,15 @@ class PlainValidator:
 
         try:
             schema = handler(source_type)
-            serialization = core_schema.wrap_serializer_function_ser_schema(
-                function=lambda v, h: h(v),
-                schema=schema,
-                return_schema=schema,
+            # TODO if `schema['serialization']` is one of `'include-exclude-dict/sequence',
+            # schema validation will fail. That's why we use 'type ignore' comments below.
+            serialization = schema.get(
+                'serialization',
+                core_schema.wrap_serializer_function_ser_schema(
+                    function=lambda v, h: h(v),
+                    schema=schema,
+                    return_schema=handler.generate_schema(source_type),
+                ),
             )
         except PydanticSchemaGenerationError:
             serialization = None
@@ -207,12 +212,16 @@ class PlainValidator:
             return core_schema.with_info_plain_validator_function(
                 func,
                 field_name=handler.field_name,
-                serialization=serialization,
+                serialization=serialization,  # pyright: ignore[reportArgumentType]
                 metadata=metadata,
             )
         else:
             func = cast(core_schema.NoInfoValidatorFunction, self.func)
-            return core_schema.no_info_plain_validator_function(func, serialization=serialization, metadata=metadata)
+            return core_schema.no_info_plain_validator_function(
+                func,
+                serialization=serialization,  # pyright: ignore[reportArgumentType]
+                metadata=metadata,
+            )
 
     @classmethod
     def _from_decorator(cls, decorator: _decorators.Decorator[_decorators.FieldValidatorDecoratorInfo]) -> Self:
@@ -224,7 +233,7 @@ class PlainValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class WrapValidator:
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **around** the inner validation logic.
 
@@ -385,7 +394,7 @@ def field_validator(
     check_fields: bool | None = None,
     json_schema_input_type: Any = PydanticUndefined,
 ) -> Callable[[Any], Any]:
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/validators/#field-validators
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#field-validators
 
     Decorate methods on the class indicating that they should be used to validate fields.
 
@@ -642,7 +651,7 @@ def model_validator(
     *,
     mode: Literal['wrap', 'before', 'after'],
 ) -> Any:
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/validators/#model-validators
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validators/#model-validators
 
     Decorate model methods for validation purposes.
 

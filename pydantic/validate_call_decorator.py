@@ -3,6 +3,7 @@
 from __future__ import annotations as _annotations
 
 import functools
+import inspect
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
 
 from ._internal import _typing_extra, _validate_call
@@ -32,7 +33,7 @@ def validate_call(
     config: ConfigDict | None = None,
     validate_return: bool = False,
 ) -> AnyCallableT | Callable[[AnyCallableT], AnyCallableT]:
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/validation_decorator/
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/validation_decorator/
 
     Returns a decorated wrapper around the function that validates the arguments and, optionally, the return value.
 
@@ -55,12 +56,18 @@ def validate_call(
 
         validate_call_wrapper = _validate_call.ValidateCallWrapper(function, config, validate_return, local_ns)
 
-        @functools.wraps(function)
-        def wrapper_function(*args, **kwargs):
-            return validate_call_wrapper(*args, **kwargs)
+        if inspect.iscoroutinefunction(function):
+
+            @functools.wraps(function)
+            async def wrapper_function(*args, **kwargs):  # type: ignore
+                return await validate_call_wrapper(*args, **kwargs)
+        else:
+
+            @functools.wraps(function)
+            def wrapper_function(*args, **kwargs):
+                return validate_call_wrapper(*args, **kwargs)
 
         wrapper_function.raw_function = function  # type: ignore
-
         return wrapper_function  # type: ignore
 
     if func:

@@ -548,9 +548,7 @@ def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) 
     )
 
 
-def inspect_field_serializer(
-    serializer: Callable[..., Any], mode: Literal['plain', 'wrap'], computed_field: bool = False
-) -> tuple[bool, bool]:
+def inspect_field_serializer(serializer: Callable[..., Any], mode: Literal['plain', 'wrap']) -> tuple[bool, bool]:
     """Look at a field serializer function and determine if it is a field serializer,
     and whether it takes an info argument.
 
@@ -559,8 +557,6 @@ def inspect_field_serializer(
     Args:
         serializer: The serializer function to inspect.
         mode: The serializer mode, either 'plain' or 'wrap'.
-        computed_field: When serializer is applied on computed_field. It doesn't require
-            info signature.
 
     Returns:
         Tuple of (is_field_serializer, info_arg).
@@ -587,13 +583,8 @@ def inspect_field_serializer(
             f'Unrecognized field_serializer function signature for {serializer} with `mode={mode}`:{sig}',
             code='field-serializer-signature',
         )
-    if info_arg and computed_field:
-        raise PydanticUserError(
-            'field_serializer on computed_field does not use info signature', code='field-serializer-signature'
-        )
 
-    else:
-        return is_field_serializer, info_arg
+    return is_field_serializer, info_arg
 
 
 def inspect_annotated_serializer(serializer: Callable[..., Any], mode: Literal['plain', 'wrap']) -> bool:

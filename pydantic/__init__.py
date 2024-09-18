@@ -1,5 +1,6 @@
 import typing
 from importlib import import_module
+from warnings import warn
 
 from ._migration import getattr_migration
 from .version import VERSION
@@ -17,7 +18,6 @@ if typing.TYPE_CHECKING:
     )
 
     from . import dataclasses
-    from ._internal._generate_schema import GenerateSchema as GenerateSchema
     from .aliases import AliasChoices, AliasGenerator, AliasPath
     from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
     from .config import ConfigDict, with_config
@@ -177,6 +177,7 @@ __all__ = (
     'Secret',
     'SecretStr',
     'SecretBytes',
+    'SocketPath',
     'StrictBool',
     'StrictBytes',
     'StrictInt',
@@ -217,8 +218,6 @@ __all__ = (
     # annotated handlers
     'GetCoreSchemaHandler',
     'GetJsonSchemaHandler',
-    # generate schema from ._internal
-    'GenerateSchema',
     # pydantic_core
     'ValidationError',
     'ValidationInfo',
@@ -341,6 +340,7 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'PaymentCardNumber': (__spec__.parent, '.types'),
     'ByteSize': (__spec__.parent, '.types'),
     'PastDate': (__spec__.parent, '.types'),
+    'SocketPath': (__spec__.parent, '.types'),
     'FutureDate': (__spec__.parent, '.types'),
     'PastDatetime': (__spec__.parent, '.types'),
     'FutureDatetime': (__spec__.parent, '.types'),
@@ -372,8 +372,6 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     # annotated handlers
     'GetCoreSchemaHandler': (__spec__.parent, '.annotated_handlers'),
     'GetJsonSchemaHandler': (__spec__.parent, '.annotated_handlers'),
-    # generate schema from ._internal
-    'GenerateSchema': (__spec__.parent, '._internal._generate_schema'),
     # pydantic_core stuff
     'ValidationError': ('pydantic_core', '.'),
     'ValidationInfo': ('pydantic_core', '.core_schema'),
@@ -389,14 +387,23 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'parse_obj_as': (__spec__.parent, '.deprecated.tools'),
     'schema_of': (__spec__.parent, '.deprecated.tools'),
     'schema_json_of': (__spec__.parent, '.deprecated.tools'),
+    # deprecated dynamic imports
     'FieldValidationInfo': ('pydantic_core', '.core_schema'),
+    'GenerateSchema': (__spec__.parent, '._internal._generate_schema'),
 }
-_deprecated_dynamic_imports = {'FieldValidationInfo'}
+_deprecated_dynamic_imports = {'FieldValidationInfo', 'GenerateSchema'}
 
 _getattr_migration = getattr_migration(__name__)
 
 
 def __getattr__(attr_name: str) -> object:
+    if attr_name in _deprecated_dynamic_imports:
+        warn(
+            f'Importing {attr_name} from `pydantic` is deprecated. This feature is either no longer supported, or is not public.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     dynamic_attr = _dynamic_imports.get(attr_name)
     if dynamic_attr is None:
         return _getattr_migration(attr_name)
