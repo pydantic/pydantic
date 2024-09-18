@@ -3324,7 +3324,8 @@ def test_subclassing_gen_schema_warns() -> None:
 
 def test_nested_v1_model_warns() -> None:
     with pytest.warns(
-        UserWarning, match='Mixing V1 models and V2 models (or constructs, like `TypeAdapter`) is not supported.'
+        UserWarning,
+        match=r'Mixing V1 models and V2 models \(or constructs, like `TypeAdapter`\) is not supported. Please upgrade `V1Model` to V2.',
     ):
 
         class V1Model(BaseModelV1):
