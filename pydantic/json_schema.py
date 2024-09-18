@@ -834,6 +834,10 @@ class GenerateJsonSchema:
         """
         return self.handle_invalid_for_json_schema(schema, 'core_schema.CallableSchema')
 
+    def nested_schema(self, schema: core_schema.NestedSchema) -> JsonSchemaValue:
+        # FIXME: See PR description for an explanation of how we should handle nested schemas
+        return None
+
     def list_schema(self, schema: core_schema.ListSchema) -> JsonSchemaValue:
         """Returns a schema that matches a list schema.
 

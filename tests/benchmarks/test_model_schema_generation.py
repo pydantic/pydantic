@@ -37,7 +37,7 @@ def test_simple_model_schema_generation(benchmark) -> None:
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_nested_model_schema_generation(benchmark) -> None:
+def test_nested_schema_generation(benchmark) -> None:
     def generate_schema():
         class NestedModel(BaseModel):
             field1: str

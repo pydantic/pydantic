@@ -57,10 +57,13 @@ def test_forward_ref_auto_update_no_model(create_module):
             b: 'Foo'
 
     assert module.Bar.__pydantic_complete__ is True
+    assert module.Foo.__pydantic_complete__ is False
     assert repr(module.Bar.model_fields['b']) == 'FieldInfo(annotation=Foo, required=True)'
 
     # Bar should be complete and ready to use
     b = module.Bar(b={'a': {'b': {}}})
+    # `Foo` gets auto-rebuilt during the first usage of `Bar` as it reuses `Foo`
+    assert module.Foo.__pydantic_complete__ is True
     assert b.model_dump() == {'b': {'a': {'b': {'a': None}}}}
 
     # model_fields is complete on Foo
@@ -68,10 +71,7 @@ def test_forward_ref_auto_update_no_model(create_module):
         'FieldInfo(annotation=Union[Bar, NoneType], required=False, default=None)'
     )
 
-    assert module.Foo.__pydantic_complete__ is False
-    # Foo gets auto-rebuilt during the first attempt at validation
     f = module.Foo(a={'b': {'a': {'b': {'a': None}}}})
-    assert module.Foo.__pydantic_complete__ is True
     assert f.model_dump() == {'a': {'b': {'a': {'b': {'a': None}}}}}
 
 
@@ -745,6 +745,8 @@ class Bar(BaseModel, Generic[T]):
     finally:
         del sys.modules['eval_type_backport']
 
+    # `Foo` contains a forward ref so we must explicitly rebuild in order to not get a forward ref here
+    module.Foo.model_rebuild()
     assert module.Foo.model_fields['bar'].annotation == typing.Optional[module.Bar[str]]
     assert module.Foo.model_fields['bar2'].annotation == typing.Union[int, module.Bar[float]]
     assert module.Bar.model_fields['foo'].annotation == module.Foo
@@ -773,6 +775,8 @@ class Bar(BaseModel, Generic[T]):
 """
     )
 
+    # `Foo` contains a forward ref so we must explicitly rebuild in order to not get a forward ref here
+    module.Foo.model_rebuild()
     assert module.Foo.model_fields['bar'].annotation == typing.Optional[module.Bar[str]]
     assert module.Foo.model_fields['bar2'].annotation == typing.Union[int, str, module.Bar[float]]
     assert module.Bar.model_fields['foo'].annotation == module.Foo
@@ -1125,8 +1129,8 @@ class Foo(BaseModel):
         """
     )
 
-    extras_schema = module_2.Foo.__pydantic_core_schema__['schema']['fields']['bar']['schema']['schema'][
-        'extras_schema'
-    ]
+    extras_schema = module_2.Foo.__pydantic_core_schema__['schema']['fields']['bar']['schema'][
+        'cls'
+    ].__pydantic_core_schema__['schema']['extras_schema']
 
     assert extras_schema == {'type': 'int'}
