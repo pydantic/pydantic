@@ -51,7 +51,7 @@ dependencies = [
     'typing-extensions>=4.6.1; python_version < "3.13"',
     'typing-extensions>=4.12.2; python_version >= "3.13"',
     'annotated-types>=0.6.0',
-    "pydantic-core @ git+https://github.com/ollz272/pydantic-core@add-millisecond",
+    "pydantic-core @ git+https://github.com/pydantic/pydantic-core",
 ]
 dynamic = ['version', 'readme']
 

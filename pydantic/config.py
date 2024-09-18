@@ -564,7 +564,7 @@ class ConfigDict(TypedDict, total=False):
 
     ser_json_timedelta: Literal['iso8601', 'seconds_float', 'milliseconds_float']
     """
-    The format of JSON serialized timedeltas. Accepts the string values of `'iso8601'`, 
+    The format of JSON serialized timedeltas. Accepts the string values of `'iso8601'`,
     `'seconds_float'`, and `'milliseconds_float'`. Defaults to `'iso8601'`.
 
     - `'iso8601'` will serialize timedeltas to ISO 8601 durations.
