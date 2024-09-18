@@ -466,7 +466,7 @@ class GenerateJsonSchema:
                 core_ref = CoreRef(core_schema['ref'])  # type: ignore[typeddict-item]
                 defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
                 json_ref = JsonRef(ref_json_schema['$ref'])
-                self.json_to_defs_refs[json_ref] = defs_ref
+                # self.json_to_defs_refs[json_ref] = defs_ref
                 # Replace the schema if it's not a reference to itself
                 # What we want to avoid is having the def be just a ref to itself
                 # which is what would happen if we blindly assigned any
