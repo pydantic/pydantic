@@ -1296,6 +1296,15 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </li>
         
           <li class="md-nav__item">
+  <a href="#ignore-unknown-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      Ignore Unknown Arguments
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#change-whether-cli-should-exit-on-error" class="md-nav__link">
     <span class="md-ellipsis">
       Change Whether CLI Should Exit on Error
@@ -3301,6 +3310,15 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </li>
         
           <li class="md-nav__item">
+  <a href="#ignore-unknown-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      Ignore Unknown Arguments
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#change-whether-cli-should-exit-on-error" class="md-nav__link">
     <span class="md-ellipsis">
       Change Whether CLI Should Exit on Error
@@ -4408,6 +4426,22 @@ fields.</p>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    --implicit_opt, --no-implicit_opt (default: False)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<h4 id="ignore-unknown-arguments">Ignore Unknown Arguments<a class="headerlink" href="#ignore-unknown-arguments" title="Permanent link">&para;</a></h4>
+<p>Change whether to ignore unknown CLI arguments and only parse known ones using <code>cli_ignore_unknown_args</code>. By default, the CLI
+does not ignore any args.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">,</span> <span class="n">cli_parse_args</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cli_ignore_unknown_args</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">good_arg</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;--bad-arg=bad&#39;</span><span class="p">,</span> <span class="s1">&#39;ANOTHER_BAD_ARG&#39;</span><span class="p">,</span> <span class="s1">&#39;--good_arg=hello world&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;good_arg&#39;: &#39;hello world&#39;}</span>
 </code></pre></div>
 <h4 id="change-whether-cli-should-exit-on-error">Change Whether CLI Should Exit on Error<a class="headerlink" href="#change-whether-cli-should-exit-on-error" title="Permanent link">&para;</a></h4>
 <p>Change whether the CLI internal parser will exit on error or raise a <code>SettingsError</code> exception by using
