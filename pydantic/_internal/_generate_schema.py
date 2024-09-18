@@ -1907,12 +1907,9 @@ class GenerateSchema:
                         )
 
                     var_kwargs_mode = 'unpacked-typed-dict'
-                    # TODO: does it work without resolving?
-                    var_kwargs_schema = resolve_original_schema(
-                        self._typed_dict_schema(unpack_type, None), self.defs.definitions
-                    )
+                    var_kwargs_schema = self._typed_dict_schema(unpack_type, None)
                 else:
-                    var_kwargs_mode = 'single'
+                    var_kwargs_mode = 'uniform'
                     var_kwargs_schema = self.generate_schema(annotation)
 
         return_schema: core_schema.CoreSchema | None = None
