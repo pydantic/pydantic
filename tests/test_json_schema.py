@@ -6549,6 +6549,44 @@ def test_decorator_field_validator_input_type() -> None:
     }
 
 
+def test_json_schema_input_type_with_refs() -> None:
+    """Test that `'definition-ref` schemas for `json_schema_input_type` are inlined.
+
+    See: https://github.com/pydantic/pydantic/issues/10434.
+    """
+
+    class Sub(BaseModel):
+        pass
+
+    class Model(BaseModel):
+        sub: Annotated[
+            Sub,
+            PlainSerializer(lambda v: v, return_type=Sub),
+            PlainValidator(lambda v: v, json_schema_input_type=Sub),
+        ]
+
+    json_schema = Model.model_json_schema()
+
+    assert 'Sub' in json_schema['$defs']
+    assert json_schema['properties']['sub']['$ref'] == '#/$defs/Sub'
+
+
+def test_json_schema_input_type_with_refs() -> None:
+    """Test that recursive `'definition-ref` schemas for `json_schema_input_type` are not inlined."""
+
+    class Model(BaseModel):
+        model: Annotated[
+            'Model',
+            PlainSerializer(lambda v: v, return_type='Model'),
+            PlainValidator(lambda v: v, json_schema_input_type='Model'),
+        ]
+
+    json_schema = Model.model_json_schema()
+
+    assert 'Model' in json_schema['$defs']
+    assert json_schema['$ref'] == '#/$defs/Model'
+
+
 def test_title_strip() -> None:
     class Model(BaseModel):
         some_field: str = Field(alias='_some_field')

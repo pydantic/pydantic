@@ -127,6 +127,13 @@ class BeforeValidator:
             if self.json_schema_input_type is PydanticUndefined
             else handler.generate_schema(self.json_schema_input_type)
         )
+        # Try to resolve the original schema if required, because schema cleaning
+        # won't inline references in metadata:
+        if input_schema is not None:
+            try:
+                input_schema = handler.resolve_ref_schema(input_schema)
+            except LookupError:
+                pass
         metadata = _core_metadata.build_metadata_dict(js_input_core_schema=input_schema)
 
         info_arg = _inspect_validator(self.func, 'before')
@@ -204,6 +211,13 @@ class PlainValidator:
             serialization = None
 
         input_schema = handler.generate_schema(self.json_schema_input_type)
+        # Try to resolve the original schema if required, because schema cleaning
+        # won't inline references in metadata:
+        try:
+            input_schema = handler.resolve_ref_schema(input_schema)
+        except LookupError:
+            pass
+
         metadata = _core_metadata.build_metadata_dict(js_input_core_schema=input_schema)
 
         info_arg = _inspect_validator(self.func, 'plain')
@@ -281,6 +295,13 @@ class WrapValidator:
             if self.json_schema_input_type is PydanticUndefined
             else handler.generate_schema(self.json_schema_input_type)
         )
+        # Try to resolve the original schema if required, because schema cleaning
+        # won't inline references in metadata:
+        if input_schema is not None:
+            try:
+                input_schema = handler.resolve_ref_schema(input_schema)
+            except LookupError:
+                pass
         metadata = _core_metadata.build_metadata_dict(js_input_core_schema=input_schema)
 
         info_arg = _inspect_validator(self.func, 'wrap')
