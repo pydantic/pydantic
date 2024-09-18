@@ -335,13 +335,16 @@ def rebuild_dataclass(
 
             types_namespace = _typing_extra.merge_cls_and_parent_ns(cls, types_namespace)
 
-        existing_config = getattr(cls, '__pydantic_config__', {})
-        new_config = {**existing_config, 'defer_build': False}
         return _pydantic_dataclasses.complete_dataclass(
             cls,
-            _config.ConfigWrapper(new_config, check=False),
+            _config.ConfigWrapper(cls.__pydantic_config__, check=False),
             raise_errors=raise_errors,
             types_namespace=types_namespace,
+            # We could provide a different config instead (with `'defer_build'` set to `True`)
+            # of this explicit `_force_build` argument, but because config can come from the
+            # decorator parameter or the `__pydantic_config__` attribute, `complete_dataclass`
+            # will overwrite `__pydantic_config__` with the provided config above:
+            _force_build=True,
         )
 
 

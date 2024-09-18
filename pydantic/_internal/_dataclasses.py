@@ -90,6 +90,7 @@ def complete_dataclass(
     *,
     raise_errors: bool = True,
     types_namespace: dict[str, Any] | None,
+    _force_build: bool = False,
 ) -> bool:
     """Finish building a pydantic dataclass.
 
@@ -102,6 +103,8 @@ def complete_dataclass(
         config_wrapper: The config wrapper instance.
         raise_errors: Whether to raise errors, defaults to `True`.
         types_namespace: The types namespace.
+        _force_build: Whether to force building the dataclass, no matter if
+            [`defer_build`][pydantic.config.ConfigDict.defer_build] is set.
 
     Returns:
         `True` if building a pydantic dataclass is successfully completed, `False` otherwise.
@@ -123,7 +126,7 @@ def complete_dataclass(
     cls.__init__ = __init__  # type: ignore
     cls.__pydantic_config__ = config_wrapper.config_dict  # type: ignore
 
-    if config_wrapper.defer_build:
+    if not _force_build and config_wrapper.defer_build:
         set_dataclass_mocks(cls, cls.__name__)
         return False
 

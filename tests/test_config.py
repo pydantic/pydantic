@@ -740,11 +740,11 @@ def test_config_dataclass_defer_build(defer_build: bool, generate_schema_calls: 
     if defer_build:
         assert isinstance(MyDataclass.__pydantic_validator__, MockValSer)
         assert isinstance(MyDataclass.__pydantic_serializer__, MockValSer)
-        assert generate_schema_calls.count == 0, 'Should respect experimental_defer_build_mode'
+        assert generate_schema_calls.count == 0, 'Should respect defer_build'
     else:
         assert isinstance(MyDataclass.__pydantic_validator__, SchemaValidator)
         assert isinstance(MyDataclass.__pydantic_serializer__, SchemaSerializer)
-        assert generate_schema_calls.count == 1, 'Should respect experimental_defer_build_mode'
+        assert generate_schema_calls.count == 1, 'Should respect defer_build'
 
     m = MyDataclass(x=1)
     assert m.x == 1
@@ -763,7 +763,7 @@ def test_dataclass_defer_build_override_on_rebuild_dataclass(generate_schema_cal
 
     assert isinstance(MyDataclass.__pydantic_validator__, MockValSer)
     assert isinstance(MyDataclass.__pydantic_serializer__, MockValSer)
-    assert generate_schema_calls.count == 0, 'Should respect experimental_defer_build_mode'
+    assert generate_schema_calls.count == 0, 'Should respect defer_build'
 
     rebuild_dataclass(MyDataclass, force=True)
     assert isinstance(MyDataclass.__pydantic_validator__, SchemaValidator)
@@ -828,7 +828,7 @@ def test_config_model_defer_build_nested(defer_build: bool, generate_schema_call
     assert isinstance(MyModel.__pydantic_serializer__, SchemaSerializer)
 
     expected_schema_count = 1 if defer_build is True else 2
-    assert generate_schema_calls.count == expected_schema_count, 'Should respect experimental_defer_build_mode'
+    assert generate_schema_calls.count == expected_schema_count, 'Should respect defer_build'
 
     if defer_build:
         assert isinstance(MyNestedModel.__pydantic_validator__, MockValSer)
