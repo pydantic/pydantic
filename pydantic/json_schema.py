@@ -1201,9 +1201,7 @@ class GenerateJsonSchema:
                     continue  # this means that the "alias" does not represent a field
                 alias_is_present_on_all_choices = True
                 for choice in one_of_choices:
-                    while '$ref' in choice:
-                        assert isinstance(choice['$ref'], str)
-                        choice = self.get_schema_from_definitions(JsonRef(choice['$ref'])) or {}
+                    choice = self.resolve_schema_to_update(choice)
                     properties = choice.get('properties', {})
                     if not isinstance(properties, dict) or alias not in properties:
                         alias_is_present_on_all_choices = False
