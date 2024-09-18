@@ -6549,7 +6549,15 @@ def test_decorator_field_validator_input_type() -> None:
     }
 
 
-def test_json_schema_input_type_with_refs() -> None:
+@pytest.mark.parametrize(
+    'validator',
+    [
+        PlainValidator(lambda v: v, json_schema_input_type='Sub'),
+        BeforeValidator(lambda v: v, json_schema_input_type='Sub'),
+        WrapValidator(lambda v, h: h(v), json_schema_input_type='Sub'),
+    ],
+)
+def test_json_schema_input_type_with_refs(validator) -> None:
     """Test that `'definition-ref` schemas for `json_schema_input_type` are inlined.
 
     See: https://github.com/pydantic/pydantic/issues/10434.
@@ -6562,7 +6570,7 @@ def test_json_schema_input_type_with_refs() -> None:
         sub: Annotated[
             Sub,
             PlainSerializer(lambda v: v, return_type=Sub),
-            PlainValidator(lambda v: v, json_schema_input_type=Sub),
+            validator,
         ]
 
     json_schema = Model.model_json_schema()
@@ -6571,14 +6579,22 @@ def test_json_schema_input_type_with_refs() -> None:
     assert json_schema['properties']['sub']['$ref'] == '#/$defs/Sub'
 
 
-def test_json_schema_input_type_with_refs() -> None:
+@pytest.mark.parametrize(
+    'validator',
+    [
+        PlainValidator(lambda v: v, json_schema_input_type='Model'),
+        BeforeValidator(lambda v: v, json_schema_input_type='Model'),
+        WrapValidator(lambda v, h: h(v), json_schema_input_type='Model'),
+    ],
+)
+def test_json_schema_input_type_with_recursive_refs(validator) -> None:
     """Test that recursive `'definition-ref` schemas for `json_schema_input_type` are not inlined."""
 
     class Model(BaseModel):
         model: Annotated[
             'Model',
             PlainSerializer(lambda v: v, return_type='Model'),
-            PlainValidator(lambda v: v, json_schema_input_type='Model'),
+            validator,
         ]
 
     json_schema = Model.model_json_schema()
