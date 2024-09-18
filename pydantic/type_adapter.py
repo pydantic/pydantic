@@ -7,17 +7,13 @@ from contextlib import contextmanager
 from dataclasses import is_dataclass
 from functools import cached_property, wraps
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Generic,
     Iterable,
     Iterator,
     Literal,
-    Set,
     TypeVar,
-    Union,
     cast,
     final,
     overload,
@@ -27,7 +23,7 @@ from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
 from typing_extensions import Concatenate, ParamSpec, is_typeddict
 
 from pydantic.errors import PydanticUserError
-from pydantic.main import BaseModel
+from pydantic.main import BaseModel, IncEx
 
 from ._internal import _config, _generate_schema, _mock_val_ser, _typing_extra, _utils
 from .config import ConfigDict
@@ -44,11 +40,6 @@ T = TypeVar('T')
 R = TypeVar('R')
 P = ParamSpec('P')
 TypeAdapterT = TypeVar('TypeAdapterT', bound='TypeAdapter')
-
-
-if TYPE_CHECKING:
-    # should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
-    IncEx = Union[Set[int], Set[str], Dict[int, Any], Dict[str, Any]]
 
 
 def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth: int) -> CoreSchema:
@@ -148,7 +139,7 @@ def _frame_depth(
 
 @final
 class TypeAdapter(Generic[T]):
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/type_adapter/
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/type_adapter/
 
     Type adapters provide a flexible way to perform validation and serialization based on a Python type.
 
@@ -156,13 +147,6 @@ class TypeAdapter(Generic[T]):
     for types that do not have such methods (such as dataclasses, primitive types, and more).
 
     **Note:** `TypeAdapter` instances are not types, and cannot be used as type annotations for fields.
-
-    **Note:** By default, `TypeAdapter` does not respect the
-    [`defer_build=True`][pydantic.config.ConfigDict.defer_build] setting in the
-    [`model_config`][pydantic.BaseModel.model_config] or in the `TypeAdapter` constructor `config`. You need to also
-    explicitly set [`experimental_defer_build_mode=('model', 'type_adapter')`][pydantic.config.ConfigDict.experimental_defer_build_mode] of the
-    config to defer the model validator and serializer construction. Thus, this feature is opt-in to ensure backwards
-    compatibility.
 
     Attributes:
         core_schema: The core schema for the type.
@@ -329,21 +313,15 @@ class TypeAdapter(Generic[T]):
 
     def _defer_build(self) -> bool:
         config = self._config if self._config is not None else self._model_config()
-        return self._is_defer_build_config(config) if config is not None else False
+        if config:
+            return config.get('defer_build') is True
+        return False
 
     def _model_config(self) -> ConfigDict | None:
         type_: Any = _typing_extra.annotated_type(self._type) or self._type  # Eg FastAPI heavily uses Annotated
         if _utils.lenient_issubclass(type_, BaseModel):
             return type_.model_config
         return getattr(type_, '__pydantic_config__', None)
-
-    @staticmethod
-    def _is_defer_build_config(config: ConfigDict) -> bool:
-        # TODO reevaluate this logic when we have a better understanding of how defer_build should work with TypeAdapter
-        # Should we drop the special experimental_defer_build_mode check?
-        return config.get('defer_build', False) is True and 'type_adapter' in config.get(
-            'experimental_defer_build_mode', ()
-        )
 
     @_frame_depth(1)
     def validate_python(
@@ -376,7 +354,7 @@ class TypeAdapter(Generic[T]):
     def validate_json(
         self, data: str | bytes, /, *, strict: bool | None = None, context: dict[str, Any] | None = None
     ) -> T:
-        """Usage docs: https://docs.pydantic.dev/2.9/concepts/json/#json-parsing
+        """Usage docs: https://docs.pydantic.dev/2.10/concepts/json/#json-parsing
 
         Validate a JSON string or bytes against the model.
 
@@ -488,7 +466,7 @@ class TypeAdapter(Generic[T]):
         serialize_as_any: bool = False,
         context: dict[str, Any] | None = None,
     ) -> bytes:
-        """Usage docs: https://docs.pydantic.dev/2.9/concepts/json/#json-serialization
+        """Usage docs: https://docs.pydantic.dev/2.10/concepts/json/#json-serialization
 
         Serialize an instance of the adapted type to JSON.
 

@@ -292,6 +292,9 @@ def test_async():
         v = await foo(1, 2)
         assert v == 'a=1 b=2'
 
+    # insert_assert(inspect.iscoroutinefunction(foo) is True)
+    assert inspect.iscoroutinefunction(foo) is True
+
     asyncio.run(run())
     with pytest.raises(ValidationError) as exc_info:
         asyncio.run(foo('x'))
@@ -819,12 +822,12 @@ def test_eval_type_backport():
 
 
 @pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+ for PEP 695 syntax with generics')
-def test_validate_call_with_pep_695_syntax() -> None:
+def test_validate_call_with_pep_695_syntax(create_module) -> None:
     """Note: validate_call still doesn't work properly with generics, see https://github.com/pydantic/pydantic/issues/7796.
 
     This test is just to ensure that the syntax is accepted and doesn't raise a NameError."""
-    globs = {}
-    exec(
+
+    module = create_module(
         """
 from typing import Iterable
 from pydantic import validate_call
@@ -836,16 +839,87 @@ def find_max_no_validate_return[T](args: Iterable[T]) -> T:
 @validate_call(validate_return=True)
 def find_max_validate_return[T](args: Iterable[T]) -> T:
     return sorted(args, reverse=True)[0]
-        """,
-        globs,
+        """
     )
-    functions = [globs['find_max_no_validate_return'], globs['find_max_validate_return']]
+
+    functions = [module.find_max_no_validate_return, module.find_max_validate_return]
     for find_max in functions:
         assert len(find_max.__type_params__) == 1
         assert find_max([1, 2, 10, 5]) == 10
 
         with pytest.raises(ValidationError):
             find_max(1)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+ for PEP 695 syntax with generics')
+def test_pep695_with_class(create_module):
+    """Primarily to ensure that the syntax is accepted and doesn't raise a `NameError` with `T`.
+    The validation is not expected to work properly when parameterized at this point."""
+
+    for import_annotations in ('from __future__ import annotations', ''):
+        module = create_module(
+            f"""
+{import_annotations}
+from pydantic import validate_call
+
+class A[T]:
+    @validate_call(validate_return=True)
+    def f(self, a: T) -> T:
+        return str(a)
+            """
+        )
+        A = module.A
+        a = A[int]()
+        # these two are undesired behavior, but it's what happens now
+        assert a.f(1) == '1'
+        assert a.f('1') == '1'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+ for PEP 695 syntax with generics')
+def test_pep695_with_nested_scopes(create_module):
+    """Nested scopes generally cannot be caught by `parent_frame_namespace`,
+    so currently this test is expected to fail.
+    """
+
+    module = create_module(
+        """
+from __future__ import annotations
+from pydantic import validate_call
+
+class A[T]:
+    def g(self):
+        @validate_call(validate_return=True)
+        def inner(a: T) -> T: ...
+
+    def h[S](self):
+        @validate_call(validate_return=True)
+        def inner(a: T) -> S: ...
+        """
+    )
+
+    A = module.A
+    a = A[int]()
+    with pytest.raises(NameError):
+        a.g()
+    with pytest.raises(NameError):
+        a.h()
+
+    with pytest.raises(NameError):
+        create_module(
+            """
+from __future__ import annotations
+from pydantic import validate_call
+
+class A[T]:
+    class B:
+        @validate_call(validate_return=True)
+        def f(a: T) -> T: ...
+
+    class C[S]:
+        @validate_call(validate_return=True)
+        def f(a: T) -> S: ...
+            """
+        )
 
 
 class M0(BaseModel):

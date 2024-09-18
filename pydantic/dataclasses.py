@@ -108,7 +108,7 @@ def dataclass(
     kw_only: bool = False,
     slots: bool = False,
 ) -> Callable[[type[_T]], type[PydanticDataclass]] | type[PydanticDataclass]:
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/dataclasses/
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/dataclasses/
 
     A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclass`,
     but with added validation.
@@ -201,6 +201,17 @@ def dataclass(
 
         original_cls = cls
 
+        # we warn on conflicting config specifications, but only if the class doesn't have a dataclass base
+        # because a dataclass base might provide a __pydantic_config__ attribute that we don't want to warn about
+        has_dataclass_base = any(_typing_extra.is_dataclass(base) for base in cls.__bases__)
+        if not has_dataclass_base and config is not None and hasattr(cls, '__pydantic_config__'):
+            warn(
+                f'`config` is set via both the `dataclass` decorator and `__pydantic_config__` for dataclass {cls.__name__}. '
+                f'The `config` specification from `dataclass` decorator will take priority.',
+                category=UserWarning,
+                stacklevel=2,
+            )
+
         # if config is not explicitly provided, try to read it from the type
         config_dict = config if config is not None else getattr(cls, '__pydantic_config__', None)
         config_wrapper = _config.ConfigWrapper(config_dict)
@@ -257,10 +268,8 @@ def dataclass(
         cls.__doc__ = original_doc
         cls.__module__ = original_cls.__module__
         cls.__qualname__ = original_cls.__qualname__
-        pydantic_complete = _pydantic_dataclasses.complete_dataclass(
-            cls, config_wrapper, raise_errors=False, types_namespace=None
-        )
-        cls.__pydantic_complete__ = pydantic_complete  # type: ignore
+        cls.__pydantic_complete__ = False  # `complete_dataclass` will set it to `True` if successful.
+        _pydantic_dataclasses.complete_dataclass(cls, config_wrapper, raise_errors=False, types_namespace=None)
         return cls
 
     return create_dataclass if _cls is None else create_dataclass(_cls)

@@ -385,6 +385,12 @@ def test_validate_float_inf_nan_python() -> None:
     ]
 
 
+def test_predicate_success_python() -> None:
+    ta = TypeAdapter(Annotated[int, Predicate(lambda x: x > 0)])
+
+    assert ta.validate_python(1) == 1
+
+
 def test_predicate_error_python() -> None:
     ta = TypeAdapter(Annotated[int, Predicate(lambda x: x > 0)])
 

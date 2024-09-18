@@ -2,7 +2,7 @@
 # It is not intended for manual editing.
 
 [metadata]
-groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "testing-extra"]
+groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "testing-extra", "timezone"]
 strategy = []
 lock_version = "4.5.0"
 content_hash = "sha256:428e90ceb38b0eb8e7f4d72994daafbc81406190c26055113c865c53274f8532"

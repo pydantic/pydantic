@@ -12,7 +12,7 @@ from typing import Any, Callable, ClassVar, Dict, FrozenSet, Generic, List, Opti
 
 import pytest
 from dirty_equals import HasRepr
-from pydantic_core import ArgsKwargs, CoreSchema, SchemaValidator, core_schema
+from pydantic_core import ArgsKwargs, SchemaValidator
 from typing_extensions import Annotated, Literal
 
 import pydantic
@@ -20,7 +20,6 @@ from pydantic import (
     BaseModel,
     BeforeValidator,
     ConfigDict,
-    GenerateSchema,
     PydanticDeprecatedSince20,
     PydanticUndefinedAnnotation,
     PydanticUserError,
@@ -2453,12 +2452,20 @@ def test_rebuild_dataclass():
 
     assert rebuild_dataclass(MyDataClass) is None
 
-    @pydantic.dataclasses.dataclass()
+    @pydantic.dataclasses.dataclass
     class MyDataClass1:
         d2: Optional['Foo'] = None  # noqa F821
 
     with pytest.raises(PydanticUndefinedAnnotation, match="name 'Foo' is not defined"):
         rebuild_dataclass(MyDataClass1, _parent_namespace_depth=0)
+
+    @pydantic.dataclasses.dataclass
+    class MyDataClass2:
+        x: 'Foo'  # noqa F821
+
+    assert not MyDataClass2.__pydantic_complete__
+    assert rebuild_dataclass(MyDataClass2, _types_namespace={'Foo': int})
+    assert MyDataClass2.__pydantic_complete__
 
 
 @pytest.mark.parametrize(
@@ -2480,23 +2487,31 @@ def test_model_config(dataclass_decorator: Any) -> None:
 
 
 def test_model_config_override_in_decorator() -> None:
-    @pydantic.dataclasses.dataclass(config=ConfigDict(str_to_lower=False, str_strip_whitespace=True))
-    class Model:
-        x: str
-        __pydantic_config__ = ConfigDict(str_to_lower=True)
+    with pytest.warns(
+        UserWarning, match='`config` is set via both the `dataclass` decorator and `__pydantic_config__`'
+    ):
 
-    ta = TypeAdapter(Model)
-    assert ta.validate_python({'x': 'ABC '}).x == 'ABC'
+        @pydantic.dataclasses.dataclass(config=ConfigDict(str_to_lower=False, str_strip_whitespace=True))
+        class Model:
+            x: str
+            __pydantic_config__ = ConfigDict(str_to_lower=True)
+
+        ta = TypeAdapter(Model)
+        assert ta.validate_python({'x': 'ABC '}).x == 'ABC'
 
 
 def test_model_config_override_in_decorator_empty_config() -> None:
-    @pydantic.dataclasses.dataclass(config=ConfigDict())
-    class Model:
-        x: str
-        __pydantic_config__ = ConfigDict(str_to_lower=True)
+    with pytest.warns(
+        UserWarning, match='`config` is set via both the `dataclass` decorator and `__pydantic_config__`'
+    ):
 
-    ta = TypeAdapter(Model)
-    assert ta.validate_python({'x': 'ABC '}).x == 'ABC '
+        @pydantic.dataclasses.dataclass(config=ConfigDict())
+        class Model:
+            x: str
+            __pydantic_config__ = ConfigDict(str_to_lower=True)
+
+        ta = TypeAdapter(Model)
+        assert ta.validate_python({'x': 'ABC '}).x == 'ABC '
 
 
 def test_dataclasses_with_config_decorator():
@@ -2644,19 +2659,6 @@ def test_dataclasses_with_slots_and_default():
         b: int = Field(1)
 
     assert B().b == 1
-
-
-def test_schema_generator() -> None:
-    class LaxStrGenerator(GenerateSchema):
-        def str_schema(self) -> CoreSchema:
-            return core_schema.no_info_plain_validator_function(str)
-
-    @pydantic.dataclasses.dataclass
-    class Model:
-        x: str
-        __pydantic_config__ = ConfigDict(schema_generator=LaxStrGenerator)
-
-    assert Model(x=1).x == '1'
 
 
 @pytest.mark.parametrize('decorator1', **dataclass_decorators())
@@ -3037,3 +3039,13 @@ def test_warns_on_double_frozen() -> None:
         @pydantic.dataclasses.dataclass(frozen=True, config=ConfigDict(frozen=True))
         class DC:
             x: int
+
+
+def test_warns_on_double_config() -> None:
+    with pytest.warns(
+        UserWarning, match='`config` is set via both the `dataclass` decorator and `__pydantic_config__`'
+    ):
+
+        @pydantic.dataclasses.dataclass(config=ConfigDict(title='from decorator'))
+        class Foo:
+            __pydantic_config__ = ConfigDict(title='from __pydantic_config__')

@@ -1,24 +1,32 @@
-from typing import Any, Dict, Generic, List, Literal, Optional, TypeVar, Union, get_origin
+from typing import Any, Callable, Dict, Generic, List, Literal, Optional, TypeVar, Union, get_origin
 
 import pytest
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Self
 
 from pydantic import (
+    AfterValidator,
     BaseModel,
+    BeforeValidator,
     Discriminator,
     Field,
-    ValidationInfo,
+    PlainSerializer,
+    PlainValidator,
+    SerializerFunctionWrapHandler,
     ValidatorFunctionWrapHandler,
+    WrapSerializer,
     WrapValidator,
     create_model,
+    field_serializer,
     field_validator,
+    model_serializer,
     model_validator,
 )
 from pydantic.dataclasses import dataclass
+from pydantic.functional_validators import ModelWrapValidatorHandler
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_simple_model_schema_generation(benchmark):
+def test_simple_model_schema_generation(benchmark) -> None:
     def generate_schema():
         class SimpleModel(BaseModel):
             field1: str
@@ -29,7 +37,7 @@ def test_simple_model_schema_generation(benchmark):
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_nested_model_schema_generation(benchmark):
+def test_nested_model_schema_generation(benchmark) -> None:
     def generate_schema():
         class NestedModel(BaseModel):
             field1: str
@@ -44,7 +52,7 @@ def test_nested_model_schema_generation(benchmark):
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_complex_model_schema_generation(benchmark):
+def test_complex_model_schema_generation(benchmark) -> None:
     def generate_schema():
         class ComplexModel(BaseModel):
             field1: Union[str, int, float]
@@ -55,7 +63,7 @@ def test_complex_model_schema_generation(benchmark):
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_recursive_model_schema_generation(benchmark):
+def test_recursive_model_schema_generation(benchmark) -> None:
     def generate_schema():
         class RecursiveModel(BaseModel):
             name: str
@@ -83,7 +91,7 @@ class NestedModel(BaseModel):
     animal: Annotated[Union[Cat, Dog], Discriminator('type')]
 
 
-@pytest.mark.benchmark
+@pytest.mark.benchmark(group='model_schema_generation')
 def test_construct_schema():
     @dataclass(frozen=True, kw_only=True)
     class Root:
@@ -91,7 +99,7 @@ def test_construct_schema():
         model: NestedModel
 
 
-@pytest.mark.benchmark
+@pytest.mark.benchmark(group='model_schema_generation')
 def test_lots_of_models_with_lots_of_fields():
     T = TypeVar('T')
 
@@ -166,113 +174,159 @@ def test_lots_of_models_with_lots_of_fields():
         globals()[model_name] = model
 
 
+@pytest.mark.parametrize('validator_mode', ['before', 'after', 'plain'])
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_field_validator_before(benchmark):
-    def schema_gen():
-        class ModelWithBeforeValidator(BaseModel):
-            field1: int
+def test_custom_field_validator_via_decorator(benchmark, validator_mode) -> None:
+    def schema_gen() -> None:
+        class ModelWithFieldValidator(BaseModel):
+            field: Any
 
-            @field_validator('field1', mode='before')
-            def validate_before(cls, v):
+            @field_validator('field', mode=validator_mode)
+            @classmethod
+            def validate_field(cls, v: Any):
                 return v
 
     benchmark(schema_gen)
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_field_validator_after(benchmark):
-    def schema_gen():
-        class ModelWithAfterValidator(BaseModel):
-            field2: int
+def test_custom_wrap_field_validator_via_decorator(benchmark) -> None:
+    def schema_gen() -> None:
+        class ModelWithWrapFieldValidator(BaseModel):
+            field: Any
 
-            @field_validator('field2', mode='after')
-            def validate_after(cls, v):
-                return v
+            @field_validator('field', mode='wrap')
+            @classmethod
+            def validate_field(cls, v: Any, handler: ValidatorFunctionWrapHandler) -> Any:
+                return handler(v)
 
     benchmark(schema_gen)
+
+
+@pytest.mark.parametrize('validator_constructor', [BeforeValidator, AfterValidator, PlainValidator])
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_custom_field_validator_via_annotation(benchmark, validator_constructor) -> None:
+    def validate_field(v: Any) -> Any:
+        return v
+
+    def schema_gen(validation_func) -> None:
+        class ModelWithFieldValidator(BaseModel):
+            field: Annotated[Any, validator_constructor(validation_func)]
+
+    benchmark(schema_gen, validate_field)
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_field_validator_plain(benchmark):
-    def schema_gen():
-        class ModelWithPlainValidator(BaseModel):
-            field3: str
+def test_custom_wrap_field_validator_via_annotation(benchmark) -> None:
+    def validate_field(v: Any, handler: ValidatorFunctionWrapHandler) -> Any:
+        return handler(v)
 
-            @field_validator('field3', mode='plain')
-            def validate_plain(cls, v):
-                if ' ' in v:
-                    raise ValueError('field3 must not contain spaces')
-                return v
+    def schema_gen(validator_func: Callable) -> None:
+        class ModelWithWrapFieldValidator(BaseModel):
+            field: Annotated[Any, WrapValidator(validator_func)]
 
-    benchmark(schema_gen)
-
-
-@pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_field_validator_wrap(benchmark):
-    def schema_gen():
-        def wrap_validator_field4(v: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo) -> str:
-            if ' ' in v:
-                raise ValueError('field4 must not contain spaces')
-            return v
-
-        class ModelWithWrapValidator(BaseModel):
-            field4: Annotated[str, WrapValidator(wrap_validator_field4)]
-
-    benchmark(schema_gen)
+    benchmark(schema_gen, validate_field)
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
 def test_custom_model_validator_before(benchmark):
-    def schema_gen():
+    def schema_gen() -> None:
         class ModelWithBeforeValidator(BaseModel):
-            field1: int
+            field: Any
 
             @model_validator(mode='before')
             @classmethod
-            def validate_model_before(cls, data):
-                if isinstance(data, dict):
-                    data['field1'] = data.get('field1', 0) + 1
+            def validate_model_before(cls, data: Any) -> Any:
                 return data
 
     benchmark(schema_gen)
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_model_validator_after(benchmark):
-    def schema_gen():
+def test_custom_model_validator_after(benchmark) -> None:
+    def schema_gen() -> None:
         class ModelWithAfterValidator(BaseModel):
-            field2: str
+            field: Any
 
             @model_validator(mode='after')
-            def validate_model_after(self):
-                self.field2 = self.field2.upper()
+            def validate_model_after(self: 'ModelWithAfterValidator') -> 'ModelWithAfterValidator':
                 return self
 
     benchmark(schema_gen)
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
-def test_custom_model_validator_wrap(benchmark):
-    def schema_gen():
+def test_custom_model_validator_wrap(benchmark) -> None:
+    def schema_gen() -> None:
         class ModelWithWrapValidator(BaseModel):
-            field1: int
-            field2: str
-            field3: float
-            field4: bool
+            field: Any
 
             @model_validator(mode='wrap')
-            def validate_model_wrap(cls, values, handler):
-                # Perform some validation before the default validation
-                if values.get('field4') is True and values.get('field3', 0) < 0:
-                    raise ValueError('field3 must be non-negative when field4 is True')
+            @classmethod
+            def validate_model_wrap(cls, values: Any, handler: ModelWrapValidatorHandler[Self]) -> Any:
+                return handler(values)
 
-                # Call the default validation
-                instance = handler(values)
+    benchmark(schema_gen)
 
-                # Perform some validation after the default validation
-                if instance.field1 > 100:
-                    instance.field2 += '!'
 
-                return instance
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_custom_field_serializer_plain(benchmark) -> None:
+    def schema_gen() -> None:
+        class ModelWithFieldSerializer(BaseModel):
+            field1: int
+
+            @field_serializer('field1', mode='plain')
+            def serialize_field(cls, v: int) -> str:
+                return str(v)
+
+    benchmark(schema_gen)
+
+
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_custom_field_serializer_wrap(benchmark) -> None:
+    def schema_gen() -> None:
+        class ModelWithFieldSerializer(BaseModel):
+            field1: int
+
+            @field_serializer('field1', mode='wrap')
+            def serialize_field(cls, v: int, nxt: SerializerFunctionWrapHandler) -> str:
+                return nxt(v)
+
+    benchmark(schema_gen)
+
+
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_custom_model_serializer_decorator(benchmark) -> None:
+    def schema_gen() -> None:
+        class ModelWithModelSerializer(BaseModel):
+            field1: Any
+
+            @model_serializer
+            def serialize_model(self) -> Any:
+                return self.field1
+
+    benchmark(schema_gen)
+
+
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_custom_serializer_plain_annotated(benchmark) -> None:
+    def schema_gen() -> None:
+        def serialize_idempotent(x: Any) -> Any:
+            return x
+
+        class ModelWithAnnotatedSerializer(BaseModel):
+            field: Annotated[List, PlainSerializer(serialize_idempotent, return_type=Any)]
+
+    benchmark(schema_gen)
+
+
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_custom_serializer_wrap_annotated(benchmark) -> None:
+    def schema_gen() -> None:
+        def serialize_idempotent(x: Any, nxt: SerializerFunctionWrapHandler) -> Any:
+            return nxt(x)
+
+        class ModelWithAnnotatedSerializer(BaseModel):
+            field: Annotated[List, WrapSerializer(serialize_idempotent, when_used='json')]
 
     benchmark(schema_gen)

@@ -46,7 +46,7 @@ class ValidateCallWrapper:
         # TODO: this is a bit of a hack, we should probably have a better way to handle this
         # specifically, we shouldn't be pumping the namespace full of type_params
         # when we take namespace and type_params arguments in eval_type_backport
-        type_params = getattr(schema_type, '__type_params__', ())
+        type_params = (namespace or {}).get('__type_params__', ()) + getattr(schema_type, '__type_params__', ())
         namespace = {
             **{param.__name__: param for param in type_params},
             **(global_ns or {}),

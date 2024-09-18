@@ -46,6 +46,7 @@ from .warnings import PydanticDeprecatedSince20
 __all__ = (
     'Strict',
     'StrictStr',
+    'SocketPath',
     'conbytes',
     'conlist',
     'conset',
@@ -112,7 +113,7 @@ T = TypeVar('T')
 
 @_dataclasses.dataclass
 class Strict(_fields.PydanticMetadata, BaseMetadata):
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/strict_mode/#strict-mode-with-annotated-strict
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/strict_mode/#strict-mode-with-annotated-strict
 
     A field metadata class to indicate that a field should be validated in strict mode.
     Use this class as an annotation via [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated), as seen below.
@@ -687,7 +688,7 @@ StrictBytes = Annotated[bytes, Strict()]
 
 @_dataclasses.dataclass(frozen=True)
 class StringConstraints(annotated_types.GroupedMetadata):
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/fields/#string-constraints
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/fields/#string-constraints
 
     A field metadata class to apply constraints to `str` types.
     Use this class as an annotation via [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated), as seen below.
@@ -708,6 +709,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
         from pydantic.types import StringConstraints
 
         ConstrainedStr = Annotated[str, StringConstraints(min_length=1, max_length=10)]
+        ```
     """
 
     strip_whitespace: bool | None = None
@@ -1238,7 +1240,7 @@ Model(uuid5=uuid.uuid5(uuid.NAMESPACE_DNS, 'pydantic.org'))
 
 @_dataclasses.dataclass
 class PathType:
-    path_type: Literal['file', 'dir', 'new']
+    path_type: Literal['file', 'dir', 'new', 'socket']
 
     def __get_pydantic_json_schema__(
         self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
@@ -1253,6 +1255,7 @@ class PathType:
             'file': cast(core_schema.WithInfoValidatorFunction, self.validate_file),
             'dir': cast(core_schema.WithInfoValidatorFunction, self.validate_directory),
             'new': cast(core_schema.WithInfoValidatorFunction, self.validate_new),
+            'socket': cast(core_schema.WithInfoValidatorFunction, self.validate_socket),
         }
 
         return core_schema.with_info_after_validator_function(
@@ -1266,6 +1269,13 @@ class PathType:
             return path
         else:
             raise PydanticCustomError('path_not_file', 'Path does not point to a file')
+
+    @staticmethod
+    def validate_socket(path: Path, _: core_schema.ValidationInfo) -> Path:
+        if path.is_socket():
+            return path
+        else:
+            raise PydanticCustomError('path_not_socket', 'Path does not point to a socket')
 
     @staticmethod
     def validate_directory(path: Path, _: core_schema.ValidationInfo) -> Path:
@@ -1374,6 +1384,8 @@ except ValidationError as e:
 NewPath = Annotated[Path, PathType('new')]
 """A path for a new file or directory that must not already exist. The parent directory must already exist."""
 
+SocketPath = Annotated[Path, PathType('socket')]
+"""A path to an existing socket file"""
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ JSON TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -2627,7 +2639,7 @@ __getattr__ = getattr_migration(__name__)
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class GetPydanticSchema:
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/types/#using-getpydanticschema-to-reduce-boilerplate
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/types/#using-getpydanticschema-to-reduce-boilerplate
 
     A convenience class for creating an annotation that provides pydantic custom type hooks.
 
@@ -2763,7 +2775,7 @@ class Tag:
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
 class Discriminator:
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/unions/#discriminated-unions-with-callable-discriminator
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/unions/#discriminated-unions-with-callable-discriminator
 
     Provides a way to use a custom callable as the way to extract the value of a union discriminator.
 
