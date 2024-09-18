@@ -3323,7 +3323,9 @@ def test_subclassing_gen_schema_warns() -> None:
 
 
 def test_nested_v1_model_warns() -> None:
-    with pytest.warns(UserWarning, match='Nesting V1 models inside V2 models is not supported.'):
+    with pytest.warns(
+        UserWarning, match='Mixing V1 models and V2 models (or constructs, like `TypeAdapter`) is not supported.'
+    ):
 
         class V1Model(BaseModelV1):
             a: int
