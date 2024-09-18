@@ -68,7 +68,7 @@ class ConfigWrapper:
     strict: bool
     # whether instances of models and dataclasses (including subclass instances) should re-validate, default 'never'
     revalidate_instances: Literal['always', 'never', 'subclass-instances']
-    ser_json_timedelta: Literal['iso8601', 'milliseconds_float', 'seconds_float']
+    ser_json_timedelta: Literal['iso8601', 'seconds_float', 'milliseconds_float']
     ser_json_bytes: Literal['utf8', 'base64', 'hex']
     val_json_bytes: Literal['utf8', 'base64', 'hex']
     ser_json_inf_nan: Literal['null', 'constants', 'strings']
