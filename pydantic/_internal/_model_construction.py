@@ -614,6 +614,10 @@ def complete_model_class(
         PydanticUndefinedAnnotation: If `PydanticUndefinedAnnotation` occurs in`__get_pydantic_core_schema__`
             and `raise_errors=True`.
     """
+    if config_wrapper.defer_build:
+        set_model_mocks(cls, cls_name)
+        return False
+
     typevars_map = get_model_typevars_map(cls)
     gen_schema = GenerateSchema(
         config_wrapper,
@@ -626,10 +630,6 @@ def complete_model_class(
         gen_schema,
         ref_mode='unpack',
     )
-
-    if config_wrapper.defer_build:
-        set_model_mocks(cls, cls_name)
-        return False
 
     try:
         schema = cls.__get_pydantic_core_schema__(cls, handler)
@@ -690,7 +690,7 @@ def set_deprecated_descriptors(cls: type[BaseModel]) -> None:
 
 
 class _DeprecatedFieldDescriptor:
-    """Data descriptor used to emit a runtime deprecation warning before accessing a deprecated field.
+    """Read-only data descriptor used to emit a runtime deprecation warning before accessing a deprecated field.
 
     Attributes:
         msg: The deprecation message to be emitted.
@@ -709,6 +709,8 @@ class _DeprecatedFieldDescriptor:
 
     def __get__(self, obj: BaseModel | None, obj_type: type[BaseModel] | None = None) -> Any:
         if obj is None:
+            if self.wrapped_property is not None:
+                return self.wrapped_property.__get__(None, obj_type)
             raise AttributeError(self.field_name)
 
         warnings.warn(self.msg, builtins.DeprecationWarning, stacklevel=2)
@@ -717,7 +719,7 @@ class _DeprecatedFieldDescriptor:
             return self.wrapped_property.__get__(obj, obj_type)
         return obj.__dict__[self.field_name]
 
-    # Defined to take precedence over the instance's dictionary
+    # Defined to make it a data descriptor and take precedence over the instance's dictionary.
     # Note that it will not be called when setting a value on a model instance
     # as `BaseModel.__setattr__` is defined and takes priority.
     def __set__(self, obj: Any, value: Any) -> NoReturn:

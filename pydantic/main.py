@@ -16,6 +16,7 @@ from typing import (
     Dict,
     Generator,
     Literal,
+    Mapping,
     Set,
     Tuple,
     TypeVar,
@@ -70,7 +71,9 @@ __all__ = 'BaseModel', 'create_model'
 # Keep these type aliases available at runtime:
 TupleGenerator: TypeAlias = Generator[Tuple[str, Any], None, None]
 # Keep this type alias in sync with the stub definition in `pydantic-core`:
-IncEx: TypeAlias = Union[Set[int], Set[str], Dict[int, Union['IncEx', bool]], Dict[str, Union['IncEx', bool]]]
+IncEx: TypeAlias = Union[
+    Set[int], Set[str], Mapping[int, Union['IncEx', Literal[True]]], Mapping[str, Union['IncEx', Literal[True]]]
+]
 
 _object_setattr = _model_construction.object_setattr
 
@@ -1518,6 +1521,8 @@ def create_model(  # noqa: C901
         **field_definitions: Attributes of the new model. They should be passed in the format:
             `<name>=(<type>, <default value>)`, `<name>=(<type>, <FieldInfo>)`, or `typing.Annotated[<type>, <FieldInfo>]`.
             Any additional metadata in `typing.Annotated[<type>, <FieldInfo>, ...]` will be ignored.
+            Note, `FieldInfo` instances should be created via `pydantic.Field(...)`.
+            Initializing `FieldInfo` instances directly is not supported.
 
     Returns:
         The new [model][pydantic.BaseModel].

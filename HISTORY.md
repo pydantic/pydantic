@@ -1,3 +1,32 @@
+## v2.9.2 (2024-09-17)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.9.2)
+
+### What's Changed
+
+#### Fixes
+* Do not error when trying to evaluate annotations of private attributes by @Viicos in [#10358](https://github.com/pydantic/pydantic/pull/10358)
+* Adding notes on designing sound `Callable` discriminators by @sydney-runkle in [#10400](https://github.com/pydantic/pydantic/pull/10400)
+* Fix serialization schema generation when using `PlainValidator` by @Viicos in [#10427](https://github.com/pydantic/pydantic/pull/10427)
+* Fix `Union` serialization warnings by @sydney-runkle in [pydantic/pydantic-core#1449](https://github.com/pydantic/pydantic-core/pull/1449)
+* Fix variance issue in `_IncEx` type alias, only allow `True` by @Viicos in [#10414](https://github.com/pydantic/pydantic/pull/10414)
+* Fix `ZoneInfo` validation with various invalid types by @sydney-runkle in [#10408](https://github.com/pydantic/pydantic/pull/10408)
+
+## v2.9.1 (2024-09-09)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.9.1)
+
+### What's Changed
+
+#### Fixes
+* Fix Predicate issue in v2.9.0 by @sydney-runkle in [#10321](https://github.com/pydantic/pydantic/pull/10321)
+* Fixing `annotated-types` bound to `>=0.6.0` by @sydney-runkle in [#10327](https://github.com/pydantic/pydantic/pull/10327)
+* Turn `tzdata` install requirement into optional `timezone` dependency by @jakob-keller in [#10331](https://github.com/pydantic/pydantic/pull/10331)
+* Fix `IncExc` type alias definition by @Viicos in [#10339](https://github.com/pydantic/pydantic/pull/10339)
+* Use correct types namespace when building namedtuple core schemas by @Viicos in [#10337](https://github.com/pydantic/pydantic/pull/10337)
+* Fix evaluation of stringified annotations during namespace inspection by @Viicos in [#10347](https://github.com/pydantic/pydantic/pull/10347)
+* Fix tagged union serialization with alias generators by @sydney-runkle in [pydantic/pydantic-core#1442](https://github.com/pydantic/pydantic-core/pull/1442)
+
 ## v2.9.0 (2024-09-05)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.9.0)

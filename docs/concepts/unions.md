@@ -248,6 +248,19 @@ In the case of a `Union` with multiple models, sometimes there isn't a single un
 across all models that you can use as a discriminator.
 This is the perfect use case for a callable `Discriminator`.
 
+!!! tip
+    When you're designing callable discriminators, remember that you might have to account
+    for both `dict` and model type inputs. This pattern is similar to that of `mode='before'` validators,
+    where you have to anticipate various forms of input.
+
+    But wait! You ask, I only anticipate passing in `dict` types, why do I need to account for models?
+    Pydantic uses callable discriminators for serialization as well, at which point the input to your callable is
+    very likely to be a model instance.
+
+    In the following examples, you'll see that the callable discriminators are designed to handle both `dict` and model inputs.
+    If you don't follow this practice, it's likely that you'll, in the best case, get warnings during serialization,
+    and in the worst case, get runtime errors during validation.
+
 ```py
 from typing import Any, Literal, Union
 

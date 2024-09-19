@@ -821,10 +821,18 @@ class GenerateSchema:
         ):
             schema = existing_schema
         elif (validators := getattr(obj, '__get_validators__', None)) is not None:
-            warn(
-                '`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
-                PydanticDeprecatedSince20,
-            )
+            from pydantic.v1 import BaseModel as BaseModelV1
+
+            if issubclass(obj, BaseModelV1):
+                warn(
+                    f'Mixing V1 models and V2 models (or constructs, like `TypeAdapter`) is not supported. Please upgrade `{obj.__name__}` to V2.',
+                    UserWarning,
+                )
+            else:
+                warn(
+                    '`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
+                    PydanticDeprecatedSince20,
+                )
             schema = core_schema.chain_schema([core_schema.with_info_plain_validator_function(v) for v in validators()])
         else:
             # we have no existing schema information on the property, exit early so that we can go generate a schema
@@ -1650,7 +1658,7 @@ class GenerateSchema:
                 return value
             try:
                 return ZoneInfo(value)
-            except (ZoneInfoNotFoundError, ValueError):
+            except (ZoneInfoNotFoundError, ValueError, TypeError):
                 raise PydanticCustomError('zoneinfo_str', 'invalid timezone: {value}', {'value': value})
 
         metadata = build_metadata_dict(js_functions=[lambda _1, _2: {'type': 'string', 'format': 'zoneinfo'}])
@@ -1972,7 +1980,6 @@ class GenerateSchema:
         return_type_schema = self._apply_field_serializers(
             return_type_schema,
             filter_field_decorator_info_by_field(field_serializers.values(), d.cls_var_name),
-            computed_field=True,
         )
 
         alias_generator = self._config_wrapper.alias_generator
@@ -2197,7 +2204,6 @@ class GenerateSchema:
         self,
         schema: core_schema.CoreSchema,
         serializers: list[Decorator[FieldSerializerDecoratorInfo]],
-        computed_field: bool = False,
     ) -> core_schema.CoreSchema:
         """Apply field serializers to a schema."""
         if serializers:
@@ -2214,9 +2220,7 @@ class GenerateSchema:
 
             # use the last serializer to make it easy to override a serializer set on a parent model
             serializer = serializers[-1]
-            is_field_serializer, info_arg = inspect_field_serializer(
-                serializer.func, serializer.info.mode, computed_field=computed_field
-            )
+            is_field_serializer, info_arg = inspect_field_serializer(serializer.func, serializer.info.mode)
 
             try:
                 return_type = _decorators.get_function_return_type(

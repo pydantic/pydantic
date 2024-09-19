@@ -101,6 +101,7 @@ from pydantic import (
     SecretStr,
     SerializeAsAny,
     SkipValidation,
+    SocketPath,
     Strict,
     StrictBool,
     StrictBytes,
@@ -3697,6 +3698,24 @@ def test_new_path_validation_path_already_exists(value):
             'input': value,
         }
     ]
+
+
+@pytest.mark.skipif(
+    not sys.platform.startswith('linux'),
+    reason='Test only works for linux systems. Windows excluded (unsupported). Mac excluded due to CI issues.',
+)
+def test_socket_exists(tmp_path):
+    import socket
+
+    # Working around path length limits by reducing character count where possible.
+    target = tmp_path / 's'
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+        sock.bind(str(target))
+
+        class Model(BaseModel):
+            path: SocketPath
+
+        assert Model(path=target).path == target
 
 
 @pytest.mark.parametrize('value', ('/nonexistentdir/foo.py', Path('/nonexistentdir/foo.py')))

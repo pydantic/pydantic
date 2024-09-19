@@ -27,6 +27,7 @@ from pydantic._internal._mock_val_ser import MockValSer
 from pydantic._internal._typing_extra import get_type_hints
 from pydantic.config import ConfigDict, JsonValue
 from pydantic.dataclasses import dataclass as pydantic_dataclass
+from pydantic.dataclasses import rebuild_dataclass
 from pydantic.errors import PydanticUserError
 from pydantic.fields import ComputedFieldInfo, FieldInfo
 from pydantic.type_adapter import TypeAdapter
@@ -729,6 +730,48 @@ def test_config_model_defer_build(defer_build: bool, generate_schema_calls: Call
 
 
 @pytest.mark.parametrize('defer_build', [True, False])
+def test_config_dataclass_defer_build(defer_build: bool, generate_schema_calls: CallCounter) -> None:
+    config = ConfigDict(defer_build=defer_build)
+
+    @pydantic_dataclass(config=config)
+    class MyDataclass:
+        x: int
+
+    if defer_build:
+        assert isinstance(MyDataclass.__pydantic_validator__, MockValSer)
+        assert isinstance(MyDataclass.__pydantic_serializer__, MockValSer)
+        assert generate_schema_calls.count == 0, 'Should respect defer_build'
+    else:
+        assert isinstance(MyDataclass.__pydantic_validator__, SchemaValidator)
+        assert isinstance(MyDataclass.__pydantic_serializer__, SchemaSerializer)
+        assert generate_schema_calls.count == 1, 'Should respect defer_build'
+
+    m = MyDataclass(x=1)
+    assert m.x == 1
+
+    assert isinstance(MyDataclass.__pydantic_validator__, SchemaValidator)
+    assert isinstance(MyDataclass.__pydantic_serializer__, SchemaSerializer)
+    assert generate_schema_calls.count == 1, 'Should not build duplicated core schemas'
+
+
+def test_dataclass_defer_build_override_on_rebuild_dataclass(generate_schema_calls: CallCounter) -> None:
+    config = ConfigDict(defer_build=True)
+
+    @pydantic_dataclass(config=config)
+    class MyDataclass:
+        x: int
+
+    assert isinstance(MyDataclass.__pydantic_validator__, MockValSer)
+    assert isinstance(MyDataclass.__pydantic_serializer__, MockValSer)
+    assert generate_schema_calls.count == 0, 'Should respect defer_build'
+
+    rebuild_dataclass(MyDataclass, force=True)
+    assert isinstance(MyDataclass.__pydantic_validator__, SchemaValidator)
+    assert isinstance(MyDataclass.__pydantic_serializer__, SchemaSerializer)
+    assert generate_schema_calls.count == 1, 'Should have called generate_schema once'
+
+
+@pytest.mark.parametrize('defer_build', [True, False])
 def test_config_model_type_adapter_defer_build(defer_build: bool, generate_schema_calls: CallCounter):
     config = ConfigDict(defer_build=defer_build)
 
@@ -785,7 +828,7 @@ def test_config_model_defer_build_nested(defer_build: bool, generate_schema_call
     assert isinstance(MyModel.__pydantic_serializer__, SchemaSerializer)
 
     expected_schema_count = 1 if defer_build is True else 2
-    assert generate_schema_calls.count == expected_schema_count, 'Should respect experimental_defer_build_mode'
+    assert generate_schema_calls.count == expected_schema_count, 'Should respect defer_build'
 
     if defer_build:
         assert isinstance(MyNestedModel.__pydantic_validator__, MockValSer)
@@ -866,7 +909,7 @@ def test_model_config_as_model_field_raises():
     assert exc_info.value.code == 'model-config-invalid-field-name'
 
 
-def test_dataclass_allowes_model_config_as_model_field():
+def test_dataclass_allows_model_config_as_model_field():
     config_title = 'from_config'
     field_title = 'from_field'
 
@@ -888,3 +931,10 @@ def test_with_config_disallowed_with_model():
         @with_config({'coerce_numbers_to_str': True})
         class Model(BaseModel):
             pass
+
+
+def test_empty_config_with_annotations():
+    class Model(BaseModel):
+        model_config: ConfigDict = {}
+
+    assert Model.model_config == {}
