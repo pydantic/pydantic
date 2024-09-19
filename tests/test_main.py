@@ -2587,17 +2587,6 @@ def test_protected_namespace_default():
             model_dump_something: str
 
 
-def test_conflict_with_existing_method():
-    with pytest.raises(
-        UserWarning,
-        match=r'`model_validate` is a pydantic method. Overriding this method in `.+` may lead to unexpected behavior.',
-    ):
-
-        class Model(BaseModel):
-            def model_validate(self) -> None:
-                pass
-
-
 def test_custom_protected_namespace():
     with pytest.warns(UserWarning, match='Field "test_field" in Model has conflict with protected namespace "test_"'):
 

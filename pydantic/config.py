@@ -670,7 +670,7 @@ class ConfigDict(TypedDict, total=False):
     an error _is_ raised if there is an actual collision with an existing attribute:
 
     ```py
-    from pydantic import BaseModel
+    from pydantic import BaseModel, ConfigDict
 
     try:
 
