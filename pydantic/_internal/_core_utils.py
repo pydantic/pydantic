@@ -458,6 +458,10 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
             return s
 
         current_recursion_ref_count[ref] += 1
+        if 'serialization' in s:
+            # Even though this is a `'definition-ref'` schema, there might
+            # be more references inside the serialization schema:
+            recurse(s, count_refs)
         recurse(definitions[ref], count_refs)
         current_recursion_ref_count[ref] -= 1
         return s
