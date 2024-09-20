@@ -201,6 +201,14 @@ def test_unpacked_typed_dict_kwargs() -> None:
     assert exc.value.errors()[1]['type'] == 'missing'
     assert exc.value.errors()[1]['loc'] == ('b',)
 
+    # Make sure that when called without any arguments,
+    # empty kwargs are still validated against the typed dict:
+    with pytest.raises(ValidationError) as exc:
+        foo()
+
+    assert exc.value.errors()[1]['type'] == 'missing'
+    assert exc.value.errors()[1]['loc'] == ('b',)
+
 
 def test_field_can_provide_factory() -> None:
     @validate_call
