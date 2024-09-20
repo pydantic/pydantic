@@ -2710,6 +2710,24 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#unpack-typed-dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      Unpack used without a TypedDict
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#overlapping-unpack-typed-dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overlapping unpacked TypedDict fields and arguments
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3506,6 +3524,24 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   <a href="#dataclass-on-model" class="md-nav__link">
     <span class="md-ellipsis">
       dataclass is used on a BaseModel subclass
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unpack-typed-dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      Unpack used without a TypedDict
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#overlapping-unpack-typed-dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overlapping unpacked TypedDict fields and arguments
     </span>
   </a>
   
@@ -4496,6 +4532,45 @@ a Pydantic model.</p>
 
 <span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;dataclass-on-model&#39;</span>
+</code></pre></div>
+<h2 id="unpack-typed-dict"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Unpack"><code>Unpack</code></a> used without a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict"><code>TypedDict</code></a><a class="headerlink" href="#unpack-typed-dict" title="Permanent link">&para;</a></h2>
+<p>This error is raised when <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Unpack"><code>Unpack</code></a> is used with something other than
+a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict"><code>TypedDict</code></a> class object to type hint variadic keyword arguments.</p>
+<p>For reference, see the <a href="https://typing.readthedocs.io/en/latest/spec/callables.html#unpack-for-keyword-arguments">related specification section</a> and <a href="https://peps.python.org/pep-0692/">PEP 692</a>.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Unpack</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">validate_call</span>
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="nd">@validate_call</span>
+    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Unpack</span><span class="p">[</span><span class="nb">int</span><span class="p">]):</span>
+        <span class="k">pass</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;unpack-typed-dict&#39;</span>
+</code></pre></div>
+<h2 id="overlapping-unpack-typed-dict">Overlapping unpacked <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict"><code>TypedDict</code></a> fields and arguments<a class="headerlink" href="#overlapping-unpack-typed-dict" title="Permanent link">&para;</a></h2>
+<p>This error is raised when the typed dictionary used to type hint variadic keywords arguments
+has field names overlapping with arguments (unless <a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#positional-only-parameter">positional only</a>).</p>
+<p>For reference, see the <a href="https://typing.readthedocs.io/en/latest/spec/callables.html#unpack-for-keyword-arguments">related specification section</a> and <a href="https://peps.python.org/pep-0692/">PEP 692</a>.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypedDict</span><span class="p">,</span> <span class="n">Unpack</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">validate_call</span>
+
+
+<span class="k">class</span> <span class="nc">TD</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="nd">@validate_call</span>
+    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Unpack</span><span class="p">[</span><span class="n">TD</span><span class="p">]):</span>
+        <span class="k">pass</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;overlapping-unpack-typed-dict&#39;</span>
 </code></pre></div>
 
 
