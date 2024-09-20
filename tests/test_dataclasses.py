@@ -1714,6 +1714,57 @@ def test_base_dataclasses_annotations_resolving_with_override(create_module, dat
     assert TypeAdapter(D3).validate_python({'db_id': 42, 's': 'ABC'}) == D3(db_id=42, s='abc')
 
 
+def test_namespace_priority(create_module):
+    @create_module
+    def module():
+        from dataclasses import dataclass
+
+        from pydantic import BaseModel
+
+        X = str
+
+        def inner():
+            X = int
+
+            @dataclass
+            class MyDataclass:
+                x1: X
+
+            return MyDataclass
+
+        class Model(BaseModel):
+            dc: inner()
+            x2: X
+
+    Model = module.Model
+    assert Model.model_json_schema()['properties']['x2']['type'] == 'string'
+    assert Model.model_json_schema()['properties']['dc']['$ref'] == '#/$defs/MyDataclass'
+    assert Model.model_json_schema()['$defs']['MyDataclass']['properties']['x1']['type'] == 'integer'
+
+
+def test_namespace_priority_forward_refs(create_module):
+    @create_module
+    def module():
+        from dataclasses import dataclass
+
+        @dataclass
+        class MyDataclass:
+            x1: 'X'
+
+        X = int
+
+    class Model(BaseModel):
+        dc: 'module.MyDataclass'
+        x2: 'X'
+
+    X = str
+
+    Model.model_rebuild()
+    assert Model.model_json_schema()['properties']['x2']['type'] == 'string'
+    assert Model.model_json_schema()['properties']['dc']['$ref'] == '#/$defs/MyDataclass'
+    assert Model.model_json_schema()['$defs']['MyDataclass']['properties']['x1']['type'] == 'integer'
+
+
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python < 3.10')
 def test_kw_only():
     @pydantic.dataclasses.dataclass(kw_only=True)

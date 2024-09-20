@@ -358,7 +358,7 @@ class GenerateSchema:
     ) -> None:
         # we need a stack for recursing into nested models
         self._config_wrapper_stack = ConfigWrapperStack(config_wrapper)
-        self._types_namespace = types_namespace or NsResolver()
+        self._types_namespace = types_namespace if types_namespace is not None else NsResolver()
         self._typevars_map = typevars_map
         self.field_name_stack = _FieldNameStack()
         self.model_type_stack = _ModelTypeStack()
@@ -662,7 +662,7 @@ class GenerateSchema:
 
             model_validators = decorators.model_validators.values()
 
-            with self._config_wrapper_stack.push(config_wrapper), self._types_namespace.push(cls):
+            with self._config_wrapper_stack.push(config_wrapper), self._types_namespace.push_globalns(cls):
                 extras_schema = None
                 if core_config.get('extra_fields_behavior') == 'allow':
                     assert cls.__mro__[0] is cls
@@ -673,11 +673,11 @@ class GenerateSchema:
                         )
                         if extras_annotation is not None:
                             if isinstance(extras_annotation, str):
-                                extras_annotation = _typing_extra.eval_type_backport(
+                                extras_annotation = _typing_extra.eval_type(
                                     _typing_extra._make_forward_ref(
                                         extras_annotation, is_argument=False, is_class=True
                                     ),
-                                    self._types_namespace,
+                                    types_namespace=self._types_namespace,
                                 )
                             tp = get_origin(extras_annotation)
                             if tp not in (Dict, dict):
@@ -841,7 +841,7 @@ class GenerateSchema:
         # class Model(BaseModel):
         #   x: SomeImportedTypeAliasWithAForwardReference
         try:
-            obj = _typing_extra.eval_type_backport(obj, self._types_namespace)
+            obj = _typing_extra.eval_type(obj, types_namespace=self._types_namespace)
         except NameError as e:
             raise PydanticUndefinedAnnotation.from_name_error(e) from e
 
@@ -1249,14 +1249,15 @@ class GenerateSchema:
         if has_instance_in_type(field_info.annotation, ForwardRef):
             if self._typevars_map:
                 # Ensure that typevars get mapped to their concrete types:
-                types_namespace = NsResolver(
-                    self._types_namespace,
-                    {k.__name__: v for k, v in self._typevars_map.items()},
+                types_namespace = (
+                    NsResolver()
+                    .add_localns(self._types_namespace)
+                    .add_localns({k.__name__: v for k, v in self._typevars_map.items()})
                 )
             else:
                 types_namespace = self._types_namespace
 
-            evaluated = _typing_extra.eval_type_lenient(field_info.annotation, types_namespace)
+            evaluated = _typing_extra.eval_type_lenient(field_info.annotation, types_namespace=types_namespace)
             if evaluated is not field_info.annotation and not has_instance_in_type(evaluated, PydanticRecursiveRef):
                 new_field_info = FieldInfo.from_annotation(evaluated)
                 field_info.annotation = new_field_info.annotation
@@ -1391,8 +1392,8 @@ class GenerateSchema:
             annotation = origin.__value__
             typevars_map = get_standard_typevars_map(obj)
 
-            with self._types_namespace.push(origin):
-                annotation = _typing_extra.eval_type_lenient(annotation, self._types_namespace)
+            with self._types_namespace.push_globalns(origin):
+                annotation = _typing_extra.eval_type_lenient(annotation, types_namespace=self._types_namespace)
                 annotation = replace_types(annotation, typevars_map)
                 schema = self.generate_schema(annotation)
                 assert schema['type'] != 'definitions'
@@ -1453,7 +1454,7 @@ class GenerateSchema:
             except AttributeError:
                 config = None
 
-            with self._config_wrapper_stack.push(config), self._types_namespace.push(typed_dict_cls):
+            with self._config_wrapper_stack.push(config), self._types_namespace.push_globalns(typed_dict_cls):
                 core_config = self._config_wrapper.core_config(typed_dict_cls)
 
                 required_keys: frozenset[str] = typed_dict_cls.__required_keys__
@@ -1529,7 +1530,7 @@ class GenerateSchema:
             if origin is not None:
                 namedtuple_cls = origin
 
-            with self._types_namespace.push(namedtuple_cls):
+            with self._types_namespace.push_globalns(namedtuple_cls):
                 annotations: dict[str, Any] = get_cls_type_hints_lenient(namedtuple_cls, self._types_namespace)
                 if not annotations:
                     # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
@@ -1763,10 +1764,10 @@ class GenerateSchema:
                 dataclass = origin
 
             with ExitStack() as dataclass_bases_stack:
-                # Pushing a namespace prioritises items already in the stack, so iterate though the MRO forwards
-                for dataclass_base in dataclass.__mro__:
+                # Pushing a namespace prioritises the pushed item, so iterate though the MRO backwards
+                for dataclass_base in reversed(dataclass.__mro__):
                     if dataclasses.is_dataclass(dataclass_base):
-                        dataclass_bases_stack.enter_context(self._types_namespace.push(dataclass_base))
+                        dataclass_bases_stack.enter_context(self._types_namespace.push_localns(dataclass_base))
 
                 # Pushing a config overwrites the previous config, so iterate though the MRO backwards
                 config = None

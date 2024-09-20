@@ -43,7 +43,6 @@ class ValidateCallWrapper:
             self.__qualname__ = function.__qualname__
             self.__module__ = function.__module__
 
-        global_ns = _typing_extra.NsResolver.from_module_ns_of(function)
         # TODO: this is a bit of a hack, we should probably have a better way to handle this
         # specifically, we shouldn't be pumping the namespace full of type_params
         # when we take namespace and type_params arguments in eval_type_backport
@@ -55,7 +54,7 @@ class ValidateCallWrapper:
                 else getattr(schema_type, '__type_params__', ())
             )
             type_params_ns = {param.__name__: param for param in type_params}
-        ns_resolver = _typing_extra.NsResolver(type_params_ns, global_ns, namespace)
+        ns_resolver = _typing_extra.NsResolver(globalns=function).add_localns(type_params_ns).add_localns(namespace)
 
         config_wrapper = ConfigWrapper(config)
         gen_schema = _generate_schema.GenerateSchema(config_wrapper, ns_resolver)

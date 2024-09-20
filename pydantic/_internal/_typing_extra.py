@@ -3,29 +3,19 @@
 from __future__ import annotations as _annotations
 
 import dataclasses
-import inspect
 import re
 import sys
 import types
 import typing
 import warnings
 from collections.abc import Callable
-from contextlib import contextmanager
 from functools import partial
 from types import GetSetDescriptorType
 from typing import TYPE_CHECKING, Any, Final
 
-from typing_extensions import (
-    Annotated,
-    Literal,
-    Self,
-    TypeAliasType,
-    TypeGuard,
-    Unpack,
-    deprecated,
-    get_args,
-    get_origin,
-)
+from typing_extensions import Annotated, Literal, TypeAliasType, TypeGuard, Unpack, deprecated, get_args, get_origin
+
+from ._namespace_resolver import NsResolver
 
 if TYPE_CHECKING:
     from ._dataclasses import StandardDataclass
@@ -191,94 +181,6 @@ def is_finalvar(ann_type: Any) -> bool:
     return _check_finalvar(ann_type) or _check_finalvar(get_origin(ann_type))
 
 
-class NsResolver:
-    """Protects namespaces from modifications and provides a way to merge namespaces without copying namespaces."""
-
-    def __init__(self, *namespaces: NsResolver | typing.Mapping[str, Any] | None) -> None:
-        self._namespaces: list[typing.Mapping[str, Any]] = []
-        self._resolved_memo: dict[str, Any] | None = None
-
-        for ns in namespaces:
-            if ns is None:
-                continue
-            if isinstance(ns, NsResolver):
-                self._namespaces.extend(ns._namespaces)
-            else:
-                assert isinstance(ns, typing.Mapping)
-                self._namespaces.append(ns)
-
-    @classmethod
-    def from_module_ns_of(cls, obj: Any) -> Self:
-        """Get namespace resolver from the module where the object is defined."""
-        namespace = cls._module_ns_of(obj)
-        return cls(namespace) if namespace is not None else cls()
-
-    @classmethod
-    def _module_ns_of(cls, obj: Any) -> typing.Mapping[str, Any] | None:
-        """Gets namespace mapping of module where the object is defined. Caller is expected to not mutate contents."""
-        if inspect.ismodule(obj):
-            return obj.__dict__
-
-        module = cls._get_module(obj)
-        return module.__dict__ if module else None
-
-    @classmethod
-    def _get_module(cls, obj: Any) -> types.ModuleType | None:
-        if obj is None:
-            return None
-
-        module_name = getattr(obj, '__module__', None)
-        if module_name:
-            try:
-                return sys.modules[module_name]
-            except KeyError:
-                # happens occasionally, see https://github.com/pydantic/pydantic/issues/2363
-                pass
-        return None
-
-    @contextmanager
-    def push(self, ns_from: type[Any]):
-        """Push namespace of from_ns as lowest priority in the resolved namespaces"""
-        if (namespace := self._module_ns_of(ns_from)) is not None:
-            self._namespaces.insert(0, namespace)
-            self._reset()
-            try:
-                yield
-            finally:
-                self._namespaces.pop(0)
-                self._reset()
-        else:
-            yield
-
-    def _reset(self) -> None:
-        self._resolved_memo = None
-
-    def resolve_name(self, name: str) -> Any:
-        """Resolve name in the namespaces in order."""
-        for ns in reversed(self._namespaces):
-            if name in ns:
-                return ns[name]
-        raise KeyError(name)
-
-    def resolve_namespace(self) -> dict[str, Any]:
-        """Resolves the namespaces in order by merging them together.
-        Maybe resource intensive for big namespaces. Therefore, this is only used when really needed.
-        Caller is expected to not mutate contents.
-        """
-        if self._resolved_memo is None:
-            self._resolved_memo = {k: v for ns in self._namespaces for k, v in ns.items()}
-        return self._resolved_memo
-
-    def __getitem__(self, name: str):  # Called by "eval" inside typing._eval_type
-        return self.resolve_name(name)
-
-    def __contains__(self, name: str):
-        return any(
-            name in ns
-            for ns in self._namespaces  # No need to reverse here as namespaces don't override remove items
-        )
-
-
 def parent_frame_namespace(*, parent_depth: int = 2) -> NsResolver | None:
     """We allow use of items in parent namespace to get around the issue with `get_type_hints` only looking in the
     global module namespace. See https://github.com/pydantic/pydantic/issues/2678#issuecomment-1008139014 -> Scope
@@ -293,7 +195,7 @@ def parent_frame_namespace(*, parent_depth: int = 2) -> NsResolver | None:
 
     During schema build, if a class is defined at the top module level, we don't need to
     fetch that module's namespace, because the class' __module__ attribute can be used to access the parent namespace.
-    This is done via `NsResolver.from_module_ns_of`. Thus, there's no need to cache the parent frame namespace in this case.
+    This is done via `NsResolver._get_module`. Thus, there's no need to cache the parent frame namespace in this case.
     """
     frame = sys._getframe(parent_depth)
 
@@ -303,18 +205,14 @@ def parent_frame_namespace(*, parent_depth: int = 2) -> NsResolver | None:
     if frame.f_back is None or frame.f_code.co_name == '<module>':
         return None
 
-    return frame.f_locals if isinstance(frame.f_locals, NsResolver) else NsResolver(frame.f_locals)
+    return frame.f_locals if isinstance(frame.f_locals, NsResolver) else NsResolver().add_localns(frame.f_locals)
 
 
 def merge_cls_and_parent_ns(cls: type[Any], parent_namespace: NsResolver | None = None) -> NsResolver:
-    return NsResolver(
-        NsResolver.from_module_ns_of(cls),
-        parent_namespace,
-        NsResolver({cls.__name__: cls}),
-    )
+    return NsResolver(globalns=cls).add_localns(parent_namespace).add_localns({cls.__name__: cls})
 
 
-def get_cls_type_hints_lenient(obj: Any, types_namespace: NsResolver | None = None) -> dict[str, Any]:
+def get_cls_type_hints_lenient(obj: Any, types_namespace: NsResolver | dict[str, Any] | None = None) -> dict[str, Any]:
     """Collect annotations from a class, including those from parent classes.
 
     Unlike `typing.get_type_hints`, this function will not error if a forward reference is not resolvable.
@@ -322,30 +220,60 @@ def get_cls_type_hints_lenient(obj: Any, types_namespace: NsResolver | None = No
     hints = {}
     for base in reversed(obj.__mro__):
         ann = base.__dict__.get('__annotations__')
-        types_ns = NsResolver(types_namespace, dict(vars(base)))
+        types_ns = NsResolver().add_localns(types_namespace).add_localns(dict(vars(base)))
         if ann is not None and ann is not GetSetDescriptorType:
             for name, value in ann.items():
-                hints[name] = eval_type_lenient(value, types_ns)
+                hints[name] = eval_type_lenient(value, types_namespace=types_ns)
     return hints
 
 
-def eval_type_lenient(value: Any, types_namespace: NsResolver | None = None) -> Any:
-    """Behaves like typing._eval_type, except it won't raise an error if a forward reference can't be resolved."""
+def eval_type_lenient(
+    value: Any,
+    globalns: dict[str, Any] | None = None,
+    localns: dict[str, Any] | None = None,
+    *,
+    types_namespace: NsResolver | None = None,
+) -> Any:
+    """Behaves like typing._eval_type, except it won't raise an error if a forward reference can't be resolved.
+    types_namespace overrides globalns and localns.
+    """
     if value is None:
         value = NoneType
     elif isinstance(value, str):
         value = _make_forward_ref(value, is_argument=False, is_class=True)
 
     try:
-        return eval_type_backport(value, types_namespace)
+        return eval_type(value, globalns, localns, types_namespace=types_namespace)
     except NameError:
         # the point of this function is to be tolerant to this case
         return value
 
 
+def eval_type(
+    value: Any,
+    globalns: dict[str, Any] | None = None,
+    localns: dict[str, Any] | None = None,
+    type_params: tuple[Any] | None = None,
+    *,
+    types_namespace: NsResolver | None = None,
+) -> Any:
+    """Evaluate a type annotation. Either types_namespace or globalns and localns can be provided."""
+    if types_namespace is None:
+        globalns_dict = globalns
+        localns_dict: typing.Mapping[str, Any] | None = localns
+    else:
+        assert globalns is None and localns is None, 'types_namespace should not be used with globalns or localns'
+        globalns_dict = types_namespace.current_globals() or {}
+        localns_dict = NsResolver().add_localns(types_namespace)  # Locals resolved by __getitem__ of NsResolver
+        assert isinstance(globalns_dict, dict), 'Python type eval requires a dict for globalns'
+
+    return eval_type_backport(value, globalns_dict, localns_dict, type_params)
+
+
 def eval_type_backport(
     value: Any,
-    types_namespace: NsResolver | None = None,
+    globalns: dict[str, Any] | None = None,
+    localns: typing.Mapping[str, Any] | None = None,
     type_params: tuple[Any] | None = None,
 ) -> Any:
     """An enhanced version of `typing._eval_type` which will fall back to using the `eval_type_backport`
@@ -358,7 +286,7 @@ def eval_type_backport(
     This function will also display a helpful error if the value passed fails to evaluate.
     """
     try:
-        return _eval_type_backport(value, types_namespace, type_params)
+        return _eval_type_handler(value, globalns, localns, type_params)
     except TypeError as e:
         if 'Unable to evaluate type annotation' in str(e):
             raise
@@ -375,13 +303,14 @@ def eval_type_backport(
             raise TypeError(message) from e
 
 
-def _eval_type_backport(
+def _eval_type_handler(
     value: Any,
-    types_namespace: NsResolver | None = None,
+    globalns: dict[str, Any] | None = None,
+    localns: typing.Mapping[str, Any] | None = None,
     type_params: tuple[Any] | None = None,
 ) -> Any:
     try:
-        return _eval_type(value, types_namespace, type_params)
+        return _eval_type(value, globalns, localns, type_params)
     except TypeError as e:
         if not (isinstance(value, typing.ForwardRef) and is_backport_fixable_error(e)):
             raise
@@ -396,21 +325,22 @@ def _eval_type_backport(
                 '`typing` constructs or install the `eval_type_backport` package.'
             ) from e
 
-        return pkg_eval_type_backport(value, {}, types_namespace, try_default=False)  # type: ignore
+        return pkg_eval_type_backport(value, globalns, localns, try_default=False)  # type: ignore
 
 
 def _eval_type(
     value: Any,
-    types_namespace: NsResolver | None = None,
+    globalns: dict[str, Any] | None = None,
+    localns: typing.Mapping[str, Any] | None = None,
     type_params: tuple[Any] | None = None,
 ) -> Any:
     if sys.version_info >= (3, 13):
         return typing._eval_type(  # type: ignore
-            value, {}, types_namespace, type_params=type_params
+            value, globalns, localns, type_params=type_params
         )
     else:
         return typing._eval_type(  # type: ignore
-            value, {}, types_namespace
+            value, globalns, localns
         )
 
 
@@ -455,7 +385,7 @@ def get_function_type_hints(
         elif isinstance(value, str):
             value = _make_forward_ref(value)
 
-        type_hints[name] = eval_type_backport(value, types_namespace, type_params)
+        type_hints[name] = eval_type(value, types_namespace=types_namespace, type_params=type_params)
 
     return type_hints
 

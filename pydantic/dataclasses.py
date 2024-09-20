@@ -323,7 +323,7 @@ def rebuild_dataclass(
         if '__pydantic_core_schema__' in cls.__dict__:
             delattr(cls, '__pydantic_core_schema__')  # delete cached value to ensure full rebuild happens
         if _types_namespace is not None:
-            types_namespace = _typing_extra.NsResolver(_types_namespace)
+            types_namespace = _typing_extra.NsResolver().add_localns(_types_namespace)
         else:
             frame_parent_ns: _typing_extra.NsResolver | None = None
             if _parent_namespace_depth > 0:

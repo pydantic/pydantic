@@ -51,7 +51,7 @@ from datetime import datetime
 from typing_extensions import Annotated
 
 from pydantic import BaseModel
-from pydantic.experimental.pipeline import validate_as, validate_as_deferred
+from pydantic.experimental.pipeline import validate_as
 
 
 class User(BaseModel):
@@ -73,7 +73,7 @@ class User(BaseModel):
     friends: Annotated[list[User], validate_as(...).len(0, 100)]  # (6)!
     family: Annotated[  # (7)!
         list[User],
-        validate_as_deferred(lambda: list[User]).transform(lambda x: x[1:]),
+        validate_as(list[User]).transform(lambda x: x[1:]),
     ]
     bio: Annotated[
         datetime,

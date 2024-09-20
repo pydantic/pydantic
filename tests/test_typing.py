@@ -65,7 +65,7 @@ def test_is_none_type():
     'union',
     [
         typing.Union[int, str],
-        eval_type_lenient('int | str', types_namespace=NsResolver(sys.modules[__name__].__dict__)),
+        eval_type_lenient('int | str', types_namespace=NsResolver(globalns=sys.modules[__name__].__dict__)),
         *([int | str] if sys.version_info >= (3, 10) else []),
     ],
 )
@@ -158,7 +158,6 @@ def test_func_ns_excludes_default_globals() -> None:
 
 
 module_foo = 'global_foo'
-module_bar = 'global_bar'
 module_ns = parent_frame_namespace(parent_depth=1)
 
 
@@ -176,15 +175,28 @@ def test_exotic_localns() -> None:
     assert Model.model_fields['foo'].annotation == str
 
 
-def test_ns_resolver_init():
-    resolver = NsResolver(
-        {'Foo': str},
-        {'Foo': int, 'Bar': float},
-    )
-    assert resolver.resolve_namespace() == {'Foo': int, 'Bar': float}
+def test_ns_resolver():
+    resolver = NsResolver(globalns={'Foo': str}).add_localns({'Foo': int, 'Bar': float})
+
+    assert resolver.resolved_localns == {'Foo': int, 'Bar': float}
     assert resolver.resolve_name('Foo') == int
+    assert resolver.current_globals() == {'Foo': str}
+
     with pytest.raises(KeyError):
         resolver.resolve_name('Unknown')
+
+    resolver.add_localns({'Bar': bool})
+    assert resolver.resolved_localns == {'Foo': int, 'Bar': bool}
+
+
+def test_ns_resolver_mapping():
+    resolver = NsResolver(globalns={'Foo': str}).add_localns({'Foo': int, 'Bar': float})
+    assert 'Foo' in resolver and 'Bar' in resolver and 'Unknown' not in resolver
+    assert resolver['Foo'] is int and resolver['Bar'] is float
+    assert list(resolver) == ['Foo', 'Bar']
+    assert {**resolver} == {'Foo': int, 'Bar': float}
+    assert bool(resolver) and not bool(NsResolver())
+    assert len(resolver) == 2 and len(NsResolver()) == 0
 
 
 def test_ns_resolver_push(create_module):
@@ -196,9 +208,15 @@ def test_ns_resolver_push(create_module):
         class SomeClass:
             pass
 
-    resolver = NsResolver({'Foo': str})
-    with resolver.push(module.SomeClass):
-        ns = resolver.resolve_namespace()
-        assert ns['Foo'] == str, 'Should not get overwritten by module content'
-        assert ns['Bar'] == float
-    assert resolver.resolve_namespace() == {'Foo': str}
+    resolver = NsResolver().add_localns({'Foo': str})
+
+    with resolver.push_globalns(module.SomeClass):
+        assert resolver['Foo'] == str, 'Should not get overwritten by module content'
+        assert resolver['Bar'] == float
+
+    with resolver.push_localns(module.SomeClass):
+        assert resolver['Foo'] == int, 'Should get overwritten by module content'
+        assert resolver['Bar'] == float
+
+    assert resolver['Foo'] == str
+    assert 'Bar' not in resolver

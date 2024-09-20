@@ -2240,6 +2240,53 @@ def test_model_rebuild_zero_depth():
     assert m.model_dump() == {'x': 42}
 
 
+def test_namespace_priority(create_module):
+    @create_module
+    def module():
+        from pydantic import BaseModel
+
+        X = str
+
+        def inner():
+            X = int
+
+            class MyModel(BaseModel):
+                x1: X
+
+            return MyModel
+
+        class Model(BaseModel):
+            dc: inner()
+            x2: X
+
+    Model = module.Model
+    assert Model.model_json_schema()['properties']['x2']['type'] == 'string'
+    assert Model.model_json_schema()['properties']['dc']['$ref'] == '#/$defs/MyModel'
+    assert Model.model_json_schema()['$defs']['MyModel']['properties']['x1']['type'] == 'integer'
+
+
+def test_namespace_priority_forward_refs(create_module):
+    @create_module
+    def module():
+        from pydantic import BaseModel
+
+        class MyModel(BaseModel):
+            x1: 'X'
+
+        X = int
+
+    class Model(BaseModel):
+        dc: 'module.MyModel'
+        x2: 'X'
+
+    X = str
+
+    Model.model_rebuild()
+    assert Model.model_json_schema()['properties']['x2']['type'] == 'string'
+    assert Model.model_json_schema()['properties']['dc']['$ref'] == '#/$defs/MyModel'
+    assert Model.model_json_schema()['$defs']['MyModel']['properties']['x1']['type'] == 'integer'
+
+
 @pytest.fixture(scope='session', name='InnerEqualityModel')
 def inner_equality_fixture():
     class InnerEqualityModel(BaseModel):

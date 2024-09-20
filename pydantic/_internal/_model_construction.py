@@ -32,7 +32,7 @@ from ._signature import generate_pydantic_signature
 from ._typing_extra import (
     NsResolver,
     _make_forward_ref,
-    eval_type_backport,
+    eval_type,
     is_annotated,
     is_classvar,
     merge_cls_and_parent_ns,
@@ -215,14 +215,14 @@ class ModelMetaclass(ABCMeta):
             if __pydantic_reset_parent_namespace__:
                 parent_ns = parent_frame_namespace()
                 cls.__pydantic_parent_namespace__ = build_lenient_weakvaluedict(
-                    # TODO remove resolve_namespace? And use NsResolver directly in __pydantic_parent_namespace__?
-                    parent_ns.resolve_namespace() if parent_ns is not None else {}
+                    # TODO remove resolved_localns? And use NsResolver directly in __pydantic_parent_namespace__?
+                    parent_ns.resolved_localns if parent_ns is not None else None
                 )
             parent_namespace: dict[str, Any] | None = getattr(cls, '__pydantic_parent_namespace__', None)
             if isinstance(parent_namespace, dict):
                 parent_namespace = unpack_lenient_weakvaluedict(parent_namespace)
 
-            parent_ns = NsResolver(parent_namespace) if parent_namespace else None
+            parent_ns = NsResolver().add_localns(parent_namespace) if parent_namespace else None
             types_namespace = merge_cls_and_parent_ns(cls, parent_ns)
 
             set_model_fields(cls, bases, config_wrapper, types_namespace)
@@ -514,9 +514,9 @@ def inspect_namespace(  # noqa C901
                 frame = sys._getframe(2)
                 if frame is not None:
                     try:
-                        ann_type = eval_type_backport(
+                        ann_type = eval_type(
                             _make_forward_ref(ann_type, is_argument=False, is_class=True),
-                            types_namespace=NsResolver(frame.f_globals, frame.f_locals),
+                            types_namespace=NsResolver(globalns=frame.f_globals).add_localns(frame.f_locals),
                         )
                     except (NameError, TypeError):
                         pass

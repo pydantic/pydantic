@@ -277,7 +277,7 @@ def collect_dataclass_fields(
     for ann_name, dataclass_field in dataclass_fields.items():
         ann_type = _typing_extra.eval_type_lenient(
             dataclass_field.type,
-            types_namespace=NsResolver(NsResolver.from_module_ns_of(cls), types_namespace, NsResolver(dict(vars(cls)))),
+            types_namespace=(NsResolver(globalns=cls).add_localns(types_namespace).add_localns(dict(vars(cls)))),
         )
         if is_classvar(ann_type):
             continue
