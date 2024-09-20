@@ -116,11 +116,15 @@ impl<T: EnumValidateValue> Validator for EnumValidator<T> {
                 },
                 input,
             ));
-        } else if let Some(v) = T::validate_value(py, input, &self.lookup, strict)? {
-            state.floor_exactness(Exactness::Lax);
+        }
+
+        state.floor_exactness(Exactness::Lax);
+
+        if let Some(v) = T::validate_value(py, input, &self.lookup, strict)? {
             return Ok(v);
+        } else if let Ok(res) = class.as_unbound().call1(py, (input.as_python(),)) {
+            return Ok(res);
         } else if let Some(ref missing) = self.missing {
-            state.floor_exactness(Exactness::Lax);
             let enum_value = missing.bind(py).call1((input.to_object(py),)).map_err(|_| {
                 ValError::new(
                     ErrorType::Enum {
@@ -146,6 +150,7 @@ impl<T: EnumValidateValue> Validator for EnumValidator<T> {
                 return Err(type_error.into());
             }
         }
+
         Err(ValError::new(
             ErrorType::Enum {
                 expected: self.expected_repr.clone(),
