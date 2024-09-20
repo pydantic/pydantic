@@ -769,6 +769,19 @@ def test_build_non_default_follows():
         )
 
 
+def test_build_missing_var_kwargs():
+    with pytest.raises(
+        SchemaError, match="`var_kwargs_schema` must be specified when `var_kwargs_mode` is `'unpacked-typed-dict'`"
+    ):
+        SchemaValidator(
+            {
+                'type': 'arguments',
+                'arguments_schema': [],
+                'var_kwargs_mode': 'unpacked-typed-dict',
+            }
+        )
+
+
 @pytest.mark.parametrize(
     'input_value,expected',
     [
@@ -778,7 +791,7 @@ def test_build_non_default_follows():
     ],
     ids=repr,
 )
-def test_kwargs(py_and_json: PyAndJson, input_value, expected):
+def test_kwargs_uniform(py_and_json: PyAndJson, input_value, expected):
     v = py_and_json(
         {
             'type': 'arguments',
@@ -789,6 +802,48 @@ def test_kwargs(py_and_json: PyAndJson, input_value, expected):
             'var_kwargs_schema': {'type': 'str'},
         }
     )
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_test(input_value)
+    else:
+        assert v.validate_test(input_value) == expected
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        [ArgsKwargs((), {'x': 1}), ((), {'x': 1})],
+        [ArgsKwargs((), {'x': 1.0}), Err('x\n  Input should be a valid integer [type=int_type,')],
+        [ArgsKwargs((), {'x': 1, 'z': 'str'}), ((), {'x': 1, 'y': 'str'})],
+        [ArgsKwargs((), {'x': 1, 'y': 'str'}), Err('y\n  Extra inputs are not permitted [type=extra_forbidden,')],
+    ],
+)
+def test_kwargs_typed_dict(py_and_json: PyAndJson, input_value, expected):
+    v = py_and_json(
+        {
+            'type': 'arguments',
+            'arguments_schema': [],
+            'var_kwargs_mode': 'unpacked-typed-dict',
+            'var_kwargs_schema': {
+                'type': 'typed-dict',
+                'fields': {
+                    'x': {
+                        'type': 'typed-dict-field',
+                        'schema': {'type': 'int', 'strict': True},
+                        'required': True,
+                    },
+                    'y': {
+                        'type': 'typed-dict-field',
+                        'schema': {'type': 'str'},
+                        'required': False,
+                        'validation_alias': 'z',
+                    },
+                },
+                'config': {'extra_fields_behavior': 'forbid'},
+            },
+        }
+    )
+
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_test(input_value)
