@@ -892,6 +892,21 @@ def test_clear_return_schema():
     assert return_serializer == 'return_serializer: Any'
 
 
+def test_serializer_return_type_model() -> None:
+    """https://github.com/pydantic/pydantic/issues/10443"""
+
+    class Sub(BaseModel):
+        pass
+
+    class Model(BaseModel):
+        sub: Annotated[
+            Sub,
+            PlainSerializer(lambda v: v, return_type=Sub),
+        ]
+
+    assert Model(sub=Sub()).model_dump() == {'sub': {}}
+
+
 def test_type_adapter_dump_json():
     class Model(TypedDict):
         x: int

@@ -127,6 +127,13 @@ class BeforeValidator:
             if self.json_schema_input_type is PydanticUndefined
             else handler.generate_schema(self.json_schema_input_type)
         )
+        # Try to resolve the original schema if required, because schema cleaning
+        # won't inline references in metadata:
+        if input_schema is not None:
+            try:
+                input_schema = handler.resolve_ref_schema(input_schema)
+            except LookupError:
+                pass
         metadata = _core_metadata.build_metadata_dict(js_input_core_schema=input_schema)
 
         info_arg = _inspect_validator(self.func, 'before')
@@ -190,15 +197,27 @@ class PlainValidator:
 
         try:
             schema = handler(source_type)
-            serialization = core_schema.wrap_serializer_function_ser_schema(
-                function=lambda v, h: h(v),
-                schema=schema,
-                return_schema=schema,
+            # TODO if `schema['serialization']` is one of `'include-exclude-dict/sequence',
+            # schema validation will fail. That's why we use 'type ignore' comments below.
+            serialization = schema.get(
+                'serialization',
+                core_schema.wrap_serializer_function_ser_schema(
+                    function=lambda v, h: h(v),
+                    schema=schema,
+                    return_schema=handler.generate_schema(source_type),
+                ),
             )
         except PydanticSchemaGenerationError:
             serialization = None
 
         input_schema = handler.generate_schema(self.json_schema_input_type)
+        # Try to resolve the original schema if required, because schema cleaning
+        # won't inline references in metadata:
+        try:
+            input_schema = handler.resolve_ref_schema(input_schema)
+        except LookupError:
+            pass
+
         metadata = _core_metadata.build_metadata_dict(js_input_core_schema=input_schema)
 
         info_arg = _inspect_validator(self.func, 'plain')
@@ -207,12 +226,16 @@ class PlainValidator:
             return core_schema.with_info_plain_validator_function(
                 func,
                 field_name=handler.field_name,
-                serialization=serialization,
+                serialization=serialization,  # pyright: ignore[reportArgumentType]
                 metadata=metadata,
             )
         else:
             func = cast(core_schema.NoInfoValidatorFunction, self.func)
-            return core_schema.no_info_plain_validator_function(func, serialization=serialization, metadata=metadata)
+            return core_schema.no_info_plain_validator_function(
+                func,
+                serialization=serialization,  # pyright: ignore[reportArgumentType]
+                metadata=metadata,
+            )
 
     @classmethod
     def _from_decorator(cls, decorator: _decorators.Decorator[_decorators.FieldValidatorDecoratorInfo]) -> Self:
@@ -272,6 +295,13 @@ class WrapValidator:
             if self.json_schema_input_type is PydanticUndefined
             else handler.generate_schema(self.json_schema_input_type)
         )
+        # Try to resolve the original schema if required, because schema cleaning
+        # won't inline references in metadata:
+        if input_schema is not None:
+            try:
+                input_schema = handler.resolve_ref_schema(input_schema)
+            except LookupError:
+                pass
         metadata = _core_metadata.build_metadata_dict(js_input_core_schema=input_schema)
 
         info_arg = _inspect_validator(self.func, 'wrap')

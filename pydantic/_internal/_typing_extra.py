@@ -11,7 +11,7 @@ import warnings
 from collections.abc import Callable
 from functools import partial
 from types import GetSetDescriptorType
-from typing import TYPE_CHECKING, Any, Final, Iterable
+from typing import TYPE_CHECKING, Any, Final
 
 from typing_extensions import Annotated, Literal, TypeAliasType, TypeGuard, Unpack, deprecated, get_args, get_origin
 
@@ -239,17 +239,13 @@ def merge_cls_and_parent_ns(cls: type[Any], parent_namespace: dict[str, Any] | N
     return ns
 
 
-def get_cls_type_hints_lenient(
-    obj: Any, globalns: dict[str, Any] | None = None, mro: Iterable[type[Any]] | None = None
-) -> dict[str, Any]:
+def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None) -> dict[str, Any]:
     """Collect annotations from a class, including those from parent classes.
 
     Unlike `typing.get_type_hints`, this function will not error if a forward reference is not resolvable.
     """
     hints = {}
-    if mro is None:
-        mro = reversed(obj.__mro__)
-    for base in mro:
+    for base in reversed(obj.__mro__):
         ann = base.__dict__.get('__annotations__')
         localns = dict(vars(base))
         if ann is not None and ann is not GetSetDescriptorType:

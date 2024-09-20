@@ -108,6 +108,7 @@ from pydantic.types import (
     conint,
     constr,
 )
+from pydantic.warnings import PydanticDeprecatedSince210
 
 try:
     import email_validator
@@ -1777,11 +1778,15 @@ def test_model_default():
 @pytest.mark.parametrize(
     'ser_json_timedelta,properties',
     [
-        ('float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
+        ('seconds_float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
+        ('milliseconds_float', {'duration': {'default': 300000.0, 'title': 'Duration', 'type': 'number'}}),
         ('iso8601', {'duration': {'default': 'PT5M', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
     ],
 )
-def test_model_default_timedelta(ser_json_timedelta: Literal['float', 'iso8601'], properties: typing.Dict[str, Any]):
+def test_model_default_timedelta(
+    ser_json_timedelta: Literal['iso8601', 'seconds_float', 'milliseconds_float'],
+    properties: typing.Dict[str, Any],
+):
     class Model(BaseModel):
         model_config = ConfigDict(ser_json_timedelta=ser_json_timedelta)
 
@@ -1793,6 +1798,22 @@ def test_model_default_timedelta(ser_json_timedelta: Literal['float', 'iso8601']
         'title': 'Model',
         'type': 'object',
     }
+
+
+def test_model_default_timedelta():
+    with pytest.warns(PydanticDeprecatedSince210):
+
+        class Model(BaseModel):
+            model_config = ConfigDict(ser_json_timedelta='float')
+
+            duration: timedelta = timedelta(minutes=5)
+
+        # insert_assert(Model.model_json_schema(mode='serialization'))
+        assert Model.model_json_schema(mode='serialization') == {
+            'properties': {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}},
+            'title': 'Model',
+            'type': 'object',
+        }
 
 
 @pytest.mark.parametrize(
@@ -1819,12 +1840,14 @@ def test_model_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], properti
 @pytest.mark.parametrize(
     'ser_json_timedelta,properties',
     [
-        ('float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
+        ('seconds_float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
+        ('milliseconds_float', {'duration': {'default': 300000.0, 'title': 'Duration', 'type': 'number'}}),
         ('iso8601', {'duration': {'default': 'PT5M', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
     ],
 )
 def test_dataclass_default_timedelta(
-    ser_json_timedelta: Literal['float', 'iso8601'], properties: typing.Dict[str, Any]
+    ser_json_timedelta: Literal['iso8601', 'milliseconds_float', 'seconds_float'],
+    properties: typing.Dict[str, Any],
 ):
     @dataclass(config=ConfigDict(ser_json_timedelta=ser_json_timedelta))
     class Dataclass:
@@ -1836,6 +1859,20 @@ def test_dataclass_default_timedelta(
         'title': 'Dataclass',
         'type': 'object',
     }
+
+
+def test_dataclass_default_timedelta_float():
+    with pytest.warns(PydanticDeprecatedSince210):
+
+        @dataclass(config=ConfigDict(ser_json_timedelta='float'))
+        class Dataclass:
+            duration: timedelta = timedelta(minutes=5)
+
+        assert TypeAdapter(Dataclass).json_schema(mode='serialization') == {
+            'properties': {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}},
+            'title': 'Dataclass',
+            'type': 'object',
+        }
 
 
 @pytest.mark.parametrize(
@@ -1861,24 +1898,49 @@ def test_dataclass_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], prop
 @pytest.mark.parametrize(
     'ser_json_timedelta,properties',
     [
-        ('float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
+        ('seconds_float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
+        ('milliseconds_float', {'duration': {'default': 300000.0, 'title': 'Duration', 'type': 'number'}}),
         ('iso8601', {'duration': {'default': 'PT5M', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
     ],
 )
 def test_typeddict_default_timedelta(
-    ser_json_timedelta: Literal['float', 'iso8601'], properties: typing.Dict[str, Any]
+    ser_json_timedelta: Literal['iso8601', 'milliseconds_float', 'seconds_float'],
+    properties: typing.Dict[str, Any],
 ):
     class MyTypedDict(TypedDict):
         __pydantic_config__ = ConfigDict(ser_json_timedelta=ser_json_timedelta)
 
         duration: Annotated[timedelta, Field(timedelta(minutes=5))]
 
-    # insert_assert(TypeAdapter(MyTypedDict).json_schema(mode='serialization'))
-    assert TypeAdapter(MyTypedDict).json_schema(mode='serialization') == {
-        'properties': properties,
-        'title': 'MyTypedDict',
-        'type': 'object',
-    }
+    if ser_json_timedelta == 'float':
+        with pytest.warns(PydanticDeprecatedSince210):
+            # insert_assert(TypeAdapter(MyTypedDict).json_schema(mode='serialization'))
+            assert TypeAdapter(MyTypedDict).json_schema(mode='serialization') == {
+                'properties': properties,
+                'title': 'MyTypedDict',
+                'type': 'object',
+            }
+    else:
+        assert TypeAdapter(MyTypedDict).json_schema(mode='serialization') == {
+            'properties': properties,
+            'title': 'MyTypedDict',
+            'type': 'object',
+        }
+
+
+def test_typeddict_default_timedelta_float():
+    class MyTypedDict(TypedDict):
+        __pydantic_config__ = ConfigDict(ser_json_timedelta='float')
+
+        duration: Annotated[timedelta, Field(timedelta(minutes=5))]
+
+    with pytest.warns(PydanticDeprecatedSince210):
+        # insert_assert(TypeAdapter(MyTypedDict).json_schema(mode='serialization'))
+        assert TypeAdapter(MyTypedDict).json_schema(mode='serialization') == {
+            'properties': {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}},
+            'title': 'MyTypedDict',
+            'type': 'object',
+        }
 
 
 @pytest.mark.parametrize(
@@ -6549,8 +6611,78 @@ def test_decorator_field_validator_input_type() -> None:
     }
 
 
+@pytest.mark.parametrize(
+    'validator',
+    [
+        PlainValidator(lambda v: v, json_schema_input_type='Sub'),
+        BeforeValidator(lambda v: v, json_schema_input_type='Sub'),
+        WrapValidator(lambda v, h: h(v), json_schema_input_type='Sub'),
+    ],
+)
+def test_json_schema_input_type_with_refs(validator) -> None:
+    """Test that `'definition-ref` schemas for `json_schema_input_type` are inlined.
+
+    See: https://github.com/pydantic/pydantic/issues/10434.
+    """
+
+    class Sub(BaseModel):
+        pass
+
+    class Model(BaseModel):
+        sub: Annotated[
+            Sub,
+            PlainSerializer(lambda v: v, return_type=Sub),
+            validator,
+        ]
+
+    json_schema = Model.model_json_schema()
+
+    assert 'Sub' in json_schema['$defs']
+    assert json_schema['properties']['sub']['$ref'] == '#/$defs/Sub'
+
+
+@pytest.mark.parametrize(
+    'validator',
+    [
+        PlainValidator(lambda v: v, json_schema_input_type='Model'),
+        BeforeValidator(lambda v: v, json_schema_input_type='Model'),
+        WrapValidator(lambda v, h: h(v), json_schema_input_type='Model'),
+    ],
+)
+def test_json_schema_input_type_with_recursive_refs(validator) -> None:
+    """Test that recursive `'definition-ref` schemas for `json_schema_input_type` are not inlined."""
+
+    class Model(BaseModel):
+        model: Annotated[
+            'Model',
+            PlainSerializer(lambda v: v, return_type='Model'),
+            validator,
+        ]
+
+    json_schema = Model.model_json_schema()
+
+    assert 'Model' in json_schema['$defs']
+    assert json_schema['$ref'] == '#/$defs/Model'
+
+
 def test_title_strip() -> None:
     class Model(BaseModel):
         some_field: str = Field(alias='_some_field')
 
     assert Model.model_json_schema()['properties']['_some_field']['title'] == 'Some Field'
+
+
+def test_arbitrary_ref_in_json_schema() -> None:
+    """See https://github.com/pydantic/pydantic/issues/9981."""
+
+    class Test(BaseModel):
+        x: dict = Field(examples=[{'$ref': '#/components/schemas/Pet'}])
+
+    assert Test.model_json_schema() == {
+        'properties': {'x': {'examples': [{'$ref': '#/components/schemas/Pet'}], 'title': 'X', 'type': 'object'}},
+        'required': ['x'],
+        'title': 'Test',
+        'type': 'object',
+    }
+
+    # raises KeyError: '#/components/schemas/Pet'
