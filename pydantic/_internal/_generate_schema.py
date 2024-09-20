@@ -1903,7 +1903,18 @@ class GenerateSchema:
                 if unpack_type is not None:
                     if not is_typeddict(unpack_type):
                         raise PydanticUserError(
-                            f'Expected a `TypedDict` class, got {unpack_type}', code='unpack-typed-dict'
+                            f'Expected a `TypedDict` class, got {unpack_type.__name__!r}', code='unpack-typed-dict'
+                        )
+                    non_pos_only_param_names = {
+                        name for name, p in sig.parameters.items() if p.kind != Parameter.POSITIONAL_ONLY
+                    }
+                    overlapping_params = non_pos_only_param_names.intersection(unpack_type.__annotations__)
+                    if overlapping_params:
+                        raise PydanticUserError(
+                            f'Typed dictionary {unpack_type.__name__!r} overlaps with parameter'
+                            f"{'s' if len(overlapping_params) >= 2 else ''} "
+                            f"{', '.join(repr(p) for p in sorted(overlapping_params))}",
+                            code='overlapping-unpack-typed-dict',
                         )
 
                     var_kwargs_mode = 'unpacked-typed-dict'

@@ -1208,5 +1208,31 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'unpack-typed-dict'
 ```
 
+## Overlapping unpacked [`TypedDict`][typing.TypedDict] fields and arguments {#overlapping-unpack-typed-dict}
+
+This error is raised when the typed dictionary used to type hint variadic keywords arguments
+has fields names overlapping with arguments (unless [positional only][positional-only_parameter]).
+
+For reference, see the [related specification section] and [PEP 692].
+
+```py
+from typing_extensions import TypedDict, Unpack
+
+from pydantic import validate_call
+
+
+class TD(TypedDict):
+    a: int
+
+
+try:
+
+    @validate_call
+    def func(a: int, **kwargs: Unpack[TD]):
+        pass
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'overlapping-unpack-typed-dict'
+```
+
 [related specification section]: https://typing.readthedocs.io/en/latest/spec/callables.html#unpack-for-keyword-arguments
 [PEP 692]: https://peps.python.org/pep-0692/

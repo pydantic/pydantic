@@ -180,6 +180,29 @@ def test_unpacked_typed_dict_kwargs_invalid_type() -> None:
     assert exc.value.code == 'unpack-typed-dict'
 
 
+def test_unpacked_typed_dict_kwargs_overlaps() -> None:
+    class TD(TypedDict, total=False):
+        a: int
+        b: int
+        c: int
+
+    with pytest.raises(PydanticUserError) as exc:
+
+        @validate_call
+        def foo(a: int, b: int, **kwargs: Unpack[TD]):
+            pass
+
+    assert exc.value.code == 'overlapping-unpack-typed-dict'
+    assert exc.value.message == "Typed dictionary 'TD' overlaps with parameters 'a', 'b'"
+
+    # Works for a pos-only argument
+    @validate_call
+    def foo(a: int, /, **kwargs: Unpack[TD]):
+        pass
+
+    foo(1, a=1)
+
+
 def test_unpacked_typed_dict_kwargs() -> None:
     @with_config({'strict': True})
     class TD(TypedDict, total=False):
@@ -206,8 +229,24 @@ def test_unpacked_typed_dict_kwargs() -> None:
     with pytest.raises(ValidationError) as exc:
         foo()
 
-    assert exc.value.errors()[1]['type'] == 'missing'
-    assert exc.value.errors()[1]['loc'] == ('b',)
+    assert exc.value.errors()[0]['type'] == 'missing'
+    assert exc.value.errors()[0]['loc'] == ('b',)
+
+
+def test_unpacked_typed_dict_kwargs_functional_syntax() -> None:
+    TD = TypedDict('TD', {'in': int, 'x-y': int})
+
+    @validate_call
+    def foo(**kwargs: Unpack[TD]):
+        pass
+
+    foo(**{'in': 1, 'x-y': 2})
+
+    with pytest.raises(ValidationError) as exc:
+        foo(**{'in': 'not_an_int', 'x-y': 1})
+
+    assert exc.value.errors()[0]['type'] == 'int_parsing'
+    assert exc.value.errors()[0]['loc'] == ('in',)
 
 
 def test_field_can_provide_factory() -> None:

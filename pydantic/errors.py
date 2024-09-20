@@ -67,6 +67,7 @@ PydanticErrorCodes = Literal[
     'with-config-on-model',
     'dataclass-on-model',
     'unpack-typed-dict',
+    'overlapping-unpack-typed-dict',
 ]
 
 
