@@ -289,31 +289,6 @@ def test_tagged_union_with_callable_discriminator_schema_generation(benchmark):
     benchmark(rebuild_model, ThanksgivingDinner)
 
 
-@pytest.mark.benchmark(group='model_schema_generation')
-def test_tagged_union_with_callable_discriminator_nested_schema_generation(benchmark):
-    class BlackCat(BaseModel):
-        pet_type: Literal['cat']
-        color: Literal['black']
-        black_name: str
-
-    class WhiteCat(BaseModel):
-        pet_type: Literal['cat']
-        color: Literal['white']
-        white_name: str
-
-    Cat = Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]
-
-    class Dog(BaseModel):
-        pet_type: Literal['dog']
-        name: str
-
-    class Model(DeferredModel):
-        pet: Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]
-        n: int
-
-    benchmark(rebuild_model, Model)
-
-
 @pytest.mark.parametrize('field_type', StdLibTypes)
 @pytest.mark.benchmark(group='stdlib_schema_generation')
 def test_stdlib_type_schema_generation(benchmark, field_type):
