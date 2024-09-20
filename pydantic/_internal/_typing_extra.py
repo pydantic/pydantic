@@ -13,7 +13,7 @@ from functools import partial
 from types import GetSetDescriptorType
 from typing import TYPE_CHECKING, Any, Final
 
-from typing_extensions import Annotated, Literal, TypeAliasType, TypeGuard, deprecated, get_args, get_origin
+from typing_extensions import Annotated, Literal, TypeAliasType, TypeGuard, Unpack, deprecated, get_args, get_origin
 
 if TYPE_CHECKING:
     from ._dataclasses import StandardDataclass
@@ -63,7 +63,11 @@ else:
 
 LITERAL_TYPES: set[Any] = {Literal}
 if hasattr(typing, 'Literal'):
-    LITERAL_TYPES.add(typing.Literal)  # type: ignore
+    LITERAL_TYPES.add(typing.Literal)
+
+UNPACK_TYPES: set[Any] = {Unpack}
+if hasattr(typing, 'Unpack'):
+    UNPACK_TYPES.add(typing.Unpack)  # pyright: ignore[reportAttributeAccessIssue]
 
 # Check if `deprecated` is a type to prevent errors when using typing_extensions < 4.9.0
 DEPRECATED_TYPES: tuple[Any, ...] = (deprecated,) if isinstance(deprecated, type) else ()
@@ -114,6 +118,14 @@ def is_annotated(ann_type: Any) -> bool:
 
 def annotated_type(type_: Any) -> Any | None:
     return get_args(type_)[0] if is_annotated(type_) else None
+
+
+def is_unpack(type_: Any) -> bool:
+    return get_origin(type_) in UNPACK_TYPES
+
+
+def unpack_type(type_: Any) -> Any | None:
+    return get_args(type_)[0] if is_unpack(type_) else None
 
 
 def is_namedtuple(type_: type[Any]) -> bool:
