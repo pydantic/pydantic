@@ -291,6 +291,7 @@ def test_tagged_union_with_callable_discriminator_schema_generation(benchmark):
 
 @pytest.mark.parametrize('field_type', StdLibTypes)
 @pytest.mark.benchmark(group='stdlib_schema_generation')
+@pytest.mark.skip('Clutters codspeed CI, but should be enabled on branches where we modify schema building.')
 def test_stdlib_type_schema_generation(benchmark, field_type):
     class StdlibTypeModel(DeferredModel):
         field: field_type
