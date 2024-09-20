@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple};
@@ -15,6 +17,27 @@ use crate::tools::SchemaDict;
 use super::validation_state::ValidationState;
 use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
 
+#[derive(Debug, PartialEq)]
+enum VarKwargsMode {
+    Uniform,
+    UnpackedTypedDict,
+}
+
+impl FromStr for VarKwargsMode {
+    type Err = PyErr;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "uniform" => Ok(Self::Uniform),
+            "unpacked-typed-dict" => Ok(Self::UnpackedTypedDict),
+            s => py_schema_err!(
+                "Invalid var_kwargs mode: `{}`, expected `uniform` or `unpacked-typed-dict`",
+                s
+            ),
+        }
+    }
+}
+
 #[derive(Debug)]
 struct Parameter {
     positional: bool,
@@ -29,6 +52,7 @@ pub struct ArgumentsValidator {
     parameters: Vec<Parameter>,
     positional_params_count: usize,
     var_args_validator: Option<Box<CombinedValidator>>,
+    var_kwargs_mode: VarKwargsMode,
     var_kwargs_validator: Option<Box<CombinedValidator>>,
     loc_by_alias: bool,
     extra: ExtraBehavior,
@@ -117,6 +141,22 @@ impl BuildValidator for ArgumentsValidator {
             });
         }
 
+        let py_var_kwargs_mode: Bound<PyString> = schema
+            .get_as(intern!(py, "var_kwargs_mode"))?
+            .unwrap_or_else(|| PyString::new_bound(py, "uniform"));
+
+        let var_kwargs_mode = VarKwargsMode::from_str(py_var_kwargs_mode.to_str()?)?;
+        let var_kwargs_validator = match schema.get_item(intern!(py, "var_kwargs_schema"))? {
+            Some(v) => Some(Box::new(build_validator(&v, config, definitions)?)),
+            None => None,
+        };
+
+        if var_kwargs_mode == VarKwargsMode::UnpackedTypedDict && var_kwargs_validator.is_none() {
+            return py_schema_err!(
+                "`var_kwargs_schema` must be specified when `var_kwargs_mode` is `'unpacked-typed-dict'`"
+            );
+        }
+
         Ok(Self {
             parameters,
             positional_params_count,
@@ -124,10 +164,8 @@ impl BuildValidator for ArgumentsValidator {
                 Some(v) => Some(Box::new(build_validator(&v, config, definitions)?)),
                 None => None,
             },
-            var_kwargs_validator: match schema.get_item(intern!(py, "var_kwargs_schema"))? {
-                Some(v) => Some(Box::new(build_validator(&v, config, definitions)?)),
-                None => None,
-            },
+            var_kwargs_mode,
+            var_kwargs_validator,
             loc_by_alias: config.get_as(intern!(py, "loc_by_alias"))?.unwrap_or(true),
             extra: ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Forbid)?,
         }
@@ -255,6 +293,9 @@ impl Validator for ArgumentsValidator {
                 }
             }
         }
+
+        let remaining_kwargs = PyDict::new_bound(py);
+
         // if there are kwargs check any that haven't been processed yet
         if let Some(kwargs) = args.kwargs() {
             if kwargs.len() > used_kwargs.len() {
@@ -278,30 +319,55 @@ impl Validator for ArgumentsValidator {
                         Err(err) => return Err(err),
                     };
                     if !used_kwargs.contains(either_str.as_cow()?.as_ref()) {
-                        match self.var_kwargs_validator {
-                            Some(ref validator) => match validator.validate(py, value.borrow_input(), state) {
-                                Ok(value) => {
-                                    output_kwargs.set_item(either_str.as_py_string(py, state.cache_str()), value)?;
-                                }
-                                Err(ValError::LineErrors(line_errors)) => {
-                                    for err in line_errors {
-                                        errors.push(err.with_outer_location(raw_key.clone()));
+                        match self.var_kwargs_mode {
+                            VarKwargsMode::Uniform => match &self.var_kwargs_validator {
+                                Some(validator) => match validator.validate(py, value.borrow_input(), state) {
+                                    Ok(value) => {
+                                        output_kwargs
+                                            .set_item(either_str.as_py_string(py, state.cache_str()), value)?;
+                                    }
+                                    Err(ValError::LineErrors(line_errors)) => {
+                                        for err in line_errors {
+                                            errors.push(err.with_outer_location(raw_key.clone()));
+                                        }
+                                    }
+                                    Err(err) => return Err(err),
+                                },
+                                None => {
+                                    if let ExtraBehavior::Forbid = self.extra {
+                                        errors.push(ValLineError::new_with_loc(
+                                            ErrorTypeDefaults::UnexpectedKeywordArgument,
+                                            value,
+                                            raw_key.clone(),
+                                        ));
                                     }
                                 }
-                                Err(err) => return Err(err),
                             },
-                            None => {
-                                if let ExtraBehavior::Forbid = self.extra {
-                                    errors.push(ValLineError::new_with_loc(
-                                        ErrorTypeDefaults::UnexpectedKeywordArgument,
-                                        value,
-                                        raw_key.clone(),
-                                    ));
-                                }
+                            VarKwargsMode::UnpackedTypedDict => {
+                                // Save to the remaining kwargs, we will validate as a single dict:
+                                remaining_kwargs.set_item(either_str.as_py_string(py, state.cache_str()), value)?;
                             }
                         }
                     }
                 }
+            }
+        }
+
+        if self.var_kwargs_mode == VarKwargsMode::UnpackedTypedDict {
+            // `var_kwargs_validator` is guaranteed to be `Some`:
+            match self
+                .var_kwargs_validator
+                .as_ref()
+                .unwrap()
+                .validate(py, remaining_kwargs.as_any(), state)
+            {
+                Ok(value) => {
+                    output_kwargs.update(value.downcast_bound::<PyDict>(py).unwrap().as_mapping())?;
+                }
+                Err(ValError::LineErrors(line_errors)) => {
+                    errors.extend(line_errors);
+                }
+                Err(err) => return Err(err),
             }
         }
 
