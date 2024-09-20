@@ -1,4 +1,15 @@
-from typing import Any, Dict, Generic, List, Literal, Optional, Type, TypeVar, Union, get_origin
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    List,
+    Literal,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    get_origin,
+)
 
 import pytest
 from typing_extensions import Annotated, Self
@@ -11,6 +22,7 @@ from pydantic import (
     Field,
     PlainSerializer,
     PlainValidator,
+    Tag,
     WrapSerializer,
     WrapValidator,
     create_model,
@@ -18,6 +30,8 @@ from pydantic import (
     model_validator,
 )
 from pydantic.dataclasses import dataclass, rebuild_dataclass
+
+from .shared import StdLibTypes
 
 
 class DeferredModel(BaseModel):
@@ -42,7 +56,11 @@ def test_simple_model_schema_generation(benchmark) -> None:
 def test_simple_model_schema_lots_of_fields_generation(benchmark) -> None:
     IntStr = Union[int, str]
 
-    Model = create_model('Model', __config__={'defer_build': True}, **{f'f{i}': (IntStr, ...) for i in range(100)})
+    Model = create_model(
+        'Model',
+        __config__={'defer_build': True},
+        **{f'f{i}': (IntStr, ...) for i in range(100)},
+    )
 
     benchmark(rebuild_model, Model)
 
@@ -219,3 +237,63 @@ def test_model_validators_serializers(benchmark):
             return self.field
 
     benchmark(rebuild_model, ModelWithValidator)
+
+
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_tagged_union_with_str_discriminator_schema_generation(benchmark):
+    class Cat(BaseModel):
+        pet_type: Literal['cat']
+        meows: int
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog']
+        barks: float
+
+    class Lizard(BaseModel):
+        pet_type: Literal['reptile', 'lizard']
+        scales: bool
+
+    class Model(DeferredModel):
+        pet: Union[Cat, Dog, Lizard] = Field(..., discriminator='pet_type')
+        n: int
+
+    benchmark(rebuild_model, Model)
+
+
+@pytest.mark.benchmark(group='model_schema_generation')
+def test_tagged_union_with_callable_discriminator_schema_generation(benchmark):
+    class Pie(BaseModel):
+        time_to_cook: int
+        num_ingredients: int
+
+    class ApplePie(Pie):
+        fruit: Literal['apple'] = 'apple'
+
+    class PumpkinPie(Pie):
+        filling: Literal['pumpkin'] = 'pumpkin'
+
+    def get_discriminator_value(v: Any) -> str:
+        if isinstance(v, dict):
+            return v.get('fruit', v.get('filling'))
+        return getattr(v, 'fruit', getattr(v, 'filling', None))
+
+    class ThanksgivingDinner(DeferredModel):
+        dessert: Annotated[
+            Union[
+                Annotated[ApplePie, Tag('apple')],
+                Annotated[PumpkinPie, Tag('pumpkin')],
+            ],
+            Discriminator(get_discriminator_value),
+        ]
+
+    benchmark(rebuild_model, ThanksgivingDinner)
+
+
+@pytest.mark.parametrize('field_type', StdLibTypes)
+@pytest.mark.benchmark(group='stdlib_schema_generation')
+@pytest.mark.skip('Clutters codspeed CI, but should be enabled on branches where we modify schema building.')
+def test_stdlib_type_schema_generation(benchmark, field_type):
+    class StdlibTypeModel(DeferredModel):
+        field: field_type
+
+    benchmark(rebuild_model, StdlibTypeModel)
