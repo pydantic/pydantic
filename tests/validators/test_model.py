@@ -1,5 +1,7 @@
 import re
+import sys
 from copy import deepcopy
+from decimal import Decimal
 from typing import Any, Callable, Dict, List, Set, Tuple
 
 import pytest
@@ -1312,3 +1314,66 @@ def test_model_error():
             'ctx': {'class_name': 'MyModel'},
         }
     ]
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 13),
+    reason='Python 3.13+ enum initialization is different, see https://github.com/python/cpython/blob/ec610069637d56101896803a70d418a89afe0b4b/Lib/enum.py#L1159-L1163',
+)
+def test_model_with_enum_int_field_validation_should_succeed_for_any_type_equality_checks():
+    # GIVEN
+    from enum import Enum
+
+    class EnumClass(Enum):
+        enum_value = 1
+        enum_value_2 = 2
+        enum_value_3 = 3
+
+    class IntWrappable:
+        def __init__(self, value: int):
+            self.value = value
+
+        def __eq__(self, other: object) -> bool:
+            return self.value == other
+
+    class MyModel:
+        __slots__ = (
+            '__dict__',
+            '__pydantic_fields_set__',
+            '__pydantic_extra__',
+            '__pydantic_private__',
+        )
+        enum_field: EnumClass
+
+    # WHEN
+    v = SchemaValidator(
+        core_schema.model_schema(
+            MyModel,
+            core_schema.model_fields_schema(
+                {
+                    'enum_field': core_schema.model_field(
+                        core_schema.enum_schema(EnumClass, list(EnumClass.__members__.values()))
+                    ),
+                    'enum_field_2': core_schema.model_field(
+                        core_schema.enum_schema(EnumClass, list(EnumClass.__members__.values()))
+                    ),
+                    'enum_field_3': core_schema.model_field(
+                        core_schema.enum_schema(EnumClass, list(EnumClass.__members__.values()))
+                    ),
+                }
+            ),
+        )
+    )
+
+    # THEN
+    v.validate_json('{"enum_field": 1, "enum_field_2": 2, "enum_field_3": 3}')
+    m = v.validate_python(
+        {
+            'enum_field': Decimal(1),
+            'enum_field_2': Decimal(2),
+            'enum_field_3': IntWrappable(3),
+        }
+    )
+    v.validate_assignment(m, 'enum_field', Decimal(1))
+    v.validate_assignment(m, 'enum_field_2', Decimal(2))
+    v.validate_assignment(m, 'enum_field_3', IntWrappable(3))
