@@ -2,8 +2,6 @@
 
 from __future__ import annotations as _annotations
 
-import functools
-import inspect
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
 
 from ._internal import _typing_extra, _validate_call
@@ -47,30 +45,14 @@ def validate_call(
     Returns:
         The decorated function.
     """
-    local_ns = _typing_extra.parent_frame_namespace()
+    if (local_ns := _typing_extra.parent_frame_namespace()) and '__type_params__' in local_ns:
+        # When using PEP 695 syntax, an extra frame is created, which stores the type parameters.
+        # So the `local_ns` above does not contain the TypeVar.
+        #
+        # Note: since Python 3.13, `typing._eval_type` starts accepting `type_params`;
+        #       but that way won't work for Python 3.12 (which PEP 695 is introduced in).
 
-    def validate(function: AnyCallableT) -> AnyCallableT:
-        if isinstance(function, (classmethod, staticmethod)):
-            name = type(function).__name__
-            raise TypeError(f'The `@{name}` decorator should be applied after `@validate_call` (put `@{name}` on top)')
+        generic_param_ns = _typing_extra.parent_frame_namespace(parent_depth=3) or {}
+        local_ns = {**generic_param_ns, **local_ns}
 
-        validate_call_wrapper = _validate_call.ValidateCallWrapper(function, config, validate_return, local_ns)
-
-        if inspect.iscoroutinefunction(function):
-
-            @functools.wraps(function)
-            async def wrapper_function(*args, **kwargs):  # type: ignore
-                return await validate_call_wrapper(*args, **kwargs)
-        else:
-
-            @functools.wraps(function)
-            def wrapper_function(*args, **kwargs):
-                return validate_call_wrapper(*args, **kwargs)
-
-        wrapper_function.raw_function = function  # type: ignore
-        return wrapper_function  # type: ignore
-
-    if func:
-        return validate(func)
-    else:
-        return validate
+    return _validate_call.validate_call_with_namespace(func, config, validate_return, local_ns)

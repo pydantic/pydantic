@@ -4,13 +4,14 @@ import re
 import sys
 from datetime import datetime, timezone
 from functools import partial
-from typing import Any, List, Tuple
+from typing import Any, Dict, Generic, List, Literal, Optional, Set, Tuple, TypeVar, Union
 
 import pytest
 from pydantic_core import ArgsKwargs
 from typing_extensions import Annotated, TypedDict
 
 from pydantic import Field, PydanticInvalidForJsonSchema, TypeAdapter, ValidationError, validate_call
+from pydantic.config import ConfigDict
 from pydantic.main import BaseModel
 
 
@@ -851,8 +852,376 @@ def find_max_validate_return[T](args: Iterable[T]) -> T:
             find_max(1)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+ for PEP 695 syntax with generics')
-def test_pep695_with_class(create_module):
+class M0(BaseModel):
+    z: int
+
+
+M = M0
+
+
+def test_uses_local_ns():
+    class M1(BaseModel):
+        y: int
+
+    M = M1  # noqa: F841
+
+    def foo():
+        class M2(BaseModel):
+            z: int
+
+        M = M2
+
+        @validate_call
+        def bar(m: M) -> M:
+            return m
+
+        assert bar({'z': 1}) == M2(z=1)
+
+
+def test_validate_call_infos():
+    T = TypeVar('T')
+
+    config: ConfigDict = {'strict': False}
+    raw_functions = dict()
+
+    class A(BaseModel, Generic[T]):
+        class Nested(BaseModel): ...
+
+        def f(self, x: T) -> Tuple[T, int]: ...
+        def g(self, x: List[T]) -> Nested: ...
+        def h(self, x: List[T]) -> Tuple[T, T]: ...
+
+        raw_functions['A.f'] = f
+        raw_functions['A.g'] = g
+        raw_functions['A.h'] = h
+
+        f = validate_call(validate_return=False, config=config)(f)
+        g = validate_call(validate_return=True)(g)
+        h = validate_call(validate_return=True)(h)
+
+    class B(A):
+        def f(self): ...
+
+        raw_functions['B.f'] = f
+        f = validate_call(f)
+
+    for cls in (A, A[int]):
+        for name in ('f', 'g', 'h'):
+            infos = cls.__pydantic_validate_calls__
+            assert getattr(cls, name).__pydantic_validate_call_info__ is infos[name]
+
+    A_infos = A.__pydantic_validate_calls__
+    A_int_infos = A[int].__pydantic_validate_calls__
+    for infos in (A_infos, A_int_infos):
+        assert set(infos.keys()) == {'f', 'g', 'h'}
+        assert infos['f']['config'] == config
+        assert infos['f']['local_namespace'] is infos['g']['local_namespace']
+        assert infos['f']['validate_return'] is False
+        assert infos['g']['validate_return'] is True
+        assert 'Nested' in infos['f']['local_namespace'].keys()
+        for name in ('f', 'g', 'h'):
+            assert infos[name]['function'] == raw_functions[f'A.{name}']
+
+    B_infos = B.__pydantic_validate_calls__
+    assert B_infos['f']['function'] == raw_functions['B.f']
+    assert B_infos['f']['validate_return'] is False
+    assert all(name not in B_infos for name in ('g', 'h'))
+
+
+def test_generic_simple():
+    T = TypeVar('T')
+
+    class A(BaseModel, Generic[T]):
+        @validate_call(validate_return=True)
+        def f(self, x: T) -> T:
+            return x
+
+    a = A[int]()
+    assert a.f(1) == 1
+    assert a.f('1') == 1
+    with pytest.raises(ValidationError):
+        a.f('abc')
+
+
+def test_generic_config():
+    T = TypeVar('T')
+
+    class A(BaseModel, Generic[T]):
+        @validate_call(config={'strict': True})
+        def f(self, x: T) -> T:
+            return x
+
+    a = A[int]()
+    with pytest.raises(ValidationError):
+        a.f('123')
+
+
+def test_generic_inheritance():
+    T = TypeVar('T')
+
+    class A(BaseModel, Generic[T]):
+        @validate_call(validate_return=True)
+        def f(self, x: T) -> int:
+            return x
+
+        # no validate_return
+        @validate_call
+        def g(self, x: List[T]) -> T:
+            return
+
+    class SubA(A[T], Generic[T]):
+        pass
+
+    for cls in (A, SubA):
+        a: A[str] = cls[str]()
+        assert a.f('1') == 1
+        assert a.g(['a', 'b']) is None
+        with pytest.raises(ValidationError):
+            a.f(123)
+        with pytest.raises(ValidationError):
+            a.g([1, 'a'])
+
+
+def test_generic_wraps():
+    T = TypeVar('T')
+
+    class A(BaseModel, Generic[T]):
+        @validate_call(validate_return=True)
+        def f(self, x: T) -> T:
+            return x
+
+    # the raw functions is the same object
+    assert len(set(id(f.raw_function) for f in (A.f, A[int].f, A[str].f))) == 1
+
+    a = A()
+    a_int = A[int]()
+    a_str = A[str]()
+    assert a.f([]) == []
+
+    assert a_int.f(1) == 1
+    assert a_int.f('1') == 1
+
+    assert a_str.f('1') == '1'
+    assert a_str.f('a') == 'a'
+    assert a_str.f(b'a') == 'a'
+
+    for func, type, model in zip((A.f, A[int].f, A[str].f), (T, int, str), (A, A[int], A[str])):
+        qualname = f'test_generic_wraps.<locals>.{model.__name__}.f'
+        assert func.__qualname__ == qualname
+        assert func.__annotations__ == {'x': type, 'return': type}
+        assert inspect.signature(func).parameters['x'].annotation is type
+        assert inspect.signature(func).return_annotation is type
+
+
+def test_generic_multi_typevars():
+    T1 = TypeVar('T1')
+    T2 = TypeVar('T2')
+
+    class A(BaseModel, Generic[T1]):
+        @validate_call
+        def f_a(self, x: T1) -> T1:
+            return x
+
+    class B(A[T1], Generic[T1, T2]):
+        @validate_call
+        def f_b(self, x: T1, y: T2) -> Tuple[T1, T2]:
+            return x, y
+
+    class BSwap(B[T2, T1], Generic[T1, T2]): ...
+
+    b1 = B[int, str]()
+    assert b1.f_a(123) == 123
+    assert b1.f_b(0, 'abc') == (0, 'abc')
+
+    with pytest.raises(ValidationError):
+        b1.f_a('abc')
+    with pytest.raises(ValidationError):
+        b1.f_b(0, [])
+
+    b2 = BSwap[int, str]()
+    assert b2.f_a('abc') == 'abc'
+    assert b2.f_b('abc', 0) == ('abc', 0)
+    with pytest.raises(ValidationError):
+        b2.f_a([])
+    with pytest.raises(ValidationError):
+        b2.f_b('abc', 'abc')
+
+
+def test_generic_complex_type():
+    T = TypeVar('T')
+
+    class A(BaseModel, Generic[T]):
+        a: T
+
+        @validate_call(validate_return=True)
+        def f(self, x: T) -> Tuple[T, T]:
+            return (self.a, x)
+
+        @validate_call(validate_return=True)
+        def g(self, x: List[T]) -> Tuple[T, T]:
+            return (x[0], x[1])
+
+        @validate_call(validate_return=True)
+        def h(self, x: List[T]) -> Tuple[T, T]:
+            return None
+
+    def check_A():
+        a_any = A(a=1)
+        assert a_any.f(2) == (1, 2)
+        assert a_any.f('abc') == (1, 'abc')
+        assert a_any.g([1, 'a']) == (1, 'a')
+        with pytest.raises(ValidationError):
+            a_any.h([1])
+
+    check_A()
+
+    a_int = A[int](a=1)
+    assert a_int.f(2) == (1, 2)
+    assert a_int.f('2') == (1, 2)
+    assert a_int.g([1, 2, 3]) == (1, 2)
+    with pytest.raises(ValidationError):
+        a_int.f('abc')
+    with pytest.raises(ValidationError):
+        a_int.f([])
+    with pytest.raises(ValidationError):
+        a_int.g([1, 'abc'])
+
+    # Ensure the subclassed methods will not affect the original methods.
+    check_A()
+
+    class B(A[int], Generic[T]):
+        @validate_call
+        def f1(self, x: Optional[Union[T, Literal['bar']]] = None): ...
+
+        @validate_call(validate_return=True)
+        def f2(self, x: T) -> Dict[str, List[Optional[Set[T]]]]:
+            # test complicated type as well type conversion
+            return {str(x): [None, (x,)]}
+
+    b_foo = B[Literal['foo']](a=123)
+    b_foo.f1('foo')
+    b_foo.f1('bar')
+    b_foo.f1()
+    with pytest.raises(ValidationError):
+        b_foo.f1('abc')
+    with pytest.raises(ValidationError):
+        b_foo.f1(1234)
+
+    # inherited
+    assert b_foo.g([1, 2, 3]) == (1, 2)
+    with pytest.raises(ValidationError):
+        b_foo.f('abc')
+
+
+# For normal function or class other than `BaseModel`, we cannot get the parameters at runtime.
+# https://github.com/python/typing/issues/629
+# https://discuss.python.org/t/runtime-access-to-type-parameters/37517
+NO_ACCESS_TO_TYPE_PARAMS = pytest.mark.xfail(reason='no access to type parameters')
+
+
+@NO_ACCESS_TO_TYPE_PARAMS
+def test_generic_func():
+    T = TypeVar('T')
+
+    @validate_call(validate_return=True)
+    def my_func(arg: T) -> T:
+        return 1
+
+    with pytest.raises(ValidationError):
+        my_func('a')
+
+
+@NO_ACCESS_TO_TYPE_PARAMS
+def test_generic_class():
+    T = TypeVar('T')
+
+    class A(Generic[T]):
+        @validate_call(validate_return=True)
+        def my_func(self, arg: T) -> T:
+            return arg
+
+    a = A[int]()
+    with pytest.raises(ValidationError):
+        a.my_func('a')
+
+
+REQUIRE_PEP_695 = pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+')
+
+
+@REQUIRE_PEP_695
+def test_pep_695_function(create_module) -> None:
+    """Note: validate_call still doesn't work properly with generics, see https://github.com/pydantic/pydantic/issues/7796.
+
+    This test is just to ensure that the syntax is accepted and doesn't raise a NameError."""
+
+    for import_annotations in ('from __future__ import annotations', ''):
+        # locals = {'Iterable': Iterable}
+
+        source = f"""
+{import_annotations}
+from typing import Iterable
+from pydantic import BaseModel, validate_call
+
+@validate_call
+def find_max_no_validate_return[T](args: Iterable[T]) -> T:
+    return sorted(args, reverse=True)[0]
+
+@validate_call(validate_return=True)
+def find_max_validate_return[T](args: Iterable[T]) -> T:
+    return sorted(args, reverse=True)[0]
+            """
+        module = create_module(source)
+
+        functions = [module.find_max_no_validate_return, module.find_max_validate_return]
+        for find_max in functions:
+            assert len(find_max.__type_params__) == 1
+            assert find_max([1, 2, 10, 5]) == 10
+
+            with pytest.raises(ValidationError):
+                find_max(1)
+
+
+@REQUIRE_PEP_695
+def test_pep_695_class(create_module):
+    """Test both PEP 695 syntax and validation on BaseModel."""
+
+    for import_annotations in ('from __future__ import annotations', ''):
+        source = f"""
+{import_annotations}
+from typing import Union, List, Tuple
+from pydantic import BaseModel, validate_call
+
+class A[T](BaseModel):
+    @validate_call(validate_return=True)
+    def f(self, x: T) -> T:
+        return x
+
+class B[T, S](BaseModel):
+    @validate_call(validate_return=True)
+    def f(self, x: T) -> Union[T, List[tuple[S, int]]]:
+        return x
+
+    @validate_call(validate_return=True)
+    def g[P: int](self, x: P) -> list[P]:
+        return (x,)
+             """
+        module = create_module(source)
+
+        A = module.A
+        a = A[int]()
+        assert a.f(1) == 1
+        assert a.f('1') == 1
+        with pytest.raises(ValidationError):
+            a.f('abc')
+
+        B = module.B
+        b = B[int, str]()
+        assert b.f(0) == 0
+        assert b.g(1) == [1]
+
+
+@REQUIRE_PEP_695
+def test_pep695_with_normal_class(create_module):
     """Primarily to ensure that the syntax is accepted and doesn't raise a `NameError` with `T`.
     The validation is not expected to work properly when parameterized at this point."""
 
@@ -875,7 +1244,7 @@ class A[T]:
         assert a.f('1') == '1'
 
 
-@pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+ for PEP 695 syntax with generics')
+@REQUIRE_PEP_695
 def test_pep695_with_nested_scopes(create_module):
     """Nested scopes generally cannot be caught by `parent_frame_namespace`,
     so currently this test is expected to fail.
@@ -920,29 +1289,3 @@ class A[T]:
         def f(a: T) -> S: ...
             """
         )
-
-
-class M0(BaseModel):
-    z: int
-
-
-M = M0
-
-
-def test_uses_local_ns():
-    class M1(BaseModel):
-        y: int
-
-    M = M1  # noqa: F841
-
-    def foo():
-        class M2(BaseModel):
-            z: int
-
-        M = M2
-
-        @validate_call
-        def bar(m: M) -> M:
-            return m
-
-        assert bar({'z': 1}) == M2(z=1)
