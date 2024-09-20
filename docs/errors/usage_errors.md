@@ -1211,7 +1211,7 @@ except PydanticUserError as exc_info:
 ## Overlapping unpacked [`TypedDict`][typing.TypedDict] fields and arguments {#overlapping-unpack-typed-dict}
 
 This error is raised when the typed dictionary used to type hint variadic keywords arguments
-has fields names overlapping with arguments (unless [positional only][positional-only_parameter]).
+has field names overlapping with arguments (unless [positional only][positional-only_parameter]).
 
 For reference, see the [related specification section] and [PEP 692].
 
