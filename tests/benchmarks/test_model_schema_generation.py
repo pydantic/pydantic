@@ -10,7 +10,6 @@ from typing import (
     Union,
     get_origin,
 )
-from uuid import UUID
 
 import pytest
 from typing_extensions import Annotated, Self
@@ -254,7 +253,7 @@ def test_tagged_union_with_str_discriminator_schema_generation(benchmark):
         pet_type: Literal['reptile', 'lizard']
         scales: bool
 
-    class Model(BaseModel):
+    class Model(DeferredModel):
         pet: Union[Cat, Dog, Lizard] = Field(..., discriminator='pet_type')
         n: int
 
@@ -278,7 +277,7 @@ def test_tagged_union_with_callable_discriminator_schema_generation(benchmark):
             return v.get('fruit', v.get('filling'))
         return getattr(v, 'fruit', getattr(v, 'filling', None))
 
-    class ThanksgivingDinner(BaseModel):
+    class ThanksgivingDinner(DeferredModel):
         dessert: Annotated[
             Union[
                 Annotated[ApplePie, Tag('apple')],
@@ -313,23 +312,6 @@ def test_tagged_union_with_callable_discriminator_nested_schema_generation(bench
         n: int
 
     benchmark(rebuild_model, Model)
-
-
-@pytest.mark.benchmark(group='model_schema_generation')
-def test_untagged_union_left_to_right_mode_schema_generation(benchmark):
-    class User(DeferredModel):
-        id: Union[str, int] = Field(union_mode='left_to_right')
-
-    benchmark(rebuild_model, User)
-
-
-@pytest.mark.benchmark(group='model_schema_generation')
-def test_untagged_union_smart_mode_schema_generation(benchmark):
-    class User(DeferredModel):
-        id: Union[int, str, UUID]
-        name: str
-
-    benchmark(rebuild_model, User)
 
 
 @pytest.mark.parametrize('field_type', StdLibTypes)
