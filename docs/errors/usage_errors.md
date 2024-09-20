@@ -1197,13 +1197,14 @@ For reference, see the [related specification section] and [PEP 692].
 ```py
 from typing_extensions import Unpack
 
-from pydantic import validate_call
+from pydantic import PydanticUserError, validate_call
 
 try:
 
     @validate_call
     def func(**kwargs: Unpack[int]):
         pass
+
 except PydanticUserError as exc_info:
     assert exc_info.code == 'unpack-typed-dict'
 ```
@@ -1218,7 +1219,7 @@ For reference, see the [related specification section] and [PEP 692].
 ```py
 from typing_extensions import TypedDict, Unpack
 
-from pydantic import validate_call
+from pydantic import PydanticUserError, validate_call
 
 
 class TD(TypedDict):
@@ -1230,6 +1231,7 @@ try:
     @validate_call
     def func(a: int, **kwargs: Unpack[TD]):
         pass
+
 except PydanticUserError as exc_info:
     assert exc_info.code == 'overlapping-unpack-typed-dict'
 ```
