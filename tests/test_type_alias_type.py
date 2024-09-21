@@ -7,7 +7,7 @@ import pytest
 from annotated_types import MaxLen
 from typing_extensions import Annotated, Literal, TypeAliasType
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, PydanticSchemaGenerationError, ValidationError
 from pydantic.type_adapter import TypeAdapter
 
 T = TypeVar('T')
@@ -434,3 +434,25 @@ def test_type_alias_with_type_statement(input_value, error):
             MyModel(value=input_value)
     else:
         MyModel(value=input_value)
+
+
+def test_circular_type_aliasing():
+    with pytest.raises(PydanticSchemaGenerationError, match='Circular type aliasing detected'):
+
+        class MyModel(BaseModel):
+            type A = B
+            type B = A
+
+            value: A
+
+
+def test_cyclic_type_aliasing():
+    class MyModel(BaseModel):
+        type A = C
+        type B = C
+        type C = Union[A, B]
+
+        value: C
+
+    with pytest.raises(ValidationError, match='recursion_loop'):
+        MyModel(value=1)
