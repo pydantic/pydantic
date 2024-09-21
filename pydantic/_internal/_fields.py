@@ -102,6 +102,15 @@ def collect_model_fields(  # noqa: C901
     BaseModel = import_cached_base_model()
     FieldInfo_ = import_cached_field_info()
 
+    dataclass_fields = {
+        field.name for base in bases for field in (dataclasses.fields(base) if dataclasses.is_dataclass(base) else ())
+    }
+
+    parent_fields_lookup: dict[str, FieldInfo] = {}
+    for base in reversed(bases):
+        if model_fields := getattr(base, 'model_fields', None):
+            parent_fields_lookup.update(model_fields)
+
     type_hints = get_cls_type_hints_lenient(cls, types_namespace)
 
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
@@ -152,9 +161,6 @@ def collect_model_fields(  # noqa: C901
         # "... shadows an attribute" warnings
         generic_origin = getattr(cls, '__pydantic_generic_metadata__', {}).get('origin')
         for base in bases:
-            dataclass_fields = {
-                field.name for field in (dataclasses.fields(base) if dataclasses.is_dataclass(base) else ())
-            }
             if hasattr(base, ann_name):
                 if base is generic_origin:
                     # Don't warn when "shadowing" of attributes in parametrized generics
@@ -185,13 +191,10 @@ def collect_model_fields(  # noqa: C901
             else:
                 # if field has no default value and is not in __annotations__ this means that it is
                 # defined in a base class and we can take it from there
-                model_fields_lookup: dict[str, FieldInfo] = {}
-                for x in cls.__bases__[::-1]:
-                    model_fields_lookup.update(getattr(x, 'model_fields', {}))
-                if ann_name in model_fields_lookup:
+                if ann_name in parent_fields_lookup:
                     # The field was present on one of the (possibly multiple) base classes
                     # copy the field to make sure typevar substitutions don't cause issues with the base classes
-                    field_info = copy(model_fields_lookup[ann_name])
+                    field_info = copy(parent_fields_lookup[ann_name])
                 else:
                     # The field was not found on any base classes; this seems to be caused by fields not getting
                     # generated thanks to models not being fully defined while initializing recursive models.
