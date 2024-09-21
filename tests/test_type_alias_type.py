@@ -1,6 +1,7 @@
 import datetime
+import sys
 from dataclasses import dataclass
-from typing import Dict, Generic, List, Tuple, TypeVar, Union
+from typing import Dict, Generic, List, Sequence, Tuple, TypeVar, Union
 
 import pytest
 from annotated_types import MaxLen
@@ -388,3 +389,48 @@ def test_type_alias_to_type_with_ref():
             'type': 'literal_error',
         }
     ]
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 12),
+    reason='type statement is a new feature in 3.12',
+)
+@pytest.mark.parametrize(
+    'input_value,error',
+    [
+        ([1], None),
+        (2, 'Input should be an instance of Sequence'),
+        (['foo'], None),
+        ([True], None),
+        ([[]], None),
+        ([None], None),
+        ([[1, '']], None),
+        ([{'a': None}], None),
+        ([{'a': [{'foo': 'bar'}]}], None),
+        # 5 errors:
+        # - value.0.str,
+        # - value.0.int,
+        # - value.0.bool,
+        # - value.0.`list[nullable[union[str,int,bool,...,dict[str,...]]]]`,
+        # - value.0.`dict[str,...]`.2.[key]
+        ([{2: None}], '5 validation errors for MyModel'),
+    ],
+    ids=repr,
+)
+def test_type_alias_with_type_statement(input_value, error):
+    class MyModel(BaseModel):
+        type JSON = str | int | bool | JSONSeq | JSONObj | None | JSONAlias
+        type JSONObj = dict[str, JSON]
+        type JSONSeq = list[JSON]
+        JSONAlias = JSONSeq
+        type MyJSONAlias = JSON
+        # MyJSONAlias = JSON
+        type JSONs = Sequence[MyJSONAlias]
+
+        value: JSONs
+
+    if error is not None:
+        with pytest.raises(ValidationError, match=error):
+            MyModel(value=input_value)
+    else:
+        MyModel(value=input_value)

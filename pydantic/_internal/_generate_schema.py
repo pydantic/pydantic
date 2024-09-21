@@ -1404,10 +1404,15 @@ class GenerateSchema:
             if maybe_schema is not None:
                 return maybe_schema
 
-            origin = get_origin(obj) or obj
-
-            annotation = origin.__value__
-            typevars_map = get_standard_typevars_map(obj)
+            prev = obj
+            origin = obj
+            while True:
+                if not hasattr(origin, '__value__'):
+                    break
+                prev = origin
+                origin = origin.__value__
+            annotation = prev.__value__
+            typevars_map = get_standard_typevars_map(prev)
 
             with self._types_namespace_stack.push(origin):
                 annotation = _typing_extra.eval_type_lenient(annotation, self._types_namespace)
