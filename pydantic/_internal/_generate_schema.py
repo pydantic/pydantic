@@ -1404,33 +1404,39 @@ class GenerateSchema:
             if maybe_schema is not None:
                 return maybe_schema
 
-            # Find the builtin type/container type that the alias actually points to.
-            # Here we don't stop at the final builtin type but the type alias before that
-            # because the `__value__` of last alias type contains the full information
-            # of the final type, including generics, which is crucial for schema generation.
-            seen_types: set[str] = set()
-            current_type = obj
-            while True:
-                if not hasattr(current_type, '__value__') or not hasattr(current_type.__value__, '__value__'):
-                    break
-                # Note that current_type.__name__ is different from str(current_type).
-                # The former does not include generics, while the latter contains sufficient information.
-                type_name = str(current_type)
+            if sys.version_info >= (3, 12):
+                # Find the builtin type/container type that the alias actually points to.
+                # Here we don't stop at the final builtin type but the type alias before that
+                # because the `__value__` of last alias type contains the full information
+                # of the final type, including generics, which is crucial for schema generation.
+                seen_types: set[str] = set()
+                current_type = obj
+                while True:
+                    if not hasattr(current_type, '__value__') or not hasattr(current_type.__value__, '__value__'):
+                        break
+                    # Note that current_type.__name__ is different from str(current_type).
+                    # The former does not include generics, while the latter contains sufficient information.
+                    type_name = str(current_type)
 
-                # Here only circular aliasing is checked because it fails schema generation. This error
-                # is raised at model class declaration. Cyclic aliasing does not fail schema generation
-                # but the schema raises recursion_loop validation errors *after* the model is declared.
-                # TODO: Figure out how schemas can still be generated when there is cyclic aliasing
-                if type_name in seen_types:
-                    raise PydanticSchemaGenerationError(f"Circular type aliasing detected: type '{type_name}'")
+                    # Here only circular aliasing is checked because it fails schema generation. This error
+                    # is raised at model class declaration. Cyclic aliasing does not fail schema generation
+                    # but the schema raises recursion_loop validation errors *after* the model is declared.
+                    # TODO: Figure out how schemas can still be generated when there is cyclic aliasing
+                    if type_name in seen_types:
+                        raise PydanticSchemaGenerationError(f"Circular type aliasing detected: type '{type_name}'")
 
-                seen_types.add(type_name)
-                current_type = current_type.__value__
+                    seen_types.add(type_name)
+                    current_type = current_type.__value__
+                origin = current_type
+                annotation = current_type.__value__
+            else:
+                origin = get_origin(obj) or obj
+                current_type = obj
+                annotation = origin.__value__
 
-            annotation = current_type.__value__
             typevars_map = get_standard_typevars_map(current_type)
 
-            with self._types_namespace_stack.push(current_type):
+            with self._types_namespace_stack.push(origin):
                 annotation = _typing_extra.eval_type_lenient(annotation, self._types_namespace)
                 annotation = replace_types(annotation, typevars_map)
                 schema = self.generate_schema(annotation)

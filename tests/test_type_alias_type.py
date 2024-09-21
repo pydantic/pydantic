@@ -1,7 +1,7 @@
 import datetime
 import sys
 from dataclasses import dataclass
-from typing import Dict, Generic, List, Sequence, Tuple, TypeVar, Union
+from typing import Dict, Generic, List, Tuple, TypeVar, Union
 
 import pytest
 from annotated_types import MaxLen
@@ -417,50 +417,68 @@ def test_type_alias_to_type_with_ref():
     ],
     ids=repr,
 )
-def test_type_alias_with_type_statement(input_value, error):
-    class MyModel(BaseModel):
-        type JSON = str | int | bool | JSONSeq | JSONObj | None | JSONAlias
-        type JSONObj = dict[str, JSON]
-        type JSONSeq = list[JSON]
-        JSONAlias = JSONSeq
-        type MyJSONAlias = JSON
-        # MyJSONAlias = JSON
-        type JSONs = Sequence[MyJSONAlias]
+def test_type_alias_with_type_statement(create_module, input_value, error):
+    module = create_module(
+        """
+from typing import Sequence
+from pydantic import BaseModel
 
-        value: JSONs
+type JSON = str | int | bool | JSONSeq | JSONObj | None | JSONAlias
+type JSONObj = dict[str, JSON]
+type JSONSeq = list[JSON]
+JSONAlias = JSONSeq
+type MyJSONAlias = JSON
+# MyJSONAlias = JSON
+type JSONs = Sequence[MyJSONAlias]
 
+class MyModel(BaseModel):
+    value: JSONs
+"""
+    )
     if error is not None:
         with pytest.raises(ValidationError, match=error):
-            MyModel(value=input_value)
+            module.MyModel(value=input_value)
     else:
-        MyModel(value=input_value)
+        module.MyModel(value=input_value)
 
 
 @pytest.mark.skipif(
     sys.version_info < (3, 12),
     reason='type statement is available from 3.12',
 )
-def test_circular_type_aliasing():
+def test_circular_type_aliasing(create_module):
     with pytest.raises(PydanticSchemaGenerationError, match='Circular type aliasing detected'):
+        create_module(
+            """
+from pydantic import BaseModel
 
-        class MyModel(BaseModel):
-            type A = B
-            type B = A
+class MyModel(BaseModel):
+    type A = B
+    type B = A
 
-            value: A
+    value: A
+"""
+        )
 
 
 @pytest.mark.skipif(
     sys.version_info < (3, 12),
     reason='type statement is available from 3.12',
 )
-def test_cyclic_type_aliasing():
-    class MyModel(BaseModel):
-        type A = C
-        type B = C
-        type C = Union[A, B]
+def test_cyclic_type_aliasing(create_module):
+    module = create_module(
+        """
+from pydantic import BaseModel
+from typing import Union
 
-        value: C
+class MyModel(BaseModel):
+    type A = C
+    type B = C
+    type C = Union[A, B]
+
+    value: C
+"""
+    )
 
     with pytest.raises(ValidationError, match='recursion_loop'):
-        MyModel(value=1)
+        module.MyModel(value=1)
