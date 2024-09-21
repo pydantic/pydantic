@@ -393,7 +393,7 @@ def test_type_alias_to_type_with_ref():
 
 @pytest.mark.skipif(
     sys.version_info < (3, 12),
-    reason='type statement is a new feature in 3.12',
+    reason='type statement is available from 3.12',
 )
 @pytest.mark.parametrize(
     'input_value,error',
@@ -436,6 +436,10 @@ def test_type_alias_with_type_statement(input_value, error):
         MyModel(value=input_value)
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 12),
+    reason='type statement is available from 3.12',
+)
 def test_circular_type_aliasing():
     with pytest.raises(PydanticSchemaGenerationError, match='Circular type aliasing detected'):
 
@@ -446,6 +450,10 @@ def test_circular_type_aliasing():
             value: A
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 12),
+    reason='type statement is available from 3.12',
+)
 def test_cyclic_type_aliasing():
     class MyModel(BaseModel):
         type A = C
