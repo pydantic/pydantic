@@ -1404,17 +1404,27 @@ class GenerateSchema:
             if maybe_schema is not None:
                 return maybe_schema
 
-            prev = obj
-            origin = obj
+            seen = set()
+            current_type = obj
+            is_circular = False
             while True:
-                if not hasattr(origin, '__value__'):
+                if not hasattr(current_type, '__value__') or not hasattr(current_type.__value__, '__value__'):
                     break
-                prev = origin
-                origin = origin.__value__
-            annotation = prev.__value__
-            typevars_map = get_standard_typevars_map(prev)
+                # Note that current_type.__name__ is different from str(current_type).
+                # The former does not include generics, while the latter contains sufficient information.
+                type_name = str(current_type)
+                if type_name in seen:
+                    is_circular = True
+                    break
+                seen.add(type_name)
+                current_type = current_type.__value__
+            if is_circular:
+                raise ValueError("cyclic type aliasing with no terminal types detected")
 
-            with self._types_namespace_stack.push(origin):
+            annotation = current_type.__value__
+            typevars_map = get_standard_typevars_map(current_type)
+
+            with self._types_namespace_stack.push(current_type):
                 annotation = _typing_extra.eval_type_lenient(annotation, self._types_namespace)
                 annotation = replace_types(annotation, typevars_map)
                 schema = self.generate_schema(annotation)
