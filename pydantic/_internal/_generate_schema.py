@@ -1427,16 +1427,14 @@ class GenerateSchema:
 
                     seen_types.add(type_name)
                     current_type = current_type.__value__
-                origin = current_type
                 annotation = current_type.__value__
+                typevars_map = get_standard_typevars_map(current_type)
             else:
-                origin = get_origin(obj) or obj
-                current_type = obj
-                annotation = origin.__value__
+                current_type = get_origin(obj) or obj
+                annotation = current_type.__value__
+                typevars_map = get_standard_typevars_map(obj)
 
-            typevars_map = get_standard_typevars_map(current_type)
-
-            with self._types_namespace_stack.push(origin):
+            with self._types_namespace_stack.push(current_type):
                 annotation = _typing_extra.eval_type_lenient(annotation, self._types_namespace)
                 annotation = replace_types(annotation, typevars_map)
                 schema = self.generate_schema(annotation)
