@@ -178,15 +178,15 @@ def test_exotic_localns() -> None:
 def test_ns_resolver():
     resolver = NsResolver(globalns={'Foo': str}).add_localns({'Foo': int, 'Bar': float})
 
-    assert resolver.resolved_localns == {'Foo': int, 'Bar': float}
-    assert resolver.resolve_name('Foo') == int
+    assert resolver.resolve_name('Foo') is int
+    assert resolver.resolve_name('Bar') is float
     assert resolver.current_globals() == {'Foo': str}
 
     with pytest.raises(KeyError):
         resolver.resolve_name('Unknown')
 
     resolver.add_localns({'Bar': bool})
-    assert resolver.resolved_localns == {'Foo': int, 'Bar': bool}
+    assert resolver.resolve_name('Bar') is bool
 
 
 def test_ns_resolver_mapping():

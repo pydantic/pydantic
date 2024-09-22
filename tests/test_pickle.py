@@ -8,7 +8,7 @@ import pytest
 
 import pydantic
 from pydantic import BaseModel, PositiveFloat, ValidationError
-from pydantic._internal._model_construction import _PydanticWeakRef
+from pydantic._internal._weak_ref import _PydanticWeakRef
 from pydantic.config import ConfigDict
 
 

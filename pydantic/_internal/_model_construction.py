@@ -7,7 +7,6 @@ import operator
 import sys
 import typing
 import warnings
-import weakref
 from abc import ABCMeta
 from functools import lru_cache, partial
 from types import FunctionType
@@ -214,15 +213,12 @@ class ModelMetaclass(ABCMeta):
 
             if __pydantic_reset_parent_namespace__:
                 parent_ns = parent_frame_namespace()
-                cls.__pydantic_parent_namespace__ = build_lenient_weakvaluedict(
-                    # TODO remove resolved_localns? And use NsResolver directly in __pydantic_parent_namespace__?
-                    parent_ns.resolved_localns if parent_ns is not None else None
+                cls.__pydantic_parent_namespace__ = (
+                    parent_ns.build_pydantic_parent_namespace_weakdict() if parent_ns is not None else None
                 )
             parent_namespace: dict[str, Any] | None = getattr(cls, '__pydantic_parent_namespace__', None)
-            if isinstance(parent_namespace, dict):
-                parent_namespace = unpack_lenient_weakvaluedict(parent_namespace)
+            parent_ns = NsResolver.from_pydantic_parent_namespace_weakdict(parent_namespace)
 
-            parent_ns = NsResolver().add_localns(parent_namespace) if parent_namespace else None
             types_namespace = merge_cls_and_parent_ns(cls, parent_ns)
 
             set_model_fields(cls, bases, config_wrapper, types_namespace)
@@ -730,77 +726,6 @@ class _DeprecatedFieldDescriptor:
     # as `BaseModel.__setattr__` is defined and takes priority.
     def __set__(self, obj: Any, value: Any) -> NoReturn:
         raise AttributeError(self.field_name)
-
-
-class _PydanticWeakRef:
-    """Wrapper for `weakref.ref` that enables `pickle` serialization.
-
-    Cloudpickle fails to serialize `weakref.ref` objects due to an arcane error related
-    to abstract base classes (`abc.ABC`). This class works around the issue by wrapping
-    `weakref.ref` instead of subclassing it.
-
-    See https://github.com/pydantic/pydantic/issues/6763 for context.
-
-    Semantics:
-        - If not pickled, behaves the same as a `weakref.ref`.
-        - If pickled along with the referenced object, the same `weakref.ref` behavior
-          will be maintained between them after unpickling.
-        - If pickled without the referenced object, after unpickling the underlying
-          reference will be cleared (`__call__` will always return `None`).
-    """
-
-    def __init__(self, obj: Any):
-        if obj is None:
-            # The object will be `None` upon deserialization if the serialized weakref
-            # had lost its underlying object.
-            self._wr = None
-        else:
-            self._wr = weakref.ref(obj)
-
-    def __call__(self) -> Any:
-        if self._wr is None:
-            return None
-        else:
-            return self._wr()
-
-    def __reduce__(self) -> tuple[Callable, tuple[weakref.ReferenceType | None]]:
-        return _PydanticWeakRef, (self(),)
-
-
-def build_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | None:
-    """Takes an input dictionary, and produces a new value that (invertibly) replaces the values with weakrefs.
-
-    We can't just use a WeakValueDictionary because many types (including int, str, etc.) can't be stored as values
-    in a WeakValueDictionary.
-
-    The `unpack_lenient_weakvaluedict` function can be used to reverse this operation.
-    """
-    if d is None:
-        return None
-    result = {}
-    for k, v in d.items():
-        try:
-            proxy = _PydanticWeakRef(v)
-        except TypeError:
-            proxy = v
-        result[k] = proxy
-    return result
-
-
-def unpack_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | None:
-    """Inverts the transform performed by `build_lenient_weakvaluedict`."""
-    if d is None:
-        return None
-
-    result = {}
-    for k, v in d.items():
-        if isinstance(v, _PydanticWeakRef):
-            v = v()
-            if v is not None:
-                result[k] = v
-        else:
-            result[k] = v
-    return result
 
 
 @lru_cache(maxsize=None)

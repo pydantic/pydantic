@@ -3,11 +3,12 @@ from __future__ import annotations as _annotations
 import itertools
 import sys
 from contextlib import contextmanager
-from functools import cached_property
 from types import ModuleType
 from typing import Any, Callable, Iterator, Mapping, Type, Union
 
 from typing_extensions import Self
+
+from ._weak_ref import _PydanticWeakRef
 
 ModuleSource = Union[Type[Any], Callable]
 
@@ -32,7 +33,6 @@ class NsResolver(Mapping[str, Any]):
             ns_dicts = [localns] if localns else None
         if ns_dicts:
             self._localns.extend(ns_dicts)
-            self._reset_resolved_localns()
         return self
 
     def current_globals(self) -> Mapping[str, Any] | None:
@@ -58,13 +58,11 @@ class NsResolver(Mapping[str, Any]):
         namespace = self._module_namespace_from(from_type)
         if namespace:
             self._localns.append(namespace)
-            self._reset_resolved_localns()
         try:
             yield
         finally:
             if namespace:
                 self._localns.pop()
-                self._reset_resolved_localns()
 
     @classmethod
     def _get_namespace_dict(cls, obj: ModuleSource | Mapping[str, Any] | None) -> Mapping[str, Any] | None:
@@ -92,9 +90,6 @@ class NsResolver(Mapping[str, Any]):
                 pass
         return None
 
-    def _reset_resolved_localns(self) -> None:
-        self.__dict__.pop('resolved_localns', None)  # reset the cached_property
-
     def resolve_name(self, name: str) -> Any:
         """Resolve name in the namespaces in order."""
         for ns in reversed(self._localns):
@@ -105,14 +100,6 @@ class NsResolver(Mapping[str, Any]):
             return globalns[name]
 
         raise KeyError(name)
-
-    @cached_property
-    def resolved_localns(self) -> dict[str, Any]:
-        """Resolves the local namespaces in order by merging them together.
-        Maybe resource intensive for big namespaces. Therefore, this is only used when really needed.
-        Caller is expected to not mutate contents.
-        """
-        return {k: v for ns in self._localns for k, v in ns.items()}
 
     def __getitem__(self, name: str) -> Any:  # Called by "eval" inside typing._eval_type
         return self.resolve_name(name)
@@ -136,3 +123,40 @@ class NsResolver(Mapping[str, Any]):
         for ns in self._localns:
             keys.update(ns.keys())
         return len(keys)
+
+    def build_pydantic_parent_namespace_weakdict(self) -> dict[str, Any] | None:
+        """Converts locals to a dict where values are (invertibly) replaced with weakrefs.
+        This should only be used for __pydantic_parent_namespace__.
+
+        We can't just use a WeakValueDictionary because many types (including int, str, etc.) can't be stored as values
+        in a WeakValueDictionary.
+
+        The `from_pydantic_parent_namespace_weakdict` function can be used to reverse this operation.
+        """
+        result = {}
+        for ns in reversed(self._localns):  # reversed so that the last namespace has priority
+            for k, v in ns.items():
+                if k in result:
+                    continue
+                try:
+                    proxy = _PydanticWeakRef(v)
+                except TypeError:
+                    proxy = v
+                result[k] = proxy
+        return result
+
+    @classmethod
+    def from_pydantic_parent_namespace_weakdict(cls, d: dict[str, Any] | None) -> Self:
+        """Inverts the transform performed by `build_pydantic_parent_namespace_weakdict`."""
+        if not d:
+            return cls()
+
+        result = {}
+        for k, v in d.items():
+            if isinstance(v, _PydanticWeakRef):
+                v = v()
+                if v is not None:
+                    result[k] = v
+            else:
+                result[k] = v
+        return cls().add_localns(result)

@@ -544,19 +544,16 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             else:
                 if _parent_namespace_depth > 0:
                     frame_parent_ns = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth)
-                    cls_parent_ns = (
-                        _model_construction.unpack_lenient_weakvaluedict(cls.__pydantic_parent_namespace__) or {}
+                    cls_parent_ns = _typing_extra.NsResolver.from_pydantic_parent_namespace_weakdict(
+                        cls.__pydantic_parent_namespace__
                     )
-                    parent_ns_dict = {
-                        **cls_parent_ns,
-                        # TODO remove resolved_localns? And use NsResolver directly in __pydantic_parent_namespace__?
-                        **(frame_parent_ns.resolved_localns if frame_parent_ns else {}),
-                    }
-                    cls.__pydantic_parent_namespace__ = _model_construction.build_lenient_weakvaluedict(parent_ns_dict)
+                    parent = cls_parent_ns.add_localns(frame_parent_ns)
+                    cls.__pydantic_parent_namespace__ = parent.build_pydantic_parent_namespace_weakdict()
                 else:
-                    parent_ns_dict = _model_construction.unpack_lenient_weakvaluedict(cls.__pydantic_parent_namespace__)
+                    parent = _typing_extra.NsResolver.from_pydantic_parent_namespace_weakdict(
+                        cls.__pydantic_parent_namespace__
+                    )
 
-                parent = _typing_extra.NsResolver().add_localns(parent_ns_dict) if parent_ns_dict else None
                 types_namespace = _typing_extra.merge_cls_and_parent_ns(cls, parent)
 
             # manually override defer_build so complete_model_class doesn't skip building the model again
