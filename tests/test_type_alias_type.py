@@ -452,10 +452,10 @@ def test_circular_type_aliasing(create_module):
             """
 from pydantic import BaseModel
 
-class MyModel(BaseModel):
-    type A = B
-    type B = A
+type A = B
+type B = A
 
+class MyModel(BaseModel):
     value: A
 """
         )
@@ -471,11 +471,11 @@ def test_cyclic_type_aliasing(create_module):
 from pydantic import BaseModel
 from typing import Union
 
-class MyModel(BaseModel):
-    type A = C
-    type B = C
-    type C = Union[A, B]
+type A = C
+type B = C
+type C = Union[A, B]
 
+class MyModel(BaseModel):
     value: C
 """
     )
