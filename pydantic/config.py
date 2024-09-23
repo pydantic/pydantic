@@ -573,6 +573,16 @@ class ConfigDict(TypedDict, total=False):
         NOTE: `'float' is deprecated in v2.10 in favour of `'milliseconds_float'`
     """
 
+    ser_json_datetime: Literal['iso8601', 'seconds_int', 'milliseconds_int']
+    """
+    The format of JSON serialized datetimes. Accepts the string values of `'iso8601'`,
+    `'seconds_float'`, and `'milliseconds_float'`. Defaults to `'iso8601'`.
+
+    - `'iso8601'` will serialize datetimes to ISO 8601 durations.
+    - `'seconds_int'` will serialize datetimes to its unix timestamp.
+    - `'milliseconds_int'` will serialize datetimes to its unix timestamp, in milliseconds.
+    """
+
     ser_json_bytes: Literal['utf8', 'base64', 'hex']
     """
     The encoding of JSON serialized bytes. Defaults to `'utf8'`.

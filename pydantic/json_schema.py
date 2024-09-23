@@ -709,6 +709,8 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
+        if self._config.ser_json_datetime in {'milliseconds_int', 'seconds_int'}:
+            return {'type': 'number'}
         return {'type': 'string', 'format': 'date-time'}
 
     def timedelta_schema(self, schema: core_schema.TimedeltaSchema) -> JsonSchemaValue:
@@ -2087,6 +2089,7 @@ class GenerateJsonSchema:
         return pydantic_core.to_jsonable_python(
             default,
             timedelta_mode=config.ser_json_timedelta,
+            datetime_mode=config.ser_json_datetime,
             bytes_mode=config.ser_json_bytes,
         )
 
