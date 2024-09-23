@@ -1829,7 +1829,7 @@ def test_model_default_datetime(
     }
 
 
-def test_model_default_timedelta():
+def test_model_default_timedelta_deprecated_float():
     with pytest.warns(PydanticDeprecatedSince210):
 
         class Model(BaseModel):
