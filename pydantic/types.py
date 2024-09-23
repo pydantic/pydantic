@@ -2767,9 +2767,9 @@ class Tag:
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         schema = handler(source_type)
-        metadata = schema.setdefault('metadata', {})
-        assert isinstance(metadata, dict)
-        metadata[_core_utils.TAGGED_UNION_TAG_KEY] = self.tag
+        pydantic_metadata = schema.get('pydantic_metadata', {})
+        pydantic_metadata[_core_utils.TAGGED_UNION_TAG_KEY] = self.tag
+        schema['pydantic_metadata'] = pydantic_metadata
         return schema
 
 

@@ -696,13 +696,13 @@ class TestModel:
             core_schema.AnySchema(
                 type='any',
                 ref='meta_schema',
-                metadata={'schema_type': 'any', 'test_id': '42'},
+                pydantic_metadata={'schema_type': 'any', 'test_id': '42'},
                 serialization=core_schema.simple_ser_schema('bool'),
             ),
             {
                 'type': 'any',
                 'ref': 'meta_schema',
-                'metadata': {'schema_type': 'any', 'test_id': '42'},
+                'pydantic_metadata': {'schema_type': 'any', 'test_id': '42'},
                 'serialization': {'type': 'bool'},
             },
         ),
@@ -711,7 +711,7 @@ class TestModel:
             False,
             core_schema.model_fields_schema(
                 ref='meta_schema',
-                metadata={'schema_type': 'model', 'test_id': '43'},
+                pydantic_metadata={'schema_type': 'model', 'test_id': '43'},
                 computed_fields=[
                     core_schema.computed_field(
                         property_name='TestModel',
@@ -719,7 +719,7 @@ class TestModel:
                             fields={'a': core_schema.model_field(core_schema.str_schema())},
                         ),
                         alias='comp_field_1',
-                        metadata={'comp_field_key': 'comp_field_data'},
+                        pydantic_metadata={'comp_field_key': 'comp_field_data'},
                     )
                 ],
                 fields={'a': core_schema.model_field(core_schema.str_schema())},
@@ -736,7 +736,7 @@ class TestModel:
                             'fields': {'a': {'type': 'model-field', 'schema': {'type': 'str'}}},
                         },
                         'alias': 'comp_field_1',
-                        'metadata': {'comp_field_key': 'comp_field_data'},
+                        'pydantic_metadata': {'comp_field_key': 'comp_field_data'},
                     }
                 ],
                 'ref': 'meta_schema',
@@ -747,7 +747,7 @@ class TestModel:
             False,
             core_schema.model_schema(
                 ref='meta_schema',
-                metadata={'schema_type': 'model', 'test_id': '43'},
+                pydantic_metadata={'schema_type': 'model', 'test_id': '43'},
                 custom_init=False,
                 root_model=False,
                 cls=TestModel,

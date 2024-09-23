@@ -4853,9 +4853,11 @@ def test_literal_multiple():
 
 def test_typing_mutable_set():
     s1 = TypeAdapter(Set[int]).core_schema
-    s1.pop('metadata', None)
     s2 = TypeAdapter(typing.MutableSet[int]).core_schema
-    s2.pop('metadata', None)
+
+    # we pop metadata to avoid comparing json schema mutators
+    s1.pop('pydantic_metadata', None)
+    s2.pop('pydantic_metadata', None)
     assert s1 == s2
 
 

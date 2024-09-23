@@ -40,7 +40,7 @@ _CORE_SCHEMA_FIELD_TYPES = {'typed-dict-field', 'dataclass-field', 'model-field'
 _FUNCTION_WITH_INNER_SCHEMA_TYPES = {'function-before', 'function-after', 'function-wrap'}
 _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'set', 'frozenset'}
 
-TAGGED_UNION_TAG_KEY = 'pydantic.internal.tagged_union_tag'
+TAGGED_UNION_TAG_KEY = 'pydantic_internal_tagged_union_tag'
 """
 Used in a `Tag` schema to specify the tag used for a discriminated union.
 """
@@ -470,12 +470,12 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
             return False
         if 'serialization' in s:
             return False
-        if 'metadata' in s:
-            metadata = s['metadata']
+        if 'pydantic_metadata' in s:
+            metadata = s['pydantic_metadata']
             for k in (
                 'pydantic_js_functions',
                 'pydantic_js_annotation_functions',
-                'pydantic.internal.union_discriminator',
+                'pydantic_internal_union_discriminator',
             ):
                 if k in metadata:
                     # we need to keep this as a ref
@@ -514,18 +514,18 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
 def _strip_metadata(schema: CoreSchema) -> CoreSchema:
     def strip_metadata(s: CoreSchema, recurse: Recurse) -> CoreSchema:
         s = s.copy()
-        s.pop('metadata', None)
+        s.pop('pydantic_metadata', None)
         if s['type'] == 'model-fields':
             s = s.copy()
             s['fields'] = {k: v.copy() for k, v in s['fields'].items()}
             for field_name, field_schema in s['fields'].items():
-                field_schema.pop('metadata', None)
+                field_schema.pop('pydantic_metadata', None)
                 s['fields'][field_name] = field_schema
             computed_fields = s.get('computed_fields', None)
             if computed_fields:
                 s['computed_fields'] = [cf.copy() for cf in computed_fields]
                 for cf in computed_fields:
-                    cf.pop('metadata', None)
+                    cf.pop('pydantic_metadata', None)
             else:
                 s.pop('computed_fields', None)
         elif s['type'] == 'model':

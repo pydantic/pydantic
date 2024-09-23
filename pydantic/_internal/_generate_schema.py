@@ -1387,7 +1387,7 @@ class GenerateSchema:
         else:
             choices_with_tags: list[CoreSchema | tuple[CoreSchema, str]] = []
             for choice in choices:
-                tag = choice.get('metadata', {}).get(_core_utils.TAGGED_UNION_TAG_KEY)
+                tag = choice.get('pydantic_metadata', {}).get(_core_utils.TAGGED_UNION_TAG_KEY)
                 if tag is not None:
                     choices_with_tags.append((choice, tag))
                 else:

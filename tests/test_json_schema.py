@@ -3414,7 +3414,7 @@ def test_namedtuple_modify_schema():
         @classmethod
         def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
             schema = handler(source)
-            schema['arguments_schema']['metadata']['prefer_positional_arguments'] = False
+            schema['arguments_schema']['pydantic_metadata']['prefer_positional_arguments'] = False
             return schema
 
     class Location(BaseModel):

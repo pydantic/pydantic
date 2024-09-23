@@ -17,10 +17,10 @@ from pydantic._internal._core_utils import (
 from pydantic._internal._repr import Representation
 
 
-def remove_metadata(schema: CoreSchema) -> CoreSchema:
+def remove_pydantic_metadata(schema: CoreSchema) -> CoreSchema:
     def inner(s: CoreSchema, recurse: Walk) -> CoreSchema:
         s = s.copy()
-        s.pop('metadata', None)
+        s.pop('pydantic_metadata', None)
         return recurse(s, inner)
 
     return walk_core_schema(schema, inner)
@@ -176,7 +176,7 @@ def remove_metadata(schema: CoreSchema) -> CoreSchema:
     ],
 )
 def test_build_schema_defs(input_schema: cs.CoreSchema, inlined: cs.CoreSchema):
-    actual_inlined = remove_metadata(simplify_schema_references(input_schema))
+    actual_inlined = remove_pydantic_metadata(simplify_schema_references(input_schema))
     assert actual_inlined == inlined
     SchemaValidator(actual_inlined)  # check for validity
 
