@@ -1287,7 +1287,7 @@ version = "2.24.0"
 requires_python = ">=3.8"
 git = "https://github.com/ollz272/pydantic-core.git"
 ref = "add-datetime-serializer"
-revision = "e9ebd111527e413a999c1343261a85dea3c68ffe"
+revision = "f94636e5a9c4fa64f062b6a82affb4a9328d8a30"
 summary = "Core functionality for Pydantic validation and serialization"
 dependencies = [
     "typing-extensions!=4.7.0,>=4.6.0",
