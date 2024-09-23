@@ -555,6 +555,12 @@ class GenerateJsonSchema:
         return json_schema
 
     # ### Schema generation methods
+
+    def invalid_schema(self, schema: core_schema.InvalidSchema) -> JsonSchemaValue:
+        """Placeholder - should never be called."""
+
+        raise RuntimeError('Cannot generate schema for invalid_schema. This is a bug! Please report it.')
+
     def any_schema(self, schema: core_schema.AnySchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches any value.
 

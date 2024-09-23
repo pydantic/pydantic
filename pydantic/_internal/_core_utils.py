@@ -44,10 +44,6 @@ TAGGED_UNION_TAG_KEY = 'pydantic.internal.tagged_union_tag'
 """
 Used in a `Tag` schema to specify the tag used for a discriminated union.
 """
-HAS_INVALID_SCHEMAS_METADATA_KEY = 'pydantic.internal.invalid'
-"""Used to mark a schema that is invalid because it refers to a definition that was not yet defined when the
-schema was first encountered.
-"""
 
 
 def is_core_schema(
@@ -146,10 +142,7 @@ def define_expected_missing_refs(
     expected_missing_refs = allowed_missing_refs.difference(refs)
     if expected_missing_refs:
         definitions: list[core_schema.CoreSchema] = [
-            # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
-            #   Issue: https://github.com/pydantic/pydantic-core/issues/619
-            core_schema.none_schema(ref=ref, metadata={HAS_INVALID_SCHEMAS_METADATA_KEY: True})
-            for ref in expected_missing_refs
+            core_schema.invalid_schema(ref=ref) for ref in expected_missing_refs
         ]
         return core_schema.definitions_schema(schema, definitions)
     return None
@@ -160,11 +153,11 @@ def collect_invalid_schemas(schema: core_schema.CoreSchema) -> bool:
 
     def _is_schema_valid(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
         nonlocal invalid
-        if 'metadata' in s:
-            metadata = s['metadata']
-            if HAS_INVALID_SCHEMAS_METADATA_KEY in metadata:
-                invalid = metadata[HAS_INVALID_SCHEMAS_METADATA_KEY]
-                return s
+
+        if s['type'] == 'invalid':
+            invalid = True
+            return s
+
         return recurse(s, _is_schema_valid)
 
     walk_core_schema(schema, _is_schema_valid)
