@@ -617,6 +617,8 @@ class ConfigDict(TypedDict, total=False):
     in v2.10 given feedback that this restriction was limiting in AI and data science contexts,
     where it is common to have fields with names like `model_id`, `model_input`, `model_output`, etc.
 
+    For more details, see https://github.com/pydantic/pydantic/issues/10315.
+
     ```py
     import warnings
 
@@ -632,9 +634,9 @@ class ConfigDict(TypedDict, total=False):
     except UserWarning as e:
         print(e)
         '''
-        Field "model_dump_something" in Model has conflict with protected namespace "model_dump_".
+        Field "model_dump_something" in Model has conflict with protected namespace "model_dump".
 
-        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('model_validate_',)`.
+        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('model_validate',)`.
         '''
     ```
 

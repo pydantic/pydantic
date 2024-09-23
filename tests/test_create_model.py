@@ -558,7 +558,7 @@ def test_create_model_tuple_3():
 
 def test_create_model_protected_namespace_default():
     with pytest.warns(
-        UserWarning, match='Field "model_dump_something" in Model has conflict with protected namespace "model_dump_"'
+        UserWarning, match='Field "model_dump_something" in Model has conflict with protected namespace "model_dump"'
     ):
         create_model('Model', model_dump_something=(str, ...))
 

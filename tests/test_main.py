@@ -2580,7 +2580,7 @@ def test_recursion_loop_error():
 
 def test_protected_namespace_default():
     with pytest.warns(
-        UserWarning, match='Field "model_dump_something" in Model has conflict with protected namespace "model_dump_"'
+        UserWarning, match='Field "model_dump_something" in Model has conflict with protected namespace "model_dump"'
     ):
 
         class Model(BaseModel):
