@@ -485,7 +485,9 @@ jobs:
           target: ${{ matrix.target }}
           manylinux: ${{ matrix.manylinux }}
           args: --release --out dist --interpreter ${{ matrix.interpreter || '3.8 3.9 3.10 3.11 3.12 3.13 pypy3.9 pypy3.10' }}
-          rust-toolchain: stable
+          # Limit windows builds to 1.77 to keep Windows 7 support.
+          # FIXME: Unpin when Python 3.8 support is dropped. (3.9 requires Windows 10)
+          rust-toolchain: ${{ (matrix.os == 'windows' && '1.77') || 'stable' }}
           docker-options: -e CI
 
       - run: ${{ (matrix.os == 'windows' && 'dir') || 'ls -lh' }} dist/
@@ -534,16 +536,17 @@ jobs:
 
       - name: install rust stable
         id: rust-toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@master
         with:
           components: llvm-tools
+          # Limit windows builds to 1.77 to keep Windows 7 support.
+          # FIXME: Unpin when Python 3.8 support is dropped. (3.9 requires Windows 10)
+          toolchain: ${{ (matrix.os == 'windows' && '1.77') || 'stable' }}
 
       - run: pip install -U 'ruff==0.5.0' typing_extensions
 
       # generate self-schema now, so we don't have to do so inside docker in maturin build
       - run: python generate_self_schema.py
-
-      - run: rustc --version --verbose
 
       - name: build initial wheel
         uses: PyO3/maturin-action@v1
@@ -553,7 +556,7 @@ jobs:
             --release
             --out pgo-wheel
             --interpreter ${{ matrix.interpreter }}
-          rust-toolchain: stable
+          rust-toolchain: ${{ steps.rust-toolchain.outputs.name }}
           docker-options: -e CI
         env:
           RUSTFLAGS: "-Cprofile-generate=${{ github.workspace }}/profdata"
@@ -568,7 +571,7 @@ jobs:
           pip install -r tests/requirements.txt
           pip install pydantic-core --no-index --no-deps --find-links pgo-wheel --force-reinstall
           pytest tests/benchmarks
-          rustup run stable bash -c 'echo LLVM_PROFDATA=$RUSTUP_HOME/toolchains/$RUSTUP_TOOLCHAIN/lib/rustlib/${{ env.RUST_HOST }}/bin/llvm-profdata >> "$GITHUB_ENV"'
+          rustup run ${{ steps.rust-toolchain.outputs.name }} bash -c 'echo LLVM_PROFDATA=$RUSTUP_HOME/toolchains/$RUSTUP_TOOLCHAIN/lib/rustlib/${{ env.RUST_HOST }}/bin/llvm-profdata >> "$GITHUB_ENV"'
 
       - name: merge pgo data
         run: ${{ env.LLVM_PROFDATA }} merge -o ${{ github.workspace }}/merged.profdata ${{ github.workspace }}/profdata
@@ -581,7 +584,7 @@ jobs:
             --release
             --out dist
             --interpreter ${{ matrix.interpreter }}
-          rust-toolchain: stable
+          rust-toolchain: ${{steps.rust-toolchain.outputs.name}}
           docker-options: -e CI
         env:
           RUSTFLAGS: "-Cprofile-use=${{ github.workspace }}/merged.profdata"
