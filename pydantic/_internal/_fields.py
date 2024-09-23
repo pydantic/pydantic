@@ -102,10 +102,6 @@ def collect_model_fields(  # noqa: C901
     BaseModel = import_cached_base_model()
     FieldInfo_ = import_cached_field_info()
 
-    dataclass_fields = {
-        field.name for base in bases for field in (dataclasses.fields(base) if dataclasses.is_dataclass(base) else ())
-    }
-
     parent_fields_lookup: dict[str, FieldInfo] = {}
     for base in reversed(bases):
         if model_fields := getattr(base, 'model_fields', None):
@@ -161,6 +157,9 @@ def collect_model_fields(  # noqa: C901
         # "... shadows an attribute" warnings
         generic_origin = getattr(cls, '__pydantic_generic_metadata__', {}).get('origin')
         for base in bases:
+            dataclass_fields = {
+                field.name for field in (dataclasses.fields(base) if dataclasses.is_dataclass(base) else ())
+            }
             if hasattr(base, ann_name):
                 if base is generic_origin:
                     # Don't warn when "shadowing" of attributes in parametrized generics
