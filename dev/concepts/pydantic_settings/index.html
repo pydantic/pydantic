@@ -1358,6 +1358,15 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#change-the-cli-flag-prefix-character" class="md-nav__link">
+    <span class="md-ellipsis">
+      Change the CLI Flag Prefix Character
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3372,6 +3381,15 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#change-the-cli-flag-prefix-character" class="md-nav__link">
+    <span class="md-ellipsis">
+      Change the CLI Flag Prefix Character
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4626,6 +4644,27 @@ even if <code>cli_use_class_docs_for_groups</code> is set to <code>True</code>.<
 <span class="sd">  --sub_model JSON    set sub_model from JSON string</span>
 <span class="sd">  --sub_model.v1 int  the sub model v1 option (required)</span>
 <span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+<h4 id="change-the-cli-flag-prefix-character">Change the CLI Flag Prefix Character<a class="headerlink" href="#change-the-cli-flag-prefix-character" title="Permanent link">&para;</a></h4>
+<p>Change The CLI flag prefix character used in CLI optional arguments by settings <code>cli_flag_prefix_char</code>.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AliasChoices</span><span class="p">,</span> <span class="n">Field</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">,</span> <span class="n">cli_parse_args</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cli_flag_prefix_char</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">):</span>
+    <span class="n">my_arg</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;m&#39;</span><span class="p">,</span> <span class="s1">&#39;my-arg&#39;</span><span class="p">))</span>
+
+
+<span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;++my-arg&#39;</span><span class="p">,</span> <span class="s1">&#39;hi&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;my_arg&#39;: &#39;hi&#39;}</span>
+
+<span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;+m&#39;</span><span class="p">,</span> <span class="s1">&#39;hi&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;my_arg&#39;: &#39;hi&#39;}</span>
 </code></pre></div>
 <h3 id="integrating-with-existing-parsers">Integrating with Existing Parsers<a class="headerlink" href="#integrating-with-existing-parsers" title="Permanent link">&para;</a></h3>
 <p>A CLI settings source can be integrated with existing parsers by overriding the default CLI settings source with a user
