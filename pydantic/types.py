@@ -1687,7 +1687,7 @@ class _SecretField(_SecretBase[SecretType]):
         return core_schema.lax_or_strict_schema(
             lax_schema=get_secret_schema(strict=False),
             strict_schema=get_secret_schema(strict=True),
-            metadata={'pydantic_js_functions': [get_json_schema]},
+            pydantic_metadata={'pydantic_js_functions': [get_json_schema]},
         )
 
 
@@ -2922,7 +2922,7 @@ class Discriminator:
             custom_error_context=custom_error_context,
             strict=original_schema.get('strict'),
             ref=original_schema.get('ref'),
-            metadata=original_schema.get('metadata'),
+            pydantic_metadata=original_schema.get('pydantic_metadata'),
             serialization=original_schema.get('serialization'),
         )
 

@@ -246,6 +246,7 @@ class _ApplyInferredDiscriminator:
             strict=False,
             from_attributes=True,
             ref=schema.get('ref'),
+            pydantic_metadata=schema.get('pydantic_metadata'),
             metadata=schema.get('metadata'),
             serialization=schema.get('serialization'),
         )

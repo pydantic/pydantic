@@ -47,7 +47,6 @@ from pydantic.warnings import PydanticDeprecatedSince26, PydanticDeprecatedSince
 
 from ._internal import (
     _config,
-    _core_metadata,
     _core_utils,
     _decorators,
     _internal_dataclass,
@@ -458,9 +457,6 @@ class GenerateJsonSchema:
             if core_mode_ref in self.core_to_defs_refs and self.core_to_defs_refs[core_mode_ref] in self.definitions:
                 return {'$ref': self.core_to_json_refs[core_mode_ref]}
 
-        # Generate the JSON schema, accounting for the json_schema_override and core_schema_override
-        metadata_handler = _core_metadata.CoreMetadataHandler(schema)
-
         def populate_defs(core_schema: CoreSchema, json_schema: JsonSchemaValue) -> JsonSchemaValue:
             if 'ref' in core_schema:
                 core_ref = CoreRef(core_schema['ref'])  # type: ignore[typeddict-item]
@@ -517,7 +513,7 @@ class GenerateJsonSchema:
 
         current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, handler_func)
 
-        for js_modify_function in metadata_handler.metadata.get('pydantic_js_functions', ()):
+        for js_modify_function in schema.get('pydantic_metadata', {}).get('pydantic_js_functions', ()):
 
             def new_handler_func(
                 schema_or_field: CoreSchemaOrField,
@@ -535,7 +531,7 @@ class GenerateJsonSchema:
 
             current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, new_handler_func)
 
-        for js_modify_function in metadata_handler.metadata.get('pydantic_js_annotation_functions', ()):
+        for js_modify_function in schema.get('pydantic_metadata', {}).get('pydantic_js_annotation_functions', ()):
 
             def new_handler_func(
                 schema_or_field: CoreSchemaOrField,
@@ -987,8 +983,9 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        metadata = _core_metadata.CoreMetadataHandler(schema).metadata
-        if self._mode == 'validation' and (input_schema := metadata.get('pydantic_js_input_core_schema')):
+        if self._mode == 'validation' and (
+            input_schema := schema.get('pydantic_metadata', {}).get('pydantic_js_input_core_schema')
+        ):
             return self.generate_inner(input_schema)
 
         return self.generate_inner(schema['schema'])
@@ -1013,8 +1010,9 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        metadata = _core_metadata.CoreMetadataHandler(schema).metadata
-        if self._mode == 'validation' and (input_schema := metadata.get('pydantic_js_input_core_schema')):
+        if self._mode == 'validation' and (
+            input_schema := schema.get('pydantic_metadata', {}).get('pydantic_js_input_core_schema')
+        ):
             return self.generate_inner(input_schema)
 
         return self.handle_invalid_for_json_schema(
@@ -1030,8 +1028,9 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        metadata = _core_metadata.CoreMetadataHandler(schema).metadata
-        if self._mode == 'validation' and (input_schema := metadata.get('pydantic_js_input_core_schema')):
+        if self._mode == 'validation' and (
+            input_schema := schema.get('pydantic_metadata', {}).get('pydantic_js_input_core_schema')
+        ):
             return self.generate_inner(input_schema)
 
         return self.generate_inner(schema['schema'])
@@ -1620,8 +1619,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        metadata = _core_metadata.CoreMetadataHandler(schema).metadata
-        prefer_positional = metadata.get('pydantic_js_prefer_positional_arguments')
+        prefer_positional = schema.get('pydantic_metadata', {}).get('prefer_positional_arguments')
 
         arguments = schema['arguments_schema']
         kw_only_arguments = [a for a in arguments if a.get('mode') == 'keyword_only']

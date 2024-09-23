@@ -12,7 +12,7 @@ from pydantic_core import PydanticUndefined, core_schema
 from pydantic_core import core_schema as _core_schema
 from typing_extensions import Annotated, Literal, Self, TypeAlias
 
-from ._internal import _core_metadata, _decorators, _generics, _internal_dataclass
+from ._internal import _decorators, _generics, _internal_dataclass
 from .annotated_handlers import GetCoreSchemaHandler
 from .errors import PydanticUserError
 
@@ -134,7 +134,7 @@ class BeforeValidator:
                 input_schema = handler.resolve_ref_schema(input_schema)
             except LookupError:
                 pass
-        metadata = _core_metadata.build_metadata_dict(js_input_core_schema=input_schema)
+        pydantic_metadata = core_schema.pydantic_metadata(js_input_core_schema=input_schema)
 
         info_arg = _inspect_validator(self.func, 'before')
         if info_arg:
@@ -143,11 +143,13 @@ class BeforeValidator:
                 func,
                 schema=schema,
                 field_name=handler.field_name,
-                metadata=metadata,
+                pydantic_metadata=pydantic_metadata,
             )
         else:
             func = cast(core_schema.NoInfoValidatorFunction, self.func)
-            return core_schema.no_info_before_validator_function(func, schema=schema, metadata=metadata)
+            return core_schema.no_info_before_validator_function(
+                func, schema=schema, pydantic_metadata=pydantic_metadata
+            )
 
     @classmethod
     def _from_decorator(cls, decorator: _decorators.Decorator[_decorators.FieldValidatorDecoratorInfo]) -> Self:
@@ -218,7 +220,7 @@ class PlainValidator:
         except LookupError:
             pass
 
-        metadata = _core_metadata.build_metadata_dict(js_input_core_schema=input_schema)
+        pydantic_metadata = core_schema.pydantic_metadata(js_input_core_schema=input_schema)
 
         info_arg = _inspect_validator(self.func, 'plain')
         if info_arg:
@@ -227,14 +229,14 @@ class PlainValidator:
                 func,
                 field_name=handler.field_name,
                 serialization=serialization,  # pyright: ignore[reportArgumentType]
-                metadata=metadata,
+                pydantic_metadata=pydantic_metadata,
             )
         else:
             func = cast(core_schema.NoInfoValidatorFunction, self.func)
             return core_schema.no_info_plain_validator_function(
                 func,
                 serialization=serialization,  # pyright: ignore[reportArgumentType]
-                metadata=metadata,
+                pydantic_metadata=pydantic_metadata,
             )
 
     @classmethod
@@ -302,7 +304,7 @@ class WrapValidator:
                 input_schema = handler.resolve_ref_schema(input_schema)
             except LookupError:
                 pass
-        metadata = _core_metadata.build_metadata_dict(js_input_core_schema=input_schema)
+        pydantic_metadata = core_schema.pydantic_metadata(js_input_core_schema=input_schema)
 
         info_arg = _inspect_validator(self.func, 'wrap')
         if info_arg:
@@ -311,14 +313,14 @@ class WrapValidator:
                 func,
                 schema=schema,
                 field_name=handler.field_name,
-                metadata=metadata,
+                pydantic_metadata=pydantic_metadata,
             )
         else:
             func = cast(core_schema.NoInfoWrapValidatorFunction, self.func)
             return core_schema.no_info_wrap_validator_function(
                 func,
                 schema=schema,
-                metadata=metadata,
+                pydantic_metadata=pydantic_metadata,
             )
 
     @classmethod
@@ -818,9 +820,11 @@ else:
         @classmethod
         def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
             original_schema = handler(source)
-            metadata = _core_metadata.build_metadata_dict(js_annotation_functions=[lambda _c, h: h(original_schema)])
+            pydantic_metadata = core_schema.pydantic_metadata(
+                js_annotation_functions=[lambda _c, h: h(original_schema)]
+            )
             return core_schema.any_schema(
-                metadata=metadata,
+                pydantic_metadata=pydantic_metadata,
                 serialization=core_schema.wrap_serializer_function_ser_schema(
                     function=lambda v, h: h(v), schema=original_schema
                 ),

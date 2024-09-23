@@ -62,7 +62,6 @@ from pydantic import (
     field_serializer,
     field_validator,
 )
-from pydantic._internal._core_metadata import CoreMetadataHandler, build_metadata_dict
 from pydantic.color import Color
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass
@@ -3328,10 +3327,12 @@ def test_schema_for_generic_field():
         ) -> core_schema.PlainValidatorFunctionSchema:
             source_args = getattr(source, '__args__', [Any])
             param = source_args[0]
-            metadata = build_metadata_dict(js_functions=[lambda _c, h: h(handler.generate_schema(param))])
+            pydantic_metadata = core_schema.pydantic_metadata(
+                js_functions=[lambda _c, h: h(handler.generate_schema(param))]
+            )
             return core_schema.with_info_plain_validator_function(
                 GenModel,
-                metadata=metadata,
+                pydantic_metadata=pydantic_metadata,
             )
 
     class Model(BaseModel):
@@ -3413,7 +3414,7 @@ def test_namedtuple_modify_schema():
         @classmethod
         def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
             schema = handler(source)
-            schema['arguments_schema']['metadata']['pydantic_js_prefer_positional_arguments'] = False
+            schema['arguments_schema']['metadata']['prefer_positional_arguments'] = False
             return schema
 
     class Location(BaseModel):
@@ -3462,7 +3463,7 @@ def test_advanced_generic_schema():  # noqa: C901
 
                 return core_schema.with_info_plain_validator_function(
                     Gen,
-                    metadata={'pydantic_js_annotation_functions': [js_func]},
+                    pydantic_metadata={'pydantic_js_annotation_functions': [js_func]},
                 )
             else:
                 return handler(source)
@@ -3498,10 +3499,12 @@ def test_advanced_generic_schema():  # noqa: C901
         ) -> core_schema.CoreSchema:
             if hasattr(source, '__args__'):
                 # the js_function ignores the schema we were given and gets a new Tuple CoreSchema
-                metadata = build_metadata_dict(js_functions=[lambda _c, h: h(handler(Tuple[source.__args__]))])
+                pydantic_metadata = core_schema.pydantic_metadata(
+                    js_functions=[lambda _c, h: h(handler(Tuple[source.__args__]))]
+                )
                 return core_schema.with_info_plain_validator_function(
                     GenTwoParams,
-                    metadata=metadata,
+                    pydantic_metadata=pydantic_metadata,
                 )
             return handler(source)
 
@@ -5199,18 +5202,6 @@ def test_root_model():
         'title': 'C',
         'description': 'C Model docstring',
     }
-
-
-def test_core_metadata_core_schema_metadata():
-    with pytest.raises(TypeError, match=re.escape("CoreSchema metadata should be a dict; got 'test'.")):
-        CoreMetadataHandler({'metadata': 'test'})
-
-    core_metadata_handler = CoreMetadataHandler({})
-    core_metadata_handler._schema = {}
-    assert core_metadata_handler.metadata == {}
-    core_metadata_handler._schema = {'metadata': 'test'}
-    with pytest.raises(TypeError, match=re.escape("CoreSchema metadata should be a dict; got 'test'.")):
-        core_metadata_handler.metadata
 
 
 def test_type_adapter_json_schemas_title_description():
