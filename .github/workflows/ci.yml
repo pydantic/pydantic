@@ -455,10 +455,9 @@ jobs:
             target: i686
             python-architecture: x86
             interpreter: 3.8 3.9 3.10 3.11 3.12 3.13
-          # FIXME aarch64 builds broken, see https://github.com/PyO3/maturin/issues/2110
-          # - os: windows
-          #   target: aarch64
-          #   interpreter: 3.11 3.12 3.13
+          - os: windows
+            target: aarch64
+            interpreter: 3.11 3.12 3.13
 
         exclude:
           # See above; disabled for now.
