@@ -1268,6 +1268,15 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </li>
         
           <li class="md-nav__item">
+  <a href="#creating-cli-applications" class="md-nav__link">
+    <span class="md-ellipsis">
+      Creating CLI Applications
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#customizing-the-cli-experience" class="md-nav__link">
     <span class="md-ellipsis">
       Customizing the CLI Experience
@@ -3291,6 +3300,15 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </li>
         
           <li class="md-nav__item">
+  <a href="#creating-cli-applications" class="md-nav__link">
+    <span class="md-ellipsis">
+      Creating CLI Applications
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#customizing-the-cli-experience" class="md-nav__link">
     <span class="md-ellipsis">
       Customizing the CLI Experience
@@ -4014,8 +4032,7 @@ models. There are two primary use cases for Pydantic settings CLI:</p>
 </ol>
 <p>By default, the experience is tailored towards use case #1 and builds on the foundations established in <a href="#parsing-environment-variable-values">parsing
 environment variables</a>. If your use case primarily falls into #2, you will likely
-want to enable <a href="#enforce-required-arguments-at-cli">enforcing required arguments at the CLI</a> and <a href="#nested-model-default-partial-updates">nested model default
-partial updates</a>.</p>
+want to enable most of the defaults outlined at the end of <a href="#creating-cli-applications">creating CLI applications</a>.</p>
 <h3 id="the-basics">The Basics<a class="headerlink" href="#the-basics" title="Permanent link">&para;</a></h3>
 <p>To get started, let's revisit the example presented in <a href="#parsing-environment-variable-values">parsing environment
 variables</a> but using a Pydantic settings CLI:</p>
@@ -4062,17 +4079,7 @@ variables</a> but using a Pydantic settings CLI:</p>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 <p>To enable CLI parsing, we simply set the <code>cli_parse_args</code> flag to a valid value, which retains similar conotations as
-defined in <code>argparse</code>. Alternatively, we can also directly provide the args to parse at time of instantiation:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
-
-
-<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
-    <span class="n">this_foo</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">(</span><span class="n">_cli_parse_args</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;--this_foo&#39;</span><span class="p">,</span> <span class="s1">&#39;is such a foo&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;this_foo&#39;: &#39;is such a foo&#39;}</span>
-</code></pre></div>
+defined in <code>argparse</code>.</p>
 <p>Note that a CLI settings source is <a href="#field-value-priority"><strong>the topmost source</strong></a> by default unless its <a href="#customise-settings-sources">priority value
 is customised</a>:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">os</span>
@@ -4350,6 +4357,89 @@ positional arguments, aliasing will change the CLI help text displayed for the f
 <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;gamma-cmd&#39;</span><span class="p">,</span> <span class="s1">&#39;--opt-gamma=hi&#39;</span><span class="p">]</span>
 <span class="k">assert</span> <span class="n">get_subcommand</span><span class="p">(</span><span class="n">Root</span><span class="p">())</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;opt_gamma&#39;</span><span class="p">:</span> <span class="s1">&#39;hi&#39;</span><span class="p">}</span>
 </code></pre></div>
+<h3 id="creating-cli-applications">Creating CLI Applications<a class="headerlink" href="#creating-cli-applications" title="Permanent link">&para;</a></h3>
+<p>The <code>CliApp</code> class provides two utility methods, <code>CliApp.run</code> and <code>CliApp.run_subcommand</code>, that can be used to run a
+Pydantic <code>BaseSettings</code>, <code>BaseModel</code>, or <code>pydantic.dataclasses.dataclass</code> as a CLI application. Primarily, the methods
+provide structure for running <code>cli_cmd</code> methods associated with models.</p>
+<p><code>CliApp.run</code> can be used in directly providing the <code>cli_args</code> to be parsed, and will run the model <code>cli_cmd</code> method (if
+defined) after instantiation:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">CliApp</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">this_foo</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="k">def</span> <span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Print the parsed data</span>
+        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+        <span class="c1">#&gt; {&#39;this_foo&#39;: &#39;is such a foo&#39;}</span>
+
+        <span class="c1"># Update the parsed data showing cli_cmd ran</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">this_foo</span> <span class="o">=</span> <span class="s1">&#39;ran the foo cli cmd&#39;</span>
+
+
+<span class="n">s</span> <span class="o">=</span> <span class="n">CliApp</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">Settings</span><span class="p">,</span> <span class="n">cli_args</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;--this_foo&#39;</span><span class="p">,</span> <span class="s1">&#39;is such a foo&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;this_foo&#39;: &#39;ran the foo cli cmd&#39;}</span>
+</code></pre></div>
+<p>Similarly, the <code>CliApp.run_subcommand</code> can be used in recursive fashion to run the <code>cli_cmd</code> method of a subcommand:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">CliApp</span><span class="p">,</span> <span class="n">CliPositionalArg</span><span class="p">,</span> <span class="n">CliSubCommand</span>
+
+
+<span class="k">class</span> <span class="nc">Init</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">directory</span><span class="p">:</span> <span class="n">CliPositionalArg</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;git init &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
+        <span class="c1">#&gt; git init &quot;dir&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">directory</span> <span class="o">=</span> <span class="s1">&#39;ran the git init cli cmd&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">Clone</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">repository</span><span class="p">:</span> <span class="n">CliPositionalArg</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">directory</span><span class="p">:</span> <span class="n">CliPositionalArg</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;git clone from &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">repository</span><span class="si">}</span><span class="s1">&quot; into &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">directory</span> <span class="o">=</span> <span class="s1">&#39;ran the clone cli cmd&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">Git</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">clone</span><span class="p">:</span> <span class="n">CliSubCommand</span><span class="p">[</span><span class="n">Clone</span><span class="p">]</span>
+    <span class="n">init</span><span class="p">:</span> <span class="n">CliSubCommand</span><span class="p">[</span><span class="n">Init</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">CliApp</span><span class="o">.</span><span class="n">run_subcommand</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+
+<span class="n">cmd</span> <span class="o">=</span> <span class="n">CliApp</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">Git</span><span class="p">,</span> <span class="n">cli_args</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;init&#39;</span><span class="p">,</span> <span class="s1">&#39;dir&#39;</span><span class="p">])</span>
+<span class="k">assert</span> <span class="n">cmd</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span>
+    <span class="s1">&#39;clone&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">&#39;init&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;directory&#39;</span><span class="p">:</span> <span class="s1">&#39;ran the git init cli cmd&#39;</span><span class="p">},</span>
+<span class="p">}</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Unlike <code>CliApp.run</code>, <code>CliApp.run_subcommand</code> requires the subcommand model to have a defined <code>cli_cmd</code> method.</p>
+</div>
+<p>For <code>BaseModel</code> and <code>pydantic.dataclasses.dataclass</code> types, <code>CliApp.run</code> will internally use the following
+<code>BaseSettings</code> configuration defaults:</p>
+<ul>
+<li><code>alias_generator=AliasGenerator(lambda s: s.replace('_', '-'))</code></li>
+<li><code>nested_model_default_partial_update=True</code></li>
+<li><code>case_sensitive=True</code></li>
+<li><code>cli_hide_none_type=True</code></li>
+<li><code>cli_avoid_json=True</code></li>
+<li><code>cli_enforce_required=True</code></li>
+<li><code>cli_implicit_flags=True</code></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The alias generator for kebab case does not propagate to subcommands or submodels and will have to be manually set
+in these cases.</p>
+</div>
 <h3 id="customizing-the-cli-experience">Customizing the CLI Experience<a class="headerlink" href="#customizing-the-cli-experience" title="Permanent link">&para;</a></h3>
 <p>The below flags can be used to customise the CLI experience to your needs.</p>
 <h4 id="change-the-displayed-program-name">Change the Displayed Program Name<a class="headerlink" href="#change-the-displayed-program-name" title="Permanent link">&para;</a></h4>
@@ -4672,7 +4762,7 @@ defined one that specifies the <code>root_parser</code> object.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">ArgumentParser</span>
 
-<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">CliSettingsSource</span>
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">CliApp</span><span class="p">,</span> <span class="n">CliSettingsSource</span>
 
 <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
 <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--food&#39;</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;pear&#39;</span><span class="p">,</span> <span class="s1">&#39;kiwi&#39;</span><span class="p">,</span> <span class="s1">&#39;lime&#39;</span><span class="p">])</span>
@@ -4687,13 +4777,15 @@ defined one that specifies the <code>root_parser</code> object.</p>
 
 <span class="c1"># Parse and load CLI settings from the command line into the settings source.</span>
 <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;--food&#39;</span><span class="p">,</span> <span class="s1">&#39;kiwi&#39;</span><span class="p">,</span> <span class="s1">&#39;--name&#39;</span><span class="p">,</span> <span class="s1">&#39;waldo&#39;</span><span class="p">]</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">(</span><span class="n">_cli_settings_source</span><span class="o">=</span><span class="n">cli_settings</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">CliApp</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">Settings</span><span class="p">,</span> <span class="n">cli_settings_source</span><span class="o">=</span><span class="n">cli_settings</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="c1">#&gt; {&#39;name&#39;: &#39;waldo&#39;}</span>
 
 <span class="c1"># Load CLI settings from pre-parsed arguments. i.e., the parsing occurs elsewhere and we</span>
 <span class="c1"># just need to load the pre-parsed args into the settings source.</span>
 <span class="n">parsed_args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--food&#39;</span><span class="p">,</span> <span class="s1">&#39;kiwi&#39;</span><span class="p">,</span> <span class="s1">&#39;--name&#39;</span><span class="p">,</span> <span class="s1">&#39;ralph&#39;</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">(</span><span class="n">_cli_settings_source</span><span class="o">=</span><span class="n">cli_settings</span><span class="p">(</span><span class="n">parsed_args</span><span class="o">=</span><span class="n">parsed_args</span><span class="p">))</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">CliApp</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">Settings</span><span class="p">,</span> <span class="n">cli_args</span><span class="o">=</span><span class="n">parsed_args</span><span class="p">,</span> <span class="n">cli_settings_source</span><span class="o">=</span><span class="n">cli_settings</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="c1">#&gt; {&#39;name&#39;: &#39;ralph&#39;}</span>
 </code></pre></div>
 <p>A <code>CliSettingsSource</code> connects with a <code>root_parser</code> object by using parser methods to add <code>settings_cls</code> fields as
@@ -4710,6 +4802,12 @@ parser methods that can be customised, along with their argparse counterparts (t
 </ul>
 <p>For a non-argparse parser the parser methods can be set to <code>None</code> if not supported. The CLI settings will only raise an
 error when connecting to the root parser if a parser method is necessary but set to <code>None</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code>formatter_class</code> is only applied to subcommands. The <code>CliSettingsSource</code> never touches or modifies any of the
+external parser settings to avoid breaking changes. Since subcommands reside on their own internal parser trees, we
+can safely apply the <code>formatter_class</code> settings without breaking the external parser logic.</p>
+</div>
 <h2 id="secrets">Secrets<a class="headerlink" href="#secrets" title="Permanent link">&para;</a></h2>
 <p>Placing secret values in files is a common pattern to provide sensitive configuration to an application.</p>
 <p>A secret file follows the same principal as a dotenv file except it only contains a single value and the file name
