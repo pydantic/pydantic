@@ -1800,6 +1800,35 @@ def test_model_default_timedelta(
     }
 
 
+@pytest.mark.parametrize(
+    'ser_json_datetime,properties',
+    [
+        ('seconds_int', {'dt': {'default': 1704067200, 'format': 'date-time', 'title': 'Dt', 'type': 'number'}}),
+        (
+            'milliseconds_int',
+            {'dt': {'default': 1704067200000, 'format': 'date-time', 'title': 'Dt', 'type': 'number'}},
+        ),
+        ('iso8601', {'dt': {'default': '2024-01-01T00:00:00', 'format': 'date-time', 'title': 'Dt', 'type': 'string'}}),
+    ],
+)
+def test_model_default_datetime(
+    ser_json_datetime: Literal['iso8601', 'seconds_int', 'milliseconds_int'],
+    properties: typing.Dict[str, Any],
+):
+    class Model(BaseModel):
+        model_config = ConfigDict(ser_json_datetime=ser_json_datetime)
+
+        dt: datetime = datetime(2024, 1, 1)
+
+    print(Model.model_json_schema(mode='serialization'))
+    # insert_assert(Model.model_json_schema(mode='serialization'))
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': properties,
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 def test_model_default_timedelta():
     with pytest.warns(PydanticDeprecatedSince210):
 

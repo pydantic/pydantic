@@ -710,7 +710,7 @@ class GenerateJsonSchema:
             The generated JSON schema.
         """
         if self._config.ser_json_datetime in {'milliseconds_int', 'seconds_int'}:
-            return {'type': 'number'}
+            return {'type': 'number', 'format': 'date-time'}
         return {'type': 'string', 'format': 'date-time'}
 
     def timedelta_schema(self, schema: core_schema.TimedeltaSchema) -> JsonSchemaValue:
