@@ -7,14 +7,13 @@ from pydantic_core import CoreSchema, core_schema
 from ..errors import PydanticUserError
 from . import _core_utils
 from ._core_utils import (
+    TAGGED_UNION_DISCRIMINATOR_KEY,
     CoreSchemaField,
     collect_definitions,
 )
 
 if TYPE_CHECKING:
     from ..types import Discriminator
-
-CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY = 'pydantic_internal_tagged_union_discriminator'
 
 
 class MissingDefinitionForUnionRef(Exception):
@@ -31,7 +30,7 @@ def set_discriminator_in_metadata(schema: CoreSchema, discriminator: Any) -> Non
     schema.setdefault('pydantic_metadata', core_schema.PydanticMetadata())
     metadata = schema.get('pydantic_metadata')
     assert metadata is not None
-    metadata[CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY] = discriminator
+    metadata[TAGGED_UNION_DISCRIMINATOR_KEY] = discriminator
 
 
 def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
@@ -50,7 +49,7 @@ def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSche
             return s
 
         metadata = s.get('pydantic_metadata', {})
-        discriminator = metadata.pop(CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY, None)
+        discriminator = metadata.pop(TAGGED_UNION_DISCRIMINATOR_KEY, None)
         if discriminator is not None:
             s = apply_discriminator(s, discriminator, global_definitions)
         return s

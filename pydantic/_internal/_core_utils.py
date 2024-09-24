@@ -40,7 +40,8 @@ _CORE_SCHEMA_FIELD_TYPES = {'typed-dict-field', 'dataclass-field', 'model-field'
 _FUNCTION_WITH_INNER_SCHEMA_TYPES = {'function-before', 'function-after', 'function-wrap'}
 _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'set', 'frozenset'}
 
-TAGGED_UNION_TAG_KEY = 'pydantic_internal_tagged_union_tag'
+TAGGED_UNION_DISCRIMINATOR_KEY = 'tagged_union_discriminator'
+TAGGED_UNION_TAG_KEY = 'tagged_union_tag'
 """
 Used in a `Tag` schema to specify the tag used for a discriminated union.
 """
@@ -473,9 +474,9 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
         if 'pydantic_metadata' in s:
             metadata = s['pydantic_metadata']
             for k in (
-                'pydantic_js_functions',
-                'pydantic_js_annotation_functions',
-                'pydantic_internal_union_discriminator',
+                'json_schema_transforms',
+                'tagged_union_tag',
+                'tagged_union_discriminator',
             ):
                 if k in metadata:
                     # we need to keep this as a ref

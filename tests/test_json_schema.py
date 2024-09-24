@@ -3328,7 +3328,7 @@ def test_schema_for_generic_field():
             source_args = getattr(source, '__args__', [Any])
             param = source_args[0]
             pydantic_metadata = core_schema.pydantic_metadata(
-                js_functions=[lambda _c, h: h(handler.generate_schema(param))]
+                json_schema_transforms=[lambda _c, h: h(handler.generate_schema(param))]
             )
             return core_schema.with_info_plain_validator_function(
                 GenModel,
@@ -3414,7 +3414,7 @@ def test_namedtuple_modify_schema():
         @classmethod
         def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
             schema = handler(source)
-            schema['arguments_schema']['pydantic_metadata']['prefer_positional_arguments'] = False
+            schema['arguments_schema']['pydantic_metadata']['json_prefer_positional_arguments'] = False
             return schema
 
     class Location(BaseModel):
@@ -3463,7 +3463,7 @@ def test_advanced_generic_schema():  # noqa: C901
 
                 return core_schema.with_info_plain_validator_function(
                     Gen,
-                    pydantic_metadata={'pydantic_js_annotation_functions': [js_func]},
+                    pydantic_metadata={'json_schema_transforms': [js_func]},
                 )
             else:
                 return handler(source)
@@ -3500,7 +3500,7 @@ def test_advanced_generic_schema():  # noqa: C901
             if hasattr(source, '__args__'):
                 # the js_function ignores the schema we were given and gets a new Tuple CoreSchema
                 pydantic_metadata = core_schema.pydantic_metadata(
-                    js_functions=[lambda _c, h: h(handler(Tuple[source.__args__]))]
+                    json_schema_transforms=[lambda _c, h: h(handler(Tuple[source.__args__]))]
                 )
                 return core_schema.with_info_plain_validator_function(
                     GenTwoParams,

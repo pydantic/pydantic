@@ -1687,7 +1687,7 @@ class _SecretField(_SecretBase[SecretType]):
         return core_schema.lax_or_strict_schema(
             lax_schema=get_secret_schema(strict=False),
             strict_schema=get_secret_schema(strict=True),
-            pydantic_metadata={'pydantic_js_functions': [get_json_schema]},
+            pydantic_metadata={'json_schema_transforms': [get_json_schema]},
         )
 
 
@@ -2888,9 +2888,9 @@ class Discriminator:
             tag = None
             if isinstance(choice, tuple):
                 choice, tag = choice
-            metadata = choice.get('metadata')
-            if metadata is not None:
-                metadata_tag = metadata.get(_core_utils.TAGGED_UNION_TAG_KEY)
+            pydantic_metadata = choice.get('pydantic_metadata')
+            if pydantic_metadata is not None:
+                metadata_tag = pydantic_metadata.get(_core_utils.TAGGED_UNION_TAG_KEY)
                 if metadata_tag is not None:
                     tag = metadata_tag
             if tag is None:
@@ -2923,6 +2923,7 @@ class Discriminator:
             strict=original_schema.get('strict'),
             ref=original_schema.get('ref'),
             pydantic_metadata=original_schema.get('pydantic_metadata'),
+            metadata=original_schema.get('metadata'),
             serialization=original_schema.get('serialization'),
         )
 

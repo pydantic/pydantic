@@ -104,12 +104,12 @@ def add_js_update_schema(s: cs.CoreSchema, f: Callable[[], dict[str, Any]]) -> N
 
     if 'pydantic_metadata' in s:
         pydantic_metadata = s['pydantic_metadata']
-        if 'pydantic_js_functions' in s:
-            pydantic_metadata['pydantic_js_functions'].append(update_js_schema)
+        if 'json_schema_transforms' in s:
+            pydantic_metadata['json_schema_transforms'].append(update_js_schema)
         else:
-            pydantic_metadata['pydantic_js_functions'] = [update_js_schema]
+            pydantic_metadata['json_schema_transforms'] = [update_js_schema]
     else:
-        s['pydantic_metadata'] = {'pydantic_js_functions': [update_js_schema]}
+        s['pydantic_metadata'] = {'json_schema_transforms': [update_js_schema]}
 
 
 def as_jsonable_value(v: Any) -> Any:
