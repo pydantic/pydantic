@@ -1728,7 +1728,7 @@ def test_enum_int_default():
 
 
 def test_enum_dict():
-    class MyEnum(StrEnum):
+    class MyEnum(str, Enum):
         FOO = 'foo'
         BAR = 'bar'
 
