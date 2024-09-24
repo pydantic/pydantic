@@ -7,7 +7,7 @@ import sys
 import typing
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
-from enum import Enum, IntEnum, StrEnum
+from enum import Enum, IntEnum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from typing import (
