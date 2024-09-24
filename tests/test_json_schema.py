@@ -1733,7 +1733,7 @@ def test_enum_dict():
         BAR = 'bar'
 
     class MyModel(BaseModel):
-        enum_dict: dict[MyEnum, str]
+        enum_dict: Dict[MyEnum, str]
 
     assert MyModel.model_json_schema() == {
         'title': 'MyModel',
