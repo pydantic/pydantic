@@ -57,7 +57,7 @@ from typing_extensions import Literal, TypeAliasType, TypedDict, get_args, get_o
 
 from ..aliases import AliasChoices, AliasGenerator, AliasPath
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
-from ..config import ConfigDict, JsonDict, JsonEncoder
+from ..config import ConfigDict, JsonEncoder
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
 from ..functional_validators import AfterValidator, BeforeValidator, FieldValidatorModes, PlainValidator, WrapValidator
 from ..json_schema import JsonSchemaValue
@@ -1339,18 +1339,15 @@ class GenerateSchema:
         )
         self._apply_field_title_generator_to_field_info(self._config_wrapper, field_info, name)
 
-        json_schema_updates = {
-            'title': field_info.title,
-            'description': field_info.description,
-            'deprecated': bool(field_info.deprecated) or field_info.deprecated == '' or None,
-            'examples': to_jsonable_python(field_info.examples),
-        }
-        json_schema_updates = {k: v for k, v in json_schema_updates.items() if v is not None}
-
-        json_schema_extra = field_info.json_schema_extra
-
         pydantic_metadata = core_schema.pydantic_metadata(
-            json_schema_transforms=[get_json_schema_update_func(json_schema_updates, json_schema_extra)]
+            json_title=field_info.title,
+            json_description=field_info.description,
+            json_deprecated=bool(field_info.deprecated) or field_info.deprecated == '' or None,
+            json_examples=to_jsonable_python(field_info.examples),
+            json_dict_extra=to_jsonable_python(field_info.json_schema_extra)
+            if isinstance(field_info.json_schema_extra, dict)
+            else None,
+            json_callable_extra=field_info.json_schema_extra if callable(field_info.json_schema_extra) else None,
         )
 
         alias_generator = self._config_wrapper.alias_generator
@@ -2020,33 +2017,19 @@ class GenerateSchema:
             )
         self._apply_field_title_generator_to_field_info(self._config_wrapper, d.info, d.cls_var_name)
 
-        def set_computed_field_metadata(schema: CoreSchemaOrField, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-            json_schema = handler(schema)
+        json_dict_extra = {'readOnly': True}
+        json_dict_extra.update(
+            to_jsonable_python(d.info.json_schema_extra) if isinstance(d.info.json_schema_extra, dict) else {}
+        )
 
-            json_schema['readOnly'] = True
-
-            title = d.info.title
-            if title is not None:
-                json_schema['title'] = title
-
-            description = d.info.description
-            if description is not None:
-                json_schema['description'] = description
-
-            if d.info.deprecated or d.info.deprecated == '':
-                json_schema['deprecated'] = True
-
-            examples = d.info.examples
-            if examples is not None:
-                json_schema['examples'] = to_jsonable_python(examples)
-
-            json_schema_extra = d.info.json_schema_extra
-            if json_schema_extra is not None:
-                add_json_schema_extra(json_schema, json_schema_extra)
-
-            return json_schema
-
-        pydantic_metadata = core_schema.pydantic_metadata(json_schema_transforms=[set_computed_field_metadata])
+        pydantic_metadata = core_schema.pydantic_metadata(
+            json_title=d.info.title,
+            json_description=d.info.description,
+            json_deprecated=bool(d.info.deprecated) or d.info.deprecated == '' or None,
+            json_examples=to_jsonable_python(d.info.examples) if d.info.examples is not None else None,
+            json_dict_extra=json_dict_extra,
+            json_callable_extra=d.info.json_schema_extra if isinstance(d.info.json_schema_extra, Callable) else None,
+        )
         return core_schema.computed_field(
             d.cls_var_name, return_schema=return_type_schema, alias=d.info.alias, pydantic_metadata=pydantic_metadata
         )
@@ -2193,21 +2176,25 @@ class GenerateSchema:
         if isinstance(metadata, FieldInfo):
             for field_metadata in metadata.metadata:
                 schema = self._apply_single_annotation_json_schema(schema, field_metadata)
-            json_schema_update: JsonSchemaValue = {}
-            if metadata.title:
-                json_schema_update['title'] = metadata.title
-            if metadata.description:
-                json_schema_update['description'] = metadata.description
-            if metadata.examples:
-                json_schema_update['examples'] = to_jsonable_python(metadata.examples)
 
-            json_schema_extra = metadata.json_schema_extra
-            if json_schema_update or json_schema_extra:
-                pydantic_metadata = schema.get('pydantic_metadata', {})
-                pydantic_metadata.setdefault('json_schema_transforms', []).append(
-                    get_json_schema_update_func(json_schema_update, json_schema_extra)
-                )
-                schema['pydantic_metadata'] = pydantic_metadata  # type: ignore (readdress later)
+            existing_metadata = schema.get('pydantic_metadata', {})
+            existing_transforms = existing_metadata.get('json_schema_transforms', None)
+
+            new_metadata = core_schema.pydantic_metadata(
+                json_schema_transforms=existing_transforms,
+                json_title=metadata.title,
+                json_description=metadata.description,
+                json_deprecated=bool(metadata.deprecated) or metadata.deprecated == '' or None,
+                json_examples=to_jsonable_python(metadata.examples),
+                json_dict_extra=to_jsonable_python(metadata.json_schema_extra)
+                if isinstance(metadata.json_schema_extra, dict)
+                else None,
+                json_callable_extra=metadata.json_schema_extra if callable(metadata.json_schema_extra) else None,
+            )
+
+            existing_metadata.update(new_metadata)
+
+            schema['pydantic_metadata'] = existing_metadata  # type: ignore (readdress later)
         return schema
 
     def _get_wrapped_inner_schema(
@@ -2490,28 +2477,6 @@ def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSch
         return None
 
     return js_modify_function
-
-
-def get_json_schema_update_func(
-    json_schema_update: JsonSchemaValue, json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
-) -> GetJsonSchemaFunction:
-    def json_schema_update_func(
-        core_schema_or_field: CoreSchemaOrField, handler: GetJsonSchemaHandler
-    ) -> JsonSchemaValue:
-        json_schema = {**handler(core_schema_or_field), **json_schema_update}
-        add_json_schema_extra(json_schema, json_schema_extra)
-        return json_schema
-
-    return json_schema_update_func
-
-
-def add_json_schema_extra(
-    json_schema: JsonSchemaValue, json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
-):
-    if isinstance(json_schema_extra, dict):
-        json_schema.update(to_jsonable_python(json_schema_extra))
-    elif callable(json_schema_extra):
-        json_schema_extra(json_schema)
 
 
 class _CommonField(TypedDict):

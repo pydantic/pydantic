@@ -513,7 +513,9 @@ class GenerateJsonSchema:
 
         current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, handler_func)
 
-        for js_modify_function in schema.get('pydantic_metadata', {}).get('json_schema_transforms', ()):
+        pydantic_metadata = schema.get('pydantic_metadata', {})
+
+        for js_modify_function in pydantic_metadata.get('json_schema_transforms', ()):
             # TODO: should we resolve refs here with something like:
             # original_schema = current_handler.resolve_ref_schema(json_schema)
             # ref = json_schema.pop('$ref', None)
@@ -536,6 +538,25 @@ class GenerateJsonSchema:
         json_schema = current_handler(schema)
         if _core_utils.is_core_schema(schema):
             json_schema = populate_defs(schema, json_schema)
+
+        if title := pydantic_metadata.get('json_title'):
+            json_schema['title'] = title
+
+        if description := pydantic_metadata.get('json_description'):
+            json_schema['description'] = description
+
+        if deprecated := pydantic_metadata.get('json_deprecated'):
+            json_schema['deprecated'] = deprecated
+
+        if examples := pydantic_metadata.get('json_examples'):
+            json_schema['examples'] = examples
+
+        if json_dict_extra := pydantic_metadata.get('json_dict_extra'):
+            json_schema.update(json_dict_extra)
+
+        if json_callable_extra := pydantic_metadata.get('json_callable_extra'):
+            json_callable_extra(json_schema)
+
         return json_schema
 
     # ### Schema generation methods
