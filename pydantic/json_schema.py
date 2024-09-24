@@ -958,7 +958,8 @@ class GenerateJsonSchema:
         """
         json_schema: JsonSchemaValue = {'type': 'object'}
 
-        keys_schema = self.generate_inner(schema['keys_schema']).copy() if 'keys_schema' in schema else {}
+        ks = schema['keys_schema'] if 'keys_schema' in schema else None
+        keys_schema = self.generate_inner(ks).copy() if ks is not None else {}
         keys_pattern = keys_schema.pop('pattern', None)
 
         values_schema = self.generate_inner(schema['values_schema']).copy() if 'values_schema' in schema else {}
@@ -969,6 +970,11 @@ class GenerateJsonSchema:
             else:
                 json_schema['patternProperties'] = {keys_pattern: values_schema}
 
+        if ks is not None:
+            keys_type = ks.get('type', None)
+            if keys_type == 'enum':
+                keys_members = ks.get('members', [])
+                json_schema['propertyNames'] = {'enum': keys_members}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.object)
         return json_schema
 

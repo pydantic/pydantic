@@ -7,7 +7,7 @@ import sys
 import typing
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
-from enum import Enum, IntEnum
+from enum import Enum, IntEnum, StrEnum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from typing import (
@@ -1725,6 +1725,29 @@ def test_enum_int_default():
     default_value = UserModel.model_json_schema()['properties']['friends']['default']
     assert type(default_value) is int
     assert default_value == MyEnum.FOO.value
+
+
+def test_enum_dict():
+    class MyEnum(StrEnum):
+        FOO = 'foo'
+        BAR = 'bar'
+
+    class MyModel(BaseModel):
+        enum_dict: dict[MyEnum, str]
+
+    assert MyModel.model_json_schema() == {
+        'title': 'MyModel',
+        'type': 'object',
+        'properties': {
+            'enum_dict': {
+                'title': 'Enum Dict',
+                'type': 'object',
+                'additionalProperties': {'type': 'string'},
+                'propertyNames': {'enum': ['foo', 'bar']},
+            }
+        },
+        'required': ['enum_dict'],
+    }
 
 
 def test_dict_default():
