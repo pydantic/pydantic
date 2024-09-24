@@ -516,12 +516,6 @@ class GenerateJsonSchema:
         pydantic_metadata = schema.get('pydantic_metadata', {})
 
         for js_modify_function in pydantic_metadata.get('json_schema_transforms', ()):
-            # TODO: should we resolve refs here with something like:
-            # original_schema = current_handler.resolve_ref_schema(json_schema)
-            # ref = json_schema.pop('$ref', None)
-            # if ref and json_schema:
-            #     original_schema.update(json_schema)
-            # return original_schema
 
             def new_handler_func(
                 schema_or_field: CoreSchemaOrField,
@@ -531,6 +525,12 @@ class GenerateJsonSchema:
                 json_schema = js_modify_function(schema_or_field, current_handler)
                 if _core_utils.is_core_schema(schema_or_field):
                     json_schema = populate_defs(schema_or_field, json_schema)
+                # TODO: should we resolve refs here with something like:
+                # original_schema = current_handler.resolve_ref_schema(json_schema)
+                # ref = json_schema.pop('$ref', None)
+                # if ref and json_schema:
+                #     original_schema.update(json_schema)
+                # return original_schema
                 return json_schema
 
             current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, new_handler_func)

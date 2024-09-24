@@ -2179,6 +2179,8 @@ class GenerateSchema:
 
             existing_metadata = schema.get('pydantic_metadata', {})
             existing_transforms = existing_metadata.get('json_schema_transforms', None)
+            json_schema_extra = existing_metadata.get('json_dict_extra', {})
+            json_schema_extra.update(to_jsonable_python(metadata.json_schema_extra) if isinstance(metadata.json_schema_extra, dict) else {})
 
             new_metadata = core_schema.pydantic_metadata(
                 json_schema_transforms=existing_transforms,
@@ -2186,9 +2188,7 @@ class GenerateSchema:
                 json_description=metadata.description,
                 json_deprecated=bool(metadata.deprecated) or metadata.deprecated == '' or None,
                 json_examples=to_jsonable_python(metadata.examples),
-                json_dict_extra=to_jsonable_python(metadata.json_schema_extra)
-                if isinstance(metadata.json_schema_extra, dict)
-                else None,
+                json_dict_extra=json_schema_extra or None,
                 json_callable_extra=metadata.json_schema_extra if callable(metadata.json_schema_extra) else None,
             )
 
