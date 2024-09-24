@@ -610,7 +610,7 @@ class ConfigDict(TypedDict, total=False):
     protected_namespaces: tuple[str, ...]
     """
     A `tuple` of strings that prevent model to have field which conflict with them.
-    Defaults to `('model_validate_', 'model_dump_')`).
+    Defaults to `('model_validate', 'model_dump')`).
 
     Before v2.10, Pydantic used `('model_',)` as the default value for this setting to
     prevent collisions between model attributes and `BaseModel`'s own methods. This was changed
