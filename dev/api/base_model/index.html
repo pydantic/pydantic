@@ -4753,7 +4753,10 @@ is set to <code>'allow'</code>.</p>
 <span class="normal">1452</span>
 <span class="normal">1453</span>
 <span class="normal">1454</span>
-<span class="normal">1455</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
+<span class="normal">1455</span>
+<span class="normal">1456</span>
+<span class="normal">1457</span>
+<span class="normal">1458</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.10/concepts/models/</span>
 
 <span class="sd">    A base class for creating Pydantic models.</span>
@@ -5729,8 +5732,10 @@ is set to <code>'allow'</code>.</p>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">field</span> <span class="ow">and</span> <span class="n">field</span><span class="o">.</span><span class="n">repr</span><span class="p">:</span>
-                <span class="k">yield</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span>
-
+                <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">self</span><span class="p">:</span>
+                    <span class="k">yield</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">yield</span> <span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__repr_recursion__</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
         <span class="c1"># `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.</span>
         <span class="c1"># This can happen if a `ValidationError` is raised during initialization and the instance&#39;s</span>
         <span class="c1"># repr is generated as part of the exception handling. Therefore, we use `getattr` here</span>
@@ -5746,6 +5751,7 @@ is set to <code>'allow'</code>.</p>
 
     <span class="c1"># take logic from `_repr.Representation` without the side effects of inheritance, see #5740</span>
     <span class="n">__repr_name__</span> <span class="o">=</span> <span class="n">_repr</span><span class="o">.</span><span class="n">Representation</span><span class="o">.</span><span class="n">__repr_name__</span>
+    <span class="n">__repr_recursion__</span> <span class="o">=</span> <span class="n">_repr</span><span class="o">.</span><span class="n">Representation</span><span class="o">.</span><span class="n">__repr_recursion__</span>
     <span class="n">__repr_str__</span> <span class="o">=</span> <span class="n">_repr</span><span class="o">.</span><span class="n">Representation</span><span class="o">.</span><span class="n">__repr_str__</span>
     <span class="n">__pretty__</span> <span class="o">=</span> <span class="n">_repr</span><span class="o">.</span><span class="n">Representation</span><span class="o">.</span><span class="n">__pretty__</span>
     <span class="n">__rich_repr__</span> <span class="o">=</span> <span class="n">_repr</span><span class="o">.</span><span class="n">Representation</span><span class="o">.</span><span class="n">__rich_repr__</span>
@@ -8864,10 +8870,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1275</span>
-<span class="normal">1276</span>
-<span class="normal">1277</span>
-<span class="normal">1278</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1278</span>
 <span class="normal">1279</span>
 <span class="normal">1280</span>
 <span class="normal">1281</span>
@@ -8938,7 +8941,10 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <span class="normal">1346</span>
 <span class="normal">1347</span>
 <span class="normal">1348</span>
-<span class="normal">1349</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@typing_extensions</span><span class="o">.</span><span class="n">deprecated</span><span class="p">(</span>
+<span class="normal">1349</span>
+<span class="normal">1350</span>
+<span class="normal">1351</span>
+<span class="normal">1352</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@typing_extensions</span><span class="o">.</span><span class="n">deprecated</span><span class="p">(</span>
     <span class="s1">&#39;The `copy` method is deprecated; use `model_copy` instead. &#39;</span>
     <span class="s1">&#39;See the docstring of `BaseModel.copy` for details about how to handle `include` and `exclude`.&#39;</span><span class="p">,</span>
     <span class="n">category</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -9260,10 +9266,7 @@ Initializing <code>FieldInfo</code> instances directly is not supported.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/main.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1491</span>
-<span class="normal">1492</span>
-<span class="normal">1493</span>
-<span class="normal">1494</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1494</span>
 <span class="normal">1495</span>
 <span class="normal">1496</span>
 <span class="normal">1497</span>
@@ -9379,7 +9382,10 @@ Initializing <code>FieldInfo</code> instances directly is not supported.</p>
 <span class="normal">1607</span>
 <span class="normal">1608</span>
 <span class="normal">1609</span>
-<span class="normal">1610</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+<span class="normal">1610</span>
+<span class="normal">1611</span>
+<span class="normal">1612</span>
+<span class="normal">1613</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
