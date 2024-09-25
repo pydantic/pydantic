@@ -50,7 +50,7 @@ def validate_call(
     local_ns = _typing_extra.parent_frame_namespace()
 
     def validate(function: AnyCallableT) -> AnyCallableT:
-        validate_call_wrapper = _validate_call.ValidateCallWrapper(function, config, validate_return, local_ns)
+        validate_call_wrapper = _validate_call.wrap_validate_call(function, config, validate_return, local_ns)
 
         if inspect.iscoroutinefunction(function):
 
