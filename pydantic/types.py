@@ -2522,7 +2522,7 @@ Note:
     As a result, attempting to decode url-safe base64 data using the `Base64Bytes` type may fail or produce an incorrect
     decoding.
 
-Note: Default `encoder` and `decoder` methods:
+Note: "Default `encoder` and `decoder` methods:"
 
     In versions of Pydantic prior to v2.10, `Base64Bytes` used `base64.encodebytes` and `base64.decodebytes` functions.
     According to the [base64 documentation](https://docs.python.org/3/library/base64.html), these methods
@@ -2601,7 +2601,7 @@ Note:
     As a result, attempting to decode url-safe base64 data using the `Base64Str` type may fail or produce an incorrect
     decoding.
 
-Note: Default `encoder` and `decoder` methods:
+Note: "Default `encoder` and `decoder` methods:"
 
     In versions of Pydantic prior to v2.10, `Base64Str` used `base64.encodebytes` and `base64.decodebytes` functions.
     According to the [base64 documentation](https://docs.python.org/3/library/base64.html), these methods
