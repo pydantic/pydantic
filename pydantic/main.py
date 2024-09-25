@@ -1054,8 +1054,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         for k, v in self.__dict__.items():
             field = self.model_fields.get(k)
             if field and field.repr:
-                yield k, v
-
+                if v is not self:
+                    yield k, v
+                else:
+                    yield k, self.__repr_recursion__(v)
         # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
         # This can happen if a `ValidationError` is raised during initialization and the instance's
         # repr is generated as part of the exception handling. Therefore, we use `getattr` here
@@ -1071,6 +1073,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     # take logic from `_repr.Representation` without the side effects of inheritance, see #5740
     __repr_name__ = _repr.Representation.__repr_name__
+    __repr_recursion__ = _repr.Representation.__repr_recursion__
     __repr_str__ = _repr.Representation.__repr_str__
     __pretty__ = _repr.Representation.__pretty__
     __rich_repr__ = _repr.Representation.__rich_repr__
