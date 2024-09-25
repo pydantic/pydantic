@@ -958,23 +958,26 @@ class GenerateJsonSchema:
         """
         json_schema: JsonSchemaValue = {'type': 'object'}
 
-        ks = schema['keys_schema'] if 'keys_schema' in schema else None
-        keys_schema = self.generate_inner(ks).copy() if ks is not None else {}
+        keys_core_schema = schema.get('keys_schema')
+        keys_schema = self.resolve_schema_to_update(
+            self.generate_inner(keys_core_schema).copy() if keys_core_schema is not None else {}
+        )
         keys_pattern = keys_schema.pop('pattern', None)
 
         values_schema = self.generate_inner(schema['values_schema']).copy() if 'values_schema' in schema else {}
-        values_schema.pop('title', None)  # don't give a title to the additionalProperties
+        # don't give a title to additionalProperties and patternProperties
+        values_schema.pop('title', None)
+        keys_schema.pop('title', None)
         if values_schema or keys_pattern is not None:  # don't add additionalProperties if it's empty
             if keys_pattern is None:
                 json_schema['additionalProperties'] = values_schema
             else:
                 json_schema['patternProperties'] = {keys_pattern: values_schema}
 
-        if ks is not None:
-            keys_type = ks.get('type', None)
-            if keys_type == 'enum':
-                keys_members = ks.get('members', [])
-                json_schema['propertyNames'] = {'enum': keys_members}
+        if keys_schema.get('type') == 'string' and len(keys_schema) > 1:
+            keys_schema.pop('type')
+            json_schema['propertyNames'] = keys_schema
+
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.object)
         return json_schema
 

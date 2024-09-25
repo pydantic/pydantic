@@ -1784,6 +1784,7 @@ def test_model_default():
                     'a': {
                         'additionalProperties': {'type': 'string'},
                         'default': {'.': ''},
+                        'propertyNames': {'format': 'path'},
                         'title': 'A',
                         'type': 'object',
                     }
