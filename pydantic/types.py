@@ -2262,7 +2262,7 @@ class Base64Encoder(EncoderProtocol):
             The decoded data.
         """
         try:
-            return base64.decodebytes(data)
+            return base64.b64decode(data)
         except ValueError as e:
             raise PydanticCustomError('base64_decode', "Base64 decoding error: '{error}'", {'error': str(e)})
 
@@ -2276,7 +2276,7 @@ class Base64Encoder(EncoderProtocol):
         Returns:
             The encoded data.
         """
-        return base64.encodebytes(value)
+        return base64.b64encode(value)
 
     @classmethod
     def get_json_format(cls) -> Literal['base64']:
@@ -2517,10 +2517,48 @@ Base64Bytes = Annotated[bytes, EncodedBytes(encoder=Base64Encoder)]
 """A bytes type that is encoded and decoded using the standard (non-URL-safe) base64 encoder.
 
 Note:
-    Under the hood, `Base64Bytes` use standard library `base64.encodebytes` and `base64.decodebytes` functions.
+    Under the hood, `Base64Bytes` use standard library `base64.b64encode` and `base64.b64decode` functions.
 
     As a result, attempting to decode url-safe base64 data using the `Base64Bytes` type may fail or produce an incorrect
     decoding.
+
+Note: Default `encoder` and `decoder` methods:
+
+    In versions of Pydantic prior to v2.10, `Base64Bytes` used the `base64.encodebytes` and `base64.decodebytes`.
+    According to the [base64 documentation](https://docs.python.org/3/library/base64.html), these methods
+    are considered legacy implementation.
+
+    If you'd still like to use these legacy encoders / decoders, you can achieve this by creating a custom annotated type,
+    like follows:
+
+    ```py
+    import base64
+    from typing import Literal
+    from pydantic import EncoderProtocol, EncodedBytes
+    from pydantic_core import PydanticCustomError
+
+    from typing_extensions import Annotated
+
+
+    class LegacyBase64Encoder(EncoderProtocol):
+        @classmethod
+        def decode(cls, data: bytes) -> bytes:
+            try:
+                return base64.decodebytes(data)
+            except ValueError as e:
+                raise PydanticCustomError('base64_decode', "Base64 decoding error: '{error}'", {'error': str(e)})
+
+        @classmethod
+        def encode(cls, value: bytes) -> bytes:
+            return base64.encodebytes(value)
+
+        @classmethod
+        def get_json_format(cls) -> Literal['base64']:
+            return 'base64'
+
+
+    LegacyBase64Bytes = Annotated[bytes, EncodedBytes(encoder=LegacyBase64Encoder)]
+    ```
 
 ```py
 from pydantic import Base64Bytes, BaseModel, ValidationError
