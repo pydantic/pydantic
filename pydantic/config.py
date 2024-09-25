@@ -612,6 +612,9 @@ class ConfigDict(TypedDict, total=False):
     A `tuple` of strings that prevent model to have field which conflict with them.
     Defaults to `('model_validate', 'model_dump')`).
 
+    The reason we've selected these is to prevent collisions with other validation / dumping formats
+    in the future - ex, model_validate_{some_newly_supported_format}.
+
     Before v2.10, Pydantic used `('model_',)` as the default value for this setting to
     prevent collisions between model attributes and `BaseModel`'s own methods. This was changed
     in v2.10 given feedback that this restriction was limiting in AI and data science contexts,
