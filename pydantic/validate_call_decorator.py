@@ -50,10 +50,6 @@ def validate_call(
     local_ns = _typing_extra.parent_frame_namespace()
 
     def validate(function: AnyCallableT) -> AnyCallableT:
-        if isinstance(function, (classmethod, staticmethod)):
-            name = type(function).__name__
-            raise TypeError(f'The `@{name}` decorator should be applied after `@validate_call` (put `@{name}` on top)')
-
         validate_call_wrapper = _validate_call.ValidateCallWrapper(function, config, validate_return, local_ns)
 
         if inspect.iscoroutinefunction(function):

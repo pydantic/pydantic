@@ -2,6 +2,7 @@ from __future__ import annotations as _annotations
 
 import inspect
 from functools import partial
+from types import FunctionType, LambdaType, MethodType
 from typing import Any, Awaitable, Callable
 
 import pydantic_core
@@ -11,17 +12,36 @@ from ..plugin._schema_validator import create_schema_validator
 from . import _generate_schema, _typing_extra
 from ._config import ConfigWrapper
 
+_validate_call_handle_types: tuple[type[Any], ...] = (
+    FunctionType,
+    LambdaType,
+    MethodType,
+    partial,
+)
+
+
+def _check_function_type(function: object):
+    if any(isinstance(function, t) for t in _validate_call_handle_types):
+        return
+
+    if isinstance(function, (classmethod, staticmethod)):
+        name = type(function).__name__
+        raise TypeError(f'The `@{name}` decorator should be applied after `@validate_call` (put `@{name}` on top)')
+
+    if inspect.isclass(function):
+        raise TypeError(
+            '`validate_call` should be applied to functions, not classes (put `@validate_call` on top of `__init__` or `__new__` instead)'
+        )
+    if callable(function):
+        raise TypeError(
+            '`validate_call` should be applied to functions, not instances or other callables. Use `validate_call` explicitly on `__call__` instead.'
+        )
+
+    raise TypeError('`validate_call` should be applied to one of the following: function, method, partial, or lambda')
+
 
 class ValidateCallWrapper:
     """This is a wrapper around a function that validates the arguments passed to it, and optionally the return value."""
-
-    __slots__ = (
-        '__pydantic_validator__',
-        '__name__',
-        '__qualname__',
-        '__annotations__',
-        '__dict__',  # required for __module__
-    )
 
     def __init__(
         self,
@@ -30,17 +50,18 @@ class ValidateCallWrapper:
         validate_return: bool,
         namespace: dict[str, Any] | None,
     ):
+        _check_function_type(function)
+
         if isinstance(function, partial):
-            func = function.func
-            schema_type = func
-            self.__name__ = f'partial({func.__name__})'
-            self.__qualname__ = f'partial({func.__qualname__})'
-            self.__module__ = func.__module__
+            schema_type = function.func
+            module = function.func.__module__
+            qualname = f'partial({function.func.__qualname__})'
+            core_config_title = f'partial({function.func.__name__})'
         else:
             schema_type = function
-            self.__name__ = function.__name__
-            self.__qualname__ = function.__qualname__
-            self.__module__ = function.__module__
+            module = function.__module__
+            qualname = function.__qualname__
+            core_config_title = function.__name__
 
         global_ns = _typing_extra.get_module_ns_of(function)
         # TODO: this is a bit of a hack, we should probably have a better way to handle this
@@ -55,13 +76,13 @@ class ValidateCallWrapper:
         config_wrapper = ConfigWrapper(config)
         gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
         schema = gen_schema.clean_schema(gen_schema.generate_schema(function))
-        core_config = config_wrapper.core_config(self)
+        core_config = config_wrapper.core_config(core_config_title)
 
         self.__pydantic_validator__ = create_schema_validator(
             schema,
             schema_type,
-            self.__module__,
-            self.__qualname__,
+            module,
+            qualname,
             'validate_call',
             core_config,
             config_wrapper.plugin_settings,
@@ -75,8 +96,8 @@ class ValidateCallWrapper:
             validator = create_schema_validator(
                 schema,
                 schema_type,
-                self.__module__,
-                self.__qualname__,
+                module,
+                qualname,
                 'validate_call',
                 core_config,
                 config_wrapper.plugin_settings,
