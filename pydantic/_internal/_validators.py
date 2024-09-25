@@ -257,7 +257,7 @@ def _safe_repr(v: Any) -> int | float | str:
 
     See tests/test_types.py::test_annotated_metadata_any_order for some context.
     """
-    if isinstance(v, (int, float)):
+    if isinstance(v, (int, float, str)):
         return v
     return repr(v)
 
