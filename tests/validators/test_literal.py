@@ -389,3 +389,15 @@ def test_big_int():
     m = r'Input should be 18446744073709551617 or 340282366920938463463374607431768211457 \[type=literal_error'
     with pytest.raises(ValidationError, match=m):
         v.validate_python(37)
+
+
+def test_enum_for_str() -> None:
+    class S(str, Enum):
+        a = 'a'
+
+    val_enum = SchemaValidator(core_schema.literal_schema([S.a]))
+    val_str = SchemaValidator(core_schema.literal_schema(['a']))
+
+    for val in [val_enum, val_str]:
+        assert val.validate_python('a') == 'a'
+        assert val.validate_python(S.a) == 'a'
