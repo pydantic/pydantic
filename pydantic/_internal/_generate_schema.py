@@ -821,10 +821,18 @@ class GenerateSchema:
         ):
             schema = existing_schema
         elif (validators := getattr(obj, '__get_validators__', None)) is not None:
-            warn(
-                '`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
-                PydanticDeprecatedSince20,
-            )
+            from pydantic.v1 import BaseModel as BaseModelV1
+
+            if issubclass(obj, BaseModelV1):
+                warn(
+                    f'Mixing V1 models and V2 models (or constructs, like `TypeAdapter`) is not supported. Please upgrade `{obj.__name__}` to V2.',
+                    UserWarning,
+                )
+            else:
+                warn(
+                    '`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
+                    PydanticDeprecatedSince20,
+                )
             schema = core_schema.chain_schema([core_schema.with_info_plain_validator_function(v) for v in validators()])
         else:
             # we have no existing schema information on the property, exit early so that we can go generate a schema
@@ -1882,6 +1890,7 @@ class GenerateSchema:
         arguments_list: list[core_schema.ArgumentsParameter] = []
         var_args_schema: core_schema.CoreSchema | None = None
         var_kwargs_schema: core_schema.CoreSchema | None = None
+        var_kwargs_mode: core_schema.VarKwargsMode | None = None
 
         for name, p in sig.parameters.items():
             if p.annotation is sig.empty:
@@ -1897,7 +1906,30 @@ class GenerateSchema:
                 var_args_schema = self.generate_schema(annotation)
             else:
                 assert p.kind == Parameter.VAR_KEYWORD, p.kind
-                var_kwargs_schema = self.generate_schema(annotation)
+
+                unpack_type = _typing_extra.unpack_type(annotation)
+                if unpack_type is not None:
+                    if not is_typeddict(unpack_type):
+                        raise PydanticUserError(
+                            f'Expected a `TypedDict` class, got {unpack_type.__name__!r}', code='unpack-typed-dict'
+                        )
+                    non_pos_only_param_names = {
+                        name for name, p in sig.parameters.items() if p.kind != Parameter.POSITIONAL_ONLY
+                    }
+                    overlapping_params = non_pos_only_param_names.intersection(unpack_type.__annotations__)
+                    if overlapping_params:
+                        raise PydanticUserError(
+                            f'Typed dictionary {unpack_type.__name__!r} overlaps with parameter'
+                            f"{'s' if len(overlapping_params) >= 2 else ''} "
+                            f"{', '.join(repr(p) for p in sorted(overlapping_params))}",
+                            code='overlapping-unpack-typed-dict',
+                        )
+
+                    var_kwargs_mode = 'unpacked-typed-dict'
+                    var_kwargs_schema = self._typed_dict_schema(unpack_type, None)
+                else:
+                    var_kwargs_mode = 'uniform'
+                    var_kwargs_schema = self.generate_schema(annotation)
 
         return_schema: core_schema.CoreSchema | None = None
         config_wrapper = self._config_wrapper
@@ -1910,6 +1942,7 @@ class GenerateSchema:
             core_schema.arguments_schema(
                 arguments_list,
                 var_args_schema=var_args_schema,
+                var_kwargs_mode=var_kwargs_mode,
                 var_kwargs_schema=var_kwargs_schema,
                 populate_by_name=config_wrapper.populate_by_name,
             ),

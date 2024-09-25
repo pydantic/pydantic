@@ -18,7 +18,7 @@ from typing_extensions import (
 from ..aliases import AliasGenerator
 from ..config import ConfigDict, ExtraValues, JsonDict, JsonEncoder, JsonSchemaExtraCallable
 from ..errors import PydanticUserError
-from ..warnings import PydanticDeprecatedSince20
+from ..warnings import PydanticDeprecatedSince20, PydanticDeprecatedSince210
 
 if not TYPE_CHECKING:
     # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
@@ -68,7 +68,7 @@ class ConfigWrapper:
     strict: bool
     # whether instances of models and dataclasses (including subclass instances) should re-validate, default 'never'
     revalidate_instances: Literal['always', 'never', 'subclass-instances']
-    ser_json_timedelta: Literal['iso8601', 'float']
+    ser_json_timedelta: Literal['iso8601', 'seconds_float', 'milliseconds_float']
     ser_json_bytes: Literal['utf8', 'base64', 'hex']
     val_json_bytes: Literal['utf8', 'base64', 'hex']
     ser_json_inf_nan: Literal['null', 'constants', 'strings']
@@ -165,6 +165,14 @@ class ConfigWrapper:
             A `CoreConfig` object created from config.
         """
         config = self.config_dict
+
+        if config.get('ser_json_timedelta') == 'float':
+            warnings.warn(
+                'The `float` option for `ser_json_timedelta` has been deprecated in favor of `seconds_float`. Please use this setting instead.',
+                PydanticDeprecatedSince210,
+                stacklevel=2,
+            )
+            config['ser_json_timedelta'] = 'seconds_float'
 
         core_config_values = {
             'title': config.get('title') or (obj and obj.__name__),
