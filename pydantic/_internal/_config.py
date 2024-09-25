@@ -170,7 +170,7 @@ class ConfigWrapper:
 
         if config.get('schema_generator') is not None:
             warnings.warn(
-                'The `schema_generator` setting has been deprecated in v2.10. This setting no longer has any effect.',
+                'The `schema_generator` setting has been deprecated since v2.10. This setting no longer has any effect.',
                 PydanticDeprecatedSince210,
                 stacklevel=2,
             )
