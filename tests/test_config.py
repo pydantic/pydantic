@@ -521,6 +521,7 @@ def test_multiple_inheritance_config():
 def test_config_wrapper_match():
     localns = {
         '_GenerateSchema': GenerateSchema,
+        'GenerateSchema': GenerateSchema,
         'JsonValue': JsonValue,
         'FieldInfo': FieldInfo,
         'ComputedFieldInfo': ComputedFieldInfo,
@@ -568,6 +569,8 @@ def test_config_validation_error_cause():
 
 def test_config_defaults_match():
     localns = {
+        '_GenerateSchema': GenerateSchema,
+        'GenerateSchema': GenerateSchema,
         'FieldInfo': FieldInfo,
         'ComputedFieldInfo': ComputedFieldInfo,
     }
