@@ -1758,21 +1758,15 @@ def test_property_names_constraint():
     assert MyModel.model_json_schema() == {
         'properties': {
             'my_dict': {
-                'additionalProperties': {
-                    'type': 'string'
-                },
-                'propertyNames': {
-                    'maxLength': 1
-                },
+                'additionalProperties': {'type': 'string'},
+                'propertyNames': {'maxLength': 1},
                 'title': 'My Dict',
-                'type': 'object'
+                'type': 'object',
             }
         },
-        'required': [
-            'my_dict'
-        ],
+        'required': ['my_dict'],
         'title': 'MyModel',
-        'type': 'object'
+        'type': 'object',
     }
 
 
