@@ -23,6 +23,7 @@ from pydantic import (
     with_config,
 )
 from pydantic._internal._config import ConfigWrapper, config_defaults
+from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._mock_val_ser import MockValSer
 from pydantic._internal._typing_extra import get_type_hints
 from pydantic.config import ConfigDict, JsonValue
@@ -31,7 +32,7 @@ from pydantic.dataclasses import rebuild_dataclass
 from pydantic.errors import PydanticUserError
 from pydantic.fields import ComputedFieldInfo, FieldInfo
 from pydantic.type_adapter import TypeAdapter
-from pydantic.warnings import PydanticDeprecationWarning
+from pydantic.warnings import PydanticDeprecatedSince210, PydanticDeprecationWarning
 
 from .conftest import CallCounter
 
@@ -519,6 +520,8 @@ def test_multiple_inheritance_config():
 
 def test_config_wrapper_match():
     localns = {
+        '_GenerateSchema': GenerateSchema,
+        'GenerateSchema': GenerateSchema,
         'JsonValue': JsonValue,
         'FieldInfo': FieldInfo,
         'ComputedFieldInfo': ComputedFieldInfo,
@@ -566,6 +569,8 @@ def test_config_validation_error_cause():
 
 def test_config_defaults_match():
     localns = {
+        '_GenerateSchema': GenerateSchema,
+        'GenerateSchema': GenerateSchema,
         'FieldInfo': FieldInfo,
         'ComputedFieldInfo': ComputedFieldInfo,
     }
@@ -938,3 +943,12 @@ def test_empty_config_with_annotations():
         model_config: ConfigDict = {}
 
     assert Model.model_config == {}
+
+
+def test_generate_schema_deprecation_warning() -> None:
+    with pytest.warns(
+        PydanticDeprecatedSince210, match='The `schema_generator` setting has been deprecated since v2.10.'
+    ):
+
+        class Model(BaseModel):
+            model_config = ConfigDict(schema_generator=GenerateSchema)
