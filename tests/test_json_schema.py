@@ -101,6 +101,7 @@ from pydantic.types import (
     SecretStr,
     StrictBool,
     StrictStr,
+    StringConstraints,
     conbytes,
     condate,
     condecimal,
@@ -1747,6 +1748,31 @@ def test_enum_dict():
             }
         },
         'required': ['enum_dict'],
+    }
+
+
+def test_property_names_constraint():
+    class MyModel(BaseModel):
+        my_dict: Dict[Annotated[str, StringConstraints(max_length=1)], str]
+
+    assert MyModel.model_json_schema() == {
+        'properties': {
+            'my_dict': {
+                'additionalProperties': {
+                    'type': 'string'
+                },
+                'propertyNames': {
+                    'maxLength': 1
+                },
+                'title': 'My Dict',
+                'type': 'object'
+            }
+        },
+        'required': [
+            'my_dict'
+        ],
+        'title': 'MyModel',
+        'type': 'object'
     }
 
 
