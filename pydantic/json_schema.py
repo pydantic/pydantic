@@ -974,6 +974,7 @@ class GenerateJsonSchema:
             else:
                 json_schema['patternProperties'] = {keys_pattern: values_schema}
 
+        # The len check indicates that constraints are probably present:
         if keys_schema.get('type') == 'string' and len(keys_schema) > 1:
             keys_schema.pop('type')
             json_schema['propertyNames'] = keys_schema
