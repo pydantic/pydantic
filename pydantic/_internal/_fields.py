@@ -125,7 +125,7 @@ def collect_model_fields(  # noqa: C901
             if ann_name.startswith(protected_namespace):
                 for b in bases:
                     if hasattr(b, ann_name):
-                        if not (issubclass(b, BaseModel) and ann_name in b.__pydantic_fields__):
+                        if not (issubclass(b, BaseModel) and ann_name in getattr(b, '__pydantic_fields__', {})):
                             raise NameError(
                                 f'Field "{ann_name}" conflicts with member {getattr(b, ann_name)}'
                                 f' of protected namespace "{protected_namespace}".'

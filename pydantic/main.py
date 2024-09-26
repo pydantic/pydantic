@@ -119,19 +119,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     # Because `dict` is in the local namespace of the `BaseModel` class, we use `Dict` for annotations.
     # TODO v3 fallback to `dict` when the deprecated `dict` method gets removed.
-
-    # Must be set for `GenerateSchema.model_schema` to work for a plain `BaseModel` annotation.
-    model_fields: ClassVar[Dict[str, FieldInfo]] = {}  # noqa: UP006
-    """
-    Metadata about the fields defined on the model,
-    mapping of field names to [`FieldInfo`][pydantic.fields.FieldInfo] objects.
-    This replaces `Model.__fields__` from Pydantic V1.
-    """
-
-    # Must be set for `GenerateSchema.model_schema` to work for a plain `BaseModel` annotation.
-    model_computed_fields: ClassVar[Dict[str, ComputedFieldInfo]] = {}  # noqa: UP006
-    """A dictionary of computed field names and their corresponding `ComputedFieldInfo` objects."""
-
     __class_vars__: ClassVar[set[str]]
     """The names of the class variables defined on the model."""
 
@@ -232,6 +219,27 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     # The following line sets a flag that we use to determine when `__init__` gets overridden by the user
     __init__.__pydantic_base_init__ = True  # pyright: ignore[reportFunctionMemberAccess]
+
+    # TODO: V3 - remove `model_fields` and `model_computed_fields` properties from the `BaseModel` class - they should only
+    # be accessible on the model class, not on instances. We have these purely for backwards compatibility with Pydantic <v2.10.
+    # This is similar to the fact that we have __fields__ defined here (on `BaseModel`) and on `ModelMetaClass`.
+    @property
+    def model_fields(self) -> dict[str, FieldInfo]:
+        """Get metadata about the fields defined on the model.
+
+        Returns:
+            A mapping of field names to [`FieldInfo`][pydantic.fields.FieldInfo] objects.
+        """
+        return type(self).model_fields
+
+    @property
+    def model_computed_fields(self) -> dict[str, ComputedFieldInfo]:
+        """Get metadata about the computed fields defined on the model.
+
+        Returns:
+            A mapping of computed field names to [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] objects.
+        """
+        return type(self).model_computed_fields
 
     @property
     def model_extra(self) -> dict[str, Any] | None:

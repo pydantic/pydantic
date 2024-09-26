@@ -665,7 +665,7 @@ class GenerateSchema:
             if maybe_schema is not None:
                 return maybe_schema
 
-            fields = cls.__pydantic_fields__
+            fields = getattr(cls, '__pydantic_fields__', {})
             decorators = cls.__pydantic_decorators__
             computed_fields = decorators.computed_fields
             check_decorator_fields_exist(
