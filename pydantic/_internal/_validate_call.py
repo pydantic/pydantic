@@ -1,8 +1,8 @@
 from __future__ import annotations as _annotations
 
+import functools
 import inspect
 from functools import partial
-from types import FunctionType, LambdaType, MethodType
 from typing import Any, Awaitable, Callable
 
 import pydantic_core
@@ -12,33 +12,6 @@ from ..plugin._schema_validator import create_schema_validator
 from . import _generate_schema, _typing_extra
 from ._config import ConfigWrapper
 
-_validate_call_handle_types: tuple[type[Any], ...] = (
-    FunctionType,
-    LambdaType,
-    MethodType,
-    partial,
-)
-
-
-def _check_function_type(function: object):
-    if any(isinstance(function, t) for t in _validate_call_handle_types):
-        return
-
-    if isinstance(function, (classmethod, staticmethod)):
-        name = type(function).__name__
-        raise TypeError(f'The `@{name}` decorator should be applied after `@validate_call` (put `@{name}` on top)')
-
-    if inspect.isclass(function):
-        raise TypeError(
-            '`validate_call` should be applied to functions, not classes (put `@validate_call` on top of `__init__` or `__new__` instead)'
-        )
-    if callable(function):
-        raise TypeError(
-            '`validate_call` should be applied to functions, not instances or other callables. Use `validate_call` explicitly on `__call__` instead.'
-        )
-
-    raise TypeError('`validate_call` should be applied to one of the following: function, method, partial, or lambda')
-
 
 def wrap_validate_call(
     function: Callable[..., Any],
@@ -47,8 +20,6 @@ def wrap_validate_call(
     namespace: dict[str, Any] | None,
 ):
     """This is a wrapper around a function that validates the arguments passed to it, and optionally the return value."""
-    _check_function_type(function)
-
     if isinstance(function, partial):
         schema_type = function.func
         module = function.func.__module__
@@ -116,4 +87,16 @@ def wrap_validate_call(
             return return_validator(res)
         return res
 
-    return wrapper
+    if inspect.iscoroutinefunction(function):
+
+        @functools.wraps(function)
+        async def wrapper_function(*args, **kwargs):  # type: ignore
+            return await wrapper(*args, **kwargs)
+    else:
+
+        @functools.wraps(function)
+        def wrapper_function(*args, **kwargs):
+            return wrapper(*args, **kwargs)
+
+    wrapper_function.raw_function = function  # type: ignore
+    return wrapper_function  # type: ignore

@@ -22,7 +22,7 @@ from inspect import Parameter, _ParameterKind, signature
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
 from operator import attrgetter
-from types import FunctionType, LambdaType, MethodType
+from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, LambdaType, MethodType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -1017,7 +1017,7 @@ class GenerateSchema:
             return self.generate_schema(
                 self._get_first_arg_or_any(obj),
             )
-        elif isinstance(obj, (FunctionType, LambdaType, MethodType, partial)):
+        elif isinstance(obj, (FunctionType, LambdaType, MethodType, BuiltinFunctionType, BuiltinMethodType, partial)):
             return self._callable_schema(obj)
         elif inspect.isclass(obj) and issubclass(obj, Enum):
             return self._enum_schema(obj)
