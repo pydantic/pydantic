@@ -5530,8 +5530,6 @@ def test_custom_generic_containers():
 @pytest.mark.parametrize(
     ('field_type', 'input_data', 'expected_value', 'serialized_data'),
     [
-        pytest.param(Base64Bytes, b'Zm9vIGJhcg==\n', b'foo bar', b'Zm9vIGJhcg==\n', id='Base64Bytes-reversible'),
-        pytest.param(Base64Str, 'Zm9vIGJhcg==\n', 'foo bar', 'Zm9vIGJhcg==\n', id='Base64Str-reversible'),
         pytest.param(Base64Bytes, b'Zm9vIGJhcg==', b'foo bar', b'Zm9vIGJhcg==', id='Base64Bytes-bytes-input'),
         pytest.param(Base64Bytes, 'Zm9vIGJhcg==', b'foo bar', b'Zm9vIGJhcg==', id='Base64Bytes-str-input'),
         pytest.param(

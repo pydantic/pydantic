@@ -2548,7 +2548,7 @@ Warning:
                 raise PydanticCustomError(
                     'base64_decode',
                     "Base64 decoding error: '{error}'",
-                    {'error': str(e)}
+                    {'error': str(e)},
                 )
 
         @classmethod
