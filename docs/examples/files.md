@@ -1,6 +1,11 @@
 `pydantic` is a great tool for validating data coming from various sources.
 In this section, we will look at how to validate data from different types of files.
 
+!!! Note:
+    If you're using any of the below file formats to parse configuration / settings, you might want to
+    consider using the [`pydantic-settings`][pydantic_settings] library, which offers builtin
+    support for parsing this type of data.
+
 ## JSON data
 
 `.json` files are a common way to store key / value data in a human-readable format.
@@ -196,8 +201,38 @@ with open('people.csv') as f:
     #> [Person(name='John Doe', age=30, email='john@example.com'), Person(name='Jane Doe', age=25, email='jane@example.com')]
 ```
 
-<!-- TODO: TOML, YAML, other file formats (great for new contributors!) -->
+## TOML files
 
-!!! Note:
-    If you're using any of the above file formats to parse configuration / settings, you might want to
-    consider using the [`pydantic-settings`][pydantic_settings] library.
+TOML files are often used for configuration due to their simplicity and readability.
+
+Consider the following TOML file:
+
+```toml
+name = "John Doe"
+age = 30
+email = "john@example.com"
+```
+
+Here's how we validate that data:
+
+```py
+import tomllib
+
+from pydantic import BaseModel, EmailStr, PositiveInt
+
+
+class Person(BaseModel):
+    name: str
+    age: PositiveInt
+    email: EmailStr
+
+
+with open('person.toml', 'rb') as f:
+    data = tomllib.load(f)
+
+person = Person.model_validate(data)
+print(repr(person))
+#> Person(name='John Doe', age=30, email='john@example.com')
+```
+
+<!-- TODO: YAML and other file formats (great for new contributors!) -->
