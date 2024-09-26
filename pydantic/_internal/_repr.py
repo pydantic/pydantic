@@ -93,7 +93,7 @@ def display_as_type(obj: Any) -> str:
 
     Takes some logic from `typing._type_repr`.
     """
-    if isinstance(obj, types.FunctionType):
+    if isinstance(obj, (types.FunctionType, types.BuiltinFunctionType)):
         return obj.__name__
     elif obj is ...:
         return '...'
