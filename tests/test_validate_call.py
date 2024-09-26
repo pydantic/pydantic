@@ -22,6 +22,85 @@ from pydantic import (
 from pydantic.config import with_config
 
 
+def test_func_type():
+    def f(x: int): ...
+
+    for func in (f, lambda x: None, sorted, [].append):
+        validate_call(f)
+        validate_call(partial(f))
+
+    # Somehow `max` does not have a signature
+    with pytest.raises(TypeError, match=("Input function `max` doesn't have a valid signature")):
+        validate_call(max)
+
+    with pytest.raises(
+        TypeError,
+        match=('`validate_call` should be applied to one of the following: function, method, partial, or lambda'),
+    ):
+        validate_call([])
+
+
+def test_validate_class():
+    class A:
+        @validate_call
+        def __new__(cls, x: int):
+            return super().__new__(cls)
+
+        @validate_call
+        def __init__(self, x: int) -> None:
+            self.x = x
+
+    with pytest.raises(
+        TypeError,
+        match=re.escape(
+            '`validate_call` should be applied to functions, not classes (put `@validate_call` on top of `__init__` or `__new__` instead)'
+        ),
+    ):
+        validate_call(A)
+
+    assert A('5').x == 5
+
+
+def test_validate_custom_callable():
+    class A:
+        def __call__(self, x: int) -> int:
+            return x
+
+    with pytest.raises(
+        TypeError,
+        match=re.escape(
+            '`validate_call` should be applied to functions, not instances or other callables. Use `validate_call` explicitly on `__call__` instead.'
+        ),
+    ):
+        validate_call(A())
+
+    a = A()
+    a.__call__ = validate_call(a.__call__)
+    assert a('5') == '5'  # Note: dunder methods cannot be overridden at instance level
+
+    class B:
+        @validate_call
+        def __call__(self, x: int) -> int:
+            return x
+
+    assert B()('5') == 5
+
+
+@pytest.mark.parametrize('decorator', [staticmethod, classmethod])
+def test_classmethod_order_error(decorator):
+    name = decorator.__name__
+    with pytest.raises(
+        TypeError,
+        match=re.escape(f'The `@{name}` decorator should be applied after `@validate_call` (put `@{name}` on top)'),
+    ):
+
+        class A:
+            @validate_call
+            @decorator
+            def method(self, x: int):
+                pass
+
+
 def test_args():
     @validate_call
     def foo(a: int, b: int):
@@ -804,21 +883,6 @@ def test_dynamic_method_decoration():
 
     foo = Foo()
     assert foo.bar('test') == 'bar-test'
-
-
-@pytest.mark.parametrize('decorator', [staticmethod, classmethod])
-def test_classmethod_order_error(decorator):
-    name = decorator.__name__
-    with pytest.raises(
-        TypeError,
-        match=re.escape(f'The `@{name}` decorator should be applied after `@validate_call` (put `@{name}` on top)'),
-    ):
-
-        class A:
-            @validate_call
-            @decorator
-            def method(self, x: int):
-                pass
 
 
 def test_async_func() -> None:

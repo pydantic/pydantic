@@ -23,7 +23,7 @@ def _check_function_type(function: object):
             inspect.signature(cast(_validate_call.ValidateCallSupportedTypes, function))
         except ValueError:
             qualname = _validate_call.get_qualname(cast(_validate_call.ValidateCallSupportedTypes, function))
-            raise TypeError(f"Input function {qualname} doesn't have a valid signature")
+            raise TypeError(f"Input function `{qualname}` doesn't have a valid signature")
         return
 
     if isinstance(function, (classmethod, staticmethod)):
@@ -82,7 +82,7 @@ def validate_call(
         )
         return validate_call_wrapper  # type: ignore
 
-    if func:
+    if func is not None:
         return validate(func)
     else:
         return validate
