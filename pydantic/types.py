@@ -2476,9 +2476,15 @@ class EncodedBytes:
         return field_schema
 
     def __get_pydantic_core_schema__(self, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        if isinstance(self, source):
+            # used directly as a type
+            schema = core_schema.bytes_schema()
+        else:
+            schema = handler(source)
+
         return core_schema.with_info_after_validator_function(
             function=self.decode,
-            schema=core_schema.bytes_schema(),
+            schema=schema,
             serialization=core_schema.plain_serializer_function_ser_schema(function=self.encode),
         )
 
@@ -2522,7 +2528,7 @@ class EncodedStr(EncodedBytes):
     class MyEncoder(EncoderProtocol):
         @classmethod
         def decode(cls, data: bytes) -> bytes:
-            if data == b'**undecodable**':
+            if data == '**undecodable**':
                 raise ValueError('Cannot decode data')
             return data[13:]
 
@@ -2570,7 +2576,7 @@ class EncodedStr(EncodedBytes):
             serialization=core_schema.plain_serializer_function_ser_schema(function=self.encode_str),
         )
 
-    def decode_str(self, data: bytes, _: core_schema.ValidationInfo) -> str:
+    def decode_str(self, data: bytes | str, _: core_schema.ValidationInfo) -> str:
         """Decode the data using the specified encoder.
 
         Args:
@@ -2579,7 +2585,10 @@ class EncodedStr(EncodedBytes):
         Returns:
             The decoded data.
         """
-        return data.decode()
+        # fix: AttributeError: 'str' object has no attribute 'decode'
+        if isinstance(data, bytes):
+            return data.decode()
+        return data
 
     def encode_str(self, value: str) -> str:
         """Encode the data using the specified encoder.
