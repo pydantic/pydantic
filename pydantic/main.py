@@ -101,6 +101,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_serializer__: The `pydantic-core` `SchemaSerializer` used to dump instances of the model.
         __pydantic_validator__: The `pydantic-core` `SchemaValidator` used to validate instances of the model.
 
+        __pydantic_fields__: A dictionary of field names and their corresponding [`FieldInfo`][pydantic.fields.FieldInfo] objects.
+        __pydantic_computed_fields__: A dictionary of computed field names and their corresponding [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] objects.
+
         __pydantic_extra__: A dictionary containing extra values, if [`extra`][pydantic.config.ConfigDict.extra]
             is set to `'allow'`.
         __pydantic_fields_set__: The names of fields explicitly set during instantiation.
@@ -108,7 +111,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     """
 
     # Class attributes:
-    # `model_fields` and `__pydantic_decorators__` must be set for
+    # `__pydantic_fields__` and `__pydantic_decorators__` must be set for
     # `GenerateSchema.model_schema` to work for a plain `BaseModel` annotation.
 
     model_config: ClassVar[ConfigDict] = ConfigDict()
@@ -118,16 +121,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     # Because `dict` is in the local namespace of the `BaseModel` class, we use `Dict` for annotations.
     # TODO v3 fallback to `dict` when the deprecated `dict` method gets removed.
-    model_fields: ClassVar[Dict[str, FieldInfo]] = {}  # noqa: UP006
-    """
-    Metadata about the fields defined on the model,
-    mapping of field names to [`FieldInfo`][pydantic.fields.FieldInfo] objects.
-
-    This replaces `Model.__fields__` from Pydantic V1.
-    """
-
-    model_computed_fields: ClassVar[Dict[str, ComputedFieldInfo]] = {}  # noqa: UP006
-    """A dictionary of computed field names and their corresponding `ComputedFieldInfo` objects."""
 
     __class_vars__: ClassVar[set[str]]
     """The names of the class variables defined on the model."""
@@ -169,6 +162,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     __pydantic_validator__: ClassVar[SchemaValidator | PluggableSchemaValidator]
     """The `pydantic-core` `SchemaValidator` used to validate instances of the model."""
+
+    __pydantic_fields__: ClassVar[Dict[str, FieldInfo]]  # noqa: UP006
+    """A dictionary of field names and their corresponding [`FieldInfo`][pydantic.fields.FieldInfo] objects.
+    This replaces `Model.__fields__` from Pydantic V1.
+    """
+
+    __pydantic_computed_fields__: ClassVar[Dict[str, ComputedFieldInfo]]  # noqa: UP006
+    """A dictionary of computed field names and their corresponding [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] objects."""
 
     __pydantic_extra__: dict[str, Any] | None = _model_construction.NoInitField(init=False)
     """A dictionary containing extra values, if [`extra`][pydantic.config.ConfigDict.extra] is set to `'allow'`."""
@@ -240,6 +241,24 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
         return self.__pydantic_fields_set__
 
+    @property
+    def model_fields(self) -> dict[str, FieldInfo]:
+        """Get metadata about the fields defined on the model.
+
+        Returns:
+            A mapping of field names to [`FieldInfo`][pydantic.fields.FieldInfo] objects.
+        """
+        return self.__pydantic_fields__
+
+    @property
+    def computed_fields(self) -> dict[str, ComputedFieldInfo]:
+        """Get metadata about the computed fields defined on the model.
+
+        Returns:
+            A mapping of computed field names to [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] objects.
+        """
+        return self.__pydantic_computed_fields__
+
     @classmethod
     def model_construct(cls, _fields_set: set[str] | None = None, **values: Any) -> Self:  # noqa: C901
         """Creates a new instance of the `Model` class with validated data.
@@ -267,7 +286,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         fields_values: dict[str, Any] = {}
         fields_set = set()
 
-        for name, field in cls.model_fields.items():
+        for name, field in cls.__pydantic_fields__.items():
             if field.alias is not None and field.alias in values:
                 fields_values[name] = values.pop(field.alias)
                 fields_set.add(name)
@@ -338,7 +357,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         if update:
             if self.model_config.get('extra') == 'allow':
                 for k, v in update.items():
-                    if k in self.model_fields:
+                    if k in self.__pydantic_fields__:
                         copied.__dict__[k] = v
                     else:
                         if copied.__pydantic_extra__ is None:
@@ -880,10 +899,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 attr.__set__(self, value)
             elif self.model_config.get('validate_assignment', None):
                 self.__pydantic_validator__.validate_assignment(self, name, value)
-            elif self.model_config.get('extra') != 'allow' and name not in self.model_fields:
+            elif self.model_config.get('extra') != 'allow' and name not in self.__pydantic_fields__:
                 # TODO - matching error
                 raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
-            elif self.model_config.get('extra') == 'allow' and name not in self.model_fields:
+            elif self.model_config.get('extra') == 'allow' and name not in self.__pydantic_fields__:
                 if self.model_extra and name in self.model_extra:
                     self.__pydantic_extra__[name] = value  # type: ignore
                 else:
@@ -915,7 +934,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
             self._check_frozen(item, None)
 
-            if item in self.model_fields:
+            if item in self.__pydantic_fields__:
                 object.__delattr__(self, item)
             elif self.__pydantic_extra__ is not None and item in self.__pydantic_extra__:
                 del self.__pydantic_extra__[item]
@@ -928,7 +947,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     def _check_frozen(self, name: str, value: Any) -> None:
         if self.model_config.get('frozen', None):
             typ = 'frozen_instance'
-        elif getattr(self.model_fields.get(name), 'frozen', False):
+        elif getattr(self.__pydantic_fields__.get(name), 'frozen', False):
             typ = 'frozen_field'
         else:
             return
@@ -985,7 +1004,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
                 # We don't want to trigger unnecessary costly filtering of __dict__ on all unequal objects, so we return
                 # early if there are no keys to ignore (we would just return False later on anyway)
-                model_fields = type(self).model_fields.keys()
+                model_fields = type(self).__pydantic_fields__.keys()
                 if self.__dict__.keys() <= model_fields and other.__dict__.keys() <= model_fields:
                     return False
 
@@ -1052,7 +1071,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     def __repr_args__(self) -> _repr.ReprArgs:
         for k, v in self.__dict__.items():
-            field = self.model_fields.get(k)
+            field = self.__pydantic_fields__.get(k)
             if field and field.repr:
                 if v is not self:
                     yield k, v
@@ -1069,7 +1088,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         if pydantic_extra is not None:
             yield from ((k, v) for k, v in pydantic_extra.items())
-        yield from ((k, getattr(self, k)) for k, v in self.model_computed_fields.items() if v.repr)
+        yield from ((k, getattr(self, k)) for k, v in self.__pydantic_computed_fields__.items() if v.repr)
 
     # take logic from `_repr.Representation` without the side effects of inheritance, see #5740
     __repr_name__ = _repr.Representation.__repr_name__
