@@ -29,9 +29,13 @@ def test_func_type():
         validate_call(f)
         validate_call(partial(f))
 
-    # Somehow `max` does not have a signature
-    with pytest.raises(TypeError, match=("Input function `max` doesn't have a valid signature")):
-        validate_call(max)
+    # In some versions, these functions may not have a valid signature
+    for func in (max, min, breakpoint):
+        try:
+            inspect.signature(func)
+        except ValueError:
+            with pytest.raises(TypeError, match=(f"Input function `{func.__name__}` doesn't have a valid signature")):
+                validate_call(func)
 
     with pytest.raises(
         TypeError,
