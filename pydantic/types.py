@@ -1589,10 +1589,8 @@ class Secret(_SecretBase[SecretType]):
 
     SecretPosInt = Secret[Annotated[int, Field(gt=0, strict=True)]]
 
-
     class Model(BaseModel):
         sensitive_int: SecretPosInt
-
 
     m = Model(sensitive_int=42)
     print(m.model_dump())
@@ -1775,7 +1773,6 @@ class SecretStr(_SecretField[str]):
     ```py
     from pydantic import BaseModel, SecretBytes, SecretStr, field_serializer
 
-
     class Model(BaseModel):
         password: SecretStr
         password_bytes: SecretBytes
@@ -1783,7 +1780,6 @@ class SecretStr(_SecretField[str]):
         @field_serializer('password', 'password_bytes', when_used='json')
         def dump_secret(self, v):
             return v.get_secret_value()
-
 
     model = Model(password='IAmSensitive', password_bytes=b'IAmSensitiveBytes')
     print(model)
