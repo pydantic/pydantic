@@ -965,7 +965,7 @@ class GenerateJsonSchema:
         keys_pattern = keys_schema.pop('pattern', None)
 
         values_schema = self.generate_inner(schema['values_schema']).copy() if 'values_schema' in schema else {}
-        # don't give a title to additionalProperties and patternProperties
+        # don't give a title to additionalProperties, patternProperties and propertyNames
         values_schema.pop('title', None)
         keys_schema.pop('title', None)
         if values_schema or keys_pattern is not None:  # don't add additionalProperties if it's empty
