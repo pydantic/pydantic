@@ -3,7 +3,8 @@ from __future__ import annotations as _annotations
 import functools
 import inspect
 from functools import partial
-from typing import Any, Awaitable, Callable
+from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, LambdaType, MethodType
+from typing import Any, Awaitable, Union
 
 import pydantic_core
 
@@ -12,9 +13,23 @@ from ..plugin._schema_validator import create_schema_validator
 from . import _generate_schema, _typing_extra
 from ._config import ConfigWrapper
 
+# This should be aligned with `GenerateSchema.match_types`
+ValidateCallSupportedTypes = Union[
+    LambdaType,
+    FunctionType,
+    MethodType,
+    BuiltinFunctionType,
+    BuiltinMethodType,
+    functools.partial,
+]
+
+
+def get_qualname(func: ValidateCallSupportedTypes) -> str:
+    return f'partial({func.func.__qualname__})' if isinstance(func, functools.partial) else func.__qualname__
+
 
 def wrap_validate_call(
-    function: Callable[..., Any],
+    function: ValidateCallSupportedTypes,
     config: ConfigDict | None,
     validate_return: bool,
     namespace: dict[str, Any] | None,
@@ -23,13 +38,11 @@ def wrap_validate_call(
     if isinstance(function, partial):
         schema_type = function.func
         module = function.func.__module__
-        qualname = f'partial({function.func.__qualname__})'
-        core_config_title = f'partial({function.func.__name__})'
     else:
         schema_type = function
         module = function.__module__
-        qualname = function.__qualname__
-        core_config_title = function.__name__
+
+    qualname = core_config_title = get_qualname(function)
 
     global_ns = _typing_extra.get_module_ns_of(function)
     # TODO: this is a bit of a hack, we should probably have a better way to handle this

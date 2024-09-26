@@ -2,10 +2,9 @@
 
 from __future__ import annotations as _annotations
 
-import functools
 import inspect
-from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, LambdaType, MethodType
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
+import typing
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast, overload
 
 from ._internal import _typing_extra, _validate_call
 
@@ -16,26 +15,15 @@ if TYPE_CHECKING:
 
     AnyCallableT = TypeVar('AnyCallableT', bound=Callable[..., Any])
 
-# This should be aligned with `GenerateSchema.match_types`
-_validate_call_supported_types: tuple[type[Any], ...] = (
-    LambdaType,
-    FunctionType,
-    MethodType,
-    BuiltinFunctionType,
-    BuiltinMethodType,
-    functools.partial,
-)
-
 
 def _check_function_type(function: object):
-    if any(isinstance(function, t) for t in _validate_call_supported_types):
+    supported_types = typing.get_args(_validate_call.ValidateCallSupportedTypes)
+    if any(isinstance(function, t) for t in supported_types):
         try:
-            assert callable(function)  # for type checking
-            inspect.signature(function)
+            inspect.signature(cast(_validate_call.ValidateCallSupportedTypes, function))
         except ValueError:
-            # partial doesn't have a qualname, so we just not include it in the error message
-            maybe_qualname = f'`{function.__qualname__}` ' if hasattr(function, '__qualname__') else ''
-            raise TypeError(f"Input function {maybe_qualname}doesn't have a valid signature")
+            qualname = _validate_call.get_qualname(cast(_validate_call.ValidateCallSupportedTypes, function))
+            raise TypeError(f"Input function {qualname} doesn't have a valid signature")
         return
 
     if isinstance(function, (classmethod, staticmethod)):
@@ -89,8 +77,9 @@ def validate_call(
 
     def validate(function: AnyCallableT) -> AnyCallableT:
         _check_function_type(function)
-
-        validate_call_wrapper = _validate_call.wrap_validate_call(function, config, validate_return, local_ns)
+        validate_call_wrapper = _validate_call.wrap_validate_call(
+            cast(_validate_call.ValidateCallSupportedTypes, function), config, validate_return, local_ns
+        )
         return validate_call_wrapper  # type: ignore
 
     if func:
