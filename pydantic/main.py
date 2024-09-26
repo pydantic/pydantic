@@ -110,9 +110,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_private__: Values of private attributes set on the model instance.
     """
 
-    # Class attributes:
-    # `__pydantic_fields__` and `__pydantic_decorators__` must be set for
-    # `GenerateSchema.model_schema` to work for a plain `BaseModel` annotation.
+    # Note: Many of the below class vars are defined in the metaclass, but we define them here for type checking purposes.
 
     model_config: ClassVar[ConfigDict] = ConfigDict()
     """
@@ -122,7 +120,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     # Because `dict` is in the local namespace of the `BaseModel` class, we use `Dict` for annotations.
     # TODO v3 fallback to `dict` when the deprecated `dict` method gets removed.
 
-    # Note: Many of the below class vars are defined in the metaclass, but we define them here for type checking purposes.
+    # Must be set for `GenerateSchema.model_schema` to work for a plain `BaseModel` annotation.
     model_fields: ClassVar[Dict[str, FieldInfo]] = {}  # noqa: UP006
     """
     Metadata about the fields defined on the model,
@@ -130,6 +128,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     This replaces `Model.__fields__` from Pydantic V1.
     """
 
+    # Must be set for `GenerateSchema.model_schema` to work for a plain `BaseModel` annotation.
     model_computed_fields: ClassVar[Dict[str, ComputedFieldInfo]] = {}  # noqa: UP006
     """A dictionary of computed field names and their corresponding `ComputedFieldInfo` objects."""
 
@@ -151,6 +150,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     __pydantic_custom_init__: ClassVar[bool]
     """Whether the model has a custom `__init__` method."""
 
+    # Must be set for `GenerateSchema.model_schema` to work for a plain `BaseModel` annotation.
     __pydantic_decorators__: ClassVar[_decorators.DecoratorInfos] = _decorators.DecoratorInfos()
     """Metadata containing the decorators defined on the model.
     This replaces `Model.__validators__` and `Model.__root_validators__` from Pydantic V1."""
