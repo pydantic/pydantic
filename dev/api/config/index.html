@@ -1736,6 +1736,15 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </li>
         
           <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.schema_generator" class="md-nav__link">
+    <span class="md-ellipsis">
+      schema_generator
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pydantic.config.ConfigDict.json_schema_serialization_defaults_required" class="md-nav__link">
     <span class="md-ellipsis">
       json_schema_serialization_defaults_required
@@ -3511,6 +3520,15 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 </li>
         
           <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.schema_generator" class="md-nav__link">
+    <span class="md-ellipsis">
+      schema_generator
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pydantic.config.ConfigDict.json_schema_serialization_defaults_required" class="md-nav__link">
     <span class="md-ellipsis">
       json_schema_serialization_defaults_required
@@ -4793,9 +4811,12 @@ of subclasses of the model.</p>
 <ul>
 <li><code>'iso8601'</code> will serialize timedeltas to ISO 8601 durations.</li>
 <li><code>'seconds_float'</code> will serialize timedeltas to the total number of seconds.</li>
-<li><code>'milliseconds_float'</code> will serialize timedeltas to the total number of milliseconds.
-    NOTE: <code>'float' is deprecated in v2.10 in favour of</code>'milliseconds_float'`</li>
+<li><code>'milliseconds_float'</code> will serialize timedeltas to the total number of milliseconds.</li>
 </ul>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><code>'float' is deprecated in v2.10 in favour of</code>'milliseconds_float'`</p>
+</div>
     </div>
 
 </div>
@@ -5163,6 +5184,40 @@ used nested within other models, or when you want to manually define type namesp
     <div class="doc doc-contents ">
 
         <p>A <code>dict</code> of settings for plugins. Defaults to <code>None</code>.</p>
+    </div>
+
+</div>
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic.config.ConfigDict.schema_generator" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">schema_generator</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#pydantic.config.ConfigDict.schema_generator" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">schema_generator</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-type">type</a></span><span class="p">[</span><span class="n"><span title="pydantic._internal._generate_schema.GenerateSchema">GenerateSchema</span></span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><code>schema_generator</code> is deprecated in v2.10.</p>
+<p>Prior to v2.10, this setting was advertised as highly subject to change.
+It's possible that this interface may once again become public once the internal core schema generation
+API is more stable, but that will likely come after significant performance improvements have been made.</p>
+</div>
     </div>
 
 </div>
@@ -5615,20 +5670,7 @@ especially with <code>TypedDict</code>.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/config.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 985</span>
-<span class="normal"> 986</span>
-<span class="normal"> 987</span>
-<span class="normal"> 988</span>
-<span class="normal"> 989</span>
-<span class="normal"> 990</span>
-<span class="normal"> 991</span>
-<span class="normal"> 992</span>
-<span class="normal"> 993</span>
-<span class="normal"> 994</span>
-<span class="normal"> 995</span>
-<span class="normal"> 996</span>
-<span class="normal"> 997</span>
-<span class="normal"> 998</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 998</span>
 <span class="normal"> 999</span>
 <span class="normal">1000</span>
 <span class="normal">1001</span>
@@ -5655,7 +5697,20 @@ especially with <code>TypedDict</code>.</p>
 <span class="normal">1022</span>
 <span class="normal">1023</span>
 <span class="normal">1024</span>
-<span class="normal">1025</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
+<span class="normal">1025</span>
+<span class="normal">1026</span>
+<span class="normal">1027</span>
+<span class="normal">1028</span>
+<span class="normal">1029</span>
+<span class="normal">1030</span>
+<span class="normal">1031</span>
+<span class="normal">1032</span>
+<span class="normal">1033</span>
+<span class="normal">1034</span>
+<span class="normal">1035</span>
+<span class="normal">1036</span>
+<span class="normal">1037</span>
+<span class="normal">1038</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.10/concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict</span>
 
 <span class="sd">    A convenience decorator to set a [Pydantic configuration](config.md) on a `TypedDict` or a `dataclass` from the standard library.</span>
