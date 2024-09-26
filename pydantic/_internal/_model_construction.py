@@ -11,7 +11,7 @@ import weakref
 from abc import ABCMeta
 from functools import lru_cache, partial
 from types import FunctionType
-from typing import Any, Callable, ClassVar, Dict, Generic, Literal, NoReturn
+from typing import Any, Callable, Generic, Literal, NoReturn
 
 import typing_extensions
 from pydantic_core import PydanticUndefined, SchemaSerializer
@@ -80,15 +80,6 @@ def NoInitField(
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(PydanticModelField, PydanticModelPrivateAttr, NoInitField))
 class ModelMetaclass(ABCMeta):
-    # Because `dict` is in the local namespace of the `BaseModel` class, we use `Dict` for annotations.
-    # TODO v3 fallback to `dict` when the deprecated `dict` method gets removed.
-
-    __pydantic_fields__: ClassVar[Dict[str, FieldInfo]]  # noqa: UP006
-    """A dictionary of field names and their corresponding [`FieldInfo`][pydantic.fields.FieldInfo] objects. This replaces `Model.__fields__` from Pydantic V1."""
-
-    __pydantic_computed_fields__: ClassVar[Dict[str, ComputedFieldInfo]]  # noqa: UP006
-    """A dictionary of computed field names and their corresponding [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] objects."""
-
     def __new__(
         mcs,
         cls_name: str,
@@ -371,16 +362,16 @@ class ModelMetaclass(ABCMeta):
         Returns:
             A mapping of field names to [`FieldInfo`][pydantic.fields.FieldInfo] objects.
         """
-        return self.__pydantic_fields__
+        return getattr(self, '__pydantic_fields__', {})
 
     @property
-    def computed_fields(self) -> dict[str, ComputedFieldInfo]:
+    def model_computed_fields(self) -> dict[str, ComputedFieldInfo]:
         """Get metadata about the computed fields defined on the model.
 
         Returns:
             A mapping of computed field names to [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] objects.
         """
-        return self.__pydantic_computed_fields__
+        return getattr(self, '__pydantic_computed_fields__', {})
 
     def __dir__(self) -> list[str]:
         attributes = list(super().__dir__())

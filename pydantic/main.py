@@ -122,6 +122,17 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     # Because `dict` is in the local namespace of the `BaseModel` class, we use `Dict` for annotations.
     # TODO v3 fallback to `dict` when the deprecated `dict` method gets removed.
 
+    # Note: Many of the below class vars are defined in the metaclass, but we define them here for type checking purposes.
+    model_fields: ClassVar[Dict[str, FieldInfo]] = {}  # noqa: UP006
+    """
+    Metadata about the fields defined on the model,
+    mapping of field names to [`FieldInfo`][pydantic.fields.FieldInfo] objects.
+    This replaces `Model.__fields__` from Pydantic V1.
+    """
+
+    model_computed_fields: ClassVar[Dict[str, ComputedFieldInfo]] = {}  # noqa: UP006
+    """A dictionary of computed field names and their corresponding `ComputedFieldInfo` objects."""
+
     __class_vars__: ClassVar[set[str]]
     """The names of the class variables defined on the model."""
 
@@ -240,24 +251,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 i.e. that were not filled from defaults.
         """
         return self.__pydantic_fields_set__
-
-    @property
-    def model_fields(self) -> dict[str, FieldInfo]:
-        """Get metadata about the fields defined on the model.
-
-        Returns:
-            A mapping of field names to [`FieldInfo`][pydantic.fields.FieldInfo] objects.
-        """
-        return self.__pydantic_fields__
-
-    @property
-    def computed_fields(self) -> dict[str, ComputedFieldInfo]:
-        """Get metadata about the computed fields defined on the model.
-
-        Returns:
-            A mapping of computed field names to [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] objects.
-        """
-        return self.__pydantic_computed_fields__
 
     @classmethod
     def model_construct(cls, _fields_set: set[str] | None = None, **values: Any) -> Self:  # noqa: C901
