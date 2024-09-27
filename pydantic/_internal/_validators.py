@@ -335,7 +335,7 @@ def _extract_decimal_digits_info(decimal: Decimal) -> tuple[int, int]:
     """Compute the total number of digits and decimal places for a given [`Decimal`][decimal.Decimal] instance.
 
     This function handles both normalized and non-normalized Decimal instances.
-    Example: Decimal('1.230'), normalize=False -> 4 digits, 3 decimal places
+    Example: Decimal('1.230') -> 4 digits, 3 decimal places
 
     Args:
         decimal (Decimal): The decimal number to analyze.
