@@ -655,8 +655,10 @@ def test_decimal_constraints_after_annotation() -> None:
 
     with pytest.raises(ValidationError) as e:
         ta.validate_python(Decimal('123.45678'))
-        assert e.value.errors()[0]['type'] == 'decimal_max_places'
+
+    assert e.value.errors()[0]['type'] == 'decimal_max_places'
 
     with pytest.raises(ValidationError) as e:
         ta.validate_python(Decimal('12345678.901'))
-        assert e.value.errors()[0]['type'] == 'decimal_max_digits'
+
+    assert e.value.errors()[0]['type'] == 'decimal_max_digits'
