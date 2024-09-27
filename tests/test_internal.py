@@ -212,14 +212,19 @@ def test_schema_is_valid():
 
 
 @pytest.mark.parametrize(
-    'decimal,decimal_places,digits',
+    'decimal,normalize,decimal_places,digits',
     [
-        (Decimal('0.0'), 0, 1),
-        (Decimal('0.000'), 0, 1),
-        (Decimal('0.0001'), 4, 4),
-        (Decimal('123.123'), 3, 6),
-        (Decimal('123.1230'), 3, 6),
+        (Decimal('0.0'), False, 1, 1),
+        (Decimal('0.0'), True, 0, 1),
+        (Decimal('0.000'), False, 3, 3),
+        (Decimal('0.000'), True, 0, 1),
+        (Decimal('0.0001'), False, 4, 4),
+        (Decimal('0.0001'), True, 4, 4),
+        (Decimal('123.123'), False, 3, 6),
+        (Decimal('123.123'), True, 3, 6),
+        (Decimal('123.1230'), False, 4, 7),
+        (Decimal('123.1230'), True, 3, 6),
     ],
 )
-def test_decimal_digits_calculation(decimal: Decimal, decimal_places: int, digits: int) -> None:
-    assert _extract_decimal_digits_info(decimal.normalize()) == (decimal_places, digits)
+def test_decimal_digits_calculation(decimal: Decimal, normalize: bool, decimal_places: int, digits: int) -> None:
+    assert _extract_decimal_digits_info(decimal, normalize) == (decimal_places, digits)
