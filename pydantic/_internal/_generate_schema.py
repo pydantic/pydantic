@@ -278,8 +278,8 @@ def modify_model_json_schema(
     docstring = None if cls is BaseModel or dataclasses.is_dataclass(cls) else cls.__doc__
     if docstring and 'description' not in original_schema:
         original_schema['description'] = inspect.cleandoc(docstring)
-    elif issubclass(cls, RootModel) and cls.model_fields['root'].description:
-        original_schema['description'] = cls.model_fields['root'].description
+    elif issubclass(cls, RootModel) and cls.__pydantic_fields__['root'].description:
+        original_schema['description'] = cls.__pydantic_fields__['root'].description
     return json_schema
 
 
@@ -663,7 +663,7 @@ class GenerateSchema:
             if maybe_schema is not None:
                 return maybe_schema
 
-            fields = cls.model_fields
+            fields = getattr(cls, '__pydantic_fields__', {})
             decorators = cls.__pydantic_decorators__
             computed_fields = decorators.computed_fields
             check_decorator_fields_exist(

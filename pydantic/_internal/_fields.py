@@ -104,7 +104,7 @@ def collect_model_fields(  # noqa: C901
 
     parent_fields_lookup: dict[str, FieldInfo] = {}
     for base in reversed(bases):
-        if model_fields := getattr(base, 'model_fields', None):
+        if model_fields := getattr(base, '__pydantic_fields__', None):
             parent_fields_lookup.update(model_fields)
 
     type_hints = get_cls_type_hints_lenient(cls, types_namespace)
@@ -125,7 +125,7 @@ def collect_model_fields(  # noqa: C901
             if ann_name.startswith(protected_namespace):
                 for b in bases:
                     if hasattr(b, ann_name):
-                        if not (issubclass(b, BaseModel) and ann_name in b.model_fields):
+                        if not (issubclass(b, BaseModel) and ann_name in getattr(b, '__pydantic_fields__', {})):
                             raise NameError(
                                 f'Field "{ann_name}" conflicts with member {getattr(b, ann_name)}'
                                 f' of protected namespace "{protected_namespace}".'
