@@ -50,6 +50,6 @@ print(pydantic_model.model_dump(by_alias=True))
     field population. Accessing `SQLModel`'s `metadata` attribute would lead to a `ValidationError`.
 
 !!! note
-    You might also consider [`SQLModel`][https://sqlmodel.tiangolo.com/] which integrates Pydantic with SQLAlchemy.
+    You might also consider [`SQLModel`](https://sqlmodel.tiangolo.com/) which integrates Pydantic with SQLAlchemy.
 
 <!-- TODO: add examples for Django with Pydantic models -->
