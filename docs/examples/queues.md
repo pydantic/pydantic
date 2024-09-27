@@ -67,6 +67,4 @@ pop_from_queue()
 #> Queue is empty
 ```
 
-This pattern is quite extensible
-
 <!-- TODO: kafka, rabbitMQ, celery, arq, etc - better for SEO, great for new contributors! -->
