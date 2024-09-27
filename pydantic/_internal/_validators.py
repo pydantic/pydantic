@@ -361,14 +361,16 @@ def _extract_decimal_digits_info(decimal: Decimal, normalized: bool) -> tuple[in
 
     if exponent >= 0:
         # A positive exponent adds that many trailing zeros
+        # Ex: digit_tuple=(1, 2, 3), exponent=2 -> 12300 -> 0 decimal places, 5 digits
         digits += exponent
         decimal_places = 0
     else:
-        #  If the absolute value of the negative exponent is larger than the
-        #  number of digits, then it's the same as the number of digits,
-        #  because it'll consume all the digits in digit_tuple and then
-        #  add abs(exponent) - len(digit_tuple) leading zeros after the
-        #  decimal point.
+        # If the absolute value of the negative exponent is larger than the
+        # number of digits, then it's the same as the number of digits,
+        # because it'll consume all the digits in digit_tuple and then
+        # add abs(exponent) - len(digit_tuple) leading zeros after the decimal point.
+        # Ex: digit_tuple=(1, 2, 3), exponent=-2 -> 1.23 -> 2 decimal places, 3 digits
+        # Ex: digit_tuple=(1, 2, 3), exponent=-4 -> 0.0123 -> 4 decimal places, 4 digits
         decimal_places = abs(exponent)
         digits = max(digits, decimal_places)
 
