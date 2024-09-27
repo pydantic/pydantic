@@ -331,18 +331,11 @@ def max_length_validator(x: Any, max_length: Any) -> Any:
         raise TypeError(f"Unable to apply constraint 'max_length' to supplied value {x}")
 
 
-def _extract_decimal_digits_info(decimal: Decimal, normalized: bool) -> tuple[int, int]:
+def _extract_decimal_digits_info(decimal: Decimal) -> tuple[int, int]:
     """Compute the total number of digits and decimal places for a given [`Decimal`][decimal.Decimal] instance.
-
-    This function handles both normalized and non-normalized Decimal instances.
-    Example: Decimal('1.2300'), normalize=False -> 4 decimal places, 5 digits
-    Example: decimal=Decimal('1.2300'), normalize=True -> 2 decimal places, 3 digits
 
     Args:
         decimal (Decimal): The decimal number to analyze.
-        normalized (bool): If True, the decimal is normalized before computing its digits and places.
-            Normalization implies that trailing zeros are removed and the exponent is adjusted to reflect
-            the new number of digits and decimal places.
 
     Returns:
         tuple[int, int]: A tuple containing the number of decimal places and total digits.
@@ -353,8 +346,7 @@ def _extract_decimal_digits_info(decimal: Decimal, normalized: bool) -> tuple[in
     Though this could be divided into two separate functions, the logic is easier to follow if we couple the computation
     of the number of decimals and digits together.
     """
-    normalized_decimal = decimal.normalize() if normalized else decimal
-    _, digit_tuple, exponent = normalized_decimal.as_tuple()
+    _, digit_tuple, exponent = decimal.as_tuple()
 
     exponent = int(exponent)
     digits = len(digit_tuple)
@@ -378,11 +370,10 @@ def _extract_decimal_digits_info(decimal: Decimal, normalized: bool) -> tuple[in
 
 
 def max_digits_validator(x: Any, max_digits: Any) -> Any:
-    _, digits = _extract_decimal_digits_info(x, False)
-    _, normalized_digits = _extract_decimal_digits_info(x, True)
+    _, normalized_digits = _extract_decimal_digits_info(x.normalize())
 
     try:
-        if (digits > max_digits) and (normalized_digits > max_digits):
+        if normalized_digits > max_digits:
             raise PydanticKnownError(
                 'decimal_max_digits',
                 {'max_digits': max_digits},
@@ -393,11 +384,10 @@ def max_digits_validator(x: Any, max_digits: Any) -> Any:
 
 
 def decimal_places_validator(x: Any, decimal_places: Any) -> Any:
-    decimal_places, _ = _extract_decimal_digits_info(x, False)
-    normalized_decimal_places, _ = _extract_decimal_digits_info(x, True)
+    normalized_decimal_places, _ = _extract_decimal_digits_info(x.normalize())
 
     try:
-        if (decimal_places > decimal_places) and (normalized_decimal_places > decimal_places):
+        if normalized_decimal_places > decimal_places:
             raise PydanticKnownError(
                 'decimal_max_places',
                 {'decimal_places': decimal_places},
