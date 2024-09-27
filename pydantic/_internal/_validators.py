@@ -332,9 +332,24 @@ def max_length_validator(x: Any, max_length: Any) -> Any:
 
 
 def _extract_decimal_digits_info(decimal: Decimal, normalized: bool) -> tuple[int, int]:
-    """Modeled after the `pydanitc-core` implementation of this function.
+    """Compute the total number of digits and decimal places for a given [`Decimal`][decimal.Decimal] instance.
 
+    This function handles both normalized and non-normalized Decimal instances.
+    Example: Decimal('1.230'), normalize=False -> 3 decimal places, 4 digits
+    Example: decimal=Decimal('0.00123'), normalize=True -> 5 decimal places, 3 digits
+
+    Args:
+        decimal (Decimal): The decimal number to analyze.
+        normalized (bool): If True, the decimal is normalized before computing its digits and places.
+            Normalization implies that trailing zeros are removed and the exponent is adjusted to reflect
+            the new number of digits and decimal places.
+
+    Returns:
+        tuple[int, int]: A tuple containing the number of decimal places and total digits.
+
+    Modeled after the `pydanitc-core` implementation of this function.
     See https://github.com/pydantic/pydantic-core/blob/f389728432949ecceddecb1f59bb503b0998e9aa/src/validators/decimal.rs#L85.
+
     Though this could be divided into two separate functions, the logic is easier to follow if we couple the computation
     of the number of decimals and digits together.
     """
@@ -345,19 +360,19 @@ def _extract_decimal_digits_info(decimal: Decimal, normalized: bool) -> tuple[in
     digits = len(digit_tuple)
 
     if exponent >= 0:
-        # // A positive exponent adds that many trailing zeros.
+        # A positive exponent adds that many trailing zeros
         digits += exponent
-        decimals = 0
+        decimal_places = 0
     else:
         #  If the absolute value of the negative exponent is larger than the
         #  number of digits, then it's the same as the number of digits,
         #  because it'll consume all the digits in digit_tuple and then
         #  add abs(exponent) - len(digit_tuple) leading zeros after the
         #  decimal point.
-        decimals = abs(exponent)
-        digits = max(digits, decimals)
+        decimal_places = abs(exponent)
+        digits = max(digits, decimal_places)
 
-    return decimals, digits
+    return decimal_places, digits
 
 
 def max_digits_validator(x: Any, max_digits: Any) -> Any:
@@ -376,11 +391,11 @@ def max_digits_validator(x: Any, max_digits: Any) -> Any:
 
 
 def decimal_places_validator(x: Any, decimal_places: Any) -> Any:
-    decimals, _ = _extract_decimal_digits_info(x, False)
-    normalized_decimals, _ = _extract_decimal_digits_info(x, True)
+    decimal_places, _ = _extract_decimal_digits_info(x, False)
+    normalized_decimal_places, _ = _extract_decimal_digits_info(x, True)
 
     try:
-        if (decimals > decimal_places) and (normalized_decimals > decimal_places):
+        if (decimal_places > decimal_places) and (normalized_decimal_places > decimal_places):
             raise PydanticKnownError(
                 'decimal_max_places',
                 {'decimal_places': decimal_places},
