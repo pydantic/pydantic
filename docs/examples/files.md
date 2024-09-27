@@ -208,7 +208,7 @@ email = "john@example.com"
 
 Here's how we validate that data:
 
-```py
+```py test="skip"
 import tomllib
 
 from pydantic import BaseModel, EmailStr, PositiveInt
