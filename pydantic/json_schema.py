@@ -958,8 +958,7 @@ class GenerateJsonSchema:
         """
         json_schema: JsonSchemaValue = {'type': 'object'}
 
-        keys_core_schema = schema.get('keys_schema')
-        self.generate_inner(keys_core_schema).copy() if keys_core_schema is not None else {}
+        keys_schema = self.generate_inner(schema['keys_schema']).copy() if 'keys_schema' in schema else {}
         keys_pattern = keys_schema.pop('pattern', None)
 
         values_schema = self.generate_inner(schema['values_schema']).copy() if 'values_schema' in schema else {}
