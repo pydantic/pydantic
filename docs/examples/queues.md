@@ -16,7 +16,6 @@ Here's a simple example of how you can use Pydantic to:
 2. Deserialize and validate data when it's popped from the queue
 
 ```python test="skip"
-
 import redis
 
 from pydantic import BaseModel, EmailStr
