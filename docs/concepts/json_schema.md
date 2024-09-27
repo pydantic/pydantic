@@ -534,7 +534,6 @@ Specifically, the following config options are relevant:
 
 * [`title`][pydantic.config.ConfigDict.title]
 * [`json_schema_extra`][pydantic.config.ConfigDict.json_schema_extra]
-* [`schema_generator`][pydantic.config.ConfigDict.schema_generator]
 * [`json_schema_mode_override`][pydantic.config.ConfigDict.json_schema_mode_override]
 * [`field_title_generator`][pydantic.config.ConfigDict.field_title_generator]
 * [`model_title_generator`][pydantic.config.ConfigDict.model_title_generator]

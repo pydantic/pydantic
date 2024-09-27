@@ -46,6 +46,7 @@ from .warnings import PydanticDeprecatedSince20
 __all__ = (
     'Strict',
     'StrictStr',
+    'SocketPath',
     'conbytes',
     'conlist',
     'conset',
@@ -112,7 +113,7 @@ T = TypeVar('T')
 
 @_dataclasses.dataclass
 class Strict(_fields.PydanticMetadata, BaseMetadata):
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/strict_mode/#strict-mode-with-annotated-strict
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/strict_mode/#strict-mode-with-annotated-strict
 
     A field metadata class to indicate that a field should be validated in strict mode.
     Use this class as an annotation via [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated), as seen below.
@@ -687,7 +688,7 @@ StrictBytes = Annotated[bytes, Strict()]
 
 @_dataclasses.dataclass(frozen=True)
 class StringConstraints(annotated_types.GroupedMetadata):
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/fields/#string-constraints
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/fields/#string-constraints
 
     A field metadata class to apply constraints to `str` types.
     Use this class as an annotation via [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated), as seen below.
@@ -708,6 +709,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
         from pydantic.types import StringConstraints
 
         ConstrainedStr = Annotated[str, StringConstraints(min_length=1, max_length=10)]
+        ```
     """
 
     strip_whitespace: bool | None = None
@@ -1238,7 +1240,7 @@ Model(uuid5=uuid.uuid5(uuid.NAMESPACE_DNS, 'pydantic.org'))
 
 @_dataclasses.dataclass
 class PathType:
-    path_type: Literal['file', 'dir', 'new']
+    path_type: Literal['file', 'dir', 'new', 'socket']
 
     def __get_pydantic_json_schema__(
         self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
@@ -1253,6 +1255,7 @@ class PathType:
             'file': cast(core_schema.WithInfoValidatorFunction, self.validate_file),
             'dir': cast(core_schema.WithInfoValidatorFunction, self.validate_directory),
             'new': cast(core_schema.WithInfoValidatorFunction, self.validate_new),
+            'socket': cast(core_schema.WithInfoValidatorFunction, self.validate_socket),
         }
 
         return core_schema.with_info_after_validator_function(
@@ -1266,6 +1269,13 @@ class PathType:
             return path
         else:
             raise PydanticCustomError('path_not_file', 'Path does not point to a file')
+
+    @staticmethod
+    def validate_socket(path: Path, _: core_schema.ValidationInfo) -> Path:
+        if path.is_socket():
+            return path
+        else:
+            raise PydanticCustomError('path_not_socket', 'Path does not point to a socket')
 
     @staticmethod
     def validate_directory(path: Path, _: core_schema.ValidationInfo) -> Path:
@@ -1374,6 +1384,8 @@ except ValidationError as e:
 NewPath = Annotated[Path, PathType('new')]
 """A path for a new file or directory that must not already exist. The parent directory must already exist."""
 
+SocketPath = Annotated[Path, PathType('socket')]
+"""A path to an existing socket file"""
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ JSON TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -2250,7 +2262,7 @@ class Base64Encoder(EncoderProtocol):
             The decoded data.
         """
         try:
-            return base64.decodebytes(data)
+            return base64.b64decode(data)
         except ValueError as e:
             raise PydanticCustomError('base64_decode', "Base64 decoding error: '{error}'", {'error': str(e)})
 
@@ -2264,7 +2276,7 @@ class Base64Encoder(EncoderProtocol):
         Returns:
             The encoded data.
         """
-        return base64.encodebytes(value)
+        return base64.b64encode(value)
 
     @classmethod
     def get_json_format(cls) -> Literal['base64']:
@@ -2505,10 +2517,50 @@ Base64Bytes = Annotated[bytes, EncodedBytes(encoder=Base64Encoder)]
 """A bytes type that is encoded and decoded using the standard (non-URL-safe) base64 encoder.
 
 Note:
-    Under the hood, `Base64Bytes` use standard library `base64.encodebytes` and `base64.decodebytes` functions.
+    Under the hood, `Base64Bytes` uses the standard library `base64.b64encode` and `base64.b64decode` functions.
 
     As a result, attempting to decode url-safe base64 data using the `Base64Bytes` type may fail or produce an incorrect
     decoding.
+
+Warning:
+    In versions of Pydantic prior to v2.10, `Base64Bytes` used [`base64.encodebytes`][base64.encodebytes]
+    and [`base64.decodebytes`][base64.decodebytes] functions. According to the [base64 documentation](https://docs.python.org/3/library/base64.html),
+    these methods are considered legacy implementation, and thus, Pydantic v2.10+ now uses the modern
+    [`base64.b64encode`][base64.b64encode] and [`base64.b64decode`][base64.b64decode] functions.
+
+    If you'd still like to use these legacy encoders / decoders, you can achieve this by creating a custom annotated type,
+    like follows:
+
+    ```py
+    import base64
+    from typing import Literal
+    from pydantic import EncoderProtocol, EncodedBytes
+    from pydantic_core import PydanticCustomError
+
+    from typing_extensions import Annotated
+
+    class LegacyBase64Encoder(EncoderProtocol):
+        @classmethod
+        def decode(cls, data: bytes) -> bytes:
+            try:
+                return base64.decodebytes(data)
+            except ValueError as e:
+                raise PydanticCustomError(
+                    'base64_decode',
+                    "Base64 decoding error: '{error}'",
+                    {'error': str(e)},
+                )
+
+        @classmethod
+        def encode(cls, value: bytes) -> bytes:
+            return base64.encodebytes(value)
+
+        @classmethod
+        def get_json_format(cls) -> Literal['base64']:
+            return 'base64'
+
+    LegacyBase64Bytes = Annotated[bytes, EncodedBytes(encoder=LegacyBase64Encoder)]
+    ```
 
 ```py
 from pydantic import Base64Bytes, BaseModel, ValidationError
@@ -2525,7 +2577,7 @@ print(m.base64_bytes)
 
 # Serialize into the base64 form
 print(m.model_dump())
-#> {'base64_bytes': b'VGhpcyBpcyB0aGUgd2F5\n'}
+#> {'base64_bytes': b'VGhpcyBpcyB0aGUgd2F5'}
 
 # Validate base64 data
 try:
@@ -2543,10 +2595,19 @@ Base64Str = Annotated[str, EncodedStr(encoder=Base64Encoder)]
 """A str type that is encoded and decoded using the standard (non-URL-safe) base64 encoder.
 
 Note:
-    Under the hood, `Base64Bytes` use standard library `base64.encodebytes` and `base64.decodebytes` functions.
+    Under the hood, `Base64Str` uses the standard library `base64.b64encode` and `base64.b64decode` functions.
 
     As a result, attempting to decode url-safe base64 data using the `Base64Str` type may fail or produce an incorrect
     decoding.
+
+Warning:
+    In versions of Pydantic prior to v2.10, `Base64Str` used [`base64.encodebytes`][base64.encodebytes]
+    and [`base64.decodebytes`][base64.decodebytes] functions. According to the [base64 documentation](https://docs.python.org/3/library/base64.html),
+    these methods are considered legacy implementation, and thus, Pydantic v2.10+ now uses the modern
+    [`base64.b64encode`][base64.b64encode] and [`base64.b64decode`][base64.b64decode] functions.
+
+    See the [`Base64Bytes`](#pydantic.types.Base64Bytes) type for more information on how to
+    replicate the old behavior with the legacy encoders / decoders.
 
 ```py
 from pydantic import Base64Str, BaseModel, ValidationError
@@ -2563,7 +2624,7 @@ print(m.base64_str)
 
 # Serialize into the base64 form
 print(m.model_dump())
-#> {'base64_str': 'VGhlc2UgYXJlbid0IHRoZSBkcm9pZHMgeW91J3JlIGxvb2tpbmcgZm9y\n'}
+#> {'base64_str': 'VGhlc2UgYXJlbid0IHRoZSBkcm9pZHMgeW91J3JlIGxvb2tpbmcgZm9y'}
 
 # Validate base64 data
 try:
@@ -2627,7 +2688,7 @@ __getattr__ = getattr_migration(__name__)
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class GetPydanticSchema:
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/types/#using-getpydanticschema-to-reduce-boilerplate
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/types/#using-getpydanticschema-to-reduce-boilerplate
 
     A convenience class for creating an annotation that provides pydantic custom type hooks.
 
@@ -2763,7 +2824,7 @@ class Tag:
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
 class Discriminator:
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/unions/#discriminated-unions-with-callable-discriminator
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/unions/#discriminated-unions-with-callable-discriminator
 
     Provides a way to use a custom callable as the way to extract the value of a union discriminator.
 

@@ -35,7 +35,6 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    GenerateSchema,
     GetCoreSchemaHandler,
     PrivateAttr,
     PydanticUndefinedAnnotation,
@@ -48,8 +47,10 @@ from pydantic import (
     constr,
     field_validator,
 )
+from pydantic._internal._generate_schema import GenerateSchema
 from pydantic._internal._mock_val_ser import MockCoreSchema
 from pydantic.dataclasses import dataclass as pydantic_dataclass
+from pydantic.v1 import BaseModel as BaseModelV1
 
 
 def test_success():
@@ -114,6 +115,20 @@ def test_ultra_simple_repr(UltraSimpleModel):
     assert m.model_dump() == {'a': 10.2, 'b': 10}
     assert m.model_dump_json() == '{"a":10.2,"b":10}'
     assert str(m) == 'a=10.2 b=10'
+
+
+def test_recursive_repr() -> None:
+    class A(BaseModel):
+        a: object = None
+
+    class B(BaseModel):
+        a: Optional[A] = None
+
+    a = A()
+    a.a = a
+    b = B(a=a)
+
+    assert re.match(r"B\(a=A\(a='<Recursion on A with id=\d+>'\)\)", repr(b)) is not None
 
 
 def test_default_factory_field():
@@ -3131,62 +3146,7 @@ def test_cannot_use_leading_underscore_field_names():
             ___: int = Field(default=1)
 
 
-def test_schema_generator_customize_type() -> None:
-    class LaxStrGenerator(GenerateSchema):
-        def str_schema(self) -> CoreSchema:
-            return core_schema.no_info_plain_validator_function(str)
-
-    class Model(BaseModel):
-        x: str
-        model_config = ConfigDict(schema_generator=LaxStrGenerator)
-
-    assert Model(x=1).x == '1'
-
-
-def test_schema_generator_customize_type_constraints() -> None:
-    class LaxStrGenerator(GenerateSchema):
-        def str_schema(self) -> CoreSchema:
-            return core_schema.no_info_plain_validator_function(str)
-
-    class Model(BaseModel):
-        x: Annotated[str, Field(pattern='^\\d+$')]
-        y: Annotated[float, Field(gt=0)]
-        z: Annotated[List[int], Field(min_length=1)]
-        model_config = ConfigDict(schema_generator=LaxStrGenerator)
-
-    # insert_assert(Model(x='123', y=1, z=[-1]).model_dump())
-    assert Model(x='123', y=1, z=[-1]).model_dump() == {'x': '123', 'y': 1.0, 'z': [-1]}
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(x='abc', y=-1, z=[])
-
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'string_pattern_mismatch',
-            'loc': ('x',),
-            'msg': "String should match pattern '^\\d+$'",
-            'input': 'abc',
-            'ctx': {'pattern': '^\\d+$'},
-        },
-        {
-            'type': 'greater_than',
-            'loc': ('y',),
-            'msg': 'Input should be greater than 0',
-            'input': -1,
-            'ctx': {'gt': 0.0},
-        },
-        {
-            'type': 'too_short',
-            'loc': ('z',),
-            'msg': 'List should have at least 1 item after validation, not 0',
-            'input': [],
-            'ctx': {'field_type': 'List', 'min_length': 1, 'actual_length': 0},
-        },
-    ]
-
-
-def test_schema_generator_customize_type_constraints_order() -> None:
+def test_customize_type_constraints_order() -> None:
     class Model(BaseModel):
         # whitespace will be stripped first, then max length will be checked, should pass on ' 1 '
         x: Annotated[str, AfterValidator(lambda x: x.strip()), StringConstraints(max_length=1)]
@@ -3368,3 +3328,22 @@ def test_model_construct_with_model_post_init_and_model_copy() -> None:
 
     assert m == copy
     assert id(m) != id(copy)
+
+
+def test_subclassing_gen_schema_warns() -> None:
+    with pytest.warns(UserWarning, match='Subclassing `GenerateSchema` is not supported.'):
+
+        class MyGenSchema(GenerateSchema): ...
+
+
+def test_nested_v1_model_warns() -> None:
+    with pytest.warns(
+        UserWarning,
+        match=r'Mixing V1 models and V2 models \(or constructs, like `TypeAdapter`\) is not supported. Please upgrade `V1Model` to V2.',
+    ):
+
+        class V1Model(BaseModelV1):
+            a: int
+
+        class V2Model(BaseModel):
+            inner: V1Model

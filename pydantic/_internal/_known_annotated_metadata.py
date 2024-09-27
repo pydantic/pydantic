@@ -279,7 +279,7 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                     json_schema_constraint = 'minLength' if constraint == 'min_length' else 'maxLength'
 
             schema = cs.no_info_after_validator_function(
-                partial(get_constraint_validator(constraint), **{'constraint_value': value}), schema
+                partial(get_constraint_validator(constraint), **{constraint: value}), schema
             )
             add_js_update_schema(schema, lambda: {json_schema_constraint: as_jsonable_value(value)})  # noqa: B023
         elif constraint == 'allow_inf_nan' and value is False:
@@ -318,6 +318,8 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                             'not_operation_failed',
                             f'Not of {predicate_name} failed',  # type: ignore  # noqa: B023
                         )
+
+                return v
 
             schema = cs.no_info_after_validator_function(val_func, schema)
         else:

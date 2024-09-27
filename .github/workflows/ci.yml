@@ -139,7 +139,7 @@ jobs:
     - name: install deps
       run: |
         pdm venv create --with-pip --force $PYTHON
-        pdm install -G testing -G email
+        pdm install -G testing -G email -G timezone
 
     - run: pdm info && pdm list
 
@@ -156,7 +156,7 @@ jobs:
         CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
 
     - name: install extra deps
-      run: pdm install -G testing-extra -G email
+      run: pdm install -G testing-extra -G email -G timezone
 
     - name: test with deps
       run: make test

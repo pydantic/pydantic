@@ -70,9 +70,13 @@ warnings.filterwarnings('ignore', category=PydanticExperimentalWarning)
 1. A new feature is added, either in the [`experimental`](api/experimental.md) module or with the `experimental_` prefix.
 2. The behavior is often modified during patch/minor releases, with potential API/behavior changes.
 3. If the feature is successful, we promote it to Pydantic with the following steps:
+
     a. If it was in the [`experimental`](api/experimental.md) module, the feature is cloned to Pydantic's main module. The original experimental feature still remains in the [`experimental`](api/experimental.md) module, but it will show a warning when used. If the feature was already in the main Pydantic module, we create a copy of the feature without the `experimental_` prefix, so the feature exists with both the official and experimental names. A deprecation warning is attached to the experimental version.
+
     b. At some point, the code of the experimental feature is removed, but there will still be a stub of the feature that provides an error message with appropriate instructions.
+
     c. As a last step, the experimental version of the feature is entirely removed from the codebase.
+
 
 If the feature is unsuccessful or unpopular, it's removed with little notice. A stub will remain in the location of the deprecated feature with an error message.
 

@@ -563,13 +563,17 @@ class ConfigDict(TypedDict, total=False):
     3. Using `'never'` we would have gotten `user=SubUser(hobbies=['scuba diving'], sins=['lying'])`.
     """
 
-    ser_json_timedelta: Literal['iso8601', 'float']
+    ser_json_timedelta: Literal['iso8601', 'seconds_float', 'milliseconds_float']
     """
-    The format of JSON serialized timedeltas. Accepts the string values of `'iso8601'` and
-    `'float'`. Defaults to `'iso8601'`.
+    The format of JSON serialized timedeltas. Accepts the string values of `'iso8601'`,
+    `'seconds_float'`, and `'milliseconds_float'`. Defaults to `'iso8601'`.
 
     - `'iso8601'` will serialize timedeltas to ISO 8601 durations.
-    - `'float'` will serialize timedeltas to the total number of seconds.
+    - `'seconds_float'` will serialize timedeltas to the total number of seconds.
+    - `'milliseconds_float'` will serialize timedeltas to the total number of milliseconds.
+
+    !!! warning
+        `'float' is deprecated in v2.10 in favour of `'milliseconds_float'`
     """
 
     ser_json_bytes: Literal['utf8', 'base64', 'hex']
@@ -735,44 +739,19 @@ class ConfigDict(TypedDict, total=False):
     This can be useful to avoid the overhead of building models which are only
     used nested within other models, or when you want to manually define type namespace via
     [`Model.model_rebuild(_types_namespace=...)`][pydantic.BaseModel.model_rebuild].
-
-    See also [`experimental_defer_build_mode`][pydantic.config.ConfigDict.experimental_defer_build_mode].
-
-    !!! note
-        `defer_build` does not work by default with FastAPI Pydantic models. By default, the validator and serializer
-        for said models is constructed immediately for FastAPI routes. You also need to define
-        [`experimental_defer_build_mode=('model', 'type_adapter')`][pydantic.config.ConfigDict.experimental_defer_build_mode] with FastAPI
-        models in order for `defer_build=True` to take effect. This additional (experimental) parameter is required for
-        the deferred building due to FastAPI relying on `TypeAdapter`s.
-    """
-
-    experimental_defer_build_mode: tuple[Literal['model', 'type_adapter'], ...]
-    """
-    Controls when [`defer_build`][pydantic.config.ConfigDict.defer_build] is applicable. Defaults to `('model',)`.
-
-    Due to backwards compatibility reasons [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] does not by default
-    respect `defer_build`. Meaning when `defer_build` is `True` and `experimental_defer_build_mode` is the default `('model',)`
-    then `TypeAdapter` immediately constructs its validator and serializer instead of postponing said construction until
-    the first model validation. Set this to `('model', 'type_adapter')` to make `TypeAdapter` respect the `defer_build`
-    so it postpones validator and serializer construction until the first validation or serialization.
-
-    !!! note
-        The `experimental_defer_build_mode` parameter is named with an underscore to suggest this is an experimental feature. It may
-        be removed or changed in the future in a minor release.
     """
 
     plugin_settings: dict[str, object] | None
-    """A `dict` of settings for plugins. Defaults to `None`.
-    """
+    """A `dict` of settings for plugins. Defaults to `None`."""
 
     schema_generator: type[_GenerateSchema] | None
     """
-    A custom core schema generator class to use when generating JSON schemas.
-    Useful if you want to change the way types are validated across an entire model/schema. Defaults to `None`.
+    !!! warning
+        `schema_generator` is deprecated in v2.10.
 
-    The `GenerateSchema` interface is subject to change, currently only the `string_schema` method is public.
-
-    See [#6737](https://github.com/pydantic/pydantic/pull/6737) for details.
+        Prior to v2.10, this setting was advertised as highly subject to change.
+        It's possible that this interface may once again become public once the internal core schema generation
+        API is more stable, but that will likely come after significant performance improvements have been made.
     """
 
     json_schema_serialization_defaults_required: bool
@@ -1017,7 +996,7 @@ _TypeT = TypeVar('_TypeT', bound=type)
 
 
 def with_config(config: ConfigDict) -> Callable[[_TypeT], _TypeT]:
-    """Usage docs: https://docs.pydantic.dev/2.9/concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict
+    """Usage docs: https://docs.pydantic.dev/2.10/concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict
 
     A convenience decorator to set a [Pydantic configuration](config.md) on a `TypedDict` or a `dataclass` from the standard library.
 

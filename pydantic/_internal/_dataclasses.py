@@ -90,6 +90,7 @@ def complete_dataclass(
     *,
     raise_errors: bool = True,
     types_namespace: dict[str, Any] | None,
+    _force_build: bool = False,
 ) -> bool:
     """Finish building a pydantic dataclass.
 
@@ -102,6 +103,8 @@ def complete_dataclass(
         config_wrapper: The config wrapper instance.
         raise_errors: Whether to raise errors, defaults to `True`.
         types_namespace: The types namespace.
+        _force_build: Whether to force building the dataclass, no matter if
+            [`defer_build`][pydantic.config.ConfigDict.defer_build] is set.
 
     Returns:
         `True` if building a pydantic dataclass is successfully completed, `False` otherwise.
@@ -109,6 +112,24 @@ def complete_dataclass(
     Raises:
         PydanticUndefinedAnnotation: If `raise_error` is `True` and there is an undefined annotations.
     """
+    original_init = cls.__init__
+
+    # dataclass.__init__ must be defined here so its `__qualname__` can be changed since functions can't be copied,
+    # and so that the mock validator is used if building was deferred:
+    def __init__(__dataclass_self__: PydanticDataclass, *args: Any, **kwargs: Any) -> None:
+        __tracebackhide__ = True
+        s = __dataclass_self__
+        s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
+
+    __init__.__qualname__ = f'{cls.__qualname__}.__init__'
+
+    cls.__init__ = __init__  # type: ignore
+    cls.__pydantic_config__ = config_wrapper.config_dict  # type: ignore
+
+    if not _force_build and config_wrapper.defer_build:
+        set_dataclass_mocks(cls, cls.__name__)
+        return False
+
     if hasattr(cls, '__post_init_post_parse__'):
         warnings.warn(
             'Support for `__post_init_post_parse__` has been dropped, the method will not be called', DeprecationWarning
@@ -128,22 +149,12 @@ def complete_dataclass(
 
     # This needs to be called before we change the __init__
     sig = generate_pydantic_signature(
-        init=cls.__init__,
+        init=original_init,
         fields=cls.__pydantic_fields__,  # type: ignore
         config_wrapper=config_wrapper,
         is_dataclass=True,
     )
 
-    # dataclass.__init__ must be defined here so its `__qualname__` can be changed since functions can't be copied.
-    def __init__(__dataclass_self__: PydanticDataclass, *args: Any, **kwargs: Any) -> None:
-        __tracebackhide__ = True
-        s = __dataclass_self__
-        s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
-
-    __init__.__qualname__ = f'{cls.__qualname__}.__init__'
-
-    cls.__init__ = __init__  # type: ignore
-    cls.__pydantic_config__ = config_wrapper.config_dict  # type: ignore
     cls.__signature__ = sig  # type: ignore
     get_core_schema = getattr(cls, '__get_pydantic_core_schema__', None)
     try:
@@ -191,6 +202,7 @@ def complete_dataclass(
 
         cls.__setattr__ = validated_setattr.__get__(None, cls)  # type: ignore
 
+    cls.__pydantic_complete__ = True
     return True
 
 

@@ -127,7 +127,7 @@ plugins = pydantic.mypy
 ```
 
 !!! note
-  If you're using `pydantic.v1` models, you'll need to add `pydantic.v1.mypy` to your list of plugins.
+    If you're using `pydantic.v1` models, you'll need to add `pydantic.v1.mypy` to your list of plugins.
 
 The plugin is compatible with mypy versions `>=0.930`.
 

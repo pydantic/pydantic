@@ -8,10 +8,18 @@ from typing import Any, List, Tuple
 
 import pytest
 from pydantic_core import ArgsKwargs
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import Annotated, Required, TypedDict, Unpack
 
-from pydantic import Field, PydanticInvalidForJsonSchema, TypeAdapter, ValidationError, validate_call
-from pydantic.main import BaseModel
+from pydantic import (
+    BaseModel,
+    Field,
+    PydanticInvalidForJsonSchema,
+    PydanticUserError,
+    TypeAdapter,
+    ValidationError,
+    validate_call,
+)
+from pydantic.config import with_config
 
 
 def test_args():
@@ -162,6 +170,85 @@ def test_var_args_kwargs(validated):
     assert foo(1, 2, kwargs=4, e=5) == "a=1, b=2, args=(), d=3, kwargs={'kwargs': 4, 'e': 5}"
 
 
+def test_unpacked_typed_dict_kwargs_invalid_type() -> None:
+    with pytest.raises(PydanticUserError) as exc:
+
+        @validate_call
+        def foo(**kwargs: Unpack[int]):
+            pass
+
+    assert exc.value.code == 'unpack-typed-dict'
+
+
+def test_unpacked_typed_dict_kwargs_overlaps() -> None:
+    class TD(TypedDict, total=False):
+        a: int
+        b: int
+        c: int
+
+    with pytest.raises(PydanticUserError) as exc:
+
+        @validate_call
+        def foo(a: int, b: int, **kwargs: Unpack[TD]):
+            pass
+
+    assert exc.value.code == 'overlapping-unpack-typed-dict'
+    assert exc.value.message == "Typed dictionary 'TD' overlaps with parameters 'a', 'b'"
+
+    # Works for a pos-only argument
+    @validate_call
+    def foo(a: int, /, **kwargs: Unpack[TD]):
+        pass
+
+    foo(1, a=1)
+
+
+def test_unpacked_typed_dict_kwargs() -> None:
+    @with_config({'strict': True})
+    class TD(TypedDict, total=False):
+        a: int
+        b: Required[str]
+
+    @validate_call
+    def foo(**kwargs: Unpack[TD]):
+        pass
+
+    foo(a=1, b='test')
+    foo(b='test')
+
+    with pytest.raises(ValidationError) as exc:
+        foo(a='1')
+
+    assert exc.value.errors()[0]['type'] == 'int_type'
+    assert exc.value.errors()[0]['loc'] == ('a',)
+    assert exc.value.errors()[1]['type'] == 'missing'
+    assert exc.value.errors()[1]['loc'] == ('b',)
+
+    # Make sure that when called without any arguments,
+    # empty kwargs are still validated against the typed dict:
+    with pytest.raises(ValidationError) as exc:
+        foo()
+
+    assert exc.value.errors()[0]['type'] == 'missing'
+    assert exc.value.errors()[0]['loc'] == ('b',)
+
+
+def test_unpacked_typed_dict_kwargs_functional_syntax() -> None:
+    TD = TypedDict('TD', {'in': int, 'x-y': int})
+
+    @validate_call
+    def foo(**kwargs: Unpack[TD]):
+        pass
+
+    foo(**{'in': 1, 'x-y': 2})
+
+    with pytest.raises(ValidationError) as exc:
+        foo(**{'in': 'not_an_int', 'x-y': 1})
+
+    assert exc.value.errors()[0]['type'] == 'int_parsing'
+    assert exc.value.errors()[0]['loc'] == ('in',)
+
+
 def test_field_can_provide_factory() -> None:
     @validate_call
     def foo(a: int, b: int = Field(default_factory=lambda: 99), *args: int) -> int:
@@ -291,6 +378,9 @@ def test_async():
     async def run():
         v = await foo(1, 2)
         assert v == 'a=1 b=2'
+
+    # insert_assert(inspect.iscoroutinefunction(foo) is True)
+    assert inspect.iscoroutinefunction(foo) is True
 
     asyncio.run(run())
     with pytest.raises(ValidationError) as exc_info:
@@ -819,12 +909,12 @@ def test_eval_type_backport():
 
 
 @pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+ for PEP 695 syntax with generics')
-def test_validate_call_with_pep_695_syntax() -> None:
+def test_validate_call_with_pep_695_syntax(create_module) -> None:
     """Note: validate_call still doesn't work properly with generics, see https://github.com/pydantic/pydantic/issues/7796.
 
     This test is just to ensure that the syntax is accepted and doesn't raise a NameError."""
-    globs = {}
-    exec(
+
+    module = create_module(
         """
 from typing import Iterable
 from pydantic import validate_call
@@ -836,16 +926,87 @@ def find_max_no_validate_return[T](args: Iterable[T]) -> T:
 @validate_call(validate_return=True)
 def find_max_validate_return[T](args: Iterable[T]) -> T:
     return sorted(args, reverse=True)[0]
-        """,
-        globs,
+        """
     )
-    functions = [globs['find_max_no_validate_return'], globs['find_max_validate_return']]
+
+    functions = [module.find_max_no_validate_return, module.find_max_validate_return]
     for find_max in functions:
         assert len(find_max.__type_params__) == 1
         assert find_max([1, 2, 10, 5]) == 10
 
         with pytest.raises(ValidationError):
             find_max(1)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+ for PEP 695 syntax with generics')
+def test_pep695_with_class(create_module):
+    """Primarily to ensure that the syntax is accepted and doesn't raise a `NameError` with `T`.
+    The validation is not expected to work properly when parameterized at this point."""
+
+    for import_annotations in ('from __future__ import annotations', ''):
+        module = create_module(
+            f"""
+{import_annotations}
+from pydantic import validate_call
+
+class A[T]:
+    @validate_call(validate_return=True)
+    def f(self, a: T) -> T:
+        return str(a)
+            """
+        )
+        A = module.A
+        a = A[int]()
+        # these two are undesired behavior, but it's what happens now
+        assert a.f(1) == '1'
+        assert a.f('1') == '1'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+ for PEP 695 syntax with generics')
+def test_pep695_with_nested_scopes(create_module):
+    """Nested scopes generally cannot be caught by `parent_frame_namespace`,
+    so currently this test is expected to fail.
+    """
+
+    module = create_module(
+        """
+from __future__ import annotations
+from pydantic import validate_call
+
+class A[T]:
+    def g(self):
+        @validate_call(validate_return=True)
+        def inner(a: T) -> T: ...
+
+    def h[S](self):
+        @validate_call(validate_return=True)
+        def inner(a: T) -> S: ...
+        """
+    )
+
+    A = module.A
+    a = A[int]()
+    with pytest.raises(NameError):
+        a.g()
+    with pytest.raises(NameError):
+        a.h()
+
+    with pytest.raises(NameError):
+        create_module(
+            """
+from __future__ import annotations
+from pydantic import validate_call
+
+class A[T]:
+    class B:
+        @validate_call(validate_return=True)
+        def f(a: T) -> T: ...
+
+    class C[S]:
+        @validate_call(validate_return=True)
+        def f(a: T) -> S: ...
+            """
+        )
 
 
 class M0(BaseModel):
