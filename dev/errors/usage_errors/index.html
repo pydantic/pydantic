@@ -4535,7 +4535,7 @@ a Pydantic model.</p>
 </code></pre></div>
 <h2 id="unpack-typed-dict"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Unpack"><code>Unpack</code></a> used without a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict"><code>TypedDict</code></a><a class="headerlink" href="#unpack-typed-dict" title="Permanent link">&para;</a></h2>
 <p>This error is raised when <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Unpack"><code>Unpack</code></a> is used with something other than
-a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict"><code>TypedDict</code></a> class object to type hint variadic keyword arguments.</p>
+a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict"><code>TypedDict</code></a> class object to type hint variadic keyword parameters.</p>
 <p>For reference, see the <a href="https://typing.readthedocs.io/en/latest/spec/callables.html#unpack-for-keyword-arguments">related specification section</a> and <a href="https://peps.python.org/pep-0692/">PEP 692</a>.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Unpack</span>
 
@@ -4551,8 +4551,8 @@ a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;unpack-typed-dict&#39;</span>
 </code></pre></div>
 <h2 id="overlapping-unpack-typed-dict">Overlapping unpacked <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict"><code>TypedDict</code></a> fields and arguments<a class="headerlink" href="#overlapping-unpack-typed-dict" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the typed dictionary used to type hint variadic keywords arguments
-has field names overlapping with arguments (unless <a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#positional-only-parameter">positional only</a>).</p>
+<p>This error is raised when the typed dictionary used to type hint variadic keywords parameters has field names
+overlapping with other parameters (unless <a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#positional-only-parameter">positional only</a>).</p>
 <p>For reference, see the <a href="https://typing.readthedocs.io/en/latest/spec/callables.html#unpack-for-keyword-arguments">related specification section</a> and <a href="https://peps.python.org/pep-0692/">PEP 692</a>.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypedDict</span><span class="p">,</span> <span class="n">Unpack</span>
 
