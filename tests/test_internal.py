@@ -227,4 +227,4 @@ def test_schema_is_valid():
     ],
 )
 def test_decimal_digits_calculation(decimal: Decimal, normalize: bool, decimal_places: int, digits: int) -> None:
-    assert _extract_decimal_digits_info(decimal, normalize) == (decimal_places, digits)
+    assert _extract_decimal_digits_info(decimal.normalize() if normalize else decimal) == (decimal_places, digits)
