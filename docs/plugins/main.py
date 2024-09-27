@@ -55,15 +55,15 @@ def on_page_markdown(markdown: str, page: Page, config: Config, files: Files) ->
     """
     Called on each file after it is read and before it is converted to HTML.
     """
-    # markdown = upgrade_python(markdown)
+    markdown = upgrade_python(markdown)
     markdown = insert_json_output(markdown)
     markdown = remove_code_fence_attributes(markdown)
     if md := render_index(markdown, page):
         return md
     if md := render_why(markdown, page):
         return md
-    # if md := render_pydantic_settings(markdown, page):
-    #     return md
+    if md := render_pydantic_settings(markdown, page):
+        return md
     elif md := build_schema_mappings(markdown, page):
         return md
     elif md := build_conversion_table(markdown, page):
