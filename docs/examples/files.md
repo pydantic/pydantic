@@ -22,6 +22,8 @@ Here is an example of a `.json` file:
 To validate this data, we can use a `pydantic` model:
 
 ```python test="skip"
+import pathlib
+
 from pydantic import BaseModel, EmailStr, PositiveInt
 
 
@@ -31,11 +33,10 @@ class Person(BaseModel):
     email: EmailStr
 
 
-with open('person.json') as f:
-    json_string = f.read()
-    person = Person.model_validate_json(json_string)
-    print(repr(person))
-    #> Person(name='John Doe', age=30, email='john@example.com')
+json_string = pathlib.Path('person.json').read_text()
+person = Person.model_validate_json(json_string)
+print(repr(person))
+#> Person(name='John Doe', age=30, email='john@example.com')
 ```
 
 If the data in the file is not valid, `pydantic` will raise a [`ValidationError`][pydantic_core.ValidationError].
@@ -57,6 +58,8 @@ When we try to validate this data, `pydantic` raises a [`ValidationError`][pydan
 above issues:
 
 ```python test="skip"
+import pathlib
+
 from pydantic import BaseModel, EmailStr, PositiveInt, ValidationError
 
 
@@ -66,23 +69,22 @@ class Person(BaseModel):
     email: EmailStr
 
 
-with open('person.json') as f:
-    json_string = f.read()
-    try:
-        person = Person.model_validate_json(json_string)
-    except ValidationError as err:
-        print(err)
-        """
-        3 validation errors for Person
-        name
-        Field required [type=missing, input_value={'age': -30, 'email': 'not-an-email-address'}, input_type=dict]
-            For further information visit https://errors.pydantic.dev/2.10/v/missing
-        age
-        Input should be greater than 0 [type=greater_than, input_value=-30, input_type=int]
-            For further information visit https://errors.pydantic.dev/2.10/v/greater_than
-        email
-        value is not a valid email address: An email address must have an @-sign. [type=value_error, input_value='not-an-email-address', input_type=str]
-        """
+json_string = pathlib.Path('person.json').read_text()
+try:
+    person = Person.model_validate_json(json_string)
+except ValidationError as err:
+    print(err)
+    """
+    3 validation errors for Person
+    name
+    Field required [type=missing, input_value={'age': -30, 'email': 'not-an-email-address'}, input_type=dict]
+        For further information visit https://errors.pydantic.dev/2.10/v/missing
+    age
+    Input should be greater than 0 [type=greater_than, input_value=-30, input_type=int]
+        For further information visit https://errors.pydantic.dev/2.10/v/greater_than
+    email
+    value is not a valid email address: An email address must have an @-sign. [type=value_error, input_value='not-an-email-address', input_type=str]
+    """
 ```
 
 Often, it's the case that you have an abundance of a certain type of data within a `.json` file.
@@ -106,6 +108,7 @@ For example, you might have a list of people:
 In this case, you can validate the data against a `List[Person]` model:
 
 ```python test="skip"
+import pathlib
 from typing import List
 
 from pydantic import BaseModel, EmailStr, PositiveInt, TypeAdapter
@@ -117,13 +120,12 @@ class Person(BaseModel):
     email: EmailStr
 
 
-type_adapter = TypeAdapter(List[Person])  # (1)!
+person_list_adapter = TypeAdapter(List[Person])  # (1)!
 
-with open('people.json') as f:
-    json_string = f.read()
-    people = type_adapter.validate_json(json_string)
-    print(people)
-    #> [Person(name='John Doe', age=30, email='john@example.com'), Person(name='Jane Doe', age=25, email='jane@example.com')]
+json_string = pathlib.Path('people.json').read_text()
+people = person_list_adapter.validate_json(json_string)
+print(people)
+#> [Person(name='John Doe', age=30, email='john@example.com'), Person(name='Jane Doe', age=25, email='jane@example.com')]
 ```
 
 1. We use [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] to validate a list of `Person` objects.
@@ -144,6 +146,8 @@ Consider the following `.jsonl` file:
 We can validate this data with a similar approach to the one we used for `.json` files:
 
 ```python test="skip"
+import pathlib
+
 from pydantic import BaseModel, EmailStr, PositiveInt
 
 
@@ -153,10 +157,10 @@ class Person(BaseModel):
     email: EmailStr
 
 
-with open('people.jsonl') as f:
-    people = [Person.model_validate_json(line) for line in f]
-    print(people)
-    #> [Person(name='John Doe', age=30, email='john@example.com'), Person(name='Jane Doe', age=25, email='jane@example.com')]
+json_lines = pathlib.Path('people.jsonl').read_text().splitlines()
+people = [Person.model_validate_json(line) for line in json_lines]
+print(people)
+#> [Person(name='John Doe', age=30, email='john@example.com'), Person(name='Jane Doe', age=25, email='jane@example.com')]
 ```
 
 ## CSV files
@@ -190,8 +194,9 @@ class Person(BaseModel):
 with open('people.csv') as f:
     reader = csv.DictReader(f)
     people = [Person.model_validate(row) for row in reader]
-    print(people)
-    #> [Person(name='John Doe', age=30, email='john@example.com'), Person(name='Jane Doe', age=25, email='jane@example.com')]
+
+print(people)
+#> [Person(name='John Doe', age=30, email='john@example.com'), Person(name='Jane Doe', age=25, email='jane@example.com')]
 ```
 
 ## TOML files
