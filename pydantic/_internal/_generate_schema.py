@@ -250,7 +250,7 @@ def modify_model_json_schema(
     schema_or_field: CoreSchemaOrField,
     handler: GetJsonSchemaHandler,
     *,
-    cls: Any,
+    cls: type[Any],
     title: str | None = None,
 ) -> JsonSchemaValue:
     """Add title and description for model-like classes' JSON schema.
@@ -264,9 +264,7 @@ def modify_model_json_schema(
     Returns:
         JsonSchemaValue: The updated JSON schema.
     """
-    from ..dataclasses import is_pydantic_dataclass
     from ..root_model import RootModel
-    from ._dataclasses import is_builtin_dataclass
 
     BaseModel = import_cached_base_model()
 
@@ -276,8 +274,8 @@ def modify_model_json_schema(
         original_schema['title'] = title
     elif 'title' not in original_schema:
         original_schema['title'] = cls.__name__
-    # BaseModel + Dataclass; don't use cls.__doc__ as it will contain the verbose class signature by default
-    docstring = None if cls is BaseModel or is_builtin_dataclass(cls) or is_pydantic_dataclass(cls) else cls.__doc__
+    # BaseModel and dataclasses; don't use cls.__doc__ as it will contain the verbose class signature by default
+    docstring = None if cls is BaseModel or dataclasses.is_dataclass(cls) else cls.__doc__
     if docstring and 'description' not in original_schema:
         original_schema['description'] = inspect.cleandoc(docstring)
     elif issubclass(cls, RootModel) and cls.model_fields['root'].description:
