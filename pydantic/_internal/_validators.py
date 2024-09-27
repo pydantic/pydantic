@@ -343,21 +343,17 @@ def _extract_decimal_digits_info(decimal: Decimal) -> tuple[int, int]:
     Returns:
         tuple[int, int]: A tuple containing the number of decimal places and total digits.
 
-    Modeled after the `pydanitc-core` implementation of this function.
-    See https://github.com/pydantic/pydantic-core/blob/f389728432949ecceddecb1f59bb503b0998e9aa/src/validators/decimal.rs#L85.
-
     Though this could be divided into two separate functions, the logic is easier to follow if we couple the computation
     of the number of decimals and digits together.
     """
-    _, digit_tuple, exponent = decimal.as_tuple()
-
-    exponent = int(exponent)
-    digits = len(digit_tuple)
+    decimal_tuple = decimal.as_tuple()
+    exponent = int(decimal_tuple.exponent)
+    num_digits = len(decimal_tuple.digits)
 
     if exponent >= 0:
         # A positive exponent adds that many trailing zeros
         # Ex: digit_tuple=(1, 2, 3), exponent=2 -> 12300 -> 0 decimal places, 5 digits
-        digits += exponent
+        num_digits += exponent
         decimal_places = 0
     else:
         # If the absolute value of the negative exponent is larger than the
@@ -367,17 +363,17 @@ def _extract_decimal_digits_info(decimal: Decimal) -> tuple[int, int]:
         # Ex: digit_tuple=(1, 2, 3), exponent=-2 -> 1.23 -> 2 decimal places, 3 digits
         # Ex: digit_tuple=(1, 2, 3), exponent=-4 -> 0.0123 -> 4 decimal places, 4 digits
         decimal_places = abs(exponent)
-        digits = max(digits, decimal_places)
+        num_digits = max(num_digits, decimal_places)
 
-    return decimal_places, digits
+    return decimal_places, num_digits
 
 
 def max_digits_validator(x: Any, max_digits: Any) -> Any:
-    _, digits = _extract_decimal_digits_info(x)
-    _, normalized_digits = _extract_decimal_digits_info(x.normalize())
+    _, num_digits = _extract_decimal_digits_info(x)
+    _, normalized_num_digits = _extract_decimal_digits_info(x.normalize())
 
     try:
-        if (digits > max_digits) and (normalized_digits > max_digits):
+        if (num_digits > max_digits) and (normalized_num_digits > max_digits):
             raise PydanticKnownError(
                 'decimal_max_digits',
                 {'max_digits': max_digits},
