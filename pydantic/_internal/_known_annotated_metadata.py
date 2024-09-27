@@ -201,7 +201,7 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
     """
     import annotated_types as at
 
-    from ._validators import forbid_inf_nan_check, get_constraint_validator
+    from ._validators import NUMERIC_VALIDATOR_LOOKUP, forbid_inf_nan_check
 
     schema = schema.copy()
     schema_update, other_metadata = collect_known_metadata([annotation])
@@ -263,10 +263,8 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                     _apply_constraint_with_incompatibility_info, cs.str_schema(**{constraint: value})
                 )
             )
-        elif constraint in {*NUMERIC_CONSTRAINTS, *LENGTH_CONSTRAINTS}:
-            if constraint in NUMERIC_CONSTRAINTS:
-                json_schema_constraint = constraint
-            elif constraint in LENGTH_CONSTRAINTS:
+        elif constraint in NUMERIC_VALIDATOR_LOOKUP:
+            if constraint in LENGTH_CONSTRAINTS:
                 inner_schema = schema
                 while inner_schema['type'] in {'function-before', 'function-wrap', 'function-after'}:
                     inner_schema = inner_schema['schema']  # type: ignore
@@ -274,14 +272,16 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                 if inner_schema_type == 'list' or (
                     inner_schema_type == 'json-or-python' and inner_schema['json_schema']['type'] == 'list'  # type: ignore
                 ):
-                    json_schema_constraint = 'minItems' if constraint == 'min_length' else 'maxItems'
+                    js_constraint_key = 'minItems' if constraint == 'min_length' else 'maxItems'
                 else:
-                    json_schema_constraint = 'minLength' if constraint == 'min_length' else 'maxLength'
+                    js_constraint_key = 'minLength' if constraint == 'min_length' else 'maxLength'
+            else:
+                js_constraint_key = constraint
 
             schema = cs.no_info_after_validator_function(
-                partial(get_constraint_validator(constraint), **{constraint: value}), schema
+                partial(NUMERIC_VALIDATOR_LOOKUP[constraint], **{constraint: value}), schema
             )
-            add_js_update_schema(schema, lambda: {json_schema_constraint: as_jsonable_value(value)})  # noqa: B023
+            add_js_update_schema(schema, lambda: {js_constraint_key: as_jsonable_value(value)})  # noqa: B023
         elif constraint == 'allow_inf_nan' and value is False:
             schema = cs.no_info_after_validator_function(
                 forbid_inf_nan_check,
@@ -295,8 +295,11 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
     for annotation in other_metadata:
         if (annotation_type := type(annotation)) in (at_to_constraint_map := _get_at_to_constraint_map()):
             constraint = at_to_constraint_map[annotation_type]
+            validator = NUMERIC_VALIDATOR_LOOKUP.get(constraint)
+            if validator is None:
+                raise ValueError(f'Unknown constraint {constraint}')
             schema = cs.no_info_after_validator_function(
-                partial(get_constraint_validator(constraint), {constraint: getattr(annotation, constraint)}), schema
+                partial(validator, {constraint: getattr(annotation, constraint)}), schema
             )
             continue
         elif isinstance(annotation, (at.Predicate, at.Not)):

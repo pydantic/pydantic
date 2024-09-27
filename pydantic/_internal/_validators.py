@@ -8,6 +8,7 @@ from __future__ import annotations as _annotations
 import math
 import re
 import typing
+from decimal import Decimal
 from fractions import Fraction
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import Any, Callable
@@ -330,7 +331,70 @@ def max_length_validator(x: Any, max_length: Any) -> Any:
         raise TypeError(f"Unable to apply constraint 'max_length' to supplied value {x}")
 
 
-_CONSTRAINT_TO_VALIDATOR_LOOKUP: dict[str, Callable] = {
+def _extract_decimal_digits_info(decimal: Decimal, normalized: bool) -> tuple[int, int]:
+    """Modeled after the `pydanitc-core` implementation of this function.
+
+    See https://github.com/pydantic/pydantic-core/blob/f389728432949ecceddecb1f59bb503b0998e9aa/src/validators/decimal.rs#L85.
+    """
+    normalized_decimal = decimal.normalize() if normalized else decimal
+    _, digit_tuple, exponent = normalized_decimal.as_tuple()
+
+    exponent = int(exponent)
+    digits = len(digit_tuple)
+
+    if exponent >= 0:
+        # // A positive exponent adds that many trailing zeros.
+        digits += exponent
+        decimals = 0
+    else:
+        #  If the absolute value of the negative exponent is larger than the
+        #  number of digits, then it's the same as the number of digits,
+        #  because it'll consume all the digits in digit_tuple and then
+        #  add abs(exponent) - len(digit_tuple) leading zeros after the
+        #  decimal point.
+        decimals = abs(exponent)
+        digits = max(digits, decimals)
+
+    return decimals, digits
+
+
+def max_digits_validator(x: Any, max_digits: Any) -> Any:
+    if not isinstance(x, Decimal):
+        raise TypeError(f"Unable to apply constraint 'max_digits' to supplied value {x}")
+
+    _, digits = _extract_decimal_digits_info(x, False)
+    _, normalized_digits = _extract_decimal_digits_info(x, True)
+
+    try:
+        if (digits > max_digits) and (normalized_digits > max_digits):
+            raise PydanticKnownError(
+                'decimal_max_digits',
+                {'max_digits': max_digits},
+            )
+        return x
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'max_digits' to supplied value {x}")
+
+
+def decimal_places_validator(x: Any, decimal_places: Any) -> Any:
+    if not isinstance(x, Decimal):
+        raise TypeError(f"Unable to apply constraint 'decimal_places' to supplied value {x}")
+
+    decimals, _ = _extract_decimal_digits_info(x, False)
+    normalized_decimals, _ = _extract_decimal_digits_info(x, True)
+
+    try:
+        if (decimals > decimal_places) and (normalized_decimals > decimal_places):
+            raise PydanticKnownError(
+                'decimal_max_places',
+                {'decimal_places': decimal_places},
+            )
+        return x
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'decimal_places' to supplied value {x}")
+
+
+NUMERIC_VALIDATOR_LOOKUP: dict[str, Callable] = {
     'gt': greater_than_validator,
     'ge': greater_than_or_equal_validator,
     'lt': less_than_validator,
@@ -338,15 +402,9 @@ _CONSTRAINT_TO_VALIDATOR_LOOKUP: dict[str, Callable] = {
     'multiple_of': multiple_of_validator,
     'min_length': min_length_validator,
     'max_length': max_length_validator,
+    'max_digits': max_digits_validator,
+    'decimal_places': decimal_places_validator,
 }
-
-
-def get_constraint_validator(constraint: str) -> Callable:
-    """Fetch the validator function for the given constraint."""
-    try:
-        return _CONSTRAINT_TO_VALIDATOR_LOOKUP[constraint]
-    except KeyError:
-        raise TypeError(f'Unknown constraint {constraint}')
 
 
 IP_VALIDATOR_LOOKUP: dict[type, Callable] = {
