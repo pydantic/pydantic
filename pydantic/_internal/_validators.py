@@ -8,6 +8,7 @@ from __future__ import annotations as _annotations
 import math
 import re
 import typing
+from decimal import Decimal
 from fractions import Fraction
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import Any, Callable
@@ -330,7 +331,76 @@ def max_length_validator(x: Any, max_length: Any) -> Any:
         raise TypeError(f"Unable to apply constraint 'max_length' to supplied value {x}")
 
 
-_CONSTRAINT_TO_VALIDATOR_LOOKUP: dict[str, Callable] = {
+def _extract_decimal_digits_info(decimal: Decimal) -> tuple[int, int]:
+    """Compute the total number of digits and decimal places for a given [`Decimal`][decimal.Decimal] instance.
+
+    This function handles both normalized and non-normalized Decimal instances.
+    Example: Decimal('1.230') -> 4 digits, 3 decimal places
+
+    Args:
+        decimal (Decimal): The decimal number to analyze.
+
+    Returns:
+        tuple[int, int]: A tuple containing the number of decimal places and total digits.
+
+    Though this could be divided into two separate functions, the logic is easier to follow if we couple the computation
+    of the number of decimals and digits together.
+    """
+    decimal_tuple = decimal.as_tuple()
+    if not isinstance(decimal_tuple.exponent, int):
+        raise TypeError(f'Unable to extract decimal digits info from supplied value {decimal}')
+    exponent = decimal_tuple.exponent
+    num_digits = len(decimal_tuple.digits)
+
+    if exponent >= 0:
+        # A positive exponent adds that many trailing zeros
+        # Ex: digit_tuple=(1, 2, 3), exponent=2 -> 12300 -> 0 decimal places, 5 digits
+        num_digits += exponent
+        decimal_places = 0
+    else:
+        # If the absolute value of the negative exponent is larger than the
+        # number of digits, then it's the same as the number of digits,
+        # because it'll consume all the digits in digit_tuple and then
+        # add abs(exponent) - len(digit_tuple) leading zeros after the decimal point.
+        # Ex: digit_tuple=(1, 2, 3), exponent=-2 -> 1.23 -> 2 decimal places, 3 digits
+        # Ex: digit_tuple=(1, 2, 3), exponent=-4 -> 0.0123 -> 4 decimal places, 4 digits
+        decimal_places = abs(exponent)
+        num_digits = max(num_digits, decimal_places)
+
+    return decimal_places, num_digits
+
+
+def max_digits_validator(x: Any, max_digits: Any) -> Any:
+    _, num_digits = _extract_decimal_digits_info(x)
+    _, normalized_num_digits = _extract_decimal_digits_info(x.normalize())
+
+    try:
+        if (num_digits > max_digits) and (normalized_num_digits > max_digits):
+            raise PydanticKnownError(
+                'decimal_max_digits',
+                {'max_digits': max_digits},
+            )
+        return x
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'max_digits' to supplied value {x}")
+
+
+def decimal_places_validator(x: Any, decimal_places: Any) -> Any:
+    decimal_places_, _ = _extract_decimal_digits_info(x)
+    normalized_decimal_places, _ = _extract_decimal_digits_info(x.normalize())
+
+    try:
+        if (decimal_places_ > decimal_places) and (normalized_decimal_places > decimal_places):
+            raise PydanticKnownError(
+                'decimal_max_places',
+                {'decimal_places': decimal_places},
+            )
+        return x
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'decimal_places' to supplied value {x}")
+
+
+NUMERIC_VALIDATOR_LOOKUP: dict[str, Callable] = {
     'gt': greater_than_validator,
     'ge': greater_than_or_equal_validator,
     'lt': less_than_validator,
@@ -338,15 +408,9 @@ _CONSTRAINT_TO_VALIDATOR_LOOKUP: dict[str, Callable] = {
     'multiple_of': multiple_of_validator,
     'min_length': min_length_validator,
     'max_length': max_length_validator,
+    'max_digits': max_digits_validator,
+    'decimal_places': decimal_places_validator,
 }
-
-
-def get_constraint_validator(constraint: str) -> Callable:
-    """Fetch the validator function for the given constraint."""
-    try:
-        return _CONSTRAINT_TO_VALIDATOR_LOOKUP[constraint]
-    except KeyError:
-        raise TypeError(f'Unknown constraint {constraint}')
 
 
 IP_VALIDATOR_LOOKUP: dict[type, Callable] = {
