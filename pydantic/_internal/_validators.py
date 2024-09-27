@@ -335,6 +335,8 @@ def _extract_decimal_digits_info(decimal: Decimal, normalized: bool) -> tuple[in
     """Modeled after the `pydanitc-core` implementation of this function.
 
     See https://github.com/pydantic/pydantic-core/blob/f389728432949ecceddecb1f59bb503b0998e9aa/src/validators/decimal.rs#L85.
+    Though this could be divided into two separate functions, the logic is easier to follow if we couple the computation
+    of the number of decimals and digits together.
     """
     normalized_decimal = decimal.normalize() if normalized else decimal
     _, digit_tuple, exponent = normalized_decimal.as_tuple()
@@ -359,9 +361,6 @@ def _extract_decimal_digits_info(decimal: Decimal, normalized: bool) -> tuple[in
 
 
 def max_digits_validator(x: Any, max_digits: Any) -> Any:
-    if not isinstance(x, Decimal):
-        raise TypeError(f"Unable to apply constraint 'max_digits' to supplied value {x}")
-
     _, digits = _extract_decimal_digits_info(x, False)
     _, normalized_digits = _extract_decimal_digits_info(x, True)
 
@@ -377,9 +376,6 @@ def max_digits_validator(x: Any, max_digits: Any) -> Any:
 
 
 def decimal_places_validator(x: Any, decimal_places: Any) -> Any:
-    if not isinstance(x, Decimal):
-        raise TypeError(f"Unable to apply constraint 'decimal_places' to supplied value {x}")
-
     decimals, _ = _extract_decimal_digits_info(x, False)
     normalized_decimals, _ = _extract_decimal_digits_info(x, True)
 
