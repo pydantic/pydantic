@@ -347,7 +347,9 @@ def _extract_decimal_digits_info(decimal: Decimal) -> tuple[int, int]:
     of the number of decimals and digits together.
     """
     decimal_tuple = decimal.as_tuple()
-    exponent = int(decimal_tuple.exponent)
+    if not isinstance(decimal_tuple.exponent, int):
+        raise TypeError(f'Unable to extract decimal digits info from supplied value {decimal}')
+    exponent = decimal_tuple.exponent
     num_digits = len(decimal_tuple.digits)
 
     if exponent >= 0:
