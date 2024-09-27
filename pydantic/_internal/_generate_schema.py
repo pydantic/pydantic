@@ -815,7 +815,7 @@ class GenerateSchema:
         elif (
             (existing_schema := getattr(obj, '__pydantic_core_schema__', None)) is not None
             and not isinstance(existing_schema, MockCoreSchema)
-            and existing_schema.get('cls', None) == obj
+            and existing_schema.get('cls', None) is obj
         ):
             schema = existing_schema
         elif (validators := getattr(obj, '__get_validators__', None)) is not None:
@@ -1003,7 +1003,7 @@ class GenerateSchema:
         elif _typing_extra.is_new_type(obj):
             # NewType, can't use isinstance because it fails <3.10
             return self.generate_schema(obj.__supertype__)
-        elif obj == re.Pattern:
+        elif obj is re.Pattern:
             return self._pattern_schema(obj)
         elif obj is collections.abc.Hashable or obj is typing.Hashable:
             return self._hashable_schema()
@@ -1730,7 +1730,7 @@ class GenerateSchema:
         ser = core_schema.plain_serializer_function_ser_schema(
             attrgetter('pattern'), when_used='json', return_schema=core_schema.str_schema()
         )
-        if pattern_type == typing.Pattern or pattern_type == re.Pattern:
+        if pattern_type is typing.Pattern or pattern_type is re.Pattern:
             # bare type
             return core_schema.no_info_plain_validator_function(
                 _validators.pattern_either_validator, serialization=ser, metadata=metadata
