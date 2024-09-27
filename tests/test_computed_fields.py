@@ -817,7 +817,7 @@ def test_computed_field_with_field_serializer():
     assert MyModel().model_dump() == {'my_field': 'my_field = foo', 'other_field': 'other_field = 42'}
 
 
-def test__fields_on_instance_and_cls() -> None:
+def test_fields_on_instance_and_cls() -> None:
     """For now, we support `model_fields` and `model_computed_fields` access on both instances and classes.
 
     In V3, we should only support class access, though we need to preserve the current behavior for V2 compatibility."""
