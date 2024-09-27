@@ -1,5 +1,5 @@
 ??? api "API Documentation"
-    [`pydantic.validate_call_decorator.validate_call`][pydantic.validate_call]<br>
+    [`pydantic.validate_call_decorator.validate_call`][pydantic.validate_call_decorator.validate_call]<br>
 
 The [`validate_call()`][pydantic.validate_call] decorator allows the arguments passed to a function to be parsed
 and validated using the function's annotations before the function is called.
@@ -41,7 +41,7 @@ except ValidationError as exc:
 
 ## Parameter types
 
-Parameter types are inferred from type annotations on the function, or as [`Any`][typing.Any] if unannotated . All types listed in [types](types.md) can be validated, including Pydantic models and [custom types](types.md#custom-types).
+Parameter types are inferred from type annotations on the function, or as [`Any`][typing.Any] if not annotated. All types listed in [types](types.md) can be validated, including Pydantic models and [custom types](types.md#custom-types).
 As with the rest of Pydantic, types are by default coerced by the decorator before they're passed to the actual function:
 
 ```py
@@ -64,9 +64,9 @@ greater_than(d1, d2, include_equal=True)
 ```
 
 1. Because `include_equal` has no type annotation, it will be inferred as [`Any`][typing.Any].
-2. Although `d1` is a string, it will be converted as a [`date`][datetime.date] object.
+2. Although `d1` is a string, it will be converted to a [`date`][datetime.date] object.
 
-Type coercion like this can be extremely helpful, but also confusing or not desired. [Strict mode](strict_mode.md)
+Type coercion like this can be extremely helpful, but also confusing or not desired (see [model data conversion](models.md#data-conversion)). [Strict mode](strict_mode.md)
 can be enabled by using a [custom configuration](#custom-configuration).
 
 !!! note "Validating the return value"
@@ -83,6 +83,82 @@ using all possible [parameter configurations][parameter] and all possible combin
 * Positional-only parameters: parameters before `, /`.
 * Variable positional parameters defined via `*` (often `*args`).
 * Variable keyword parameters defined via `**` (often `**kwargs`).
+
+??? example
+
+    ```py
+    from pydantic import validate_call
+
+
+    @validate_call
+    def pos_or_kw(a: int, b: int = 2) -> str:
+        return f'a={a} b={b}'
+
+
+    print(pos_or_kw(1, b=3))
+    #> a=1 b=3
+
+
+    @validate_call
+    def kw_only(*, a: int, b: int = 2) -> str:
+        return f'a={a} b={b}'
+
+
+    print(kw_only(a=1))
+    #> a=1 b=2
+    print(kw_only(a=1, b=3))
+    #> a=1 b=3
+
+
+    @validate_call
+    def pos_only(a: int, b: int = 2, /) -> str:
+        return f'a={a} b={b}'
+
+
+    print(pos_only(1))
+    #> a=1 b=2
+
+
+    @validate_call
+    def var_args(*args: int) -> str:
+        return str(args)
+
+
+    print(var_args(1))
+    #> (1,)
+    print(var_args(1, 2, 3))
+    #> (1, 2, 3)
+
+
+    @validate_call
+    def var_kwargs(**kwargs: int) -> str:
+        return str(kwargs)
+
+
+    print(var_kwargs(a=1))
+    #> {'a': 1}
+    print(var_kwargs(a=1, b=2))
+    #> {'a': 1, 'b': 2}
+
+
+    @validate_call
+    def armageddon(
+        a: int,
+        /,
+        b: int,
+        *c: int,
+        d: int,
+        e: int = None,
+        **f: int,
+    ) -> str:
+        return f'a={a} b={b} c={c} d={d} e={e} f={f}'
+
+
+    print(armageddon(1, 2, d=3))
+    #> a=1 b=2 c=() d=3 e=None f={}
+    print(armageddon(1, 2, 3, 4, 5, 6, d=8, e=9, f=10, spam=11))
+    #> a=1 b=2 c=(3, 4, 5, 6) d=8 e=9 f={'f': 10, 'spam': 11}
+    ```
 
 !!! note "[`Unpack`][typing.Unpack] for keyword parameters"
     [`Unpack`][typing.Unpack] and typed dictionaries can be used to annotate the variable
@@ -247,9 +323,9 @@ asyncio.run(main())
 ## Compatibility with type checkers
 
 As the [`validate_call()`][pydantic.validate_call] decorator preserves the decorated function's signature,
-it should be compatible with type checkers. However, due to current limitations in the Python type system,
+it should be compatible with type checkers (such as mypy and pyright). However, due to current limitations in the Python type system,
 the [`raw_function`](#accessing-the-original-function) or other attributes won't be recognized and you will
-need to suppress the error.
+need to suppress the error using (usually with a `# type: ignore` comment).
 
 ## Custom configuration
 
@@ -330,6 +406,6 @@ We've made a big effort to make Pydantic as performant as possible. While the in
 function is only performed once, there will still be a performance impact when making calls to the function
 compared to using the original function.
 
-In many situations, this will have little or no noticeable effect, however be aware that
+In many situations, this will have little or no noticeable effect. However, be aware that
 [`validate_call()`][pydantic.validate_call] is not an equivalent or alternative to function
-definitions in strongly typed languages; it never will be.
+definitions in strongly typed languages, and it never will be.
