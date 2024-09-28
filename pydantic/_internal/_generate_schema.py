@@ -22,7 +22,6 @@ from inspect import Parameter, _ParameterKind, signature
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
 from operator import attrgetter
-from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, LambdaType, MethodType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -100,6 +99,7 @@ from ._mock_val_ser import MockCoreSchema
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._typing_extra import get_cls_type_hints_lenient, is_annotated, is_finalvar, is_self_type, is_zoneinfo_type
 from ._utils import lenient_issubclass, smart_deepcopy
+from ._validate_call import ValidateCallSupportedTypes
 
 if TYPE_CHECKING:
     from ..fields import ComputedFieldInfo, FieldInfo
@@ -1017,7 +1017,7 @@ class GenerateSchema:
             return self.generate_schema(
                 self._get_first_arg_or_any(obj),
             )
-        elif isinstance(obj, (FunctionType, LambdaType, MethodType, BuiltinFunctionType, BuiltinMethodType, partial)):
+        elif any(isinstance(obj, t) for t in get_args(ValidateCallSupportedTypes)):
             return self._call_schema(obj)
         elif inspect.isclass(obj) and issubclass(obj, Enum):
             return self._enum_schema(obj)
@@ -1872,7 +1872,7 @@ class GenerateSchema:
             # control flow can exit the `with` block without returning.
             assert False, 'Unreachable'
 
-    def _call_schema(self, function: Callable[..., Any]) -> core_schema.CallSchema:
+    def _call_schema(self, function: ValidateCallSupportedTypes) -> core_schema.CallSchema:
         """Generate schema for a Callable.
 
         TODO support functional validators once we support them in Config
