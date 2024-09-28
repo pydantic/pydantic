@@ -1018,7 +1018,7 @@ class GenerateSchema:
                 self._get_first_arg_or_any(obj),
             )
         elif isinstance(obj, (FunctionType, LambdaType, MethodType, BuiltinFunctionType, BuiltinMethodType, partial)):
-            return self._callable_schema(obj)
+            return self._call_schema(obj)
         elif inspect.isclass(obj) and issubclass(obj, Enum):
             return self._enum_schema(obj)
         elif is_zoneinfo_type(obj):
@@ -1872,7 +1872,7 @@ class GenerateSchema:
             # control flow can exit the `with` block without returning.
             assert False, 'Unreachable'
 
-    def _callable_schema(self, function: Callable[..., Any]) -> core_schema.CallSchema:
+    def _call_schema(self, function: Callable[..., Any]) -> core_schema.CallSchema:
         """Generate schema for a Callable.
 
         TODO support functional validators once we support them in Config
