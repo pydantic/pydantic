@@ -4,7 +4,7 @@ import functools
 import inspect
 from functools import partial
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, LambdaType, MethodType
-from typing import Any, Awaitable, Union
+from typing import Any, Awaitable, Callable, Union
 
 import pydantic_core
 
@@ -24,8 +24,31 @@ ValidateCallSupportedTypes = Union[
 ]
 
 
+def get_name(func: ValidateCallSupportedTypes) -> str:
+    return f'partial({func.func.__name__})' if isinstance(func, functools.partial) else func.__name__
+
+
 def get_qualname(func: ValidateCallSupportedTypes) -> str:
     return f'partial({func.func.__qualname__})' if isinstance(func, functools.partial) else func.__qualname__
+
+
+def _update_wrapper(wrapped: ValidateCallSupportedTypes, wrapper: Callable[..., Any]):
+    if inspect.iscoroutinefunction(wrapped):
+
+        @functools.wraps(wrapped)
+        async def wrapper_function(*args, **kwargs):  # type: ignore
+            return await wrapper(*args, **kwargs)
+    else:
+
+        @functools.wraps(wrapped)
+        def wrapper_function(*args, **kwargs):
+            return wrapper(*args, **kwargs)
+
+    # We need to manually update this because `partial` object has no `__name__` and `__qualname__`.
+    wrapper_function.__name__ = get_name(wrapped)
+    wrapper_function.__qualname__ = get_qualname(wrapped)
+
+    return wrapper_function
 
 
 def wrap_validate_call(
@@ -41,7 +64,6 @@ def wrap_validate_call(
     else:
         schema_type = function
         module = function.__module__
-
     qualname = core_config_title = get_qualname(function)
 
     global_ns = _typing_extra.get_module_ns_of(function)
@@ -100,16 +122,6 @@ def wrap_validate_call(
             return return_validator(res)
         return res
 
-    if inspect.iscoroutinefunction(function):
-
-        @functools.wraps(function)
-        async def wrapper_function(*args, **kwargs):  # type: ignore
-            return await wrapper(*args, **kwargs)
-    else:
-
-        @functools.wraps(function)
-        def wrapper_function(*args, **kwargs):
-            return wrapper(*args, **kwargs)
-
+    wrapper_function = _update_wrapper(function, wrapper)
     wrapper_function.raw_function = function  # type: ignore
     return wrapper_function  # type: ignore

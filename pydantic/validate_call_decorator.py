@@ -7,6 +7,7 @@ import typing
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast, overload
 
 from ._internal import _typing_extra, _validate_call
+from .errors import PydanticErrorCodes, PydanticUserError
 
 __all__ = ('validate_call',)
 
@@ -17,29 +18,37 @@ if TYPE_CHECKING:
 
 
 def _check_function_type(function: object):
+    ERROR_CODE: PydanticErrorCodes = 'validate-call-type'
+
     supported_types = typing.get_args(_validate_call.ValidateCallSupportedTypes)
-    if any(isinstance(function, t) for t in supported_types):
+    if isinstance(function, supported_types):
         try:
             inspect.signature(cast(_validate_call.ValidateCallSupportedTypes, function))
         except ValueError:
-            qualname = _validate_call.get_qualname(cast(_validate_call.ValidateCallSupportedTypes, function))
-            raise TypeError(f"Input function `{qualname}` doesn't have a valid signature")
+            raise PydanticUserError(f"Input function `{function}` doesn't have a valid signature", code=ERROR_CODE)
         return
 
-    if isinstance(function, (classmethod, staticmethod)):
+    if isinstance(function, (classmethod, staticmethod, property)):
         name = type(function).__name__
-        raise TypeError(f'The `@{name}` decorator should be applied after `@validate_call` (put `@{name}` on top)')
+        raise PydanticUserError(
+            f'The `@{name}` decorator should be applied after `@validate_call` (put `@{name}` on top)', code=ERROR_CODE
+        )
 
     if inspect.isclass(function):
-        raise TypeError(
-            '`validate_call` should be applied to functions, not classes (put `@validate_call` on top of `__init__` or `__new__` instead)'
+        raise PydanticUserError(
+            '`validate_call` should be applied to functions, not classes (put `@validate_call` on top of `__init__` or `__new__` instead)',
+            code=ERROR_CODE,
         )
     if callable(function):
-        raise TypeError(
-            '`validate_call` should be applied to functions, not instances or other callables. Use `validate_call` explicitly on `__call__` instead.'
+        raise PydanticUserError(
+            '`validate_call` should be applied to functions, not instances or other callables. Use `validate_call` explicitly on `__call__` instead.',
+            code=ERROR_CODE,
         )
 
-    raise TypeError('`validate_call` should be applied to one of the following: function, method, partial, or lambda')
+    raise PydanticUserError(
+        '`validate_call` should be applied to one of the following: function, method, partial, or lambda',
+        code=ERROR_CODE,
+    )
 
 
 @overload
