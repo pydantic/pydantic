@@ -659,7 +659,13 @@ class ConfigDict(TypedDict, total=False):
             also_protect_field: str
             protect_this: str
 
-            model_config = ConfigDict(protected_namespaces=('protect_me_', 'also_protect_', re.compile('^protect_this$')))
+            model_config = ConfigDict(
+                protected_namespaces=(
+                    'protect_me_',
+                    'also_protect_',
+                    re.compile('^protect_this$'),
+                )
+            )
 
 
     for warning in caught_warnings:
