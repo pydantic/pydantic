@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://docs.pydantic.dev/latest/concepts/alias/">
+        <link rel="canonical" href="https://docs.pydantic.dev/latest/examples/orms/">
       
       
-        <link rel="prev" href="../unions/">
+        <link rel="prev" href="../queues/">
       
       
-        <link rel="next" href="../config/">
+        <link rel="next" href="../custom_validators/">
       
       
       <link rel="icon" href="../../favicon.png">
@@ -24,7 +24,7 @@
     
     
       
-        <title>Alias - Pydantic</title>
+        <title>Databases - Pydantic</title>
       
     
     
@@ -84,7 +84,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#aliaspath-and-aliaschoices" class="md-skip">
+        <a href="#sqlalchemy" class="md-skip">
           Skip to content
         </a>
       
@@ -142,7 +142,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Alias
+              Databases
             
           </span>
         </div>
@@ -267,13 +267,11 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
         
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../models/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../concepts/models/" class="md-tabs__link">
           
   
   Concepts
@@ -331,11 +329,13 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
         
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../examples/files/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../files/" class="md-tabs__link">
           
   
   Examples
@@ -688,30 +688,25 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
       
   
   
-    
   
   
-  
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
         
           
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -722,7 +717,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             Concepts
@@ -736,7 +731,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../models/" class="md-nav__link">
+      <a href="../../concepts/models/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -757,7 +752,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../fields/" class="md-nav__link">
+      <a href="../../concepts/fields/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -778,7 +773,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../json_schema/" class="md-nav__link">
+      <a href="../../concepts/json_schema/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -799,7 +794,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../json/" class="md-nav__link">
+      <a href="../../concepts/json/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -820,7 +815,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../types/" class="md-nav__link">
+      <a href="../../concepts/types/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -841,7 +836,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../unions/" class="md-nav__link">
+      <a href="../../concepts/unions/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -859,28 +854,10 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Alias
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../concepts/alias/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -889,92 +866,6 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="Page contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#aliaspath-and-aliaschoices" class="md-nav__link">
-    <span class="md-ellipsis">
-      AliasPath and AliasChoices
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-alias-generators" class="md-nav__link">
-    <span class="md-ellipsis">
-      Using alias generators
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Using alias generators">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#using-a-callable" class="md-nav__link">
-    <span class="md-ellipsis">
-      Using a callable
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#using-an-aliasgenerator" class="md-nav__link">
-    <span class="md-ellipsis">
-      Using an AliasGenerator
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#alias-precedence" class="md-nav__link">
-    <span class="md-ellipsis">
-      Alias Precedence
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Alias Precedence">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#alias-priority" class="md-nav__link">
-    <span class="md-ellipsis">
-      Alias Priority
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -987,7 +878,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../config/" class="md-nav__link">
+      <a href="../../concepts/config/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1008,7 +899,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../serialization/" class="md-nav__link">
+      <a href="../../concepts/serialization/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1029,7 +920,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../validators/" class="md-nav__link">
+      <a href="../../concepts/validators/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1050,7 +941,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../dataclasses/" class="md-nav__link">
+      <a href="../../concepts/dataclasses/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1071,7 +962,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../postponed_annotations/" class="md-nav__link">
+      <a href="../../concepts/postponed_annotations/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1092,7 +983,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../strict_mode/" class="md-nav__link">
+      <a href="../../concepts/strict_mode/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1113,7 +1004,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../type_adapter/" class="md-nav__link">
+      <a href="../../concepts/type_adapter/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1134,7 +1025,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../validation_decorator/" class="md-nav__link">
+      <a href="../../concepts/validation_decorator/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1155,7 +1046,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../conversion_table/" class="md-nav__link">
+      <a href="../../concepts/conversion_table/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1176,7 +1067,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_settings/" class="md-nav__link">
+      <a href="../../concepts/pydantic_settings/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1197,7 +1088,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../performance/" class="md-nav__link">
+      <a href="../../concepts/performance/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1218,7 +1109,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../experimental/" class="md-nav__link">
+      <a href="../../concepts/experimental/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2210,25 +2101,30 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
       
   
   
+    
   
   
+  
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -2239,7 +2135,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Examples
@@ -2253,7 +2149,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../../examples/files/" class="md-nav__link">
+      <a href="../files/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2274,7 +2170,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../../examples/requests/" class="md-nav__link">
+      <a href="../requests/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2295,7 +2191,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../../examples/queues/" class="md-nav__link">
+      <a href="../queues/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2313,10 +2209,28 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../examples/orms/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Databases
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -2325,6 +2239,35 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#sqlalchemy" class="md-nav__link">
+    <span class="md-ellipsis">
+      SQLAlchemy
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2337,7 +2280,7 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
   
     <li class="md-nav__item">
-      <a href="../../examples/custom_validators/" class="md-nav__link">
+      <a href="../custom_validators/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2867,68 +2810,11 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#aliaspath-and-aliaschoices" class="md-nav__link">
+  <a href="#sqlalchemy" class="md-nav__link">
     <span class="md-ellipsis">
-      AliasPath and AliasChoices
+      SQLAlchemy
     </span>
   </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-alias-generators" class="md-nav__link">
-    <span class="md-ellipsis">
-      Using alias generators
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Using alias generators">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#using-a-callable" class="md-nav__link">
-    <span class="md-ellipsis">
-      Using a callable
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#using-an-aliasgenerator" class="md-nav__link">
-    <span class="md-ellipsis">
-      Using an AliasGenerator
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#alias-precedence" class="md-nav__link">
-    <span class="md-ellipsis">
-      Alias Precedence
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Alias Precedence">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#alias-priority" class="md-nav__link">
-    <span class="md-ellipsis">
-      Alias Priority
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -2951,191 +2837,61 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
   
 
 
-  <h1>Alias</h1>
+  <h1>Databases</h1>
 
-<p>An alias is an alternative name for a field, used when serializing and deserializing data.</p>
-<p>You can specify an alias in the following ways:</p>
-<ul>
-<li><code>alias</code> on the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a><ul>
-<li>must be a <code>str</code></li>
-</ul>
-</li>
-<li><code>validation_alias</code> on the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a><ul>
-<li>can be an instance of <code>str</code>, <a class="autorefs autorefs-internal" href="../../api/aliases/#pydantic.aliases.AliasPath"><code>AliasPath</code></a>, or <a class="autorefs autorefs-internal" href="../../api/aliases/#pydantic.aliases.AliasChoices"><code>AliasChoices</code></a></li>
-</ul>
-</li>
-<li><code>serialization_alias</code> on the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a><ul>
-<li>must be a <code>str</code></li>
-</ul>
-</li>
-<li><code>alias_generator</code> on the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.alias_generator"><code>Config</code></a><ul>
-<li>can be a callable or an instance of <a class="autorefs autorefs-internal" href="../../api/aliases/#pydantic.aliases.AliasGenerator"><code>AliasGenerator</code></a></li>
-</ul>
-</li>
-</ul>
-<p>For examples of how to use <code>alias</code>, <code>validation_alias</code>, and <code>serialization_alias</code>, see <a href="../fields/#field-aliases">Field aliases</a>.</p>
-<h2 id="aliaspath-and-aliaschoices"><code>AliasPath</code> and <code>AliasChoices</code><a class="headerlink" href="#aliaspath-and-aliaschoices" title="Permanent link">&para;</a></h2>
-<details class="api">
-<summary>API Documentation</summary>
-<p><a class="autorefs autorefs-internal" href="../../api/aliases/#pydantic.aliases.AliasPath"><code>pydantic.aliases.AliasPath</code></a><br>
-<a class="autorefs autorefs-internal" href="../../api/aliases/#pydantic.aliases.AliasChoices"><code>pydantic.aliases.AliasChoices</code></a><br></p>
-</details>
-<p>Pydantic provides two special types for convenience when using <code>validation_alias</code>: <code>AliasPath</code> and <code>AliasChoices</code>.</p>
-<p>The <code>AliasPath</code> is used to specify a path to a field using aliases. For example:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">AliasPath</span>
+<div class="admonition warning">
+<p class="admonition-title">🚧 Work in Progress</p>
+<p>This page is a work in progress. More examples will be added soon.</p>
+</div>
+<p>Pydantic serves as a great tool for defining models for ORM (object relational mapping) libraries.
+ORMs are used to map objects to database tables, and vice versa.</p>
+<h2 id="sqlalchemy">SQLAlchemy<a class="headerlink" href="#sqlalchemy" title="Permanent link">&para;</a></h2>
+<p>Pydantic can pair with SQLAlchemy, as it can be used to define the schema of the database models.</p>
+<div class="admonition warning">
+<p class="admonition-title">Code Duplication</p>
+<p>If you use Pydantic with SQLAlchemy, you might experience some frustration with code duplication.
+If you find yourself experiencing this difficulty, you might also consider <a href="https://sqlmodel.tiangolo.com/"><code>SQLModel</code></a> which integrates Pydantic with SQLAlchemy such that much of the code duplication is eliminated.</p>
+</div>
+<p>If you'd prefer to use pure Pydantic with SQLAlchemy, we recommend using Pydantic models alongside of SQLAlchemy models
+as shown in the example below. In this case, we take advantage of Pydantic's aliases feature to name a <code>Column</code> after a reserved SQLAlchemy field, thus avoiding conflicts.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">typing</span>
+
+<span class="kn">import</span> <span class="nn">sqlalchemy</span> <span class="k">as</span> <span class="nn">sa</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">declarative_base</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
 
 
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">first_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasPath</span><span class="p">(</span><span class="s1">&#39;names&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
-    <span class="n">last_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasPath</span><span class="p">(</span><span class="s1">&#39;names&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">from_attributes</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;names&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="s1">&#39;Doe&#39;</span><span class="p">]})</span>  <span class="c1"># (1)!</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
-<span class="c1">#&gt; first_name=&#39;John&#39; last_name=&#39;Doe&#39;</span>
+    <span class="n">metadata</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;metadata_&#39;</span><span class="p">)</span>
+
+
+<span class="n">Base</span> <span class="o">=</span> <span class="n">declarative_base</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">MyTableModel</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;my_table&#39;</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># &#39;metadata&#39; is reserved by SQLAlchemy, hence the &#39;_&#39;</span>
+    <span class="n">metadata_</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="s1">&#39;metadata&#39;</span><span class="p">,</span> <span class="n">sa</span><span class="o">.</span><span class="n">JSON</span><span class="p">)</span>
+
+
+<span class="n">sql_model</span> <span class="o">=</span> <span class="n">MyTableModel</span><span class="p">(</span><span class="n">metadata_</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;val&#39;</span><span class="p">},</span> <span class="nb">id</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">pydantic_model</span> <span class="o">=</span> <span class="n">MyModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">sql_model</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">pydantic_model</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;metadata&#39;: {&#39;key&#39;: &#39;val&#39;}}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pydantic_model</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="c1">#&gt; {&#39;metadata_&#39;: {&#39;key&#39;: &#39;val&#39;}}</span>
 </code></pre></div>
-<ol>
-<li>
-<p>We are using <code>model_validate</code> to validate a dictionary using the field aliases.</p>
-<p>You can see more details about <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate</code></a> in the API reference.</p>
-</li>
-</ol>
-<p>In the <code>'first_name'</code> field, we are using the alias <code>'names'</code> and the index <code>0</code> to specify the path to the first name.
-In the <code>'last_name'</code> field, we are using the alias <code>'names'</code> and the index <code>1</code> to specify the path to the last name.</p>
-<p><code>AliasChoices</code> is used to specify a choice of aliases. For example:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">AliasChoices</span>
-
-
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">first_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;first_name&#39;</span><span class="p">,</span> <span class="s1">&#39;fname&#39;</span><span class="p">))</span>
-    <span class="n">last_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;last_name&#39;</span><span class="p">,</span> <span class="s1">&#39;lname&#39;</span><span class="p">))</span>
-
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;fname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="s1">&#39;lname&#39;</span><span class="p">:</span> <span class="s1">&#39;Doe&#39;</span><span class="p">})</span>  <span class="c1"># (1)!</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
-<span class="c1">#&gt; first_name=&#39;John&#39; last_name=&#39;Doe&#39;</span>
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;first_name&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="s1">&#39;lname&#39;</span><span class="p">:</span> <span class="s1">&#39;Doe&#39;</span><span class="p">})</span>  <span class="c1"># (2)!</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
-<span class="c1">#&gt; first_name=&#39;John&#39; last_name=&#39;Doe&#39;</span>
-</code></pre></div>
-<ol>
-<li>We are using the second alias choice for both fields.</li>
-<li>We are using the first alias choice for the field <code>'first_name'</code> and the second alias choice
-   for the field <code>'last_name'</code>.</li>
-</ol>
-<p>You can also use <code>AliasChoices</code> with <code>AliasPath</code>:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">AliasPath</span><span class="p">,</span> <span class="n">AliasChoices</span>
-
-
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">first_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;first_name&#39;</span><span class="p">,</span> <span class="n">AliasPath</span><span class="p">(</span><span class="s1">&#39;names&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)))</span>
-    <span class="n">last_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;last_name&#39;</span><span class="p">,</span> <span class="n">AliasPath</span><span class="p">(</span><span class="s1">&#39;names&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
-
-
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;first_name&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="s1">&#39;last_name&#39;</span><span class="p">:</span> <span class="s1">&#39;Doe&#39;</span><span class="p">})</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
-<span class="c1">#&gt; first_name=&#39;John&#39; last_name=&#39;Doe&#39;</span>
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;names&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="s1">&#39;Doe&#39;</span><span class="p">]})</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
-<span class="c1">#&gt; first_name=&#39;John&#39; last_name=&#39;Doe&#39;</span>
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;names&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;John&#39;</span><span class="p">],</span> <span class="s1">&#39;last_name&#39;</span><span class="p">:</span> <span class="s1">&#39;Doe&#39;</span><span class="p">})</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
-<span class="c1">#&gt; first_name=&#39;John&#39; last_name=&#39;Doe&#39;</span>
-</code></pre></div>
-<h2 id="using-alias-generators">Using alias generators<a class="headerlink" href="#using-alias-generators" title="Permanent link">&para;</a></h2>
-<p>You can use the <code>alias_generator</code> parameter of <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict.alias_generator"><code>Config</code></a> to specify
-a callable (or group of callables, via <code>AliasGenerator</code>) that will generate aliases for all fields in a model.
-This is useful if you want to use a consistent naming convention for all fields in a model, but do not
-want to specify the alias for each field individually.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Pydantic offers three built-in alias generators that you can use out of the box:</p>
-<p><a class="autorefs autorefs-internal" href="../../api/config/#pydantic.alias_generators.to_pascal"><code>to_pascal</code></a><br>
-<a class="autorefs autorefs-internal" href="../../api/config/#pydantic.alias_generators.to_camel"><code>to_camel</code></a><br>
-<a class="autorefs autorefs-internal" href="../../api/config/#pydantic.alias_generators.to_snake"><code>to_snake</code></a><br></p>
+<p>The example above works because aliases have priority over field names for
+field population. Accessing <code>SQLModel</code>'s <code>metadata</code> attribute would lead to a <code>ValidationError</code>.</p>
 </div>
-<h3 id="using-a-callable">Using a callable<a class="headerlink" href="#using-a-callable" title="Permanent link">&para;</a></h3>
-<p>Here's a basic example using a callable:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
-
-
-<span class="k">class</span> <span class="nc">Tree</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span>
-        <span class="n">alias_generator</span><span class="o">=</span><span class="k">lambda</span> <span class="n">field_name</span><span class="p">:</span> <span class="n">field_name</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
-    <span class="p">)</span>
-
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">height</span><span class="p">:</span> <span class="nb">float</span>
-    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="n">t</span> <span class="o">=</span> <span class="n">Tree</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;AGE&#39;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span> <span class="s1">&#39;HEIGHT&#39;</span><span class="p">:</span> <span class="mf">1.2</span><span class="p">,</span> <span class="s1">&#39;KIND&#39;</span><span class="p">:</span> <span class="s1">&#39;oak&#39;</span><span class="p">})</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-<span class="c1">#&gt; {&#39;AGE&#39;: 12, &#39;HEIGHT&#39;: 1.2, &#39;KIND&#39;: &#39;oak&#39;}</span>
-</code></pre></div>
-<h3 id="using-an-aliasgenerator">Using an <code>AliasGenerator</code><a class="headerlink" href="#using-an-aliasgenerator" title="Permanent link">&para;</a></h3>
-<details class="api">
-<summary>API Documentation</summary>
-<p><a class="autorefs autorefs-internal" href="../../api/aliases/#pydantic.aliases.AliasGenerator"><code>pydantic.aliases.AliasGenerator</code></a><br></p>
-</details>
-<p><code>AliasGenerator</code> is a class that allows you to specify multiple alias generators for a model.
-You can use an <code>AliasGenerator</code> to specify different alias generators for validation and serialization.</p>
-<p>This is particularly useful if you need to use different naming conventions for loading and saving data,
-but you don't want to specify the validation and serialization aliases for each field individually.</p>
-<p>For example:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AliasGenerator</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
-
-
-<span class="k">class</span> <span class="nc">Tree</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span>
-        <span class="n">alias_generator</span><span class="o">=</span><span class="n">AliasGenerator</span><span class="p">(</span>
-            <span class="n">validation_alias</span><span class="o">=</span><span class="k">lambda</span> <span class="n">field_name</span><span class="p">:</span> <span class="n">field_name</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
-            <span class="n">serialization_alias</span><span class="o">=</span><span class="k">lambda</span> <span class="n">field_name</span><span class="p">:</span> <span class="n">field_name</span><span class="o">.</span><span class="n">title</span><span class="p">(),</span>
-        <span class="p">)</span>
-    <span class="p">)</span>
-
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">height</span><span class="p">:</span> <span class="nb">float</span>
-    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="n">t</span> <span class="o">=</span> <span class="n">Tree</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;AGE&#39;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span> <span class="s1">&#39;HEIGHT&#39;</span><span class="p">:</span> <span class="mf">1.2</span><span class="p">,</span> <span class="s1">&#39;KIND&#39;</span><span class="p">:</span> <span class="s1">&#39;oak&#39;</span><span class="p">})</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-<span class="c1">#&gt; {&#39;Age&#39;: 12, &#39;Height&#39;: 1.2, &#39;Kind&#39;: &#39;oak&#39;}</span>
-</code></pre></div>
-<h2 id="alias-precedence">Alias Precedence<a class="headerlink" href="#alias-precedence" title="Permanent link">&para;</a></h2>
-<p>If you specify an <code>alias</code> on the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a>, it will take precedence over the generated alias by default:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
-
-
-<span class="k">def</span> <span class="nf">to_camel</span><span class="p">(</span><span class="n">string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">word</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span> <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">))</span>
-
-
-<span class="k">class</span> <span class="nc">Voice</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">alias_generator</span><span class="o">=</span><span class="n">to_camel</span><span class="p">)</span>
-
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">language_code</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;lang&#39;</span><span class="p">)</span>
-
-
-<span class="n">voice</span> <span class="o">=</span> <span class="n">Voice</span><span class="p">(</span><span class="n">Name</span><span class="o">=</span><span class="s1">&#39;Filiz&#39;</span><span class="p">,</span> <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;tr-TR&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">voice</span><span class="o">.</span><span class="n">language_code</span><span class="p">)</span>
-<span class="c1">#&gt; tr-TR</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">voice</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-<span class="c1">#&gt; {&#39;Name&#39;: &#39;Filiz&#39;, &#39;lang&#39;: &#39;tr-TR&#39;}</span>
-</code></pre></div>
-<h3 id="alias-priority">Alias Priority<a class="headerlink" href="#alias-priority" title="Permanent link">&para;</a></h3>
-<p>You may set <code>alias_priority</code> on a field to change this behavior:</p>
-<ul>
-<li><code>alias_priority=2</code> the alias will <em>not</em> be overridden by the alias generator.</li>
-<li><code>alias_priority=1</code> the alias <em>will</em> be overridden by the alias generator.</li>
-<li><code>alias_priority</code> not set:<ul>
-<li>alias is set: the alias will <em>not</em> be overridden by the alias generator.</li>
-<li>alias is not set: the alias <em>will</em> be overridden by the alias generator.</li>
-</ul>
-</li>
-</ul>
-<p>The same precedence applies to <code>validation_alias</code> and <code>serialization_alias</code>.
-See more about the different field aliases under <a href="../fields/#field-aliases">field aliases</a>.</p>
+<!-- TODO: add examples for Django with Pydantic models -->
 
 
 

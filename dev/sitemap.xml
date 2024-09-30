@@ -273,11 +273,23 @@
          <lastmod>2024-09-30</lastmod>
     </url>
     <url>
-         <loc>https://docs.pydantic.dev/latest/examples/secrets/</loc>
+         <loc>https://docs.pydantic.dev/latest/examples/custom_validators/</loc>
          <lastmod>2024-09-30</lastmod>
     </url>
     <url>
-         <loc>https://docs.pydantic.dev/latest/examples/validators/</loc>
+         <loc>https://docs.pydantic.dev/latest/examples/files/</loc>
+         <lastmod>2024-09-30</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.pydantic.dev/latest/examples/orms/</loc>
+         <lastmod>2024-09-30</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.pydantic.dev/latest/examples/queues/</loc>
+         <lastmod>2024-09-30</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.pydantic.dev/latest/examples/requests/</loc>
          <lastmod>2024-09-30</lastmod>
     </url>
     <url>
