@@ -100,6 +100,8 @@ def literal_values(type_: type[Any]) -> tuple[Any, ...]:
     return get_args(type_)
 
 
+# TODO remove when we drop support for Python 3.8
+# (see https://docs.python.org/3/whatsnew/3.9.html#id4).
 def all_literal_values(type_: type[Any]) -> list[Any]:
     """This method is used to retrieve all Literal values as
     Literal can be used recursively (see https://www.python.org/dev/peps/pep-0586)

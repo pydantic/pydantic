@@ -1265,7 +1265,7 @@ class GenerateSchema:
         # Update FieldInfo annotation if appropriate:
         FieldInfo = import_cached_field_info()
 
-        if has_instance_in_type(field_info.annotation, ForwardRef):
+        if has_instance_in_type(field_info.annotation, (ForwardRef, str)):
             types_namespace = self._types_namespace
             if self._typevars_map:
                 types_namespace = (types_namespace or {}).copy()
