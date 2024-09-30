@@ -6,10 +6,14 @@ ORMs are used to map objects to database tables, and vice versa.
 
 ## SQLAlchemy
 
-Pydantic pairs quite well with SQLAlchemy, as it can be used to define the schema of the database models.
+Pydantic can pair with SQLAlchemy, as it can be used to define the schema of the database models.
 
-Here's a simple example of how you can use a Pydantic model to validate data from a SQLAlchemy model.
-In this example, we take advantage of field aliases to name a `Column` after a reserved SQLAlchemy field, thus avoiding conflicts.
+!!! warning "Code Duplication"
+    If you use Pydantic with SQLAlchemy, you might experience some frustration with code duplication.
+    If you find yourself experiencing this difficulty, you might also consider [`SQLModel`](https://sqlmodel.tiangolo.com/) which integrates Pydantic with SQLAlchemy such that much of the code duplication is eliminated.
+
+If you'd prefer to use pure Pydantic with SQLAlchemy, we recommend using Pydantic models alongside of SQLAlchemy models
+as shown in the example below. In this case, we take advantage of Pydantic's aliases feature to name a `Column` after a reserved SQLAlchemy field, thus avoiding conflicts.
 
 ```py
 import typing
@@ -48,8 +52,5 @@ print(pydantic_model.model_dump(by_alias=True))
 !!! note
     The example above works because aliases have priority over field names for
     field population. Accessing `SQLModel`'s `metadata` attribute would lead to a `ValidationError`.
-
-!!! note
-    You might also consider [`SQLModel`](https://sqlmodel.tiangolo.com/) which integrates Pydantic with SQLAlchemy.
 
 <!-- TODO: add examples for Django with Pydantic models -->
