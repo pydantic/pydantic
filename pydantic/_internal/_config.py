@@ -18,7 +18,7 @@ from typing_extensions import (
 from ..aliases import AliasGenerator
 from ..config import ConfigDict, ExtraValues, JsonDict, JsonEncoder, JsonSchemaExtraCallable
 from ..errors import PydanticUserError
-from ..warnings import PydanticDeprecatedSince20
+from ..warnings import PydanticDeprecatedSince20, PydanticDeprecatedSince210
 
 if not TYPE_CHECKING:
     # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
@@ -26,6 +26,7 @@ if not TYPE_CHECKING:
     DeprecationWarning = PydanticDeprecatedSince20
 
 if TYPE_CHECKING:
+    from .._internal._schema_generation_shared import GenerateSchema
     from ..fields import ComputedFieldInfo, FieldInfo
 
 DEPRECATION_MESSAGE = 'Support for class-based `config` is deprecated, use ConfigDict instead.'
@@ -68,7 +69,7 @@ class ConfigWrapper:
     strict: bool
     # whether instances of models and dataclasses (including subclass instances) should re-validate, default 'never'
     revalidate_instances: Literal['always', 'never', 'subclass-instances']
-    ser_json_timedelta: Literal['iso8601', 'float']
+    ser_json_timedelta: Literal['iso8601', 'seconds_float', 'milliseconds_float']
     ser_json_bytes: Literal['utf8', 'base64', 'hex']
     val_json_bytes: Literal['utf8', 'base64', 'hex']
     ser_json_inf_nan: Literal['null', 'constants', 'strings']
@@ -79,6 +80,7 @@ class ConfigWrapper:
     hide_input_in_errors: bool
     defer_build: bool
     plugin_settings: dict[str, object] | None
+    schema_generator: type[GenerateSchema] | None
     json_schema_serialization_defaults_required: bool
     json_schema_mode_override: Literal['validation', 'serialization', None]
     coerce_numbers_to_str: bool
@@ -165,6 +167,21 @@ class ConfigWrapper:
             A `CoreConfig` object created from config.
         """
         config = self.config_dict
+
+        if config.get('schema_generator') is not None:
+            warnings.warn(
+                'The `schema_generator` setting has been deprecated since v2.10. This setting no longer has any effect.',
+                PydanticDeprecatedSince210,
+                stacklevel=2,
+            )
+
+        if config.get('ser_json_timedelta') == 'float':
+            warnings.warn(
+                'The `float` option for `ser_json_timedelta` has been deprecated in favor of `seconds_float`. Please use this setting instead.',
+                PydanticDeprecatedSince210,
+                stacklevel=2,
+            )
+            config['ser_json_timedelta'] = 'seconds_float'
 
         core_config_values = {
             'title': config.get('title') or (obj and obj.__name__),
@@ -259,6 +276,7 @@ config_defaults = ConfigDict(
     hide_input_in_errors=False,
     json_encoders=None,
     defer_build=False,
+    schema_generator=None,
     plugin_settings=None,
     json_schema_serialization_defaults_required=False,
     json_schema_mode_override=None,

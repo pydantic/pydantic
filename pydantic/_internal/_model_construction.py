@@ -41,8 +41,8 @@ from ._utils import ClassAttribute, SafeGetItemProxy
 from ._validate_call import ValidateCallWrapper
 
 if typing.TYPE_CHECKING:
+    from ..fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
     from ..fields import Field as PydanticModelField
-    from ..fields import FieldInfo, ModelPrivateAttr
     from ..fields import PrivateAttr as PydanticModelPrivateAttr
     from ..main import BaseModel
 else:
@@ -234,7 +234,9 @@ class ModelMetaclass(ABCMeta):
 
             # If this is placed before the complete_model_class call above,
             # the generic computed fields return type is set to PydanticUndefined
-            cls.model_computed_fields = {k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()}
+            cls.__pydantic_computed_fields__ = {
+                k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()
+            }
 
             set_deprecated_descriptors(cls)
 
@@ -340,7 +342,7 @@ class ModelMetaclass(ABCMeta):
         for base in bases:
             if issubclass(base, BaseModel) and base is not BaseModel:
                 # model_fields might not be defined yet in the case of generics, so we use getattr here:
-                field_names.update(getattr(base, 'model_fields', {}).keys())
+                field_names.update(getattr(base, '__pydantic_fields__', {}).keys())
                 class_vars.update(base.__class_vars__)
                 private_attributes.update(base.__private_attributes__)
         return field_names, class_vars, private_attributes
@@ -349,9 +351,29 @@ class ModelMetaclass(ABCMeta):
     @deprecated('The `__fields__` attribute is deprecated, use `model_fields` instead.', category=None)
     def __fields__(self) -> dict[str, FieldInfo]:
         warnings.warn(
-            'The `__fields__` attribute is deprecated, use `model_fields` instead.', PydanticDeprecatedSince20
+            'The `__fields__` attribute is deprecated, use `model_fields` instead.',
+            PydanticDeprecatedSince20,
+            stacklevel=2,
         )
-        return self.model_fields  # type: ignore
+        return self.model_fields
+
+    @property
+    def model_fields(self) -> dict[str, FieldInfo]:
+        """Get metadata about the fields defined on the model.
+
+        Returns:
+            A mapping of field names to [`FieldInfo`][pydantic.fields.FieldInfo] objects.
+        """
+        return getattr(self, '__pydantic_fields__', {})
+
+    @property
+    def model_computed_fields(self) -> dict[str, ComputedFieldInfo]:
+        """Get metadata about the computed fields defined on the model.
+
+        Returns:
+            A mapping of computed field names to [`ComputedFieldInfo`][pydantic.fields.ComputedFieldInfo] objects.
+        """
+        return getattr(self, '__pydantic_computed_fields__', {})
 
     def __dir__(self) -> list[str]:
         attributes = list(super().__dir__())
@@ -540,7 +562,7 @@ def set_default_hash_func(cls: type[BaseModel], bases: tuple[type[Any], ...]) ->
 
 
 def make_hash_func(cls: type[BaseModel]) -> Any:
-    getter = operator.itemgetter(*cls.model_fields.keys()) if cls.model_fields else lambda _: 0
+    getter = operator.itemgetter(*cls.__pydantic_fields__.keys()) if cls.__pydantic_fields__ else lambda _: 0
 
     def hash_func(self: Any) -> int:
         try:
@@ -558,7 +580,7 @@ def make_hash_func(cls: type[BaseModel]) -> Any:
 def set_model_fields(
     cls: type[BaseModel], bases: tuple[type[Any], ...], config_wrapper: ConfigWrapper, types_namespace: dict[str, Any]
 ) -> None:
-    """Collect and set `cls.model_fields` and `cls.__class_vars__`.
+    """Collect and set `cls.__pydantic_fields__` and `cls.__class_vars__`.
 
     Args:
         cls: BaseModel or dataclass.
@@ -569,7 +591,7 @@ def set_model_fields(
     typevars_map = get_model_typevars_map(cls)
     fields, class_vars = collect_model_fields(cls, bases, config_wrapper, types_namespace, typevars_map=typevars_map)
 
-    cls.model_fields = fields
+    cls.__pydantic_fields__ = fields
     cls.__class_vars__.update(class_vars)
 
     for k in class_vars:
@@ -614,6 +636,10 @@ def complete_model_class(
         PydanticUndefinedAnnotation: If `PydanticUndefinedAnnotation` occurs in`__get_pydantic_core_schema__`
             and `raise_errors=True`.
     """
+    if config_wrapper.defer_build:
+        set_model_mocks(cls, cls_name)
+        return False
+
     typevars_map = get_model_typevars_map(cls)
     gen_schema = GenerateSchema(
         config_wrapper,
@@ -626,10 +652,6 @@ def complete_model_class(
         gen_schema,
         ref_mode='unpack',
     )
-
-    if config_wrapper.defer_build:
-        set_model_mocks(cls, cls_name)
-        return False
 
     try:
         schema = cls.__get_pydantic_core_schema__(cls, handler)
@@ -665,20 +687,20 @@ def complete_model_class(
     # set __signature__ attr only for model class, but not for its instances
     cls.__signature__ = ClassAttribute(
         '__signature__',
-        generate_pydantic_signature(init=cls.__init__, fields=cls.model_fields, config_wrapper=config_wrapper),
+        generate_pydantic_signature(init=cls.__init__, fields=cls.__pydantic_fields__, config_wrapper=config_wrapper),
     )
     return True
 
 
 def set_deprecated_descriptors(cls: type[BaseModel]) -> None:
     """Set data descriptors on the class for deprecated fields."""
-    for field, field_info in cls.model_fields.items():
+    for field, field_info in cls.__pydantic_fields__.items():
         if (msg := field_info.deprecation_message) is not None:
             desc = _DeprecatedFieldDescriptor(msg)
             desc.__set_name__(cls, field)
             setattr(cls, field, desc)
 
-    for field, computed_field_info in cls.model_computed_fields.items():
+    for field, computed_field_info in cls.__pydantic_computed_fields__.items():
         if (
             (msg := computed_field_info.deprecation_message) is not None
             # Avoid having two warnings emitted:

@@ -11,9 +11,9 @@ import warnings
 from collections.abc import Callable
 from functools import partial
 from types import GetSetDescriptorType
-from typing import TYPE_CHECKING, Any, Final, Iterable
+from typing import TYPE_CHECKING, Any, Final
 
-from typing_extensions import Annotated, Literal, TypeAliasType, TypeGuard, deprecated, get_args, get_origin
+from typing_extensions import Annotated, Literal, TypeAliasType, TypeGuard, Unpack, deprecated, get_args, get_origin
 
 if TYPE_CHECKING:
     from ._dataclasses import StandardDataclass
@@ -63,7 +63,11 @@ else:
 
 LITERAL_TYPES: set[Any] = {Literal}
 if hasattr(typing, 'Literal'):
-    LITERAL_TYPES.add(typing.Literal)  # type: ignore
+    LITERAL_TYPES.add(typing.Literal)
+
+UNPACK_TYPES: set[Any] = {Unpack}
+if hasattr(typing, 'Unpack'):
+    UNPACK_TYPES.add(typing.Unpack)  # pyright: ignore[reportAttributeAccessIssue]
 
 # Check if `deprecated` is a type to prevent errors when using typing_extensions < 4.9.0
 DEPRECATED_TYPES: tuple[Any, ...] = (deprecated,) if isinstance(deprecated, type) else ()
@@ -96,6 +100,8 @@ def literal_values(type_: type[Any]) -> tuple[Any, ...]:
     return get_args(type_)
 
 
+# TODO remove when we drop support for Python 3.8
+# (see https://docs.python.org/3/whatsnew/3.9.html#id4).
 def all_literal_values(type_: type[Any]) -> list[Any]:
     """This method is used to retrieve all Literal values as
     Literal can be used recursively (see https://www.python.org/dev/peps/pep-0586)
@@ -114,6 +120,14 @@ def is_annotated(ann_type: Any) -> bool:
 
 def annotated_type(type_: Any) -> Any | None:
     return get_args(type_)[0] if is_annotated(type_) else None
+
+
+def is_unpack(type_: Any) -> bool:
+    return get_origin(type_) in UNPACK_TYPES
+
+
+def unpack_type(type_: Any) -> Any | None:
+    return get_args(type_)[0] if is_unpack(type_) else None
 
 
 def is_namedtuple(type_: type[Any]) -> bool:
@@ -227,17 +241,13 @@ def merge_cls_and_parent_ns(cls: type[Any], parent_namespace: dict[str, Any] | N
     return ns
 
 
-def get_cls_type_hints_lenient(
-    obj: Any, globalns: dict[str, Any] | None = None, mro: Iterable[type[Any]] | None = None
-) -> dict[str, Any]:
+def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None) -> dict[str, Any]:
     """Collect annotations from a class, including those from parent classes.
 
     Unlike `typing.get_type_hints`, this function will not error if a forward reference is not resolvable.
     """
     hints = {}
-    if mro is None:
-        mro = reversed(obj.__mro__)
-    for base in mro:
+    for base in reversed(obj.__mro__):
         ann = base.__dict__.get('__annotations__')
         localns = dict(vars(base))
         if ann is not None and ann is not GetSetDescriptorType:

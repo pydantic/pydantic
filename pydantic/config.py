@@ -11,6 +11,7 @@ from .aliases import AliasGenerator
 from .errors import PydanticUserError
 
 if TYPE_CHECKING:
+    from ._internal._generate_schema import GenerateSchema as _GenerateSchema
     from .fields import ComputedFieldInfo, FieldInfo
 
 __all__ = ('ConfigDict', 'with_config')
@@ -562,13 +563,17 @@ class ConfigDict(TypedDict, total=False):
     3. Using `'never'` we would have gotten `user=SubUser(hobbies=['scuba diving'], sins=['lying'])`.
     """
 
-    ser_json_timedelta: Literal['iso8601', 'float']
+    ser_json_timedelta: Literal['iso8601', 'seconds_float', 'milliseconds_float']
     """
-    The format of JSON serialized timedeltas. Accepts the string values of `'iso8601'` and
-    `'float'`. Defaults to `'iso8601'`.
+    The format of JSON serialized timedeltas. Accepts the string values of `'iso8601'`,
+    `'seconds_float'`, and `'milliseconds_float'`. Defaults to `'iso8601'`.
 
     - `'iso8601'` will serialize timedeltas to ISO 8601 durations.
-    - `'float'` will serialize timedeltas to the total number of seconds.
+    - `'seconds_float'` will serialize timedeltas to the total number of seconds.
+    - `'milliseconds_float'` will serialize timedeltas to the total number of milliseconds.
+
+    !!! warning
+        `'float' is deprecated in v2.10 in favour of `'milliseconds_float'`
     """
 
     ser_json_bytes: Literal['utf8', 'base64', 'hex']
@@ -747,6 +752,16 @@ class ConfigDict(TypedDict, total=False):
 
     plugin_settings: dict[str, object] | None
     """A `dict` of settings for plugins. Defaults to `None`."""
+
+    schema_generator: type[_GenerateSchema] | None
+    """
+    !!! warning
+        `schema_generator` is deprecated in v2.10.
+
+        Prior to v2.10, this setting was advertised as highly subject to change.
+        It's possible that this interface may once again become public once the internal core schema generation
+        API is more stable, but that will likely come after significant performance improvements have been made.
+    """
 
     json_schema_serialization_defaults_required: bool
     """

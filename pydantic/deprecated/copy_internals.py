@@ -40,11 +40,11 @@ def _iter(
     # The extra "is not None" guards are not logically necessary but optimizes performance for the simple case.
     if exclude is not None:
         exclude = _utils.ValueItems.merge(
-            {k: v.exclude for k, v in self.model_fields.items() if v.exclude is not None}, exclude
+            {k: v.exclude for k, v in self.__pydantic_fields__.items() if v.exclude is not None}, exclude
         )
 
     if include is not None:
-        include = _utils.ValueItems.merge({k: True for k in self.model_fields}, include, intersect=True)
+        include = _utils.ValueItems.merge({k: True for k in self.__pydantic_fields__}, include, intersect=True)
 
     allowed_keys = _calculate_keys(self, include=include, exclude=exclude, exclude_unset=exclude_unset)  # type: ignore
     if allowed_keys is None and not (to_dict or by_alias or exclude_unset or exclude_defaults or exclude_none):
@@ -68,15 +68,15 @@ def _iter(
 
         if exclude_defaults:
             try:
-                field = self.model_fields[field_key]
+                field = self.__pydantic_fields__[field_key]
             except KeyError:
                 pass
             else:
                 if not field.is_required() and field.default == v:
                     continue
 
-        if by_alias and field_key in self.model_fields:
-            dict_key = self.model_fields[field_key].alias or field_key
+        if by_alias and field_key in self.__pydantic_fields__:
+            dict_key = self.__pydantic_fields__[field_key].alias or field_key
         else:
             dict_key = field_key
 

@@ -51,7 +51,7 @@ dependencies = [
     'typing-extensions>=4.6.1; python_version < "3.13"',
     'typing-extensions>=4.12.2; python_version >= "3.13"',
     'annotated-types>=0.6.0',
-    "pydantic-core==2.23.4",
+    "pydantic-core==2.24.0",
 ]
 dynamic = ['version', 'readme']
 
@@ -220,8 +220,7 @@ pydocstyle = { convention = 'google' }
 [tool.ruff.lint.extend-per-file-ignores]
 "docs/**/*.py" = ['T']
 "tests/**/*.py" = ['T', 'E721', 'F811']
-"tests/benchmarks/test_fastapi_startup_generics.py" = ['UP006', 'UP007']
-"tests/benchmarks/test_fastapi_startup_simple.py" = ['UP006', 'UP007']
+"tests/benchmarks/**/*.py" = ['UP006', 'UP007']
 
 [tool.ruff.format]
 quote-style = 'single'
