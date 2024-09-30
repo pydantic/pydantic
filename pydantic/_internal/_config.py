@@ -6,6 +6,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Pattern,
     cast,
 )
 
@@ -76,7 +77,7 @@ class ConfigWrapper:
     # whether to validate default values during validation, default False
     validate_default: bool
     validate_return: bool
-    protected_namespaces: tuple[str, ...]
+    protected_namespaces: tuple[str | Pattern, ...]
     hide_input_in_errors: bool
     defer_build: bool
     plugin_settings: dict[str, object] | None
