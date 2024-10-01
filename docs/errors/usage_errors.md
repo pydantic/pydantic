@@ -1190,7 +1190,7 @@ except PydanticUserError as exc_info:
 ## [`Unpack`][typing.Unpack] used without a [`TypedDict`][typing.TypedDict] {#unpack-typed-dict}
 
 This error is raised when [`Unpack`][typing.Unpack] is used with something other than
-a [`TypedDict`][typing.TypedDict] class object to type hint variadic keyword arguments.
+a [`TypedDict`][typing.TypedDict] class object to type hint variadic keyword parameters.
 
 For reference, see the [related specification section] and [PEP 692].
 
@@ -1211,8 +1211,8 @@ except PydanticUserError as exc_info:
 
 ## Overlapping unpacked [`TypedDict`][typing.TypedDict] fields and arguments {#overlapping-unpack-typed-dict}
 
-This error is raised when the typed dictionary used to type hint variadic keywords arguments
-has field names overlapping with arguments (unless [positional only][positional-only_parameter]).
+This error is raised when the typed dictionary used to type hint variadic keywords parameters has field names
+overlapping with other parameters (unless [positional only][positional-only_parameter]).
 
 For reference, see the [related specification section] and [PEP 692].
 

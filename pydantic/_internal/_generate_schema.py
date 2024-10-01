@@ -256,7 +256,7 @@ def modify_model_json_schema(
     schema_or_field: CoreSchemaOrField,
     handler: GetJsonSchemaHandler,
     *,
-    cls: Any,
+    cls: type[Any],
     title: str | None = None,
 ) -> JsonSchemaValue:
     """Add title and description for model-like classes' JSON schema.
@@ -270,9 +270,7 @@ def modify_model_json_schema(
     Returns:
         JsonSchemaValue: The updated JSON schema.
     """
-    from ..dataclasses import is_pydantic_dataclass
     from ..root_model import RootModel
-    from ._dataclasses import is_builtin_dataclass
 
     BaseModel = import_cached_base_model()
 
@@ -282,12 +280,12 @@ def modify_model_json_schema(
         original_schema['title'] = title
     elif 'title' not in original_schema:
         original_schema['title'] = cls.__name__
-    # BaseModel + Dataclass; don't use cls.__doc__ as it will contain the verbose class signature by default
-    docstring = None if cls is BaseModel or is_builtin_dataclass(cls) or is_pydantic_dataclass(cls) else cls.__doc__
+    # BaseModel and dataclasses; don't use cls.__doc__ as it will contain the verbose class signature by default
+    docstring = None if cls is BaseModel or dataclasses.is_dataclass(cls) else cls.__doc__
     if docstring and 'description' not in original_schema:
         original_schema['description'] = inspect.cleandoc(docstring)
-    elif issubclass(cls, RootModel) and cls.model_fields['root'].description:
-        original_schema['description'] = cls.model_fields['root'].description
+    elif issubclass(cls, RootModel) and cls.__pydantic_fields__['root'].description:
+        original_schema['description'] = cls.__pydantic_fields__['root'].description
     return json_schema
 
 
@@ -671,7 +669,7 @@ class GenerateSchema:
             if maybe_schema is not None:
                 return maybe_schema
 
-            fields = cls.model_fields
+            fields = getattr(cls, '__pydantic_fields__', {})
             decorators = cls.__pydantic_decorators__
             computed_fields = decorators.computed_fields
             check_decorator_fields_exist(
@@ -821,9 +819,12 @@ class GenerateSchema:
                 source, CallbackGetCoreSchemaHandler(self._generate_schema_inner, self, ref_mode=ref_mode)
             )
         elif (
-            (existing_schema := getattr(obj, '__pydantic_core_schema__', None)) is not None
+            hasattr(obj, '__dict__')
+            # In some cases (e.g. a stdlib dataclass subclassing a Pydantic dataclass),
+            # doing an attribute access to get the schema will result in the parent schema
+            # being fetched. Thus, only look for the current obj's dict:
+            and (existing_schema := obj.__dict__.get('__pydantic_core_schema__')) is not None
             and not isinstance(existing_schema, MockCoreSchema)
-            and existing_schema.get('cls', None) == obj
         ):
             schema = existing_schema
         elif (validators := getattr(obj, '__get_validators__', None)) is not None:
@@ -1011,7 +1012,7 @@ class GenerateSchema:
         elif _typing_extra.is_new_type(obj):
             # NewType, can't use isinstance because it fails <3.10
             return self.generate_schema(obj.__supertype__)
-        elif obj == re.Pattern:
+        elif obj is re.Pattern:
             return self._pattern_schema(obj)
         elif obj is collections.abc.Hashable or obj is typing.Hashable:
             return self._hashable_schema()
@@ -1273,7 +1274,7 @@ class GenerateSchema:
         # Update FieldInfo annotation if appropriate:
         FieldInfo = import_cached_field_info()
 
-        if has_instance_in_type(field_info.annotation, ForwardRef):
+        if has_instance_in_type(field_info.annotation, (ForwardRef, str)):
             types_namespace = self._types_namespace
             if self._typevars_map:
                 types_namespace = (types_namespace or {}).copy()
@@ -1738,7 +1739,7 @@ class GenerateSchema:
         ser = core_schema.plain_serializer_function_ser_schema(
             attrgetter('pattern'), when_used='json', return_schema=core_schema.str_schema()
         )
-        if pattern_type == typing.Pattern or pattern_type == re.Pattern:
+        if pattern_type is typing.Pattern or pattern_type is re.Pattern:
             # bare type
             return core_schema.no_info_plain_validator_function(
                 _validators.pattern_either_validator, serialization=ser, metadata=metadata
