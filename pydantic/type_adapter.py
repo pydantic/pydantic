@@ -26,6 +26,7 @@ from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel, IncEx
 
 from ._internal import _config, _generate_schema, _mock_val_ser, _typing_extra, _utils
+from ._internal._namespace_utils import NamespacesTuple, NsResolver
 from .config import ConfigDict
 from .json_schema import (
     DEFAULT_REF_TEMPLATE,
@@ -87,9 +88,12 @@ def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth:
     But at the very least this behavior is _subtly_ different from `BaseModel`'s.
     """
     local_ns = _typing_extra.parent_frame_namespace(parent_depth=parent_depth)
-    global_ns = sys._getframe(max(parent_depth - 1, 1)).f_globals.copy()
-    global_ns.update(local_ns or {})
-    gen = _generate_schema.GenerateSchema(config_wrapper, types_namespace=global_ns, typevars_map={})
+    global_ns = sys._getframe(max(parent_depth - 1, 1)).f_globals
+    ns_resolver = NsResolver(
+        namespaces_tuple=NamespacesTuple(global_ns, local_ns or {}),
+        fallback_namespace=local_ns,
+    )
+    gen = _generate_schema.GenerateSchema(config_wrapper, ns_resolver=ns_resolver, typevars_map={})
     schema = gen.generate_schema(type_)
     schema = gen.clean_schema(schema)
     return schema
