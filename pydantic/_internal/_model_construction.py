@@ -27,6 +27,7 @@ from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import set_model_mocks
+from ._namespace_utils import MappingNamespace, NsResolver
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._signature import generate_pydantic_signature
 from ._typing_extra import (
@@ -34,7 +35,6 @@ from ._typing_extra import (
     eval_type_backport,
     is_annotated,
     is_classvar,
-    merge_cls_and_parent_ns,
     parent_frame_namespace,
 )
 from ._utils import ClassAttribute, SafeGetItemProxy
@@ -213,12 +213,11 @@ class ModelMetaclass(ABCMeta):
 
             if __pydantic_reset_parent_namespace__:
                 cls.__pydantic_parent_namespace__ = build_lenient_weakvaluedict(parent_frame_namespace())
-            parent_namespace = getattr(cls, '__pydantic_parent_namespace__', None)
+            parent_namespace: dict[str, Any] | None = getattr(cls, '__pydantic_parent_namespace__', None)
             if isinstance(parent_namespace, dict):
                 parent_namespace = unpack_lenient_weakvaluedict(parent_namespace)
 
-            types_namespace = merge_cls_and_parent_ns(cls, parent_namespace)
-            set_model_fields(cls, bases, config_wrapper, types_namespace)
+            set_model_fields(cls, bases, config_wrapper, parent_namespace)
 
             if config_wrapper.frozen and '__hash__' not in namespace:
                 set_default_hash_func(cls, bases)
@@ -228,7 +227,6 @@ class ModelMetaclass(ABCMeta):
                 cls_name,
                 config_wrapper,
                 raise_errors=False,
-                types_namespace=types_namespace,
                 create_model_module=_create_model_module,
             )
 
@@ -578,7 +576,10 @@ def make_hash_func(cls: type[BaseModel]) -> Any:
 
 
 def set_model_fields(
-    cls: type[BaseModel], bases: tuple[type[Any], ...], config_wrapper: ConfigWrapper, types_namespace: dict[str, Any]
+    cls: type[BaseModel],
+    bases: tuple[type[Any], ...],
+    config_wrapper: ConfigWrapper,
+    parent_namespace: MappingNamespace | None,
 ) -> None:
     """Collect and set `cls.__pydantic_fields__` and `cls.__class_vars__`.
 
@@ -586,10 +587,12 @@ def set_model_fields(
         cls: BaseModel or dataclass.
         bases: Parents of the class, generally `cls.__bases__`.
         config_wrapper: The config wrapper instance.
-        types_namespace: Optional extra namespace to look for types in.
+        parent_namespace: Extra namespace to use as locals, with lowest priority.
+            This is provided in most cases as the locals of a function, where the model
+            is defined.
     """
     typevars_map = get_model_typevars_map(cls)
-    fields, class_vars = collect_model_fields(cls, bases, config_wrapper, types_namespace, typevars_map=typevars_map)
+    fields, class_vars = collect_model_fields(cls, bases, config_wrapper, parent_namespace, typevars_map=typevars_map)
 
     cls.__pydantic_fields__ = fields
     cls.__class_vars__.update(class_vars)
@@ -613,7 +616,7 @@ def complete_model_class(
     config_wrapper: ConfigWrapper,
     *,
     raise_errors: bool = True,
-    types_namespace: dict[str, Any] | None,
+    ns_resolver: NsResolver | None = None,
     create_model_module: str | None = None,
 ) -> bool:
     """Finish building a model class.
@@ -626,7 +629,7 @@ def complete_model_class(
         cls_name: The model or dataclass name.
         config_wrapper: The config wrapper instance.
         raise_errors: Whether to raise errors.
-        types_namespace: Optional extra namespace to look for types in.
+        ns_resolver: The namespace resolver instance to use during schema building.
         create_model_module: The module of the class to be created, if created by `create_model`.
 
     Returns:
@@ -643,7 +646,7 @@ def complete_model_class(
     typevars_map = get_model_typevars_map(cls)
     gen_schema = GenerateSchema(
         config_wrapper,
-        types_namespace,
+        ns_resolver,
         typevars_map,
     )
 
