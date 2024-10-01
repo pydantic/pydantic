@@ -4,6 +4,7 @@ from __future__ import annotations as _annotations
 
 import inspect
 import typing
+from functools import partial
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast, overload
 
 from ._internal import _typing_extra, _validate_call
@@ -26,6 +27,17 @@ def _check_function_type(function: object):
             inspect.signature(cast(_validate_call.ValidateCallSupportedTypes, function))
         except ValueError:
             raise PydanticUserError(f"Input function `{function}` doesn't have a valid signature", code=ERROR_CODE)
+
+        if isinstance(function, partial):
+            try:
+                assert not isinstance(partial.func, partial), 'Partial of partial'
+                _check_function_type(function.func)
+            except PydanticUserError as e:
+                raise PydanticUserError(
+                    f'Partial of `{function.func}` is invalid because the type of `{function.func}` is not supported by `validate_call`',
+                    code=ERROR_CODE,
+                ) from e
+
         return
 
     if isinstance(function, (classmethod, staticmethod, property)):

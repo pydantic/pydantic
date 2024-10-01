@@ -1243,4 +1243,75 @@ except PydanticUserError as exc_info:
 
 ## Unsupported type for `validate_call` {#validate-call-type}
 
-WIP
+`validate_call` has some limitations on the types it can validate. This error is raised when you try to use it with an unsupported type. Currently the supported types are:
+`LambdaType, FunctionType, MethodType, BuiltinFunctionType, BuiltinMethodType, functools.partial`. For the case of `functools.partial`, the function being partially applied must be one of the supported types.
+
+### `@classmethod`, `@staticmethod`, and `@property`
+
+These decorators cannot be put before `validate_call` because they return a class rather than one of the supported types. The correct way to use them is to put `validate_call` before the decorator.
+
+```py
+from pydantic import validate_call
+
+class A:
+    @validate_call  # error
+    @classmethod
+    def f1(cls): ...
+
+    @classmethod
+    @validate_call  # correct
+    def f2(cls): ...
+```
+
+
+### Classes
+
+To avoid ambiguity, `validate_call` should be applied to methods, not classes. If you want to validate the constructor of a class, you should put `validate_call` on top of `__init__` or `__new__` instead.
+
+```py
+from pydantic import validate_call
+
+# error
+@validate_call
+class A1: ...
+
+# correct
+class A2:
+    @validate_call
+    def __init__(self): ...
+
+    @validate_call
+    def __new__(cls): ...
+```
+
+### Custom callable
+
+Although you can create custom callable types in Python with `__call__`, currently the instance of these types cannot be validated with `validate_call`. This may change in the future, but for now, you should use `validate_call` explicitly on `__call__` instead.
+
+```py
+from pydantic import validate_call
+
+# error
+class A1:
+    def __call__(self): ...
+
+validate_call(A1())
+
+# correct
+class A2:
+    @validate_call
+    def __call__(self): ...
+```
+
+### Invalid signature
+
+This is generally less common, but a possible reason is that you are trying to validate a method that doesn't have at least one argument (usually `self`).
+
+```py
+from pydantic import validate_call
+
+class A:
+    def f(): ...
+
+validate_call(A().f)
+```

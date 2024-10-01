@@ -47,6 +47,12 @@ def test_func_type():
 
     with pytest.raises(
         PydanticUserError,
+        match=(f'Partial of `{list}` is invalid because the type of `{list}` is not supported by `validate_call`'),
+    ):
+        validate_call(partial(list))
+
+    with pytest.raises(
+        PydanticUserError,
         match=('`validate_call` should be applied to one of the following: function, method, partial, or lambda'),
     ):
         validate_call([])
