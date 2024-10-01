@@ -2527,7 +2527,7 @@ class EncodedStr(EncodedBytes):
     class MyEncoder(EncoderProtocol):
         @classmethod
         def decode(cls, data: bytes) -> bytes:
-            if data == '**undecodable**':
+            if data == b'**undecodable**':
                 raise ValueError('Cannot decode data')
             return data[13:]
 
