@@ -3,7 +3,6 @@
 from __future__ import annotations as _annotations
 
 import dataclasses
-import sys
 import warnings
 from copy import copy
 from functools import lru_cache
@@ -272,8 +271,8 @@ def _is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:
 
 def collect_dataclass_fields(
     cls: type[StandardDataclass],
-    types_namespace: dict[str, Any] | None,
     *,
+    parent_namespace: MappingNamespace | None = None,
     typevars_map: dict[Any, Any] | None = None,
     config_wrapper: ConfigWrapper | None = None,
 ) -> dict[str, FieldInfo]:
@@ -281,7 +280,9 @@ def collect_dataclass_fields(
 
     Args:
         cls: dataclass.
-        types_namespace: Optional extra namespace to look for types in.
+        parent_namespace: Extra namespace to use as locals, with lowest priority.
+            This is provided in most cases as the locals of a function, where the dataclass
+            is defined.
         typevars_map: A dictionary mapping type variables to their concrete types.
         config_wrapper: The config wrapper instance.
 
@@ -291,50 +292,64 @@ def collect_dataclass_fields(
     FieldInfo_ = import_cached_field_info()
 
     fields: dict[str, FieldInfo] = {}
-    dataclass_fields: dict[str, dataclasses.Field] = cls.__dataclass_fields__
-    cls_localns = dict(vars(cls))  # this matches get_cls_type_hints_lenient, but all tests pass with `= None` instead
 
-    source_module = sys.modules.get(cls.__module__)
-    if source_module is not None:
-        types_namespace = {**source_module.__dict__, **(types_namespace or {})}
-
-    for ann_name, dataclass_field in dataclass_fields.items():
-        ann_type = _typing_extra.eval_type_lenient(dataclass_field.type, types_namespace, cls_localns)
-        if is_classvar(ann_type):
+    # The logic here is similar to `_typing_extra.get_cls_type_hints_lenient`,
+    # although we do it manually as stdlib dataclasses already have annotations
+    # collected in each field:
+    for base in reversed(cls.__mro__):
+        if not _typing_extra.is_dataclass(base):
             continue
 
-        if (
-            not dataclass_field.init
-            and dataclass_field.default == dataclasses.MISSING
-            and dataclass_field.default_factory == dataclasses.MISSING
-        ):
-            # TODO: We should probably do something with this so that validate_assignment behaves properly
-            #   Issue: https://github.com/pydantic/pydantic/issues/5470
-            continue
+        dataclass_fields = cls.__dataclass_fields__
+        globalns, localns = ns_from(base, parent_namespace=parent_namespace)
 
-        if isinstance(dataclass_field.default, FieldInfo_):
-            if dataclass_field.default.init_var:
-                if dataclass_field.default.init is False:
-                    raise PydanticUserError(
-                        f'Dataclass field {ann_name} has init=False and init_var=True, but these are mutually exclusive.',
-                        code='clashing-init-and-init-var',
-                    )
-
-                # TODO: same note as above re validate_assignment
+        for ann_name, dataclass_field in dataclass_fields.items():
+            if ann_name not in base.__annotations__:
+                # `__dataclass_fields__`contains every field, even the ones from base classes.
+                # Only collect the ones defined on `base`.
                 continue
-            field_info = FieldInfo_.from_annotated_attribute(ann_type, dataclass_field.default)
-        else:
-            field_info = FieldInfo_.from_annotated_attribute(ann_type, dataclass_field)
+            ann_type = _typing_extra.eval_type_lenient(dataclass_field.type, globalns, localns)
 
-        fields[ann_name] = field_info
+            if is_classvar(ann_type):
+                continue
 
-        if field_info.default is not PydanticUndefined and isinstance(getattr(cls, ann_name, field_info), FieldInfo_):
-            # We need this to fix the default when the "default" from __dataclass_fields__ is a pydantic.FieldInfo
-            setattr(cls, ann_name, field_info.default)
+            if (
+                not dataclass_field.init
+                and dataclass_field.default == dataclasses.MISSING
+                and dataclass_field.default_factory == dataclasses.MISSING
+            ):
+                # TODO: We should probably do something with this so that validate_assignment behaves properly
+                #   Issue: https://github.com/pydantic/pydantic/issues/5470
+                continue
+
+            if isinstance(dataclass_field.default, FieldInfo_):
+                if dataclass_field.default.init_var:
+                    if dataclass_field.default.init is False:
+                        raise PydanticUserError(
+                            f'Dataclass field {ann_name} has init=False and init_var=True, but these are mutually exclusive.',
+                            code='clashing-init-and-init-var',
+                        )
+
+                    # TODO: same note as above re validate_assignment
+                    continue
+                field_info = FieldInfo_.from_annotated_attribute(ann_type, dataclass_field.default)
+            else:
+                field_info = FieldInfo_.from_annotated_attribute(ann_type, dataclass_field)
+
+            fields[ann_name] = field_info
+
+            if field_info.default is not PydanticUndefined and isinstance(
+                getattr(cls, ann_name, field_info), FieldInfo_
+            ):
+                # We need this to fix the default when the "default" from __dataclass_fields__ is a pydantic.FieldInfo
+                setattr(cls, ann_name, field_info.default)
 
     if typevars_map:
         for field in fields.values():
-            field.apply_typevars_map(typevars_map, types_namespace)
+            # We pass an empty ns, as `field.annotation`
+            # was already evaluated. TODO: is this method relevant?
+            # Can't we juste use `_generics.replace_types`?
+            field.apply_typevars_map(typevars_map, {})
 
     if config_wrapper is not None:
         _update_fields_from_docstrings(cls, fields, config_wrapper)

@@ -1754,32 +1754,19 @@ class GenerateSchema:
             if origin is not None:
                 dataclass = origin
 
-            with ExitStack() as dataclass_bases_stack:
-                # Pushing a namespace prioritises items already in the stack, so iterate though the MRO forwards
-                for dataclass_base in dataclass.__mro__:
-                    if dataclasses.is_dataclass(dataclass_base):
-                        dataclass_bases_stack.enter_context(self._types_namespace_stack.push(dataclass_base))
+            config = getattr(dataclass, '__pydantic_config__', None)
 
-                # Pushing a config overwrites the previous config, so iterate though the MRO backwards
-                config = None
-                for dataclass_base in reversed(dataclass.__mro__):
-                    if dataclasses.is_dataclass(dataclass_base):
-                        config = getattr(dataclass_base, '__pydantic_config__', ConfigDict())
-                        dataclass_bases_stack.enter_context(self._config_wrapper_stack.push(config))
+            from ..dataclasses import is_pydantic_dataclass
 
-                core_config = self._config_wrapper.core_config(title=dataclass.__name__)
-
-                from ..dataclasses import is_pydantic_dataclass
-
+            with self._ns_resolver.push(dataclass), self._config_wrapper_stack.push(config):
                 if is_pydantic_dataclass(dataclass):
                     fields = deepcopy(dataclass.__pydantic_fields__)
                     if typevars_map:
                         for field in fields.values():
-                            field.apply_typevars_map(typevars_map, self._types_namespace)
+                            field.apply_typevars_map(typevars_map, *self._types_namespace)
                 else:
                     fields = collect_dataclass_fields(
                         dataclass,
-                        self._types_namespace,
                         typevars_map=typevars_map,
                     )
 
@@ -1824,6 +1811,8 @@ class GenerateSchema:
                     js_functions=[partial(modify_model_json_schema, cls=dataclass, title=title)]
                 )
 
+                core_config = self._config_wrapper.core_config(title=dataclass.__name__)
+
                 dc_schema = core_schema.dataclass_schema(
                     dataclass,
                     inner_schema,
@@ -1841,10 +1830,6 @@ class GenerateSchema:
                 schema = apply_model_validators(schema, model_validators, 'outer')
                 self.defs.definitions[dataclass_ref] = schema
                 return core_schema.definition_reference_schema(dataclass_ref)
-
-            # Type checkers seem to assume ExitStack may suppress exceptions and therefore
-            # control flow can exit the `with` block without returning.
-            assert False, 'Unreachable'
 
     def _callable_schema(self, function: Callable[..., Any]) -> core_schema.CallSchema:
         """Generate schema for a Callable.
