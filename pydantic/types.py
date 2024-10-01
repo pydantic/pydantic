@@ -2480,9 +2480,7 @@ class EncodedBytes:
     def __get_pydantic_core_schema__(self, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source)
         if (schema_type := schema['type']) not in ('bytes', 'str'):
-            raise PydanticUserError(
-                f"'EncodedBytes' cannot annotate '{schema_type}'.", code='invalid-annotated-type'
-            )
+            raise PydanticUserError(f"'EncodedBytes' cannot annotate '{schema_type}'.", code='invalid-annotated-type')
 
         return core_schema.with_info_after_validator_function(
             function=self.decode,
