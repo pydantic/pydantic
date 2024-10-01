@@ -168,6 +168,7 @@ nav:
     - Linting: integrations/linting.md
   - Production Tools:
     - AWS Lambda: integrations/aws_lambda.md
+    - Pydantic Logfire: integrations/logfire.md
 - Blog: https://blog.pydantic.dev/
 - Pydantic People: pydantic_people.md
 
