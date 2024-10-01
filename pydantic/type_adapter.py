@@ -219,7 +219,7 @@ class TypeAdapter(Generic[T]):
 
         # TODO: we should probably do this differently, cc @Viicos
         local_ns = _typing_extra.parent_frame_namespace(parent_depth=self._parent_depth)
-        global_ns = sys._getframe(max(self._parent_depth - 1, 1)).f_globals.copy()
+        global_ns = sys._getframe(max(self._parent_depth - 2, 1)).f_globals.copy()
         global_ns.update(local_ns or {})
 
         self._init_core_attrs(types_namespace=global_ns, force=False)
@@ -262,7 +262,7 @@ class TypeAdapter(Generic[T]):
             self.serializer = SchemaSerializer(self.core_schema, core_config)
 
         if isinstance(self.core_schema, _mock_val_ser.MockCoreSchema):
-            self.core_schema.rebuild()
+            self.core_schema = self.core_schema.rebuild()  # type: ignore[assignment]
             self._init_core_attrs(types_namespace=types_namespace, force=False)
 
             # TODO: can we remove these asserts?
@@ -515,6 +515,9 @@ class TypeAdapter(Generic[T]):
             The JSON schema for the model as a dictionary.
         """
         schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
+        if isinstance(self.core_schema, _mock_val_ser.MockCoreSchema):
+            self.core_schema.rebuild()
+            assert not isinstance(self.core_schema, _mock_val_ser.MockCoreSchema), 'this is a bug! please report it'
         return schema_generator_instance.generate(self.core_schema, mode=mode)
 
     @staticmethod
