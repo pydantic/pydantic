@@ -16,15 +16,19 @@ Once you've got Logfire set up, you can start using it to monitor your Pydantic 
 
 ```py test="skip"
 from datetime import date
+
 import logfire
+
 from pydantic import BaseModel
 
 logfire.configure()  # (1)!
+
 
 class User(BaseModel):
     name: str
     country_code: str
     dob: date
+
 
 user = User(name='Anne', country_code='USA', dob='2000-01-01')
 logfire.info('user processed: {user!r}', user=user)  # (2)!
@@ -42,20 +46,23 @@ using the builtin Pydantic integration:
 
 ```py test="skip"
 from datetime import date
+
 import logfire
+
 from pydantic import BaseModel
 
 logfire.configure()
 logfire.instrument_pydantic()  # (1)!
+
 
 class User(BaseModel):
     name: str
     country_code: str
     dob: date
 
+
 User(name='Anne', country_code='USA', dob='2000-01-01')
-User(name='Ben', country_code='USA', dob='2000-02-02')
-User(name='Charlie', country_code='GBR', dob='1990-03-03')
+User(name='David', country_code='GBR', dob='invalid-dob')
 ```
 
 1. The `logfire.instrument_pydantic()` call automatically logs validation information for all Pydantic models in your project.
