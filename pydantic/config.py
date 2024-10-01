@@ -612,7 +612,7 @@ class ConfigDict(TypedDict, total=False):
     validate_return: bool
     """whether to validate the return value from call validators. Defaults to `False`."""
 
-    protected_namespaces: tuple[str | Pattern, ...]
+    protected_namespaces: tuple[str | Pattern[str], ...]
     """
     A `tuple` of strings and/or patterns that prevent models from having fields with names that conflict with them.
     For strings, we match on a prefix basis. Ex, if 'dog' is in the protected namespace, 'dog_name' will be protected.
