@@ -7,6 +7,6 @@ class Foo:
     foo: int
 
 
-@dataclass(config=ConfigDict(title='Bar Title'))
+@dataclass(config={'title': 'Bar Title'})
 class Bar:
     bar: str
