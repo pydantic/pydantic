@@ -1130,3 +1130,183 @@ class Foo(BaseModel):
     ]
 
     assert extras_schema == {'type': 'int'}
+
+
+@pytest.mark.xfail('get_cls_type_hints_lenient does not fetch the module ns for each base')
+def test_tmp_1(create_module):
+    @create_module
+    def module_1():
+        from pydantic import BaseModel
+
+        class Bar(BaseModel):
+            f: 'A'
+
+        A = int
+
+    module_2 = create_module(
+        f"""
+from {module_1.__name__} import Bar
+
+A = str
+
+class Foo(Bar):
+    pass
+        """
+    )
+
+    assert module_2.Foo.model_fields['f'].annotation is int
+
+
+@pytest.mark.xfail(reason='We should keep a reference to the parent frame, not f_locals')
+def test_tmp_2():
+    def func():
+        class Model(BaseModel):
+            a: 'A'
+
+        class A(BaseModel):
+            pass
+
+        return Model
+
+    Model = func()
+
+    Model.model_rebuild()
+
+
+@pytest.mark.xfail(reason='TypesNamespaceStack wrongfully merges tail')
+def test_tmp_3(create_module):
+    @create_module
+    def module_1():
+        from dataclasses import dataclass
+
+        @dataclass
+        class Bar:
+            f: 'A'
+
+        A = int
+
+    module_2 = create_module(
+        f"""
+from pydantic import BaseModel
+from {module_1.__name__} import Bar
+
+A = str
+
+class Foo(BaseModel):
+    bar: Bar
+        """
+    )
+
+    module_2.Foo(bar={'f': 1})
+
+
+@pytest.mark.xfail(reason='TypesNamespaceStack only cares about the module ns')
+def test_tmp_4():
+    def func():
+        A = int
+
+        class Model(BaseModel):
+            __pydantic_extra__: 'dict[str, A]'
+
+            model_config = {'defer_build': True, 'extra': 'allow'}
+
+        return Model
+
+    Model = func()
+
+    A = str
+
+    Model.model_rebuild()
+    Model(extra_value=1)
+
+
+@pytest.mark.xfail(reason='similar to test_tmp_1, but fails even if forward ref can be resolved')
+def test_tmp_5(create_module):
+    @create_module
+    def module_1():
+        from dataclasses import dataclass
+
+        A = int
+
+        @dataclass
+        class DC1:
+            a: 'A'
+
+    module_2 = create_module(f"""
+from dataclasses import dataclass
+
+from pydantic import BaseModel
+
+from {module_1.__name__} import DC1
+
+A = str
+
+@dataclass
+class DC2(DC1):
+    b: 'A'
+
+class Model(BaseModel):
+    dc: DC2
+
+Model(dc=dict(a=1, b='not_an_int'))
+    """)
+
+
+@pytest.mark.xfail(reason="class locals aren't kept in GenerateSchema")
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='Requires PEP 695 syntax')
+def test_tmp_6(create_module):
+    create_module(
+        """
+from pydantic import BaseModel
+
+class Model(BaseModel):
+    type Test = int
+    a: 'Test | Forward'
+
+Forward = str
+
+Model.model_rebuild()
+        """
+    )
+
+
+@pytest.mark.xfail
+def test_tmp_7(create_module):
+    from pydantic import validate_call
+
+    @create_module
+    def module_1():
+        A = int
+
+        def func(a: 'A'):
+            pass
+
+    def inner():
+        A = str
+
+        from module_1 import func
+
+        func_val = validate_call(func)
+
+        func_val(a=1)
+
+
+@pytest.mark.xfail(reason='In GenerateSchema, only the current class module is taken into account')
+def test_tmp_9(create_module):
+    from pydantic import field_serializer  # or model_serializer
+
+    @create_module
+    def module_1():
+
+        MyStr = str
+        class Model(BaseModel):
+            a: int
+
+            @field_serializer('a')
+            def ser(self) -> 'MyStr':
+                return str(self.a)
+
+    class Sub(module_1.Model):
+        pass
+
+    Sub.model_rebuild()
