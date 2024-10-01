@@ -97,7 +97,13 @@ from ._generics import get_standard_typevars_map, has_instance_in_type, recursiv
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import MockCoreSchema
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
-from ._typing_extra import get_cls_type_hints_lenient, is_annotated, is_finalvar, is_self_type, is_zoneinfo_type
+from ._typing_extra import (
+    get_cls_type_hints_lenient,
+    is_annotated,
+    is_finalvar,
+    is_self_type,
+    is_zoneinfo_type,
+)
 from ._utils import lenient_issubclass, smart_deepcopy
 from ._validate_call import ValidateCallSupportedTypes
 
@@ -1879,8 +1885,6 @@ class GenerateSchema:
         """
         sig = signature(function)
 
-        type_hints = _typing_extra.get_function_type_hints(function, types_namespace=self._types_namespace)
-
         mode_lookup: dict[_ParameterKind, Literal['positional_only', 'positional_or_keyword', 'keyword_only']] = {
             Parameter.POSITIONAL_ONLY: 'positional_only',
             Parameter.POSITIONAL_OR_KEYWORD: 'positional_or_keyword',
@@ -1896,7 +1900,10 @@ class GenerateSchema:
             if p.annotation is sig.empty:
                 annotation = typing.cast(Any, Any)
             else:
-                annotation = type_hints[name]
+                # Note: This was originally get by `_typing_extra.get_function_type_hints`,
+                #       but we switch to simply `p.annotation` to support bultins (e.g. `sorted`).
+                #       May need to revisit if anything breaks.
+                annotation = p.annotation
 
             parameter_mode = mode_lookup.get(p.kind)
             if parameter_mode is not None:
@@ -1934,8 +1941,8 @@ class GenerateSchema:
         return_schema: core_schema.CoreSchema | None = None
         config_wrapper = self._config_wrapper
         if config_wrapper.validate_return:
-            return_hint = type_hints.get('return')
-            if return_hint is not None:
+            return_hint = sig.return_annotation
+            if return_hint is not sig.empty:
                 return_schema = self.generate_schema(return_hint)
 
         return core_schema.call_schema(

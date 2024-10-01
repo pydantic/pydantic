@@ -1238,3 +1238,9 @@ except PydanticUserError as exc_info:
 
 [related specification section]: https://typing.readthedocs.io/en/latest/spec/callables.html#unpack-for-keyword-arguments
 [PEP 692]: https://peps.python.org/pep-0692/
+
+
+
+## Unsupported type for `validate_call` {#validate-call-type}
+
+WIP

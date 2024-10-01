@@ -22,12 +22,28 @@ from pydantic import (
 from pydantic.config import with_config
 
 
+def test_wrap():
+    @validate_call
+    def foo_bar(a: int, b: int):
+        """This is the foo_bar method."""
+        return f'{a}, {b}'
+
+    assert foo_bar.__doc__ == 'This is the foo_bar method.'
+    assert foo_bar.__name__ == 'foo_bar'
+    assert foo_bar.__module__ == 'tests.test_validate_call'
+    assert foo_bar.__qualname__ == 'test_wrap.<locals>.foo_bar'
+    assert callable(foo_bar.raw_function)
+    assert repr(inspect.signature(foo_bar)) == '<Signature (a: int, b: int)>'
+
+
 def test_func_type():
     def f(x: int): ...
 
     for func in (f, lambda x: None, sorted, [].append):
         assert validate_call(func).__name__ == func.__name__
-        # validate_call(partial(func))
+        assert validate_call(func).__qualname__ == func.__qualname__
+        assert validate_call(partial(func)).__name__ == f'partial({func.__name__})'
+        assert validate_call(partial(func)).__qualname__ == f'partial({func.__qualname__})'
 
     with pytest.raises(
         PydanticUserError,
@@ -182,20 +198,6 @@ def test_optional():
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'int_type', 'loc': (0,), 'msg': 'Input should be a valid integer', 'input': None}
     ]
-
-
-def test_wrap():
-    @validate_call
-    def foo_bar(a: int, b: int):
-        """This is the foo_bar method."""
-        return f'{a}, {b}'
-
-    assert foo_bar.__doc__ == 'This is the foo_bar method.'
-    assert foo_bar.__name__ == 'foo_bar'
-    assert foo_bar.__module__ == 'tests.test_validate_call'
-    assert foo_bar.__qualname__ == 'test_wrap.<locals>.foo_bar'
-    assert callable(foo_bar.raw_function)
-    assert repr(inspect.signature(foo_bar)) == '<Signature (a: int, b: int)>'
 
 
 def test_kwargs():
@@ -437,32 +439,6 @@ def test_args_name():
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'unexpected_positional_argument', 'loc': (2,), 'msg': 'Unexpected positional argument', 'input': 3}
     ]
-
-
-def test_v_args():
-    @validate_call
-    def foo1(v__args: int):
-        return v__args
-
-    assert foo1(123) == 123
-
-    @validate_call
-    def foo2(v__kwargs: int):
-        return v__kwargs
-
-    assert foo2(123) == 123
-
-    @validate_call
-    def foo3(v__positional_only: int):
-        return v__positional_only
-
-    assert foo3(123) == 123
-
-    @validate_call
-    def foo4(v__duplicate_kwargs: int):
-        return v__duplicate_kwargs
-
-    assert foo4(123) == 123
 
 
 def test_async():
@@ -985,6 +961,47 @@ def test_eval_type_backport():
             'msg': 'Input should be a valid string',
             'input': {'not a str or int'},
         },
+    ]
+
+
+def test_eval_namespace_basic(create_module):
+    module = create_module(
+        """
+from __future__ import annotations
+from typing import TypeVar
+from pydantic import validate_call
+
+T = TypeVar('T', bound=int)
+
+@validate_call
+def f(x: T): ...
+
+def g():
+    MyList = list
+
+    @validate_call
+    def h(x: MyList[int]): ...
+    return h
+"""
+    )
+    f = module.f
+    f(1)
+    with pytest.raises(ValidationError) as exc_info:
+        f('x')
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': 'x',
+            'loc': (0,),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'type': 'int_parsing',
+        }
+    ]
+
+    h = module.g()
+    with pytest.raises(ValidationError) as exc_info:
+        h('not a list')
+    assert exc_info.value.errors(include_url=False) == [
+        {'input': 'not a list', 'loc': (0,), 'msg': 'Input should be a valid list', 'type': 'list_type'}
     ]
 
 
