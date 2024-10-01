@@ -3,6 +3,7 @@ import json
 import os
 import pickle
 import sys
+import time
 from copy import copy, deepcopy
 from typing import Callable, Dict, Generic, List, NewType, Tuple, TypeVar, Union
 
@@ -76,6 +77,7 @@ class LoggedVar(Generic[T]):
         (Tuple[str, ...], 'Tuple[str, ...]'),
         (Union[int, List[str], Tuple[str, int]], 'Union[int, List[str], Tuple[str, int]]'),
         (foobar, 'foobar'),
+        (time.time_ns, 'time_ns'),
         (LoggedVar, 'LoggedVar'),
         (LoggedVar(), 'LoggedVar'),
     ],

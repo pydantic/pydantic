@@ -8,13 +8,13 @@ from __future__ import annotations as _annotations
 import math
 import re
 import typing
+from decimal import Decimal
 from fractions import Fraction
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import Any, Callable
 
 from pydantic_core import PydanticCustomError, core_schema
 from pydantic_core._pydantic_core import PydanticKnownError
-from pydantic_core.core_schema import ErrorType
 
 
 def sequence_validator(
@@ -253,66 +253,164 @@ def forbid_inf_nan_check(x: Any) -> Any:
     return x
 
 
-_InputType = typing.TypeVar('_InputType')
+def _safe_repr(v: Any) -> int | float | str:
+    """The context argument for `PydanticKnownError` requires a number or str type, so we do a simple repr() coercion for types like timedelta.
+
+    See tests/test_types.py::test_annotated_metadata_any_order for some context.
+    """
+    if isinstance(v, (int, float, str)):
+        return v
+    return repr(v)
 
 
-def create_constraint_validator(
-    constraint_id: str,
-    predicate: Callable[[_InputType, Any], bool],
-    error_type: ErrorType,
-    context_gen: Callable[[Any, Any], dict[str, Any]] | None = None,
-) -> Callable[[_InputType, Any], _InputType]:
-    """Create a validator function for a given constraint.
+def greater_than_validator(x: Any, gt: Any) -> Any:
+    try:
+        if not (x > gt):
+            raise PydanticKnownError('greater_than', {'gt': _safe_repr(gt)})
+        return x
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'gt' to supplied value {x}")
+
+
+def greater_than_or_equal_validator(x: Any, ge: Any) -> Any:
+    try:
+        if not (x >= ge):
+            raise PydanticKnownError('greater_than_equal', {'ge': _safe_repr(ge)})
+        return x
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'ge' to supplied value {x}")
+
+
+def less_than_validator(x: Any, lt: Any) -> Any:
+    try:
+        if not (x < lt):
+            raise PydanticKnownError('less_than', {'lt': _safe_repr(lt)})
+        return x
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'lt' to supplied value {x}")
+
+
+def less_than_or_equal_validator(x: Any, le: Any) -> Any:
+    try:
+        if not (x <= le):
+            raise PydanticKnownError('less_than_equal', {'le': _safe_repr(le)})
+        return x
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'le' to supplied value {x}")
+
+
+def multiple_of_validator(x: Any, multiple_of: Any) -> Any:
+    try:
+        if x % multiple_of:
+            raise PydanticKnownError('multiple_of', {'multiple_of': _safe_repr(multiple_of)})
+        return x
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'multiple_of' to supplied value {x}")
+
+
+def min_length_validator(x: Any, min_length: Any) -> Any:
+    try:
+        if not (len(x) >= min_length):
+            raise PydanticKnownError(
+                'too_short', {'field_type': 'Value', 'min_length': min_length, 'actual_length': len(x)}
+            )
+        return x
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'min_length' to supplied value {x}")
+
+
+def max_length_validator(x: Any, max_length: Any) -> Any:
+    try:
+        if len(x) > max_length:
+            raise PydanticKnownError(
+                'too_long',
+                {'field_type': 'Value', 'max_length': max_length, 'actual_length': len(x)},
+            )
+        return x
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'max_length' to supplied value {x}")
+
+
+def _extract_decimal_digits_info(decimal: Decimal) -> tuple[int, int]:
+    """Compute the total number of digits and decimal places for a given [`Decimal`][decimal.Decimal] instance.
+
+    This function handles both normalized and non-normalized Decimal instances.
+    Example: Decimal('1.230') -> 4 digits, 3 decimal places
 
     Args:
-        constraint_id: The constraint identifier, used to identify the constraint in error messages, ex 'gt'.
-        predicate: The predicate function to apply to the input value, ex `lambda x, gt: x > gt`.
-        error_type: The error type to raise if the predicate fails.
-        context_gen: A function to generate the error context from the constraint value and the input value.
+        decimal (Decimal): The decimal number to analyze.
+
+    Returns:
+        tuple[int, int]: A tuple containing the number of decimal places and total digits.
+
+    Though this could be divided into two separate functions, the logic is easier to follow if we couple the computation
+    of the number of decimals and digits together.
     """
+    decimal_tuple = decimal.as_tuple()
+    if not isinstance(decimal_tuple.exponent, int):
+        raise TypeError(f'Unable to extract decimal digits info from supplied value {decimal}')
+    exponent = decimal_tuple.exponent
+    num_digits = len(decimal_tuple.digits)
 
-    def validator(x: _InputType, constraint_value: Any) -> _InputType:
-        try:
-            if not predicate(x, constraint_value):
-                raise PydanticKnownError(
-                    error_type, context_gen(constraint_value, x) if context_gen else {constraint_id: constraint_value}
-                )
-        except TypeError:
-            raise TypeError(f"Unable to apply constraint '{constraint_id}' to supplied value {x}")
-        return x
+    if exponent >= 0:
+        # A positive exponent adds that many trailing zeros
+        # Ex: digit_tuple=(1, 2, 3), exponent=2 -> 12300 -> 0 decimal places, 5 digits
+        num_digits += exponent
+        decimal_places = 0
+    else:
+        # If the absolute value of the negative exponent is larger than the
+        # number of digits, then it's the same as the number of digits,
+        # because it'll consume all the digits in digit_tuple and then
+        # add abs(exponent) - len(digit_tuple) leading zeros after the decimal point.
+        # Ex: digit_tuple=(1, 2, 3), exponent=-2 -> 1.23 -> 2 decimal places, 3 digits
+        # Ex: digit_tuple=(1, 2, 3), exponent=-4 -> 0.0123 -> 4 decimal places, 4 digits
+        decimal_places = abs(exponent)
+        num_digits = max(num_digits, decimal_places)
 
-    return validator
-
-
-_CONSTRAINT_TO_VALIDATOR_LOOKUP: dict[str, Callable] = {
-    'gt': create_constraint_validator('gt', lambda x, gt: x > gt, 'greater_than'),
-    'ge': create_constraint_validator('ge', lambda x, ge: x >= ge, 'greater_than_equal'),
-    'lt': create_constraint_validator('lt', lambda x, lt: x < lt, 'less_than'),
-    'le': create_constraint_validator('le', lambda x, le: x <= le, 'less_than_equal'),
-    'multiple_of': create_constraint_validator(
-        'multiple_of', lambda x, multiple_of: x % multiple_of == 0, 'multiple_of'
-    ),
-    'min_length': create_constraint_validator(
-        'min_length',
-        lambda x, min_length: len(x) >= min_length,
-        'too_short',
-        lambda c_val, x: {'field_type': 'Value', 'min_length': c_val, 'actual_length': len(x)},
-    ),
-    'max_length': create_constraint_validator(
-        'max_length',
-        lambda x, max_length: len(x) <= max_length,
-        'too_long',
-        lambda c_val, x: {'field_type': 'Value', 'max_length': c_val, 'actual_length': len(x)},
-    ),
-}
+    return decimal_places, num_digits
 
 
-def get_constraint_validator(constraint: str) -> Callable:
-    """Fetch the validator function for the given constraint."""
+def max_digits_validator(x: Any, max_digits: Any) -> Any:
+    _, num_digits = _extract_decimal_digits_info(x)
+    _, normalized_num_digits = _extract_decimal_digits_info(x.normalize())
+
     try:
-        return _CONSTRAINT_TO_VALIDATOR_LOOKUP[constraint]
-    except KeyError:
-        raise TypeError(f'Unknown constraint {constraint}')
+        if (num_digits > max_digits) and (normalized_num_digits > max_digits):
+            raise PydanticKnownError(
+                'decimal_max_digits',
+                {'max_digits': max_digits},
+            )
+        return x
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'max_digits' to supplied value {x}")
+
+
+def decimal_places_validator(x: Any, decimal_places: Any) -> Any:
+    decimal_places_, _ = _extract_decimal_digits_info(x)
+    normalized_decimal_places, _ = _extract_decimal_digits_info(x.normalize())
+
+    try:
+        if (decimal_places_ > decimal_places) and (normalized_decimal_places > decimal_places):
+            raise PydanticKnownError(
+                'decimal_max_places',
+                {'decimal_places': decimal_places},
+            )
+        return x
+    except TypeError:
+        raise TypeError(f"Unable to apply constraint 'decimal_places' to supplied value {x}")
+
+
+NUMERIC_VALIDATOR_LOOKUP: dict[str, Callable] = {
+    'gt': greater_than_validator,
+    'ge': greater_than_or_equal_validator,
+    'lt': less_than_validator,
+    'le': less_than_or_equal_validator,
+    'multiple_of': multiple_of_validator,
+    'min_length': min_length_validator,
+    'max_length': max_length_validator,
+    'max_digits': max_digits_validator,
+    'decimal_places': decimal_places_validator,
+}
 
 
 IP_VALIDATOR_LOOKUP: dict[type, Callable] = {

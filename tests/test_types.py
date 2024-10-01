@@ -63,6 +63,7 @@ from pydantic import (
     Base64UrlBytes,
     Base64UrlStr,
     BaseModel,
+    BeforeValidator,
     ByteSize,
     ConfigDict,
     DirectoryPath,
@@ -5530,23 +5531,19 @@ def test_custom_generic_containers():
 @pytest.mark.parametrize(
     ('field_type', 'input_data', 'expected_value', 'serialized_data'),
     [
-        pytest.param(Base64Bytes, b'Zm9vIGJhcg==\n', b'foo bar', b'Zm9vIGJhcg==\n', id='Base64Bytes-reversible'),
-        pytest.param(Base64Str, 'Zm9vIGJhcg==\n', 'foo bar', 'Zm9vIGJhcg==\n', id='Base64Str-reversible'),
-        pytest.param(Base64Bytes, b'Zm9vIGJhcg==', b'foo bar', b'Zm9vIGJhcg==\n', id='Base64Bytes-bytes-input'),
-        pytest.param(Base64Bytes, 'Zm9vIGJhcg==', b'foo bar', b'Zm9vIGJhcg==\n', id='Base64Bytes-str-input'),
+        pytest.param(Base64Bytes, b'Zm9vIGJhcg==', b'foo bar', b'Zm9vIGJhcg==', id='Base64Bytes-bytes-input'),
+        pytest.param(Base64Bytes, 'Zm9vIGJhcg==', b'foo bar', b'Zm9vIGJhcg==', id='Base64Bytes-str-input'),
         pytest.param(
-            Base64Bytes, bytearray(b'Zm9vIGJhcg=='), b'foo bar', b'Zm9vIGJhcg==\n', id='Base64Bytes-bytearray-input'
+            Base64Bytes, bytearray(b'Zm9vIGJhcg=='), b'foo bar', b'Zm9vIGJhcg==', id='Base64Bytes-bytearray-input'
         ),
-        pytest.param(Base64Str, b'Zm9vIGJhcg==', 'foo bar', 'Zm9vIGJhcg==\n', id='Base64Str-bytes-input'),
-        pytest.param(Base64Str, 'Zm9vIGJhcg==', 'foo bar', 'Zm9vIGJhcg==\n', id='Base64Str-str-input'),
-        pytest.param(
-            Base64Str, bytearray(b'Zm9vIGJhcg=='), 'foo bar', 'Zm9vIGJhcg==\n', id='Base64Str-bytearray-input'
-        ),
+        pytest.param(Base64Str, b'Zm9vIGJhcg==', 'foo bar', 'Zm9vIGJhcg==', id='Base64Str-bytes-input'),
+        pytest.param(Base64Str, 'Zm9vIGJhcg==', 'foo bar', 'Zm9vIGJhcg==', id='Base64Str-str-input'),
+        pytest.param(Base64Str, bytearray(b'Zm9vIGJhcg=='), 'foo bar', 'Zm9vIGJhcg==', id='Base64Str-bytearray-input'),
         pytest.param(
             Base64Bytes,
             b'BCq+6+1/Paun/Q==',
             b'\x04*\xbe\xeb\xed\x7f=\xab\xa7\xfd',
-            b'BCq+6+1/Paun/Q==\n',
+            b'BCq+6+1/Paun/Q==',
             id='Base64Bytes-bytes-alphabet-vanilla',
         ),
     ],
@@ -6993,3 +6990,30 @@ def test_fraction_serialization() -> None:
 def test_fraction_json_schema() -> None:
     ta = TypeAdapter(Fraction)
     assert ta.json_schema() == {'type': 'string', 'format': 'fraction'}
+
+
+def test_annotated_metadata_any_order() -> None:
+    def validator(v):
+        if isinstance(v, (int, float)):
+            return timedelta(days=v)
+        return v
+
+    class BeforeValidatorAfterLe(BaseModel):
+        v: Annotated[timedelta, annotated_types.Le(timedelta(days=365)), BeforeValidator(validator)]
+
+    class BeforeValidatorBeforeLe(BaseModel):
+        v: Annotated[timedelta, BeforeValidator(validator), annotated_types.Le(timedelta(days=365))]
+
+    try:
+        BeforeValidatorAfterLe(v=366)
+    except ValueError as ex:
+        assert '365 days' in str(ex)
+
+    # in this case, the Le constraint comes after the BeforeValidator, so we use functional validators
+    # from pydantic._internal._validators.py (in this case, less_than_or_equal_validator)
+    # which doesn't have access to fancy pydantic-core formatting for timedelta, so we get
+    # the raw timedelta repr in the error `datetime.timedelta(days=365`` vs the above `365 days`
+    try:
+        BeforeValidatorBeforeLe(v=366)
+    except ValueError as ex:
+        assert 'datetime.timedelta(days=365)' in str(ex)

@@ -117,6 +117,20 @@ def test_ultra_simple_repr(UltraSimpleModel):
     assert str(m) == 'a=10.2 b=10'
 
 
+def test_recursive_repr() -> None:
+    class A(BaseModel):
+        a: object = None
+
+    class B(BaseModel):
+        a: Optional[A] = None
+
+    a = A()
+    a.a = a
+    b = B(a=a)
+
+    assert re.match(r"B\(a=A\(a='<Recursion on A with id=\d+>'\)\)", repr(b)) is not None
+
+
 def test_default_factory_field():
     def myfunc():
         return 1
