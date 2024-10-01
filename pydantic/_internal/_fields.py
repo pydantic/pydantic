@@ -17,6 +17,7 @@ from . import _typing_extra
 from ._config import ConfigWrapper
 from ._docs_extraction import extract_docstrings_from_cls
 from ._import_utils import import_cached_base_model, import_cached_field_info
+from ._namespace_utils import MappingNamespace, ns_from
 from ._repr import Representation
 from ._typing_extra import get_cls_type_hints_lenient, is_classvar, is_finalvar
 
@@ -73,7 +74,7 @@ def collect_model_fields(  # noqa: C901
     cls: type[BaseModel],
     bases: tuple[type[Any], ...],
     config_wrapper: ConfigWrapper,
-    types_namespace: dict[str, Any] | None,
+    parent_namespace: MappingNamespace | None,
     *,
     typevars_map: dict[Any, Any] | None = None,
 ) -> tuple[dict[str, FieldInfo], set[str]]:
@@ -87,7 +88,9 @@ def collect_model_fields(  # noqa: C901
         cls: BaseModel or dataclass.
         bases: Parents of the class, generally `cls.__bases__`.
         config_wrapper: The config wrapper instance.
-        types_namespace: Optional extra namespace to look for types in.
+        parent_namespace: Extra namespace to use as locals, with lowest priority.
+            This is provided in most cases as the locals of a function, where the model
+            is defined.
         typevars_map: A dictionary mapping type variables to their concrete types.
 
     Returns:
@@ -107,7 +110,7 @@ def collect_model_fields(  # noqa: C901
         if model_fields := getattr(base, '__pydantic_fields__', None):
             parent_fields_lookup.update(model_fields)
 
-    type_hints = get_cls_type_hints_lenient(cls, types_namespace)
+    type_hints = get_cls_type_hints_lenient(cls, parent_namespace)
 
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
     # annotations is only used for finding fields in parent classes
@@ -232,7 +235,7 @@ def collect_model_fields(  # noqa: C901
 
     if typevars_map:
         for field in fields.values():
-            field.apply_typevars_map(typevars_map, types_namespace)
+            field.apply_typevars_map(typevars_map, {})
 
     _update_fields_from_docstrings(cls, fields, config_wrapper)
     return fields, class_vars
