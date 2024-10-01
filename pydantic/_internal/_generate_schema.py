@@ -12,7 +12,7 @@ import re
 import sys
 import typing
 import warnings
-from contextlib import ExitStack, contextmanager
+from contextlib import contextmanager
 from copy import copy, deepcopy
 from decimal import Decimal
 from enum import Enum
@@ -97,6 +97,7 @@ from ._forward_ref import PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, has_instance_in_type, recursively_defined_type_refs, replace_types
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import MockCoreSchema
+from ._namespace_utils import NamespacesTuple, NsResolver
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._typing_extra import get_cls_type_hints_lenient, is_annotated, is_finalvar, is_self_type, is_zoneinfo_type
 from ._utils import lenient_issubclass, smart_deepcopy
@@ -320,30 +321,6 @@ def _add_custom_serialization_from_json_encoders(
     return schema
 
 
-TypesNamespace = Union[Dict[str, Any], None]
-
-
-class TypesNamespaceStack:
-    """A stack of types namespaces."""
-
-    def __init__(self, types_namespace: TypesNamespace):
-        self._types_namespace_stack: list[TypesNamespace] = [types_namespace]
-
-    @property
-    def tail(self) -> TypesNamespace:
-        return self._types_namespace_stack[-1]
-
-    @contextmanager
-    def push(self, for_type: type[Any]):
-        types_namespace = _typing_extra.get_module_ns_of(for_type).copy()
-        types_namespace.update(self.tail or {})
-        self._types_namespace_stack.append(types_namespace)
-        try:
-            yield
-        finally:
-            self._types_namespace_stack.pop()
-
-
 def _get_first_non_null(a: Any, b: Any) -> Any:
     """Return the first argument if it is not None, otherwise return the second argument.
 
@@ -358,7 +335,7 @@ class GenerateSchema:
 
     __slots__ = (
         '_config_wrapper_stack',
-        '_types_namespace_stack',
+        '_ns_resolver',
         '_typevars_map',
         'field_name_stack',
         'model_type_stack',
@@ -368,12 +345,12 @@ class GenerateSchema:
     def __init__(
         self,
         config_wrapper: ConfigWrapper,
-        types_namespace: dict[str, Any] | None,
+        ns_resolver: NsResolver | None = None,
         typevars_map: dict[Any, Any] | None = None,
     ) -> None:
         # we need a stack for recursing into nested models
         self._config_wrapper_stack = ConfigWrapperStack(config_wrapper)
-        self._types_namespace_stack = TypesNamespaceStack(types_namespace)
+        self._ns_resolver = ns_resolver or NsResolver()
         self._typevars_map = typevars_map
         self.field_name_stack = _FieldNameStack()
         self.model_type_stack = _ModelTypeStack()
@@ -392,8 +369,8 @@ class GenerateSchema:
         return self._config_wrapper_stack.tail
 
     @property
-    def _types_namespace(self) -> dict[str, Any] | None:
-        return self._types_namespace_stack.tail
+    def _types_namespace(self) -> NamespacesTuple:
+        return self._ns_resolver.types_namespace
 
     @property
     def _arbitrary_types(self) -> bool:
@@ -681,7 +658,7 @@ class GenerateSchema:
 
             model_validators = decorators.model_validators.values()
 
-            with self._config_wrapper_stack.push(config_wrapper), self._types_namespace_stack.push(cls):
+            with self._config_wrapper_stack.push(config_wrapper), self._ns_resolver.push(cls):
                 extras_schema = None
                 if core_config.get('extra_fields_behavior') == 'allow':
                     assert cls.__mro__[0] is cls
@@ -696,7 +673,7 @@ class GenerateSchema:
                                     _typing_extra._make_forward_ref(
                                         extras_annotation, is_argument=False, is_class=True
                                     ),
-                                    self._types_namespace,
+                                    *self._types_namespace,
                                 )
                             tp = get_origin(extras_annotation)
                             if tp not in (Dict, dict):
@@ -863,7 +840,7 @@ class GenerateSchema:
         # class Model(BaseModel):
         #   x: SomeImportedTypeAliasWithAForwardReference
         try:
-            obj = _typing_extra.eval_type_backport(obj, globalns=self._types_namespace)
+            obj = _typing_extra.eval_type_backport(obj, *self._types_namespace)
         except NameError as e:
             raise PydanticUndefinedAnnotation.from_name_error(e) from e
 
@@ -1267,15 +1244,11 @@ class GenerateSchema:
     ) -> _CommonField:
         # Update FieldInfo annotation if appropriate:
         FieldInfo = import_cached_field_info()
-
         if has_instance_in_type(field_info.annotation, (ForwardRef, str)):
-            types_namespace = self._types_namespace
-            if self._typevars_map:
-                types_namespace = (types_namespace or {}).copy()
-                # Ensure that typevars get mapped to their concrete types:
-                types_namespace.update({k.__name__: v for k, v in self._typevars_map.items()})
 
-            evaluated = _typing_extra.eval_type_lenient(field_info.annotation, types_namespace)
+            # Can we use field_info.apply_typevars_map here? Shouldn't we error if we encounter name errors here?
+            evaluated = _typing_extra.eval_type_lenient(field_info.annotation, *self._types_namespace)
+            evaluated = replace_types(evaluated, self._typevars_map)
             if evaluated is not field_info.annotation and not has_instance_in_type(evaluated, PydanticRecursiveRef):
                 new_field_info = FieldInfo.from_annotation(evaluated)
                 field_info.annotation = new_field_info.annotation
@@ -1410,8 +1383,8 @@ class GenerateSchema:
             annotation = origin.__value__
             typevars_map = get_standard_typevars_map(obj)
 
-            with self._types_namespace_stack.push(origin):
-                annotation = _typing_extra.eval_type_lenient(annotation, self._types_namespace)
+            with self._ns_resolver.push(origin):
+                annotation = _typing_extra.eval_type_lenient(annotation, *self._types_namespace)
                 annotation = replace_types(annotation, typevars_map)
                 schema = self.generate_schema(annotation)
                 assert schema['type'] != 'definitions'
@@ -1450,7 +1423,7 @@ class GenerateSchema:
         """
         FieldInfo = import_cached_field_info()
 
-        with self.model_type_stack.push(typed_dict_cls), self.defs.get_schema_or_ref(typed_dict_cls) as (
+        with self._ns_resolver.push(typed_dict_cls), self.defs.get_schema_or_ref(typed_dict_cls) as (
             typed_dict_ref,
             maybe_schema,
         ):
@@ -1472,7 +1445,7 @@ class GenerateSchema:
             except AttributeError:
                 config = None
 
-            with self._config_wrapper_stack.push(config), self._types_namespace_stack.push(typed_dict_cls):
+            with self._config_wrapper_stack.push(config):
                 core_config = self._config_wrapper.core_config(title=typed_dict_cls.__name__)
 
                 required_keys: frozenset[str] = typed_dict_cls.__required_keys__
@@ -1486,7 +1459,7 @@ class GenerateSchema:
                 else:
                     field_docstrings = None
 
-                for field_name, annotation in get_cls_type_hints_lenient(typed_dict_cls, self._types_namespace).items():
+                for field_name, annotation in get_cls_type_hints_lenient(typed_dict_cls).items():
                     annotation = replace_types(annotation, typevars_map)
                     required = field_name in required_keys
 
@@ -1548,8 +1521,8 @@ class GenerateSchema:
             if origin is not None:
                 namedtuple_cls = origin
 
-            with self._types_namespace_stack.push(namedtuple_cls):
-                annotations: dict[str, Any] = get_cls_type_hints_lenient(namedtuple_cls, self._types_namespace)
+            with self._ns_resolver.push(namedtuple_cls):
+                annotations: dict[str, Any] = get_cls_type_hints_lenient(namedtuple_cls)
                 if not annotations:
                     # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
                     annotations = {k: Any for k in namedtuple_cls._fields}
@@ -1987,7 +1960,7 @@ class GenerateSchema:
         field_serializers: dict[str, Decorator[FieldSerializerDecoratorInfo]],
     ) -> core_schema.ComputedField:
         try:
-            return_type = _decorators.get_function_return_type(d.func, d.info.return_type, self._types_namespace)
+            return_type = _decorators.get_function_return_type(d.func, d.info.return_type, *self._types_namespace)
         except NameError as e:
             raise PydanticUndefinedAnnotation.from_name_error(e) from e
         if return_type is PydanticUndefined:
@@ -2250,7 +2223,7 @@ class GenerateSchema:
 
             try:
                 return_type = _decorators.get_function_return_type(
-                    serializer.func, serializer.info.return_type, self._types_namespace
+                    serializer.func, serializer.info.return_type, *self._types_namespace
                 )
             except NameError as e:
                 raise PydanticUndefinedAnnotation.from_name_error(e) from e
@@ -2290,7 +2263,7 @@ class GenerateSchema:
 
             try:
                 return_type = _decorators.get_function_return_type(
-                    serializer.func, serializer.info.return_type, self._types_namespace
+                    serializer.func, serializer.info.return_type, *self._types_namespace
                 )
             except NameError as e:
                 raise PydanticUndefinedAnnotation.from_name_error(e) from e
