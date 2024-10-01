@@ -1,3 +1,4 @@
+from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
 
@@ -6,6 +7,6 @@ class Foo:
     foo: int
 
 
-@dataclass(config={'title': 'Bar Title'})
+@dataclass(config=ConfigDict(title='Bar Title'))
 class Bar:
     bar: str
