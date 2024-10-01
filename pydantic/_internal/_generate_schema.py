@@ -1838,7 +1838,8 @@ class GenerateSchema:
         """
         sig = signature(function)
 
-        type_hints = _typing_extra.get_function_type_hints(function, types_namespace=self._types_namespace)
+        globalns, localns = self._types_namespace
+        type_hints = _typing_extra.get_function_type_hints(function, globalns=globalns, localns=localns)
 
         mode_lookup: dict[_ParameterKind, Literal['positional_only', 'positional_or_keyword', 'keyword_only']] = {
             Parameter.POSITIONAL_ONLY: 'positional_only',
