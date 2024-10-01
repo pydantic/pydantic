@@ -214,7 +214,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 'A custom validator is returning a value other than `self`.\n'
                 "Returning anything other than `self` from a top level model validator isn't supported when validating via `__init__`.\n"
                 'See the `model_validator` docs (https://docs.pydantic.dev/latest/concepts/validators/#model-validators) for more details.',
-                category=None,
+                stacklevel=2,
             )
 
     # The following line sets a flag that we use to determine when `__init__` gets overridden by the user
