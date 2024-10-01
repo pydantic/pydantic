@@ -113,7 +113,7 @@ aside.blog img {
 
 /* Logfire link admonition */
 :root {
-  --md-admonition-icon--logfire: url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><path d="M35 19c0-2.062-.367-4.039-1.04-5.868-.46 5.389-3.333 8.157-6.335 6.868-2.812-1.208-.917-5.917-.777-8.164.236-3.809-.012-8.169-6.931-11.794 2.875 5.5.333 8.917-2.333 9.125-2.958.231-5.667-2.542-4.667-7.042-3.238 2.386-3.332 6.402-2.333 9 1.042 2.708-.042 4.958-2.583 5.208-2.84.28-4.418-3.041-2.963-8.333C2.52 10.965 1 14.805 1 19c0 9.389 7.611 17 17 17s17-7.611 17-17z"/></svg>')
+  --md-admonition-icon--logfire: url('data:image/svg+xml;charset=utf-8,<svg viewBox="10 10 70 70" xmlns="http://www.w3.org/2000/svg"><path d="M48.75 60V48.75H37.5V18.75H26.25V60H37.5V71.25H63.75V60H48.75Z"/></svg> ')
 }
 .md-typeset .admonition.logfire, .md-typeset details.logfire {
   border-color: #e620e9;

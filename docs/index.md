@@ -13,10 +13,10 @@ Pydantic is the most widely used data validation library for Python.
 
 Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define how data should be in pure, canonical Python 3.8+; validate it with Pydantic.
 
-!!! logfire "Monitor Pydantic with Logfire :rocket:"
+!!! logfire "Monitor Pydantic with Logfire :fire:"
     Built by the same team as Pydantic, [Logfire](https://pydantic.dev/logfire) is an application monitoring tool that is as simple to use and powerful as Pydantic itself.
 
-    Logfire integrates with many popular Python libraries including FastAPI, OpenAI and Pydantic itself, so you can use pydantic to monitor Pydantic validations and understand why some inputs fail validation:
+    Logfire integrates with many popular Python libraries including FastAPI, OpenAI and Pydantic itself, so you can use Logfire to monitor Pydantic validations and understand why some inputs fail validation:
 
     ```py title="Monitoring Pydantic with Logfire"
     from pydantic import BaseModel
