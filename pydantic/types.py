@@ -2411,6 +2411,8 @@ class Base64UrlEncoder(EncoderProtocol):
         return 'base64url'
 
 
+# TODO: align with PastDate and other similar types to enable usage alone
+# and add an if TYPE_CHECKING block with Annotated[bytes, ...] etc to make type checkers happy
 @_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class EncodedBytes:
     """A bytes type that is encoded and decoded using the specified encoder.
