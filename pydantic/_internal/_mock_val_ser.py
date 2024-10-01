@@ -11,6 +11,7 @@ from ..plugin._schema_validator import PluggableSchemaValidator
 if TYPE_CHECKING:
     from ..dataclasses import PydanticDataclass
     from ..main import BaseModel
+    from ..type_adapter import TypeAdapter
 
 
 ValSer = TypeVar('ValSer', bound=Union[SchemaValidator, PluggableSchemaValidator, SchemaSerializer])
@@ -108,8 +109,48 @@ class MockValSer(Generic[ValSer]):
         return None
 
 
+def set_type_adapter_mocks(adapter: TypeAdapter, type_repr: str) -> None:
+    """Set `core_schema`, `validator` and `serializer` to mock core types on a type adapter instance.
+
+    Args:
+        adapter: The type adapter instance to set the mocks on
+        type_repr: Name of the type used in the adapter, used in error messages
+    """
+    undefined_type_error_message = (
+        f'`TypeAdapter[{type_repr}]` is not fully defined; you should define `{type_repr}` and all referenced types,'
+        f' then call `.rebuild()` on the instance.'
+    )
+
+    def attempt_rebuild_fn(attr_fn: Callable[[TypeAdapter], T]) -> Callable[[], T | None]:
+        def handler() -> T | None:
+            if adapter.rebuild() is not False:
+                return attr_fn(adapter)
+            else:
+                return None
+
+        return handler
+
+    adapter.core_schema = MockCoreSchema(  # type: ignore[assignment]
+        undefined_type_error_message,
+        code='class-not-fully-defined',
+        attempt_rebuild=attempt_rebuild_fn(lambda ta: ta.core_schema),
+    )
+    adapter.validator = MockValSer(  # type: ignore[assignment]
+        undefined_type_error_message,
+        code='class-not-fully-defined',
+        val_or_ser='validator',
+        attempt_rebuild=attempt_rebuild_fn(lambda ta: ta.validator),
+    )
+    adapter.serializer = MockValSer(  # type: ignore[assignment]
+        undefined_type_error_message,
+        code='class-not-fully-defined',
+        val_or_ser='serializer',
+        attempt_rebuild=attempt_rebuild_fn(lambda ta: ta.serializer),
+    )
+
+
 def set_model_mocks(cls: type[BaseModel], cls_name: str, undefined_name: str = 'all referenced types') -> None:
-    """Set `__pydantic_validator__` and `__pydantic_serializer__` to `MockValSer`s on a model.
+    """Set `__pydantic_core_schema__`, `__pydantic_validator__` and `__pydantic_serializer__` to mock core types on a model.
 
     Args:
         cls: The model class to set the mocks on

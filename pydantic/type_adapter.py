@@ -3,15 +3,11 @@
 from __future__ import annotations as _annotations
 
 import sys
-from contextlib import contextmanager
 from dataclasses import is_dataclass
-from functools import cached_property, wraps
 from typing import (
     Any,
-    Callable,
     Generic,
     Iterable,
-    Iterator,
     Literal,
     TypeVar,
     cast,
@@ -20,7 +16,7 @@ from typing import (
 )
 
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
-from typing_extensions import Concatenate, ParamSpec, is_typeddict
+from typing_extensions import ParamSpec, is_typeddict
 
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel, IncEx
@@ -42,7 +38,7 @@ P = ParamSpec('P')
 TypeAdapterT = TypeVar('TypeAdapterT', bound='TypeAdapter')
 
 
-def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth: int) -> CoreSchema:
+def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, types_namespace: dict[str, Any]) -> CoreSchema:
     """`BaseModel` uses its own `__module__` to find out where it was defined
     and then looks for symbols to resolve forward references in those globals.
     On the other hand this function can be called with arbitrary objects,
@@ -86,10 +82,7 @@ def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth:
 
     But at the very least this behavior is _subtly_ different from `BaseModel`'s.
     """
-    local_ns = _typing_extra.parent_frame_namespace(parent_depth=parent_depth)
-    global_ns = sys._getframe(max(parent_depth - 1, 1)).f_globals.copy()
-    global_ns.update(local_ns or {})
-    gen = _generate_schema.GenerateSchema(config_wrapper, types_namespace=global_ns, typevars_map={})
+    gen = _generate_schema.GenerateSchema(config_wrapper, types_namespace=types_namespace, typevars_map={})
     schema = gen.generate_schema(type_)
     schema = gen.clean_schema(schema)
     return schema
@@ -118,23 +111,6 @@ def _type_has_config(type_: Any) -> bool:
     except TypeError:
         # type is not a class
         return False
-
-
-# This is keeping track of the frame depth for the TypeAdapter functions. This is required for _parent_depth used for
-# ForwardRef resolution. We may enter the TypeAdapter schema building via different TypeAdapter functions. Hence, we
-# need to keep track of the frame depth relative to the originally provided _parent_depth.
-def _frame_depth(
-    depth: int,
-) -> Callable[[Callable[Concatenate[TypeAdapterT, P], R]], Callable[Concatenate[TypeAdapterT, P], R]]:
-    def wrapper(func: Callable[Concatenate[TypeAdapterT, P], R]) -> Callable[Concatenate[TypeAdapterT, P], R]:
-        @wraps(func)
-        def wrapped(self: TypeAdapterT, *args: P.args, **kwargs: P.kwargs) -> R:
-            with self._with_frame_depth(depth + 1):  # depth + 1 for the wrapper function
-                return func(self, *args, **kwargs)
-
-        return wrapped
-
-    return wrapper
 
 
 @final
@@ -230,44 +206,52 @@ class TypeAdapter(Generic[T]):
         self._type = type
         self._config = config
         self._parent_depth = _parent_depth
+
         if module is None:
             f = sys._getframe(1)
             self._module_name = cast(str, f.f_globals.get('__name__', ''))
         else:
             self._module_name = module
 
-        self._core_schema: CoreSchema | None = None
-        self._validator: SchemaValidator | PluggableSchemaValidator | None = None
-        self._serializer: SchemaSerializer | None = None
+        self.core_schema: CoreSchema
+        self.validator: SchemaValidator | PluggableSchemaValidator
+        self.serializer: SchemaSerializer
 
-        if not self._defer_build():
-            # Immediately initialize the core schema, validator and serializer
-            with self._with_frame_depth(1):  # +1 frame depth for this __init__
-                # Model itself may be using deferred building. For backward compatibility we don't rebuild model mocks
-                # here as part of __init__ even though TypeAdapter itself is not using deferred building.
-                self._init_core_attrs(rebuild_mocks=False)
+        # TODO: we should probably do this differently, cc @Viicos
+        local_ns = _typing_extra.parent_frame_namespace(parent_depth=self._parent_depth)
+        global_ns = sys._getframe(max(self._parent_depth - 1, 1)).f_globals.copy()
+        global_ns.update(local_ns or {})
 
-    @contextmanager
-    def _with_frame_depth(self, depth: int) -> Iterator[None]:
-        self._parent_depth += depth
+        self._init_core_attrs(types_namespace=global_ns, force=False)
+
+    def _init_core_attrs(self, types_namespace: dict[str, Any], force: bool) -> bool:
+        """Initialize the core schema, validator, and serializer for the type.
+
+        If `force` is set to `False` and `_defer_build` is `True`, the core schema, validator, and serializer will be set to mocks.
+
+        Args:
+            types_namespace: The types namespace to use for the schema build.
+            force: Whether to force the initialization of the core schema, validator, and serializer.
+
+        Returns:
+            `True` if the core schema, validator, and serializer were successfully initialized, otherwise `False`.
+        """
+        if not force and self._defer_build:
+            _mock_val_ser.set_type_adapter_mocks(self, str(self._type))
+            self._pydantic_complete = False
+            return False
+
         try:
-            yield
-        finally:
-            self._parent_depth -= depth
-
-    @_frame_depth(1)
-    def _init_core_attrs(self, rebuild_mocks: bool) -> None:
-        try:
-            self._core_schema = _getattr_no_parents(self._type, '__pydantic_core_schema__')
-            self._validator = _getattr_no_parents(self._type, '__pydantic_validator__')
-            self._serializer = _getattr_no_parents(self._type, '__pydantic_serializer__')
+            self.core_schema = _getattr_no_parents(self._type, '__pydantic_core_schema__')
+            self.validator = _getattr_no_parents(self._type, '__pydantic_validator__')
+            self.serializer = _getattr_no_parents(self._type, '__pydantic_serializer__')
         except AttributeError:
             config_wrapper = _config.ConfigWrapper(self._config)
             core_config = config_wrapper.core_config(None)
 
-            self._core_schema = _get_schema(self._type, config_wrapper, parent_depth=self._parent_depth)
-            self._validator = create_schema_validator(
-                schema=self._core_schema,
+            self.core_schema = _get_schema(self._type, config_wrapper, types_namespace=types_namespace)
+            self.validator = create_schema_validator(
+                schema=self.core_schema,
                 schema_type=self._type,
                 schema_type_module=self._module_name,
                 schema_type_name=str(self._type),
@@ -275,55 +259,68 @@ class TypeAdapter(Generic[T]):
                 config=core_config,
                 plugin_settings=config_wrapper.plugin_settings,
             )
-            self._serializer = SchemaSerializer(self._core_schema, core_config)
+            self.serializer = SchemaSerializer(self.core_schema, core_config)
 
-        if rebuild_mocks and isinstance(self._core_schema, _mock_val_ser.MockCoreSchema):
-            self._core_schema.rebuild()
-            self._init_core_attrs(rebuild_mocks=False)
-            assert not isinstance(self._core_schema, _mock_val_ser.MockCoreSchema)
-            assert not isinstance(self._validator, _mock_val_ser.MockValSer)
-            assert not isinstance(self._serializer, _mock_val_ser.MockValSer)
+        if isinstance(self.core_schema, _mock_val_ser.MockCoreSchema):
+            self.core_schema.rebuild()
+            self._init_core_attrs(types_namespace=types_namespace, force=False)
 
-    @cached_property
-    @_frame_depth(2)  # +2 for @cached_property and core_schema(self)
-    def core_schema(self) -> CoreSchema:
-        """The pydantic-core schema used to build the SchemaValidator and SchemaSerializer."""
-        if self._core_schema is None or isinstance(self._core_schema, _mock_val_ser.MockCoreSchema):
-            self._init_core_attrs(rebuild_mocks=True)  # Do not expose MockCoreSchema from public function
-        assert self._core_schema is not None and not isinstance(self._core_schema, _mock_val_ser.MockCoreSchema)
-        return self._core_schema
+            # TODO: can we remove these asserts?
+            assert not isinstance(self.core_schema, _mock_val_ser.MockCoreSchema)
+            assert not isinstance(self.validator, _mock_val_ser.MockValSer)
+            assert not isinstance(self.serializer, _mock_val_ser.MockValSer)
 
-    @cached_property
-    @_frame_depth(2)  # +2 for @cached_property + validator(self)
-    def validator(self) -> SchemaValidator | PluggableSchemaValidator:
-        """The pydantic-core SchemaValidator used to validate instances of the model."""
-        if not isinstance(self._validator, (SchemaValidator, PluggableSchemaValidator)):
-            self._init_core_attrs(rebuild_mocks=True)  # Do not expose MockValSer from public function
-        assert isinstance(self._validator, (SchemaValidator, PluggableSchemaValidator))
-        return self._validator
+        self._pydantic_complete = True
+        return True
 
-    @cached_property
-    @_frame_depth(2)  # +2 for @cached_property + serializer(self)
-    def serializer(self) -> SchemaSerializer:
-        """The pydantic-core SchemaSerializer used to dump instances of the model."""
-        if not isinstance(self._serializer, SchemaSerializer):
-            self._init_core_attrs(rebuild_mocks=True)  # Do not expose MockValSer from public function
-        assert isinstance(self._serializer, SchemaSerializer)
-        return self._serializer
-
+    @property
     def _defer_build(self) -> bool:
-        config = self._config if self._config is not None else self._model_config()
+        config = self._config if self._config is not None else self._model_config
         if config:
             return config.get('defer_build') is True
         return False
 
+    @property
     def _model_config(self) -> ConfigDict | None:
         type_: Any = _typing_extra.annotated_type(self._type) or self._type  # Eg FastAPI heavily uses Annotated
         if _utils.lenient_issubclass(type_, BaseModel):
             return type_.model_config
         return getattr(type_, '__pydantic_config__', None)
 
-    @_frame_depth(1)
+    def rebuild(
+        self,
+        *,
+        force: bool = False,
+        _parent_namespace_depth: int = 2,
+        _types_namespace: dict[str, Any] | None = None,
+    ) -> bool | None:
+        """Try to rebuild the pydantic-core schema for the adapter's type.
+
+        This may be necessary when one of the annotations is a ForwardRef which could not be resolved during
+        the initial attempt to build the schema, and automatic rebuilding fails.
+
+        Args:
+            force: Whether to force the rebuilding of the type adapter's schema, defaults to `False`.
+            _parent_namespace_depth: The depth level of the parent namespace, defaults to 2.
+            _types_namespace: The types namespace, defaults to `None`.
+
+        Returns:
+            Returns `None` if the schema is already "complete" and rebuilding was not required.
+            If rebuilding _was_ required, returns `True` if rebuilding was successful, otherwise `False`.
+        """
+        if not force and self._pydantic_complete:
+            return None
+        else:
+            if '_core_schema' in self.__dict__:
+                delattr(self, '_core_schema')  # delete cached value to ensure full rebuild happens
+
+            if _types_namespace is not None:
+                types_namespace: dict[str, Any] = _types_namespace.copy()
+            else:
+                types_namespace = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth) or {}
+
+            return self._init_core_attrs(types_namespace=types_namespace, force=True)
+
     def validate_python(
         self,
         object: Any,
@@ -350,7 +347,6 @@ class TypeAdapter(Generic[T]):
         """
         return self.validator.validate_python(object, strict=strict, from_attributes=from_attributes, context=context)
 
-    @_frame_depth(1)
     def validate_json(
         self, data: str | bytes, /, *, strict: bool | None = None, context: dict[str, Any] | None = None
     ) -> T:
@@ -368,7 +364,6 @@ class TypeAdapter(Generic[T]):
         """
         return self.validator.validate_json(data, strict=strict, context=context)
 
-    @_frame_depth(1)
     def validate_strings(self, obj: Any, /, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> T:
         """Validate object contains string data against the model.
 
@@ -382,7 +377,6 @@ class TypeAdapter(Generic[T]):
         """
         return self.validator.validate_strings(obj, strict=strict, context=context)
 
-    @_frame_depth(1)
     def get_default_value(self, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> Some[T] | None:
         """Get the default value for the wrapped type.
 
@@ -395,7 +389,6 @@ class TypeAdapter(Generic[T]):
         """
         return self.validator.get_default_value(strict=strict, context=context)
 
-    @_frame_depth(1)
     def dump_python(
         self,
         instance: T,
@@ -448,7 +441,6 @@ class TypeAdapter(Generic[T]):
             context=context,
         )
 
-    @_frame_depth(1)
     def dump_json(
         self,
         instance: T,
@@ -503,7 +495,6 @@ class TypeAdapter(Generic[T]):
             context=context,
         )
 
-    @_frame_depth(1)
     def json_schema(
         self,
         *,
@@ -563,8 +554,13 @@ class TypeAdapter(Generic[T]):
 
         inputs_ = []
         for key, mode, adapter in inputs:
-            with adapter._with_frame_depth(1):  # +1 for json_schemas staticmethod
-                inputs_.append((key, mode, adapter.core_schema))
+            # This is the same pattern we follow for model json schemas - we attempt a core schema rebuild if we detect a mock
+            if isinstance(adapter.core_schema, _mock_val_ser.MockCoreSchema):
+                adapter.core_schema.rebuild()
+                assert not isinstance(
+                    adapter.core_schema, _mock_val_ser.MockCoreSchema
+                ), 'this is a bug! please report it'
+            inputs_.append((key, mode, adapter.core_schema))
 
         json_schemas_map, definitions = schema_generator_instance.generate_definitions(inputs_)
 
