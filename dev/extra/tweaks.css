@@ -111,6 +111,40 @@ aside.blog img {
           mask-image: var(--md-admonition-icon--api);
 }
 
+/* Logfire link admonition */
+:root {
+  --md-admonition-icon--logfire: url('data:image/svg+xml;charset=utf-8,<svg viewBox="10 10 70 70" xmlns="http://www.w3.org/2000/svg"><path d="M48.75 60V48.75H37.5V18.75H26.25V60H37.5V71.25H63.75V60H48.75Z"/></svg> ')
+}
+.md-typeset .admonition.logfire, .md-typeset details.logfire {
+  border-color: #e620e9;
+}
+.md-typeset .logfire > .admonition-title, .md-typeset .logfire > summary {
+  background-color: #e620e91a;
+}
+.md-typeset .logfire > .admonition-title::before, .md-typeset .logfire > summary::before {
+  background-color: #e620e9;
+  -webkit-mask-image: var(--md-admonition-icon--logfire);
+          mask-image: var(--md-admonition-icon--logfire);
+}
+
+/* Hide the run button in logfire admonitions */
+.admonition.logfire .run-code-btn {
+  display: none;
+}
+
+/* add border to screenshots in the logfire admonitions `img[src*="logfire"]` to differentiate from emojis */
+.admonition.logfire img[src*="logfire"] {
+  border: 1px solid #448aff;
+  border-radius: 0.2rem;
+  padding: 0.2rem;
+}
+
+/* banner slightly larger */
+.md-banner__inner {
+  font-size: 0.8rem;
+  margin: 0.3rem auto;
+}
+
 /* Revert hue value to that of pre mkdocs-material v9.4.0 */
 [data-md-color-scheme="slate"] {
   --md-hue: 230;

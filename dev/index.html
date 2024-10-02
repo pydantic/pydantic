@@ -100,9 +100,11 @@
             
   <!-- the following line is displayed in the announcement bar -->
 <!-- keep length under 164 characters (less HTML tags) to fit on 1280px desktop window -->
-<b>We're live!</b> <a href="https://pydantic.dev/logfire">Pydantic Logfire</a> is out in open beta! 🎉<br>
-Logfire is a new observability tool for Python, from the creators of Pydantic, with great Pydantic support.
-Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">what you think</a>!
+What's new &mdash; we've launched
+<a href="https://pydantic.dev/articles/logfire-announcement">Pydantic Logfire</a>
+<img alt="🔥" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.0.3/assets/svg/1f525.svg" title=":fire:">
+to help you monitor and understand your
+<a href="https://logfire.pydantic.dev/docs/integrations/pydantic/" id="logfire-app-type" target="_blank">Pydantic validations.</a>
 
           </div>
           
@@ -2884,36 +2886,45 @@ Please try it, and tell us <a href="https://docs.pydantic.dev/logfire/help/">wha
 <a href="https://anaconda.org/conda-forge/pydantic"><img alt="CondaForge" src="https://img.shields.io/conda/v/conda-forge/pydantic.svg" /></a>
 <a href="https://pepy.tech/project/pydantic"><img alt="downloads" src="https://static.pepy.tech/badge/pydantic/month" /></a><br>
 <a href="https://github.com/pydantic/pydantic/blob/main/LICENSE"><img alt="license" src="https://img.shields.io/github/license/pydantic/pydantic.svg" /></a></p>
-<p>Documentation for development version: <a href="https://github.com/pydantic/pydantic/commit/296f2caca7909887cd70e16fae4370db9eacdc14">296f2ca</a>.</p>
+<p>Documentation for development version: <a href="https://github.com/pydantic/pydantic/commit/281c11c06f3b0ec65add39f1aba0df3620eb8fe7">281c11c</a>.</p>
 <p>Pydantic is the most widely used data validation library for Python.</p>
 <p>Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define how data should be in pure, canonical Python 3.8+; validate it with Pydantic.</p>
-<div class="admonition success">
-<p class="admonition-title">Migrating to Pydantic V2</p>
-<p>Using Pydantic V1? See the <a href="migration/">Migration Guide</a> for notes on upgrading to Pydantic V2 in your applications!</p>
-</div>
-<div class="language-py highlight"><span class="filename">Pydantic Example</span><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+<div class="admonition logfire">
+<p class="admonition-title">Monitor Pydantic with Logfire <img alt="🔥" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.0.3/assets/svg/1f525.svg" title=":fire:" /></p>
+<p>Built by the same team as Pydantic, <strong><a href="https://pydantic.dev/logfire">Logfire</a></strong> is an application monitoring tool that is as simple to use and powerful as Pydantic itself.</p>
+<p>Logfire integrates with many popular Python libraries including FastAPI, OpenAI and Pydantic itself, so you can use Logfire to monitor Pydantic validations and understand why some inputs fail validation:</p>
+<div class="language-py highlight"><span class="filename">Monitoring Pydantic with Logfire</span><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">import</span> <span class="nn">logfire</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="n">logfire</span><span class="o">.</span><span class="n">configure</span><span class="p">()</span>
+<span class="n">logfire</span><span class="o">.</span><span class="n">instrument_pydantic</span><span class="p">()</span>  <span class="c1"># (1)!</span>
 
 
 <span class="k">class</span> <span class="nc">Delivery</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">timestamp</span><span class="p">:</span> <span class="n">datetime</span>
-    <span class="n">dimensions</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+    <span class="n">dimensions</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
 
 
+<span class="c1"># this will record details of a successful validation to logfire</span>
 <span class="n">m</span> <span class="o">=</span> <span class="n">Delivery</span><span class="p">(</span><span class="n">timestamp</span><span class="o">=</span><span class="s1">&#39;2020-01-02T03:04:05Z&#39;</span><span class="p">,</span> <span class="n">dimensions</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;10&#39;</span><span class="p">,</span> <span class="s1">&#39;20&#39;</span><span class="p">])</span>
 <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">timestamp</span><span class="p">))</span>
 <span class="c1">#&gt; datetime.datetime(2020, 1, 2, 3, 4, 5, tzinfo=TzInfo(UTC))</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">dimensions</span><span class="p">)</span>
 <span class="c1">#&gt; (10, 20)</span>
+
+<span class="n">Delivery</span><span class="p">(</span><span class="n">timestamp</span><span class="o">=</span><span class="s1">&#39;2020-01-02T03:04:05Z&#39;</span><span class="p">,</span> <span class="n">dimensions</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;10&#39;</span><span class="p">])</span>  <span class="c1"># (2)!</span>
 </code></pre></div>
-<div class="admonition question">
-<p class="admonition-title">Why is Pydantic named the way it is?</p>
-<p>The name "Pydantic" is a portmanteau of "Py" and "pedantic." The "Py" part indicates that the library is associated with Python, and
-"pedantic" refers to the library's meticulous approach to data validation and type enforcement.</p>
-<p>Combining these elements, "Pydantic" describes our Python library that provides detail-oriented, rigorous data validation.</p>
-<p>We’re aware of the irony that Pydantic V1 was not strict in its validation, so if we're being pedantic, "Pydantic" was a misnomer until V2 😉.</p>
+<ol>
+<li>Set logfire record all both successful and failed validations, use <code>record='failure'</code> to only record failed validations, <a href="https://logfire.pydantic.dev/docs/integrations/pydantic/">learn more</a>.</li>
+<li>This will raise a <code>ValidationError</code> since there are too few <code>dimensions</code>, details of the input data and validation errors will be recorded in Logfire.</li>
+</ol>
+<p>Would give you a view like this in the Logfire platform:</p>
+<p><a href="https://logfire.pydantic.dev/docs/guides/web-ui/live/"><img alt="Logfire Pydantic Integration" src="img/logfire-pydantic-integration.png" /></a></p>
+<p>This is just a toy example, but hopefully makes clear the potential value of instrumenting a more complex application.</p>
+<p><strong><a href="https://logfire.pydantic.dev/docs/">Learn more about Pydantic Logfire</a></strong></p>
 </div>
 <h2 id="why-use-pydantic">Why use Pydantic?<a class="headerlink" href="#why-use-pydantic" title="Permanent link">&para;</a></h2>
 <ul>
