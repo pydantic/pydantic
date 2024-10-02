@@ -550,13 +550,13 @@ class MyModel(BaseModel):
 def test_different_ways_of_type_aliasing(create_module):
     module = create_module(
         """
-from typing import NewType
+from typing import NewType, List
 from typing_extensions import TypeAlias, TypeAliasType
 from pydantic import BaseModel
 
-T1: TypeAlias = list[int]
+T1: TypeAlias = List[int]
 T2 = TypeAliasType('T2', int)
-T3 = list[str]
+T3 = List[str]
 T4 = NewType('T4', str)
 
 class MyModel(BaseModel):
@@ -603,11 +603,11 @@ class MyModel(BaseModel):
 def test_different_ways_of_type_aliasing_nested(create_module):
     module = create_module(
         """
-from typing import NewType
+from typing import NewType, List
 from typing_extensions import TypeAlias, TypeAliasType
 from pydantic import BaseModel
 
-T1: TypeAlias = list[int]
+T1: TypeAlias = List[int]
 T2 = TypeAliasType('T2', T1)
 T3 = T2
 T4 = NewType('T4', T3)
