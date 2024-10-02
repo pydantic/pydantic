@@ -127,6 +127,11 @@ aside.blog img {
           mask-image: var(--md-admonition-icon--logfire);
 }
 
+/* Hide the run button in logfire admonitions */
+.admonition.logfire .run-code-btn {
+  display: none;
+}
+
 /* Revert hue value to that of pre mkdocs-material v9.4.0 */
 [data-md-color-scheme="slate"] {
   --md-hue: 230;

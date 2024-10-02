@@ -15,7 +15,7 @@ Define how data should be in pure, canonical Python 3.8+; validate it with Pydan
 
 ## Pydantic Logfire :fire:
 
-We've recently released Pydantic Logfire to help you monitor your applications.
+We've recently launched Pydantic Logfire to help you monitor your applications.
 [Learn more](https://pydantic.dev/articles/logfire-announcement)
 
 ## Pydantic V1.10 vs. V2
