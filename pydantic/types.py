@@ -1143,8 +1143,9 @@ class UuidVersion:
 
     Example:
         ```python
-        from typing_extensions import Annotated
         from uuid import UUID
+
+        from typing_extensions import Annotated
 
         from pydantic.types import UuidVersion
 
@@ -2617,10 +2618,11 @@ Warning:
     ```py
     import base64
     from typing import Literal
-    from pydantic import EncoderProtocol, EncodedBytes
-    from pydantic_core import PydanticCustomError
 
+    from pydantic_core import PydanticCustomError
     from typing_extensions import Annotated
+
+    from pydantic import EncodedBytes, EncoderProtocol
 
     class LegacyBase64Encoder(EncoderProtocol):
         @classmethod
@@ -3196,7 +3198,9 @@ class FailFast(_fields.PydanticMetadata, BaseMetadata):
 
     ```py
     from typing import List
+
     from typing_extensions import Annotated
+
     from pydantic import BaseModel, FailFast, ValidationError
 
     class Model(BaseModel):
