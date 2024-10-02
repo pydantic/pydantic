@@ -444,14 +444,15 @@ class MyModel(BaseModel):
 def test_type_alias_with_generics(create_module):
     module = create_module(
         """
-from typing import TypeAlias, TypeVar
+from typing import TypeAlias, TypeVar, Sequence
 from pydantic import BaseModel
 
 T = TypeVar("T")
-MyList: TypeAlias = list[T]
+MySeq: TypeAlias = Sequence[T]
+MyIntSeq = MySeq[int]
 
 class MyModel(BaseModel):
-    v: MyList[int]
+    v: MyIntSeq
 """
     )
     assert module.MyModel(v=[1]).model_dump() == {'v': [1]}
@@ -475,6 +476,7 @@ class MyModel(BaseModel):
     reason='type statement is available from 3.12',
 )
 def test_generics_with_type_statement(create_module):
+    # essentially test case `test_type_alias_with_generics` with the new syntax
     module = create_module(
         """
 from pydantic import BaseModel
