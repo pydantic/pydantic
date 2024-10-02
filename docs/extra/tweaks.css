@@ -132,6 +132,12 @@ aside.blog img {
   display: none;
 }
 
+/* banner slightly larger */
+.md-banner__inner {
+  font-size: 0.8rem;
+  margin: 0.3rem auto;
+}
+
 /* Revert hue value to that of pre mkdocs-material v9.4.0 */
 [data-md-color-scheme="slate"] {
   --md-hue: 230;

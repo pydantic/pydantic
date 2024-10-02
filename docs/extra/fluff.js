@@ -17,15 +17,15 @@
     ['/integrations/fastapi/', 'FastAPI app.'],
     ['/integrations/openai/', 'OpenAI integration.'],
     ['/integrations/asyncpg/', 'Postgres queries.'],
-    ['/integrations/redis/', 'Task Queue.'],
-    ['/integrations/system-metrics/', 'System Metrics.'],
-    ['/integrations/httpx/', 'API Calls.'],
-    ['/integrations/logging/', 'Std lib logging.'],
+    ['/integrations/redis/', 'task queue.'],
+    ['/integrations/system-metrics/', 'system metrics.'],
+    ['/integrations/httpx/', 'API calls.'],
+    ['/integrations/logging/', 'std lib logging.'],
     ['/integrations/django/', 'Django app.'],
     ['/integrations/anthropic/', 'Anthropic API calls.'],
     ['/integrations/fastapi/', 'Flask app.'],
     ['/integrations/mysql/', 'MySQL queries.'],
-    ['/integrations/sqlalchemy/', 'SqlAlchemy queries.'],
+    ['/integrations/sqlalchemy/', 'SQLAlchemy queries.'],
     ['/integrations/structlog/', 'Structlog logs.'],
     ['/integrations/stripe/', 'Stripe API calls.'],
   ];
@@ -34,21 +34,32 @@
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+  // avoid multiple replaceText running at the same time (e.g. when the user has left the page)
+  let running = false;
+
   const replaceText = async () => {
-    const text = el.textContent;
-    for (let i = text.length; i >= 0; i--) {
-      el.textContent = text.slice(0, i);
-      await sleep(20);
+    if (running) {
+      return;
     }
-    await sleep(50);
-    counter++;
-    // change the link halfway through the animation
-    const [link, newText] = appTypes[counter % appTypes.length];
-    el.href = docsUrl + link;
-    await sleep(50);
-    for (let i = 0; i <= newText.length; i++) {
-      el.textContent = newText.slice(0, i);
+    running = true;
+    try {
+      const text = el.textContent;
+      for (let i = text.length; i >= 0; i--) {
+        el.textContent = text.slice(0, i);
+        await sleep(30);
+      }
       await sleep(30);
+      counter++;
+      // change the link halfway through the animation
+      const [link, newText] = appTypes[counter % appTypes.length];
+      el.href = docsUrl + link;
+      await sleep(30);
+      for (let i = 0; i <= newText.length; i++) {
+        el.textContent = newText.slice(0, i);
+        await sleep(30);
+      }
+    } finally {
+      running = false;
     }
   };
   setInterval(replaceText, 3000);
