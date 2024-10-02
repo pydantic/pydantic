@@ -482,3 +482,118 @@ class MyModel(BaseModel):
 
     with pytest.raises(ValidationError, match='recursion_loop'):
         module.MyModel(value=1)
+
+
+def test_different_ways_of_type_aliasing(create_module):
+    module = create_module(
+        """
+from typing import NewType
+from typing_extensions import TypeAlias, TypeAliasType
+from pydantic import BaseModel
+
+T1: TypeAlias = list[int]
+T2 = TypeAliasType('T2', int)
+T3 = list[str]
+T4 = NewType('T4', str)
+
+class MyModel(BaseModel):
+    a: T1
+    b: T2
+    c: T3
+    d: T4
+"""
+    )
+    assert module.MyModel(a=[1], b=2, c=['foo'], d='bar').model_dump() == {'a': [1], 'b': 2, 'c': ['foo'], 'd': 'bar'}
+    with pytest.raises(ValidationError) as exc_info:
+        module.MyModel(a='?', b='?', c=[True], d=2)
+    assert sorted(exc_info.value.errors(include_url=False), key=lambda x: x['loc']) == [
+        {
+            'type': 'list_type',
+            'loc': ('a',),
+            'msg': 'Input should be a valid list',
+            'input': '?',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': ('b',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': '?',
+        },
+        {
+            'type': 'string_type',
+            'loc': (
+                'c',
+                0,
+            ),
+            'msg': 'Input should be a valid string',
+            'input': True,
+        },
+        {
+            'type': 'string_type',
+            'loc': ('d',),
+            'msg': 'Input should be a valid string',
+            'input': 2,
+        },
+    ]
+
+
+def test_different_ways_of_type_aliasing_nested(create_module):
+    module = create_module(
+        """
+from typing import NewType
+from typing_extensions import TypeAlias, TypeAliasType
+from pydantic import BaseModel
+
+T1: TypeAlias = list[int]
+T2 = TypeAliasType('T2', T1)
+T3 = T2
+T4 = NewType('T4', T3)
+
+class MyModel(BaseModel):
+    a: T1
+    b: T2
+    c: T3
+    d: T4
+"""
+    )
+    assert module.MyModel(a=[1], b=[1], c=[1], d=[1]).model_dump() == {'a': [1], 'b': [1], 'c': [1], 'd': [1]}
+    with pytest.raises(ValidationError) as exc_info:
+        module.MyModel(a=['a'], b=['a'], c=['a'], d=['a'])
+    assert sorted(exc_info.value.errors(include_url=False), key=lambda x: x['loc']) == [
+        {
+            'type': 'int_parsing',
+            'loc': (
+                'a',
+                0,
+            ),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': (
+                'b',
+                0,
+            ),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': (
+                'c',
+                0,
+            ),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': (
+                'd',
+                0,
+            ),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        },
+    ]
