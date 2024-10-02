@@ -132,6 +132,13 @@ aside.blog img {
   display: none;
 }
 
+/* add border to screenshots in the logfire admonitions `img[src*="logfire"]` to differentiate from emojis */
+.admonition.logfire img[src*="logfire"] {
+  border: 1px solid #448aff;
+  border-radius: 0.2rem;
+  padding: 0.2rem;
+}
+
 /* banner slightly larger */
 .md-banner__inner {
   font-size: 0.8rem;

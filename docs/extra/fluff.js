@@ -62,5 +62,5 @@
       running = false;
     }
   };
-  setInterval(replaceText, 3000);
+  setInterval(replaceText, 4000);
 })();

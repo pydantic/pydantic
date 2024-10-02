@@ -14,23 +14,25 @@ Pydantic is the most widely used data validation library for Python.
 Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define how data should be in pure, canonical Python 3.8+; validate it with Pydantic.
 
 !!! logfire "Monitor Pydantic with Logfire :fire:"
-    Built by the same team as Pydantic, [Logfire](https://pydantic.dev/logfire) is an application monitoring tool that is as simple to use and powerful as Pydantic itself.
+    Built by the same team as Pydantic, **[Logfire](https://pydantic.dev/logfire)** is an application monitoring tool that is as simple to use and powerful as Pydantic itself.
 
     Logfire integrates with many popular Python libraries including FastAPI, OpenAI and Pydantic itself, so you can use Logfire to monitor Pydantic validations and understand why some inputs fail validation:
 
     ```py title="Monitoring Pydantic with Logfire"
+    from datetime import datetime
+
     from pydantic import BaseModel
     import logfire
 
     logfire.configure()
-    logfire.instrument_pydantic() # record all Pydantic validations,
+    logfire.instrument_pydantic()  # record all Pydantic validations,
 
     class Delivery(BaseModel):
         timestamp: datetime
         dimensions: tuple[int, int]
 
     # this will record details of a successful validation to logfire
-    Delivery(timestamp='2020-01-02T03:04:05Z', dimensions=['10', '20'])
+    m = Delivery(timestamp='2020-01-02T03:04:05Z', dimensions=['10', '20'])
     print(repr(m.timestamp))
     #> datetime.datetime(2020, 1, 2, 3, 4, 5, tzinfo=TzInfo(UTC))
     print(m.dimensions)
@@ -39,7 +41,14 @@ Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define h
     # this will record details of a failed validation to logfire
     Delivery(timestamp='2020-01-02T03:04:05Z', dimensions=['10', '20', '30'])
     ```
-    [Learn more about Pydantic Logfire](https://pydantic.dev/logfire)
+
+    Would give you a view like this in the Logfire platform:
+
+    [![Logfire Pydantic Integration](img/logfire-pydantic-integration.png)](https://logfire.pydantic.dev/docs/guides/web-ui/live/)
+
+    This is just a toy example, but hopefully makes clear the potential value of instrumenting a more complex application.
+
+    **[Learn more about Pydantic Logfire](https://pydantic.dev/logfire)**
 
 
 ## Why use Pydantic?
