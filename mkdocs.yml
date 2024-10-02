@@ -196,6 +196,7 @@ hooks:
 - 'docs/plugins/main.py'
 
 plugins:
+- social
 - mike:
     alias_type: symlink
     canonical_version: latest
