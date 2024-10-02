@@ -444,7 +444,8 @@ class MyModel(BaseModel):
 def test_type_alias_with_generics(create_module):
     module = create_module(
         """
-from typing import TypeAlias, TypeVar, Sequence
+from typing import TypeVar, Sequence
+from typing_extensions import TypeAlias
 from pydantic import BaseModel
 
 T = TypeVar("T")
