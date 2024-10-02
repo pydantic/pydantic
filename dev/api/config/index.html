@@ -5081,10 +5081,17 @@ Set equal to <code>ser_json_bytes</code> to get back an equal value after serial
         <div class="language-text highlight"><pre><span></span><code>A `tuple` of strings and/or patterns that prevent models from having fields with names that conflict with them.
 For strings, we match on a prefix basis. Ex, if &#39;dog&#39; is in the protected namespace, &#39;dog_name&#39; will be protected.
 For patterns, we match on the entire field name. Ex, if `re.compile(r&#39;^dog$&#39;)` is in the protected namespace, &#39;dog&#39; will be protected, but &#39;dog_name&#39; will not be.
-Defaults to `(&#39;model_&#39;, )`).
+Defaults to `(&#39;model_validate&#39;, &#39;model_dump&#39;)`).
 
-Pydantic prevents collisions between model attributes and `BaseModel`&#39;s own methods by
-namespacing them with the prefix `model_`.
+The reason we&#39;ve selected these is to prevent collisions with other validation / dumping formats
+in the future - ex, model_validate_{some_newly_supported_format}.
+
+Before v2.10, Pydantic used `(&#39;model_&#39;,)` as the default value for this setting to
+prevent collisions between model attributes and `BaseModel`&#39;s own methods. This was changed
+in v2.10 given feedback that this restriction was limiting in AI and data science contexts,
+where it is common to have fields with names like `model_id`, `model_input`, `model_output`, etc.
+
+For more details, see https://github.com/pydantic/pydantic/issues/10315.
 
 ```py
 import warnings
@@ -5096,14 +5103,14 @@ warnings.filterwarnings(&#39;error&#39;)  # Raise warnings as errors
 try:
 
     class Model(BaseModel):
-        model_prefixed_field: str
+        model_dump_something: str
 
 except UserWarning as e:
     print(e)
     &#39;&#39;&#39;
-    Field &quot;model_prefixed_field&quot; in Model has conflict with protected namespace &quot;model_&quot;.
+    Field &quot;model_dump_something&quot; in Model has conflict with protected namespace &quot;model_dump&quot;.
 
-    You may be able to resolve this warning by setting `model_config[&#39;protected_namespaces&#39;] = ()`.
+    You may be able to resolve this warning by setting `model_config[&#39;protected_namespaces&#39;] = (&#39;model_validate&#39;,)`.
     &#39;&#39;&#39;
 ```
 
@@ -5149,12 +5156,14 @@ While Pydantic will only emit a warning when an item is in a protected namespace
 an error _is_ raised if there is an actual collision with an existing attribute:
 
 ```py
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 try:
 
     class Model(BaseModel):
         model_validate: str
+
+        model_config = ConfigDict(protected_namespaces=(&#39;model_&#39;,))
 
 except NameError as e:
     print(e)
@@ -5769,16 +5778,7 @@ especially with <code>TypedDict</code>.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/config.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1010</span>
-<span class="normal">1011</span>
-<span class="normal">1012</span>
-<span class="normal">1013</span>
-<span class="normal">1014</span>
-<span class="normal">1015</span>
-<span class="normal">1016</span>
-<span class="normal">1017</span>
-<span class="normal">1018</span>
-<span class="normal">1019</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1019</span>
 <span class="normal">1020</span>
 <span class="normal">1021</span>
 <span class="normal">1022</span>
@@ -5809,7 +5809,16 @@ especially with <code>TypedDict</code>.</p>
 <span class="normal">1047</span>
 <span class="normal">1048</span>
 <span class="normal">1049</span>
-<span class="normal">1050</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
+<span class="normal">1050</span>
+<span class="normal">1051</span>
+<span class="normal">1052</span>
+<span class="normal">1053</span>
+<span class="normal">1054</span>
+<span class="normal">1055</span>
+<span class="normal">1056</span>
+<span class="normal">1057</span>
+<span class="normal">1058</span>
+<span class="normal">1059</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.10/concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict</span>
 
 <span class="sd">    A convenience decorator to set a [Pydantic configuration](config.md) on a `TypedDict` or a `dataclass` from the standard library.</span>
