@@ -107,6 +107,9 @@ make
 
 If you've made any changes to the documentation (including changes to function signatures, class definitions, or docstrings that will appear in the API documentation), make sure it builds successfully.
 
+We use `mkdocs-material[imaging]` to support social previews.
+You can find directions on how to install the required dependencies [here](https://squidfunk.github.io/mkdocs-material/plugins/requirements/image-processing/).
+
 ```bash
 # Build documentation
 make docs
