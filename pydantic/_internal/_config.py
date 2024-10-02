@@ -2,6 +2,7 @@ from __future__ import annotations as _annotations
 
 import warnings
 from contextlib import contextmanager
+from re import Pattern
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -26,6 +27,7 @@ if not TYPE_CHECKING:
     DeprecationWarning = PydanticDeprecatedSince20
 
 if TYPE_CHECKING:
+    from .._internal._schema_generation_shared import GenerateSchema
     from ..fields import ComputedFieldInfo, FieldInfo
 
 DEPRECATION_MESSAGE = 'Support for class-based `config` is deprecated, use ConfigDict instead.'
@@ -75,10 +77,11 @@ class ConfigWrapper:
     # whether to validate default values during validation, default False
     validate_default: bool
     validate_return: bool
-    protected_namespaces: tuple[str, ...]
+    protected_namespaces: tuple[str | Pattern[str], ...]
     hide_input_in_errors: bool
     defer_build: bool
     plugin_settings: dict[str, object] | None
+    schema_generator: type[GenerateSchema] | None
     json_schema_serialization_defaults_required: bool
     json_schema_mode_override: Literal['validation', 'serialization', None]
     coerce_numbers_to_str: bool
@@ -165,6 +168,13 @@ class ConfigWrapper:
             A `CoreConfig` object created from config.
         """
         config = self.config_dict
+
+        if config.get('schema_generator') is not None:
+            warnings.warn(
+                'The `schema_generator` setting has been deprecated since v2.10. This setting no longer has any effect.',
+                PydanticDeprecatedSince210,
+                stacklevel=2,
+            )
 
         if config.get('ser_json_timedelta') == 'float':
             warnings.warn(
@@ -263,10 +273,11 @@ config_defaults = ConfigDict(
     ser_json_inf_nan='null',
     validate_default=False,
     validate_return=False,
-    protected_namespaces=('model_',),
+    protected_namespaces=('model_validate', 'model_dump'),
     hide_input_in_errors=False,
     json_encoders=None,
     defer_build=False,
+    schema_generator=None,
     plugin_settings=None,
     json_schema_serialization_defaults_required=False,
     json_schema_mode_override=None,

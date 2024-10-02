@@ -14,7 +14,7 @@ import typing_extensions
 
 from ._core_utils import get_type_ref
 from ._forward_ref import PydanticRecursiveRef
-from ._typing_extra import TypeVarType, typing_base
+from ._typing_extra import LITERAL_TYPES, TypeVarType, typing_base
 from ._utils import all_identical, is_model_class
 
 if sys.version_info >= (3, 10):
@@ -357,6 +357,8 @@ def has_instance_in_type(type_: Any, isinstance_target: Any) -> bool:
     if origin_type is typing_extensions.Annotated:
         annotated_type, *annotations = type_args
         return has_instance_in_type(annotated_type, isinstance_target)
+    elif origin_type in LITERAL_TYPES:
+        return False
 
     # Having type args is a good indicator that this is a typing module
     # class instantiation or a generic alias of some sort.
