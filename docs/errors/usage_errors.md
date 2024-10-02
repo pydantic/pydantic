@@ -1253,14 +1253,19 @@ These decorators cannot be put before `validate_call` because they return a clas
 ```py
 from pydantic import validate_call
 
-class A:
-    @validate_call  # error
-    @classmethod
-    def f1(cls): ...
+# error
+try:
+    class A:
+        @validate_call
+        @classmethod
+        def f1(cls): ...
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'validate-call-type'
 
-    @classmethod
-    @validate_call  # correct
-    def f2(cls): ...
+# correct
+@classmethod
+@validate_call
+def f2(cls): ...
 ```
 
 
@@ -1272,8 +1277,11 @@ To avoid ambiguity, `validate_call` should be applied to methods, not classes. I
 from pydantic import validate_call
 
 # error
-@validate_call
-class A1: ...
+try:
+    @validate_call
+    class A1: ...
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'validate-call-type'
 
 # correct
 class A2:
@@ -1292,10 +1300,14 @@ Although you can create custom callable types in Python with `__call__`, current
 from pydantic import validate_call
 
 # error
-class A1:
-    def __call__(self): ...
+try:
+    class A1:
+        def __call__(self): ...
 
-validate_call(A1())
+    validate_call(A1())
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'validate-call-type'
 
 # correct
 class A2:
@@ -1310,8 +1322,11 @@ This is generally less common, but a possible reason is that you are trying to v
 ```py
 from pydantic import validate_call
 
-class A:
-    def f(): ...
+try:
+    class A:
+        def f(): ...
 
-validate_call(A().f)
+    validate_call(A().f)
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'validate-call-type'
 ```
