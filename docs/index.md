@@ -18,11 +18,12 @@ Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define h
 
     Logfire integrates with many popular Python libraries including FastAPI, OpenAI and Pydantic itself, so you can use Logfire to monitor Pydantic validations and understand why some inputs fail validation:
 
-    ```py title="Monitoring Pydantic with Logfire"
+    ```py title="Monitoring Pydantic with Logfire" test="skip"
     from datetime import datetime
 
-    from pydantic import BaseModel
     import logfire
+
+    from pydantic import BaseModel
 
     logfire.configure()
     logfire.instrument_pydantic()  # (1)!
@@ -40,11 +41,11 @@ Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define h
     print(m.dimensions)
     #> (10, 20)
 
-    Delivery(timestamp='2020-01-02T03:04:05Z', dimensions=['10', '20', '30'])  # (2)!
+    Delivery(timestamp='2020-01-02T03:04:05Z', dimensions=['10'])  # (2)!
     ```
 
     1. Set logfire record all both successful and failed validations, use `record='failure'` to only record failed validations, [learn more](https://logfire.pydantic.dev/docs/integrations/pydantic/).
-    2. This will raise a `ValidationError` since there are too many `dimensions`, details of the input data and validation errors will be recorded in Logfire.
+    2. This will raise a `ValidationError` since there are too few `dimensions`, details of the input data and validation errors will be recorded in Logfire.
 
     Would give you a view like this in the Logfire platform:
 
