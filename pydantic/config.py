@@ -2,7 +2,8 @@
 
 from __future__ import annotations as _annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Pattern, Type, TypeVar, Union
+from re import Pattern
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, TypeVar, Union
 
 from typing_extensions import Literal, TypeAlias, TypedDict
 

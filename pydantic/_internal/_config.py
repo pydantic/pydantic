@@ -2,11 +2,11 @@ from __future__ import annotations as _annotations
 
 import warnings
 from contextlib import contextmanager
+from re import Pattern
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Pattern,
     cast,
 )
 
