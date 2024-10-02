@@ -25,11 +25,13 @@ Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define h
     import logfire
 
     logfire.configure()
-    logfire.instrument_pydantic()  # record all Pydantic validations,
+    logfire.instrument_pydantic()  # (1)!
+
 
     class Delivery(BaseModel):
         timestamp: datetime
         dimensions: tuple[int, int]
+
 
     # this will record details of a successful validation to logfire
     m = Delivery(timestamp='2020-01-02T03:04:05Z', dimensions=['10', '20'])
@@ -38,9 +40,11 @@ Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define h
     print(m.dimensions)
     #> (10, 20)
 
-    # this will record details of a failed validation to logfire
-    Delivery(timestamp='2020-01-02T03:04:05Z', dimensions=['10', '20', '30'])
+    Delivery(timestamp='2020-01-02T03:04:05Z', dimensions=['10', '20', '30'])  # (2)!
     ```
+
+    1. Set logfire record all both successful and failed validations, use `record='failure'` to only record failed validations, [learn more](https://logfire.pydantic.dev/docs/integrations/pydantic/).
+    2. This will raise a `ValidationError` since there are too many `dimensions`, details of the input data and validation errors will be recorded in Logfire.
 
     Would give you a view like this in the Logfire platform:
 
@@ -48,7 +52,7 @@ Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define h
 
     This is just a toy example, but hopefully makes clear the potential value of instrumenting a more complex application.
 
-    **[Learn more about Pydantic Logfire](https://pydantic.dev/logfire)**
+    **[Learn more about Pydantic Logfire](https://logfire.pydantic.dev/docs/)**
 
 
 ## Why use Pydantic?
