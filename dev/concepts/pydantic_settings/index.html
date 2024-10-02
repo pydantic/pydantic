@@ -3996,18 +3996,36 @@ nested model default object fields.</p>
     <span class="n">flag</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 
 
-<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">SettingsPartialUpdate</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span>
         <span class="n">env_nested_delimiter</span><span class="o">=</span><span class="s1">&#39;__&#39;</span><span class="p">,</span> <span class="n">nested_model_default_partial_update</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">)</span>
 
-    <span class="n">nested_model</span><span class="p">:</span> <span class="n">SubModel</span> <span class="o">=</span> <span class="n">SubModel</span><span class="p">()</span>
+    <span class="n">nested_model</span><span class="p">:</span> <span class="n">SubModel</span> <span class="o">=</span> <span class="n">SubModel</span><span class="p">(</span><span class="n">val</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">SettingsNoPartialUpdate</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span>
+        <span class="n">env_nested_delimiter</span><span class="o">=</span><span class="s1">&#39;__&#39;</span><span class="p">,</span> <span class="n">nested_model_default_partial_update</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">)</span>
+
+    <span class="n">nested_model</span><span class="p">:</span> <span class="n">SubModel</span> <span class="o">=</span> <span class="n">SubModel</span><span class="p">(</span><span class="n">val</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
 
 <span class="c1"># Apply a partial update to the default object using environment variables</span>
 <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;NESTED_MODEL__FLAG&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;True&#39;</span>
 
-<span class="k">assert</span> <span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;nested_model&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;val&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;flag&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}}</span>
+<span class="c1"># When partial update is enabled, the existing SubModel instance is updated</span>
+<span class="c1"># with nested_model.flag=True change</span>
+<span class="k">assert</span> <span class="n">SettingsPartialUpdate</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span>
+    <span class="s1">&#39;nested_model&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;val&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;flag&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1"># When partial update is disabled, a new SubModel instance is instantiated</span>
+<span class="c1"># with nested_model.flag=True change</span>
+<span class="k">assert</span> <span class="n">SettingsNoPartialUpdate</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span>
+    <span class="s1">&#39;nested_model&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;val&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;flag&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+<span class="p">}</span>
 </code></pre></div>
 <h2 id="dotenv-env-support">Dotenv (.env) support<a class="headerlink" href="#dotenv-env-support" title="Permanent link">&para;</a></h2>
 <p>Dotenv files (generally named <code>.env</code>) are a common pattern that make it easy to use environment variables in a
