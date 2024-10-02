@@ -1251,16 +1251,19 @@ except PydanticUserError as exc_info:
 These decorators cannot be put before `validate_call` because they return a class rather than one of the supported types. The correct way to use them is to put `validate_call` before the decorator.
 
 ```py
-from pydantic import validate_call
+from pydantic import PydanticUserError, validate_call
 
 # error
 try:
+
     class A:
         @validate_call
         @classmethod
         def f1(cls): ...
+
 except PydanticUserError as exc_info:
     assert exc_info.code == 'validate-call-type'
+
 
 # correct
 @classmethod
@@ -1274,14 +1277,17 @@ def f2(cls): ...
 To avoid ambiguity, `validate_call` should be applied to methods, not classes. If you want to validate the constructor of a class, you should put `validate_call` on top of `__init__` or `__new__` instead.
 
 ```py
-from pydantic import validate_call
+from pydantic import PydanticUserError, validate_call
 
 # error
 try:
+
     @validate_call
     class A1: ...
+
 except PydanticUserError as exc_info:
     assert exc_info.code == 'validate-call-type'
+
 
 # correct
 class A2:
@@ -1297,10 +1303,11 @@ class A2:
 Although you can create custom callable types in Python with `__call__`, currently the instance of these types cannot be validated with `validate_call`. This may change in the future, but for now, you should use `validate_call` explicitly on `__call__` instead.
 
 ```py
-from pydantic import validate_call
+from pydantic import PydanticUserError, validate_call
 
 # error
 try:
+
     class A1:
         def __call__(self): ...
 
@@ -1308,6 +1315,7 @@ try:
 
 except PydanticUserError as exc_info:
     assert exc_info.code == 'validate-call-type'
+
 
 # correct
 class A2:
@@ -1320,9 +1328,10 @@ class A2:
 This is generally less common, but a possible reason is that you are trying to validate a method that doesn't have at least one argument (usually `self`).
 
 ```py
-from pydantic import validate_call
+from pydantic import PydanticUserError, validate_call
 
 try:
+
     class A:
         def f(): ...
 
