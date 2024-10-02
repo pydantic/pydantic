@@ -428,7 +428,6 @@ type JSONObj = dict[str, JSON]
 type JSONSeq = list[JSON]
 JSONAlias = JSONSeq
 type MyJSONAlias = JSON
-# MyJSONAlias = JSON
 type JSONs = Sequence[MyJSONAlias]
 
 class MyModel(BaseModel):
@@ -442,11 +441,73 @@ class MyModel(BaseModel):
         module.MyModel(value=input_value)
 
 
+def test_type_alias_with_generics(create_module):
+    module = create_module(
+        """
+from typing import TypeAlias, TypeVar
+from pydantic import BaseModel
+
+T = TypeVar("T")
+MyList: TypeAlias = list[T]
+
+class MyModel(BaseModel):
+    v: MyList[int]
+"""
+    )
+    assert module.MyModel(v=[1]).model_dump() == {'v': [1]}
+    with pytest.raises(ValidationError) as exc_info:
+        module.MyModel(v=['a'])
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': (
+                'v',
+                0,
+            ),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        },
+    ]
+
+
 @pytest.mark.skipif(
     sys.version_info < (3, 12),
     reason='type statement is available from 3.12',
 )
-def test_circular_type_aliasing(create_module):
+def test_generics_with_type_statement(create_module):
+    module = create_module(
+        """
+from pydantic import BaseModel
+from typing import Sequence
+
+type MySeq[T] = Sequence[T]
+type MyIntSeq = MySeq[int]
+
+class MyModel(BaseModel):
+    v: MyIntSeq
+"""
+    )
+    assert module.MyModel(v=[1]).model_dump() == {'v': [1]}
+    with pytest.raises(ValidationError) as exc_info:
+        module.MyModel(v=['a'])
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': (
+                'v',
+                0,
+            ),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        },
+    ]
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 12),
+    reason='type statement is available from 3.12',
+)
+def test_circular_type_aliasing_with_type_statement(create_module):
     with pytest.raises(PydanticSchemaGenerationError, match='Circular type aliasing detected'):
         create_module(
             """
@@ -465,7 +526,7 @@ class MyModel(BaseModel):
     sys.version_info < (3, 12),
     reason='type statement is available from 3.12',
 )
-def test_cyclic_type_aliasing(create_module):
+def test_cyclic_type_aliasing_with_type_statement(create_module):
     module = create_module(
         """
 from pydantic import BaseModel
