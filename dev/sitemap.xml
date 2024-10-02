@@ -313,6 +313,10 @@
          <lastmod>2024-10-02</lastmod>
     </url>
     <url>
+         <loc>https://docs.pydantic.dev/latest/integrations/logfire/</loc>
+         <lastmod>2024-10-02</lastmod>
+    </url>
+    <url>
          <loc>https://docs.pydantic.dev/latest/integrations/mypy/</loc>
          <lastmod>2024-10-02</lastmod>
     </url>
