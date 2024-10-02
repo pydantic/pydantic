@@ -1,4 +1,3 @@
-from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
 
