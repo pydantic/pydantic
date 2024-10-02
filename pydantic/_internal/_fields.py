@@ -142,7 +142,7 @@ def collect_model_fields(  # noqa: C901
                     for pn in config_wrapper.protected_namespaces:
                         if isinstance(pn, Pattern):
                             if not pn.match(ann_name):
-                                valid_namespaces += (pn.pattern,)
+                                valid_namespaces += (f're.compile({pn.pattern})',)
                         else:
                             if not ann_name.startswith(pn):
                                 valid_namespaces += (pn,)

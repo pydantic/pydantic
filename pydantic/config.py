@@ -672,7 +672,7 @@ class ConfigDict(TypedDict, total=False):
         '''
         Field "also_protect_field" in Model has conflict with protected namespace "also_protect_".
 
-        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_', '^protect_this$')`.
+        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_', re.compile('^protect_this$'))`.
 
         Field "protect_this" in Model has conflict with protected namespace "re.compile('^protect_this$')".
 
