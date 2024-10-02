@@ -1141,8 +1141,9 @@ class UuidVersion:
 
     Example:
         ```python
-        from typing_extensions import Annotated
         from uuid import UUID
+
+        from typing_extensions import Annotated
 
         from pydantic.types import UuidVersion
 
@@ -3135,7 +3136,9 @@ class FailFast(_fields.PydanticMetadata, BaseMetadata):
 
     ```py
     from typing import List
+
     from typing_extensions import Annotated
+
     from pydantic import BaseModel, FailFast, ValidationError
 
     class Model(BaseModel):
