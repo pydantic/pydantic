@@ -2625,6 +2625,15 @@ def test_multiple_protected_namespace():
             model_config = ConfigDict(protected_namespaces=('protect_me_', 'also_protect_'))
 
 
+def test_protected_namespace_pattern() -> None:
+    with pytest.warns(UserWarning, match=r'Field "perfect_match" in Model has conflict with protected namespace .*'):
+
+        class Model(BaseModel):
+            perfect_match: str
+
+            model_config = ConfigDict(protected_namespaces=(re.compile(r'^perfect_match$'),))
+
+
 def test_model_get_core_schema() -> None:
     class Model(BaseModel):
         @classmethod

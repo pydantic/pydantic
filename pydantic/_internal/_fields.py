@@ -7,7 +7,7 @@ import sys
 import warnings
 from copy import copy
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Pattern
 
 from pydantic_core import PydanticUndefined
 
@@ -121,8 +121,15 @@ def collect_model_fields(  # noqa: C901
             # Note: we may need to change this logic if/when we introduce a `BareModel` class with no
             # protected namespaces (where `model_config` might be allowed as a field name)
             continue
+
         for protected_namespace in config_wrapper.protected_namespaces:
-            if ann_name.startswith(protected_namespace):
+            ns_violation: bool = False
+            if isinstance(protected_namespace, Pattern):
+                ns_violation = protected_namespace.match(ann_name) is not None
+            elif isinstance(protected_namespace, str):
+                ns_violation = ann_name.startswith(protected_namespace)
+
+            if ns_violation:
                 for b in bases:
                     if hasattr(b, ann_name):
                         if not (issubclass(b, BaseModel) and ann_name in getattr(b, '__pydantic_fields__', {})):
@@ -131,9 +138,15 @@ def collect_model_fields(  # noqa: C901
                                 f' of protected namespace "{protected_namespace}".'
                             )
                 else:
-                    valid_namespaces = tuple(
-                        x for x in config_wrapper.protected_namespaces if not ann_name.startswith(x)
-                    )
+                    valid_namespaces = ()
+                    for pn in config_wrapper.protected_namespaces:
+                        if isinstance(pn, Pattern):
+                            if not pn.match(ann_name):
+                                valid_namespaces += (f're.compile({pn.pattern})',)
+                        else:
+                            if not ann_name.startswith(pn):
+                                valid_namespaces += (pn,)
+
                     warnings.warn(
                         f'Field "{ann_name}" in {cls.__name__} has conflict with protected namespace "{protected_namespace}".'
                         '\n\nYou may be able to resolve this warning by setting'

@@ -2,6 +2,7 @@
 
 from __future__ import annotations as _annotations
 
+from re import Pattern
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, TypeVar, Union
 
 from typing_extensions import Literal, TypeAlias, TypedDict
@@ -612,9 +613,11 @@ class ConfigDict(TypedDict, total=False):
     validate_return: bool
     """whether to validate the return value from call validators. Defaults to `False`."""
 
-    protected_namespaces: tuple[str, ...]
+    protected_namespaces: tuple[str | Pattern[str], ...]
     """
-    A `tuple` of strings that prevent model to have field which conflict with them.
+    A `tuple` of strings and/or patterns that prevent models from having fields with names that conflict with them.
+    For strings, we match on a prefix basis. Ex, if 'dog' is in the protected namespace, 'dog_name' will be protected.
+    For patterns, we match on the entire field name. Ex, if `re.compile(r'^dog$')` is in the protected namespace, 'dog' will be protected, but 'dog_name' will not be.
     Defaults to `('model_validate', 'model_dump')`).
 
     The reason we've selected these is to prevent collisions with other validation / dumping formats
@@ -650,29 +653,38 @@ class ConfigDict(TypedDict, total=False):
 
     You can customize this behavior using the `protected_namespaces` setting:
 
-    ```py
+    ```py test="skip"
+    import re
     import warnings
 
     from pydantic import BaseModel, ConfigDict
 
-    warnings.filterwarnings('error')  # Raise warnings as errors
-
-    try:
+    with warnings.catch_warnings(record=True) as caught_warnings:
+        warnings.simplefilter('always')  # Catch all warnings
 
         class Model(BaseModel):
-            model_prefixed_field: str
+            safe_field: str
             also_protect_field: str
+            protect_this: str
 
             model_config = ConfigDict(
-                protected_namespaces=('protect_me_', 'also_protect_')
+                protected_namespaces=(
+                    'protect_me_',
+                    'also_protect_',
+                    re.compile('^protect_this$'),
+                )
             )
 
-    except UserWarning as e:
-        print(e)
+    for warning in caught_warnings:
+        print(f'{warning.message}\n')
         '''
         Field "also_protect_field" in Model has conflict with protected namespace "also_protect_".
 
-        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_',)`.
+        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_', re.compile('^protect_this$'))`.
+
+        Field "protect_this" in Model has conflict with protected namespace "re.compile('^protect_this$')".
+
+        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_', 'also_protect_')`.
         '''
     ```
 

@@ -2,6 +2,7 @@ from __future__ import annotations as _annotations
 
 import warnings
 from contextlib import contextmanager
+from re import Pattern
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -76,7 +77,7 @@ class ConfigWrapper:
     # whether to validate default values during validation, default False
     validate_default: bool
     validate_return: bool
-    protected_namespaces: tuple[str, ...]
+    protected_namespaces: tuple[str | Pattern[str], ...]
     hide_input_in_errors: bool
     defer_build: bool
     plugin_settings: dict[str, object] | None
