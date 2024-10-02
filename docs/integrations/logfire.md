@@ -1,4 +1,4 @@
-Pydantic integrates seamlessly with **Logfire**, an observability platform built on the same belief as our open source library — that the most powerful tools can be easy to use.
+Pydantic integrates seamlessly with **Pydantic Logfire**, an observability platform built by us on the same belief as our open source library — that the most powerful tools can be easy to use.
 
 ## Getting Started
 
@@ -42,7 +42,7 @@ logfire.info('user processed: {user!r}', user=user)  # (2)!
 ### Pydantic Instrumentation
 
 You can even record information about the validation process automatically by
-using the builtin Pydantic integration:
+using the builtin [Pydantic integration](https://logfire.pydantic.dev/docs/why-logfire/pydantic/):
 
 ```py test="skip"
 from datetime import date

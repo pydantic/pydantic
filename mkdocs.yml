@@ -157,6 +157,7 @@ nav:
   - Validation Errors: errors/validation_errors.md
   - Usage Errors: errors/usage_errors.md
 - Integrations:
+  - Pydantic Logfire: integrations/logfire.md
   - Dev Tools:
     - Mypy: integrations/mypy.md/.
     - PyCharm: integrations/pycharm.md
@@ -168,7 +169,6 @@ nav:
     - Linting: integrations/linting.md
   - Production Tools:
     - AWS Lambda: integrations/aws_lambda.md
-    - Pydantic Logfire: integrations/logfire.md
 - Blog: https://blog.pydantic.dev/
 - Pydantic People: pydantic_people.md
 
