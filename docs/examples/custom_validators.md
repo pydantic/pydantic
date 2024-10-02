@@ -2,8 +2,10 @@
     This page is a work in progress.
 
 This page provides example snippets for creating more complex, custom validators in Pydantic.
+Many of these examples are adapted from Pydantic issues and discussions, and are intended to showcase
+the flexibility and power of Pydantic's validation system.
 
-## Using Custom Validators with [`Annotated`][typing.Annotated] Metadata
+## Custom `datetime` Validator via [`Annotated`][typing.Annotated] Metadata
 
 In this example, we'll construct a custom validator, attached to an [`Annotated`][typing.Annotated] type,
 that ensures a [`datetime`][datetime.datetime] object adheres to a given timezone constraint.

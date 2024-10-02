@@ -147,13 +147,17 @@ nav:
     - ULID: api/pydantic_extra_types_ulid.md
 - Architecture: architecture.md
 - Examples:
-  - Secrets: examples/secrets.md
-  - Validators: examples/validators.md
+  - Validating File Data: examples/files.md
+  - Web and API Requests: examples/requests.md
+  - Queues: examples/queues.md
+  - Databases: examples/orms.md
+  - Custom Validators: examples/custom_validators.md
 - Error Messages:
   - Error Handling: errors/errors.md
   - Validation Errors: errors/validation_errors.md
   - Usage Errors: errors/usage_errors.md
 - Integrations:
+  - Pydantic Logfire: integrations/logfire.md
   - Dev Tools:
     - Mypy: integrations/mypy.md/.
     - PyCharm: integrations/pycharm.md
@@ -232,7 +236,7 @@ plugins:
       'usage/rich.md': 'integrations/rich.md'
       'usage/linting.md': 'integrations/linting.md'
       'usage/types.md': 'concepts/types.md'
-      'usage/types/secrets.md': 'examples/secrets.md'
+      'usage/types/secrets.md': 'api/types.md#pydantic.types.Secret'
       'usage/types/string_types.md': 'api/types.md#pydantic.types.StringConstraints'
       'usage/types/file_types.md': 'api/types.md#pydantic.types.FilePath'
       'api/main.md': 'api/base_model.md'
@@ -285,6 +289,8 @@ plugins:
       'usage/types/sequence_iterable.md': 'api/standard_library_types.md#other-iterables'
       'usage/types/set_types.md': 'api/standard_library_types.md#sets'
       'usage/types/uuids.md': 'api/standard_library_types.md#uuid'
-      'blog/pydantic-v2-alpha.md': 'https://blog.pydantic.dev/blog/2023/04/03/pydantic-v2-pre-release/'
-      'blog/pydantic-v2-final.md': 'https://blog.pydantic.dev/blog/2023/06/30/pydantic-v2-is-here/'
-      'blog/pydantic-v2.md': 'https://blog.pydantic.dev/blog/2022/07/10/pydantic-v2-plan/'
+      'blog/pydantic-v2-alpha.md': 'https://pydantic.dev/articles/pydantic-v2-alpha'
+      'blog/pydantic-v2-final.md': 'https://pydantic.dev/articles/pydantic-v2-final'
+      'blog/pydantic-v2.md': 'https://pydantic.dev/articles/pydantic-v2'
+      'examples/secrets.md': 'api/types.md#pydantic.types.Secret'
+      'examples/validators.md': 'examples/custom_validators.md'
