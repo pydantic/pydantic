@@ -217,11 +217,9 @@ class TypeAdapter(Generic[T]):
         self.validator: SchemaValidator | PluggableSchemaValidator
         self.serializer: SchemaSerializer
 
-        # TODO: we should probably do this differently, cc @Viicos
         local_ns = _typing_extra.parent_frame_namespace(parent_depth=self._parent_depth)
-        global_ns = sys._getframe(max(self._parent_depth - 2, 1)).f_globals.copy()
+        global_ns = sys._getframe(max(self._parent_depth - 1, 1)).f_globals.copy()
         global_ns.update(local_ns or {})
-
         self._init_core_attrs(types_namespace=global_ns, force=False)
 
     def _init_core_attrs(self, types_namespace: dict[str, Any], force: bool) -> bool:
@@ -261,14 +259,10 @@ class TypeAdapter(Generic[T]):
             )
             self.serializer = SchemaSerializer(self.core_schema, core_config)
 
+        # TODO: I think we should move this to the rebuild pattern?
         if isinstance(self.core_schema, _mock_val_ser.MockCoreSchema):
             self.core_schema = self.core_schema.rebuild()  # type: ignore[assignment]
-            self._init_core_attrs(types_namespace=types_namespace, force=False)
-
-            # TODO: can we remove these asserts?
-            assert not isinstance(self.core_schema, _mock_val_ser.MockCoreSchema)
-            assert not isinstance(self.validator, _mock_val_ser.MockValSer)
-            assert not isinstance(self.serializer, _mock_val_ser.MockValSer)
+            self._init_core_attrs(types_namespace=types_namespace, force=True)
 
         self._pydantic_complete = True
         return True

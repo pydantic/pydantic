@@ -123,7 +123,7 @@ def set_type_adapter_mocks(adapter: TypeAdapter, type_repr: str) -> None:
 
     def attempt_rebuild_fn(attr_fn: Callable[[TypeAdapter], T]) -> Callable[[], T | None]:
         def handler() -> T | None:
-            if adapter.rebuild() is not False:
+            if adapter.rebuild(_parent_namespace_depth=5) is not False:
                 return attr_fn(adapter)
             else:
                 return None
