@@ -96,10 +96,10 @@ def validate_call(
 
     def validate(function: AnyCallableT) -> AnyCallableT:
         _check_function_type(function)
-        validate_call_wrapper = _validate_call.wrap_validate_call(
+        validate_call_wrapper = _validate_call.ValidateCallWrapper(
             cast(_validate_call.ValidateCallSupportedTypes, function), config, validate_return, local_ns
         )
-        return validate_call_wrapper  # type: ignore
+        return _validate_call.update_wrapper(function, validate_call_wrapper.__call__)  # type: ignore
 
     if func is not None:
         return validate(func)

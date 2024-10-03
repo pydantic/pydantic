@@ -37,69 +37,74 @@ def get_qualname(func: ValidateCallSupportedTypes) -> str:
     return f'partial({func.func.__qualname__})' if isinstance(func, functools.partial) else func.__qualname__
 
 
-def _update_wrapper(wrapped: ValidateCallSupportedTypes, wrapper: Callable[..., Any]):
+def update_wrapper(wrapped: ValidateCallSupportedTypes, wrapper: Callable[..., Any]):
     """Update the `wrapper` function with the attributes of the `wrapped` function. Return the updated function."""
     if inspect.iscoroutinefunction(wrapped):
         # We have to create a new couroutine function
         @functools.wraps(wrapped)
-        async def wrapper_function(*args, **kwargs):
+        async def wrapper_function(*args, **kwargs):  # type: ignore
             return await wrapper(*args, **kwargs)
     else:
-        wrapper_function = functools.wraps(wrapped)(wrapper)
+
+        @functools.wraps(wrapped)
+        def wrapper_function(*args, **kwargs):
+            return wrapper(*args, **kwargs)
 
     # We need to manually update this because `partial` object has no `__name__` and `__qualname__`.
     wrapper_function.__name__ = get_name(wrapped)
     wrapper_function.__qualname__ = get_qualname(wrapped)
+    wrapper_function.raw_function = wrapped  # type: ignore
 
     return wrapper_function
 
 
-def wrap_validate_call(
-    function: ValidateCallSupportedTypes,
-    config: ConfigDict | None,
-    validate_return: bool,
-    namespace: dict[str, Any] | None,
-):
-    """Return a wrapped function that validates the input and optionally output of the given function."""
-    if isinstance(function, partial):
-        schema_type = function.func
-        module = function.func.__module__
-    else:
-        schema_type = function
-        module = function.__module__
-    qualname = core_config_title = get_qualname(function)
+class ValidateCallWrapper:
+    """This is a wrapper around a function that validates the arguments passed to it, and optionally the return value."""
 
-    global_ns = _typing_extra.get_module_ns_of(function)
-    # TODO: this is a bit of a hack, we should probably have a better way to handle this
-    # specifically, we shouldn't be pumping the namespace full of type_params
-    # when we take namespace and type_params arguments in eval_type_backport
-    type_params = (namespace or {}).get('__type_params__', ()) + getattr(schema_type, '__type_params__', ())
-    namespace = {
-        **{param.__name__: param for param in type_params},
-        **(global_ns or {}),
-        **(namespace or {}),
-    }
-    config_wrapper = ConfigWrapper(config)
-    gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
-    schema = gen_schema.clean_schema(gen_schema.generate_schema(function))
-    core_config = config_wrapper.core_config(core_config_title)
-
-    function_validator = create_schema_validator(
-        schema,
-        schema_type,
-        module,
-        qualname,
-        'validate_call',
-        core_config,
-        config_wrapper.plugin_settings,
+    __slots__ = (
+        '__pydantic_validator__',
+        '__name__',
+        '__qualname__',
+        '__annotations__',
+        '__dict__',  # required for __module__
     )
 
-    if validate_return:
-        signature = inspect.signature(function)
-        return_type = signature.return_annotation if signature.return_annotation is not signature.empty else Any
+    def __init__(
+        self,
+        function: ValidateCallSupportedTypes,
+        config: ConfigDict | None,
+        validate_return: bool,
+        namespace: dict[str, Any] | None,
+    ):
+        """Return a wrapped function that validates the input and optionally output of the given function."""
+        if isinstance(function, partial):
+            schema_type = function.func
+            module = function.func.__module__
+        else:
+            schema_type = function
+            module = function.__module__
+        qualname = core_config_title = get_qualname(function)
+
+        self.__name__ = get_name(function)
+        self.__qualname__ = qualname
+        self.__module__ = module
+
+        global_ns = _typing_extra.get_module_ns_of(function)
+        # TODO: this is a bit of a hack, we should probably have a better way to handle this
+        # specifically, we shouldn't be pumping the namespace full of type_params
+        # when we take namespace and type_params arguments in eval_type_backport
+        type_params = (namespace or {}).get('__type_params__', ()) + getattr(schema_type, '__type_params__', ())
+        namespace = {
+            **{param.__name__: param for param in type_params},
+            **(global_ns or {}),
+            **(namespace or {}),
+        }
+        config_wrapper = ConfigWrapper(config)
         gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
-        schema = gen_schema.clean_schema(gen_schema.generate_schema(return_type))
-        validator = create_schema_validator(
+        schema = gen_schema.clean_schema(gen_schema.generate_schema(function))
+        core_config = config_wrapper.core_config(core_config_title)
+
+        function_validator = create_schema_validator(
             schema,
             schema_type,
             module,
@@ -108,24 +113,40 @@ def wrap_validate_call(
             core_config,
             config_wrapper.plugin_settings,
         )
-        if inspect.iscoroutinefunction(function):
 
-            async def return_val_wrapper(aw: Awaitable[Any]) -> None:
-                return validator.validate_python(await aw)
+        if validate_return:
+            signature = inspect.signature(function)
+            return_type = signature.return_annotation if signature.return_annotation is not signature.empty else Any
+            gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
+            schema = gen_schema.clean_schema(gen_schema.generate_schema(return_type))
+            validator = create_schema_validator(
+                schema,
+                schema_type,
+                module,
+                qualname,
+                'validate_call',
+                core_config,
+                config_wrapper.plugin_settings,
+            )
+            if inspect.iscoroutinefunction(function):
 
-            return_validator = return_val_wrapper
+                async def return_val_wrapper(aw: Awaitable[Any]) -> None:
+                    return validator.validate_python(await aw)
+
+                return_validator = return_val_wrapper
+            else:
+                return_validator = validator.validate_python
         else:
-            return_validator = validator.validate_python
-    else:
-        return_validator = None
+            return_validator = None
 
-    def wrapper(*args, **kwargs):
-        """The wrapper function. Does the same as the original function, but validates the input and output."""
-        res = function_validator.validate_python(pydantic_core.ArgsKwargs(args, kwargs))
-        if return_validator is not None:
-            return return_validator(res)
-        return res
+        def wrapper(*args, **kwargs):
+            """The wrapper function. Does the same as the original function, but validates the input and output."""
+            res = function_validator.validate_python(pydantic_core.ArgsKwargs(args, kwargs))
+            if return_validator is not None:
+                return return_validator(res)
+            return res
 
-    wrapper_function = _update_wrapper(function, wrapper)
-    wrapper_function.raw_function = function  # type: ignore
-    return wrapper_function  # type: ignore
+        self.__pydantic_validator__ = wrapper
+
+    def __call__(self, *args, **kwargs) -> Any:
+        return self.__pydantic_validator__(*args, **kwargs)
