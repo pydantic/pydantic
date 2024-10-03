@@ -38,16 +38,14 @@ def get_qualname(func: ValidateCallSupportedTypes) -> str:
 
 
 def _update_wrapper(wrapped: ValidateCallSupportedTypes, wrapper: Callable[..., Any]):
+    """Update the `wrapper` function with the attributes of the `wrapped` function. Return the updated function."""
     if inspect.iscoroutinefunction(wrapped):
-
+        # We have to create a new couroutine function
         @functools.wraps(wrapped)
-        async def wrapper_function(*args, **kwargs):  # type: ignore
+        async def wrapper_function(*args, **kwargs):
             return await wrapper(*args, **kwargs)
     else:
-
-        @functools.wraps(wrapped)
-        def wrapper_function(*args, **kwargs):
-            return wrapper(*args, **kwargs)
+        wrapper_function = functools.wraps(wrapped)(wrapper)
 
     # We need to manually update this because `partial` object has no `__name__` and `__qualname__`.
     wrapper_function.__name__ = get_name(wrapped)
@@ -62,7 +60,7 @@ def wrap_validate_call(
     validate_return: bool,
     namespace: dict[str, Any] | None,
 ):
-    """This is a wrapper around a function that validates the arguments passed to it, and optionally the return value."""
+    """Return a wrapped function that validates the input and optionally output of the given function."""
     if isinstance(function, partial):
         schema_type = function.func
         module = function.func.__module__
@@ -122,6 +120,7 @@ def wrap_validate_call(
         return_validator = None
 
     def wrapper(*args, **kwargs):
+        """The wrapper function. Does the same as the original function, but validates the input and output."""
         res = function_validator.validate_python(pydantic_core.ArgsKwargs(args, kwargs))
         if return_validator is not None:
             return return_validator(res)
