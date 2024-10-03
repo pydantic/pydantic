@@ -3,7 +3,7 @@ from __future__ import annotations as _annotations
 import functools
 import inspect
 from functools import partial
-from types import FunctionType, LambdaType, MethodType
+from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, LambdaType, MethodType
 from typing import Any, Awaitable, Callable, Union, get_args
 
 import pydantic_core
@@ -21,6 +21,8 @@ ValidateCallSupportedTypes = Union[
     LambdaType,
     FunctionType,
     MethodType,
+    BuiltinFunctionType,
+    BuiltinMethodType,
     functools.partial,
 ]
 

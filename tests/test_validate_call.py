@@ -42,18 +42,11 @@ def test_func_type():
     class A:
         def m(self, x: int): ...
 
-    for func in (f, lambda x: None, A.m, A().m):
+    for func in (f, lambda x: None, A.m, A().m, sorted, compile, print, [].append, {}.popitem, int().bit_length):
         assert validate_call(func).__name__ == func.__name__
         assert validate_call(func).__qualname__ == func.__qualname__
         assert validate_call(partial(func)).__name__ == f'partial({func.__name__})'
         assert validate_call(partial(func)).__qualname__ == f'partial({func.__qualname__})'
-
-    for bltin in (sorted, [].append):
-        with pytest.raises(
-            PydanticUserError,
-            match=(f'Unable to validate {bltin}: built-in functions and methods are not supported by `validate_call`'),
-        ):
-            validate_call(bltin)
 
     with pytest.raises(
         PydanticUserError,
@@ -117,6 +110,14 @@ def test_validate_custom_callable():
 
 
 def test_invalid_signature():
+    # In some versions, these functions may not have a valid signature
+    for func in (max, min, breakpoint):
+        try:
+            inspect.signature(func)
+        except ValueError:
+            with pytest.raises(PydanticUserError, match=(f"Input function `{func}` doesn't have a valid signature")):
+                validate_call(func)
+
     class A:
         def f(): ...
 

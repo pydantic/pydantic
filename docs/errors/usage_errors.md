@@ -1247,12 +1247,6 @@ except PydanticUserError as exc_info:
 `LambdaType, FunctionType, MethodType, functools.partial`. For the case of `functools.partial`, the function being partially applied must be one of the supported types.
 
 
-### Built-in functions
-
-Built-in functions such as `print`, `len`, `sum`, etc. cannot be validated with `validate_call`. Typically, these function does not have meaningful type annotations to validate against, and they raise `TypeError` when called with invalid arguments.
-
-
-
 ### `@classmethod`, `@staticmethod`, and `@property`
 
 These decorators cannot be put before `validate_call` because they return a class rather than one of the supported types. The correct way to use them is to put `validate_call` before the decorator.
