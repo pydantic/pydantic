@@ -3,8 +3,8 @@
 from __future__ import annotations as _annotations
 
 import inspect
-import typing
 from functools import partial
+from types import BuiltinFunctionType, BuiltinMethodType
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast, overload
 
 from ._internal import _typing_extra, _validate_call
@@ -21,8 +21,7 @@ if TYPE_CHECKING:
 def _check_function_type(function: object):
     ERROR_CODE: PydanticErrorCodes = 'validate-call-type'
 
-    supported_types = typing.get_args(_validate_call.ValidateCallSupportedTypes)
-    if isinstance(function, supported_types):
+    if isinstance(function, _validate_call.VALIDATE_CALL_SUPPORTED_TYPES):
         try:
             inspect.signature(cast(_validate_call.ValidateCallSupportedTypes, function))
         except ValueError:
@@ -40,6 +39,12 @@ def _check_function_type(function: object):
 
         return
 
+    if isinstance(function, (BuiltinFunctionType, BuiltinMethodType)):
+        raise PydanticUserError(
+            f'Unable to validate {function}: built-in functions and methods are not supported by `validate_call`',
+            code=ERROR_CODE,
+        )
+
     if isinstance(function, (classmethod, staticmethod, property)):
         name = type(function).__name__
         raise PydanticUserError(
@@ -48,17 +53,17 @@ def _check_function_type(function: object):
 
     if inspect.isclass(function):
         raise PydanticUserError(
-            '`validate_call` should be applied to functions, not classes (put `@validate_call` on top of `__init__` or `__new__` instead)',
+            f'Unable to validate {function}: `validate_call` should be applied to functions, not classes (put `@validate_call` on top of `__init__` or `__new__` instead)',
             code=ERROR_CODE,
         )
     if callable(function):
         raise PydanticUserError(
-            '`validate_call` should be applied to functions, not instances or other callables. Use `validate_call` explicitly on `__call__` instead.',
+            f'Unable to validate {function}: `validate_call` should be applied to functions, not instances or other callables. Use `validate_call` explicitly on `__call__` instead.',
             code=ERROR_CODE,
         )
 
     raise PydanticUserError(
-        '`validate_call` should be applied to one of the following: function, method, partial, or lambda',
+        f'Unable to validate {function}: `validate_call` should be applied to one of the following: function, method, partial, or lambda',
         code=ERROR_CODE,
     )
 

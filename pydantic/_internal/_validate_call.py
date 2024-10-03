@@ -3,8 +3,8 @@ from __future__ import annotations as _annotations
 import functools
 import inspect
 from functools import partial
-from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, LambdaType, MethodType
-from typing import Any, Awaitable, Callable, Union
+from types import FunctionType, LambdaType, MethodType
+from typing import Any, Awaitable, Callable, Union, get_args
 
 import pydantic_core
 
@@ -14,14 +14,17 @@ from . import _generate_schema, _typing_extra
 from ._config import ConfigWrapper
 
 # This should be aligned with `GenerateSchema.match_types`
+#
+# Note: This does not play very well with type checkers. For example,
+# `a: LambdaType = lambda x: x` will raise a type error by Pyright.
 ValidateCallSupportedTypes = Union[
     LambdaType,
     FunctionType,
     MethodType,
-    BuiltinFunctionType,
-    BuiltinMethodType,
     functools.partial,
 ]
+
+VALIDATE_CALL_SUPPORTED_TYPES = get_args(ValidateCallSupportedTypes)
 
 
 def get_name(func: ValidateCallSupportedTypes) -> str:

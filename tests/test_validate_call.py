@@ -39,11 +39,21 @@ def test_wrap():
 def test_func_type():
     def f(x: int): ...
 
-    for func in (f, lambda x: None, sorted, [].append):
+    class A:
+        def m(self, x: int): ...
+
+    for func in (f, lambda x: None, A.m, A().m):
         assert validate_call(func).__name__ == func.__name__
         assert validate_call(func).__qualname__ == func.__qualname__
         assert validate_call(partial(func)).__name__ == f'partial({func.__name__})'
         assert validate_call(partial(func)).__qualname__ == f'partial({func.__qualname__})'
+
+    for bltin in (sorted, [].append):
+        with pytest.raises(
+            PydanticUserError,
+            match=(f'Unable to validate {bltin}: built-in functions and methods are not supported by `validate_call`'),
+        ):
+            validate_call(bltin)
 
     with pytest.raises(
         PydanticUserError,
@@ -107,14 +117,6 @@ def test_validate_custom_callable():
 
 
 def test_invalid_signature():
-    # In some versions, these functions may not have a valid signature
-    for func in (max, min, breakpoint):
-        try:
-            inspect.signature(func)
-        except ValueError:
-            with pytest.raises(PydanticUserError, match=(f"Input function `{func}` doesn't have a valid signature")):
-                validate_call(func)
-
     class A:
         def f(): ...
 
@@ -313,27 +315,32 @@ def test_unpacked_typed_dict_kwargs() -> None:
         b: Required[str]
 
     @validate_call
-    def foo(**kwargs: Unpack[TD]):
+    def foo1(**kwargs: Unpack[TD]):
         pass
 
-    foo(a=1, b='test')
-    foo(b='test')
+    @validate_call
+    def foo2(**kwargs: 'Unpack[TD]'):
+        pass
 
-    with pytest.raises(ValidationError) as exc:
-        foo(a='1')
+    for foo in (foo1, foo2):
+        foo(a=1, b='test')
+        foo(b='test')
 
-    assert exc.value.errors()[0]['type'] == 'int_type'
-    assert exc.value.errors()[0]['loc'] == ('a',)
-    assert exc.value.errors()[1]['type'] == 'missing'
-    assert exc.value.errors()[1]['loc'] == ('b',)
+        with pytest.raises(ValidationError) as exc:
+            foo(a='1')
 
-    # Make sure that when called without any arguments,
-    # empty kwargs are still validated against the typed dict:
-    with pytest.raises(ValidationError) as exc:
-        foo()
+        assert exc.value.errors()[0]['type'] == 'int_type'
+        assert exc.value.errors()[0]['loc'] == ('a',)
+        assert exc.value.errors()[1]['type'] == 'missing'
+        assert exc.value.errors()[1]['loc'] == ('b',)
 
-    assert exc.value.errors()[0]['type'] == 'missing'
-    assert exc.value.errors()[0]['loc'] == ('b',)
+        # Make sure that when called without any arguments,
+        # empty kwargs are still validated against the typed dict:
+        with pytest.raises(ValidationError) as exc:
+            foo()
+
+        assert exc.value.errors()[0]['type'] == 'missing'
+        assert exc.value.errors()[0]['loc'] == ('b',)
 
 
 def test_unpacked_typed_dict_kwargs_functional_syntax() -> None:
@@ -364,7 +371,7 @@ def test_field_can_provide_factory() -> None:
 
 def test_annotated_field_can_provide_factory() -> None:
     @validate_call
-    def foo2(a: int, b: Annotated[int, Field(default_factory=lambda: 99)], *args: int) -> int:
+    def foo2(a: int, b: 'Annotated[int, Field(default_factory=lambda: 99)]', *args: int) -> int:
         """mypy reports Incompatible default for argument "b" if we don't supply ANY as default"""
         return a + b + sum(args)
 
@@ -1129,10 +1136,12 @@ def test_uses_local_ns():
         class M2(BaseModel):
             z: int
 
-        M = M2
+        M = M2  # noqa: F841
 
-        @validate_call
-        def bar(m: M) -> M:
+        @validate_call(validate_return=True)
+        def bar(m: 'M') -> 'M':
             return m
 
         assert bar({'z': 1}) == M2(z=1)
+
+    foo()
