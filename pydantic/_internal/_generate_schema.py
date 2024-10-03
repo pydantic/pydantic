@@ -1904,7 +1904,9 @@ class GenerateSchema:
                 # Note: This was originally get by `_typing_extra.get_function_type_hints`,
                 #       but we switch to simply `p.annotation` to support bultins (e.g. `sorted`).
                 #       May need to revisit if anything breaks.
-                annotation = _make_forward_ref(p.annotation) if isinstance(p.annotation, str) else p.annotation
+                annotation = (
+                    _typing_extra._make_forward_ref(p.annotation) if isinstance(p.annotation, str) else p.annotation
+                )
                 annotation = self._resolve_forward_ref(annotation)
 
             parameter_mode = mode_lookup.get(p.kind)

@@ -7,7 +7,7 @@ from functools import partial
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast, overload
 
 from ._internal import _typing_extra, _validate_call
-from .errors import PydanticErrorCodes, PydanticUserError
+from .errors import PydanticUserError
 
 __all__ = ('validate_call',)
 
