@@ -771,6 +771,21 @@ to help you monitor and understand your
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Build documentation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#updating-the-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Updating the documentation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -3064,6 +3079,21 @@ to help you monitor and understand your
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Build documentation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#updating-the-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Updating the documentation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -3274,6 +3304,22 @@ make<span class="w"> </span>docs
 <span class="c1"># If you have changed the documentation, make sure it builds successfully.</span>
 <span class="c1"># You can also use `pdm run mkdocs serve` to serve the documentation at localhost:8000</span>
 </code></pre></div>
+<h4 id="updating-the-documentation">Updating the documentation<a class="headerlink" href="#updating-the-documentation" title="Permanent link">&para;</a></h4>
+<p>We push a new version of the documentation with each minor release, and we push to a <code>dev</code> path with each commit to <code>main</code>.</p>
+<p>If you're updating the documentation out of cycle with a minor release and want your changes to be reflected on <code>latest</code>,
+do the following:</p>
+<ol>
+<li>Open a PR against <code>main</code> with your docs changes</li>
+<li>Once the PR is merged, checkout the <code>docs-update</code> branch. This branch should be up to date with the latest patch release.
+For example, if the latest release is <code>v2.9.2</code>, you should make sure <code>docs-update</code> is up to date with the <code>v2.9.2</code> tag.</li>
+<li>Checkout a new branch from <code>docs-update</code> and cherry-pick your changes onto this branch.</li>
+<li>Push your changes and open a PR against <code>docs-update</code>.</li>
+<li>Once the PR is merged, the new docs will be built and deployed.</li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Maintainer shortcut - as a maintainer, you can skip the second PR and just cherry pick directly onto the <code>docs-update</code> branch.</p>
+</div>
 <h3 id="commit-and-push-your-changes">Commit and push your changes<a class="headerlink" href="#commit-and-push-your-changes" title="Permanent link">&para;</a></h3>
 <p>Commit your changes, push your branch to GitHub, and create a pull request.</p>
 <p>Please follow the pull request template and fill in as much information as possible. Link to any relevant issues and include a description of your changes.</p>
