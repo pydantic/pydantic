@@ -125,10 +125,14 @@ If you're updating the documentation out of cycle with a minor release and want 
 do the following:
 
 1. Open a PR against `main` with your docs changes
-2. Once the PR is merged, cherry-pick the changes onto the `docs-update` branch, which should be up to date with the
-latest patch release. For example, if the latest release is `v2.9.2`, you should make sure `docs-update` is up to date with
-the `v2.9.2` tag.
-3. Push the changes to the `docs-update` branch - this will trigger a docs build and deployment.
+2. Once the PR is merged, checkout the `docs-update` branch. This branch should be up to date with the latest patch release.
+For example, if the latest release is `v2.9.2`, you should make sure `docs-update` is up to date with the `v2.9.2` tag.
+3. Checkout a new branch from `docs-update` and cherry-pick your changes onto this branch.
+4. Push your changes and open a PR against `docs-update`.
+5. Once the PR is merged, the new docs will be built and deployed.
+
+!!! note
+    Maintainer shortcut - as a maintainer, you can skip the second PR and just cherry pick directly onto the `docs-update` branch.
 
 ### Commit and push your changes
 
