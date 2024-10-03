@@ -1249,7 +1249,7 @@ except PydanticUserError as exc_info:
 
 ### `@classmethod`, `@staticmethod`, and `@property`
 
-These decorators cannot be put before `validate_call` because they return a class rather than one of the supported types. The correct way to use them is to put `validate_call` before the decorator.
+These decorators must be put before `validate_call`.
 
 ```py
 from pydantic import PydanticUserError, validate_call
@@ -1275,7 +1275,7 @@ def f2(cls): ...
 
 ### Classes
 
-To avoid ambiguity, `validate_call` should be applied to methods, not classes. If you want to validate the constructor of a class, you should put `validate_call` on top of `__init__` or `__new__` instead.
+While classes are callables themselves, `validate_call` can't be applied on them, as it needs to know about which method to use (`__init__` or `__new__`) to fetch type annotations. If you want to validate the constructor of a class, you should put `validate_call` on top of the appropriate method instead.
 
 ```py
 from pydantic import PydanticUserError, validate_call
@@ -1301,7 +1301,7 @@ class A2:
 
 ### Custom callable
 
-Although you can create custom callable types in Python with `__call__`, currently the instance of these types cannot be validated with `validate_call`. This may change in the future, but for now, you should use `validate_call` explicitly on `__call__` instead.
+Although you can create custom callable types in Python by implementing a `__call__` method, currently the instances of these types cannot be validated with `validate_call`. This may change in the future, but for now, you should use `validate_call` explicitly on `__call__` instead.
 
 ```py
 from pydantic import PydanticUserError, validate_call

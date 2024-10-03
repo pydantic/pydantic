@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 def _check_function_type(function: object):
-    ERROR_CODE: PydanticErrorCodes = 'validate-call-type'
+    ERROR_CODE = 'validate-call-type'
 
     if isinstance(function, _validate_call.VALIDATE_CALL_SUPPORTED_TYPES):
         try:
