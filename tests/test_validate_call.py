@@ -42,7 +42,7 @@ def test_func_type():
     class A:
         def m(self, x: int): ...
 
-    for func in (f, lambda x: None, A.m, A().m, sorted, compile, print, [].append, {}.popitem, int().bit_length):
+    for func in (f, lambda x: None, A.m, A().m):
         assert validate_call(func).__name__ == func.__name__
         assert validate_call(func).__qualname__ == func.__qualname__
         assert validate_call(partial(func)).__name__ == f'partial({func.__name__})'
@@ -111,9 +111,13 @@ def test_validate_custom_callable():
 
 def test_invalid_signature():
     # In some versions, these functions may not have a valid signature
-    for func in (max, min, breakpoint):
+    for func in (max, min, breakpoint, sorted, compile, print, [].append, {}.popitem, int().bit_length):
         try:
             inspect.signature(func)
+            assert validate_call(func).__name__ == func.__name__
+            assert validate_call(func).__qualname__ == func.__qualname__
+            assert validate_call(partial(func)).__name__ == f'partial({func.__name__})'
+            assert validate_call(partial(func)).__qualname__ == f'partial({func.__qualname__})'
         except ValueError:
             with pytest.raises(PydanticUserError, match=(f"Input function `{func}` doesn't have a valid signature")):
                 validate_call(func)
