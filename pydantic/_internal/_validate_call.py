@@ -61,6 +61,8 @@ def update_wrapper(wrapped: ValidateCallSupportedTypes, wrapper: Callable[..., A
 class ValidateCallWrapper:
     """This is a wrapper around a function that validates the arguments passed to it, and optionally the return value."""
 
+    # This slots are not currently used, but in the future we may want to expose them.
+    # See #9883
     __slots__ = (
         '__pydantic_validator__',
         '__name__',
@@ -76,7 +78,6 @@ class ValidateCallWrapper:
         validate_return: bool,
         namespace: dict[str, Any] | None,
     ):
-        """Return a wrapped function that validates the input and optionally output of the given function."""
         if isinstance(function, partial):
             schema_type = function.func
             module = function.func.__module__
