@@ -1244,7 +1244,14 @@ except PydanticUserError as exc_info:
 ## Unsupported type for `validate_call` {#validate-call-type}
 
 `validate_call` has some limitations on the types it can validate. This error is raised when you try to use it with an unsupported type. Currently the supported types are:
-`LambdaType, FunctionType, MethodType, BuiltinFunctionType, BuiltinMethodType, functools.partial`. For the case of `functools.partial`, the function being partially applied must be one of the supported types.
+`LambdaType, FunctionType, MethodType, functools.partial`. For the case of `functools.partial`, the function being partially applied must be one of the supported types.
+
+
+### Built-in functions
+
+Built-in functions such as `print`, `len`, `sum`, etc. cannot be validated with `validate_call`. Typically, these function does not have meaningful type annotations to validate against, and they raise `TypeError` when called with invalid arguments.
+
+
 
 ### `@classmethod`, `@staticmethod`, and `@property`
 
