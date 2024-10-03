@@ -1014,13 +1014,6 @@ def test_bare_type_type_validation_fails(bare_type):
     ]
 
 
-def test_annotation_field_name_shadows_attribute():
-    with pytest.raises(NameError):
-        # When defining a model that has an attribute with the name of a built-in attribute, an exception is raised
-        class BadModel(BaseModel):
-            model_json_schema: str  # This conflicts with the BaseModel's model_json_schema() class method
-
-
 def test_value_field_name_shadows_attribute():
     with pytest.raises(PydanticUserError, match="A non-annotated attribute was detected: `model_json_schema = 'abc'`"):
 
@@ -2602,20 +2595,11 @@ def test_recursion_loop_error():
 
 def test_protected_namespace_default():
     with pytest.warns(
-        UserWarning, match='Field "model_prefixed_field" in Model has conflict with protected namespace "model_"'
+        UserWarning, match='Field "model_dump_something" in Model has conflict with protected namespace "model_dump"'
     ):
 
         class Model(BaseModel):
-            model_prefixed_field: str
-
-
-def test_protected_namespace_real_conflict():
-    with pytest.raises(
-        NameError, match=r'Field "model_validate" conflicts with member .* of protected namespace "model_"\.'
-    ):
-
-        class Model(BaseModel):
-            model_validate: str
+            model_dump_something: str
 
 
 def test_custom_protected_namespace():
@@ -2639,6 +2623,15 @@ def test_multiple_protected_namespace():
             also_protect_field: str
 
             model_config = ConfigDict(protected_namespaces=('protect_me_', 'also_protect_'))
+
+
+def test_protected_namespace_pattern() -> None:
+    with pytest.warns(UserWarning, match=r'Field "perfect_match" in Model has conflict with protected namespace .*'):
+
+        class Model(BaseModel):
+            perfect_match: str
+
+            model_config = ConfigDict(protected_namespaces=(re.compile(r'^perfect_match$'),))
 
 
 def test_model_get_core_schema() -> None:
