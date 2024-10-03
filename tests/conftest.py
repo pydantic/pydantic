@@ -43,7 +43,11 @@ def _extract_source_code_from_function(function: FunctionType):
 
 
 def _create_module_file(code: str, tmp_path: Path, name: str) -> tuple[str, str]:
-    name = f'{name}_{secrets.token_hex(5)}'
+    # Max path length in Windows is 260. Leaving some buffer here
+    max_name_len = 240 - len(str(tmp_path))
+    # Windows does not allow these characters in paths. Linux bans slashes only.
+    sanitized_name = re.sub('[' + re.escape('<>:"/\\|?*') + ']', '-', name)[:max_name_len]
+    name = f'{sanitized_name}_{secrets.token_hex(5)}'
     path = tmp_path / f'{name}.py'
     path.write_text(code)
     return name, str(path)

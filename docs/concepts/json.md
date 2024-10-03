@@ -1,6 +1,3 @@
-!!! warning "🚧 Work in Progress"
-    This page is a work in progress.
-
 # JSON
 
 ## Json Parsing
@@ -97,7 +94,7 @@ print(dog_dict)
 
 !!! tip "Validating LLM Output"
     This feature is particularly beneficial for validating LLM outputs.
-    We've written some blog posts about this topic, which you can find [here](https://blog.pydantic.dev/blog/category/llms/).
+    We've written some blog posts about this topic, which you can find [here](https://pydantic.dev/articles).
 
 In future versions of Pydantic, we expect to expand support for this feature through either Pydantic's other JSON validation functions
 ([`pydantic.main.BaseModel.model_validate_json`][pydantic.main.BaseModel.model_validate_json] and
