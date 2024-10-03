@@ -117,6 +117,19 @@ make docs
 # You can also use `pdm run mkdocs serve` to serve the documentation at localhost:8000
 ```
 
+#### Updating the documentation
+
+We push a new version of the documentation with each minor release, and we push to a `dev` path with each commit to `main`.
+
+If you're updating the documentation out of cycle with a minor release and want your changes to be reflected on `latest`,
+do the following:
+
+1. Open a PR against `main` with your docs changes
+2. Once the PR is merged, cherry-pick the changes onto the `docs-update` branch, which should be up to date with the
+latest patch release. For example, if the latest release is `v2.9.2`, you should make sure `docs-update` is up to date with
+the `v2.9.2` tag.
+3. Push the changes to the `docs-update` branch - this will trigger a docs build and deployment.
+
 ### Commit and push your changes
 
 Commit your changes, push your branch to GitHub, and create a pull request.
