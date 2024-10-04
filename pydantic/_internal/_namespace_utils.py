@@ -17,7 +17,8 @@ MappingNamespace: TypeAlias = Mapping[str, Any]
 """Any kind of namespace.
 
 In most cases, this is a local namespace (e.g. the `__dict__` attribute of a class,
-the [`f_locals`][frame.f_locals] attribute of a frame object).
+the [`f_locals`][frame.f_locals] attribute of a frame object, when dealing with types
+defined inside functions).
 This namespace type is expected as the `locals` argument during annotations evaluation.
 """
 
@@ -43,8 +44,8 @@ class NamespacesTuple(NamedTuple):
 def get_module_ns_of(obj: Any) -> dict[str, Any]:
     """Get the namespace of the module where the object is defined.
 
-    Caution: this function does not return a copy of the module namespace, so it should not be mutated.
-    The burden of enforcing this is on the caller.
+    Caution: this function does not return a copy of the module namespace, so the result
+    should not be mutated. The burden of enforcing this is on the caller.
     """
     module_name = getattr(obj, '__module__', None)
     if module_name:
@@ -116,7 +117,7 @@ def ns_from(obj: Any, parent_namespace: MappingNamespace | None = None) -> Names
     if parent_namespace is not None:
         locals_list.append(parent_namespace)
 
-    global_ns = get_module_ns_of(obj)
+    globalns = get_module_ns_of(obj)
 
     if isinstance(obj, type):
         locals_list.extend(
@@ -140,7 +141,7 @@ def ns_from(obj: Any, parent_namespace: MappingNamespace | None = None) -> Names
         type_params += getattr(obj, '__type_params__', ())
         locals_list.append({t.__name__: t for t in type_params})
 
-    return NamespacesTuple(global_ns, LazyLocalNamespace(*locals_list))
+    return NamespacesTuple(globalns, LazyLocalNamespace(*locals_list))
 
 
 class NsResolver:

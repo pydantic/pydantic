@@ -270,8 +270,9 @@ def dataclass(
         cls.__module__ = original_cls.__module__
         cls.__qualname__ = original_cls.__qualname__
         cls.__pydantic_complete__ = False  # `complete_dataclass` will set it to `True` if successful.
-        # TODO parent_namespace is currently None, but we could do the same thing as Pydantic models,
-        # even if we don't save it under an attribute for reuse:
+        # TODO `parent_namespace` is currently None, but we could do the same thing as Pydantic models:
+        # fetch the parent ns using `parent_frame_namespace` (if the dataclass was defined in a function),
+        # and possibly cache it (see the `__pydantic_parent_namespace__` logic for models).
         _pydantic_dataclasses.complete_dataclass(cls, config_wrapper, raise_errors=False, parent_namespace=None)
         return cls
 

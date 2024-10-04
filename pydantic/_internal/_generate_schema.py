@@ -1245,8 +1245,7 @@ class GenerateSchema:
         # Update FieldInfo annotation if appropriate:
         FieldInfo = import_cached_field_info()
         if has_instance_in_type(field_info.annotation, (ForwardRef, str)):
-
-            # Can we use field_info.apply_typevars_map here? Shouldn't we error if we encounter name errors here?
+            # TODO Can we use field_info.apply_typevars_map here? Shouldn't we error if we encounter name errors here?
             evaluated = _typing_extra.eval_type_lenient(field_info.annotation, *self._types_namespace)
             evaluated = replace_types(evaluated, self._typevars_map)
             if evaluated is not field_info.annotation and not has_instance_in_type(evaluated, PydanticRecursiveRef):

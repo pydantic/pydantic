@@ -234,7 +234,7 @@ def collect_model_fields(  # noqa: C901
 
     if typevars_map:
         for field in fields.values():
-            field.apply_typevars_map(typevars_map, {})
+            field.apply_typevars_map(typevars_map)
 
     _update_fields_from_docstrings(cls, fields, config_wrapper)
     return fields, class_vars
@@ -346,10 +346,10 @@ def collect_dataclass_fields(
 
     if typevars_map:
         for field in fields.values():
-            # We pass an empty ns, as `field.annotation`
+            # We don't pass any ns, as `field.annotation`
             # was already evaluated. TODO: is this method relevant?
             # Can't we juste use `_generics.replace_types`?
-            field.apply_typevars_map(typevars_map, {})
+            field.apply_typevars_map(typevars_map)
 
     if config_wrapper is not None:
         _update_fields_from_docstrings(cls, fields, config_wrapper)
