@@ -28,7 +28,7 @@ from pydantic import (
     ValidationError,
     WebsocketUrl,
 )
-from pydantic.networks import validate_email
+from pydantic.networks import import_email_validator, validate_email
 
 try:
     import email_validator
@@ -970,10 +970,26 @@ def test_address_invalid(value: str, reason: Union[str, None]):
         validate_email(value)
 
 
-@pytest.mark.skipif(email_validator, reason='email_validator is installed')
-def test_email_validator_not_installed():
+def test_email_validator_not_installed(mocker):
+    mocker.patch('pydantic.networks.email_validator', None)
+    m = mocker.patch('pydantic.networks.import_email_validator', side_effect=ImportError)
     with pytest.raises(ImportError):
         validate_email('s@muelcolvin.com')
+        m.assert_called_once()
+
+
+def test_import_email_validator_not_installed(mocker):
+    mocker.patch.dict('sys.modules', {'email_validator': None})
+    with pytest.raises(ImportError, match=r'email-validator is not installed, run `pip install pydantic\[email\]`'):
+        import_email_validator()
+
+
+def test_import_email_validator_invalid_version(mocker):
+    mocker.patch('pydantic.networks.version', return_value='1.0.0')
+    with pytest.raises(
+        ImportError, match=r'email-validator version >= 2.0 required, run pip install -U email-validator'
+    ):
+        import_email_validator()
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
