@@ -7070,7 +7070,7 @@ def test_awaitable_complex_type():
         return x
 
     for adapter in (
-        TypeAdapter(Awaitable[Annotated[int, Field(gt=0)] | Model[Literal[3]] | list]),
+        TypeAdapter(Awaitable[Union[Annotated[int, Field(gt=0)], Model[Literal[3]], list]]),
         TypeAdapter(Awaitable['Annotated[int, Field(gt=0)] | Model[Literal[3]] | list']),
     ):
 
