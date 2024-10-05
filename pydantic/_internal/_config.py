@@ -185,7 +185,7 @@ class ConfigWrapper:
             config['ser_json_timedelta'] = 'seconds_float'
 
         core_config_values = {
-            'title': config.get('title') or (obj and obj.__name__),
+            'title': config.get('title') or (obj and getattr(obj, '__name__', str(obj))),
             'extra_fields_behavior': config.get('extra'),
             'allow_inf_nan': config.get('allow_inf_nan'),
             'populate_by_name': config.get('populate_by_name'),

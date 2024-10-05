@@ -18,7 +18,7 @@ from decimal import Decimal
 from enum import Enum
 from fractions import Fraction
 from functools import partial
-from inspect import Parameter, _ParameterKind, signature
+from inspect import Parameter, _ParameterKind, iscoroutine, signature
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
 from operator import attrgetter
@@ -26,7 +26,9 @@ from types import FunctionType, LambdaType, MethodType
 from typing import (
     TYPE_CHECKING,
     Any,
+    Awaitable,
     Callable,
+    Coroutine,
     Dict,
     Final,
     ForwardRef,
@@ -49,12 +51,14 @@ from pydantic_core import (
     PydanticCustomError,
     PydanticSerializationUnexpectedValue,
     PydanticUndefined,
+    SchemaValidator,
     Url,
     core_schema,
     to_jsonable_python,
 )
 from typing_extensions import Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
+from .. import ValidationError
 from ..aliases import AliasChoices, AliasGenerator, AliasPath
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from ..config import ConfigDict, JsonDict, JsonEncoder
@@ -149,6 +153,7 @@ MAPPING_TYPES = [
     typing.Counter,
 ]
 DEQUE_TYPES: list[type] = [collections.deque, typing.Deque]
+AWAITABLE_TYPES: list[type] = [typing.Awaitable, typing_extensions.Awaitable, collections.abc.Awaitable]
 
 _mode_to_validator: dict[
     FieldValidatorModes, type[BeforeValidator | AfterValidator | PlainValidator | WrapValidator]
@@ -484,6 +489,23 @@ class GenerateSchema:
                 enum_type,
                 metadata={'pydantic_js_functions': [get_json_schema_no_cases]},
             )
+
+    def _awaitable_schema(self, tp: Any) -> CoreSchema:
+        if tp is Any:
+            return core_schema.is_instance_schema(typing.Awaitable)
+
+        return_validator = SchemaValidator(
+            self.generate_schema(tp),
+            self._config_wrapper.core_config('__pydantic_awaitable_return_validator__'),
+        )
+
+        async def co_wrapper(obj: Awaitable) -> tp:
+            return return_validator.validate_python(await obj)
+
+        def validator(obj: Awaitable) -> Awaitable[tp]:
+            return co_wrapper(obj)
+
+        return core_schema.no_info_after_validator_function(validator, core_schema.is_instance_schema(typing.Awaitable))
 
     def _ip_schema(self, tp: Any) -> CoreSchema:
         from ._validators import IP_VALIDATOR_LOOKUP
@@ -991,6 +1013,8 @@ class GenerateSchema:
             return self._sequence_schema(Any)
         elif obj in DICT_TYPES:
             return self._dict_schema(Any, Any)
+        elif obj in AWAITABLE_TYPES:
+            return self._awaitable_schema(Any)
         elif isinstance(obj, TypeAliasType):
             return self._type_alias_type_schema(obj)
         elif obj is type:
@@ -1024,8 +1048,7 @@ class GenerateSchema:
             return self._enum_schema(obj)
         elif is_zoneinfo_type(obj):
             return self._zoneinfo_schema()
-
-        if _typing_extra.is_dataclass(obj):
+        elif _typing_extra.is_dataclass(obj):
             return self._dataclass_schema(obj, None)
 
         origin = get_origin(obj)
@@ -1070,6 +1093,8 @@ class GenerateSchema:
             return self._frozenset_schema(self._get_first_arg_or_any(obj))
         elif origin in DICT_TYPES:
             return self._dict_schema(*self._get_first_two_args_or_any(obj))
+        elif origin in AWAITABLE_TYPES:
+            return self._awaitable_schema(self._get_first_arg_or_any(obj))
         elif is_typeddict(origin):
             return self._typed_dict_schema(obj, origin)
         elif origin in (typing.Type, type):
