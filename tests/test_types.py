@@ -3719,6 +3719,25 @@ def test_socket_exists(tmp_path):
         assert Model(path=target).path == target
 
 
+def test_socket_not_exists(tmp_path):
+    target = tmp_path / 's'
+
+    class Model(BaseModel):
+        path: SocketPath
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(path=target)
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'path_not_socket',
+            'loc': ('path',),
+            'msg': 'Path does not point to a socket',
+            'input': target,
+        }
+    ]
+
+
 @pytest.mark.parametrize('value', ('/nonexistentdir/foo.py', Path('/nonexistentdir/foo.py')))
 def test_new_path_validation_parent_does_not_exist(value):
     class Model(BaseModel):
