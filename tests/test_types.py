@@ -7071,7 +7071,7 @@ def test_awaitable_complex_type():
 
     for adapter in (
         TypeAdapter(Awaitable[Annotated[int, Field(gt=0)] | Model[Literal[3]] | list]),
-        TypeAdapter(Awaitable["Annotated[int, Field(gt=0)] | Model[Literal[3]] | list"]),
+        TypeAdapter(Awaitable['Annotated[int, Field(gt=0)] | Model[Literal[3]] | list']),
     ):
 
         async def run():
