@@ -18,7 +18,7 @@ from decimal import Decimal
 from enum import Enum
 from fractions import Fraction
 from functools import partial
-from inspect import Parameter, _ParameterKind, iscoroutine, signature
+from inspect import Parameter, _ParameterKind, signature
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
 from operator import attrgetter
@@ -28,7 +28,6 @@ from typing import (
     Any,
     Awaitable,
     Callable,
-    Coroutine,
     Dict,
     Final,
     ForwardRef,
@@ -58,7 +57,6 @@ from pydantic_core import (
 )
 from typing_extensions import Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
-from .. import ValidationError
 from ..aliases import AliasChoices, AliasGenerator, AliasPath
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from ..config import ConfigDict, JsonDict, JsonEncoder
@@ -495,7 +493,7 @@ class GenerateSchema:
             return core_schema.is_instance_schema(typing.Awaitable)
 
         return_validator = SchemaValidator(
-            self.generate_schema(tp),
+            self.clean_schema(self.generate_schema(tp)),
             self._config_wrapper.core_config('__pydantic_awaitable_return_validator__'),
         )
 

@@ -1,3 +1,4 @@
+import asyncio
 import collections
 import ipaddress
 import itertools
@@ -19,12 +20,14 @@ from numbers import Number
 from pathlib import Path
 from typing import (
     Any,
+    Awaitable,
     Callable,
     Counter,
     DefaultDict,
     Deque,
     Dict,
     FrozenSet,
+    Generic,
     Iterable,
     List,
     NewType,
@@ -7017,3 +7020,85 @@ def test_annotated_metadata_any_order() -> None:
         BeforeValidatorBeforeLe(v=366)
     except ValueError as ex:
         assert 'datetime.timedelta(days=365)' in str(ex)
+
+
+def test_awaitable_simple_type():
+    class Model(BaseModel):
+        a: 'Awaitable[int]'
+
+    async def f(x):
+        return x
+
+    async def run():
+        assert await Model(a=f('1')).a == 1
+
+        with pytest.raises(ValidationError) as exc_info:
+            await Model(a=f('abc')).a
+
+        assert exc_info.value.errors(include_url=False) == [
+            {
+                'type': 'int_parsing',
+                'loc': (),
+                'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                'input': 'abc',
+            }
+        ]
+
+        with pytest.raises(ValidationError) as exc_info:
+            Model(a=123)
+
+        assert exc_info.value.errors(include_url=False) == [
+            {
+                'type': 'is_instance_of',
+                'loc': ('a',),
+                'msg': 'Input should be an instance of typing.Awaitable',
+                'input': 123,
+                'ctx': {'class': 'typing.Awaitable'},
+            }
+        ]
+
+    asyncio.run(run())
+
+
+def test_awaitable_complex_type():
+    T = TypeVar('T')
+
+    class Model(BaseModel, Generic[T]):
+        a: T
+
+    async def f(x):
+        return x
+
+    for adapter in (
+        TypeAdapter(Awaitable[Annotated[int, Field(gt=0)] | Model[Literal[3]] | list]),
+        TypeAdapter(Awaitable["Annotated[int, Field(gt=0)] | Model[Literal[3]] | list"]),
+    ):
+
+        async def run():
+            assert await adapter.validate_python(f(1)) == 1
+            assert await adapter.validate_python(f({'a': 3})) == Model(a=3)
+            assert await adapter.validate_python(f((1, 2))) == [1, 2]
+
+            aw = adapter.validate_python(f(-1))
+            with pytest.raises(ValidationError) as exc_info:
+                await aw
+
+            assert exc_info.value.errors(include_url=False) == [
+                {
+                    'type': 'greater_than',
+                    'loc': ('constrained-int',),
+                    'msg': 'Input should be greater than 0',
+                    'input': -1,
+                    'ctx': {'gt': 0},
+                },
+                {
+                    'type': 'model_type',
+                    'loc': ('Model[Literal[3]]',),
+                    'msg': 'Input should be a valid dictionary or instance of Model[Literal[3]]',
+                    'input': -1,
+                    'ctx': {'class_name': 'Model[Literal[3]]'},
+                },
+                {'type': 'list_type', 'loc': ('list[any]',), 'msg': 'Input should be a valid list', 'input': -1},
+            ]
+
+        asyncio.run(run())
