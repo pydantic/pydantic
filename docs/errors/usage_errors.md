@@ -407,7 +407,6 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'callable-discriminator-no-tag'
 ```
 
-
 ## `TypedDict` version {#typed-dict-version}
 
 This error is raised when you use [typing.TypedDict][]
@@ -540,7 +539,6 @@ try:
 except PydanticUserError as exc_info:
     assert exc_info.code == 'invalid-for-json-schema'
 ```
-
 
 ## JSON schema already used {#json-schema-already-used}
 
@@ -1067,7 +1065,7 @@ except PydanticUserError as exc_info:
 
 ## Cannot evaluate type annotation {#unevaluable-type-annotation}
 
-Because type annotations are evaluated *after* assignments, you might get unexpected results when using a type annotation name
+Because type annotations are evaluated _after_ assignments, you might get unexpected results when using a type annotation name
 that clashes with one of your fields. We raise an error in the following case:
 
 ```py test="skip"
@@ -1139,6 +1137,7 @@ pydantic.errors.PydanticUserError: Dataclass field bar has init=False and init_v
 ## `model_config` is used as a model field {#model-config-invalid-field-name}
 
 This error is raised when `model_config` is used as the name of a field.
+
 ```py
 from pydantic import BaseModel, PydanticUserError
 
@@ -1153,7 +1152,7 @@ except PydanticUserError as exc_info:
 
 ## [`with_config`][pydantic.config.with_config] is used on a `BaseModel` subclass {#with-config-on-model}
 
-This error is raised when the [`with_config`][pydantic.config.with_config]  decorator is used on a class which is already a Pydantic model (use the `model_config` attribute instead).
+This error is raised when the [`with_config`][pydantic.config.with_config] decorator is used on a class which is already a Pydantic model (use the `model_config` attribute instead).
 
 ```py
 from pydantic import BaseModel, PydanticUserError, with_config
@@ -1187,64 +1186,9 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'dataclass-on-model'
 ```
 
-## [`Unpack`][typing.Unpack] used without a [`TypedDict`][typing.TypedDict] {#unpack-typed-dict}
-
-This error is raised when [`Unpack`][typing.Unpack] is used with something other than
-a [`TypedDict`][typing.TypedDict] class object to type hint variadic keyword parameters.
-
-For reference, see the [related specification section] and [PEP 692].
-
-```py
-from typing_extensions import Unpack
-
-from pydantic import PydanticUserError, validate_call
-
-try:
-
-    @validate_call
-    def func(**kwargs: Unpack[int]):
-        pass
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'unpack-typed-dict'
-```
-
-## Overlapping unpacked [`TypedDict`][typing.TypedDict] fields and arguments {#overlapping-unpack-typed-dict}
-
-This error is raised when the typed dictionary used to type hint variadic keywords parameters has field names
-overlapping with other parameters (unless [positional only][positional-only_parameter]).
-
-For reference, see the [related specification section] and [PEP 692].
-
-```py
-from typing_extensions import TypedDict, Unpack
-
-from pydantic import PydanticUserError, validate_call
-
-
-class TD(TypedDict):
-    a: int
-
-
-try:
-
-    @validate_call
-    def func(a: int, **kwargs: Unpack[TD]):
-        pass
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'overlapping-unpack-typed-dict'
-```
-
-[related specification section]: https://typing.readthedocs.io/en/latest/spec/callables.html#unpack-for-keyword-arguments
-[PEP 692]: https://peps.python.org/pep-0692/
-
-
-
 ## Unsupported type for `validate_call` {#validate-call-type}
 
-`validate_call` has some limitations on the callables it can validate. This error is raised when you try to use it with an unsupported callable. Currently the supported callables are functions (including lambdas), methods and instances of [`partial`][functools.partial]. In the case of [`partial`][functools.partial], the function being partially  applied must be one of the supported callables.
-
+`validate_call` has some limitations on the callables it can validate. This error is raised when you try to use it with an unsupported callable. Currently the supported callables are functions (including lambdas), methods and instances of [`partial`][functools.partial]. In the case of [`partial`][functools.partial], the function being partially applied must be one of the supported callables.
 
 ### `@classmethod`, `@staticmethod`, and `@property`
 
@@ -1270,7 +1214,6 @@ except PydanticUserError as exc_info:
 @validate_call
 def f2(cls): ...
 ```
-
 
 ### Classes
 
@@ -1339,3 +1282,55 @@ try:
 except PydanticUserError as exc_info:
     assert exc_info.code == 'validate-call-type'
 ```
+
+## [`Unpack`][typing.Unpack] used without a [`TypedDict`][typing.TypedDict] {#unpack-typed-dict}
+
+This error is raised when [`Unpack`][typing.Unpack] is used with something other than
+a [`TypedDict`][typing.TypedDict] class object to type hint variadic keyword parameters.
+
+For reference, see the [related specification section] and [PEP 692].
+
+```py
+from typing_extensions import Unpack
+
+from pydantic import PydanticUserError, validate_call
+
+try:
+
+    @validate_call
+    def func(**kwargs: Unpack[int]):
+        pass
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'unpack-typed-dict'
+```
+
+## Overlapping unpacked [`TypedDict`][typing.TypedDict] fields and arguments {#overlapping-unpack-typed-dict}
+
+This error is raised when the typed dictionary used to type hint variadic keywords parameters has field names
+overlapping with other parameters (unless [positional only][positional-only_parameter]).
+
+For reference, see the [related specification section] and [PEP 692].
+
+```py
+from typing_extensions import TypedDict, Unpack
+
+from pydantic import PydanticUserError, validate_call
+
+
+class TD(TypedDict):
+    a: int
+
+
+try:
+
+    @validate_call
+    def func(a: int, **kwargs: Unpack[TD]):
+        pass
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'overlapping-unpack-typed-dict'
+```
+
+[related specification section]: https://typing.readthedocs.io/en/latest/spec/callables.html#unpack-for-keyword-arguments
+[PEP 692]: https://peps.python.org/pep-0692/

@@ -66,9 +66,9 @@ PydanticErrorCodes = Literal[
     'model-config-invalid-field-name',
     'with-config-on-model',
     'dataclass-on-model',
+    'validate-call-type',
     'unpack-typed-dict',
     'overlapping-unpack-typed-dict',
-    'validate-call-type',
 ]
 
 
