@@ -99,7 +99,7 @@ from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import MockCoreSchema
 from ._namespace_utils import NamespacesTuple, NsResolver
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
-from ._typing_extra import get_cls_type_hints_lenient, is_annotated, is_finalvar, is_self_type, is_zoneinfo_type
+from ._typing_extra import get_cls_type_hints, is_annotated, is_finalvar, is_self_type, is_zoneinfo_type
 from ._utils import lenient_issubclass, smart_deepcopy
 
 if TYPE_CHECKING:
@@ -1245,8 +1245,8 @@ class GenerateSchema:
         # Update FieldInfo annotation if appropriate:
         FieldInfo = import_cached_field_info()
         if has_instance_in_type(field_info.annotation, (ForwardRef, str)):
-            # TODO Can we use field_info.apply_typevars_map here? Shouldn't we error if we encounter name errors here?
-            evaluated = _typing_extra.eval_type_lenient(field_info.annotation, *self._types_namespace)
+            # TODO Can we use field_info.apply_typevars_map here? Shouldn't we use lenient=False?
+            evaluated = _typing_extra.eval_type(field_info.annotation, *self._types_namespace, lenient=True)
             evaluated = replace_types(evaluated, self._typevars_map)
             if evaluated is not field_info.annotation and not has_instance_in_type(evaluated, PydanticRecursiveRef):
                 new_field_info = FieldInfo.from_annotation(evaluated)
@@ -1383,7 +1383,7 @@ class GenerateSchema:
             typevars_map = get_standard_typevars_map(obj)
 
             with self._ns_resolver.push(origin):
-                annotation = _typing_extra.eval_type_lenient(annotation, *self._types_namespace)
+                annotation = _typing_extra.eval_type(annotation, *self._types_namespace, lenient=True)
                 annotation = replace_types(annotation, typevars_map)
                 schema = self.generate_schema(annotation)
                 assert schema['type'] != 'definitions'
@@ -1422,7 +1422,7 @@ class GenerateSchema:
         """
         FieldInfo = import_cached_field_info()
 
-        with self._ns_resolver.push(typed_dict_cls), self.defs.get_schema_or_ref(typed_dict_cls) as (
+        with self.model_type_stack.push(typed_dict_cls), self.defs.get_schema_or_ref(typed_dict_cls) as (
             typed_dict_ref,
             maybe_schema,
         ):
@@ -1458,7 +1458,9 @@ class GenerateSchema:
                 else:
                     field_docstrings = None
 
-                for field_name, annotation in get_cls_type_hints_lenient(typed_dict_cls).items():
+                for field_name, annotation in get_cls_type_hints(
+                    typed_dict_cls, ns_resolver=self._ns_resolver, lenient=False
+                ).items():
                     annotation = replace_types(annotation, typevars_map)
                     required = field_name in required_keys
 
@@ -1520,30 +1522,31 @@ class GenerateSchema:
             if origin is not None:
                 namedtuple_cls = origin
 
-            with self._ns_resolver.push(namedtuple_cls):
-                annotations: dict[str, Any] = get_cls_type_hints_lenient(namedtuple_cls)
-                if not annotations:
-                    # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
-                    annotations = {k: Any for k in namedtuple_cls._fields}
+            annotations: dict[str, Any] = get_cls_type_hints(
+                namedtuple_cls, ns_resolver=self._ns_resolver, lenient=False
+            )
+            if not annotations:
+                # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
+                annotations = {k: Any for k in namedtuple_cls._fields}
 
-                if typevars_map:
-                    annotations = {
-                        field_name: replace_types(annotation, typevars_map)
-                        for field_name, annotation in annotations.items()
-                    }
+            if typevars_map:
+                annotations = {
+                    field_name: replace_types(annotation, typevars_map)
+                    for field_name, annotation in annotations.items()
+                }
 
-                arguments_schema = core_schema.arguments_schema(
-                    [
-                        self._generate_parameter_schema(
-                            field_name,
-                            annotation,
-                            default=namedtuple_cls._field_defaults.get(field_name, Parameter.empty),
-                        )
-                        for field_name, annotation in annotations.items()
-                    ],
-                    metadata=build_metadata_dict(js_prefer_positional_arguments=True),
-                )
-                return core_schema.call_schema(arguments_schema, namedtuple_cls, ref=namedtuple_ref)
+            arguments_schema = core_schema.arguments_schema(
+                [
+                    self._generate_parameter_schema(
+                        field_name,
+                        annotation,
+                        default=namedtuple_cls._field_defaults.get(field_name, Parameter.empty),
+                    )
+                    for field_name, annotation in annotations.items()
+                ],
+                metadata=build_metadata_dict(js_prefer_positional_arguments=True),
+            )
+            return core_schema.call_schema(arguments_schema, namedtuple_cls, ref=namedtuple_ref)
 
     def _generate_parameter_schema(
         self,

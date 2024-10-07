@@ -273,7 +273,7 @@ def dataclass(
         # TODO `parent_namespace` is currently None, but we could do the same thing as Pydantic models:
         # fetch the parent ns using `parent_frame_namespace` (if the dataclass was defined in a function),
         # and possibly cache it (see the `__pydantic_parent_namespace__` logic for models).
-        _pydantic_dataclasses.complete_dataclass(cls, config_wrapper, raise_errors=False, parent_namespace=None)
+        _pydantic_dataclasses.complete_dataclass(cls, config_wrapper, raise_errors=False)
         return cls
 
     return create_dataclass if _cls is None else create_dataclass(_cls)
@@ -327,17 +327,15 @@ def rebuild_dataclass(
     if '__pydantic_core_schema__' in cls.__dict__:
         delattr(cls, '__pydantic_core_schema__')  # delete cached value to ensure full rebuild happens
 
-    fallback_namespace: MappingNamespace | None = None
-    override_namespace: MappingNamespace | None = None
-
     if _types_namespace is not None:
-        override_namespace = _types_namespace
+        rebuild_ns = _types_namespace
     elif _parent_namespace_depth > 0:
-        fallback_namespace = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth) or {}
+        rebuild_ns = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth, force=True) or {}
+    else:
+        rebuild_ns = {}
 
     ns_resolver = NsResolver(
-        fallback_namespace=fallback_namespace,
-        override_namespace=override_namespace,
+        parent_namespace=rebuild_ns,
     )
 
     return _pydantic_dataclasses.complete_dataclass(

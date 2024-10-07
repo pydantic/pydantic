@@ -91,7 +91,7 @@ def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth:
     globalns = sys._getframe(max(parent_depth - 1, 1)).f_globals
     ns_resolver = NsResolver(
         namespaces_tuple=NamespacesTuple(globalns, local_ns or {}),
-        fallback_namespace=local_ns,
+        parent_namespace=local_ns,
     )
     gen = _generate_schema.GenerateSchema(config_wrapper, ns_resolver=ns_resolver, typevars_map={})
     schema = gen.generate_schema(type_)

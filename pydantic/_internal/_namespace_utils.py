@@ -145,30 +145,22 @@ def ns_from(obj: Any, parent_namespace: MappingNamespace | None = None) -> Names
 
 
 class NsResolver:
-    """A class holding the logic to resolve namespaces for annotations evaluation in the context
-    of core schema generation.
+    """A class holding the logic to resolve namespaces for annotations evaluation.
 
-    This class handles the namespace logic when evaluating annotations that failed to
-    resolve during the initial inspection/building of the Pydantic model, dataclass, etc.
+    This class handles the namespace logic when evaluating annotations mainly for class objects.
 
     It holds a stack of classes that are being inspected during the core schema building,
     and the `types_namespace` property exposes the globals and locals to be used for
     type annotation evaluation. Additionally -- if no class is present in the stack -- a
-    fallback globals and locals can be provided with the `namespaces_tuple` argument.
-
-    This is only meant to be used alongside with the `GenerateSchema` class.
+    fallback globals and locals can be provided using the `namespaces_tuple` argument
+    (this is useful when generating a schema for a simple annotation, e.g. when using
+    `TypeAdapter`).
 
     Args:
         namespaces_tuple: The default globals and locals to used if no class is present
             on the stack. This can be useful when using the `GenerateSchema` class
             with `TypeAdapter`, where the "type" being analyzed is a simple annotation.
-        fallback_namespace: A namespace to use as a last resort if a name wasn't found
-            in the locals nor the globals. This is mainly used when rebuilding a core
-            schema for a Pydantic model or dataclass, where the parent namespace is used.
-        override_namespace: A namespace to use first when resolving forward annotations.
-            This is mainly used when rebuilding a core schema for a Pydantic model or
-            dataclass, where an explicit namespace can be provided to resolve annotations
-            that failed to resolve during the initial schema building.
+        parent_namespace: TODO
 
     Example:
         ```python lint="skip" test="skip"
@@ -194,12 +186,10 @@ class NsResolver:
     def __init__(
         self,
         namespaces_tuple: NamespacesTuple | None = None,
-        fallback_namespace: MappingNamespace | None = None,
-        override_namespace: MappingNamespace | None = None,
+        parent_namespace: MappingNamespace | None = None,
     ) -> None:
         self._base_ns_tuple = namespaces_tuple or NamespacesTuple({}, {})
-        self._fallback_ns = fallback_namespace
-        self._override_ns = override_namespace
+        self._parent_ns = parent_namespace
         self._types_stack: list[type[Any]] = []
 
     @cached_property
@@ -212,16 +202,19 @@ class NsResolver:
         typ = self._types_stack[-1]
 
         globalns = get_module_ns_of(typ)
-        # TODO check len(self._types_stack) == 1? As we specified,
-        # fallback_namespace should only be used for the class being rebuilt.
-        # However, it might be good to keep this for now to avoid having too
-        # many breaking changes.
-        if self._fallback_ns is not None:
-            globalns = {**self._fallback_ns, **globalns}
 
-        locals_list: list[MappingNamespace] = [vars(typ), {typ.__name__: typ}]
-        if self._override_ns is not None:
-            locals_list.append(self._override_ns)
+        locals_list: list[MappingNamespace] = []
+        if self._parent_ns is not None:
+            locals_list.append(self._parent_ns)
+        if len(self._types_stack) > 1:
+            first_type = self._types_stack[0]
+            locals_list.append({first_type.__name__: first_type})
+
+        locals_list.extend([
+            vars(typ),
+            # The len check above presents this from being added twice:
+            {typ.__name__: typ},
+        ])
 
         return NamespacesTuple(globalns, LazyLocalNamespace(*locals_list))
 

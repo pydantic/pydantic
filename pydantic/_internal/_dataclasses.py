@@ -24,7 +24,7 @@ from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
 from ._mock_val_ser import set_dataclass_mocks
-from ._namespace_utils import MappingNamespace, NsResolver
+from ._namespace_utils import NsResolver
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._signature import generate_pydantic_signature
 
@@ -71,21 +71,21 @@ else:
 
 def set_dataclass_fields(
     cls: type[StandardDataclass],
-    parent_namespace: MappingNamespace | None = None,
+    ns_resolver: NsResolver | None = None,
     config_wrapper: _config.ConfigWrapper | None = None,
 ) -> None:
     """Collect and set `cls.__pydantic_fields__`.
 
     Args:
         cls: The class.
-        parent_namespace: Extra namespace to use as locals, with lowest priority.
+        ns_resolver: Extra namespace to use as locals, with lowest priority.
             This is provided in most cases as the locals of a function, where the dataclass
             is defined.
         config_wrapper: The config wrapper instance, defaults to `None`.
     """
     typevars_map = get_standard_typevars_map(cls)
     fields = collect_dataclass_fields(
-        cls, parent_namespace=parent_namespace, typevars_map=typevars_map, config_wrapper=config_wrapper
+        cls, ns_resolver=ns_resolver, typevars_map=typevars_map, config_wrapper=config_wrapper
     )
 
     cls.__pydantic_fields__ = fields  # type: ignore
@@ -96,7 +96,6 @@ def complete_dataclass(
     config_wrapper: _config.ConfigWrapper,
     *,
     raise_errors: bool = True,
-    parent_namespace: MappingNamespace | None = None,
     ns_resolver: NsResolver | None = None,
     _force_build: bool = False,
 ) -> bool:
@@ -146,7 +145,7 @@ def complete_dataclass(
             'Support for `__post_init_post_parse__` has been dropped, the method will not be called', DeprecationWarning
         )
 
-    set_dataclass_fields(cls, parent_namespace, config_wrapper=config_wrapper)
+    set_dataclass_fields(cls, ns_resolver, config_wrapper=config_wrapper)
 
     typevars_map = get_standard_typevars_map(cls)
     gen_schema = GenerateSchema(

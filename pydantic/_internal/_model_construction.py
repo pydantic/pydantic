@@ -27,7 +27,7 @@ from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import set_model_mocks
-from ._namespace_utils import MappingNamespace, NsResolver
+from ._namespace_utils import NsResolver
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._signature import generate_pydantic_signature
 from ._typing_extra import (
@@ -217,7 +217,9 @@ class ModelMetaclass(ABCMeta):
             if isinstance(parent_namespace, dict):
                 parent_namespace = unpack_lenient_weakvaluedict(parent_namespace)
 
-            set_model_fields(cls, bases, config_wrapper, parent_namespace)
+            ns_resolver = NsResolver(parent_namespace=parent_namespace)
+
+            set_model_fields(cls, bases, config_wrapper, ns_resolver)
 
             if config_wrapper.frozen and '__hash__' not in namespace:
                 set_default_hash_func(cls, bases)
@@ -227,6 +229,7 @@ class ModelMetaclass(ABCMeta):
                 cls_name,
                 config_wrapper,
                 raise_errors=False,
+                ns_resolver=ns_resolver,
                 create_model_module=_create_model_module,
             )
 
@@ -579,7 +582,7 @@ def set_model_fields(
     cls: type[BaseModel],
     bases: tuple[type[Any], ...],
     config_wrapper: ConfigWrapper,
-    parent_namespace: MappingNamespace | None,
+    ns_resolver: NsResolver | None,
 ) -> None:
     """Collect and set `cls.__pydantic_fields__` and `cls.__class_vars__`.
 
@@ -587,12 +590,12 @@ def set_model_fields(
         cls: BaseModel or dataclass.
         bases: Parents of the class, generally `cls.__bases__`.
         config_wrapper: The config wrapper instance.
-        parent_namespace: Extra namespace to use as locals, with lowest priority.
+        ns_resolver: Extra namespace to use as locals, with lowest priority.
             This is provided in most cases as the locals of a function, where the model
             is defined.
     """
     typevars_map = get_model_typevars_map(cls)
-    fields, class_vars = collect_model_fields(cls, bases, config_wrapper, parent_namespace, typevars_map=typevars_map)
+    fields, class_vars = collect_model_fields(cls, bases, config_wrapper, ns_resolver, typevars_map=typevars_map)
 
     cls.__pydantic_fields__ = fields
     cls.__class_vars__.update(class_vars)

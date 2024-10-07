@@ -569,17 +569,18 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         if '__pydantic_core_schema__' in cls.__dict__:
             delattr(cls, '__pydantic_core_schema__')  # delete cached value to ensure full rebuild happens
 
-        fallback_namespace: MappingNamespace | None = None
-        override_namespace: MappingNamespace | None = None
-
         if _types_namespace is not None:
-            override_namespace = _types_namespace
+            rebuild_ns = _types_namespace
         elif _parent_namespace_depth > 0:
-            fallback_namespace = (
-                _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth, force=True) or {}
-            )
+            rebuild_ns = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth, force=True) or {}
+        else:
+            rebuild_ns = {}
 
-        ns_resolver = NsResolver(fallback_namespace=fallback_namespace, override_namespace=override_namespace)
+        parent_ns = _model_construction.unpack_lenient_weakvaluedict(cls.__pydantic_parent_namespace__) or {}
+
+        ns_resolver = NsResolver(
+            parent_namespace={**rebuild_ns, **parent_ns},
+        )
 
         # manually override defer_build so complete_model_class doesn't skip building the model again
         config = {**cls.model_config, 'defer_build': False}

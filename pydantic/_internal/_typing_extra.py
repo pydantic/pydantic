@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any, Final
 
 from typing_extensions import Annotated, Literal, TypeAliasType, TypeGuard, Unpack, deprecated, get_args, get_origin
 
-from ._namespace_utils import GlobalsNamespace, MappingNamespace, ns_from
+from ._namespace_utils import GlobalsNamespace, MappingNamespace, NsResolver
 
 if TYPE_CHECKING:
     from ._dataclasses import StandardDataclass
@@ -243,28 +243,49 @@ def merge_cls_and_parent_ns(cls: type[Any], parent_namespace: dict[str, Any] | N
     return ns
 
 
-def get_cls_type_hints_lenient(obj: Any, parent_namespace: MappingNamespace | None = None) -> dict[str, Any]:
+def get_cls_type_hints(
+    obj: type[Any], *, ns_resolver: NsResolver | None = None, lenient: bool = False
+) -> dict[str, Any]:
     """Collect annotations from a class, including those from parent classes.
 
-    Unlike `typing.get_type_hints`, this function will not error if a forward reference is not resolvable.
+    Args:
+        obj: The class to inspect.
+        ns_resolver: A namespace resolver instance to use. Defaults to an empty instance.
+        lenient: Whether to keep unresolvable annotations as is or re-raise the `NameError` exception. Default: re-raise.
     """
     hints = {}
+    ns_resolver = ns_resolver or NsResolver()
+
     for base in reversed(obj.__mro__):
         ann = base.__dict__.get('__annotations__')
         # TODO: to be more correct, we might want to only pass `parent_namespace`
         # when `base is obj`, because the other bases might be defined in a different
         # context (i.e. not in the same frame):
-        globalns, localns = ns_from(base, parent_namespace=parent_namespace)
-        if ann is not None and ann is not GetSetDescriptorType:
-            for name, value in ann.items():
-                hints[name] = eval_type_lenient(value, globalns, localns)
+        # globalns, localns = ns_from(base, parent_namespace=parent_namespace)
+        with ns_resolver.push(base):
+            globalns, localns = ns_resolver.types_namespace
+            if ann is not None and ann is not GetSetDescriptorType:
+                for name, value in ann.items():
+                    hints[name] = eval_type(value, globalns, localns, lenient=lenient)
     return hints
 
 
-def eval_type_lenient(
-    value: Any, globalns: dict[str, Any] | None = None, localns: MappingNamespace | None = None
+def eval_type(
+    value: Any,
+    globalns: dict[str, Any] | None = None,
+    localns: MappingNamespace | None = None,
+    *,
+    lenient: bool = False,
 ) -> Any:
-    """Behaves like typing._eval_type, except it won't raise an error if a forward reference can't be resolved."""
+    """Evaluate the annotation using the provided namespaces.
+
+    Args:
+        value: The value to evaluate. If `None`, it will be replaced by `type[None]`. If an instance
+            of `str`, it will be converted to a `ForwardRef`.
+        globalns: The global namespace to use during annotation evaluation.
+        globalns: The local namespace to use during annotation evaluation.
+        lenient: Whether to keep unresolvable annotations as is or re-raise the `NameError` exception. Default: re-raise.
+    """
     if value is None:
         value = NoneType
     elif isinstance(value, str):
@@ -273,6 +294,8 @@ def eval_type_lenient(
     try:
         return eval_type_backport(value, globalns, localns)
     except NameError:
+        if not lenient:
+            raise
         # the point of this function is to be tolerant to this case
         return value
 
