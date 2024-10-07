@@ -291,6 +291,7 @@ all_schema_functions = [
     (core_schema.decimal_schema, args(), {'type': 'decimal'}),
     (core_schema.decimal_schema, args(multiple_of=5, gt=1.2), {'type': 'decimal', 'multiple_of': 5, 'gt': 1.2}),
     (core_schema.complex_schema, args(), {'type': 'complex'}),
+    (core_schema.invalid_schema, args(), {'type': 'invalid'}),
 ]
 
 
@@ -299,7 +300,7 @@ def test_schema_functions(function, args_kwargs, expected_schema):
     args, kwargs = args_kwargs
     schema = function(*args, **kwargs)
     assert schema == expected_schema
-    if schema.get('type') in {None, 'definition-ref', 'typed-dict-field', 'model-field'}:
+    if schema.get('type') in {None, 'definition-ref', 'typed-dict-field', 'model-field', 'invalid'}:
         return
 
     v = SchemaValidator(schema)
@@ -354,3 +355,8 @@ def test_expected_serialization_types(return_schema):
             )
         )
     )
+
+
+def test_err_on_invalid() -> None:
+    with pytest.raises(SchemaError, match='Cannot construct schema with `InvalidSchema` member.'):
+        SchemaValidator(core_schema.invalid_schema())

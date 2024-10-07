@@ -479,6 +479,7 @@ macro_rules! validator_match {
             $(
                 <$validator>::EXPECTED_TYPE => build_specific_validator::<$validator>($type, $dict, $config, $definitions),
             )+
+            "invalid" => return py_schema_err!("Cannot construct schema with `InvalidSchema` member."),
             _ => return py_schema_err!(r#"Unknown schema type: "{}""#, $type),
         }
     };
