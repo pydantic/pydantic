@@ -175,7 +175,7 @@ def complete_dataclass(
         set_dataclass_mocks(cls, cls.__name__, f'`{e.name}`')
         return False
 
-    core_config = config_wrapper.core_config(cls)
+    core_config = config_wrapper.core_config(title=cls.__name__)
 
     try:
         schema = gen_schema.clean_schema(schema)

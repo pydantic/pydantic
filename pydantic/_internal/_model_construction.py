@@ -661,7 +661,7 @@ def complete_model_class(
         set_model_mocks(cls, cls_name, f'`{e.name}`')
         return False
 
-    core_config = config_wrapper.core_config(cls)
+    core_config = config_wrapper.core_config(title=cls.__name__)
 
     try:
         schema = gen_schema.clean_schema(schema)

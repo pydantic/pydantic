@@ -675,7 +675,7 @@ class GenerateSchema:
                 {*fields.keys(), *computed_fields.keys()},
             )
             config_wrapper = ConfigWrapper(cls.model_config, check=False)
-            core_config = config_wrapper.core_config(cls)
+            core_config = config_wrapper.core_config(title=cls.__name__)
             title = self._get_model_title_from_config(cls, config_wrapper)
             metadata = build_metadata_dict(js_functions=[partial(modify_model_json_schema, cls=cls, title=title)])
 
@@ -1473,7 +1473,7 @@ class GenerateSchema:
                 config = None
 
             with self._config_wrapper_stack.push(config), self._types_namespace_stack.push(typed_dict_cls):
-                core_config = self._config_wrapper.core_config(typed_dict_cls)
+                core_config = self._config_wrapper.core_config(title=typed_dict_cls.__name__)
 
                 required_keys: frozenset[str] = typed_dict_cls.__required_keys__
 
@@ -1794,7 +1794,7 @@ class GenerateSchema:
                         config = getattr(dataclass_base, '__pydantic_config__', None)
                         dataclass_bases_stack.enter_context(self._config_wrapper_stack.push(config))
 
-                core_config = self._config_wrapper.core_config(dataclass)
+                core_config = self._config_wrapper.core_config(title=dataclass.__name__)
 
                 from ..dataclasses import is_pydantic_dataclass
 
