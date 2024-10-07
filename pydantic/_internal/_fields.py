@@ -295,7 +295,7 @@ def collect_dataclass_fields(
 
     # The logic here is similar to `_typing_extra.get_cls_type_hints_lenient`,
     # although we do it manually as stdlib dataclasses already have annotations
-    # collected in each field:
+    # collected in each class:
     for base in reversed(cls.__mro__):
         if not _typing_extra.is_dataclass(base):
             continue
