@@ -1395,6 +1395,15 @@ to help you monitor and understand your
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#suppressing-fields-from-cli-help-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      Suppressing Fields from CLI Help Text
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3511,6 +3520,15 @@ to help you monitor and understand your
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#suppressing-fields-from-cli-help-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      Suppressing Fields from CLI Help Text
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4876,6 +4894,38 @@ even if <code>cli_use_class_docs_for_groups</code> is set to <code>True</code>.<
 <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;+m&#39;</span><span class="p">,</span> <span class="s1">&#39;hi&#39;</span><span class="p">]</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="c1">#&gt; {&#39;my_arg&#39;: &#39;hi&#39;}</span>
+</code></pre></div>
+<h4 id="suppressing-fields-from-cli-help-text">Suppressing Fields from CLI Help Text<a class="headerlink" href="#suppressing-fields-from-cli-help-text" title="Permanent link">&para;</a></h4>
+<p>To suppress a field from the CLI help text, the <code>CliSuppress</code> annotation can be used for field types, or the
+<code>CLI_SUPPRESS</code> string constant can be used for field descriptions.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">CLI_SUPPRESS</span><span class="p">,</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">CliSuppress</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">,</span> <span class="n">cli_parse_args</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Suppress fields from CLI help text.&quot;&quot;&quot;</span>
+
+    <span class="n">field_a</span><span class="p">:</span> <span class="n">CliSuppress</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">field_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="n">CLI_SUPPRESS</span><span class="p">)</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;example.py&#39;</span><span class="p">,</span> <span class="s1">&#39;--help&#39;</span><span class="p">]</span>
+    <span class="n">Settings</span><span class="p">()</span>
+<span class="k">except</span> <span class="ne">SystemExit</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="c1">#&gt; 0</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">usage: example.py [-h]</span>
+
+<span class="sd">Suppress fields from CLI help text.</span>
+
+<span class="sd">options:</span>
+<span class="sd">  -h, --help          show this help message and exit</span>
+<span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 <h3 id="integrating-with-existing-parsers">Integrating with Existing Parsers<a class="headerlink" href="#integrating-with-existing-parsers" title="Permanent link">&para;</a></h3>
 <p>A CLI settings source can be integrated with existing parsers by overriding the default CLI settings source with a user
