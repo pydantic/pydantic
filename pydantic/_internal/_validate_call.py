@@ -1,8 +1,10 @@
 from __future__ import annotations as _annotations
 
+import functools
 import inspect
 from functools import partial
-from typing import Any, Awaitable, Callable
+from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, LambdaType, MethodType
+from typing import Any, Awaitable, Callable, Union, get_args
 
 import pydantic_core
 
@@ -11,10 +13,56 @@ from ..plugin._schema_validator import create_schema_validator
 from . import _generate_schema, _typing_extra
 from ._config import ConfigWrapper
 
+# This should be aligned with `GenerateSchema.match_types`
+#
+# Note: This does not play very well with type checkers. For example,
+# `a: LambdaType = lambda x: x` will raise a type error by Pyright.
+ValidateCallSupportedTypes = Union[
+    LambdaType,
+    FunctionType,
+    MethodType,
+    BuiltinFunctionType,
+    BuiltinMethodType,
+    functools.partial,
+]
+
+VALIDATE_CALL_SUPPORTED_TYPES = get_args(ValidateCallSupportedTypes)
+
+
+def get_name(func: ValidateCallSupportedTypes) -> str:
+    return f'partial({func.func.__name__})' if isinstance(func, functools.partial) else func.__name__
+
+
+def get_qualname(func: ValidateCallSupportedTypes) -> str:
+    return f'partial({func.func.__qualname__})' if isinstance(func, functools.partial) else func.__qualname__
+
+
+def update_wrapper(wrapped: ValidateCallSupportedTypes, wrapper: Callable[..., Any]):
+    """Update the `wrapper` function with the attributes of the `wrapped` function. Return the updated function."""
+    if inspect.iscoroutinefunction(wrapped):
+        # We have to create a new couroutine function
+        @functools.wraps(wrapped)
+        async def wrapper_function(*args, **kwargs):  # type: ignore
+            return await wrapper(*args, **kwargs)
+    else:
+
+        @functools.wraps(wrapped)
+        def wrapper_function(*args, **kwargs):
+            return wrapper(*args, **kwargs)
+
+    # We need to manually update this because `partial` object has no `__name__` and `__qualname__`.
+    wrapper_function.__name__ = get_name(wrapped)
+    wrapper_function.__qualname__ = get_qualname(wrapped)
+    wrapper_function.raw_function = wrapped  # type: ignore
+
+    return wrapper_function
+
 
 class ValidateCallWrapper:
     """This is a wrapper around a function that validates the arguments passed to it, and optionally the return value."""
 
+    # This slots are not currently used, but in the future we may want to expose them.
+    # See #9883
     __slots__ = (
         '__pydantic_validator__',
         '__name__',
@@ -25,22 +73,22 @@ class ValidateCallWrapper:
 
     def __init__(
         self,
-        function: Callable[..., Any],
+        function: ValidateCallSupportedTypes,
         config: ConfigDict | None,
         validate_return: bool,
         namespace: dict[str, Any] | None,
     ):
         if isinstance(function, partial):
-            func = function.func
-            schema_type = func
-            self.__name__ = f'partial({func.__name__})'
-            self.__qualname__ = f'partial({func.__qualname__})'
-            self.__module__ = func.__module__
+            schema_type = function.func
+            module = function.func.__module__
         else:
             schema_type = function
-            self.__name__ = function.__name__
-            self.__qualname__ = function.__qualname__
-            self.__module__ = function.__module__
+            module = function.__module__
+        qualname = core_config_title = get_qualname(function)
+
+        self.__name__ = get_name(function)
+        self.__qualname__ = qualname
+        self.__module__ = module
 
         global_ns = _typing_extra.get_module_ns_of(function)
         # TODO: this is a bit of a hack, we should probably have a better way to handle this
@@ -55,13 +103,13 @@ class ValidateCallWrapper:
         config_wrapper = ConfigWrapper(config)
         gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
         schema = gen_schema.clean_schema(gen_schema.generate_schema(function))
-        core_config = config_wrapper.core_config(self)
+        core_config = config_wrapper.core_config(core_config_title)
 
-        self.__pydantic_validator__ = create_schema_validator(
+        function_validator = create_schema_validator(
             schema,
             schema_type,
-            self.__module__,
-            self.__qualname__,
+            module,
+            qualname,
             'validate_call',
             core_config,
             config_wrapper.plugin_settings,
@@ -75,8 +123,8 @@ class ValidateCallWrapper:
             validator = create_schema_validator(
                 schema,
                 schema_type,
-                self.__module__,
-                self.__qualname__,
+                module,
+                qualname,
                 'validate_call',
                 core_config,
                 config_wrapper.plugin_settings,
@@ -86,14 +134,20 @@ class ValidateCallWrapper:
                 async def return_val_wrapper(aw: Awaitable[Any]) -> None:
                     return validator.validate_python(await aw)
 
-                self.__return_pydantic_validator__ = return_val_wrapper
+                return_validator = return_val_wrapper
             else:
-                self.__return_pydantic_validator__ = validator.validate_python
+                return_validator = validator.validate_python
         else:
-            self.__return_pydantic_validator__ = None
+            return_validator = None
 
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        res = self.__pydantic_validator__.validate_python(pydantic_core.ArgsKwargs(args, kwargs))
-        if self.__return_pydantic_validator__:
-            return self.__return_pydantic_validator__(res)
-        return res
+        def wrapper(*args, **kwargs):
+            """The wrapper function. Does the same as the original function, but validates the input and output."""
+            res = function_validator.validate_python(pydantic_core.ArgsKwargs(args, kwargs))
+            if return_validator is not None:
+                return return_validator(res)
+            return res
+
+        self.__pydantic_validator__ = wrapper
+
+    def __call__(self, *args, **kwargs) -> Any:
+        return self.__pydantic_validator__(*args, **kwargs)
