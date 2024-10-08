@@ -87,9 +87,7 @@ def collect_model_fields(  # noqa: C901
         cls: BaseModel or dataclass.
         bases: Parents of the class, generally `cls.__bases__`.
         config_wrapper: The config wrapper instance.
-        ns_resolver: Extra namespace to use as locals, with lowest priority.
-            This is provided in most cases as the locals of a function, where the model
-            is defined.
+        ns_resolver: Namespace resolver to use when getting model annotations.
         typevars_map: A dictionary mapping type variables to their concrete types.
 
     Returns:
@@ -280,9 +278,8 @@ def collect_dataclass_fields(
 
     Args:
         cls: dataclass.
-        parent_namespace: Extra namespace to use as locals, with lowest priority.
-            This is provided in most cases as the locals of a function, where the dataclass
-            is defined.
+        ns_resolver: Namespace resolver to use when getting model annotations.
+            Defaults to an empty instance.
         typevars_map: A dictionary mapping type variables to their concrete types.
         config_wrapper: The config wrapper instance.
 

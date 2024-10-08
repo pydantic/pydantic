@@ -10,7 +10,7 @@ from ..config import ConfigDict
 from ..plugin._schema_validator import create_schema_validator
 from . import _generate_schema
 from ._config import ConfigWrapper
-from ._namespace_utils import MappingNamespace, NsResolver, ns_from
+from ._namespace_utils import MappingNamespace, NsResolver, ns_for_function
 
 
 class ValidateCallWrapper:
@@ -43,7 +43,7 @@ class ValidateCallWrapper:
             self.__qualname__ = function.__qualname__
             self.__module__ = function.__module__
 
-        ns_resolver = NsResolver(namespaces_tuple=ns_from(schema_type, parent_namespace=parent_namespace))
+        ns_resolver = NsResolver(namespaces_tuple=ns_for_function(schema_type, parent_namespace=parent_namespace))
 
         config_wrapper = ConfigWrapper(config)
         gen_schema = _generate_schema.GenerateSchema(config_wrapper, ns_resolver)

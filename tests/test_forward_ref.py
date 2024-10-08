@@ -1297,8 +1297,8 @@ def test_tmp_9(create_module):
 
     @create_module
     def module_1():
-
         MyStr = str
+
         class Model(BaseModel):
             a: int
 

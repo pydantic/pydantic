@@ -4,7 +4,7 @@ import sys
 from collections.abc import Generator, Mapping
 from contextlib import contextmanager
 from functools import cached_property
-from typing import Any, Iterator, NamedTuple, TypeAlias, TypeVar
+from typing import Any, Callable, Iterator, NamedTuple, TypeAlias, TypeVar
 
 GlobalsNamespace: TypeAlias = dict[str, Any]
 """A global namespace.
@@ -97,55 +97,45 @@ class LazyLocalNamespace(Mapping[str, Any]):
         return iter(self.data)
 
 
-# This function is quite similar to the `NsResolver.types_namespace` property, but it also
-# handles functions, while `NsResolver` only deals with type objects. This function should
-# thus only be used when you want to resolve annotations for an object when *not* in a
-# core schema generation context:
-def ns_from(obj: Any, parent_namespace: MappingNamespace | None = None) -> NamespacesTuple:
-    """Return the global and local namespaces to be used when evaluating annotations for the provided object.
+def ns_for_function(obj: Callable[..., Any], parent_namespace: MappingNamespace | None = None) -> NamespacesTuple:
+    """Return the global and local namespaces to be used when evaluating annotations for the provided function.
 
-    The global namespace will be the `__dict__` attribute of the module the object was defined in. The
-    local namespace will be constructed depending on the object type:
-    - if it is a type object, use the object's `__dict__` attribute and add the object itself to the locals.
-    - if it is a function, add the `__type_params__` introduced by PEP 695.
+    The global namespace will be the `__dict__` attribute of the module the function was defined in.
+    The local namespace will contain the `__type_params__` introduced by PEP 695.
 
     Args:
         obj: The object to use when building namespaces.
         parent_namespace: Optional namespace to be added with the lowest priority in the local namespace.
+            If the passed function is a method, the `parent_namespace` will be the namespace of the class
+            the method is defined in. Thus, we also fetch type `__type_params__` from there (i.e. the
+            class-scoped type variables).
     """
     locals_list: list[MappingNamespace] = []
     if parent_namespace is not None:
         locals_list.append(parent_namespace)
 
-    globalns = get_module_ns_of(obj)
+    # Get the `__type_params__` attribute introduced by PEP 695.
+    # Note that the `typing._eval_type` function expects type params to be
+    # passed as a separate argument. However, internally, `_eval_type` calls
+    # `ForwardRef._evaluate` which will merge type params with the localns,
+    # essentially mimicing what we do here.
+    type_params: tuple[TypeVar, ...] = ()
+    if parent_namespace is not None:
+        # We also fetch type params from the parent namespace. If present, it probably
+        # means the function was defined in a class. This is to support the following:
+        # https://github.com/python/cpython/issues/124089.
+        type_params += parent_namespace.get('__type_params__', ())
 
-    if isinstance(obj, type):
-        locals_list.extend(
-            [
-                vars(obj),  # i.e. `obj.__dict__`
-                {obj.__name__: obj},
-            ]
-        )
-    else:
-        # For functions, get the `__type_params__` attribute introduced by PEP 695.
-        # Note that the typing `_eval_type` function expects type params to be
-        # passed as a separate argument. However, internally, `_eval_type` calls
-        # `ForwardRef._evaluate` which will merge type params with the localns,
-        # essentially mimicing what we do here.
-        type_params: tuple[TypeVar, ...] = ()
-        if parent_namespace is not None:
-            # We also fetch type params from the parent namespace. If present, it probably
-            # means the function was defined in a class. This is to support the following:
-            # https://github.com/python/cpython/issues/124089.
-            type_params += parent_namespace.get('__type_params__', ())
-        type_params += getattr(obj, '__type_params__', ())
-        locals_list.append({t.__name__: t for t in type_params})
+    locals_list.append({t.__name__: t for t in type_params})
+
+    # What about short-cirtuiting to `obj.__globals__`?
+    globalns = get_module_ns_of(obj)
 
     return NamespacesTuple(globalns, LazyLocalNamespace(*locals_list))
 
 
 class NsResolver:
-    """A class holding the logic to resolve namespaces for annotations evaluation.
+    """A class responsible for the namespaces resolving logic for annotations evaluation.
 
     This class handles the namespace logic when evaluating annotations mainly for class objects.
 
@@ -156,30 +146,71 @@ class NsResolver:
     (this is useful when generating a schema for a simple annotation, e.g. when using
     `TypeAdapter`).
 
+    The namespace creation logic is unfortunately flawed in some cases, for backwards
+    compatibility reasons and to better support valid edge cases. See the description
+    for the `parent_namespace` argument and the example for more details.
+
     Args:
         namespaces_tuple: The default globals and locals to used if no class is present
             on the stack. This can be useful when using the `GenerateSchema` class
             with `TypeAdapter`, where the "type" being analyzed is a simple annotation.
-        parent_namespace: TODO
+        parent_namespace: An optional parent namespace that will be added to the locals
+            with the lowest priority. For a given class defined in a function, the locals
+            of this function are usually used as the parent namespace:
+
+            ```python lint="skip" test="skip"
+            from pydantic import BaseModel
+
+            def func() -> None:
+                SomeType = int
+
+                class Model(BaseModel):
+                    f: 'SomeType'
+
+                # when collecting fields, an namespace resolver instance will be created
+                # this way:
+                # ns_resolver = NsResolver(parent_namespace={'SomeType': SomeType})
+            ```
+
+            For backwards compatibility reasons and to support valid edge cases, this parent
+            namespace will be used for *every* type being pushed to the stack. In the future,
+            we might want to be smarter by only doing so when the type being pushed is defined
+            in the same module as the parent namespace.
 
     Example:
         ```python lint="skip" test="skip"
         ns_resolver = NsResolver(
-            namespaces_tuple=NamespacesTuple({'my_global': 1}, {}),
-            fallback_namespace={'fallback': 2, 'my_global': 3},
+            parent_namespace={'fallback': 1},
         )
 
-        ns_resolver.types_namespace
-        #> NamespacesTuple({'my_global': 1}, {})
+        class Sub:
+            m: 'Model'
 
+        class Model:
+            some_local = 1
+            sub: Sub
 
-        class MyType:
-            some_local = 4
+        ns_resolver = NsResolver()
 
-
-        with ns_resolver.push(MyType):
+        # This is roughly what happens when we build a core schema for `Model`:
+        with ns_resolver.push(Model):
             ns_resolver.types_namespace
-            #> NamespacesTuple({'my_global': 1, 'fallback': 2}, {'some_local': 4})
+            #> NamespacesTuple({'Sub': Sub}, {'Model': Model, 'some_local': 1})
+            # First thing to notice here, the model being pushed is added to the locals.
+            # Because `NsResolver` is being used during the model definition, it is not
+            # yet added to the globals. This is useful when resolving self-referencing annotations.
+
+            with ns_resolver.push(Sub):
+                ns_resolver.types_namespace
+                #> NamespacesTuple({'Sub': Sub}, {'Sub': Sub, 'Model': Model})
+                # Second thing to notice: `Sub` is present in both the globals and locals.
+                # This is not an issue, just that as described above, the model being pushed
+                # is added to the locals, but it happens to be present in the globals as well
+                # because it is already defined.
+                # Third thing to notice: `Model` is also added in locals. This is a backwards
+                # compatibility workaround that allows for `Sub` to be resolve `'Model'`
+                # correctly (as otherwise models would have to be rebuilt even though this
+                # doesn't look necessary).
         ```
     """
 
@@ -204,17 +235,20 @@ class NsResolver:
         globalns = get_module_ns_of(typ)
 
         locals_list: list[MappingNamespace] = []
+        # Hacky workarounds, see class docstring:
         if self._parent_ns is not None:
             locals_list.append(self._parent_ns)
         if len(self._types_stack) > 1:
             first_type = self._types_stack[0]
             locals_list.append({first_type.__name__: first_type})
 
-        locals_list.extend([
-            vars(typ),
-            # The len check above presents this from being added twice:
-            {typ.__name__: typ},
-        ])
+        locals_list.extend(
+            [
+                vars(typ),
+                # The len check above presents this from being added twice:
+                {typ.__name__: typ},
+            ]
+        )
 
         return NamespacesTuple(globalns, LazyLocalNamespace(*locals_list))
 

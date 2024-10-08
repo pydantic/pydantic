@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any, Final
 
 from typing_extensions import Annotated, Literal, TypeAliasType, TypeGuard, Unpack, deprecated, get_args, get_origin
 
-from ._namespace_utils import GlobalsNamespace, MappingNamespace, NsResolver
+from ._namespace_utils import GlobalsNamespace, MappingNamespace, NsResolver, get_module_ns_of
 
 if TYPE_CHECKING:
     from ._dataclasses import StandardDataclass
@@ -201,7 +201,7 @@ def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> dic
 
     In other cases, like during initial schema build, if a class is defined at the top module level, we don't need to
     fetch that module's namespace, because the class' __module__ attribute can be used to access the parent namespace.
-    This is done in `_typing_extra.get_module_ns_of`. Thus, there's no need to cache the parent frame namespace in this case.
+    This is done in `_namespace_utils.get_module_ns_of`. Thus, there's no need to cache the parent frame namespace in this case.
     """
     frame = sys._getframe(parent_depth)
 
@@ -219,30 +219,6 @@ def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> dic
     return frame.f_locals
 
 
-def get_module_ns_of(obj: Any) -> dict[str, Any]:
-    """Get the namespace of the module where the object is defined.
-
-    Caution: this function does not return a copy of the module namespace, so it should not be mutated.
-    The burden of enforcing this is on the caller.
-    """
-    module_name = getattr(obj, '__module__', None)
-    if module_name:
-        try:
-            return sys.modules[module_name].__dict__
-        except KeyError:
-            # happens occasionally, see https://github.com/pydantic/pydantic/issues/2363
-            return {}
-    return {}
-
-
-def merge_cls_and_parent_ns(cls: type[Any], parent_namespace: dict[str, Any] | None = None) -> dict[str, Any]:
-    ns = get_module_ns_of(cls).copy()
-    if parent_namespace is not None:
-        ns.update(parent_namespace)
-    ns[cls.__name__] = cls
-    return ns
-
-
 def get_cls_type_hints(
     obj: type[Any], *, ns_resolver: NsResolver | None = None, lenient: bool = False
 ) -> dict[str, Any]:
@@ -258,10 +234,6 @@ def get_cls_type_hints(
 
     for base in reversed(obj.__mro__):
         ann = base.__dict__.get('__annotations__')
-        # TODO: to be more correct, we might want to only pass `parent_namespace`
-        # when `base is obj`, because the other bases might be defined in a different
-        # context (i.e. not in the same frame):
-        # globalns, localns = ns_from(base, parent_namespace=parent_namespace)
         with ns_resolver.push(base):
             globalns, localns = ns_resolver.types_namespace
             if ann is not None and ann is not GetSetDescriptorType:
@@ -272,7 +244,7 @@ def get_cls_type_hints(
 
 def eval_type(
     value: Any,
-    globalns: dict[str, Any] | None = None,
+    globalns: GlobalsNamespace | None = None,
     localns: MappingNamespace | None = None,
     *,
     lenient: bool = False,
@@ -282,7 +254,7 @@ def eval_type(
     Args:
         value: The value to evaluate. If `None`, it will be replaced by `type[None]`. If an instance
             of `str`, it will be converted to a `ForwardRef`.
-        globalns: The global namespace to use during annotation evaluation.
+        localns: The global namespace to use during annotation evaluation.
         globalns: The local namespace to use during annotation evaluation.
         lenient: Whether to keep unresolvable annotations as is or re-raise the `NameError` exception. Default: re-raise.
     """
@@ -302,7 +274,7 @@ def eval_type(
 
 def eval_type_backport(
     value: Any,
-    globalns: dict[str, Any] | None = None,
+    globalns: GlobalsNamespace | None = None,
     localns: MappingNamespace | None = None,
     type_params: tuple[Any, ...] | None = None,
 ) -> Any:
@@ -335,7 +307,7 @@ def eval_type_backport(
 
 def _eval_type_backport(
     value: Any,
-    globalns: dict[str, Any] | None = None,
+    globalns: GlobalsNamespace | None = None,
     localns: MappingNamespace | None = None,
     type_params: tuple[Any, ...] | None = None,
 ) -> Any:
@@ -360,7 +332,7 @@ def _eval_type_backport(
 
 def _eval_type(
     value: Any,
-    globalns: dict[str, Any] | None = None,
+    globalns: GlobalsNamespace | None = None,
     localns: MappingNamespace | None = None,
     type_params: tuple[Any, ...] | None = None,
 ) -> Any:

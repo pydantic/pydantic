@@ -1458,9 +1458,12 @@ class GenerateSchema:
                 else:
                     field_docstrings = None
 
-                for field_name, annotation in get_cls_type_hints(
-                    typed_dict_cls, ns_resolver=self._ns_resolver, lenient=False
-                ).items():
+                try:
+                    annotations = get_cls_type_hints(typed_dict_cls, ns_resolver=self._ns_resolver, lenient=False)
+                except NameError as e:
+                    raise PydanticUndefinedAnnotation.from_name_error(e) from e
+
+                for field_name, annotation in annotations.items():
                     annotation = replace_types(annotation, typevars_map)
                     required = field_name in required_keys
 
@@ -1522,9 +1525,10 @@ class GenerateSchema:
             if origin is not None:
                 namedtuple_cls = origin
 
-            annotations: dict[str, Any] = get_cls_type_hints(
-                namedtuple_cls, ns_resolver=self._ns_resolver, lenient=False
-            )
+            try:
+                annotations = get_cls_type_hints(namedtuple_cls, ns_resolver=self._ns_resolver, lenient=False)
+            except NameError as e:
+                raise PydanticUndefinedAnnotation.from_name_error(e) from e
             if not annotations:
                 # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
                 annotations = {k: Any for k in namedtuple_cls._fields}
