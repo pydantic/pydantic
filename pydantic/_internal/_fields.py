@@ -278,7 +278,7 @@ def collect_dataclass_fields(
 
     Args:
         cls: dataclass.
-        ns_resolver: Namespace resolver to use when getting model annotations.
+        ns_resolver: Namespace resolver to use when getting dataclass annotations.
             Defaults to an empty instance.
         typevars_map: A dictionary mapping type variables to their concrete types.
         config_wrapper: The config wrapper instance.
@@ -290,6 +290,7 @@ def collect_dataclass_fields(
 
     fields: dict[str, FieldInfo] = {}
     ns_resolver = ns_resolver or NsResolver()
+    dataclass_fields = cls.__dataclass_fields__
 
     # The logic here is similar to `_typing_extra.get_cls_type_hints`,
     # although we do it manually as stdlib dataclasses already have annotations
@@ -297,8 +298,6 @@ def collect_dataclass_fields(
     for base in reversed(cls.__mro__):
         if not _typing_extra.is_dataclass(base):
             continue
-
-        dataclass_fields = cls.__dataclass_fields__
 
         with ns_resolver.push(base):
             for ann_name, dataclass_field in dataclass_fields.items():

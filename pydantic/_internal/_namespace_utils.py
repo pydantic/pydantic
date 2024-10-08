@@ -151,7 +151,7 @@ class NsResolver:
     for the `parent_namespace` argument and the example for more details.
 
     Args:
-        namespaces_tuple: The default globals and locals to used if no class is present
+        namespaces_tuple: The default globals and locals to use if no class is present
             on the stack. This can be useful when using the `GenerateSchema` class
             with `TypeAdapter`, where the "type" being analyzed is a simple annotation.
         parent_namespace: An optional parent namespace that will be added to the locals
@@ -208,7 +208,7 @@ class NsResolver:
                 # is added to the locals, but it happens to be present in the globals as well
                 # because it is already defined.
                 # Third thing to notice: `Model` is also added in locals. This is a backwards
-                # compatibility workaround that allows for `Sub` to be resolve `'Model'`
+                # compatibility workaround that allows for `Sub` to be able to resolve `'Model'`
                 # correctly (as otherwise models would have to be rebuilt even though this
                 # doesn't look necessary).
         ```
@@ -227,7 +227,7 @@ class NsResolver:
     def types_namespace(self) -> NamespacesTuple:
         """The current global and local namespaces to be used for annotations evaluation."""
         if not self._types_stack:
-            # TODO do we want to merge fallback and override ns here?
+            # TODO do we want to merge `self._parent_ns` here?
             return self._base_ns_tuple
 
         typ = self._types_stack[-1]

@@ -590,9 +590,7 @@ def set_model_fields(
         cls: BaseModel or dataclass.
         bases: Parents of the class, generally `cls.__bases__`.
         config_wrapper: The config wrapper instance.
-        ns_resolver: Extra namespace to use as locals, with lowest priority.
-            This is provided in most cases as the locals of a function, where the model
-            is defined.
+        ns_resolver: Namespace resolver to use when getting model annotations.
     """
     typevars_map = get_model_typevars_map(cls)
     fields, class_vars = collect_model_fields(cls, bases, config_wrapper, ns_resolver, typevars_map=typevars_map)

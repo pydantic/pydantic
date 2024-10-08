@@ -112,7 +112,8 @@ def complete_dataclass(
         parent_namespace: Extra namespace to use as locals, with lowest priority.
             This is provided in most cases as the locals of a function, where the dataclass
             is defined.
-        ns_resolver: The namespace resolver instance to use during schema building.
+        ns_resolver: The namespace resolver instance to use when collecting dataclass fields
+            and during schema building.
         _force_build: Whether to force building the dataclass, no matter if
             [`defer_build`][pydantic.config.ConfigDict.defer_build] is set.
 
