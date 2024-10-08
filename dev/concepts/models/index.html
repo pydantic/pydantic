@@ -3565,7 +3565,7 @@ you know the resulting model instance is valid.</p>
 <p>The model instance can be serialized using the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump"><code>model_dump</code></a> method:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="k">assert</span> <span class="n">user</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Jane Doe&#39;</span><span class="p">}</span>
 </code></pre></div>
-<p>Calling <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/2to3.html#to3fixer-dict">dict</a> on the instance will also provide a dictionary, but nested fields will not be
+<p>Calling <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict">dict</a> on the instance will also provide a dictionary, but nested fields will not be
 recursively converted into dictionaries. <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump"><code>model_dump</code></a> also
 provides numerous arguments to customize the serialization result.</p>
 <p>By default, models are mutable and field values can be changed through attribute assignment:</p>
@@ -4238,7 +4238,7 @@ will be raised, as Pydantic doesn't infer the type of the generic model based on
 </div>
 <h3 id="validation-of-unparametrized-type-variables">Validation of unparametrized type variables<a class="headerlink" href="#validation-of-unparametrized-type-variables" title="Permanent link">&para;</a></h3>
 <p>When leaving type variables unparametrized, Pydantic treats generic models similarly to how it treats built-in generic
-types like <a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list"><code>list</code></a> and <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/2to3.html#to3fixer-dict"><code>dict</code></a>:</p>
+types like <a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list"><code>list</code></a> and <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict"><code>dict</code></a>:</p>
 <ul>
 <li>If the type variable is <a href="https://typing.readthedocs.io/en/latest/reference/generics.html#type-variables-with-upper-bounds">bound</a>
   or <a href="https://typing.readthedocs.io/en/latest/reference/generics.html#type-variables-with-constraints">constrained</a> to a specific type,
