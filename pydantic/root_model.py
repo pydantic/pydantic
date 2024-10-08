@@ -148,7 +148,9 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType], metaclass=_RootMod
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, RootModel):
             return NotImplemented
-        return self.model_fields['root'].annotation == other.model_fields['root'].annotation and super().__eq__(other)
+        return self.__pydantic_fields__['root'].annotation == other.__pydantic_fields__[
+            'root'
+        ].annotation and super().__eq__(other)
 
     def __repr_args__(self) -> _repr.ReprArgs:
         yield 'root', self.root

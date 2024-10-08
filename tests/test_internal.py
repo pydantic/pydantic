@@ -3,6 +3,7 @@ Tests for internal things that are complex enough to warrant their own unit test
 """
 
 from dataclasses import dataclass
+from decimal import Decimal
 
 import pytest
 from pydantic_core import CoreSchema, SchemaValidator
@@ -16,6 +17,7 @@ from pydantic._internal._core_utils import (
     walk_core_schema,
 )
 from pydantic._internal._repr import Representation
+from pydantic._internal._validators import _extract_decimal_digits_info
 
 
 def remove_metadata(schema: CoreSchema) -> CoreSchema:
@@ -207,3 +209,19 @@ def test_schema_is_valid():
         collect_invalid_schemas(cs.nullable_schema(cs.int_schema(metadata={HAS_INVALID_SCHEMAS_METADATA_KEY: True})))
         is True
     )
+
+
+@pytest.mark.parametrize(
+    'decimal,decimal_places,digits',
+    [
+        (Decimal('0.0'), 1, 1),
+        (Decimal('0.'), 0, 1),
+        (Decimal('0.000'), 3, 3),
+        (Decimal('0.0001'), 4, 4),
+        (Decimal('.0001'), 4, 4),
+        (Decimal('123.123'), 3, 6),
+        (Decimal('123.1230'), 4, 7),
+    ],
+)
+def test_decimal_digits_calculation(decimal: Decimal, decimal_places: int, digits: int) -> None:
+    assert _extract_decimal_digits_info(decimal) == (decimal_places, digits)

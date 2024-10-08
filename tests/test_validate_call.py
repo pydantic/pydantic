@@ -8,10 +8,18 @@ from typing import Any, List, Tuple
 
 import pytest
 from pydantic_core import ArgsKwargs
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import Annotated, Required, TypedDict, Unpack
 
-from pydantic import Field, PydanticInvalidForJsonSchema, TypeAdapter, ValidationError, validate_call
-from pydantic.main import BaseModel
+from pydantic import (
+    BaseModel,
+    Field,
+    PydanticInvalidForJsonSchema,
+    PydanticUserError,
+    TypeAdapter,
+    ValidationError,
+    validate_call,
+)
+from pydantic.config import with_config
 
 
 def test_args():
@@ -160,6 +168,85 @@ def test_var_args_kwargs(validated):
     assert foo(1, 2, 3, e=10) == "a=1, b=2, args=(3,), d=3, kwargs={'e': 10}"
     assert foo(1, 2, kwargs=4) == "a=1, b=2, args=(), d=3, kwargs={'kwargs': 4}"
     assert foo(1, 2, kwargs=4, e=5) == "a=1, b=2, args=(), d=3, kwargs={'kwargs': 4, 'e': 5}"
+
+
+def test_unpacked_typed_dict_kwargs_invalid_type() -> None:
+    with pytest.raises(PydanticUserError) as exc:
+
+        @validate_call
+        def foo(**kwargs: Unpack[int]):
+            pass
+
+    assert exc.value.code == 'unpack-typed-dict'
+
+
+def test_unpacked_typed_dict_kwargs_overlaps() -> None:
+    class TD(TypedDict, total=False):
+        a: int
+        b: int
+        c: int
+
+    with pytest.raises(PydanticUserError) as exc:
+
+        @validate_call
+        def foo(a: int, b: int, **kwargs: Unpack[TD]):
+            pass
+
+    assert exc.value.code == 'overlapping-unpack-typed-dict'
+    assert exc.value.message == "Typed dictionary 'TD' overlaps with parameters 'a', 'b'"
+
+    # Works for a pos-only argument
+    @validate_call
+    def foo(a: int, /, **kwargs: Unpack[TD]):
+        pass
+
+    foo(1, a=1)
+
+
+def test_unpacked_typed_dict_kwargs() -> None:
+    @with_config({'strict': True})
+    class TD(TypedDict, total=False):
+        a: int
+        b: Required[str]
+
+    @validate_call
+    def foo(**kwargs: Unpack[TD]):
+        pass
+
+    foo(a=1, b='test')
+    foo(b='test')
+
+    with pytest.raises(ValidationError) as exc:
+        foo(a='1')
+
+    assert exc.value.errors()[0]['type'] == 'int_type'
+    assert exc.value.errors()[0]['loc'] == ('a',)
+    assert exc.value.errors()[1]['type'] == 'missing'
+    assert exc.value.errors()[1]['loc'] == ('b',)
+
+    # Make sure that when called without any arguments,
+    # empty kwargs are still validated against the typed dict:
+    with pytest.raises(ValidationError) as exc:
+        foo()
+
+    assert exc.value.errors()[0]['type'] == 'missing'
+    assert exc.value.errors()[0]['loc'] == ('b',)
+
+
+def test_unpacked_typed_dict_kwargs_functional_syntax() -> None:
+    TD = TypedDict('TD', {'in': int, 'x-y': int})
+
+    @validate_call
+    def foo(**kwargs: Unpack[TD]):
+        pass
+
+    foo(**{'in': 1, 'x-y': 2})
+
+    with pytest.raises(ValidationError) as exc:
+        foo(**{'in': 'not_an_int', 'x-y': 1})
+
+    assert exc.value.errors()[0]['type'] == 'int_parsing'
+    assert exc.value.errors()[0]['loc'] == ('in',)
 
 
 def test_field_can_provide_factory() -> None:
