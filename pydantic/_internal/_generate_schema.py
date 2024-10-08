@@ -1791,7 +1791,7 @@ class GenerateSchema:
                 config = None
                 for dataclass_base in reversed(dataclass.__mro__):
                     if dataclasses.is_dataclass(dataclass_base):
-                        config = getattr(dataclass_base, '__pydantic_config__', None)
+                        config = getattr(dataclass_base, '__pydantic_config__', ConfigDict())
                         dataclass_bases_stack.enter_context(self._config_wrapper_stack.push(config))
 
                 core_config = self._config_wrapper.core_config(title=dataclass.__name__)
@@ -1811,7 +1811,7 @@ class GenerateSchema:
                     )
 
                 # disallow combination of init=False on a dataclass field and extra='allow' on a dataclass
-                if self._config_wrapper_stack.tail.extra == 'allow':
+                if self._config_wrapper.extra == 'allow':
                     # disallow combination of init=False on a dataclass field and extra='allow' on a dataclass
                     for field_name, field in fields.items():
                         if field.init is False:
@@ -1846,7 +1846,7 @@ class GenerateSchema:
                 model_validators = decorators.model_validators.values()
                 inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
 
-                title = self._get_model_title_from_config(dataclass, ConfigWrapper(config))
+                title = self._get_model_title_from_config(dataclass, self._config_wrapper)
                 metadata = build_metadata_dict(
                     js_functions=[partial(modify_model_json_schema, cls=dataclass, title=title)]
                 )

@@ -818,12 +818,14 @@ def test_override_builtin_dataclass_nested():
         modified_date: Optional[datetime]
         seen_count: int
 
+        __pydantic_config__ = {'revalidate_instances': 'always'}
+
     @dataclasses.dataclass
     class File:
         filename: str
         meta: Meta
 
-    FileChecked = pydantic.dataclasses.dataclass(File, config=ConfigDict(revalidate_instances='always'))
+    FileChecked = pydantic.dataclasses.dataclass(File)
     f = FileChecked(filename=b'thefilename', meta=Meta(modified_date='2020-01-01T00:00', seen_count='7'))
     assert f.filename == 'thefilename'
     assert f.meta.modified_date == datetime(2020, 1, 1, 0, 0)
