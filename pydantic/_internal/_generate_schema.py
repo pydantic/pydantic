@@ -1756,7 +1756,7 @@ class GenerateSchema:
             if origin is not None:
                 dataclass = origin
 
-            config = getattr(dataclass, '__pydantic_config__', None)
+            config = getattr(dataclass, '__pydantic_config__', ConfigDict())
 
             from ..dataclasses import is_pydantic_dataclass
 
@@ -1772,7 +1772,6 @@ class GenerateSchema:
                         typevars_map=typevars_map,
                     )
 
-                # disallow combination of init=False on a dataclass field and extra='allow' on a dataclass
                 if self._config_wrapper.extra == 'allow':
                     # disallow combination of init=False on a dataclass field and extra='allow' on a dataclass
                     for field_name, field in fields.items():

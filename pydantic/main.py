@@ -790,7 +790,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 # Attempt to rebuild the origin in case new types have been defined
                 try:
                     # depth 3 gets you above this __class_getitem__ call
-                    origin.model_rebuild(_parent_namespace_depth=3)
+                    origin.model_rebuild(_parent_namespace_depth=0)
                 except PydanticUndefinedAnnotation:
                     # It's okay if it fails, it just means there are still undefined types
                     # that could be evaluated later.
