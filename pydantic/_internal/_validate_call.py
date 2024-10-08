@@ -55,7 +55,7 @@ class ValidateCallWrapper:
         config_wrapper = ConfigWrapper(config)
         gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
         schema = gen_schema.clean_schema(gen_schema.generate_schema(function))
-        core_config = config_wrapper.core_config(self)
+        core_config = config_wrapper.core_config(self.__name__)
 
         self.__pydantic_validator__ = create_schema_validator(
             schema,
