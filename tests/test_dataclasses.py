@@ -21,6 +21,7 @@ from pydantic import (
     BeforeValidator,
     ConfigDict,
     PydanticDeprecatedSince20,
+    PydanticSchemaGenerationError,
     PydanticUndefinedAnnotation,
     PydanticUserError,
     RootModel,
@@ -818,12 +819,14 @@ def test_override_builtin_dataclass_nested():
         modified_date: Optional[datetime]
         seen_count: int
 
+        __pydantic_config__ = {'revalidate_instances': 'always'}
+
     @dataclasses.dataclass
     class File:
         filename: str
         meta: Meta
 
-    FileChecked = pydantic.dataclasses.dataclass(File, config=ConfigDict(revalidate_instances='always'))
+    FileChecked = pydantic.dataclasses.dataclass(File)
     f = FileChecked(filename=b'thefilename', meta=Meta(modified_date='2020-01-01T00:00', seen_count='7'))
     assert f.filename == 'thefilename'
     assert f.meta.modified_date == datetime(2020, 1, 1, 0, 0)
@@ -3049,3 +3052,23 @@ def test_warns_on_double_config() -> None:
         @pydantic.dataclasses.dataclass(config=ConfigDict(title='from decorator'))
         class Foo:
             __pydantic_config__ = ConfigDict(title='from __pydantic_config__')
+
+
+def test_do_not_leak_config_from_other_types_during_building() -> None:
+    """Regression test, where dataclasses without any config would use the precedent type's config."""
+
+    class ArbitraryType:
+        pass
+
+    @dataclasses.dataclass
+    class DC:
+        a: ArbitraryType
+        b: str
+
+    with pytest.raises(PydanticSchemaGenerationError):
+
+        class Model(BaseModel):
+            model_config = ConfigDict(arbitrary_types_allowed=True)
+
+            dc: DC
+            other: str
