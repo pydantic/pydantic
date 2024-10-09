@@ -272,6 +272,18 @@ def eval_type(
         return value
 
 
+@deprecated(
+    '`eval_type_lenient` is deprecated, use `eval_type` with `lenient=True` instead.',
+    category=None,
+)
+def eval_type_lenient(
+    value: Any,
+    globalns: GlobalsNamespace | None = None,
+    localns: MappingNamespace | None = None,
+) -> Any:
+    return eval_type(value, globalns, localns, lenient=True)
+
+
 def eval_type_backport(
     value: Any,
     globalns: GlobalsNamespace | None = None,
