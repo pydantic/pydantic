@@ -409,8 +409,8 @@ def get_function_type_hints(
         globalns = get_module_ns_of(function)
     type_params: tuple[Any, ...] | None = None
     if localns is None:
-        # If localns was specified, it is assumed to already contain type params.
-        # This is because Pydantic has more advanced logic to do so (see `_namespace_utils.ns_from`).
+        # If localns was specified, it is assumed to already contain type params. This is because
+        # Pydantic has more advanced logic to do so (see `_namespace_utils.ns_for_function`).
         type_params = getattr(function, '__type_params__', ())
 
     type_hints = {}
