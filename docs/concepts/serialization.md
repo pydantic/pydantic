@@ -163,7 +163,7 @@ class FooBarModel(BaseModel):
 
 m = FooBarModel(banana=3.14, foo='hello', bar={'whatever': 123})
 
-print(dict(m))
+print(dict(m))  # (1)!
 #> {'banana': 3.14, 'foo': 'hello', 'bar': BarModel(whatever=123)}
 for name, value in m:
     print(f'{name}: {value}')
@@ -171,6 +171,9 @@ for name, value in m:
     #> foo: hello
     #> bar: whatever=123
 ```
+
+1. You might get an unexpected error if your model defines a field named `keys`. In that case,
+   you can call `dict(iter(m))` as a workaround.
 
 Note also that [`RootModel`](models.md#rootmodel-and-custom-root-types) _does_ get converted to a dictionary with the key `'root'`.
 
