@@ -1132,8 +1132,13 @@ class Foo(BaseModel):
     assert extras_schema == {'type': 'int'}
 
 
-@pytest.mark.xfail('get_cls_type_hints_lenient does not fetch the module ns for each base')
-def test_tmp_1(create_module):
+@pytest.mark.xfail(
+    reason='While `get_cls_type_hints` uses the correct module ns for each base, `collect_model_fields` '
+    'will still use the `FieldInfo` instances from each base (see the `parent_fields_lookup` logic). '
+    'This means that `f` is still a forward ref in `Foo.model_fields`, and it gets evaluated in '
+    '`GenerateSchema._model_schema`, where only the module of `Foo` is considered.'
+)
+def test_uses_the_correct_globals_to_resolve_model_forward_refs(create_module):
     @create_module
     def module_1():
         from pydantic import BaseModel
@@ -1157,8 +1162,11 @@ class Foo(Bar):
     assert module_2.Foo.model_fields['f'].annotation is int
 
 
-@pytest.mark.xfail(reason='We should keep a reference to the parent frame, not f_locals')
-def test_tmp_2():
+@pytest.mark.xfail(
+    reason='We should keep a reference to the parent frame, not `f_locals`. '
+    "It's probably only reasonable to support this in Python 3.14 with PEP 649."
+)
+def test_can_resolve_forward_refs_in_parent_frame_after_class_definition():
     def func():
         class Model(BaseModel):
             a: 'A'
@@ -1173,8 +1181,7 @@ def test_tmp_2():
     Model.model_rebuild()
 
 
-@pytest.mark.xfail(reason='TypesNamespaceStack wrongfully merges tail')
-def test_tmp_3(create_module):
+def test_uses_correct_global_ns_for_type_defined_in_separate_module(create_module):
     @create_module
     def module_1():
         from dataclasses import dataclass
@@ -1200,8 +1207,7 @@ class Foo(BaseModel):
     module_2.Foo(bar={'f': 1})
 
 
-@pytest.mark.xfail(reason='TypesNamespaceStack only cares about the module ns')
-def test_tmp_4():
+def test_uses_the_local_namespace_when_generating_schema():
     def func():
         A = int
 
@@ -1214,14 +1220,13 @@ def test_tmp_4():
 
     Model = func()
 
-    A = str
+    A = str  # noqa: F841
 
     Model.model_rebuild()
     Model(extra_value=1)
 
 
-@pytest.mark.xfail(reason='similar to test_tmp_1, but fails even if forward ref can be resolved')
-def test_tmp_5(create_module):
+def test_uses_the_correct_globals_to_resolve_dataclass_forward_refs(create_module):
     @create_module
     def module_1():
         from dataclasses import dataclass
@@ -1247,14 +1252,15 @@ class DC2(DC1):
 
 class Model(BaseModel):
     dc: DC2
-
-Model(dc=dict(a=1, b='not_an_int'))
     """)
 
+    Model = module_2.Model
 
-@pytest.mark.xfail(reason="class locals aren't kept in GenerateSchema")
+    Model(dc=dict(a=1, b='not_an_int'))
+
+
 @pytest.mark.skipif(sys.version_info < (3, 12), reason='Requires PEP 695 syntax')
-def test_tmp_6(create_module):
+def test_class_locals_are_kept_during_schema_generation(create_module):
     create_module(
         """
 from pydantic import BaseModel
@@ -1270,8 +1276,7 @@ Model.model_rebuild()
     )
 
 
-@pytest.mark.xfail
-def test_tmp_7(create_module):
+def test_validate_call_does_not_override_the_global_ns_with_the_local_ns_where_it_is_used(create_module):
     from pydantic import validate_call
 
     @create_module
@@ -1282,7 +1287,7 @@ def test_tmp_7(create_module):
             pass
 
     def inner():
-        A = str
+        A = str  # noqa: F841
 
         from module_1 import func
 
@@ -1291,12 +1296,15 @@ def test_tmp_7(create_module):
         func_val(a=1)
 
 
-@pytest.mark.xfail(reason='In GenerateSchema, only the current class module is taken into account')
-def test_tmp_9(create_module):
-    from pydantic import field_serializer  # or model_serializer
-
+@pytest.mark.xfail(
+    reason='In `GenerateSchema`, only the current class module is taken into account. '
+    'This is similar to `test_uses_the_correct_globals_to_resolve_model_forward_refs`.'
+)
+def test_uses_the_correct_globals_to_resolve_forward_refs_on_serializers(create_module):
     @create_module
     def module_1():
+        from pydantic import BaseModel, field_serializer  # or model_serializer
+
         MyStr = str
 
         class Model(BaseModel):
@@ -1310,3 +1318,29 @@ def test_tmp_9(create_module):
         pass
 
     Sub.model_rebuild()
+
+
+@pytest.mark.xfail(reason='parent namespace is used for every type in `NsResolver`, for backwards compatibility.')
+def test_do_not_use_parent_ns_when_outside_the_function(create_module):
+    @create_module
+    def module_1():
+        import dataclasses
+
+        from pydantic import BaseModel
+
+        @dataclasses.dataclass
+        class A:
+            a: 'Model'  # shouldn't resolve
+            b: 'Test'  # same
+
+        def inner():
+            Test = int  # noqa: F841
+
+            class Model(BaseModel, A):
+                pass
+
+            return Model
+
+        ReturnedModel = inner()  # noqa: F841
+
+    assert module_1.ReturnedModel.__pydantic_complete__ is False

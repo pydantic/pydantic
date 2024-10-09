@@ -6,6 +6,8 @@ from contextlib import contextmanager
 from functools import cached_property
 from typing import Any, Callable, Iterator, NamedTuple, TypeAlias, TypeVar
 
+from typing_extensions import TypeAliasType
+
 GlobalsNamespace: TypeAlias = dict[str, Any]
 """A global namespace.
 
@@ -221,7 +223,7 @@ class NsResolver:
     ) -> None:
         self._base_ns_tuple = namespaces_tuple or NamespacesTuple({}, {})
         self._parent_ns = parent_namespace
-        self._types_stack: list[type[Any]] = []
+        self._types_stack: list[type[Any] | TypeAliasType] = []
 
     @cached_property
     def types_namespace(self) -> NamespacesTuple:
@@ -242,18 +244,17 @@ class NsResolver:
             first_type = self._types_stack[0]
             locals_list.append({first_type.__name__: first_type})
 
-        locals_list.extend(
-            [
-                vars(typ),
-                # The len check above presents this from being added twice:
-                {typ.__name__: typ},
-            ]
-        )
+        if hasattr(typ, '__dict__'):
+            # TypeAliasType is the exception.
+            locals_list.append(vars(typ))
+
+        # The len check above presents this from being added twice:
+        locals_list.append({typ.__name__: typ})
 
         return NamespacesTuple(globalns, LazyLocalNamespace(*locals_list))
 
     @contextmanager
-    def push(self, typ: type[Any], /) -> Generator[None]:
+    def push(self, typ: type[Any] | TypeAliasType, /) -> Generator[None]:
         """Push a type to the stack."""
         self._types_stack.append(typ)
         # Reset the cached property:

@@ -1371,7 +1371,7 @@ class GenerateSchema:
 
     def _type_alias_type_schema(
         self,
-        obj: Any,  # TypeAliasType
+        obj: TypeAliasType,
     ) -> CoreSchema:
         with self.defs.get_schema_or_ref(obj) as (ref, maybe_schema):
             if maybe_schema is not None:
