@@ -2576,11 +2576,11 @@ class EncodedStr:
         return field_schema
 
     def __get_pydantic_core_schema__(self, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        inner_schema = handler(source)
-        _check_annotated_type(inner_schema['type'], 'str', self.__class__.__name__)
+        schema = handler(source)
+        _check_annotated_type(schema['type'], 'str', self.__class__.__name__)
         return core_schema.with_info_after_validator_function(
             function=self.decode_str,
-            schema=inner_schema,
+            schema=schema,
             serialization=core_schema.plain_serializer_function_ser_schema(function=self.encode_str),
         )
 
