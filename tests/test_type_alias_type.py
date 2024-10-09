@@ -1,4 +1,5 @@
 import datetime
+import sys
 from dataclasses import dataclass
 from typing import Dict, Generic, List, Tuple, TypeVar, Union
 
@@ -6,7 +7,7 @@ import pytest
 from annotated_types import MaxLen
 from typing_extensions import Annotated, Literal, TypeAliasType
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, PydanticSchemaGenerationError, ValidationError
 from pydantic.type_adapter import TypeAdapter
 
 T = TypeVar('T')
@@ -387,4 +388,276 @@ def test_type_alias_to_type_with_ref():
             'msg': "Input should be 'Div'",
             'type': 'literal_error',
         }
+    ]
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 12),
+    reason='type statement is available from 3.12',
+)
+@pytest.mark.parametrize(
+    'input_value,error',
+    [
+        ([1], None),
+        (2, 'Input should be an instance of Sequence'),
+        (['foo'], None),
+        ([True], None),
+        ([[]], None),
+        ([None], None),
+        ([[1, '']], None),
+        ([{'a': None}], None),
+        ([{'a': [{'foo': 'bar'}]}], None),
+        # 5 errors:
+        # - value.0.str,
+        # - value.0.int,
+        # - value.0.bool,
+        # - value.0.`list[nullable[union[str,int,bool,...,dict[str,...]]]]`,
+        # - value.0.`dict[str,...]`.2.[key]
+        ([{2: None}], '5 validation errors for MyModel'),
+    ],
+    ids=repr,
+)
+def test_type_alias_with_type_statement(create_module, input_value, error):
+    module = create_module(
+        """
+from typing import Sequence
+from pydantic import BaseModel
+
+type JSON = str | int | bool | JSONSeq | JSONObj | None | JSONAlias
+type JSONObj = dict[str, JSON]
+type JSONSeq = list[JSON]
+JSONAlias = JSONSeq
+type MyJSONAlias = JSON
+type JSONs = Sequence[MyJSONAlias]
+
+class MyModel(BaseModel):
+    value: JSONs
+"""
+    )
+    if error is not None:
+        with pytest.raises(ValidationError, match=error):
+            module.MyModel(value=input_value)
+    else:
+        module.MyModel(value=input_value)
+
+
+def test_type_alias_with_generics(create_module):
+    module = create_module(
+        """
+from typing import TypeVar, Sequence
+from typing_extensions import TypeAlias
+from pydantic import BaseModel
+
+T = TypeVar("T")
+MySeq: TypeAlias = Sequence[T]
+MyIntSeq = MySeq[int]
+
+class MyModel(BaseModel):
+    v: MyIntSeq
+"""
+    )
+    assert module.MyModel(v=[1]).model_dump() == {'v': [1]}
+    with pytest.raises(ValidationError) as exc_info:
+        module.MyModel(v=['a'])
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': (
+                'v',
+                0,
+            ),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        },
+    ]
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 12),
+    reason='type statement is available from 3.12',
+)
+def test_generics_with_type_statement(create_module):
+    # essentially test case `test_type_alias_with_generics` with the new syntax
+    module = create_module(
+        """
+from pydantic import BaseModel
+from typing import Sequence
+
+type MySeq[T] = Sequence[T]
+type MyIntSeq = MySeq[int]
+
+class MyModel(BaseModel):
+    v: MyIntSeq
+"""
+    )
+    assert module.MyModel(v=[1]).model_dump() == {'v': [1]}
+    with pytest.raises(ValidationError) as exc_info:
+        module.MyModel(v=['a'])
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': (
+                'v',
+                0,
+            ),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        },
+    ]
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 12),
+    reason='type statement is available from 3.12',
+)
+def test_circular_type_aliasing_with_type_statement(create_module):
+    with pytest.raises(PydanticSchemaGenerationError, match='Circular type aliasing detected'):
+        create_module(
+            """
+from pydantic import BaseModel
+
+type A = B
+type B = A
+
+class MyModel(BaseModel):
+    value: A
+"""
+        )
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 12),
+    reason='type statement is available from 3.12',
+)
+def test_cyclic_type_aliasing_with_type_statement(create_module):
+    module = create_module(
+        """
+from pydantic import BaseModel
+from typing import Union
+
+type A = C
+type B = C
+type C = Union[A, B]
+
+class MyModel(BaseModel):
+    value: C
+"""
+    )
+
+    with pytest.raises(ValidationError, match='recursion_loop'):
+        module.MyModel(value=1)
+
+
+def test_different_ways_of_type_aliasing(create_module):
+    module = create_module(
+        """
+from typing import NewType, List
+from typing_extensions import TypeAlias, TypeAliasType
+from pydantic import BaseModel
+
+T1: TypeAlias = List[int]
+T2 = TypeAliasType('T2', int)
+T3 = List[str]
+T4 = NewType('T4', str)
+
+class MyModel(BaseModel):
+    a: T1
+    b: T2
+    c: T3
+    d: T4
+"""
+    )
+    assert module.MyModel(a=[1], b=2, c=['foo'], d='bar').model_dump() == {'a': [1], 'b': 2, 'c': ['foo'], 'd': 'bar'}
+    with pytest.raises(ValidationError) as exc_info:
+        module.MyModel(a='?', b='?', c=[True], d=2)
+    assert sorted(exc_info.value.errors(include_url=False), key=lambda x: x['loc']) == [
+        {
+            'type': 'list_type',
+            'loc': ('a',),
+            'msg': 'Input should be a valid list',
+            'input': '?',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': ('b',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': '?',
+        },
+        {
+            'type': 'string_type',
+            'loc': (
+                'c',
+                0,
+            ),
+            'msg': 'Input should be a valid string',
+            'input': True,
+        },
+        {
+            'type': 'string_type',
+            'loc': ('d',),
+            'msg': 'Input should be a valid string',
+            'input': 2,
+        },
+    ]
+
+
+def test_different_ways_of_type_aliasing_nested(create_module):
+    module = create_module(
+        """
+from typing import NewType, List
+from typing_extensions import TypeAlias, TypeAliasType
+from pydantic import BaseModel
+
+T1: TypeAlias = List[int]
+T2 = TypeAliasType('T2', T1)
+T3 = T2
+T4 = NewType('T4', T3)
+
+class MyModel(BaseModel):
+    a: T1
+    b: T2
+    c: T3
+    d: T4
+"""
+    )
+    assert module.MyModel(a=[1], b=[1], c=[1], d=[1]).model_dump() == {'a': [1], 'b': [1], 'c': [1], 'd': [1]}
+    with pytest.raises(ValidationError) as exc_info:
+        module.MyModel(a=['a'], b=['a'], c=['a'], d=['a'])
+    assert sorted(exc_info.value.errors(include_url=False), key=lambda x: x['loc']) == [
+        {
+            'type': 'int_parsing',
+            'loc': (
+                'a',
+                0,
+            ),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': (
+                'b',
+                0,
+            ),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': (
+                'c',
+                0,
+            ),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': (
+                'd',
+                0,
+            ),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        },
     ]
