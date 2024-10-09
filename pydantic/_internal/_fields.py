@@ -301,7 +301,7 @@ def collect_dataclass_fields(
 
         with ns_resolver.push(base):
             for ann_name, dataclass_field in dataclass_fields.items():
-                if ann_name not in base.__annotations__:
+                if ann_name not in base.__dict__.get('__annotations__', {}):
                     # `__dataclass_fields__`contains every field, even the ones from base classes.
                     # Only collect the ones defined on `base`.
                     continue

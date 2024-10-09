@@ -78,9 +78,7 @@ def set_dataclass_fields(
 
     Args:
         cls: The class.
-        ns_resolver: Extra namespace to use as locals, with lowest priority.
-            This is provided in most cases as the locals of a function, where the dataclass
-            is defined.
+        ns_resolver: Namespace resolver to use when getting dataclass annotations.
         config_wrapper: The config wrapper instance, defaults to `None`.
     """
     typevars_map = get_standard_typevars_map(cls)
@@ -109,9 +107,6 @@ def complete_dataclass(
         cls: The class.
         config_wrapper: The config wrapper instance.
         raise_errors: Whether to raise errors, defaults to `True`.
-        parent_namespace: Extra namespace to use as locals, with lowest priority.
-            This is provided in most cases as the locals of a function, where the dataclass
-            is defined.
         ns_resolver: The namespace resolver instance to use when collecting dataclass fields
             and during schema building.
         _force_build: Whether to force building the dataclass, no matter if

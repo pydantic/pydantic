@@ -233,12 +233,13 @@ def get_cls_type_hints(
     ns_resolver = ns_resolver or NsResolver()
 
     for base in reversed(obj.__mro__):
-        ann = base.__dict__.get('__annotations__')
+        ann: dict[str, Any] | None = base.__dict__.get('__annotations__')
+        if not ann or isinstance(ann, GetSetDescriptorType):
+            continue
         with ns_resolver.push(base):
             globalns, localns = ns_resolver.types_namespace
-            if ann is not None and ann is not GetSetDescriptorType:
-                for name, value in ann.items():
-                    hints[name] = eval_type(value, globalns, localns, lenient=lenient)
+            for name, value in ann.items():
+                hints[name] = eval_type(value, globalns, localns, lenient=lenient)
     return hints
 
 
