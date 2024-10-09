@@ -152,8 +152,7 @@ jobs:
 
       - name: resolve MSRV
         id: resolve-msrv
-        run:
-          echo MSRV=`python -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["package"]["rust-version"])'` >> $GITHUB_OUTPUT
+        run: echo MSRV=`python -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["package"]["rust-version"])'` >> $GITHUB_OUTPUT
 
       - name: install rust MSRV
         uses: dtolnay/rust-toolchain@master
@@ -357,8 +356,8 @@ jobs:
       - run: npm run test
 
       - run: |
-         ls -lh dist/
-         ls -l dist/
+          ls -lh dist/
+          ls -l dist/
 
       - uses: actions/upload-artifact@v4
         with:
@@ -434,6 +433,9 @@ jobs:
           - os: linux
             manylinux: musllinux_1_1
             target: aarch64
+          - os: linux
+            manylinux: musllinux_1_1
+            target: armv7
 
           # macos;
           # all versions x86_64
@@ -559,7 +561,7 @@ jobs:
           rust-toolchain: ${{ steps.rust-toolchain.outputs.name }}
           docker-options: -e CI
         env:
-          RUSTFLAGS: "-Cprofile-generate=${{ github.workspace }}/profdata"
+          RUSTFLAGS: '-Cprofile-generate=${{ github.workspace }}/profdata'
 
       - name: detect rust host
         run: echo RUST_HOST=$(rustc -Vv | grep host | cut -d ' ' -f 2) >> "$GITHUB_ENV"
@@ -587,7 +589,7 @@ jobs:
           rust-toolchain: ${{steps.rust-toolchain.outputs.name}}
           docker-options: -e CI
         env:
-          RUSTFLAGS: "-Cprofile-use=${{ github.workspace }}/merged.profdata"
+          RUSTFLAGS: '-Cprofile-use=${{ github.workspace }}/merged.profdata'
 
       - run: ${{ matrix.ls || 'ls -lh' }} dist/
 
@@ -612,20 +614,20 @@ jobs:
 
       - name: list dist files
         run: |
-         ls -lh dist/
-         ls -l dist/
-         echo "`ls dist | wc -l` files"
+          ls -lh dist/
+          ls -l dist/
+          echo "`ls dist | wc -l` files"
 
       - name: extract and list sdist file
         run: |
-         mkdir sdist-files
-         tar -xvf dist/*.tar.gz -C sdist-files
-         tree -a sdist-files
+          mkdir sdist-files
+          tar -xvf dist/*.tar.gz -C sdist-files
+          tree -a sdist-files
 
       - name: extract and list wheel file
         run: |
-         ls dist/*cp310-manylinux*x86_64.whl | head -n 1
-         python -m zipfile --list `ls dist/*cp310-manylinux*x86_64.whl | head -n 1`
+          ls dist/*cp310-manylinux*x86_64.whl | head -n 1
+          python -m zipfile --list `ls dist/*cp310-manylinux*x86_64.whl | head -n 1`
 
   test-builds-arch:
     name: test build on ${{ matrix.target }}-${{ matrix.distro }}
