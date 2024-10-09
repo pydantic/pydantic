@@ -4,11 +4,11 @@ import sys
 from collections.abc import Generator, Mapping
 from contextlib import contextmanager
 from functools import cached_property
-from typing import Any, Callable, Iterator, NamedTuple, TypeAlias, TypeVar
+from typing import Any, Callable, Iterator, NamedTuple, TypeVar
 
-from typing_extensions import TypeAliasType
+from typing_extensions import TypeAlias, TypeAliasType
 
-GlobalsNamespace: TypeAlias = dict[str, Any]
+GlobalsNamespace: TypeAlias = 'dict[str, Any]'
 """A global namespace.
 
 In most cases, this is a reference to the `__dict__` attribute of a module.
@@ -120,7 +120,7 @@ def ns_for_function(obj: Callable[..., Any], parent_namespace: MappingNamespace 
     # Note that the `typing._eval_type` function expects type params to be
     # passed as a separate argument. However, internally, `_eval_type` calls
     # `ForwardRef._evaluate` which will merge type params with the localns,
-    # essentially mimicing what we do here.
+    # essentially mimicking what we do here.
     type_params: tuple[TypeVar, ...] = ()
     if parent_namespace is not None:
         # We also fetch type params from the parent namespace. If present, it probably

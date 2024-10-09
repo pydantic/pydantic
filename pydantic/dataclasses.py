@@ -10,9 +10,8 @@ from warnings import warn
 
 from typing_extensions import Literal, TypeGuard, dataclass_transform
 
-from ._internal import _config, _decorators, _typing_extra
+from ._internal import _config, _decorators, _namespace_utils, _typing_extra
 from ._internal import _dataclasses as _pydantic_dataclasses
-from ._internal._namespace_utils import MappingNamespace, NsResolver
 from ._migration import getattr_migration
 from .config import ConfigDict
 from .errors import PydanticUserError
@@ -20,6 +19,7 @@ from .fields import Field, FieldInfo, PrivateAttr
 
 if TYPE_CHECKING:
     from ._internal._dataclasses import PydanticDataclass
+    from ._internal._namespace_utils import MappingNamespace
 
 __all__ = 'dataclass', 'rebuild_dataclass'
 
@@ -334,7 +334,7 @@ def rebuild_dataclass(
     else:
         rebuild_ns = {}
 
-    ns_resolver = NsResolver(
+    ns_resolver = _namespace_utils.NsResolver(
         parent_namespace=rebuild_ns,
     )
 

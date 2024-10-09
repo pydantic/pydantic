@@ -39,11 +39,11 @@ from ._internal import (
     _import_utils,
     _mock_val_ser,
     _model_construction,
+    _namespace_utils,
     _repr,
     _typing_extra,
     _utils,
 )
-from ._internal._namespace_utils import MappingNamespace, NsResolver
 from ._migration import getattr_migration
 from .aliases import AliasChoices, AliasPath
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
@@ -59,6 +59,7 @@ if TYPE_CHECKING:
 
     from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
 
+    from ._internal._namespace_utils import MappingNamespace
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
     from .deprecated.parse import Protocol as DeprecatedParseProtocol
     from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
@@ -578,7 +579,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         parent_ns = _model_construction.unpack_lenient_weakvaluedict(cls.__pydantic_parent_namespace__) or {}
 
-        ns_resolver = NsResolver(
+        ns_resolver = _namespace_utils.NsResolver(
             parent_namespace={**rebuild_ns, **parent_ns},
         )
 

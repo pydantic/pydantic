@@ -339,7 +339,12 @@ def _eval_type_backport(
                 '`typing` constructs or install the `eval_type_backport` package.'
             ) from e
 
-        return eval_type_backport(value, globalns, localns, try_default=False)
+        return eval_type_backport(
+            value,
+            globalns,
+            localns,  # pyright: ignore[reportArgumentType], waiting on a new `eval_type_backport` release.
+            try_default=False,
+        )
 
 
 def _eval_type(
