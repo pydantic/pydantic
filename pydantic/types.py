@@ -2584,7 +2584,7 @@ class EncodedStr:
             serialization=core_schema.plain_serializer_function_ser_schema(function=self.encode_str),
         )
 
-    def decode_str(self, data: bytes, _: core_schema.ValidationInfo) -> str:
+    def decode_str(self, data: str, _: core_schema.ValidationInfo) -> str:
         """Decode the data using the specified encoder.
 
         Args:
@@ -2593,7 +2593,7 @@ class EncodedStr:
         Returns:
             The decoded data.
         """
-        return self.encoder.decode(data).decode()
+        return self.encoder.decode(data.encode()).decode()
 
     def encode_str(self, value: str) -> str:
         """Encode the data using the specified encoder.
