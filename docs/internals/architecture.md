@@ -1,3 +1,6 @@
+!!! note
+    This section is part of the *internals* documentation, and is partly targeted to contributors.
+
 Starting with Pydantic V2, part of the codebase is written in Rust in a separate package called `pydantic-core`.
 This was done partly in order to improve validation and serialization performance (with the cost of limited
 customization and extendibility of the internal logic).
@@ -130,11 +133,11 @@ and will return the following JSON Schema:
 ### Customizing the core schema and JSON schema
 
 !!! abstract "Usage Documentation"
-    [Custom types](concepts/types.md#custom-types)
+    [Custom types](../concepts/types.md#custom-types)
 
-    [Implementing `__get_pydantic_core_schema__`](concepts/json_schema.md#implementing-__get_pydantic_core_schema__)
+    [Implementing `__get_pydantic_core_schema__`](../concepts/json_schema.md#implementing-__get_pydantic_core_schema__)
 
-    [Implementing `__get_pydantic_json_schema__`](concepts/json_schema.md#implementing-__get_pydantic_json_schema__)
+    [Implementing `__get_pydantic_json_schema__`](../concepts/json_schema.md#implementing-__get_pydantic_json_schema__)
 
 While the `GenerateSchema` and [`GenerateJsonSchema`][pydantic.json_schema.GenerateJsonSchema] classes handle
 the creation of the corresponding schemas, Pydantic offers a way to customize them in some cases, following a wrapper pattern.
@@ -187,7 +190,7 @@ create an instance of a `GetCoreSchemaHandler` to be passed to the `MyGt.__get_p
     where a simple `{'type': 'int'}` schema is returned.
 
 The `source` argument depends on the core schema generation pattern. In the case of [`Annotated`][typing.Annotated],
-the `source` will be the type being annotated. When [defining a custom type](concepts/types.md#as-a-method-on-a-custom-type),
+the `source` will be the type being annotated. When [defining a custom type](../concepts/types.md#as-a-method-on-a-custom-type),
 the `source` will be the actual class where `__get_pydantic_core_schema__` is defined.
 
 ## Model validation and serialization
