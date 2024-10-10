@@ -1424,6 +1424,7 @@ uses a no-op `sort` method to disable sorting entirely, which is reflected in th
 
 ```py
 import json
+from typing import Optional
 
 from pydantic import BaseModel, Field
 from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
@@ -1431,7 +1432,7 @@ from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
 
 class MyGenerateJsonSchema(GenerateJsonSchema):
     def sort(
-        self, value: JsonSchemaValue, parent_key: str | None = None
+        self, value: JsonSchemaValue, parent_key: Optional[str] = None = None
     ) -> JsonSchemaValue:
         """No-op, we don't want to sort schema values at all."""
         return value
