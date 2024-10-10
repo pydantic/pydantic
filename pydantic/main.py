@@ -848,6 +848,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         return m
 
+    def __replace__(self, **changes: Any) -> Self:
+        """Creates a new instance of the model, replacing fields with values from changes. Relevant for v3.13+."""
+        return self.model_copy(update=changes, deep=True)
+
     if not TYPE_CHECKING:
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
         # The same goes for __setattr__ and __delattr__, see: https://github.com/pydantic/pydantic/issues/8643
