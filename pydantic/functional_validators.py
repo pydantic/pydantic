@@ -183,7 +183,12 @@ class PlainValidator:
 
         from pydantic import BaseModel, PlainValidator
 
-        MyInt = Annotated[int, PlainValidator(lambda v: int(v) + 1, json_schema_input_type=Union[str, int])]  # (1)!
+        MyInt = Annotated[
+            int,
+            PlainValidator(
+                lambda v: int(v) + 1, json_schema_input_type=Union[str, int]  # (1)!
+            ),
+        ]
 
         class Model(BaseModel):
             a: MyInt
