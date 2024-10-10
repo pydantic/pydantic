@@ -3107,14 +3107,14 @@ to help you monitor and understand your
 <span class="sd">    Returns:</span>
 <span class="sd">        The decorated function.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">local_ns</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">parent_frame_namespace</span><span class="p">()</span>
+    <span class="n">parent_namespace</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">parent_frame_namespace</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="n">function</span><span class="p">:</span> <span class="n">AnyCallableT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnyCallableT</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">function</span><span class="p">,</span> <span class="p">(</span><span class="nb">classmethod</span><span class="p">,</span> <span class="nb">staticmethod</span><span class="p">)):</span>
             <span class="n">name</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">function</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The `@</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">` decorator should be applied after `@validate_call` (put `@</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">` on top)&#39;</span><span class="p">)</span>
 
-        <span class="n">validate_call_wrapper</span> <span class="o">=</span> <span class="n">_validate_call</span><span class="o">.</span><span class="n">ValidateCallWrapper</span><span class="p">(</span><span class="n">function</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">validate_return</span><span class="p">,</span> <span class="n">local_ns</span><span class="p">)</span>
+        <span class="n">validate_call_wrapper</span> <span class="o">=</span> <span class="n">_validate_call</span><span class="o">.</span><span class="n">ValidateCallWrapper</span><span class="p">(</span><span class="n">function</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">validate_return</span><span class="p">,</span> <span class="n">parent_namespace</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">iscoroutinefunction</span><span class="p">(</span><span class="n">function</span><span class="p">):</span>
 

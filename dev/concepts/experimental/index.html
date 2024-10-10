@@ -3006,7 +3006,7 @@ These APIs are meant for situations where the code savings are significant and t
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-<span class="kn">from</span> <span class="nn">pydantic.experimental.pipeline</span> <span class="kn">import</span> <span class="n">validate_as</span><span class="p">,</span> <span class="n">validate_as_deferred</span>
+<span class="kn">from</span> <span class="nn">pydantic.experimental.pipeline</span> <span class="kn">import</span> <span class="n">validate_as</span>
 
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3026,10 +3026,6 @@ These APIs are meant for situations where the code savings are significant and t
         <span class="p">),</span>
     <span class="p">]</span>
     <span class="n">friends</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">User</span><span class="p">],</span> <span class="n">validate_as</span><span class="p">(</span><span class="o">...</span><span class="p">)</span><span class="o">.</span><span class="n">len</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)]</span>  <span class="c1"># (6)!</span>
-    <span class="n">family</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>  <span class="c1"># (7)!</span>
-        <span class="nb">list</span><span class="p">[</span><span class="n">User</span><span class="p">],</span>
-        <span class="n">validate_as_deferred</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">User</span><span class="p">])</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">:]),</span>
-    <span class="p">]</span>
     <span class="n">bio</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
         <span class="n">datetime</span><span class="p">,</span>
         <span class="n">validate_as</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
@@ -3044,7 +3040,6 @@ These APIs are meant for situations where the code savings are significant and t
 <li>You can also use the lower level transform, constrain and predicate methods.</li>
 <li>Use the <code>|</code> or <code>&amp;</code> operators to combine steps (like a logical OR or AND).</li>
 <li>Calling <code>validate_as(...)</code> with <code>Ellipsis</code>, <code>...</code> as the first positional argument implies <code>validate_as(&lt;field type&gt;)</code>. Use <code>validate_as(Any)</code> to accept any type.</li>
-<li>For recursive types you can use <code>validate_as_deferred</code> to reference the type itself before it's defined.</li>
 <li>You can call <code>validate_as()</code> before or after other steps to do pre or post processing.</li>
 </ol>
 <h3 id="mapping-from-beforevalidator-aftervalidator-and-wrapvalidator">Mapping from <code>BeforeValidator</code>, <code>AfterValidator</code> and <code>WrapValidator</code><a class="headerlink" href="#mapping-from-beforevalidator-aftervalidator-and-wrapvalidator" title="Permanent link">&para;</a></h3>
