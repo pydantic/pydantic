@@ -1,81 +1,41 @@
-Postponed annotations (as described in [PEP563](https://www.python.org/dev/peps/pep-0563/)) "just work".
+Forward annotations (wrapped into quotes) or using the `from __future__ import annotations` [future statement]
+(as introduced in [PEP563](https://www.python.org/dev/peps/pep-0563/)) is supported:
 
-```py requires="3.9"
+```py
 from __future__ import annotations
 
 from typing import Any
 
 from pydantic import BaseModel
 
+MyInt = int
 
 class Model(BaseModel):
-    a: list[int]
-    b: Any
+    a: MyInt
+    # Without the future import, equivalent to:
+    # a: 'MyInt'
 
 
-print(Model(a=('1', 2, 3), b='ok'))
-#> a=[1, 2, 3] b='ok'
-```
-
-Internally, Pydantic will call a method similar to `typing.get_type_hints` to resolve annotations.
-
-Even without using `from __future__ import annotations`, in cases where the referenced type is not yet defined, a
-`ForwardRef` or string can be used:
-
-```py
-from typing import ForwardRef
-
-from pydantic import BaseModel
-
-Foo = ForwardRef('Foo')
-
-
-class Foo(BaseModel):
-    a: int = 123
-    b: Foo = None
-
-
-print(Foo())
-#> a=123 b=None
-print(Foo(b={'a': '321'}))
-#> a=123 b=Foo(a=321, b=None)
+print(Model(a='1'))
+#> a=1
 ```
 
 ## Self-referencing (or "Recursive") Models
 
-Models with self-referencing fields are also supported. Self-referencing fields will be automatically
-resolved after model creation.
+Models with self-referencing fields are also supported. They will be resolved during model creation.
 
-Within the model, you can refer to the not-yet-constructed model using a string:
-
-```py
-from pydantic import BaseModel
-
-
-class Foo(BaseModel):
-    a: int = 123
-    #: The sibling of `Foo` is referenced by string
-    sibling: 'Foo' = None
-
-
-print(Foo())
-#> a=123 sibling=None
-print(Foo(sibling={'a': '321'}))
-#> a=123 sibling=Foo(a=321, sibling=None)
-```
-
-If you use `from __future__ import annotations`, you can also just refer to the model by its type name:
+Within the model, can either add the `from __future__ import annotations` import or wrap the annotation
+into a string:
 
 ```py
-from __future__ import annotations
+from typing import Optional
 
 from pydantic import BaseModel
 
 
 class Foo(BaseModel):
     a: int = 123
-    #: The sibling of `Foo` is referenced directly by type
-    sibling: Foo = None
+    sibling: 'Optional[Foo]' = None
 
 
 print(Foo())
@@ -90,7 +50,7 @@ When working with self-referencing recursive models, it is possible that you mig
 in validation inputs. For example, this can happen when validating ORM instances with back-references from
 attributes.
 
-Rather than raising a Python `RecursionError` while attempting to validate data with cyclic references, Pydantic is able
+Rather than raising a [`RecursionError`][] while attempting to validate data with cyclic references, Pydantic is able
 to detect the cyclic reference and raise an appropriate `ValidationError`:
 
 ```py
@@ -124,7 +84,8 @@ except ValidationError as exc:
 ```
 
 Because this error is raised without actually exceeding the maximum recursion depth, you can catch and
-handle the raised `ValidationError` without needing to worry about the limited remaining recursion depth:
+handle the raised [`ValidationError`][pydantic.ValidationError] without needing to worry about the limited
+remaining recursion depth:
 
 ```python
 from contextlib import contextmanager
@@ -179,8 +140,8 @@ print(Node.model_validate(node_data))
 #> id=1 children=[Node(id=2, children=[Node(id=3, children=[])])]
 ```
 
-Similarly, if Pydantic encounters a recursive reference during _serialization_, rather than waiting for the maximum
-recursion depth to be exceeded, a `ValueError` is raised immediately:
+Similarly, if Pydantic encounters a recursive reference during _serialization_, rather than waiting
+for the maximum recursion depth to be exceeded, a [`ValueError`][] is raised immediately:
 
 ```py
 from pydantic import TypeAdapter
@@ -266,3 +227,5 @@ print(TypeAdapter(Node).dump_python(nodes[0]))
 }
 """
 ```
+
+[future statement]: https://docs.python.org/3/reference/simple_stmts.html#future
