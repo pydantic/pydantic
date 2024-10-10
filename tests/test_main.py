@@ -3345,10 +3345,12 @@ def test_nested_v1_model_warns() -> None:
 
 @pytest.mark.skipif(sys.version_info < (3, 13), reason='requires python 3.13')
 def test_replace() -> None:
+    from copy import replace
+
     class Model(BaseModel):
         x: int
         y: int
 
     m = Model(x=1, y=2)
-    m2 = m.replace(x=3)
-    assert m2 == Model(x=3, y=2)
+    assert m.replace(x=3) == Model(x=3, y=2)
+    assert replace(m, x=3) == Model(x=3, y=2)
