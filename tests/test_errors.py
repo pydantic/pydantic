@@ -257,6 +257,11 @@ all_errors = [
     ('no_such_attribute', "Object has no attribute 'wrong_name'", {'attribute': 'wrong_name'}),
     ('json_invalid', 'Invalid JSON: foobar', {'error': 'foobar'}),
     ('json_type', 'JSON input should be string, bytes or bytearray', None),
+    (
+        'needs_python_object',
+        'Cannot check `isinstance` when validating from json, use a JsonOrPython validator instead',
+        {'method_name': 'isinstance'},
+    ),
     ('recursion_loop', 'Recursion error - cyclic reference detected', None),
     ('model_type', 'Input should be a valid dictionary or instance of Foobar', {'class_name': 'Foobar'}),
     ('model_attributes_type', 'Input should be a valid dictionary or object to extract fields from', None),
@@ -506,10 +511,10 @@ def test_all_errors():
             'example_context': None,
         },
         {
-            'type': 'recursion_loop',
-            'message_template_python': 'Recursion error - cyclic reference detected',
-            'example_message_python': 'Recursion error - cyclic reference detected',
-            'example_context': None,
+            'type': 'needs_python_object',
+            'message_template_python': 'Cannot check `{method_name}` when validating from json, use a JsonOrPython validator instead',
+            'example_message_python': 'Cannot check `` when validating from json, use a JsonOrPython validator instead',
+            'example_context': {'method_name': ''},
         },
     ]
 

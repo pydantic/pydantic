@@ -19,8 +19,9 @@ class Spam:
 
 def test_validate_json() -> None:
     v = SchemaValidator({'type': 'is-instance', 'cls': Foo})
-    with pytest.raises(NotImplementedError, match='use a JsonOrPython validator instead'):
+    with pytest.raises(ValidationError) as exc_info:
         v.validate_json('"foo"')
+        assert exc_info.value.errors()[0]['type'] == 'needs_python_object'
 
 
 def test_is_instance():
@@ -175,11 +176,9 @@ def test_is_instance_json_type_before_validator():
     schema = core_schema.is_instance_schema(type)
     v = SchemaValidator(schema)
 
-    with pytest.raises(
-        NotImplementedError,
-        match='Cannot check isinstance when validating from json, use a JsonOrPython validator instead.',
-    ):
+    with pytest.raises(ValidationError) as exc_info:
         v.validate_json('null')
+        assert exc_info.value.errors()[0]['type'] == 'needs_python_object'
 
     # now wrap in a before validator
     def set_type_to_int(input: None) -> type:
