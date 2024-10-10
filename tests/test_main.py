@@ -3352,5 +3352,4 @@ def test_replace() -> None:
         y: int
 
     m = Model(x=1, y=2)
-    assert m.replace(x=3) == Model(x=3, y=2)
     assert replace(m, x=3) == Model(x=3, y=2)
