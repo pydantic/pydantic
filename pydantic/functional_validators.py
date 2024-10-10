@@ -168,9 +168,6 @@ class PlainValidator:
         You can now use the `json_schema_input_type` argument to specify the input type of the function
         to be used in the JSON schema when `mode='validation'` (the default). See the example below for more details.
 
-        If you'd like the JSON Schema type for an annotated field to be populated automatically,
-        you might consider using `WrapValidator` instead.
-
     Attributes:
         func: The validator function.
         json_schema_input_type: The input type of the function. This is only used to generate the appropriate
