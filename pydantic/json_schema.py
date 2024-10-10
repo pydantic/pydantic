@@ -564,7 +564,7 @@ class GenerateJsonSchema:
         """
         sorted_dict: dict[str, JsonSchemaValue] = {}
         keys = value.keys()
-        if (parent_key != 'properties') and (parent_key != 'default'):
+        if parent_key not in ('properties', 'default'):
             keys = sorted(keys)
         for key in keys:
             sorted_dict[key] = self._sort_recursive(value[key], parent_key=key)
@@ -575,7 +575,7 @@ class GenerateJsonSchema:
         if isinstance(value, dict):
             sorted_dict: dict[str, JsonSchemaValue] = {}
             keys = value.keys()
-            if (parent_key != 'properties') and (parent_key != 'default'):
+            if parent_key not in ('properties', 'default'):
                 keys = sorted(keys)
             for key in keys:
                 sorted_dict[key] = self._sort_recursive(value[key], parent_key=key)
