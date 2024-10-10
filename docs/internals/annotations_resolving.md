@@ -1,16 +1,20 @@
+!!! note
+    This section is part of the *internals* documentation, and is partly targeted to contributors.
+
 Pydantic heavily relies on [type hints][type hint] at runtime to build schemas for validation, serialization, etc.
 
 While type hints were primarily introduced for static type checkers (such as [Mypy] or [Pyright]), they are
 accessible (and sometimes evaluated) at runtime. This means that the following would fail at runtime,
 because `Node` has yet to be defined in the current module:
 
-```python
+```python test="skip" lint="skip"
 class Node:
     """Binary tree node."""
 
-    def __init__(self, left: Node, right: Node):  # NameError: name 'Node' is not defined
-        self.left = left
-        self.right = right
+    # NameError: name 'Node' is not defined:
+    def __init__(self, l: Node, r: Node) -> None:
+        self.left = l
+        self.right = r
 ```
 
 To circumvent this issue, forward references can be used (by wrapping the annotation into quotes).
@@ -18,7 +22,7 @@ To circumvent this issue, forward references can be used (by wrapping the annota
 In Python 3.7, [PEP 563] introduced the concept of _postponed evaluation of annotations_, meaning
 with the `from __future__ import annotations` [future statement], type hints are stringified by default:
 
-```python
+```python requires="3.12" lint="skip"
 from __future__ import annotations
 
 from pydantic import BaseModel
@@ -27,12 +31,12 @@ from pydantic import BaseModel
 class Foo(BaseModel):
     f: MyType
     # Without the future import, equivalent to:
-    f: 'MyType'
+    # f: 'MyType'
 
 
-MyType = int
+type MyType = int
 
-A.__annotations__
+print(Foo.__annotations__)
 #> {'f': 'MyType'}
 ```
 
@@ -47,21 +51,22 @@ The Python standard library provides some tools to do so ([`typing.get_type_hint
 [`inspect.get_annotations()`][inspect.get_annotations]), but they come with some limitations. Thus, they are
 being re-implemented in Pydantic with improved support for edge cases.
 
-For a long time, Pydantic has tried to support many edge cases, resulting in a messy annotations evaluation logic
+For a long time, Pydantic has tried to support many cases, resulting in a messy annotations evaluation logic
 (which would allow invalid use cases from a static type checking perspective to work). In 2.10, the internal logic
 was refactored to support more cases while still trying to be backwards compatible. There's a hope that [PEP 649]
-(introduced in Python 3.14) will greatly simplify the process, especially when it comes to locals of a function.
+(introduced in Python 3.14) will greatly simplify the process, especially when it comes to dealing with locals
+of a function.
 
 To evaluate forward references, Pydantic roughly follows the same logic as described in the documentation of the
 [`typing.get_type_hints()`][typing.get_type_hints] function. That is, the built-in [`eval()`][eval] function is used
 by passing the forward reference, a global and a local namespace. The namespace fetching logic is defined in the
-following sections.
+sections below.
 
 ## Resolving annotations at class definition
 
 The following example will be used as a reference throughout this section:
 
-```python
+```python test="skip" lint="skip"
 # module1.py:
 type MyType = int
 
@@ -98,15 +103,15 @@ following logic is applied:
    `{'f1': 'MyType'}`.
 2. Iterate over the `__annotations__` items and try to evaluate the annotation [^1] using a custom wrapper around
    the built-in [`eval()`][eval] function. This function takes two `globals` and `locals` arguments:
-     - The current module's `__dict__` is naturally used as the globals namespace. For `Base`, this will be
+     - The current module's `__dict__` is naturally used as `globals`. For `Base`, this will be
        `sys.modules['module1'].__dict__`.
-     - For the locals namespace, Pydantic will try to resolve symbols in the following namespaces, sorted by highest priority:
+     - For the `locals` argument, Pydantic will try to resolve symbols in the following namespaces, sorted by highest priority:
          - A namespace created on the fly, containing the current class name (`{cls.__name__: cls}`). This is done
            in order to support recursive references.
          - The locals of the current class (i.e. `cls.__dict__`). For `Model`, this will include `LocalType`.
-         - The parent namespace of the class, if different from the globals namespace described above. This is the
+         - The parent namespace of the class, if different from the globals described above. This is the
            [locals][frame.f_locals] of the frame where the class is being defined. For `Base`, because the class is being
-           defined in the module directly, this namespace won't be used as it will result in the globals namespace being used again.
+           defined in the module directly, this namespace won't be used as it will result in the globals being used again.
            For `Model`, the parent namespace is the locals of the frame of `inner()`.
 3. If the annotation failed to evaluate, it is kept as is, so that the model can be rebuilt at a later stage. This will
    be the case for `f5`.
@@ -141,7 +146,7 @@ While the namespace fetching logic is trying to be as accurate as possible, we s
 
 1.  Here is an example:
 
-    ```python
+    ```python test="skip" lint="skip"
     def func():
         A = int
 
@@ -149,6 +154,7 @@ While the namespace fetching logic is trying to be as accurate as possible, we s
             f: 'A | Forward'
 
         return Model
+
 
     Model = func()
 
@@ -191,7 +197,7 @@ and the `{Bar.__name__: Bar}` namespace are included in the locals during annota
 
 1.  This backwards compatibility logic can introduce some inconsistencies, such as the following:
 
-    ```python
+    ```python lint="skip"
     from dataclasses import dataclass
 
     from pydantic import BaseModel
@@ -202,6 +208,7 @@ and the `{Bar.__name__: Bar}` namespace are included in the locals during annota
         # `a` and `b` shouldn't resolve:
         a: 'Model'
         b: 'Inner'
+
 
     def func():
         Inner = int
@@ -218,7 +225,7 @@ and the `{Bar.__name__: Bar}` namespace are included in the locals during annota
 When a forward reference fails to evaluate, Pydantic will silently fail and stop the core schema
 generation process. This can be seen by inspecting the `__pydantic_core_schema__` of a model class:
 
-```python
+```python lint="skip"
 from pydantic import BaseModel
 
 
@@ -232,7 +239,7 @@ Foo.__pydantic_core_schema__
 
 If you then properly define `MyType`, you can rebuild the model:
 
-```python
+```python test="skip" lint="skip"
 type MyType = int
 
 Foo.model_rebuild()

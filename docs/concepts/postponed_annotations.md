@@ -4,11 +4,10 @@ Forward annotations (wrapped into quotes) or using the `from __future__ import a
 ```py
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel
 
 MyInt = int
+
 
 class Model(BaseModel):
     a: MyInt
@@ -19,6 +18,8 @@ class Model(BaseModel):
 print(Model(a='1'))
 #> a=1
 ```
+
+The internal logic to resolve forward annotations is described in details in [this section](../internals/annotations_resolving.md).
 
 ## Self-referencing (or "Recursive") Models
 
@@ -51,7 +52,7 @@ in validation inputs. For example, this can happen when validating ORM instances
 attributes.
 
 Rather than raising a [`RecursionError`][] while attempting to validate data with cyclic references, Pydantic is able
-to detect the cyclic reference and raise an appropriate `ValidationError`:
+to detect the cyclic reference and raise an appropriate [`ValidationError`][pydantic_core.ValidationError]:
 
 ```py
 from typing import Optional
@@ -84,7 +85,7 @@ except ValidationError as exc:
 ```
 
 Because this error is raised without actually exceeding the maximum recursion depth, you can catch and
-handle the raised [`ValidationError`][pydantic.ValidationError] without needing to worry about the limited
+handle the raised [`ValidationError`][pydantic_core.ValidationError] without needing to worry about the limited
 remaining recursion depth:
 
 ```python

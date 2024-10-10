@@ -145,8 +145,9 @@ nav:
     - Semantic Version: api/pydantic_extra_types_semantic_version.md
     - Timezone Name: api/pydantic_extra_types_timezone_name.md
     - ULID: api/pydantic_extra_types_ulid.md
-- Architecture: architecture.md
-- Annotations resolving: annotations_resolving.md
+- Internals:
+  - Architecture: internals/architecture.md
+  - Annotations resolving: internals/annotations_resolving.md
 - Examples:
   - Validating File Data: examples/files.md
   - Web and API Requests: examples/requests.md
