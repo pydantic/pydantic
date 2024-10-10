@@ -557,20 +557,34 @@ class GenerateJsonSchema:
         return json_schema
 
     def sort(self, value: JsonSchemaValue, parent_key: str | None = None) -> JsonSchemaValue:
-        """Sort the JSON schema, skipping the 'properties' and 'default' keys to preserve field definition order."""
+        """Override this method to customize the sorting of the JSON schema (e.g., don't sort at all, sort all keys unconditionally, etc.)
+
+        By default, alphabetically sort the keys in the JSON schema, skipping the 'properties' and 'default' keys to preserve field definition order.
+        This sort is recursive, so it will sort all nested dictionaries as well.
+        """
+        sorted_dict: dict[str, JsonSchemaValue] = {}
+        keys = value.keys()
+        if (parent_key != 'properties') and (parent_key != 'default'):
+            keys = sorted(keys)
+        for key in keys:
+            sorted_dict[key] = self._sort_recursive(value[key], parent_key=key)
+        return sorted_dict
+
+    def _sort_recursive(self, value: Any, parent_key: str | None = None) -> Any:
+        """Recursively sort a JSON schema value."""
         if isinstance(value, dict):
             sorted_dict: dict[str, JsonSchemaValue] = {}
             keys = value.keys()
             if (parent_key != 'properties') and (parent_key != 'default'):
                 keys = sorted(keys)
             for key in keys:
-                sorted_dict[key] = self.sort(value[key], parent_key=key)
+                sorted_dict[key] = self._sort_recursive(value[key], parent_key=key)
             return sorted_dict
         elif isinstance(value, list):
             sorted_list: list[JsonSchemaValue] = []
-            for item in value:  # type: ignore
-                sorted_list.append(self.sort(item, parent_key))
-            return sorted_list  # type: ignore
+            for item in value:
+                sorted_list.append(self._sort_recursive(item, parent_key))
+            return sorted_list
         else:
             return value
 
