@@ -167,6 +167,7 @@ error_types! {
         error: {ctx_type: String, ctx_fn: field_from_context},
     },
     JsonType {},
+    NeedsPythonObject { method_name: {ctx_type: String, ctx_fn: field_from_context} },
     // ---------------------
     // recursion error
     RecursionLoop {},
@@ -477,6 +478,7 @@ impl ErrorType {
             Self::NoSuchAttribute {..} => "Object has no attribute '{attribute}'",
             Self::JsonInvalid {..} => "Invalid JSON: {error}",
             Self::JsonType {..} => "JSON input should be string, bytes or bytearray",
+            Self::NeedsPythonObject {..} => "Cannot check `{method_name}` when validating from json, use a JsonOrPython validator instead",
             Self::RecursionLoop {..} => "Recursion error - cyclic reference detected",
             Self::Missing {..} => "Field required",
             Self::FrozenField {..} => "Field is frozen",
@@ -626,6 +628,7 @@ impl ErrorType {
         match self {
             Self::NoSuchAttribute { attribute, .. } => render!(tmpl, attribute),
             Self::JsonInvalid { error, .. } => render!(tmpl, error),
+            Self::NeedsPythonObject { method_name, .. } => render!(tmpl, method_name),
             Self::GetAttributeError { error, .. } => render!(tmpl, error),
             Self::ModelType { class_name, .. } => render!(tmpl, class_name),
             Self::DataclassType { class_name, .. } => render!(tmpl, class_name),

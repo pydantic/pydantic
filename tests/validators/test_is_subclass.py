@@ -77,3 +77,10 @@ def test_custom_repr():
             'ctx': {'class': 'Spam'},
         }
     ]
+
+
+def test_is_subclass_json() -> None:
+    v = SchemaValidator(core_schema.is_subclass_schema(Foo))
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_json("'Foo'")
+        assert exc_info.value.errors()[0]['type'] == 'needs_python_object'
