@@ -1042,6 +1042,21 @@ to help you monitor and understand your
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Customizing the JSON Schema Generation Process">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#json-schema-sorting" class="md-nav__link">
+    <span class="md-ellipsis">
+      JSON schema sorting
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3264,6 +3279,21 @@ to help you monitor and understand your
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Customizing the JSON Schema Generation Process">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#json-schema-sorting" class="md-nav__link">
+    <span class="md-ellipsis">
+      JSON schema sorting
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -4857,6 +4887,63 @@ subclasses to modify the "global" approach to generating JSON schema.</p>
 <span class="sd">    },</span>
 <span class="sd">    &#39;title&#39;: &#39;Example&#39;,</span>
 <span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+<h3 id="json-schema-sorting">JSON schema sorting<a class="headerlink" href="#json-schema-sorting" title="Permanent link">&para;</a></h3>
+<p>By default, Pydantic recursively sorts JSON schemas by alphabetically sorting keys. Notably, Pydantic skips sorting the values of the <code>properties</code> key,
+to preserve the order of the fields as they were defined in the model.</p>
+<p>If you would like to customize this behavior, you can override the <code>sort</code> method in your custom <code>GenerateJsonSchema</code> subclass. The below example
+uses a no-op <code>sort</code> method to disable sorting entirely, which is reflected in the preserved order of the model fields and <code>json_schema_extra</code> keys:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<span class="kn">from</span> <span class="nn">pydantic.json_schema</span> <span class="kn">import</span> <span class="n">GenerateJsonSchema</span><span class="p">,</span> <span class="n">JsonSchemaValue</span>
+
+
+<span class="k">class</span> <span class="nc">MyGenerateJsonSchema</span><span class="p">(</span><span class="n">GenerateJsonSchema</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">sort</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">JsonSchemaValue</span><span class="p">,</span> <span class="n">parent_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;No-op, we don&#39;t want to sort schema values at all.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">value</span>
+
+
+<span class="k">class</span> <span class="nc">Bar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">c</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">b</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">json_schema_extra</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="s1">&#39;hi&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;world&#39;</span><span class="p">})</span>
+
+
+<span class="n">json_schema</span> <span class="o">=</span> <span class="n">Bar</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">(</span><span class="n">schema_generator</span><span class="o">=</span><span class="n">MyGenerateJsonSchema</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">json_schema</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">  &quot;type&quot;: &quot;object&quot;,</span>
+<span class="sd">  &quot;properties&quot;: {</span>
+<span class="sd">    &quot;c&quot;: {</span>
+<span class="sd">      &quot;type&quot;: &quot;string&quot;,</span>
+<span class="sd">      &quot;title&quot;: &quot;C&quot;</span>
+<span class="sd">    },</span>
+<span class="sd">    &quot;b&quot;: {</span>
+<span class="sd">      &quot;type&quot;: &quot;string&quot;,</span>
+<span class="sd">      &quot;title&quot;: &quot;B&quot;</span>
+<span class="sd">    },</span>
+<span class="sd">    &quot;a&quot;: {</span>
+<span class="sd">      &quot;type&quot;: &quot;string&quot;,</span>
+<span class="sd">      &quot;c&quot;: &quot;hi&quot;,</span>
+<span class="sd">      &quot;b&quot;: &quot;hello&quot;,</span>
+<span class="sd">      &quot;a&quot;: &quot;world&quot;,</span>
+<span class="sd">      &quot;title&quot;: &quot;A&quot;</span>
+<span class="sd">    }</span>
+<span class="sd">  },</span>
+<span class="sd">  &quot;required&quot;: [</span>
+<span class="sd">    &quot;c&quot;,</span>
+<span class="sd">    &quot;b&quot;,</span>
+<span class="sd">    &quot;a&quot;</span>
+<span class="sd">  ],</span>
+<span class="sd">  &quot;title&quot;: &quot;Bar&quot;</span>
 <span class="sd">}</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
