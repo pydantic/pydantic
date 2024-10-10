@@ -14,6 +14,7 @@ from __future__ import annotations as _annotations
 import dataclasses
 import inspect
 import math
+import os
 import re
 import warnings
 from collections import defaultdict
@@ -336,6 +337,8 @@ class GenerateJsonSchema:
             try:
                 mapping[key] = getattr(self, method_name)
             except AttributeError as e:  # pragma: no cover
+                if os.environ['PYDANTIC_PRIVATE_ALLOW_UNHANDLED_SCHEMA_TYPES'] == '1':
+                    continue
                 raise TypeError(
                     f'No method for generating JsonSchema for core_schema.type={key!r} '
                     f'(expected: {type(self).__name__}.{method_name})'
