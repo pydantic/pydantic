@@ -19,20 +19,23 @@ from typing_extensions import TypeGuard
 from ..errors import PydanticUndefinedAnnotation
 from ..plugin._schema_validator import PluggableSchemaValidator, create_schema_validator
 from ..warnings import PydanticDeprecatedSince20
-from . import _config, _decorators, _typing_extra
+from . import _config, _decorators
 from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
 from ._mock_val_ser import set_dataclass_mocks
+from ._namespace_utils import NsResolver
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._signature import generate_pydantic_signature
 
 if typing.TYPE_CHECKING:
+    from dataclasses import Field
+
     from ..config import ConfigDict
     from ..fields import FieldInfo
 
     class StandardDataclass(typing.Protocol):
-        __dataclass_fields__: ClassVar[dict[str, Any]]
+        __dataclass_fields__: ClassVar[dict[str, Field[Any]]]
         __dataclass_params__: ClassVar[Any]  # in reality `dataclasses._DataclassParams`
         __post_init__: ClassVar[Callable[..., None]]
 
@@ -68,18 +71,20 @@ else:
 
 def set_dataclass_fields(
     cls: type[StandardDataclass],
-    types_namespace: dict[str, Any] | None = None,
+    ns_resolver: NsResolver | None = None,
     config_wrapper: _config.ConfigWrapper | None = None,
 ) -> None:
     """Collect and set `cls.__pydantic_fields__`.
 
     Args:
         cls: The class.
-        types_namespace: The types namespace, defaults to `None`.
+        ns_resolver: Namespace resolver to use when getting dataclass annotations.
         config_wrapper: The config wrapper instance, defaults to `None`.
     """
     typevars_map = get_standard_typevars_map(cls)
-    fields = collect_dataclass_fields(cls, types_namespace, typevars_map=typevars_map, config_wrapper=config_wrapper)
+    fields = collect_dataclass_fields(
+        cls, ns_resolver=ns_resolver, typevars_map=typevars_map, config_wrapper=config_wrapper
+    )
 
     cls.__pydantic_fields__ = fields  # type: ignore
 
@@ -89,7 +94,7 @@ def complete_dataclass(
     config_wrapper: _config.ConfigWrapper,
     *,
     raise_errors: bool = True,
-    types_namespace: dict[str, Any] | None,
+    ns_resolver: NsResolver | None = None,
     _force_build: bool = False,
 ) -> bool:
     """Finish building a pydantic dataclass.
@@ -102,7 +107,8 @@ def complete_dataclass(
         cls: The class.
         config_wrapper: The config wrapper instance.
         raise_errors: Whether to raise errors, defaults to `True`.
-        types_namespace: The types namespace.
+        ns_resolver: The namespace resolver instance to use when collecting dataclass fields
+            and during schema building.
         _force_build: Whether to force building the dataclass, no matter if
             [`defer_build`][pydantic.config.ConfigDict.defer_build] is set.
 
@@ -135,16 +141,13 @@ def complete_dataclass(
             'Support for `__post_init_post_parse__` has been dropped, the method will not be called', DeprecationWarning
         )
 
-    if types_namespace is None:
-        types_namespace = _typing_extra.merge_cls_and_parent_ns(cls)
-
-    set_dataclass_fields(cls, types_namespace, config_wrapper=config_wrapper)
+    set_dataclass_fields(cls, ns_resolver, config_wrapper=config_wrapper)
 
     typevars_map = get_standard_typevars_map(cls)
     gen_schema = GenerateSchema(
         config_wrapper,
-        types_namespace,
-        typevars_map,
+        ns_resolver=ns_resolver,
+        typevars_map=typevars_map,
     )
 
     # This needs to be called before we change the __init__
