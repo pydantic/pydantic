@@ -163,6 +163,14 @@ class PlainValidator:
 
     A metadata class that indicates that a validation should be applied **instead** of the inner validation logic.
 
+    !!! note:
+        Before v2.9, `PlainValidator` wasn't always compatible with JSON Schema generation for `mode='validation'`.
+        You can now use the `json_schema_input_type` argument to specify the input type of the function
+        to be used in the JSON schema when `mode='validation'` (the default). See the example below for more details.
+
+        If you'd like the JSON Schema type for an annotated field to be populated automatically,
+        you might consider using `WrapValidator` instead.
+
     Attributes:
         func: The validator function.
         json_schema_input_type: The input type of the function. This is only used to generate the appropriate
@@ -170,18 +178,25 @@ class PlainValidator:
 
     Example:
         ```py
+        from typing import Union
         from typing_extensions import Annotated
 
         from pydantic import BaseModel, PlainValidator
 
-        MyInt = Annotated[int, PlainValidator(lambda v: int(v) + 1)]
+        MyInt = Annotated[int, PlainValidator(lambda v: int(v) + 1, json_schema_input_type=Union[str, int])]  # (1)!
 
         class Model(BaseModel):
             a: MyInt
 
         print(Model(a='1').a)
         #> 2
+
+        print(Model(a=1).a)
+        #> 2
         ```
+
+        1. In this example, we've specified the `json_schema_input_type` as `Union[str, int]` which indicates to the JSON schema
+        generator that in validation mode, the input type for the `a` field can be either a `str` or an `int`.
     """
 
     func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
