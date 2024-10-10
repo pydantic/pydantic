@@ -486,9 +486,9 @@ class GenerateSchema:
             )
 
     def _ip_schema(self, tp: Any) -> CoreSchema:
-        from ._validators import IP_VALIDATOR_LOOKUP
+        from ._validators import IP_VALIDATOR_LOOKUP, IpType
 
-        ip_type_json_schema_format = {
+        ip_type_json_schema_format: dict[type[IpType], str] = {
             IPv4Address: 'ipv4',
             IPv4Network: 'ipv4network',
             IPv4Interface: 'ipv4interface',
@@ -497,11 +497,13 @@ class GenerateSchema:
             IPv6Interface: 'ipv6interface',
         }
 
-        def ser_ip(ip: Any) -> str:
+        def ser_ip(ip: Any, info: core_schema.SerializationInfo) -> str | IpType:
             if not isinstance(ip, (tp, str)):
                 raise PydanticSerializationUnexpectedValue(
                     f"Expected `{tp}` but got `{type(ip)}` with value `'{ip}'` - serialized value may not be as expected."
                 )
+            if info.mode == 'python':
+                return ip
             return str(ip)
 
         return core_schema.lax_or_strict_schema(
@@ -510,7 +512,7 @@ class GenerateSchema:
                 json_schema=core_schema.no_info_after_validator_function(tp, core_schema.str_schema()),
                 python_schema=core_schema.is_instance_schema(tp),
             ),
-            serialization=core_schema.plain_serializer_function_ser_schema(ser_ip),
+            serialization=core_schema.plain_serializer_function_ser_schema(ser_ip, info_arg=True, when_used='always'),
             metadata=build_metadata_dict(
                 js_functions=[lambda _1, _2: {'type': 'string', 'format': ip_type_json_schema_format[tp]}]
             ),
