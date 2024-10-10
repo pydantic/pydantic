@@ -392,7 +392,7 @@ class GenerateJsonSchema:
         json_schema = {'$defs': self.definitions}
         json_schema = definitions_remapping.remap_json_schema(json_schema)
         self._used = True
-        return json_schemas_map, _sort_json_schema(json_schema['$defs'])  # type: ignore
+        return json_schemas_map, self.sort(json_schema['$defs'])  # type: ignore
 
     def generate(self, schema: CoreSchema, mode: JsonSchemaMode = 'validation') -> JsonSchemaValue:
         """Generates a JSON schema for a specified schema in a specified mode.
@@ -441,7 +441,7 @@ class GenerateJsonSchema:
         # json_schema['$schema'] = self.schema_dialect
 
         self._used = True
-        return _sort_json_schema(json_schema)
+        return self.sort(json_schema)
 
     def generate_inner(self, schema: CoreSchemaOrField) -> JsonSchemaValue:  # noqa: C901
         """Generates a JSON schema for a given core schema.
@@ -555,6 +555,24 @@ class GenerateJsonSchema:
         if _core_utils.is_core_schema(schema):
             json_schema = populate_defs(schema, json_schema)
         return json_schema
+
+    def sort(self, value: JsonSchemaValue, parent_key: str | None = None) -> JsonSchemaValue:
+        """Sort the JSON schema, skipping the 'properties' and 'default' keys to preserve field definition order."""
+        if isinstance(value, dict):
+            sorted_dict: dict[str, JsonSchemaValue] = {}
+            keys = value.keys()
+            if (parent_key != 'properties') and (parent_key != 'default'):
+                keys = sorted(keys)
+            for key in keys:
+                sorted_dict[key] = self.sort(value[key], parent_key=key)
+            return sorted_dict
+        elif isinstance(value, list):
+            sorted_list: list[JsonSchemaValue] = []
+            for item in value:  # type: ignore
+                sorted_list.append(self.sort(item, parent_key))
+            return sorted_list  # type: ignore
+        else:
+            return value
 
     # ### Schema generation methods
     def any_schema(self, schema: core_schema.AnySchema) -> JsonSchemaValue:
@@ -2363,24 +2381,6 @@ def _make_json_hashable(value: JsonValue) -> _HashableJsonValue:
         return tuple(sorted((k, _make_json_hashable(v)) for k, v in value.items()))
     elif isinstance(value, list):
         return tuple(_make_json_hashable(v) for v in value)
-    else:
-        return value
-
-
-def _sort_json_schema(value: JsonSchemaValue, parent_key: str | None = None) -> JsonSchemaValue:
-    if isinstance(value, dict):
-        sorted_dict: dict[str, JsonSchemaValue] = {}
-        keys = value.keys()
-        if (parent_key != 'properties') and (parent_key != 'default'):
-            keys = sorted(keys)
-        for key in keys:
-            sorted_dict[key] = _sort_json_schema(value[key], parent_key=key)
-        return sorted_dict
-    elif isinstance(value, list):
-        sorted_list: list[JsonSchemaValue] = []
-        for item in value:  # type: ignore
-            sorted_list.append(_sort_json_schema(item, parent_key))
-        return sorted_list  # type: ignore
     else:
         return value
 
