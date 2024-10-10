@@ -3964,6 +3964,7 @@ ErrorType = Literal[
     'no_such_attribute',
     'json_invalid',
     'json_type',
+    'needs_python_object',
     'recursion_loop',
     'missing',
     'frozen_field',
