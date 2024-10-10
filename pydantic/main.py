@@ -850,7 +850,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     def __replace__(self, **changes: Any) -> Self:
         """Creates a new instance of the model, replacing fields with values from changes. Relevant for v3.13+."""
-        return self.model_copy(update=changes, deep=True)
+        return self.model_copy(update=changes)
 
     if not TYPE_CHECKING:
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
