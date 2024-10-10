@@ -1432,7 +1432,7 @@ from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
 
 class MyGenerateJsonSchema(GenerateJsonSchema):
     def sort(
-        self, value: JsonSchemaValue, parent_key: Optional[str] = None = None
+        self, value: JsonSchemaValue, parent_key: Optional[str] = None
     ) -> JsonSchemaValue:
         """No-op, we don't want to sort schema values at all."""
         return value
