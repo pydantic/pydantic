@@ -86,11 +86,11 @@ def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth:
 
     But at the very least this behavior is _subtly_ different from `BaseModel`'s.
     """
-    local_ns = _typing_extra.parent_frame_namespace(parent_depth=parent_depth)
+    localns = _typing_extra.parent_frame_namespace(parent_depth=parent_depth)
     globalns = sys._getframe(max(parent_depth - 1, 1)).f_globals
     ns_resolver = _namespace_utils.NsResolver(
-        namespaces_tuple=_namespace_utils.NamespacesTuple(globalns, local_ns or {}),
-        parent_namespace=local_ns,
+        namespaces_tuple=_namespace_utils.NamespacesTuple(globalns, localns or {}),
+        parent_namespace=localns,
     )
     gen = _generate_schema.GenerateSchema(config_wrapper, ns_resolver=ns_resolver, typevars_map={})
     schema = gen.generate_schema(type_)

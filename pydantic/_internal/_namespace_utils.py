@@ -59,6 +59,8 @@ def get_module_ns_of(obj: Any) -> dict[str, Any]:
     return {}
 
 
+# Note that this class is almost identical to `collections.ChainMap`, but need to enforce
+# immutable mappings here:
 class LazyLocalNamespace(Mapping[str, Any]):
     """A lazily evaluated mapping, to be used as the `locals` argument during annotations evaluation.
 
@@ -83,7 +85,7 @@ class LazyLocalNamespace(Mapping[str, Any]):
         self._namespaces = namespaces
 
     @cached_property
-    def data(self) -> Mapping[str, Any]:
+    def data(self) -> dict[str, Any]:
         return {k: v for ns in self._namespaces for k, v in ns.items()}
 
     def __len__(self) -> int:
