@@ -6982,6 +6982,15 @@ def test_ser_ip_with_unexpected_value() -> None:
         assert ta.dump_python(123)
 
 
+def test_ser_ip_python_and_json() -> None:
+    ta = TypeAdapter(ipaddress.IPv4Address)
+
+    ip = ta.validate_python('127.0.0.1')
+    assert ta.dump_python(ip) == ip
+    assert ta.dump_python(ip, mode='json') == '127.0.0.1'
+    assert ta.dump_json(ip) == b'"127.0.0.1"'
+
+
 @pytest.mark.parametrize('input_data', ['1/3', 1.333, Fraction(1, 3), Decimal('1.333')])
 def test_fraction_validation_lax(input_data) -> None:
     ta = TypeAdapter(Fraction)
