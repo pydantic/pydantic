@@ -207,13 +207,14 @@ print(m.model_dump())
 """
 ```
 
-Self-referencing models are supported. For more details, see [postponed annotations](postponed_annotations.md#self-referencing-or-recursive-models).
+Self-referencing models are supported. For more details, see  the documentation related to
+[forward annotations](forward_annotations.md#self-referencing-or-recursive-models).
 
 ## Rebuilding model schema
 
 When you define a model class in your code, Pydantic will analyze the body of the class to collect a variety of information
 required to perform validation and serialization, gathered in a core schema. Notably, the model's type annotations are evaluated to
-understand the valid types for each field (more information can be found in the [Architecture](../architecture.md) documentation).
+understand the valid types for each field (more information can be found in the [Architecture](../internals/architecture.md) documentation).
 However, it might be the case that annotations refer to symbols not defined when the model class is being created.
 To circumvent this issue, the [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild] method can be used:
 
@@ -254,9 +255,7 @@ print(Foo.model_json_schema())
 ```
 
 1. `Bar` is not yet defined when the `Foo` class is being created. For this reason,
-   a [string annotation](https://typing.readthedocs.io/en/latest/spec/annotations.html#string-annotations)
-   is being used. Alternatively, postponed annotations can be used with the `from __future__ import annotations` import
-   (see [PEP 563](https://peps.python.org/pep-0563/)).
+    a [forward annotation](forward_annotations.md) is being used.
 
 Pydantic tries to determine when this is necessary automatically and error if it wasn't done, but you may want to
 call [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild] proactively when dealing with recursive models or generics.
