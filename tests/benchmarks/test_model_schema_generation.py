@@ -338,7 +338,7 @@ def test_nested_recursive_model_schema_generation(benchmark):
 
     class Tree(DeferredModel):
         root: Node
-        metadata: dict[str, 'Tree'] = Field(default_factory=dict)
+        metadata: Dict[str, 'Tree'] = Field(default_factory=dict)
 
     benchmark(rebuild_model, Tree)
 
@@ -354,7 +354,7 @@ def test_nested_recursive_generic_model_schema_generation(benchmark):
 
     class GenericTree(DeferredModel, Generic[T]):
         root: GenericNode[T]
-        metadata: dict[str, 'GenericTree[T]'] = Field(default_factory=dict)
+        metadata: Dict[str, 'GenericTree[T]'] = Field(default_factory=dict)
 
     benchmark(rebuild_model, GenericTree[int])
 
