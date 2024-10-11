@@ -31,7 +31,7 @@ from pydantic import (
 )
 from pydantic.dataclasses import dataclass, rebuild_dataclass
 
-from .shared import StdLibTypes
+from .shared import PydanticTypes, StdLibTypes
 
 
 class DeferredModel(BaseModel):
@@ -297,3 +297,13 @@ def test_stdlib_type_schema_generation(benchmark, field_type):
         field: field_type
 
     benchmark(rebuild_model, StdlibTypeModel)
+
+
+@pytest.mark.parametrize('field_type', PydanticTypes)
+@pytest.mark.benchmark(group='pydantic_custom_types_schema_generation')
+@pytest.mark.skip('Clutters codspeed CI, but should be enabled on branches where we modify schema building.')
+def test_pydantic_custom_types_schema_generation(benchmark, field_type):
+    class PydanticTypeModel(DeferredModel):
+        field: field_type
+
+    benchmark(rebuild_model, PydanticTypeModel)

@@ -1414,6 +1414,68 @@ print(validation_schema)
 """
 ```
 
+### JSON schema sorting
+
+By default, Pydantic recursively sorts JSON schemas by alphabetically sorting keys. Notably, Pydantic skips sorting the values of the `properties` key,
+to preserve the order of the fields as they were defined in the model.
+
+If you would like to customize this behavior, you can override the `sort` method in your custom `GenerateJsonSchema` subclass. The below example
+uses a no-op `sort` method to disable sorting entirely, which is reflected in the preserved order of the model fields and `json_schema_extra` keys:
+
+```py
+import json
+from typing import Optional
+
+from pydantic import BaseModel, Field
+from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
+
+
+class MyGenerateJsonSchema(GenerateJsonSchema):
+    def sort(
+        self, value: JsonSchemaValue, parent_key: Optional[str] = None
+    ) -> JsonSchemaValue:
+        """No-op, we don't want to sort schema values at all."""
+        return value
+
+
+class Bar(BaseModel):
+    c: str
+    b: str
+    a: str = Field(json_schema_extra={'c': 'hi', 'b': 'hello', 'a': 'world'})
+
+
+json_schema = Bar.model_json_schema(schema_generator=MyGenerateJsonSchema)
+print(json.dumps(json_schema, indent=2))
+"""
+{
+  "type": "object",
+  "properties": {
+    "c": {
+      "type": "string",
+      "title": "C"
+    },
+    "b": {
+      "type": "string",
+      "title": "B"
+    },
+    "a": {
+      "type": "string",
+      "c": "hi",
+      "b": "hello",
+      "a": "world",
+      "title": "A"
+    }
+  },
+  "required": [
+    "c",
+    "b",
+    "a"
+  ],
+  "title": "Bar"
+}
+"""
+```
+
 ## Customizing the `$ref`s in JSON Schema
 
 The format of `$ref`s can be altered by calling [`model_json_schema()`][pydantic.main.BaseModel.model_json_schema]

@@ -1,6 +1,7 @@
 import json
 import platform
 import re
+import sys
 import warnings
 from collections import defaultdict
 from copy import deepcopy
@@ -3340,3 +3341,15 @@ def test_nested_v1_model_warns() -> None:
 
         class V2Model(BaseModel):
             inner: V1Model
+
+
+@pytest.mark.skipif(sys.version_info < (3, 13), reason='requires python 3.13')
+def test_replace() -> None:
+    from copy import replace
+
+    class Model(BaseModel):
+        x: int
+        y: int
+
+    m = Model(x=1, y=2)
+    assert replace(m, x=3) == Model(x=3, y=2)
