@@ -3719,6 +3719,25 @@ def test_socket_exists(tmp_path):
         assert Model(path=target).path == target
 
 
+def test_socket_not_exists(tmp_path):
+    target = tmp_path / 's'
+
+    class Model(BaseModel):
+        path: SocketPath
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(path=target)
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'path_not_socket',
+            'loc': ('path',),
+            'msg': 'Path does not point to a socket',
+            'input': target,
+        }
+    ]
+
+
 @pytest.mark.parametrize('value', ('/nonexistentdir/foo.py', Path('/nonexistentdir/foo.py')))
 def test_new_path_validation_parent_does_not_exist(value):
     class Model(BaseModel):
@@ -6961,6 +6980,15 @@ def test_ser_ip_with_unexpected_value() -> None:
 
     with pytest.warns(UserWarning, match='serialized value may not be as expected.'):
         assert ta.dump_python(123)
+
+
+def test_ser_ip_python_and_json() -> None:
+    ta = TypeAdapter(ipaddress.IPv4Address)
+
+    ip = ta.validate_python('127.0.0.1')
+    assert ta.dump_python(ip) == ip
+    assert ta.dump_python(ip, mode='json') == '127.0.0.1'
+    assert ta.dump_json(ip) == b'"127.0.0.1"'
 
 
 @pytest.mark.parametrize('input_data', ['1/3', 1.333, Fraction(1, 3), Decimal('1.333')])

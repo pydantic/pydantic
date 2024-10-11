@@ -19,6 +19,7 @@ from typing_extensions import Literal, TypeAlias, Unpack, deprecated
 
 from . import types
 from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils
+from ._internal._namespace_utils import GlobalsNamespace, MappingNamespace
 from .aliases import AliasChoices, AliasPath
 from .config import JsonDict
 from .errors import PydanticUserError
@@ -596,7 +597,12 @@ class FieldInfo(_repr.Representation):
             # Annotated arguments must be a tuple
             return typing_extensions.Annotated[(self.annotation, *self.metadata)]  # type: ignore
 
-    def apply_typevars_map(self, typevars_map: dict[Any, Any] | None, types_namespace: dict[str, Any] | None) -> None:
+    def apply_typevars_map(
+        self,
+        typevars_map: dict[Any, Any] | None,
+        globalns: GlobalsNamespace | None = None,
+        localns: MappingNamespace | None = None,
+    ) -> None:
         """Apply a `typevars_map` to the annotation.
 
         This method is used when analyzing parametrized generic types to replace typevars with their concrete types.
@@ -605,13 +611,14 @@ class FieldInfo(_repr.Representation):
 
         Args:
             typevars_map: A dictionary mapping type variables to their concrete types.
-            types_namespace (dict | None): A dictionary containing related types to the annotated type.
+            globalns: The globals namespace to use during type annotation evaluation.
+            localns: The locals namespace to use during type annotation evaluation.
 
         See Also:
             pydantic._internal._generics.replace_types is used for replacing the typevars with
                 their concrete types.
         """
-        annotation = _typing_extra.eval_type_lenient(self.annotation, types_namespace)
+        annotation = _typing_extra.eval_type(self.annotation, globalns, localns, lenient=True)
         self.annotation = _generics.replace_types(annotation, typevars_map)
 
     def __repr_args__(self) -> ReprArgs:

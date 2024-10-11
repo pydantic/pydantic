@@ -2,6 +2,7 @@ from __future__ import annotations as _annotations
 
 import warnings
 from contextlib import contextmanager
+from re import Pattern
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -76,7 +77,7 @@ class ConfigWrapper:
     # whether to validate default values during validation, default False
     validate_default: bool
     validate_return: bool
-    protected_namespaces: tuple[str, ...]
+    protected_namespaces: tuple[str | Pattern[str], ...]
     hide_input_in_errors: bool
     defer_build: bool
     plugin_settings: dict[str, object] | None
@@ -153,15 +154,13 @@ class ConfigWrapper:
                 except KeyError:
                     raise AttributeError(f'Config has no attribute {name!r}') from None
 
-    def core_config(self, obj: Any) -> core_schema.CoreConfig:
-        """Create a pydantic-core config, `obj` is just used to populate `title` if not set in config.
-
-        Pass `obj=None` if you do not want to attempt to infer the `title`.
+    def core_config(self, title: str | None) -> core_schema.CoreConfig:
+        """Create a pydantic-core config.
 
         We don't use getattr here since we don't want to populate with defaults.
 
         Args:
-            obj: An object used to populate `title` if not set in config.
+            title: The title to use if not set in config.
 
         Returns:
             A `CoreConfig` object created from config.
@@ -184,7 +183,7 @@ class ConfigWrapper:
             config['ser_json_timedelta'] = 'seconds_float'
 
         core_config_values = {
-            'title': config.get('title') or (obj and obj.__name__),
+            'title': config.get('title') or title or None,
             'extra_fields_behavior': config.get('extra'),
             'allow_inf_nan': config.get('allow_inf_nan'),
             'populate_by_name': config.get('populate_by_name'),
@@ -272,7 +271,7 @@ config_defaults = ConfigDict(
     ser_json_inf_nan='null',
     validate_default=False,
     validate_return=False,
-    protected_namespaces=('model_',),
+    protected_namespaces=('model_validate', 'model_dump'),
     hide_input_in_errors=False,
     json_encoders=None,
     defer_build=False,

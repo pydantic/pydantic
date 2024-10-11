@@ -1,5 +1,5 @@
-!!! warning "🚧 Work in Progress"
-    This page is a work in progress. More examples will be added soon.
+Pydantic models are a great way to validating and serializing data for requests and responses.
+Pydantic is instrumental in many web frameworks and libraries, such as FastAPI, Django, Flask, and HTTPX.
 
 ## `httpx` requests
 

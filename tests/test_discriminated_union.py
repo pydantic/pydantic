@@ -1803,7 +1803,9 @@ def test_callable_discriminated_union_with_missing_tag() -> None:
         assert exc_info.code == 'callable-discriminator-no-tag'
 
 
-@pytest.mark.xfail(reason='Issue not yet fixed, see: https://github.com/pydantic/pydantic/issues/8271.')
+@pytest.mark.xfail(
+    reason='Issue not yet fixed, see: https://github.com/pydantic/pydantic/issues/8271. At the moment, JSON schema gen warns with a PydanticJsonSchemaWarning.'
+)
 def test_presence_of_discriminator_when_generating_type_adaptor_json_schema_definitions() -> None:
     class ItemType(str, Enum):
         ITEM1 = 'item1'
@@ -1829,11 +1831,11 @@ def test_presence_of_discriminator_when_generating_type_adaptor_json_schema_defi
             ]
         ]
 
-    adaptor = TypeAdapter(
+    adapter = TypeAdapter(
         Annotated[CreateObjectDto, FieldInfo(examples=[{'id': 1, 'items': [{'id': 3, 'type': 'ITEM1'}]}])]
     )
 
-    schema_map, definitions = GenerateJsonSchema().generate_definitions([(adaptor, 'validation', adaptor.core_schema)])
+    schema_map, definitions = GenerateJsonSchema().generate_definitions([(adapter, 'validation', adapter.core_schema)])
     assert definitions == {
         'CreateItem1': {
             'properties': {'id': {'title': 'Id', 'type': 'integer'}, 'type': {'const': 'item1', 'title': 'Type'}},

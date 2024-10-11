@@ -14,6 +14,7 @@ from __future__ import annotations as _annotations
 import dataclasses
 import inspect
 import math
+import os
 import re
 import warnings
 from collections import defaultdict
@@ -112,7 +113,7 @@ def update_json_schema(schema: JsonSchemaValue, updates: dict[str, Any]) -> Json
     return schema
 
 
-JsonSchemaWarningKind = Literal['skipped-choice', 'non-serializable-default']
+JsonSchemaWarningKind = Literal['skipped-choice', 'non-serializable-default', 'skipped-discriminator']
 """
 A type alias representing the kinds of warnings that can be emitted during JSON schema generation.
 
@@ -336,6 +337,8 @@ class GenerateJsonSchema:
             try:
                 mapping[key] = getattr(self, method_name)
             except AttributeError as e:  # pragma: no cover
+                if os.environ['PYDANTIC_PRIVATE_ALLOW_UNHANDLED_SCHEMA_TYPES'] == '1':
+                    continue
                 raise TypeError(
                     f'No method for generating JsonSchema for core_schema.type={key!r} '
                     f'(expected: {type(self).__name__}.{method_name})'
@@ -389,7 +392,7 @@ class GenerateJsonSchema:
         json_schema = {'$defs': self.definitions}
         json_schema = definitions_remapping.remap_json_schema(json_schema)
         self._used = True
-        return json_schemas_map, _sort_json_schema(json_schema['$defs'])  # type: ignore
+        return json_schemas_map, self.sort(json_schema['$defs'])  # type: ignore
 
     def generate(self, schema: CoreSchema, mode: JsonSchemaMode = 'validation') -> JsonSchemaValue:
         """Generates a JSON schema for a specified schema in a specified mode.
@@ -438,7 +441,7 @@ class GenerateJsonSchema:
         # json_schema['$schema'] = self.schema_dialect
 
         self._used = True
-        return _sort_json_schema(json_schema)
+        return self.sort(json_schema)
 
     def generate_inner(self, schema: CoreSchemaOrField) -> JsonSchemaValue:  # noqa: C901
         """Generates a JSON schema for a given core schema.
@@ -466,7 +469,6 @@ class GenerateJsonSchema:
                 core_ref = CoreRef(core_schema['ref'])  # type: ignore[typeddict-item]
                 defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
                 json_ref = JsonRef(ref_json_schema['$ref'])
-                self.json_to_defs_refs[json_ref] = defs_ref
                 # Replace the schema if it's not a reference to itself
                 # What we want to avoid is having the def be just a ref to itself
                 # which is what would happen if we blindly assigned any
@@ -553,6 +555,38 @@ class GenerateJsonSchema:
         if _core_utils.is_core_schema(schema):
             json_schema = populate_defs(schema, json_schema)
         return json_schema
+
+    def sort(self, value: JsonSchemaValue, parent_key: str | None = None) -> JsonSchemaValue:
+        """Override this method to customize the sorting of the JSON schema (e.g., don't sort at all, sort all keys unconditionally, etc.)
+
+        By default, alphabetically sort the keys in the JSON schema, skipping the 'properties' and 'default' keys to preserve field definition order.
+        This sort is recursive, so it will sort all nested dictionaries as well.
+        """
+        sorted_dict: dict[str, JsonSchemaValue] = {}
+        keys = value.keys()
+        if parent_key not in ('properties', 'default'):
+            keys = sorted(keys)
+        for key in keys:
+            sorted_dict[key] = self._sort_recursive(value[key], parent_key=key)
+        return sorted_dict
+
+    def _sort_recursive(self, value: Any, parent_key: str | None = None) -> Any:
+        """Recursively sort a JSON schema value."""
+        if isinstance(value, dict):
+            sorted_dict: dict[str, JsonSchemaValue] = {}
+            keys = value.keys()
+            if parent_key not in ('properties', 'default'):
+                keys = sorted(keys)
+            for key in keys:
+                sorted_dict[key] = self._sort_recursive(value[key], parent_key=key)
+            return sorted_dict
+        elif isinstance(value, list):
+            sorted_list: list[JsonSchemaValue] = []
+            for item in value:
+                sorted_list.append(self._sort_recursive(item, parent_key))
+            return sorted_list
+        else:
+            return value
 
     # ### Schema generation methods
     def any_schema(self, schema: core_schema.AnySchema) -> JsonSchemaValue:
@@ -958,16 +992,25 @@ class GenerateJsonSchema:
         """
         json_schema: JsonSchemaValue = {'type': 'object'}
 
-        keys_schema = self.generate_inner(schema['keys_schema']).copy() if 'keys_schema' in schema else {}
+        keys_schema = self.resolve_schema_to_update(
+            self.generate_inner(schema['keys_schema']).copy() if 'keys_schema' in schema else {}
+        )
         keys_pattern = keys_schema.pop('pattern', None)
 
         values_schema = self.generate_inner(schema['values_schema']).copy() if 'values_schema' in schema else {}
-        values_schema.pop('title', None)  # don't give a title to the additionalProperties
+        # don't give a title to additionalProperties, patternProperties and propertyNames
+        values_schema.pop('title', None)
+        keys_schema.pop('title', None)
         if values_schema or keys_pattern is not None:  # don't add additionalProperties if it's empty
             if keys_pattern is None:
                 json_schema['additionalProperties'] = values_schema
             else:
                 json_schema['patternProperties'] = {keys_pattern: values_schema}
+
+        # The len check indicates that constraints are probably present:
+        if keys_schema.get('type') == 'string' and len(keys_schema) > 1:
+            keys_schema.pop('type')
+            json_schema['propertyNames'] = keys_schema
 
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.object)
         return json_schema
@@ -1201,9 +1244,14 @@ class GenerateJsonSchema:
                     continue  # this means that the "alias" does not represent a field
                 alias_is_present_on_all_choices = True
                 for choice in one_of_choices:
-                    while '$ref' in choice:
-                        assert isinstance(choice['$ref'], str)
-                        choice = self.get_schema_from_definitions(JsonRef(choice['$ref'])) or {}
+                    try:
+                        choice = self.resolve_schema_to_update(choice)
+                    except RuntimeError as exc:
+                        # TODO: fixme - this is a workaround for the fact that we can't always resolve refs
+                        # for tagged union choices at this point in the schema gen process, we might need to do
+                        # another pass at the end like we do for core schemas
+                        self.emit_warning('skipped-discriminator', str(exc))
+                        choice = {}
                     properties = choice.get('properties', {})
                     if not isinstance(properties, dict) or alias not in properties:
                         alias_is_present_on_all_choices = False
@@ -2347,24 +2395,6 @@ def _make_json_hashable(value: JsonValue) -> _HashableJsonValue:
         return tuple(sorted((k, _make_json_hashable(v)) for k, v in value.items()))
     elif isinstance(value, list):
         return tuple(_make_json_hashable(v) for v in value)
-    else:
-        return value
-
-
-def _sort_json_schema(value: JsonSchemaValue, parent_key: str | None = None) -> JsonSchemaValue:
-    if isinstance(value, dict):
-        sorted_dict: dict[str, JsonSchemaValue] = {}
-        keys = value.keys()
-        if (parent_key != 'properties') and (parent_key != 'default'):
-            keys = sorted(keys)
-        for key in keys:
-            sorted_dict[key] = _sort_json_schema(value[key], parent_key=key)
-        return sorted_dict
-    elif isinstance(value, list):
-        sorted_list: list[JsonSchemaValue] = []
-        for item in value:  # type: ignore
-            sorted_list.append(_sort_json_schema(item, parent_key))
-        return sorted_list  # type: ignore
     else:
         return value
 
