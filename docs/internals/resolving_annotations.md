@@ -17,7 +17,7 @@ class Node:
         self.right = r
 ```
 
-To circumvent this issue, forward references can be used (by wrapping the annotation into quotes).
+To circumvent this issue, forward references can be used (by wrapping the annotation in quotes).
 
 In Python 3.7, [PEP 563] introduced the concept of _postponed evaluation of annotations_, meaning
 with the `from __future__ import annotations` [future statement], type hints are stringified by default:
@@ -30,7 +30,7 @@ from pydantic import BaseModel
 
 class Foo(BaseModel):
     f: MyType
-    # Without the future import, equivalent to:
+    # Given the future import above, this is equivalent to:
     # f: 'MyType'
 
 
@@ -44,22 +44,23 @@ print(Foo.__annotations__)
 
 Static type checkers make use of the <abbr title="Abstract Syntax Tree">AST</abbr> to analyze the defined annotations.
 Regarding the previous example, this has the benefit of being able to understand what `MyType` refers to when analyzing
-the class definition of `Foo`, even if it isn't yet defined at runtime.
+the class definition of `Foo`, even if `MyType` isn't yet defined at runtime.
 
 However, for runtime tools such as Pydantic, it is more challenging to correctly resolve these forward annotations.
 The Python standard library provides some tools to do so ([`typing.get_type_hints()`][typing.get_type_hints],
 [`inspect.get_annotations()`][inspect.get_annotations]), but they come with some limitations. Thus, they are
 being re-implemented in Pydantic with improved support for edge cases.
 
-For a long time, Pydantic has tried to support many cases, resulting in a messy annotations evaluation logic
-(which would allow invalid use cases from a static type checking perspective to work). In 2.10, the internal logic
-was refactored to support more cases while still trying to be backwards compatible. There's a hope that [PEP 649]
-(introduced in Python 3.14) will greatly simplify the process, especially when it comes to dealing with locals
+As Pydantic as grown, it's adapted to support many edge cases requiring irregular patterns for annotation evaluation.
+Some of these use cases aren't necessarily sound from a static type checking perspective. In v2.10, the internal
+logic was refactored in an attempt to simplify and standardize annotation evaluation. Admittedly, backwards compatibility
+posed some challenges, and there is still some noticeable scar tissue in the codebase because of this.There's a hope that
+[PEP 649] (introduced in Python 3.14) will greatly simplify the process, especially when it comes to dealing with locals
 of a function.
 
 To evaluate forward references, Pydantic roughly follows the same logic as described in the documentation of the
 [`typing.get_type_hints()`][typing.get_type_hints] function. That is, the built-in [`eval()`][eval] function is used
-by passing the forward reference, a global and a local namespace. The namespace fetching logic is defined in the
+by passing the forward reference, a global, and a local namespace. The namespace fetching logic is defined in the
 sections below.
 
 ## Resolving annotations at class definition
@@ -95,7 +96,7 @@ def inner() -> None:
     type InnerType2 = complex
 ```
 
-When the `Model` class is being built, different [namespaces][namespace] are in play. For each base class
+When the `Model` class is being built, different [namespaces][namespace] are at play. For each base class
 of the `Model`'s [MRO][method resolution order] (in reverse order — that is, starting with `Base`), the
 following logic is applied:
 
@@ -137,10 +138,10 @@ While the namespace fetching logic is trying to be as accurate as possible, we s
 - When the `Model` class is being created inside a function, we keep a copy of the [locals][frame.f_locals] of the frame.
   This copy only includes the symbols defined in the locals when `Model` is being defined, meaning `InnerType2` won't be included
   (and will **not be** if doing a model rebuild at a later point!).
-- To avoid memory leaks, we use [weak references][weakref] to the locals of the function, meaning some forward references might
-  not resolve outside the function (1).
-- Locals of the function are only taken into account for Pydantic models, it does not apply to dataclasses, typed dictionaries
-  or named tuples.
+    - To avoid memory leaks, we use [weak references][weakref] to the locals of the function, meaning some forward references might
+    not resolve outside the function (1).
+    - Locals of the function are only taken into account for Pydantic models, but this pattern does not apply to dataclasses, typed
+    dictionaries or named tuples.
 
 </div>
 
@@ -184,7 +185,7 @@ class Bar(BaseModel):
 ```
 
 Once the fields for `Bar` have been collected (meaning annotations resolved), the `GenerateSchema` class converts
-every field into a core schema. When it encounters another class defining fields (such as dataclasses), it will
+every field into a core schema. When it encounters another class-like field type (such as a dataclass), it will
 try to evaluate annotations, following roughly the same logic as [described above](#resolving-annotations-at-class-definition).
 However, to evaluate the `'Bar | None'` annotation, `Bar` needs to be present in the globals or locals, which is normally
 *not* the case: `Bar` is being created, so it is not "assigned" to the current module's `__dict__` at that point.

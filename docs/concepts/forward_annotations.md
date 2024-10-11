@@ -1,5 +1,5 @@
-Forward annotations (wrapped into quotes) or using the `from __future__ import annotations` [future statement]
-(as introduced in [PEP563](https://www.python.org/dev/peps/pep-0563/)) is supported:
+Forward annotations (wrapped in quotes) or using the `from __future__ import annotations` [future statement]
+(as introduced in [PEP563](https://www.python.org/dev/peps/pep-0563/)) are supported:
 
 ```py
 from __future__ import annotations
@@ -19,14 +19,17 @@ print(Model(a='1'))
 #> a=1
 ```
 
-The internal logic to resolve forward annotations is described in details in [this section](../internals/annotations_resolving.md).
+As shown in the following sections, forward annotations are useful when you want to reference
+a type that is not yet defined in your code.
+
+The internal logic to resolve forward annotations is described in detail in [this section](../internals/resolving_annotations.md).
 
 ## Self-referencing (or "Recursive") Models
 
-Models with self-referencing fields are also supported. They will be resolved during model creation.
+Models with self-referencing fields are also supported. These annotations will be resolved during model creation.
 
-Within the model, can either add the `from __future__ import annotations` import or wrap the annotation
-into a string:
+Within the model, you can either add the `from __future__ import annotations` import or wrap the annotation
+in a string:
 
 ```py
 from typing import Optional
