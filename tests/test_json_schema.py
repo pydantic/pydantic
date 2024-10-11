@@ -101,6 +101,7 @@ from pydantic.types import (
     SecretStr,
     StrictBool,
     StrictStr,
+    StringConstraints,
     conbytes,
     condate,
     condecimal,
@@ -1727,6 +1728,48 @@ def test_enum_int_default():
     assert default_value == MyEnum.FOO.value
 
 
+def test_enum_dict():
+    class MyEnum(str, Enum):
+        FOO = 'foo'
+        BAR = 'bar'
+
+    class MyModel(BaseModel):
+        enum_dict: Dict[MyEnum, str]
+
+    assert MyModel.model_json_schema() == {
+        'title': 'MyModel',
+        'type': 'object',
+        'properties': {
+            'enum_dict': {
+                'title': 'Enum Dict',
+                'type': 'object',
+                'additionalProperties': {'type': 'string'},
+                'propertyNames': {'enum': ['foo', 'bar']},
+            }
+        },
+        'required': ['enum_dict'],
+    }
+
+
+def test_property_names_constraint():
+    class MyModel(BaseModel):
+        my_dict: Dict[Annotated[str, StringConstraints(max_length=1)], str]
+
+    assert MyModel.model_json_schema() == {
+        'properties': {
+            'my_dict': {
+                'additionalProperties': {'type': 'string'},
+                'propertyNames': {'maxLength': 1},
+                'title': 'My Dict',
+                'type': 'object',
+            }
+        },
+        'required': ['my_dict'],
+        'title': 'MyModel',
+        'type': 'object',
+    }
+
+
 def test_dict_default():
     class UserModel(BaseModel):
         friends: Dict[str, float] = {'a': 1.1, 'b': 2.2}
@@ -1761,6 +1804,7 @@ def test_model_default():
                     'a': {
                         'additionalProperties': {'type': 'string'},
                         'default': {'.': ''},
+                        'propertyNames': {'format': 'path'},
                         'title': 'A',
                         'type': 'object',
                     }

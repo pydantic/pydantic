@@ -1,6 +1,3 @@
-!!! warning "🚧 Work in Progress"
-    This page is a work in progress.
-
 Starting with Pydantic V2, part of the codebase is written in Rust in a separate package called `pydantic-core`.
 This was done partly in order to improve validation and serialization performance (with the cost of limited
 customization and extendibility of the internal logic).

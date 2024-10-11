@@ -1143,8 +1143,9 @@ class UuidVersion:
 
     Example:
         ```python
-        from typing_extensions import Annotated
         from uuid import UUID
+
+        from typing_extensions import Annotated
 
         from pydantic.types import UuidVersion
 
@@ -2476,9 +2477,11 @@ class EncodedBytes:
         return field_schema
 
     def __get_pydantic_core_schema__(self, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        schema = handler(source)
+        _check_annotated_type(schema['type'], 'bytes', self.__class__.__name__)
         return core_schema.with_info_after_validator_function(
             function=self.decode,
-            schema=core_schema.bytes_schema(),
+            schema=schema,
             serialization=core_schema.plain_serializer_function_ser_schema(function=self.encode),
         )
 
@@ -2509,7 +2512,7 @@ class EncodedBytes:
 
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true)
-class EncodedStr(EncodedBytes):
+class EncodedStr:
     """A str type that is encoded and decoded using the specified encoder.
 
     `EncodedStr` needs an encoder that implements `EncoderProtocol` to operate.
@@ -2563,14 +2566,25 @@ class EncodedStr(EncodedBytes):
     ```
     """
 
+    encoder: type[EncoderProtocol]
+
+    def __get_pydantic_json_schema__(
+        self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        field_schema = handler(core_schema)
+        field_schema.update(type='string', format=self.encoder.get_json_format())
+        return field_schema
+
     def __get_pydantic_core_schema__(self, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        schema = handler(source)
+        _check_annotated_type(schema['type'], 'str', self.__class__.__name__)
         return core_schema.with_info_after_validator_function(
             function=self.decode_str,
-            schema=super(EncodedStr, self).__get_pydantic_core_schema__(source=source, handler=handler),  # noqa: UP008
+            schema=schema,
             serialization=core_schema.plain_serializer_function_ser_schema(function=self.encode_str),
         )
 
-    def decode_str(self, data: bytes, _: core_schema.ValidationInfo) -> str:
+    def decode_str(self, data: str, _: core_schema.ValidationInfo) -> str:
         """Decode the data using the specified encoder.
 
         Args:
@@ -2579,7 +2593,7 @@ class EncodedStr(EncodedBytes):
         Returns:
             The decoded data.
         """
-        return data.decode()
+        return self.encoder.decode(data.encode()).decode()
 
     def encode_str(self, value: str) -> str:
         """Encode the data using the specified encoder.
@@ -2590,7 +2604,7 @@ class EncodedStr(EncodedBytes):
         Returns:
             The encoded data.
         """
-        return super(EncodedStr, self).encode(value=value.encode()).decode()  # noqa: UP008
+        return self.encoder.encode(value.encode()).decode()  # noqa: UP008
 
     def __hash__(self) -> int:
         return hash(self.encoder)
@@ -2617,10 +2631,11 @@ Warning:
     ```py
     import base64
     from typing import Literal
-    from pydantic import EncoderProtocol, EncodedBytes
-    from pydantic_core import PydanticCustomError
 
+    from pydantic_core import PydanticCustomError
     from typing_extensions import Annotated
+
+    from pydantic import EncodedBytes, EncoderProtocol
 
     class LegacyBase64Encoder(EncoderProtocol):
         @classmethod
@@ -3196,7 +3211,9 @@ class FailFast(_fields.PydanticMetadata, BaseMetadata):
 
     ```py
     from typing import List
+
     from typing_extensions import Annotated
+
     from pydantic import BaseModel, FailFast, ValidationError
 
     class Model(BaseModel):

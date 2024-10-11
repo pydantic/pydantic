@@ -39,6 +39,7 @@ from ._internal import (
     _import_utils,
     _mock_val_ser,
     _model_construction,
+    _namespace_utils,
     _repr,
     _typing_extra,
     _utils,
@@ -58,6 +59,7 @@ if TYPE_CHECKING:
 
     from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
 
+    from ._internal._namespace_utils import MappingNamespace
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
     from .deprecated.parse import Protocol as DeprecatedParseProtocol
     from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
@@ -214,7 +216,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 'A custom validator is returning a value other than `self`.\n'
                 "Returning anything other than `self` from a top level model validator isn't supported when validating via `__init__`.\n"
                 'See the `model_validator` docs (https://docs.pydantic.dev/latest/concepts/validators/#model-validators) for more details.',
-                category=None,
+                stacklevel=2,
             )
 
     # The following line sets a flag that we use to determine when `__init__` gets overridden by the user
@@ -545,7 +547,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         force: bool = False,
         raise_errors: bool = True,
         _parent_namespace_depth: int = 2,
-        _types_namespace: dict[str, Any] | None = None,
+        _types_namespace: MappingNamespace | None = None,
     ) -> bool | None:
         """Try to rebuild the pydantic-core schema for the model.
 
@@ -564,37 +566,32 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
         if not force and cls.__pydantic_complete__:
             return None
+
+        if '__pydantic_core_schema__' in cls.__dict__:
+            delattr(cls, '__pydantic_core_schema__')  # delete cached value to ensure full rebuild happens
+
+        if _types_namespace is not None:
+            rebuild_ns = _types_namespace
+        elif _parent_namespace_depth > 0:
+            rebuild_ns = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth, force=True) or {}
         else:
-            if '__pydantic_core_schema__' in cls.__dict__:
-                delattr(cls, '__pydantic_core_schema__')  # delete cached value to ensure full rebuild happens
-            if _types_namespace is not None:
-                types_namespace: dict[str, Any] | None = _types_namespace.copy()
-            else:
-                if _parent_namespace_depth > 0:
-                    frame_parent_ns = (
-                        _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth, force=True) or {}
-                    )
-                    cls_parent_ns = (
-                        _model_construction.unpack_lenient_weakvaluedict(cls.__pydantic_parent_namespace__) or {}
-                    )
-                    types_namespace = {**cls_parent_ns, **frame_parent_ns}
-                    cls.__pydantic_parent_namespace__ = _model_construction.build_lenient_weakvaluedict(types_namespace)
-                else:
-                    types_namespace = _model_construction.unpack_lenient_weakvaluedict(
-                        cls.__pydantic_parent_namespace__
-                    )
+            rebuild_ns = {}
 
-                types_namespace = _typing_extra.merge_cls_and_parent_ns(cls, types_namespace)
+        parent_ns = _model_construction.unpack_lenient_weakvaluedict(cls.__pydantic_parent_namespace__) or {}
 
-            # manually override defer_build so complete_model_class doesn't skip building the model again
-            config = {**cls.model_config, 'defer_build': False}
-            return _model_construction.complete_model_class(
-                cls,
-                cls.__name__,
-                _config.ConfigWrapper(config, check=False),
-                raise_errors=raise_errors,
-                types_namespace=types_namespace,
-            )
+        ns_resolver = _namespace_utils.NsResolver(
+            parent_namespace={**rebuild_ns, **parent_ns},
+        )
+
+        # manually override defer_build so complete_model_class doesn't skip building the model again
+        config = {**cls.model_config, 'defer_build': False}
+        return _model_construction.complete_model_class(
+            cls,
+            cls.__name__,
+            _config.ConfigWrapper(config, check=False),
+            raise_errors=raise_errors,
+            ns_resolver=ns_resolver,
+        )
 
     @classmethod
     def model_validate(
@@ -793,12 +790,16 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
                 # Attempt to rebuild the origin in case new types have been defined
                 try:
-                    # depth 3 gets you above this __class_getitem__ call
-                    origin.model_rebuild(_parent_namespace_depth=3)
+                    # depth 2 gets you above this __class_getitem__ call.
+                    # Note that we explicitly provide the parent ns, otherwise
+                    # `model_rebuild` will use the parent ns no matter if it is the ns of a module.
+                    # We don't want this here, as this has unexpected effects when a model
+                    # is being parametrized during a forward annotation evaluation.
+                    parent_ns = _typing_extra.parent_frame_namespace(parent_depth=2) or {}
+                    origin.model_rebuild(_types_namespace=parent_ns)
                 except PydanticUndefinedAnnotation:
                     # It's okay if it fails, it just means there are still undefined types
                     # that could be evaluated later.
-                    # TODO: Make sure validation fails if there are still undefined types, perhaps using MockValidator
                     pass
 
                 submodel = _generics.create_generic_submodel(model_name, origin, args, params)
@@ -847,6 +848,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             )
 
         return m
+
+    def __replace__(self, **changes: Any) -> Self:
+        """Creates a new instance of the model, replacing fields with values from changes. Relevant for v3.13+."""
+        return self.model_copy(update=changes)
 
     if not TYPE_CHECKING:
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
