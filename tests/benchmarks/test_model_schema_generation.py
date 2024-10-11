@@ -6,14 +6,13 @@ from typing import (
     Literal,
     Optional,
     Type,
-    TypedDict,
     TypeVar,
     Union,
     get_origin,
 )
 
 import pytest
-from typing_extensions import Annotated, Self
+from typing_extensions import Annotated, Self, TypedDict
 
 from pydantic import (
     AfterValidator,
