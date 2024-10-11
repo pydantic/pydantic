@@ -21,7 +21,8 @@ from typing_extensions import ParamSpec, is_typeddict
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel, IncEx
 
-from ._internal import _config, _generate_schema, _mock_val_ser, _namespace_utils, _typing_extra, _utils
+from ._internal import _config, _generate_schema, _mock_val_ser, _typing_extra, _utils
+from ._internal._namespace_utils import GlobalsNamespace, MappingNamespace, NamespacesTuple, NsResolver
 from .config import ConfigDict
 from .json_schema import (
     DEFAULT_REF_TEMPLATE,
@@ -38,7 +39,7 @@ P = ParamSpec('P')
 TypeAdapterT = TypeVar('TypeAdapterT', bound='TypeAdapter')
 
 
-def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, types_namespace: dict[str, Any]) -> CoreSchema:
+def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, ns_resolver: NsResolver) -> CoreSchema:
     """`BaseModel` uses its own `__module__` to find out where it was defined
     and then looks for symbols to resolve forward references in those globals.
     On the other hand this function can be called with arbitrary objects,
@@ -82,13 +83,7 @@ def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, types_namespa
 
     But at the very least this behavior is _subtly_ different from `BaseModel`'s.
     """
-    localns = _typing_extra.parent_frame_namespace(parent_depth=parent_depth)
-    globalns = sys._getframe(max(parent_depth - 1, 1)).f_globals
-    ns_resolver = _namespace_utils.NsResolver(
-        namespaces_tuple=_namespace_utils.NamespacesTuple(globalns, localns or {}),
-        parent_namespace=localns,
-    )
-    gen = _generate_schema.GenerateSchema(config_wrapper, ns_resolver=ns_resolver, typevars_map={})
+    gen = _generate_schema.GenerateSchema(config_wrapper, ns_resolver=ns_resolver)
     schema = gen.generate_schema(type_)
     schema = gen.clean_schema(schema)
     return schema
@@ -223,18 +218,18 @@ class TypeAdapter(Generic[T]):
         self.validator: SchemaValidator | PluggableSchemaValidator
         self.serializer: SchemaSerializer
 
-        local_ns = _typing_extra.parent_frame_namespace(parent_depth=self._parent_depth)
-        global_ns = sys._getframe(max(self._parent_depth - 1, 1)).f_globals.copy()
-        global_ns.update(local_ns or {})
-        self._init_core_attrs(types_namespace=global_ns, force=False)
+        localns: MappingNamespace = _typing_extra.parent_frame_namespace(parent_depth=self._parent_depth) or {}
+        globalns: GlobalsNamespace = sys._getframe(max(self._parent_depth - 1, 1)).f_globals.copy()
+        ns_resolver = NsResolver(namespaces_tuple=NamespacesTuple(locals=localns, globals=globalns))
+        self._init_core_attrs(ns_resolver=ns_resolver, force=False)
 
-    def _init_core_attrs(self, types_namespace: dict[str, Any], force: bool) -> bool:
+    def _init_core_attrs(self, ns_resolver: NsResolver, force: bool) -> bool:
         """Initialize the core schema, validator, and serializer for the type.
 
         If `force` is set to `False` and `_defer_build` is `True`, the core schema, validator, and serializer will be set to mocks.
 
         Args:
-            types_namespace: The types namespace to use for the schema build.
+            ns_resolver: The namespace resolver to use when building the core schema for the adapted type.
             force: Whether to force the initialization of the core schema, validator, and serializer.
 
         Returns:
@@ -253,7 +248,7 @@ class TypeAdapter(Generic[T]):
             config_wrapper = _config.ConfigWrapper(self._config)
             core_config = config_wrapper.core_config(None)
 
-            self.core_schema = _get_schema(self._type, config_wrapper, types_namespace=types_namespace)
+            self.core_schema = _get_schema(self._type, config_wrapper, ns_resolver=ns_resolver)
             self.validator = create_schema_validator(
                 schema=self.core_schema,
                 schema_type=self._type,
@@ -268,7 +263,7 @@ class TypeAdapter(Generic[T]):
         # TODO: I think we should move this to the rebuild pattern?
         if isinstance(self.core_schema, _mock_val_ser.MockCoreSchema):
             self.core_schema = self.core_schema.rebuild()  # type: ignore[assignment]
-            self._init_core_attrs(types_namespace=types_namespace, force=True)
+            self._init_core_attrs(ns_resolver=ns_resolver, force=True)
 
         self._pydantic_complete = True
         return True
@@ -319,7 +314,8 @@ class TypeAdapter(Generic[T]):
             else:
                 types_namespace = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth) or {}
 
-            return self._init_core_attrs(types_namespace=types_namespace, force=True)
+            ns_resolver = NsResolver(parent_namespace=types_namespace)
+            return self._init_core_attrs(ns_resolver=ns_resolver, force=True)
 
     def validate_python(
         self,
