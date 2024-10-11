@@ -298,3 +298,4 @@ plugins:
       'blog/pydantic-v2.md': 'https://pydantic.dev/articles/pydantic-v2'
       'examples/secrets.md': 'api/types.md#pydantic.types.Secret'
       'examples/validators.md': 'examples/custom_validators.md'
+      'architecture.md': 'internals/architecture.md'
