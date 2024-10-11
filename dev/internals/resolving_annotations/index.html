@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://docs.pydantic.dev/latest/api/pydantic_extra_types_coordinate/">
+        <link rel="canonical" href="https://docs.pydantic.dev/latest/internals/resolving_annotations/">
       
       
-        <link rel="prev" href="../pydantic_extra_types_routing_numbers/">
+        <link rel="prev" href="../architecture/">
       
       
-        <link rel="next" href="../pydantic_extra_types_mac_address/">
+        <link rel="next" href="../../examples/files/">
       
       
       <link rel="icon" href="../../favicon.png">
@@ -24,7 +24,7 @@
     
     
       
-        <title>Coordinate - Pydantic</title>
+        <title>Resolving Annotations - Pydantic</title>
       
     
     
@@ -67,11 +67,11 @@
       
         <meta  property="og:type"  content="website" >
       
-        <meta  property="og:title"  content="Coordinate - Pydantic" >
+        <meta  property="og:title"  content="Resolving Annotations - Pydantic" >
       
         <meta  property="og:description"  content="Data validation using Python type hints" >
       
-        <meta  property="og:image"  content="https://docs.pydantic.dev/latest/assets/images/social/api/pydantic_extra_types_coordinate.png" >
+        <meta  property="og:image"  content="https://docs.pydantic.dev/latest/assets/images/social/internals/resolving_annotations.png" >
       
         <meta  property="og:image:type"  content="image/png" >
       
@@ -79,15 +79,15 @@
       
         <meta  property="og:image:height"  content="630" >
       
-        <meta  property="og:url"  content="https://docs.pydantic.dev/latest/api/pydantic_extra_types_coordinate/" >
+        <meta  property="og:url"  content="https://docs.pydantic.dev/latest/internals/resolving_annotations/" >
       
         <meta  name="twitter:card"  content="summary_large_image" >
       
-        <meta  name="twitter:title"  content="Coordinate - Pydantic" >
+        <meta  name="twitter:title"  content="Resolving Annotations - Pydantic" >
       
         <meta  name="twitter:description"  content="Data validation using Python type hints" >
       
-        <meta  name="twitter:image"  content="https://docs.pydantic.dev/latest/assets/images/social/api/pydantic_extra_types_coordinate.png" >
+        <meta  name="twitter:image"  content="https://docs.pydantic.dev/latest/assets/images/social/internals/resolving_annotations.png" >
       
     
     
@@ -110,7 +110,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#pydantic_extra_types.coordinate" class="md-skip">
+        <a href="#the-challenges-of-runtime-evaluation" class="md-skip">
           Skip to content
         </a>
       
@@ -170,7 +170,7 @@ to help you monitor and understand your
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Coordinate
+              Resolving Annotations
             
           </span>
         </div>
@@ -313,21 +313,17 @@ to help you monitor and understand your
         
   
   
-    
-  
   
     
     
       
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../base_model/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../api/base_model/" class="md-tabs__link">
           
   
   API Documentation
@@ -344,11 +340,13 @@ to help you monitor and understand your
         
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../internals/architecture/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../architecture/" class="md-tabs__link">
           
   
   Internals
@@ -1156,30 +1154,25 @@ to help you monitor and understand your
       
   
   
-    
   
   
-  
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1190,7 +1183,7 @@ to help you monitor and understand your
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             API Documentation
@@ -1209,20 +1202,17 @@ to help you monitor and understand your
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_1" >
         
           
-          <label class="md-nav__link" for="__nav_3_1" id="__nav_3_1_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3_1" id="__nav_3_1_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1247,7 +1237,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../base_model/" class="md-nav__link">
+      <a href="../../api/base_model/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1268,7 +1258,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../root_model/" class="md-nav__link">
+      <a href="../../api/root_model/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1289,7 +1279,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../dataclasses/" class="md-nav__link">
+      <a href="../../api/dataclasses/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1310,7 +1300,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../type_adapter/" class="md-nav__link">
+      <a href="../../api/type_adapter/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1331,7 +1321,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../validate_call/" class="md-nav__link">
+      <a href="../../api/validate_call/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1352,7 +1342,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../fields/" class="md-nav__link">
+      <a href="../../api/fields/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1373,7 +1363,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../aliases/" class="md-nav__link">
+      <a href="../../api/aliases/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1394,7 +1384,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../config/" class="md-nav__link">
+      <a href="../../api/config/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1415,7 +1405,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../json_schema/" class="md-nav__link">
+      <a href="../../api/json_schema/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1436,7 +1426,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../errors/" class="md-nav__link">
+      <a href="../../api/errors/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1457,7 +1447,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../functional_validators/" class="md-nav__link">
+      <a href="../../api/functional_validators/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1478,7 +1468,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../functional_serializers/" class="md-nav__link">
+      <a href="../../api/functional_serializers/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1499,7 +1489,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../standard_library_types/" class="md-nav__link">
+      <a href="../../api/standard_library_types/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1520,7 +1510,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../types/" class="md-nav__link">
+      <a href="../../api/types/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1541,7 +1531,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../networks/" class="md-nav__link">
+      <a href="../../api/networks/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1562,7 +1552,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../version/" class="md-nav__link">
+      <a href="../../api/version/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1583,7 +1573,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../annotated_handlers/" class="md-nav__link">
+      <a href="../../api/annotated_handlers/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1604,7 +1594,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../experimental/" class="md-nav__link">
+      <a href="../../api/experimental/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1638,20 +1628,17 @@ to help you monitor and understand your
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2" >
         
           
-          <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1676,7 +1663,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_core/" class="md-nav__link">
+      <a href="../../api/pydantic_core/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1697,7 +1684,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_core_schema/" class="md-nav__link">
+      <a href="../../api/pydantic_core_schema/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1726,7 +1713,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_settings/" class="md-nav__link">
+      <a href="../../api/pydantic_settings/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1744,30 +1731,25 @@ to help you monitor and understand your
                 
   
   
-    
   
   
-  
     
     
     
       
       
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_4" >
         
           
-          
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_4" checked>
-        
-          
-          <label class="md-nav__link" for="__nav_3_4" id="__nav_3_4_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3_4" id="__nav_3_4_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1778,7 +1760,7 @@ to help you monitor and understand your
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_4_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3_4">
             <span class="md-nav__icon md-icon"></span>
             Pydantic Extra Types
@@ -1792,7 +1774,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_color/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_color/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1813,7 +1795,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_country/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_country/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1834,7 +1816,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_payment/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_payment/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1855,7 +1837,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_phone_numbers/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_phone_numbers/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1876,7 +1858,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_routing_numbers/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_routing_numbers/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1894,28 +1876,10 @@ to help you monitor and understand your
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Coordinate
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../api/pydantic_extra_types_coordinate/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1924,62 +1888,6 @@ to help you monitor and understand your
   
 
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="Page contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic_extra_types.coordinate" class="md-nav__link">
-    <span class="md-ellipsis">
-      coordinate
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic_extra_types.coordinate.Latitude" class="md-nav__link">
-    <span class="md-ellipsis">
-      Latitude
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic_extra_types.coordinate.Longitude" class="md-nav__link">
-    <span class="md-ellipsis">
-      Longitude
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic_extra_types.coordinate.Coordinate" class="md-nav__link">
-    <span class="md-ellipsis">
-      Coordinate
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1992,7 +1900,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_mac_address/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_mac_address/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2013,7 +1921,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_isbn/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_isbn/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2034,7 +1942,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_pendulum_dt/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_pendulum_dt/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2055,7 +1963,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_currency_code/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_currency_code/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2076,7 +1984,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_language_code/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_language_code/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2097,7 +2005,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_script_code/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_script_code/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2118,7 +2026,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_semantic_version/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_semantic_version/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2139,7 +2047,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_timezone_name/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_timezone_name/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2160,7 +2068,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../pydantic_extra_types_ulid/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_ulid/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2193,25 +2101,30 @@ to help you monitor and understand your
       
   
   
+    
   
   
+  
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -2222,7 +2135,7 @@ to help you monitor and understand your
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             Internals
@@ -2236,7 +2149,7 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../../internals/architecture/" class="md-nav__link">
+      <a href="../architecture/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2254,10 +2167,28 @@ to help you monitor and understand your
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../internals/resolving_annotations/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Resolving Annotations
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -2266,6 +2197,68 @@ to help you monitor and understand your
   
 
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-challenges-of-runtime-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      The challenges of runtime evaluation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resolving-annotations-at-class-definition" class="md-nav__link">
+    <span class="md-ellipsis">
+      Resolving annotations at class definition
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Resolving annotations at class definition">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#limitations-and-backwards-compatibility-concerns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Limitations and backwards compatibility concerns
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resolving-annotations-when-rebuilding-a-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Resolving annotations when rebuilding a model
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2960,36 +2953,42 @@ to help you monitor and understand your
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#pydantic_extra_types.coordinate" class="md-nav__link">
+  <a href="#the-challenges-of-runtime-evaluation" class="md-nav__link">
     <span class="md-ellipsis">
-      coordinate
+      The challenges of runtime evaluation
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic_extra_types.coordinate.Latitude" class="md-nav__link">
+  <a href="#resolving-annotations-at-class-definition" class="md-nav__link">
     <span class="md-ellipsis">
-      Latitude
+      Resolving annotations at class definition
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Resolving annotations at class definition">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#limitations-and-backwards-compatibility-concerns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Limitations and backwards compatibility concerns
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic_extra_types.coordinate.Longitude" class="md-nav__link">
-    <span class="md-ellipsis">
-      Longitude
-    </span>
-  </a>
+        
+      </ul>
+    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic_extra_types.coordinate.Coordinate" class="md-nav__link">
+  <a href="#resolving-annotations-when-rebuilding-a-model" class="md-nav__link">
     <span class="md-ellipsis">
-      Coordinate
+      Resolving annotations when rebuilding a model
     </span>
   </a>
   
@@ -3014,196 +3013,270 @@ to help you monitor and understand your
   
 
 
-  <h1>Coordinate</h1>
+  <h1>Resolving Annotations</h1>
 
-<div class="doc doc-object doc-module">
-
-
-
-<a id="pydantic_extra_types.coordinate"></a>
-    <div class="doc doc-contents first">
-
-        <p>The <code>pydantic_extra_types.coordinate</code> module provides the <a class="autorefs autorefs-internal" href="#pydantic_extra_types.coordinate.Latitude"><code>Latitude</code></a>,
-<a class="autorefs autorefs-internal" href="#pydantic_extra_types.coordinate.Longitude"><code>Longitude</code></a>, and
-<a class="autorefs autorefs-internal" href="#pydantic_extra_types.coordinate.Coordinate"><code>Coordinate</code></a> data types.</p>
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="pydantic_extra_types.coordinate.Latitude" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">Latitude</span>
-
-
-<a href="#pydantic_extra_types.coordinate.Latitude" class="headerlink" title="Permanent link">&para;</a></h2>
-
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code></p>
-
-
-        <p>Latitude value should be between -90 and 90, inclusive.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-<span class="kn">from</span> <span class="nn">pydantic_extra_types.coordinate</span> <span class="kn">import</span> <span class="n">Latitude</span>
-
-<span class="k">class</span> <span class="nc">Location</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">latitude</span><span class="p">:</span> <span class="n">Latitude</span>
-
-<span class="n">location</span> <span class="o">=</span> <span class="n">Location</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="mf">41.40338</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
-<span class="c1">#&gt; latitude=41.40338</span>
-</code></pre></div>
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This section is part of the <em>internals</em> documentation, and is partly targeted to contributors.</p>
 </div>
+<p>Pydantic heavily relies on <a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-type-hint">type hints</a> at runtime to build schemas for validation, serialization, etc.</p>
+<p>While type hints were primarily introduced for static type checkers (such as <a href="https://www.mypy-lang.org/">Mypy</a> or <a href="https://github.com/microsoft/pyright/">Pyright</a>), they are
+accessible (and sometimes evaluated) at runtime. This means that the following would fail at runtime,
+because <code>Node</code> has yet to be defined in the current module:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Node</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Binary tree node.&quot;&quot;&quot;</span>
 
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="pydantic_extra_types.coordinate.Longitude" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">Longitude</span>
-
-
-<a href="#pydantic_extra_types.coordinate.Longitude" class="headerlink" title="Permanent link">&para;</a></h2>
-
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code></p>
-
-
-        <p>Longitude value should be between -180 and 180, inclusive.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-
-<span class="kn">from</span> <span class="nn">pydantic_extra_types.coordinate</span> <span class="kn">import</span> <span class="n">Longitude</span>
-
-<span class="k">class</span> <span class="nc">Location</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">longitude</span><span class="p">:</span> <span class="n">Longitude</span>
-
-<span class="n">location</span> <span class="o">=</span> <span class="n">Location</span><span class="p">(</span><span class="n">longitude</span><span class="o">=</span><span class="mf">2.17403</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
-<span class="c1">#&gt; longitude=2.17403</span>
+    <span class="c1"># NameError: name &#39;Node&#39; is not defined:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">l</span><span class="p">:</span> <span class="n">Node</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="n">Node</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">l</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">r</span>
 </code></pre></div>
+<p>To circumvent this issue, forward references can be used (by wrapping the annotation in quotes).</p>
+<p>In Python 3.7, <a href="https://peps.python.org/pep-0563/">PEP 563</a> introduced the concept of <em>postponed evaluation of annotations</em>, meaning
+with the <code>from __future__ import annotations</code> <a href="https://docs.python.org/3/reference/simple_stmts.html#future">future statement</a>, type hints are stringified by default:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">f</span><span class="p">:</span> <span class="n">MyType</span>
+    <span class="c1"># Given the future import above, this is equivalent to:</span>
+    <span class="c1"># f: &#39;MyType&#39;</span>
 
 
-  <div class="doc doc-children">
+<span class="nb">type</span> <span class="n">MyType</span> <span class="o">=</span> <span class="nb">int</span>
 
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="pydantic_extra_types.coordinate.Coordinate" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">Coordinate</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
-  </span>
-
-<a href="#pydantic_extra_types.coordinate.Coordinate" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">Coordinate</span><span class="p">(</span><span class="n">latitude</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_extra_types.coordinate.Latitude" href="#pydantic_extra_types.coordinate.Latitude">Latitude</a></span><span class="p">,</span> <span class="n">longitude</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_extra_types.coordinate.Longitude" href="#pydantic_extra_types.coordinate.Longitude">Longitude</a></span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Foo</span><span class="o">.</span><span class="vm">__annotations__</span><span class="p">)</span>
+<span class="c1">#&gt; {&#39;f&#39;: &#39;MyType&#39;}</span>
 </code></pre></div>
+<h2 id="the-challenges-of-runtime-evaluation">The challenges of runtime evaluation<a class="headerlink" href="#the-challenges-of-runtime-evaluation" title="Permanent link">&para;</a></h2>
+<p>Static type checkers make use of the <abbr title="Abstract Syntax Tree">AST</abbr> to analyze the defined annotations.
+Regarding the previous example, this has the benefit of being able to understand what <code>MyType</code> refers to when analyzing
+the class definition of <code>Foo</code>, even if <code>MyType</code> isn't yet defined at runtime.</p>
+<p>However, for runtime tools such as Pydantic, it is more challenging to correctly resolve these forward annotations.
+The Python standard library provides some tools to do so (<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.get_type_hints"><code>typing.get_type_hints()</code></a>,
+<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/inspect.html#inspect.get_annotations"><code>inspect.get_annotations()</code></a>), but they come with some limitations. Thus, they are
+being re-implemented in Pydantic with improved support for edge cases.</p>
+<p>As Pydantic as grown, it's adapted to support many edge cases requiring irregular patterns for annotation evaluation.
+Some of these use cases aren't necessarily sound from a static type checking perspective. In v2.10, the internal
+logic was refactored in an attempt to simplify and standardize annotation evaluation. Admittedly, backwards compatibility
+posed some challenges, and there is still some noticeable scar tissue in the codebase because of this.There's a hope that
+<a href="https://peps.python.org/pep-0649/">PEP 649</a> (introduced in Python 3.14) will greatly simplify the process, especially when it comes to dealing with locals
+of a function.</p>
+<p>To evaluate forward references, Pydantic roughly follows the same logic as described in the documentation of the
+<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.get_type_hints"><code>typing.get_type_hints()</code></a> function. That is, the built-in <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#eval"><code>eval()</code></a> function is used
+by passing the forward reference, a global, and a local namespace. The namespace fetching logic is defined in the
+sections below.</p>
+<h2 id="resolving-annotations-at-class-definition">Resolving annotations at class definition<a class="headerlink" href="#resolving-annotations-at-class-definition" title="Permanent link">&para;</a></h2>
+<p>The following example will be used as a reference throughout this section:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="c1"># module1.py:</span>
+<span class="nb">type</span> <span class="n">MyType</span> <span class="o">=</span> <span class="nb">int</span>
 
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="pydantic._internal._repr.Representation">Representation</span></code></p>
+<span class="k">class</span> <span class="nc">Base</span><span class="p">:</span>
+    <span class="n">f1</span><span class="p">:</span> <span class="s1">&#39;MyType&#39;</span>
+
+<span class="c1"># module2.py:</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="kn">from</span> <span class="nn">module1</span> <span class="kn">import</span> <span class="n">Base</span>
+
+<span class="nb">type</span> <span class="n">MyType</span> <span class="o">=</span> <span class="nb">str</span>
 
 
-        <p>Coordinate parses Latitude and Longitude.</p>
-<p>You can use the <code>Coordinate</code> data type for storing coordinates. Coordinates can be
-defined using one of the following formats:</p>
+<span class="k">def</span> <span class="nf">inner</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="nb">type</span> <span class="n">InnerType</span> <span class="o">=</span> <span class="nb">bool</span>
+
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Base</span><span class="p">):</span>
+        <span class="nb">type</span> <span class="n">LocalType</span> <span class="o">=</span> <span class="nb">bytes</span>
+
+        <span class="n">f2</span><span class="p">:</span> <span class="s1">&#39;MyType&#39;</span>
+        <span class="n">f3</span><span class="p">:</span> <span class="s1">&#39;InnerType&#39;</span>
+        <span class="n">f4</span><span class="p">:</span> <span class="s1">&#39;LocalType&#39;</span>
+        <span class="n">f5</span><span class="p">:</span> <span class="s1">&#39;UnknownType&#39;</span>
+
+    <span class="nb">type</span> <span class="n">InnerType2</span> <span class="o">=</span> <span class="nb">complex</span>
+</code></pre></div>
+<p>When the <code>Model</code> class is being built, different <a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-namespace">namespaces</a> are at play. For each base class
+of the <code>Model</code>'s <a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-method-resolution-order">MRO</a> (in reverse order — that is, starting with <code>Base</code>), the
+following logic is applied:</p>
 <ol>
-<li>Tuple: <code>(Latitude, Longitude)</code>. For example: <code>(41.40338, 2.17403)</code>.</li>
-<li><code>Coordinate</code> instance: <code>Coordinate(latitude=Latitude, longitude=Longitude)</code>.</li>
+<li>Fetch the <code>__annotations__</code> key from the current base class' <code>__dict__</code>, if present. For <code>Base</code>, this will be
+   <code>{'f1': 'MyType'}</code>.</li>
+<li>Iterate over the <code>__annotations__</code> items and try to evaluate the annotation <sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup> using a custom wrapper around
+   the built-in <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#eval"><code>eval()</code></a> function. This function takes two <code>globals</code> and <code>locals</code> arguments:<ul>
+<li>The current module's <code>__dict__</code> is naturally used as <code>globals</code>. For <code>Base</code>, this will be
+   <code>sys.modules['module1'].__dict__</code>.</li>
+<li>For the <code>locals</code> argument, Pydantic will try to resolve symbols in the following namespaces, sorted by highest priority:<ul>
+<li>A namespace created on the fly, containing the current class name (<code>{cls.__name__: cls}</code>). This is done
+   in order to support recursive references.</li>
+<li>The locals of the current class (i.e. <code>cls.__dict__</code>). For <code>Model</code>, this will include <code>LocalType</code>.</li>
+<li>The parent namespace of the class, if different from the globals described above. This is the
+   <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/datamodel.html#frame.f_locals">locals</a> of the frame where the class is being defined. For <code>Base</code>, because the class is being
+   defined in the module directly, this namespace won't be used as it will result in the globals being used again.
+   For <code>Model</code>, the parent namespace is the locals of the frame of <code>inner()</code>.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>If the annotation failed to evaluate, it is kept as is, so that the model can be rebuilt at a later stage. This will
+   be the case for <code>f5</code>.</li>
 </ol>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-
-<span class="kn">from</span> <span class="nn">pydantic_extra_types.coordinate</span> <span class="kn">import</span> <span class="n">Coordinate</span>
-
-<span class="k">class</span> <span class="nc">Location</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">coordinate</span><span class="p">:</span> <span class="n">Coordinate</span>
-
-<span class="n">location</span> <span class="o">=</span> <span class="n">Location</span><span class="p">(</span><span class="n">coordinate</span><span class="o">=</span><span class="p">(</span><span class="mf">41.40338</span><span class="p">,</span> <span class="mf">2.17403</span><span class="p">))</span>
-<span class="c1">#&gt; coordinate=Coordinate(latitude=41.40338, longitude=2.17403)</span>
-</code></pre></div>
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-    </div>
-
+<p>The following table lists the resolved type annotations for every field, once the <code>Model</code> class has been created:</p>
+<table>
+<thead>
+<tr>
+<th>Field name</th>
+<th>Resolved annotation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>f1</code></td>
+<td><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int"><code>int</code></a></td>
+</tr>
+<tr>
+<td><code>f2</code></td>
+<td><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str"><code>str</code></a></td>
+</tr>
+<tr>
+<td><code>f3</code></td>
+<td><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool"><code>bool</code></a></td>
+</tr>
+<tr>
+<td><code>f4</code></td>
+<td><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes"><code>bytes</code></a></td>
+</tr>
+<tr>
+<td><code>f5</code></td>
+<td><code>'UnkownType'</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="limitations-and-backwards-compatibility-concerns">Limitations and backwards compatibility concerns<a class="headerlink" href="#limitations-and-backwards-compatibility-concerns" title="Permanent link">&para;</a></h3>
+<p>While the namespace fetching logic is trying to be as accurate as possible, we still face some limitations:</p>
+<div class="annotate">
+<ul>
+<li>The locals of the current class (<code>cls.__dict__</code>) may include irrelevant entries, most of them being dunder attributes.
+  This means that the following annotation: <code>f: '__doc__'</code> will successfully (and unexpectedly) be resolved.</li>
+<li>When the <code>Model</code> class is being created inside a function, we keep a copy of the <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/datamodel.html#frame.f_locals">locals</a> of the frame.
+  This copy only includes the symbols defined in the locals when <code>Model</code> is being defined, meaning <code>InnerType2</code> won't be included
+  (and will <strong>not be</strong> if doing a model rebuild at a later point!).<ul>
+<li>To avoid memory leaks, we use <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/weakref.html#module-weakref">weak references</a> to the locals of the function, meaning some forward references might
+not resolve outside the function (1).</li>
+<li>Locals of the function are only taken into account for Pydantic models, but this pattern does not apply to dataclasses, typed
+dictionaries or named tuples.</li>
+</ul>
+</li>
+</ul>
 </div>
+<ol>
+<li>
+<p>Here is an example:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">func</span><span class="p">():</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="nb">int</span>
+
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">f</span><span class="p">:</span> <span class="s1">&#39;A | Forward&#39;</span>
+
+    <span class="k">return</span> <span class="n">Model</span>
 
 
+<span class="n">Model</span> <span class="o">=</span> <span class="n">func</span><span class="p">()</span>
+
+<span class="n">Model</span><span class="o">.</span><span class="n">model_rebuild</span><span class="p">(</span><span class="n">_types_namespace</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Forward&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">})</span>
+<span class="c1"># pydantic.errors.PydanticUndefinedAnnotation: name &#39;A&#39; is not defined</span>
+</code></pre></div>
+</li>
+</ol>
+<p><a href="" id="backwards-compatibility-logic"></a></p>
+<p>For backwards compatibility reasons, and to be able to support valid use cases without having to rebuild models,
+the namespace logic described above is a bit different when it comes to core schema generation. Taking the
+following example:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-  </div>
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span>
+    <span class="n">a</span><span class="p">:</span> <span class="s1">&#39;Bar | None&#39;</span> <span class="o">=</span> <span class="kc">None</span>
 
-    </div>
 
+<span class="k">class</span> <span class="nc">Bar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">b</span><span class="p">:</span> <span class="n">Foo</span>
+</code></pre></div>
+<p>Once the fields for <code>Bar</code> have been collected (meaning annotations resolved), the <code>GenerateSchema</code> class converts
+every field into a core schema. When it encounters another class-like field type (such as a dataclass), it will
+try to evaluate annotations, following roughly the same logic as <a href="#resolving-annotations-at-class-definition">described above</a>.
+However, to evaluate the <code>'Bar | None'</code> annotation, <code>Bar</code> needs to be present in the globals or locals, which is normally
+<em>not</em> the case: <code>Bar</code> is being created, so it is not "assigned" to the current module's <code>__dict__</code> at that point.</p>
+<p class="annotate">To avoid having to call <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_rebuild"><code>model_rebuild()</code></a> on <code>Bar</code>, both the parent namespace
+(if <code>Bar</code> was to be defined inside a function, and <a href="#model-rebuild-semantics">the namespace provided during a model rebuild</a>)
+and the <code>{Bar.__name__: Bar}</code> namespace are included in the locals during annotations evaluation of <code>Foo</code>
+(with the lowest priority) (1).</p>
+<ol>
+<li>
+<p>This backwards compatibility logic can introduce some inconsistencies, such as the following:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span>
+    <span class="c1"># `a` and `b` shouldn&#39;t resolve:</span>
+    <span class="n">a</span><span class="p">:</span> <span class="s1">&#39;Model&#39;</span>
+    <span class="n">b</span><span class="p">:</span> <span class="s1">&#39;Inner&#39;</span>
+
+
+<span class="k">def</span> <span class="nf">func</span><span class="p">():</span>
+    <span class="n">Inner</span> <span class="o">=</span> <span class="nb">int</span>
+
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">foo</span><span class="p">:</span> <span class="n">Foo</span>
+
+    <span class="n">Model</span><span class="o">.</span><span class="n">__pydantic_complete__</span>
+    <span class="c1">#&gt; True, should be False.</span>
+</code></pre></div>
+</li>
+</ol>
+<h2 id="resolving-annotations-when-rebuilding-a-model">Resolving annotations when rebuilding a model<a class="headerlink" href="#resolving-annotations-when-rebuilding-a-model" title="Permanent link">&para;</a></h2>
+<p>When a forward reference fails to evaluate, Pydantic will silently fail and stop the core schema
+generation process. This can be seen by inspecting the <code>__pydantic_core_schema__</code> of a model class:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">f</span><span class="p">:</span> <span class="s1">&#39;MyType&#39;</span>
+
+
+<span class="n">Foo</span><span class="o">.</span><span class="n">__pydantic_core_schema__</span>
+<span class="c1">#&gt; &lt;pydantic._internal._mock_val_ser.MockCoreSchema object at 0x73cd0d9e6d00&gt;</span>
+</code></pre></div>
+<p>If you then properly define <code>MyType</code>, you can rebuild the model:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="nb">type</span> <span class="n">MyType</span> <span class="o">=</span> <span class="nb">int</span>
+
+<span class="n">Foo</span><span class="o">.</span><span class="n">model_rebuild</span><span class="p">()</span>
+<span class="n">Foo</span><span class="o">.</span><span class="n">__pydantic_core_schema__</span>
+<span class="c1">#&gt; {&#39;type&#39;: &#39;model&#39;, &#39;schema&#39;: {...}, ...}</span>
+</code></pre></div>
+<p><a href="" id="model-rebuild-semantics"></a></p>
+<p>The <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_rebuild"><code>model_rebuild()</code></a> method uses a <em>rebuild namespace</em>, with the following semantics:</p>
+<ul>
+<li>If an explicit <code>_types_namespace</code> argument is provided, it is used as the rebuild namespace.</li>
+<li>If no namespace is provided, the namespace where the method is called will be used as the rebuild namespace.</li>
+</ul>
+<p>This <em>rebuild namespace</em> will be merged with the model's parent namespace (if it was defined in a function) and used as is
+(see the <a href="#backwards-compatibility-logic">backwards compatibility logic</a> described above).</p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>This is done unconditionally, as forward annotations can be only present <em>as part</em> of a type hint (e.g. <code>Optional['int']</code>), as dictated by
+  the <a href="https://typing.readthedocs.io/en/latest/spec/annotations.html#string-annotations">typing specification</a>.&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+</ol>
 </div>
 
 

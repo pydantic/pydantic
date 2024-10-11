@@ -343,16 +343,17 @@ to help you monitor and understand your
   
   
   
-    <li class="md-tabs__item">
-      <a href="../../architecture/" class="md-tabs__link">
-        
-  
     
+    
+      <li class="md-tabs__item">
+        <a href="../../internals/architecture/" class="md-tabs__link">
+          
   
-  Architecture
+  Internals
 
-      </a>
-    </li>
+        </a>
+      </li>
+    
   
 
       
@@ -1333,11 +1334,11 @@ to help you monitor and understand your
   
   
     <li class="md-nav__item">
-      <a href="../postponed_annotations/" class="md-nav__link">
+      <a href="../forward_annotations/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Postponed Annotations
+    Forward Annotations
   </span>
   
 
@@ -2454,8 +2455,48 @@ to help you monitor and understand your
   
   
   
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Internals
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Internals
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
-      <a href="../../architecture/" class="md-nav__link">
+      <a href="../../internals/architecture/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2464,6 +2505,35 @@ to help you monitor and understand your
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../internals/resolving_annotations/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Resolving Annotations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -3658,11 +3728,12 @@ Models possess the following methods and attributes:</p>
 <span class="sd">}</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
-<p>Self-referencing models are supported. For more details, see <a href="../postponed_annotations/#self-referencing-or-recursive-models">postponed annotations</a>.</p>
+<p>Self-referencing models are supported. For more details, see  the documentation related to
+<a href="../forward_annotations/#self-referencing-or-recursive-models">forward annotations</a>.</p>
 <h2 id="rebuilding-model-schema">Rebuilding model schema<a class="headerlink" href="#rebuilding-model-schema" title="Permanent link">&para;</a></h2>
 <p>When you define a model class in your code, Pydantic will analyze the body of the class to collect a variety of information
 required to perform validation and serialization, gathered in a core schema. Notably, the model's type annotations are evaluated to
-understand the valid types for each field (more information can be found in the <a href="../../architecture/">Architecture</a> documentation).
+understand the valid types for each field (more information can be found in the <a href="../../internals/architecture/">Architecture</a> documentation).
 However, it might be the case that annotations refer to symbols not defined when the model class is being created.
 To circumvent this issue, the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_rebuild"><code>model_rebuild()</code></a> method can be used:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span>
@@ -3701,9 +3772,7 @@ To circumvent this issue, the <a class="autorefs autorefs-internal" href="../../
 </code></pre></div>
 <ol>
 <li><code>Bar</code> is not yet defined when the <code>Foo</code> class is being created. For this reason,
-   a <a href="https://typing.readthedocs.io/en/latest/spec/annotations.html#string-annotations">string annotation</a>
-   is being used. Alternatively, postponed annotations can be used with the <code>from __future__ import annotations</code> import
-   (see <a href="https://peps.python.org/pep-0563/">PEP 563</a>).</li>
+    a <a href="../forward_annotations/">forward annotation</a> is being used.</li>
 </ol>
 <p>Pydantic tries to determine when this is necessary automatically and error if it wasn't done, but you may want to
 call <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_rebuild"><code>model_rebuild()</code></a> proactively when dealing with recursive models or generics.</p>
