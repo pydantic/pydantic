@@ -217,7 +217,7 @@ def get_origin(v: Any) -> Any:
     return typing_extensions.get_origin(v)
 
 
-def get_standard_typevars_map(cls: type[Any]) -> dict[TypeVarType, Any] | None:
+def get_standard_typevars_map(cls: Any) -> dict[TypeVarType, Any] | None:
     """Package a generic type's typevars and parametrization (if present) into a dictionary compatible with the
     `replace_types` function. Specifically, this works with standard typing generics and typing._GenericAlias.
     """

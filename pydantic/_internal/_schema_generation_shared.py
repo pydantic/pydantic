@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from ..json_schema import GenerateJsonSchema, JsonSchemaValue
     from ._core_utils import CoreSchemaOrField
     from ._generate_schema import GenerateSchema
+    from ._namespace_utils import NamespacesTuple
 
     GetJsonSchemaFunction = Callable[[CoreSchemaOrField, GetJsonSchemaHandler], JsonSchemaValue]
     HandlerOverride = Callable[[CoreSchemaOrField], JsonSchemaValue]
@@ -90,7 +91,7 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
         else:  # ref_mode = 'unpack
             return self.resolve_ref_schema(schema)
 
-    def _get_types_namespace(self) -> dict[str, Any] | None:
+    def _get_types_namespace(self) -> NamespacesTuple:
         return self._generate_schema._types_namespace
 
     def generate_schema(self, source_type: Any, /) -> core_schema.CoreSchema:

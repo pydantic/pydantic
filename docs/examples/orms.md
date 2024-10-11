@@ -1,6 +1,3 @@
-!!! warning "🚧 Work in Progress"
-    This page is a work in progress. More examples will be added soon.
-
 Pydantic serves as a great tool for defining models for ORM (object relational mapping) libraries.
 ORMs are used to map objects to database tables, and vice versa.
 

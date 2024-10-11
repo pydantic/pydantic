@@ -2,6 +2,7 @@
 
 from __future__ import annotations as _annotations
 
+from re import Pattern
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, TypeVar, Union
 
 from typing_extensions import Literal, TypeAlias, TypedDict
@@ -612,13 +613,22 @@ class ConfigDict(TypedDict, total=False):
     validate_return: bool
     """whether to validate the return value from call validators. Defaults to `False`."""
 
-    protected_namespaces: tuple[str, ...]
+    protected_namespaces: tuple[str | Pattern[str], ...]
     """
-    A `tuple` of strings that prevent model to have field which conflict with them.
-    Defaults to `('model_', )`).
+    A `tuple` of strings and/or patterns that prevent models from having fields with names that conflict with them.
+    For strings, we match on a prefix basis. Ex, if 'dog' is in the protected namespace, 'dog_name' will be protected.
+    For patterns, we match on the entire field name. Ex, if `re.compile(r'^dog$')` is in the protected namespace, 'dog' will be protected, but 'dog_name' will not be.
+    Defaults to `('model_validate', 'model_dump')`).
 
-    Pydantic prevents collisions between model attributes and `BaseModel`'s own methods by
-    namespacing them with the prefix `model_`.
+    The reason we've selected these is to prevent collisions with other validation / dumping formats
+    in the future - ex, model_validate_{some_newly_supported_format}.
+
+    Before v2.10, Pydantic used `('model_',)` as the default value for this setting to
+    prevent collisions between model attributes and `BaseModel`'s own methods. This was changed
+    in v2.10 given feedback that this restriction was limiting in AI and data science contexts,
+    where it is common to have fields with names like `model_id`, `model_input`, `model_output`, etc.
+
+    For more details, see https://github.com/pydantic/pydantic/issues/10315.
 
     ```py
     import warnings
@@ -630,42 +640,51 @@ class ConfigDict(TypedDict, total=False):
     try:
 
         class Model(BaseModel):
-            model_prefixed_field: str
+            model_dump_something: str
 
     except UserWarning as e:
         print(e)
         '''
-        Field "model_prefixed_field" in Model has conflict with protected namespace "model_".
+        Field "model_dump_something" in Model has conflict with protected namespace "model_dump".
 
-        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ()`.
+        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('model_validate',)`.
         '''
     ```
 
     You can customize this behavior using the `protected_namespaces` setting:
 
-    ```py
+    ```py test="skip"
+    import re
     import warnings
 
     from pydantic import BaseModel, ConfigDict
 
-    warnings.filterwarnings('error')  # Raise warnings as errors
-
-    try:
+    with warnings.catch_warnings(record=True) as caught_warnings:
+        warnings.simplefilter('always')  # Catch all warnings
 
         class Model(BaseModel):
-            model_prefixed_field: str
+            safe_field: str
             also_protect_field: str
+            protect_this: str
 
             model_config = ConfigDict(
-                protected_namespaces=('protect_me_', 'also_protect_')
+                protected_namespaces=(
+                    'protect_me_',
+                    'also_protect_',
+                    re.compile('^protect_this$'),
+                )
             )
 
-    except UserWarning as e:
-        print(e)
+    for warning in caught_warnings:
+        print(f'{warning.message}\n')
         '''
         Field "also_protect_field" in Model has conflict with protected namespace "also_protect_".
 
-        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_',)`.
+        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_', re.compile('^protect_this$'))`.
+
+        Field "protect_this" in Model has conflict with protected namespace "re.compile('^protect_this$')".
+
+        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_', 'also_protect_')`.
         '''
     ```
 
@@ -673,12 +692,14 @@ class ConfigDict(TypedDict, total=False):
     an error _is_ raised if there is an actual collision with an existing attribute:
 
     ```py
-    from pydantic import BaseModel
+    from pydantic import BaseModel, ConfigDict
 
     try:
 
         class Model(BaseModel):
             model_validate: str
+
+            model_config = ConfigDict(protected_namespaces=('model_',))
 
     except NameError as e:
         print(e)

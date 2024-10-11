@@ -108,7 +108,7 @@ docs = [
     "autoflake",
     "mkdocs",
     "mkdocs-exclude",
-    "mkdocs-material",
+    "mkdocs-material[imaging]",
     "mkdocs-redirects",
     "mkdocstrings-python",
     "tomli",

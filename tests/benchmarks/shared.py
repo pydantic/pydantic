@@ -32,7 +32,41 @@ from uuid import UUID, uuid4, uuid5
 
 from typing_extensions import Literal, TypedDict
 
-from pydantic import BaseModel
+from pydantic import (
+    UUID1,
+    UUID3,
+    UUID4,
+    UUID5,
+    Base64Bytes,
+    Base64Str,
+    Base64UrlBytes,
+    Base64UrlStr,
+    BaseModel,
+    ByteSize,
+    DirectoryPath,
+    FilePath,
+    FiniteFloat,
+    FutureDate,
+    ImportString,
+    Json,
+    JsonValue,
+    NegativeFloat,
+    NegativeInt,
+    NewPath,
+    NonNegativeFloat,
+    NonNegativeInt,
+    NonPositiveFloat,
+    NonPositiveInt,
+    OnErrorOmit,
+    PastDate,
+    PastDatetime,
+    PositiveFloat,
+    PositiveInt,
+    Secret,
+    SecretBytes,
+    SecretStr,
+    StrictBool,
+)
 
 
 class SimpleModel(BaseModel):
@@ -152,4 +186,48 @@ StdLibTypes = [
     Literal['apple', 'pumpkin'],  #
     Type[Foo],  # typing.Type
     Any,  # typing.Any
+]
+
+PydanticTypes = [
+    StrictBool,
+    PositiveInt,
+    PositiveFloat,
+    NegativeInt,
+    NegativeFloat,
+    NonNegativeInt,
+    NonPositiveInt,
+    NonNegativeFloat,
+    NonPositiveFloat,
+    FiniteFloat,
+    UUID1,
+    UUID3,
+    UUID4,
+    UUID5,
+    FilePath,
+    DirectoryPath,
+    NewPath,
+    Base64Bytes,
+    Base64Str,
+    Base64UrlBytes,
+    Base64UrlStr,
+    JsonValue,
+    OnErrorOmit,
+    ImportString,
+    Json[Any],
+    Json[List[int]],
+    Json[List[str]],
+    Json[List[bytes]],
+    Json[List[float]],
+    Json[List[Any]],
+    Secret[bool],
+    Secret[int],
+    Secret[float],
+    Secret[str],
+    Secret[bytes],
+    SecretStr,
+    SecretBytes,
+    ByteSize,
+    PastDate,
+    FutureDate,
+    PastDatetime,
 ]
