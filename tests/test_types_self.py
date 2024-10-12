@@ -7,7 +7,7 @@ import pytest
 import typing_extensions
 from typing_extensions import NamedTuple, TypedDict
 
-from pydantic import BaseModel, Field, TypeAdapter, ValidationError
+from pydantic import BaseModel, Field, PydanticUserError, TypeAdapter, ValidationError, validate_call
 
 
 @pytest.fixture(
@@ -171,3 +171,27 @@ def test_self_type_in_dataclass(Self):
     assert m.item.ref.x == 2
     with pytest.raises(dataclasses.FrozenInstanceError):
         m.item.ref.x = 3
+
+
+def test_invalid_validate_call(Self):
+    with pytest.raises(PydanticUserError, match='`typing.Self` is invalid in this context'):
+
+        @validate_call
+        def foo(self: Self):
+            pass
+
+
+def test_invalid_validate_call_of_method(Self):
+    with pytest.raises(PydanticUserError, match='`typing.Self` is invalid in this context'):
+
+        class A(BaseModel):
+            @validate_call
+            def foo(self: Self):
+                pass
+
+
+def test_invalid_type_adapter(Self):
+    with pytest.raises(PydanticUserError, match='`typing.Self` is invalid in this context'):
+
+        class A(BaseModel):
+            TypeAdapter(Self)

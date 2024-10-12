@@ -778,7 +778,7 @@ class GenerateSchema:
         if is_self_type(obj):
             obj = self.model_type_stack.get()
             if obj is None:
-                raise PydanticUserError('`typing.Self` is not valid outside a class scope', code='invalid-self-type')
+                raise PydanticUserError('`typing.Self` is invalid in this context', code='invalid-self-type')
         with self.defs.get_schema_or_ref(obj) as (_, maybe_schema):
             if maybe_schema is not None:
                 return maybe_schema

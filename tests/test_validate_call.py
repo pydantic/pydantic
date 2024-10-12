@@ -8,7 +8,7 @@ from typing import Any, List, Tuple
 
 import pytest
 from pydantic_core import ArgsKwargs
-from typing_extensions import Annotated, Required, Self, TypedDict, Unpack
+from typing_extensions import Annotated, Required, TypedDict, Unpack
 
 from pydantic import (
     BaseModel,
@@ -1033,11 +1033,3 @@ def test_uses_local_ns():
             return m
 
         assert bar({'z': 1}) == M2(z=1)
-
-
-def test_invalid_self():
-    with pytest.raises(TypeError, match='`typing.Self` is not valid outside a class scope'):
-
-        @validate_call
-        def foo(self: Self):
-            pass

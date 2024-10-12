@@ -407,7 +407,6 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'callable-discriminator-no-tag'
 ```
 
-
 ## `TypedDict` version {#typed-dict-version}
 
 This error is raised when you use [typing.TypedDict][]
@@ -540,7 +539,6 @@ try:
 except PydanticUserError as exc_info:
     assert exc_info.code == 'invalid-for-json-schema'
 ```
-
 
 ## JSON schema already used {#json-schema-already-used}
 
@@ -1067,7 +1065,7 @@ except PydanticUserError as exc_info:
 
 ## Cannot evaluate type annotation {#unevaluable-type-annotation}
 
-Because type annotations are evaluated *after* assignments, you might get unexpected results when using a type annotation name
+Because type annotations are evaluated _after_ assignments, you might get unexpected results when using a type annotation name
 that clashes with one of your fields. We raise an error in the following case:
 
 ```py test="skip"
@@ -1139,6 +1137,7 @@ pydantic.errors.PydanticUserError: Dataclass field bar has init=False and init_v
 ## `model_config` is used as a model field {#model-config-invalid-field-name}
 
 This error is raised when `model_config` is used as the name of a field.
+
 ```py
 from pydantic import BaseModel, PydanticUserError
 
@@ -1153,7 +1152,7 @@ except PydanticUserError as exc_info:
 
 ## [`with_config`][pydantic.config.with_config] is used on a `BaseModel` subclass {#with-config-on-model}
 
-This error is raised when the [`with_config`][pydantic.config.with_config]  decorator is used on a class which is already a Pydantic model (use the `model_config` attribute instead).
+This error is raised when the [`with_config`][pydantic.config.with_config] decorator is used on a class which is already a Pydantic model (use the `model_config` attribute instead).
 
 ```py
 from pydantic import BaseModel, PydanticUserError, with_config
@@ -1239,13 +1238,12 @@ except PydanticUserError as exc_info:
 [related specification section]: https://typing.readthedocs.io/en/latest/spec/callables.html#unpack-for-keyword-arguments
 [PEP 692]: https://peps.python.org/pep-0692/
 
-
 ## Invalid `Self` type {#invalid-self-type}
 
-This error is raise when `Self` is used outside a class scope.
+Currently, `Self` can only be used to annotate a field of a class (specifically, subclasses of `BaseModel`, `NamedTuple`, `TypedDict`, or classes decorated by `@dataclass`). Attempting to use `Self` in any other ways will raise this error.
 
 ```py
-from typing_extensions import Self,
+from typing_extensions import Self
 
 from pydantic import PydanticUserError, validate_call
 
@@ -1257,3 +1255,36 @@ try:
 
 except PydanticUserError as exc_info:
     assert exc_info.code == 'invalid-self-type'
+```
+
+The following examples of `validate_call` and `TypeAdapter` will also raise this error, even they are correct from a type-checking perspective. This may be supported in the future.
+
+```py
+from typing_extensions import Self
+
+from pydantic import PydanticUserError, validate_call
+
+try:
+
+    class A(BaseModel):
+        @validate_call
+        def func(self: Self):
+            pass
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'invalid-self-type' -->
+```
+
+```py
+from typing_extensions import Self
+
+from pydantic import PydanticUserError, BaseModel, TypeAdapter
+
+try:
+
+    class A(BaseModel):
+        adapter = TypeAdapter(Self)
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'invalid-self-type'
+```
