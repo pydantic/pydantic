@@ -1262,7 +1262,7 @@ The following examples of `validate_call` and `TypeAdapter` will also raise this
 ```py
 from typing_extensions import Self
 
-from pydantic import PydanticUserError, validate_call
+from pydantic import BaseModel, PydanticUserError, validate_call
 
 try:
 
@@ -1272,13 +1272,13 @@ try:
             pass
 
 except PydanticUserError as exc_info:
-    assert exc_info.code == 'invalid-self-type' -->
+    assert exc_info.code == 'invalid-self-type'
 ```
 
 ```py
 from typing_extensions import Self
 
-from pydantic import PydanticUserError, BaseModel, TypeAdapter
+from pydantic import BaseModel, PydanticUserError, TypeAdapter
 
 try:
 
