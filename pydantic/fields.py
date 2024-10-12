@@ -32,7 +32,7 @@ else:
     # and https://youtrack.jetbrains.com/issue/PY-51428
     DeprecationWarning = PydanticDeprecatedSince20
 
-__all__ = 'Field', 'PrivateAttr', 'computed_field'
+__all__ = 'Field', 'FieldInfo', 'PrivateAttr', 'computed_field'
 
 
 _Unset: Any = PydanticUndefined
