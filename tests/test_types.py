@@ -7045,3 +7045,17 @@ def test_annotated_metadata_any_order() -> None:
         BeforeValidatorBeforeLe(v=366)
     except ValueError as ex:
         assert 'datetime.timedelta(days=365)' in str(ex)
+
+
+@pytest.mark.parametrize('base64_type', [Base64Bytes, Base64Str, Base64UrlBytes, Base64UrlStr])
+def test_base64_with_invalid_min_length(base64_type) -> None:
+    """Check that an error is raised when the length of the base64 type's value is less or more than the min_length and max_length."""
+
+    class Model(BaseModel):
+        base64_value: base64_type = Field(min_length=3, max_length=5)  # type: ignore
+
+    with pytest.raises(ValidationError):
+        Model(**{'base64_value': b''})
+
+    with pytest.raises(ValidationError):
+        Model(**{'base64_value': b'123456'})
