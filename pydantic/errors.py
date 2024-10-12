@@ -68,6 +68,7 @@ PydanticErrorCodes = Literal[
     'dataclass-on-model',
     'unpack-typed-dict',
     'overlapping-unpack-typed-dict',
+    'invalid-self-type',
 ]
 
 

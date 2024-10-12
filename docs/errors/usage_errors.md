@@ -1238,3 +1238,22 @@ except PydanticUserError as exc_info:
 
 [related specification section]: https://typing.readthedocs.io/en/latest/spec/callables.html#unpack-for-keyword-arguments
 [PEP 692]: https://peps.python.org/pep-0692/
+
+
+## Invalid `Self` type {#invalid-self-type}
+
+This error is raise when `Self` is used outside a class scope.
+
+```py
+from typing_extensions import Self,
+
+from pydantic import PydanticUserError, validate_call
+
+try:
+
+    @validate_call
+    def func(self: Self):
+        pass
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'invalid-self-type'
