@@ -4,22 +4,25 @@ import re
 import sys
 from datetime import datetime, timezone
 from functools import partial
-from typing import Any, List, Tuple
+from typing import Any, List, Literal, Tuple, Union
 
 import pytest
 from pydantic_core import ArgsKwargs
 from typing_extensions import Annotated, Required, TypedDict, Unpack
 
 from pydantic import (
+    AfterValidator,
     BaseModel,
+    BeforeValidator,
     Field,
     PydanticInvalidForJsonSchema,
     PydanticUserError,
+    Strict,
     TypeAdapter,
     ValidationError,
     validate_call,
+    with_config,
 )
-from pydantic.config import with_config
 
 
 def test_args():
@@ -610,6 +613,92 @@ def test_config_strict():
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'int_type', 'loc': (0,), 'msg': 'Input should be a valid integer', 'input': 'foo'},
         {'type': 'list_type', 'loc': (1,), 'msg': 'Input should be a valid list', 'input': ('bar', 'foobar')},
+    ]
+
+
+def test_annotated_num():
+    @validate_call
+    def f(a: Annotated[int, Field(gt=0), Field(lt=10)]):
+        return a
+
+    assert f(5) == 5
+
+    with pytest.raises(ValidationError) as exc_info:
+        f(0)
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'greater_than', 'loc': (0,), 'msg': 'Input should be greater than 0', 'input': 0, 'ctx': {'gt': 0}}
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        f(10)
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'less_than', 'loc': (0,), 'msg': 'Input should be less than 10', 'input': 10, 'ctx': {'lt': 10}}
+    ]
+
+
+def test_annotated_discriminator():
+    class Cat(BaseModel):
+        type: Literal['cat'] = 'cat'
+        food: str
+        meow: int
+
+    class Dog(BaseModel):
+        type: Literal['dog'] = 'dog'
+        food: str
+        bark: int
+
+    Pet = Annotated[Union[Cat, Dog], Field(discriminator='type')]
+
+    @validate_call
+    def f(pet: Pet):
+        return pet
+
+    with pytest.raises(ValidationError) as exc_info:
+        f({'food': 'fish'})
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'union_tag_not_found',
+            'loc': (0,),
+            'msg': "Unable to extract tag using discriminator 'type'",
+            'input': {'food': 'fish'},
+            'ctx': {'discriminator': "'type'"},
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        f({'type': 'dog', 'food': 'fish'})
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'missing',
+            'loc': (0, 'dog', 'bark'),
+            'msg': 'Field required',
+            'input': {'type': 'dog', 'food': 'fish'},
+        }
+    ]
+
+
+def test_annotated_validator():
+    @validate_call
+    def f(x: Annotated[int, BeforeValidator(lambda x: x + '2'), AfterValidator(lambda x: x + 1)]):
+        return x
+
+    assert f('1') == 13
+
+
+def test_annotated_strict():
+    @validate_call
+    def f(x: Annotated[int, Strict]):
+        return x
+
+    assert f(1) == 1
+
+    with pytest.raises(ValidationError) as exc_info:
+        f('1')
+
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'int_type', 'loc': (0,), 'msg': 'Input should be a valid integer', 'input': '1'}
     ]
 
 
