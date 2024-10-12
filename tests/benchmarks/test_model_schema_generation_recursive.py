@@ -1,16 +1,10 @@
-from typing import Dict, Generic, Literal, Optional, Type, TypeVar, Union
+from typing import Dict, Generic, Literal, Optional, TypeVar, Union
 
 import pytest
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
-
-class DeferredModel(BaseModel):
-    model_config = {'defer_build': True}
-
-
-def rebuild_model(model: Type[BaseModel]) -> None:
-    model.model_rebuild(force=True, _types_namespace={})
+from .shared import DeferredModel, rebuild_model
 
 
 @pytest.mark.benchmark(group='model_schema_generation_recursive')

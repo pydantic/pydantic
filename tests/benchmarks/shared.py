@@ -231,3 +231,11 @@ PydanticTypes = [
     FutureDate,
     PastDatetime,
 ]
+
+
+class DeferredModel(BaseModel):
+    model_config = {'defer_build': True}
+
+
+def rebuild_model(model: Type[BaseModel]) -> None:
+    model.model_rebuild(force=True, _types_namespace={})

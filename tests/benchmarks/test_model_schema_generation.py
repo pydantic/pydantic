@@ -31,15 +31,7 @@ from pydantic import (
 )
 from pydantic.dataclasses import dataclass, rebuild_dataclass
 
-from .shared import PydanticTypes, StdLibTypes
-
-
-class DeferredModel(BaseModel):
-    model_config = {'defer_build': True}
-
-
-def rebuild_model(model: Type[BaseModel]) -> None:
-    model.model_rebuild(force=True, _types_namespace={})
+from .shared import DeferredModel, PydanticTypes, StdLibTypes, rebuild_model
 
 
 @pytest.mark.benchmark(group='model_schema_generation')
