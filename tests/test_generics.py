@@ -2268,9 +2268,13 @@ def test_generic_recursion_contextvar():
     assert not recursively_defined_type_refs()
     try:
         with generic_recursion_self_type(Model, (int,)):
-            # Make sure that something has been added to the contextvar-managed recursive types cache
-            assert recursively_defined_type_refs()
-            raise TestingException
+            assert not recursively_defined_type_refs()
+            with generic_recursion_self_type(Model, (float,)):
+                assert not recursively_defined_type_refs()  # Not added as generic param is different
+                with generic_recursion_self_type(Model, (int,)):
+                    # Make sure that something has been added to the contextvar-managed recursive types cache
+                    assert recursively_defined_type_refs()
+                    raise TestingException
     except TestingException:
         pass
 

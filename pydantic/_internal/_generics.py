@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 import types
 import typing
-from collections import ChainMap
+from collections import ChainMap, defaultdict
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import prepare_class
@@ -393,7 +393,7 @@ def check_parameters_count(cls: type[BaseModel], parameters: tuple[Any, ...]) ->
         raise TypeError(f'Too {description} parameters for {cls}; actual {actual}, expected {expected}')
 
 
-_generic_recursion_cache: ContextVar[set[str] | None] = ContextVar('_generic_recursion_cache', default=None)
+_generic_recursion_cache: ContextVar[dict[str, int] | None] = ContextVar('_generic_recursion_cache', default=None)
 
 
 @contextmanager
@@ -407,20 +407,20 @@ def generic_recursion_self_type(
     can be used while building the core schema, and will produce a schema_ref that will be valid in the
     final parent schema.
     """
-    previously_seen_type_refs = _generic_recursion_cache.get()
-    if previously_seen_type_refs is None:
-        previously_seen_type_refs = set()
-        token = _generic_recursion_cache.set(previously_seen_type_refs)
+    recursion_counts = _generic_recursion_cache.get()
+    if recursion_counts is None:
+        recursion_counts = defaultdict(int)
+        token = _generic_recursion_cache.set(recursion_counts)
     else:
         token = None
 
     try:
         type_ref = get_type_ref(origin, args_override=args)
-        if type_ref in previously_seen_type_refs:
+        if recursion_counts[type_ref] > 1:
             self_type = PydanticRecursiveRef(type_ref=type_ref)
             yield self_type
         else:
-            previously_seen_type_refs.add(type_ref)
+            recursion_counts[type_ref] += 1
             yield None
     finally:
         if token:
@@ -432,7 +432,7 @@ def recursively_defined_type_refs() -> set[str]:
     if not visited:
         return set()  # not in a generic recursion, so there are no types
 
-    return visited.copy()  # don't allow modifications
+    return {k for k, v in visited.items() if v > 1}
 
 
 def get_cached_generic_type_early(parent: type[BaseModel], typevar_values: Any) -> type[BaseModel] | None:

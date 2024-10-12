@@ -51,6 +51,11 @@ def check_schema(schema: CoreSchema) -> None:
     assert schema['type'] == 'model'
     assert schema['root_model'] is True
     assert schema['custom_init'] is False
+    # assert schema['type'] == 'definitions'
+    # root = next(s for s in schema['definitions'] if s['root_model'] is True)
+    # assert root['type'] == 'model'
+    # assert root['root_model'] is True
+    # assert root['custom_init'] is False
 
 
 @parametrize_root_model()

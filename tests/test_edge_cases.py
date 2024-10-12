@@ -2594,7 +2594,13 @@ def test_multiple_enums():
         a: Optional[MyEnum]
         b: Optional[MyEnum]
 
-    TypeAdapter(MyModel)
+    ta = TypeAdapter(MyModel)
+    assert ta.validate_json('{"a": 1, "b": 1}') == {'a': MyEnum.a, 'b': MyEnum.a}
+    assert ta.core_schema['type'] == 'definitions'
+    assert len(ta.core_schema['definitions']) == 1
+    assert ta.core_schema['definitions'][0]['type'] == 'enum'
+    ref = ta.core_schema['definitions'][0]['ref']
+    assert ta.core_schema['schema']['fields']['a']['schema']['schema']['schema_ref'] == ref
 
 
 @pytest.mark.parametrize(

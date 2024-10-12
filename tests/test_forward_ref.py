@@ -1125,10 +1125,10 @@ class Foo(BaseModel):
         """
     )
 
-    extras_schema = module_2.Foo.__pydantic_core_schema__['schema']['fields']['bar']['schema']['schema'][
-        'extras_schema'
-    ]
-
+    assert len(module_2.Foo.__pydantic_core_schema__['definitions']) == 1
+    ref = module_2.Foo.__pydantic_core_schema__['schema']['schema']['fields']['bar']['schema']['schema_ref']
+    assert module_2.Foo.__pydantic_core_schema__['definitions'][0]['ref'] == ref
+    extras_schema = module_2.Foo.__pydantic_core_schema__['definitions'][0]['schema']['extras_schema']
     assert extras_schema == {'type': 'int'}
 
 
