@@ -51,7 +51,7 @@ from datetime import datetime
 from typing_extensions import Annotated
 
 from pydantic import BaseModel
-from pydantic.experimental.pipeline import validate_as, validate_as_deferred
+from pydantic.experimental.pipeline import validate_as
 
 
 class User(BaseModel):
@@ -71,10 +71,6 @@ class User(BaseModel):
         ),
     ]
     friends: Annotated[list[User], validate_as(...).len(0, 100)]  # (6)!
-    family: Annotated[  # (7)!
-        list[User],
-        validate_as_deferred(lambda: list[User]).transform(lambda x: x[1:]),
-    ]
     bio: Annotated[
         datetime,
         validate_as(int)
@@ -89,8 +85,7 @@ class User(BaseModel):
 4. You can also use the lower level transform, constrain and predicate methods.
 5. Use the `|` or `&` operators to combine steps (like a logical OR or AND).
 6. Calling `validate_as(...)` with `Ellipsis`, `...` as the first positional argument implies `validate_as(<field type>)`. Use `validate_as(Any)` to accept any type.
-7. For recursive types you can use `validate_as_deferred` to reference the type itself before it's defined.
-8. You can call `validate_as()` before or after other steps to do pre or post processing.
+7. You can call `validate_as()` before or after other steps to do pre or post processing.
 
 ### Mapping from `BeforeValidator`, `AfterValidator` and `WrapValidator`
 

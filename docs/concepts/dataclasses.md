@@ -308,7 +308,7 @@ In this case you can simply add `arbitrary_types_allowed` in the config!
 ```py
 import dataclasses
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 from pydantic.errors import PydanticSchemaGenerationError
 
 
@@ -335,8 +335,6 @@ try:
         dc: DC
         other: str
 
-    # invalid as it is now a pydantic dataclass
-    Model(dc=my_dc, other='other')
 except PydanticSchemaGenerationError as e:
     print(e.message)
     """
@@ -346,16 +344,22 @@ except PydanticSchemaGenerationError as e:
     """
 
 
-class Model(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+@dataclasses.dataclass
+class DC2:
+    a: ArbitraryType
+    b: str
 
-    dc: DC
+    __pydantic_config__ = {'arbitrary_types_allowed': True}
+
+
+class Model(BaseModel):
+    dc: DC2
     other: str
 
 
-m = Model(dc=my_dc, other='other')
+m = Model(dc=DC2(a=ArbitraryType(value=3), b='qwe'), other='other')
 print(repr(m))
-#> Model(dc=DC(a=ArbitraryType(value=3), b='qwe'), other='other')
+#> Model(dc=DC2(a=ArbitraryType(value=3), b='qwe'), other='other')
 ```
 
 ### Checking if a dataclass is a pydantic dataclass

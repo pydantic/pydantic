@@ -11,7 +11,7 @@ import typing
 from decimal import Decimal
 from fractions import Fraction
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import Any, Callable
+from typing import Any, Callable, Union
 
 from pydantic_core import PydanticCustomError, core_schema
 from pydantic_core._pydantic_core import PydanticKnownError
@@ -412,8 +412,9 @@ NUMERIC_VALIDATOR_LOOKUP: dict[str, Callable] = {
     'decimal_places': decimal_places_validator,
 }
 
+IpType = Union[IPv4Address, IPv6Address, IPv4Network, IPv6Network, IPv4Interface, IPv6Interface]
 
-IP_VALIDATOR_LOOKUP: dict[type, Callable] = {
+IP_VALIDATOR_LOOKUP: dict[type[IpType], Callable] = {
     IPv4Address: ip_v4_address_validator,
     IPv6Address: ip_v6_address_validator,
     IPv4Network: ip_v4_network_validator,

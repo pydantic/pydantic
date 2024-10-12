@@ -154,15 +154,13 @@ class ConfigWrapper:
                 except KeyError:
                     raise AttributeError(f'Config has no attribute {name!r}') from None
 
-    def core_config(self, obj: Any) -> core_schema.CoreConfig:
-        """Create a pydantic-core config, `obj` is just used to populate `title` if not set in config.
-
-        Pass `obj=None` if you do not want to attempt to infer the `title`.
+    def core_config(self, title: str | None) -> core_schema.CoreConfig:
+        """Create a pydantic-core config.
 
         We don't use getattr here since we don't want to populate with defaults.
 
         Args:
-            obj: An object used to populate `title` if not set in config.
+            title: The title to use if not set in config.
 
         Returns:
             A `CoreConfig` object created from config.
@@ -185,7 +183,7 @@ class ConfigWrapper:
             config['ser_json_timedelta'] = 'seconds_float'
 
         core_config_values = {
-            'title': config.get('title') or (obj and getattr(obj, '__name__', str(obj))),
+            'title': config.get('title') or title or None,
             'extra_fields_behavior': config.get('extra'),
             'allow_inf_nan': config.get('allow_inf_nan'),
             'populate_by_name': config.get('populate_by_name'),
