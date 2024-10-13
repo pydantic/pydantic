@@ -689,17 +689,22 @@ def test_annotated_validator():
 
 def test_annotated_strict():
     @validate_call
-    def f(x: Annotated[int, Strict]):
+    def f1(x: Annotated[int, Strict()]):
         return x
 
-    assert f(1) == 1
+    @validate_call
+    def f2(x: 'Annotated[int, Strict()]'):
+        return x
 
-    with pytest.raises(ValidationError) as exc_info:
-        f('1')
+    for f in (f1, f2):
+        assert f(1) == 1
 
-    assert exc_info.value.errors(include_url=False) == [
-        {'type': 'int_type', 'loc': (0,), 'msg': 'Input should be a valid integer', 'input': '1'}
-    ]
+        with pytest.raises(ValidationError) as exc_info:
+            f('1')
+
+        assert exc_info.value.errors(include_url=False) == [
+            {'type': 'int_type', 'loc': (0,), 'msg': 'Input should be a valid integer', 'input': '1'}
+        ]
 
 
 def test_annotated_use_of_alias():
