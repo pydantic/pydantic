@@ -28,11 +28,13 @@ ValidateCallSupportedTypes = Union[
 VALIDATE_CALL_SUPPORTED_TYPES = get_args(ValidateCallSupportedTypes)
 
 
-def get_name(func: ValidateCallSupportedTypes) -> str:
+def extract_function_name(func: ValidateCallSupportedTypes) -> str:
+    """Extract the name of a `ValidateCallSupportedTypes` object."""
     return f'partial({func.func.__name__})' if isinstance(func, functools.partial) else func.__name__
 
 
-def get_qualname(func: ValidateCallSupportedTypes) -> str:
+def extract_function_qualname(func: ValidateCallSupportedTypes) -> str:
+    """Extract the qualname of a `ValidateCallSupportedTypes` object."""
     return f'partial({func.func.__qualname__})' if isinstance(func, functools.partial) else func.__qualname__
 
 
@@ -50,8 +52,8 @@ def update_wrapper(wrapped: ValidateCallSupportedTypes, wrapper: Callable[..., A
             return wrapper(*args, **kwargs)
 
     # We need to manually update this because `partial` object has no `__name__` and `__qualname__`.
-    wrapper_function.__name__ = get_name(wrapped)
-    wrapper_function.__qualname__ = get_qualname(wrapped)
+    wrapper_function.__name__ = extract_function_name(wrapped)
+    wrapper_function.__qualname__ = extract_function_qualname(wrapped)
     wrapper_function.raw_function = wrapped  # type: ignore
 
     return wrapper_function
@@ -83,9 +85,9 @@ class ValidateCallWrapper:
         else:
             schema_type = function
             module = function.__module__
-        qualname = core_config_title = get_qualname(function)
+        qualname = core_config_title = extract_function_qualname(function)
 
-        self.__name__ = get_name(function)
+        self.__name__ = extract_function_name(function)
         self.__qualname__ = qualname
         self.__module__ = module
 
