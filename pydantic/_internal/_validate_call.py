@@ -14,8 +14,6 @@ from . import _generate_schema
 from ._config import ConfigWrapper
 from ._namespace_utils import MappingNamespace, NsResolver, ns_for_function
 
-# This should be aligned with `GenerateSchema.match_types`
-#
 # Note: This does not play very well with type checkers. For example,
 # `a: LambdaType = lambda x: x` will raise a type error by Pyright.
 ValidateCallSupportedTypes = Union[

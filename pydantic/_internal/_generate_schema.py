@@ -1837,9 +1837,6 @@ class GenerateSchema:
                 self.defs.definitions[dataclass_ref] = schema
                 return core_schema.definition_reference_schema(dataclass_ref)
 
-            # Type checkers seem to assume ExitStack may suppress exceptions and therefore
-            # control flow can exit the `with` block without returning.
-            assert False, 'Unreachable'
 
     def _call_schema(self, function: ValidateCallSupportedTypes) -> core_schema.CallSchema:
         """Generate schema for a Callable.
