@@ -38,7 +38,7 @@ def extract_function_qualname(func: ValidateCallSupportedTypes) -> str:
     return f'partial({func.func.__qualname__})' if isinstance(func, functools.partial) else func.__qualname__
 
 
-def update_wrapper(wrapped: ValidateCallSupportedTypes, wrapper: Callable[..., Any]):
+def update_wrapper_attributes(wrapped: ValidateCallSupportedTypes, wrapper: Callable[..., Any]):
     """Update the `wrapper` function with the attributes of the `wrapped` function. Return the updated function."""
     if inspect.iscoroutinefunction(wrapped):
         # We have to create a new couroutine function
