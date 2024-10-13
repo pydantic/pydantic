@@ -12,7 +12,7 @@ on:
 jobs:
   codspeed-profiling:
     name: codspeed profiling
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
