@@ -73,6 +73,6 @@ def parse_mypy_version(version: str) -> tuple[int, int, int]:
         version: The mypy version string.
 
     Returns:
-        A 3-tuple of ints, e.g. `(1, 11, 0)`.
+        A triple of ints, e.g. `(1, 11, 0)`.
     """
     return tuple(map(int, version.partition('+')[0].split('.')))  # pyright: ignore[reportReturnType]

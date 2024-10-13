@@ -49,7 +49,7 @@ os.chdir(Path(__file__).parent.parent.parent)
 
 
 # Type hint taken from the signature of `pytest.param`:
-Marks: TypeAlias = MarkDecorator | Collection[MarkDecorator | Mark]
+Marks: TypeAlias = 'MarkDecorator | Collection[MarkDecorator | Mark]'
 
 
 def build_cases(
@@ -267,12 +267,11 @@ def test_success_cases_run(module: str) -> None:
 @pytest.mark.parametrize(
     ['v_str', 'v_tuple'],
     [
-        ('0', (0,)),
         ('1.11.0', (1, 11, 0)),
         ('1.11.0+dev.d6d9d8cd4f27c52edac1f537e236ec48a01e54cb.dirty', (1, 11, 0)),
     ],
 )
-def test_parse_mypy_version(v_str: str, v_tuple: tuple[int, ...]) -> None:
+def test_parse_mypy_version(v_str: str, v_tuple: tuple[int, int, int]) -> None:
     assert parse_mypy_version(v_str) == v_tuple
 
 
