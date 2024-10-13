@@ -1257,7 +1257,7 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'invalid-self-type'
 ```
 
-The following examples of `validate_call` and `TypeAdapter` will also raise this error, even they are correct from a type-checking perspective. This may be supported in the future.
+The following examples of `validate_call` and `TypeAdapter` will also raise this error, even though they are correct from a type-checking perspective. This may be supported in the future.
 
 ```py
 from typing_extensions import Self
