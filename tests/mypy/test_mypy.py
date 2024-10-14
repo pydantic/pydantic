@@ -174,7 +174,6 @@ def get_expected_return_code(source_code: str) -> int:
     return 0
 
 
-@pytest.mark.filterwarnings('ignore:ast.:DeprecationWarning')  # these are produced by mypy in python 3.12
 @pytest.mark.parametrize(
     ['config_filename', 'python_filename'],
     cases,
@@ -251,8 +250,6 @@ def test_bad_toml_config() -> None:
 
 
 @pytest.mark.parametrize('module', ['dataclass_no_any', 'plugin_success', 'plugin_success_baseConfig'])
-@pytest.mark.filterwarnings('ignore:.*is deprecated.*:DeprecationWarning')
-@pytest.mark.filterwarnings('ignore:.*are deprecated.*:DeprecationWarning')
 def test_success_cases_run(module: str) -> None:
     """
     Ensure the "success" files can actually be executed
