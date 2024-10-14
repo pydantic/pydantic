@@ -38,7 +38,6 @@ from ._typing_extra import (
     parent_frame_namespace,
 )
 from ._utils import ClassAttribute, SafeGetItemProxy
-from ._validate_call import ValidateCallWrapper
 
 if typing.TYPE_CHECKING:
     from ..fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
@@ -835,7 +834,6 @@ def default_ignored_types() -> tuple[type[Any], ...]:
         staticmethod,
         PydanticDescriptorProxy,
         ComputedFieldInfo,
-        ValidateCallWrapper,
     ]
 
     if sys.version_info >= (3, 12):
