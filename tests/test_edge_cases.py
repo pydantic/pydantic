@@ -1394,6 +1394,33 @@ def test_type_on_annotation():
     assert Model.model_fields.keys() == set('abcdefg')
 
 
+def test_type_on_none():
+    class Model(BaseModel):
+        a: Type[None]
+
+    Model(a=type(None))
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=None)
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'is_subclass_of',
+            'loc': ('a',),
+            'msg': 'Input should be a subclass of NoneType',
+            'input': None,
+            'ctx': {'class': 'NoneType'},
+        }
+    ]
+
+
+def test_type_on_annotation_error():
+    with pytest.raises(TypeError, match='Expected a class, got 1'):
+
+        class Model1(BaseModel):
+            a: Type[1]
+
+
 def test_annotated_inside_type():
     class Model(BaseModel):
         a: Type[Annotated[int, ...]]
