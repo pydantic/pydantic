@@ -69,6 +69,7 @@ PydanticErrorCodes = Literal[
     'validate-call-type',
     'unpack-typed-dict',
     'overlapping-unpack-typed-dict',
+    'invalid-self-type',
 ]
 
 

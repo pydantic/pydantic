@@ -11,7 +11,7 @@ import weakref
 from abc import ABCMeta
 from functools import lru_cache, partial
 from types import FunctionType
-from typing import Any, Callable, Generic, Literal, NoReturn
+from typing import Any, Callable, Generic, Literal, NoReturn, cast
 
 import typing_extensions
 from pydantic_core import PydanticUndefined, SchemaSerializer
@@ -135,12 +135,11 @@ class ModelMetaclass(ABCMeta):
             if __pydantic_generic_metadata__:
                 namespace['__pydantic_generic_metadata__'] = __pydantic_generic_metadata__
 
-            cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
-
-            BaseModel = import_cached_base_model()
+            cls = cast('type[BaseModel]', super().__new__(mcs, cls_name, bases, namespace, **kwargs))
+            BaseModel_ = import_cached_base_model()
 
             mro = cls.__mro__
-            if Generic in mro and mro.index(Generic) < mro.index(BaseModel):
+            if Generic in mro and mro.index(Generic) < mro.index(BaseModel_):
                 warnings.warn(
                     GenericBeforeBaseModelWarning(
                         'Classes should inherit from `BaseModel` before generic classes (e.g. `typing.Generic[T]`) '
@@ -150,7 +149,9 @@ class ModelMetaclass(ABCMeta):
                 )
 
             cls.__pydantic_custom_init__ = not getattr(cls.__init__, '__pydantic_base_init__', False)
-            cls.__pydantic_post_init__ = None if cls.model_post_init is BaseModel.model_post_init else 'model_post_init'
+            cls.__pydantic_post_init__ = (
+                None if cls.model_post_init is BaseModel_.model_post_init else 'model_post_init'
+            )
 
             cls.__pydantic_decorators__ = DecoratorInfos.build(cls)
 

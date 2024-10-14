@@ -777,6 +777,8 @@ class GenerateSchema:
         # avoid calling `__get_pydantic_core_schema__` if we've already visited this object
         if is_self_type(obj):
             obj = self.model_type_stack.get()
+            if obj is None:
+                raise PydanticUserError('`typing.Self` is invalid in this context', code='invalid-self-type')
         with self.defs.get_schema_or_ref(obj) as (_, maybe_schema):
             if maybe_schema is not None:
                 return maybe_schema
@@ -1533,7 +1535,7 @@ class GenerateSchema:
                 raise PydanticUndefinedAnnotation.from_name_error(e) from e
             if not annotations:
                 # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
-                annotations = {k: Any for k in namedtuple_cls._fields}
+                annotations: dict[str, Any] = {k: Any for k in namedtuple_cls._fields}
 
             if typevars_map:
                 annotations = {

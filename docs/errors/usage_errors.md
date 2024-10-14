@@ -1334,3 +1334,40 @@ except PydanticUserError as exc_info:
 
 [related specification section]: https://typing.readthedocs.io/en/latest/spec/callables.html#unpack-for-keyword-arguments
 [PEP 692]: https://peps.python.org/pep-0692/
+
+## Invalid `Self` type {#invalid-self-type}
+
+Currently, [`Self`][typing.Self] can only be used to annotate a field of a class (specifically, subclasses of [`BaseModel`][pydantic.BaseModel], [`NamedTuple`][typing.NamedTuple], [`TypedDict`][typing.TypedDict], or dataclasses). Attempting to use [`Self`][typing.Self] in any other ways will raise this error.
+
+```py
+from typing_extensions import Self
+
+from pydantic import PydanticUserError, validate_call
+
+try:
+
+    @validate_call
+    def func(self: Self):
+        pass
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'invalid-self-type'
+```
+
+The following example of [`validate_call()`][pydantic.validate_call] will also raise this error, even though it is correct from a type-checking perspective. This may be supported in the future.
+
+```py
+from typing_extensions import Self
+
+from pydantic import BaseModel, PydanticUserError, validate_call
+
+try:
+
+    class A(BaseModel):
+        @validate_call
+        def func(self, arg: Self):
+            pass
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'invalid-self-type'
+```
