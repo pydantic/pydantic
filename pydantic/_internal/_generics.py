@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 import types
 import typing
-from collections import ChainMap, defaultdict
+from collections import ChainMap
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import prepare_class
@@ -393,7 +393,7 @@ def check_parameters_count(cls: type[BaseModel], parameters: tuple[Any, ...]) ->
         raise TypeError(f'Too {description} parameters for {cls}; actual {actual}, expected {expected}')
 
 
-_generic_recursion_cache: ContextVar[dict[str, int] | None] = ContextVar('_generic_recursion_cache', default=None)
+_generic_recursion_cache: ContextVar[dict[str, bool] | None] = ContextVar('_generic_recursion_cache', default=None)
 
 
 @contextmanager
@@ -407,32 +407,33 @@ def generic_recursion_self_type(
     can be used while building the core schema, and will produce a schema_ref that will be valid in the
     final parent schema.
     """
-    recursion_counts = _generic_recursion_cache.get()
-    if recursion_counts is None:
-        recursion_counts = defaultdict(int)
-        token = _generic_recursion_cache.set(recursion_counts)
+    recursive_refs = _generic_recursion_cache.get()
+    if recursive_refs is None:
+        recursive_refs = {}
+        token = _generic_recursion_cache.set(recursive_refs)
     else:
         token = None
 
     try:
         type_ref = get_type_ref(origin, args_override=args)
-        if recursion_counts[type_ref] > 1:
+        if type_ref in recursive_refs:
+            recursive_refs[type_ref] = True
             self_type = PydanticRecursiveRef(type_ref=type_ref)
             yield self_type
         else:
-            recursion_counts[type_ref] += 1
+            recursive_refs[type_ref] = False
             yield None
     finally:
         if token:
             _generic_recursion_cache.reset(token)
 
 
-def recursively_defined_type_refs() -> set[str]:
+def recursively_defined_type_refs() -> set[str] | None:
     visited = _generic_recursion_cache.get()
     if not visited:
-        return set()  # not in a generic recursion, so there are no types
+        return None  # not in a generic recursion, so there are no types
 
-    return {k for k, v in visited.items() if v > 1}
+    return {k for k, v in visited.items() if v}
 
 
 def get_cached_generic_type_early(parent: type[BaseModel], typevar_values: Any) -> type[BaseModel] | None:
