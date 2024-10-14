@@ -195,17 +195,17 @@ def test_type_of_self(Self):
         self_type: Type[Self]
 
         @computed_field
-        def self_types1(self) -> list[Type[Self]]:
+        def self_types1(self) -> List[Type[Self]]:
             return [type(self), self.self_type]
 
         # make sure `eval_type` etc. works
         @computed_field
-        def self_types2(self) -> list[Type['Self']]:
+        def self_types2(self) -> List[Type['Self']]:
             return [type(self), self.self_type]
 
         # make sure `eval_type` etc. works
         @computed_field
-        def self_types3(self) -> 'list[Type[Self]]':
+        def self_types3(self) -> 'List[Type[Self]]':
             return [type(self), self.self_type]
 
     class B(A): ...
