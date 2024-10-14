@@ -128,22 +128,6 @@ def collect_definitions(schema: core_schema.CoreSchema) -> dict[str, core_schema
     return defs
 
 
-def collect_invalid_schemas(schema: core_schema.CoreSchema) -> bool:
-    invalid = False
-
-    def _is_schema_valid(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
-        nonlocal invalid
-
-        if s['type'] == 'invalid':
-            invalid = True
-            return s
-
-        return recurse(s, _is_schema_valid)
-
-    walk_core_schema(schema, _is_schema_valid, copy=False)
-    return invalid
-
-
 T = TypeVar('T')
 
 

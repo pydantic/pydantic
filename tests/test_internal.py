@@ -7,13 +7,8 @@ from decimal import Decimal
 
 import pytest
 from pydantic_core import CoreSchema
-from pydantic_core import core_schema as cs
 
-from pydantic._internal._core_utils import (
-    Walk,
-    collect_invalid_schemas,
-    walk_core_schema,
-)
+from pydantic._internal._core_utils import Walk, walk_core_schema
 from pydantic._internal._repr import Representation
 from pydantic._internal._validators import _extract_decimal_digits_info
 
@@ -44,12 +39,6 @@ def test_representation_integrations():
         '    ) (Obj)',
     ]
     assert list(obj.__rich_repr__()) == [('int_attr', 42), ('str_attr', 'Marvin')]
-
-
-def test_schema_is_valid():
-    assert collect_invalid_schemas(cs.none_schema()) is False
-    assert collect_invalid_schemas(cs.invalid_schema()) is True
-    assert collect_invalid_schemas(cs.nullable_schema(cs.invalid_schema())) is True
 
 
 @pytest.mark.parametrize(
