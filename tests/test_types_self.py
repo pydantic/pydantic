@@ -1,7 +1,7 @@
 import dataclasses
 import re
 import typing
-from typing import List, Optional, Union
+from typing import List, Optional, Type, Union
 
 import pytest
 import typing_extensions
@@ -192,20 +192,20 @@ def test_invalid_validate_call_of_method(Self):
 
 def test_type_of_self(Self):
     class A(BaseModel):
-        self_type: type[Self]
+        self_type: Type[Self]
 
         @computed_field
-        def self_types1(self) -> list[type[Self]]:
+        def self_types1(self) -> list[Type[Self]]:
             return [type(self), self.self_type]
 
         # make sure `eval_type` etc. works
         @computed_field
-        def self_types2(self) -> list[type['Self']]:
+        def self_types2(self) -> list[Type['Self']]:
             return [type(self), self.self_type]
 
         # make sure `eval_type` etc. works
         @computed_field
-        def self_types3(self) -> 'list[type[Self]]':
+        def self_types3(self) -> 'list[Type[Self]]':
             return [type(self), self.self_type]
 
     class B(A): ...
