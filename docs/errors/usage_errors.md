@@ -1065,7 +1065,7 @@ except PydanticUserError as exc_info:
 
 ## Cannot evaluate type annotation {#unevaluable-type-annotation}
 
-Because type annotations are evaluated _after_ assignments, you might get unexpected results when using a type annotation name
+Because type annotations are evaluated *after* assignments, you might get unexpected results when using a type annotation name
 that clashes with one of your fields. We raise an error in the following case:
 
 ```py test="skip"
@@ -1240,7 +1240,7 @@ except PydanticUserError as exc_info:
 
 ## Invalid `Self` type {#invalid-self-type}
 
-Currently, `Self` can only be used to annotate a field of a class (specifically, subclasses of `BaseModel`, `NamedTuple`, `TypedDict`, or classes decorated by `@dataclass`). Attempting to use `Self` in any other ways will raise this error.
+Currently, [`Self`][typing.Self] can only be used to annotate a field of a class (specifically, subclasses of [`BaseModel`][pydantic.BaseModel], [`NamedTuple`][typing.NamedTuple], [`TypedDict`][typing.TypedDict], or dataclasses). Attempting to use [`Self`][typing.Self] in any other ways will raise this error.
 
 ```py
 from typing_extensions import Self
@@ -1257,7 +1257,7 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'invalid-self-type'
 ```
 
-The following examples of `validate_call` and `TypeAdapter` will also raise this error, even though they are correct from a type-checking perspective. This may be supported in the future.
+The following example of [`validate_call()`][pydantic.validate_call] will also raise this error, even though it is correct from a type-checking perspective. This may be supported in the future.
 
 ```py
 from typing_extensions import Self
@@ -1268,22 +1268,8 @@ try:
 
     class A(BaseModel):
         @validate_call
-        def func(self: Self):
+        def func(self, arg: Self):
             pass
-
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'invalid-self-type'
-```
-
-```py
-from typing_extensions import Self
-
-from pydantic import BaseModel, PydanticUserError, TypeAdapter
-
-try:
-
-    class A(BaseModel):
-        adapter = TypeAdapter(Self)
 
 except PydanticUserError as exc_info:
     assert exc_info.code == 'invalid-self-type'

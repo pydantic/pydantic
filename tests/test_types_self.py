@@ -188,10 +188,3 @@ def test_invalid_validate_call_of_method(Self):
             @validate_call
             def foo(self: Self):
                 pass
-
-
-def test_invalid_type_adapter(Self):
-    with pytest.raises(PydanticUserError, match='`typing.Self` is invalid in this context'):
-
-        class A(BaseModel):
-            TypeAdapter(Self)
