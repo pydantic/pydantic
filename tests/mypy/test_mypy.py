@@ -66,12 +66,7 @@ cases: list[ParameterSet | tuple[str, str]] = [
     # No plugin
     *build_cases(
         ['mypy-default.ini', 'pyproject-default.toml'],
-        ['fail1.py', 'fail2.py', 'fail3.py', 'fail4.py', 'pydantic_settings.py'],
-    ),
-    *build_cases(
-        ['mypy-default.ini', 'pyproject-default.toml'],
-        ['success.py'],
-        pytest.mark.skipif(MYPY_VERSION_TUPLE > (1, 0, 1), reason='Need to handle some more things for mypy >=1.1.1'),
+        ['pydantic_settings.py'],
     ),
     *build_cases(
         ['mypy-default.ini', 'pyproject-default.toml'],
@@ -119,8 +114,6 @@ cases: list[ParameterSet | tuple[str, str]] = [
         ('mypy-plugin-strict.ini', 'plugin_default_factory.py'),
         ('mypy-plugin-strict-no-any.ini', 'dataclass_no_any.py'),
         ('mypy-plugin-very-strict.ini', 'metaclass_args.py'),
-        ('pyproject-default.toml', 'computed_fields.py'),
-        ('pyproject-default.toml', 'with_config_decorator.py'),
         ('pyproject-plugin-no-strict-optional.toml', 'no_strict_optional.py'),
         ('pyproject-plugin-strict-equality.toml', 'strict_equality.py'),
         ('pyproject-plugin.toml', 'from_orm_v1_noconflict.py'),

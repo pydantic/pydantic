@@ -12,10 +12,10 @@ class Model(BaseModel):
 
 def func(model: Model) -> None:
     model.model_dump(
-        include={'a': {1: True}},
+        include={'a': {1: True}},  # type: ignore[arg-type]
     )
     model.model_dump(
-        include={'a': {'__all__': True}},
+        include={'a': {'__all__': True}},  # type: ignore[arg-type]
     )
     model.model_dump(
         include={'a': {1: {'a'}}},
@@ -26,5 +26,5 @@ def func(model: Model) -> None:
 
     # Invalid cases:
     model.model_dump(
-        include={'a': {1: False}},  # pyright: ignore[reportArgumentType]
+        include={'a': {1: False}},  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
     )

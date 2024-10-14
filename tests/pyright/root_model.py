@@ -5,7 +5,7 @@ from pydantic import RootModel
 IntRootModel = RootModel[int]
 
 int_root_model = IntRootModel(1)
-bad_root_model = IntRootModel('1')  # pyright: ignore[reportArgumentType]
+bad_root_model = IntRootModel('1')  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
 
 assert_type(int_root_model.root, int)
 
