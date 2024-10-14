@@ -25,7 +25,7 @@ from pydantic import (
 )
 
 
-def test_wrap():
+def test_wrap() -> None:
     @validate_call
     def foo_bar(a: int, b: int):
         """This is the foo_bar method."""
@@ -39,7 +39,7 @@ def test_wrap():
     assert repr(inspect.signature(foo_bar)) == '<Signature (a: int, b: int)>'
 
 
-def test_func_type():
+def test_func_type() -> None:
     def f(x: int): ...
 
     class A:
@@ -64,7 +64,7 @@ def test_func_type():
         validate_call([])
 
 
-def test_validate_class():
+def test_validate_class() -> None:
     class A:
         @validate_call
         def __new__(cls, x: int):
@@ -88,7 +88,7 @@ def test_validate_class():
     assert A('5').x == 5
 
 
-def test_validate_custom_callable():
+def test_validate_custom_callable() -> None:
     class A:
         def __call__(self, x: int) -> int:
             return x
@@ -112,7 +112,7 @@ def test_validate_custom_callable():
     assert B()('5') == 5
 
 
-def test_invalid_signature():
+def test_invalid_signature() -> None:
     # In some versions, these functions may not have a valid signature
     for func in (max, min, breakpoint, sorted, compile, print, [].append, {}.popitem, int().bit_length):
         try:
@@ -135,7 +135,7 @@ def test_invalid_signature():
 
 
 @pytest.mark.parametrize('decorator', [staticmethod, classmethod])
-def test_classmethod_order_error(decorator):
+def test_classmethod_order_error(decorator) -> None:
     name = decorator.__name__
     with pytest.raises(
         PydanticUserError,
@@ -149,7 +149,7 @@ def test_classmethod_order_error(decorator):
                 pass
 
 
-def test_args():
+def test_args() -> None:
     @validate_call
     def foo(a: int, b: int):
         return f'{a}, {b}'

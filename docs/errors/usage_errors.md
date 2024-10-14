@@ -1065,7 +1065,7 @@ except PydanticUserError as exc_info:
 
 ## Cannot evaluate type annotation {#unevaluable-type-annotation}
 
-Because type annotations are evaluated _after_ assignments, you might get unexpected results when using a type annotation name
+Because type annotations are evaluated *after* assignments, you might get unexpected results when using a type annotation name
 that clashes with one of your fields. We raise an error in the following case:
 
 ```py test="skip"

@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 _INVALID_TYPE_ERROR_CODE = 'validate-call-type'
 
 
-def _check_function_type(function: object):
+def _check_function_type(function: object) -> None:
     """Check if the input function is a supported type for `validate_call`."""
     if isinstance(function, _validate_call.VALIDATE_CALL_SUPPORTED_TYPES):
         try:

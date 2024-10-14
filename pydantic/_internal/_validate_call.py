@@ -41,7 +41,6 @@ def extract_function_qualname(func: ValidateCallSupportedTypes) -> str:
 def update_wrapper_attributes(wrapped: ValidateCallSupportedTypes, wrapper: Callable[..., Any]):
     """Update the `wrapper` function with the attributes of the `wrapped` function. Return the updated function."""
     if inspect.iscoroutinefunction(wrapped):
-        # We have to create a new couroutine function
         @functools.wraps(wrapped)
         async def wrapper_function(*args, **kwargs):  # type: ignore
             return await wrapper(*args, **kwargs)
@@ -62,8 +61,6 @@ def update_wrapper_attributes(wrapped: ValidateCallSupportedTypes, wrapper: Call
 class ValidateCallWrapper:
     """This is a wrapper around a function that validates the arguments passed to it, and optionally the return value."""
 
-    # This slots are not currently used, but in the future we may want to expose them.
-    # See #9883
     __slots__ = (
         '__pydantic_validator__',
         '__name__',
@@ -78,7 +75,7 @@ class ValidateCallWrapper:
         config: ConfigDict | None,
         validate_return: bool,
         parent_namespace: MappingNamespace | None,
-    ):
+    ) -> None:
         if isinstance(function, partial):
             schema_type = function.func
             module = function.func.__module__
@@ -86,10 +83,6 @@ class ValidateCallWrapper:
             schema_type = function
             module = function.__module__
         qualname = core_config_title = extract_function_qualname(function)
-
-        self.__name__ = extract_function_name(function)
-        self.__qualname__ = qualname
-        self.__module__ = module
 
         ns_resolver = NsResolver(namespaces_tuple=ns_for_function(schema_type, parent_namespace=parent_namespace))
 
