@@ -870,6 +870,7 @@ class GenerateSchema:
     def _get_args_resolving_forward_refs(self, obj: Any, required: bool = False) -> tuple[Any, ...] | None:
         args = get_args(obj)
         if args:
+            args = [_typing_extra._make_forward_ref(a) if isinstance(a, str) else a for a in args]
             args = tuple([self._resolve_forward_ref(a) if isinstance(a, ForwardRef) else a for a in args])
         elif required:  # pragma: no cover
             raise TypeError(f'Expected {obj} to have generic parameters but it had none')
