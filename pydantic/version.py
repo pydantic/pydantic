@@ -63,16 +63,16 @@ def version_info() -> str:
     return '\n'.join('{:>30} {}'.format(k + ':', str(v).replace('\n', ' ')) for k, v in info.items())
 
 
-def parse_mypy_version(version: str) -> tuple[int, ...]:
-    """Parse mypy string version to tuple of ints.
+def parse_mypy_version(version: str) -> tuple[int, int, int]:
+    """Parse `mypy` string version to a 3-tuple of ints.
 
-    It parses normal version like `0.930` and extra info followed by a `+` sign
-    like `0.940+dev.04cac4b5d911c4f9529e6ce86a27b44f28846f5d.dirty`.
+    It parses normal version like `1.11.0` and extra info followed by a `+` sign
+    like `1.11.0+dev.d6d9d8cd4f27c52edac1f537e236ec48a01e54cb.dirty`.
 
     Args:
         version: The mypy version string.
 
     Returns:
-        A tuple of ints. e.g. (0, 930).
+        A triple of ints, e.g. `(1, 11, 0)`.
     """
-    return tuple(map(int, version.partition('+')[0].split('.')))
+    return tuple(map(int, version.partition('+')[0].split('.')))  # pyright: ignore[reportReturnType]
