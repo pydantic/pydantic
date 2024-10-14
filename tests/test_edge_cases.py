@@ -25,7 +25,7 @@ from typing import (
 import pytest
 from dirty_equals import HasRepr, IsStr
 from pydantic_core import ErrorDetails, InitErrorDetails, PydanticSerializationError, core_schema
-from typing_extensions import Annotated, Literal, TypedDict, get_args
+from typing_extensions import Annotated, Literal, TypeAliasType, TypedDict, get_args
 
 from pydantic import (
     BaseModel,
@@ -1410,6 +1410,30 @@ def test_type_on_none():
             'msg': 'Input should be a subclass of NoneType',
             'input': None,
             'ctx': {'class': 'NoneType'},
+        }
+    ]
+
+
+def test_type_on_typealias():
+    Float = TypeAliasType('Float', float)
+
+    class MyFloat(float): ...
+
+    adapter = TypeAdapter(Type[Float])
+
+    adapter.validate_python(float)
+    adapter.validate_python(MyFloat)
+
+    with pytest.raises(ValidationError) as exc_info:
+        adapter.validate_python(str)
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'is_subclass_of',
+            'loc': (),
+            'msg': 'Input should be a subclass of float',
+            'input': str,
+            'ctx': {'class': 'float'},
         }
     ]
 
