@@ -6,20 +6,9 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 import pytest
-from pydantic_core import CoreSchema
 
-from pydantic._internal._core_utils import Walk, walk_core_schema
 from pydantic._internal._repr import Representation
 from pydantic._internal._validators import _extract_decimal_digits_info
-
-
-def remove_metadata(schema: CoreSchema) -> CoreSchema:
-    def inner(s: CoreSchema, recurse: Walk) -> CoreSchema:
-        s = s.copy()
-        s.pop('metadata', None)
-        return recurse(s, inner)
-
-    return walk_core_schema(schema, inner)
 
 
 def test_representation_integrations():

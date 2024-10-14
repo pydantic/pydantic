@@ -14,7 +14,7 @@ from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel
 from pydantic._internal import _repr
-from pydantic._internal._core_utils import _WalkCoreSchema, pretty_print_core_schema
+from pydantic._internal._core_utils import pretty_print_core_schema
 from pydantic._internal._typing_extra import all_literal_values, get_origin, is_new_type
 from pydantic._internal._utils import (
     BUILTIN_COLLECTIONS,
@@ -555,131 +555,6 @@ def test_to_camel_from_camel() -> None:
     assert to_camel('alreadyCamel') == 'alreadyCamel'
 
 
-def test_handle_tuple_schema():
-    schema = core_schema.tuple_schema([core_schema.float_schema(), core_schema.int_schema()])
-
-    def walk(s, recurse):
-        # change extra_schema['type'] to 'str'
-        if s['type'] == 'float':
-            s['type'] = 'str'
-        return s
-
-    schema = _WalkCoreSchema().handle_tuple_schema(schema, walk)
-    assert schema == {
-        'items_schema': [{'type': 'str'}, {'type': 'int'}],
-        'type': 'tuple',
-    }
-
-
-@pytest.mark.parametrize(
-    'params,expected_extra_schema',
-    (
-        pytest.param({}, {}, id='Model fields without extra_validator'),
-        pytest.param(
-            {'extras_schema': core_schema.float_schema()},
-            {'extras_schema': {'type': 'str'}},
-            id='Model fields with extra_validator',
-        ),
-    ),
-)
-def test_handle_model_fields_schema(params, expected_extra_schema):
-    schema = core_schema.model_fields_schema(
-        {
-            'foo': core_schema.model_field(core_schema.int_schema()),
-        },
-        **params,
-    )
-
-    def walk(s, recurse):
-        # change extra_schema['type'] to 'str'
-        if s['type'] == 'float':
-            s['type'] = 'str'
-        return s
-
-    schema = _WalkCoreSchema().handle_model_fields_schema(schema, walk)
-    assert schema == {
-        **expected_extra_schema,
-        'type': 'model-fields',
-        'fields': {'foo': {'type': 'model-field', 'schema': {'type': 'int'}}},
-    }
-
-
-@pytest.mark.parametrize(
-    'params,expected_extra_schema',
-    (
-        pytest.param({}, {}, id='Typeddict without extra_validator'),
-        pytest.param(
-            {'extras_schema': core_schema.float_schema()},
-            {'extras_schema': {'type': 'str'}},
-            id='Typeddict with extra_validator',
-        ),
-    ),
-)
-def test_handle_typed_dict_schema(params, expected_extra_schema):
-    schema = core_schema.typed_dict_schema(
-        {
-            'foo': core_schema.model_field(core_schema.int_schema()),
-        },
-        **params,
-    )
-
-    def walk(s, recurse):
-        # change extra_validator['type'] to 'str'
-        if s['type'] == 'float':
-            s['type'] = 'str'
-        return s
-
-    schema = _WalkCoreSchema().handle_typed_dict_schema(schema, walk)
-    assert schema == {
-        **expected_extra_schema,
-        'type': 'typed-dict',
-        'fields': {'foo': {'type': 'model-field', 'schema': {'type': 'int'}}},
-    }
-
-
-def test_handle_function_schema():
-    schema = core_schema.with_info_before_validator_function(
-        lambda v, _info: v, core_schema.float_schema(), field_name='field_name'
-    )
-
-    def walk(s, recurse):
-        # change type to str
-        if s['type'] == 'float':
-            s['type'] = 'str'
-        return s
-
-    schema = _WalkCoreSchema().handle_function_schema(schema, walk)
-    assert schema['type'] == 'function-before'
-    assert schema['schema'] == {'type': 'str'}
-
-    def walk1(s, recurse):
-        # this is here to make sure this function is not called
-        assert False
-
-    schema = _WalkCoreSchema().handle_function_schema(core_schema.int_schema(), walk1)
-    assert schema['type'] == 'int'
-
-
-def test_handle_call_schema():
-    param_a = core_schema.arguments_parameter(name='a', schema=core_schema.str_schema(), mode='positional_only')
-    args_schema = core_schema.arguments_schema([param_a])
-
-    schema = core_schema.call_schema(
-        arguments=args_schema,
-        function=lambda a: int(a),
-        return_schema=core_schema.str_schema(),
-    )
-
-    def walk(s, recurse):
-        # change return schema
-        if 'return_schema' in schema:
-            schema['return_schema']['type'] = 'int'
-        return s
-
-    schema = _WalkCoreSchema().handle_call_schema(schema, walk)
-    assert schema['return_schema'] == {'type': 'int'}
-
-
 class TestModel:
     __slots__ = (
         '__dict__',
@@ -738,7 +613,6 @@ class TestModel:
                             'fields': {'a': {'type': 'model-field', 'schema': {'type': 'str'}}},
                         },
                         'alias': 'comp_field_1',
-                        'metadata': {'comp_field_key': 'comp_field_data'},
                     }
                 ],
                 'ref': 'meta_schema',

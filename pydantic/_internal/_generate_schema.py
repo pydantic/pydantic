@@ -67,7 +67,6 @@ from ._config import ConfigWrapper, ConfigWrapperStack
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._core_utils import (
     CoreSchemaOrField,
-    get_ref,
     get_type_ref,
     is_function_with_inner_schema,
     is_list_like_schema_with_items_schema,
@@ -337,6 +336,7 @@ class GenerateSchema:
         'field_name_stack',
         'model_type_stack',
         'defs',
+        '_discriminators_fixed_inplace',
     )
 
     def __init__(
@@ -352,6 +352,7 @@ class GenerateSchema:
         self.field_name_stack = _FieldNameStack()
         self.model_type_stack = _ModelTypeStack()
         self.defs = _Definitions()
+        self._discriminators_fixed_inplace: list[tuple[core_schema.CoreSchema, str | Discriminator]] = []
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
@@ -546,22 +547,23 @@ class GenerateSchema:
             )
         except _discriminated_union.MissingDefinitionForUnionRef:
             # defer until defs are resolved
-            _discriminated_union.set_discriminator_in_metadata(
-                schema,
-                discriminator,
-            )
+            self._discriminators_fixed_inplace.append((schema, discriminator))
             return schema
 
     def clean_schema(self, schema: CoreSchema) -> CoreSchema:
         if ref := schema.get('ref'):
             schema = self.defs.create_def_ref(ref, schema, count=False)
 
-        def_values = self.defs.clean_schema()
+        defs = self.defs.clean_schema()
 
-        if def_values:
-            schema = core_schema.definitions_schema(schema=schema, definitions=def_values)
+        if defs:
+            schema = core_schema.definitions_schema(schema=schema, definitions=[*defs.values()])
 
-        schema = _discriminated_union.apply_discriminators(schema)
+        for to_fix, discriminator in self._discriminators_fixed_inplace:
+            res = _discriminated_union.apply_discriminator(to_fix, discriminator, defs)
+            to_fix.clear()  # type: ignore
+            to_fix.update(res)  # type: ignore
+
         schema = validate_core_schema(schema)
         return schema
 
@@ -816,7 +818,7 @@ class GenerateSchema:
             if ref:
                 schema['ref'] = ref
         else:
-            ref = get_ref(schema)
+            ref = schema.get('ref', None)
 
         if ref:
             return self.defs.create_def_ref(ref, schema)
@@ -2512,7 +2514,7 @@ class _Definitions:
         self._ref_schemas[ref].append(ref_schema)
         return ref_schema
 
-    def clean_schema(self) -> list[core_schema.CoreSchema]:
+    def clean_schema(self) -> dict[str, core_schema.CoreSchema]:
         for ref, def_refs in self._ref_schemas.items():
             if ref not in self._definitions:
                 raise PydanticUndefinedAnnotation(name=ref, message='undefined ref')
@@ -2524,11 +2526,10 @@ class _Definitions:
                     def_ref.update(self._definitions[ref])  # type: ignore
                     self._ref_schema_counts[ref] -= 1
 
-        res = {
+        return {
             **self._inner_defs,
             **{k: v for k, v in self._definitions.items() if self._ref_schema_counts[k] > 0},
         }
-        return [*res.values()]
 
     def _can_be_inlined(self, s: core_schema.DefinitionReferenceSchema) -> bool:
         if self._ref_schema_counts[s['schema_ref']] > 1:
