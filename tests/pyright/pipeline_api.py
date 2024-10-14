@@ -3,14 +3,13 @@ from typing import Annotated
 
 from pydantic.experimental.pipeline import validate_as
 
-# this test works by adding type ignores and having pyright fail with
-# an unused type ignore error if the type checking isn't working
-Annotated[str, validate_as(int)]  # type: ignore
-Annotated[str, validate_as(str).transform(lambda x: int(x))]  # type: ignore
-Annotated[float, validate_as(float).gt(0)]  # should be able to compare float to int
-Annotated[datetime.datetime, validate_as(datetime.datetime).datetime_tz_naive()]
-Annotated[datetime.datetime, validate_as(str).datetime_tz_naive()]  # type: ignore
-Annotated[
+a1 = Annotated[str, validate_as(int)]  # pyright: ignore[reportInvalidTypeArguments]
+a2 = Annotated[str, validate_as(str).transform(lambda x: int(x))]  # pyright: ignore[reportInvalidTypeArguments]
+a3 = Annotated[float, validate_as(float).gt(0)]  # should be able to compare float to int
+
+a4 = Annotated[datetime.datetime, validate_as(datetime.datetime).datetime_tz_naive()]
+a5 = Annotated[datetime.datetime, validate_as(str).datetime_tz_naive()]  # pyright: ignore[reportAttributeAccessIssue]
+a6 = Annotated[
     datetime.datetime,
     (
         validate_as(str).transform(str.strip).validate_as(datetime.datetime).datetime_tz_naive()

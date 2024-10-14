@@ -1535,7 +1535,7 @@ class GenerateSchema:
                 raise PydanticUndefinedAnnotation.from_name_error(e) from e
             if not annotations:
                 # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
-                annotations = {k: Any for k in namedtuple_cls._fields}
+                annotations: dict[str, Any] = {k: Any for k in namedtuple_cls._fields}
 
             if typevars_map:
                 annotations = {
