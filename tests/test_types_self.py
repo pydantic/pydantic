@@ -7,7 +7,7 @@ import pytest
 import typing_extensions
 from typing_extensions import NamedTuple, TypedDict
 
-from pydantic import BaseModel, Field, PydanticUserError, TypeAdapter, ValidationError, validate_call
+from pydantic import BaseModel, Field, PydanticUserError, TypeAdapter, ValidationError, computed_field, validate_call
 
 
 @pytest.fixture(
@@ -188,3 +188,46 @@ def test_invalid_validate_call_of_method(Self):
             @validate_call
             def foo(self: Self):
                 pass
+
+
+def test_type_of_self(Self):
+    class A(BaseModel):
+        self_type: type[Self]
+
+        @computed_field
+        def self_types1(self) -> list[type[Self]]:
+            return [type(self), self.self_type]
+
+        # make sure `eval_type` etc. works
+        @computed_field
+        def self_types2(self) -> list[type['Self']]:
+            return [type(self), self.self_type]
+
+        # make sure `eval_type` etc. works
+        @computed_field
+        def self_types3(self) -> 'list[type[Self]]':
+            return [type(self), self.self_type]
+
+    class B(A): ...
+
+    A(self_type=A)
+    A(self_type=B)
+    B(self_type=B)
+
+    a = A(self_type=B)
+    for prop in (a.self_types1, a.self_types2, a.self_types3):
+        assert prop == [A, B]
+
+    for invalid_type in (type, int, A, object):
+        with pytest.raises(ValidationError) as exc_info:
+            B(self_type=invalid_type)
+
+        assert exc_info.value.errors(include_url=False) == [
+            {
+                'type': 'is_subclass_of',
+                'loc': ('self_type',),
+                'msg': f'Input should be a subclass of {B.__qualname__}',
+                'input': invalid_type,
+                'ctx': {'class': B.__qualname__},
+            }
+        ]
