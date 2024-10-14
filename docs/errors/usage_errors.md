@@ -407,7 +407,6 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'callable-discriminator-no-tag'
 ```
 
-
 ## `TypedDict` version {#typed-dict-version}
 
 This error is raised when you use [typing.TypedDict][]
@@ -540,7 +539,6 @@ try:
 except PydanticUserError as exc_info:
     assert exc_info.code == 'invalid-for-json-schema'
 ```
-
 
 ## JSON schema already used {#json-schema-already-used}
 
@@ -1139,6 +1137,7 @@ pydantic.errors.PydanticUserError: Dataclass field bar has init=False and init_v
 ## `model_config` is used as a model field {#model-config-invalid-field-name}
 
 This error is raised when `model_config` is used as the name of a field.
+
 ```py
 from pydantic import BaseModel, PydanticUserError
 
@@ -1153,7 +1152,7 @@ except PydanticUserError as exc_info:
 
 ## [`with_config`][pydantic.config.with_config] is used on a `BaseModel` subclass {#with-config-on-model}
 
-This error is raised when the [`with_config`][pydantic.config.with_config]  decorator is used on a class which is already a Pydantic model (use the `model_config` attribute instead).
+This error is raised when the [`with_config`][pydantic.config.with_config] decorator is used on a class which is already a Pydantic model (use the `model_config` attribute instead).
 
 ```py
 from pydantic import BaseModel, PydanticUserError, with_config
@@ -1238,3 +1237,40 @@ except PydanticUserError as exc_info:
 
 [related specification section]: https://typing.readthedocs.io/en/latest/spec/callables.html#unpack-for-keyword-arguments
 [PEP 692]: https://peps.python.org/pep-0692/
+
+## Invalid `Self` type {#invalid-self-type}
+
+Currently, [`Self`][typing.Self] can only be used to annotate a field of a class (specifically, subclasses of [`BaseModel`][pydantic.BaseModel], [`NamedTuple`][typing.NamedTuple], [`TypedDict`][typing.TypedDict], or dataclasses). Attempting to use [`Self`][typing.Self] in any other ways will raise this error.
+
+```py
+from typing_extensions import Self
+
+from pydantic import PydanticUserError, validate_call
+
+try:
+
+    @validate_call
+    def func(self: Self):
+        pass
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'invalid-self-type'
+```
+
+The following example of [`validate_call()`][pydantic.validate_call] will also raise this error, even though it is correct from a type-checking perspective. This may be supported in the future.
+
+```py
+from typing_extensions import Self
+
+from pydantic import BaseModel, PydanticUserError, validate_call
+
+try:
+
+    class A(BaseModel):
+        @validate_call
+        def func(self, arg: Self):
+            pass
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'invalid-self-type'
+```
