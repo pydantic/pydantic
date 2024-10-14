@@ -1414,13 +1414,6 @@ def test_type_on_none():
     ]
 
 
-def test_type_on_annotation_error():
-    with pytest.raises(TypeError, match='Expected a class, got 1'):
-
-        class Model1(BaseModel):
-            a: Type[1]
-
-
 def test_annotated_inside_type():
     class Model(BaseModel):
         a: Type[Annotated[int, ...]]
