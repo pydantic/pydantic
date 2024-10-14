@@ -705,10 +705,10 @@ class GenerateSchema:
                     )
                     inner_schema = apply_validators(fields_schema, decorators.root_validators.values(), None)
 
-                    missing_refs = recursively_defined_type_refs().difference(self.defs._definitions.keys())
+                    missing_refs = [r for r in recursively_defined_type_refs() if self.defs.get_def(r) is None]
                     if missing_refs:
                         raise PydanticUndefinedAnnotation(
-                            name=next(iter(missing_refs)), message='recursively defined type not fully defined'
+                            name=missing_refs[0], message='recursively defined type not fully defined'
                         )
 
                     inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
@@ -747,16 +747,6 @@ class GenerateSchema:
             return title
 
         return None
-
-    def _unpack_refs_defs(self, schema: CoreSchema) -> CoreSchema:
-        """Unpack all 'definitions' schemas into `GenerateSchema.defs.definitions`
-        and return the inner schema.
-        """
-        if schema['type'] == 'definitions':
-            for s in schema['definitions']:
-                self.defs._inner_defs[s['ref']] = s  # type: ignore
-            return schema['schema']
-        return schema
 
     def _generate_schema_from_property(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
         """Try to generate schema from either the `__get_pydantic_core_schema__` function or
@@ -811,7 +801,7 @@ class GenerateSchema:
             # we have no existing schema information on the property, exit early so that we can go generate a schema
             return None
 
-        schema = self._unpack_refs_defs(schema)
+        schema = self.defs.unpack_refs_defs(schema)
 
         if is_function_with_inner_schema(schema):
             ref = schema['schema'].pop('ref', None)  # pyright: ignore[reportCallIssue, reportArgumentType]
@@ -2119,16 +2109,19 @@ class GenerateSchema:
         if ref is not None:
             schema = schema.copy()
             new_ref = ref + f'_{repr(metadata)}'
-            if new_ref in self.defs._definitions:
-                return self.defs._definitions[new_ref]
+            existing = self.defs.get_def(new_ref)
+            if existing is not None:
+                return existing
             schema['ref'] = new_ref  # type: ignore
         elif schema['type'] == 'definition-ref':
             ref = schema['schema_ref']
-            if ref in self.defs._definitions:
-                schema = self.defs._definitions[ref].copy()
+            existing = self.defs.get_def(ref)
+            if existing is not None:
+                schema = existing.copy()
                 new_ref = ref + f'_{repr(metadata)}'
-                if new_ref in self.defs._definitions:
-                    return self.defs._definitions[new_ref]
+                existing = self.defs.get_def(new_ref)
+                if existing is not None:
+                    return existing
                 schema['ref'] = new_ref  # type: ignore
 
         maybe_updated_schema = _known_annotated_metadata.apply_known_metadata(metadata, schema.copy())
@@ -2499,7 +2492,10 @@ class _Definitions:
         self._ref_schema_counts: dict[str, int] = defaultdict(int)
         self._ref_schemas: dict[str, list[core_schema.DefinitionReferenceSchema]] = defaultdict(list)
         self._recursive_refs: dict[str, bool] = {}
-        self._inner_defs: dict[str, core_schema.CoreSchema] = {}
+        self._unpacked_definitions: dict[str, core_schema.CoreSchema] = {}
+
+    def get_def(self, ref: str) -> core_schema.CoreSchema | None:
+        return self._definitions.get(ref)
 
     def create_def_ref(
         self, ref: str, schema: core_schema.CoreSchema | None, count: bool = True
@@ -2526,10 +2522,12 @@ class _Definitions:
                     def_ref.update(self._definitions[ref])  # type: ignore
                     self._ref_schema_counts[ref] -= 1
 
-        return {
-            **self._inner_defs,
-            **{k: v for k, v in self._definitions.items() if self._ref_schema_counts[k] > 0},
-        }
+        definitions = {**self._unpacked_definitions}
+        for ref, def_schema in self._definitions.items():
+            if self._ref_schema_counts[ref] > 0:
+                definitions[ref] = def_schema
+
+        return definitions
 
     def _can_be_inlined(self, s: core_schema.DefinitionReferenceSchema) -> bool:
         if self._ref_schema_counts[s['schema_ref']] > 1:
@@ -2549,6 +2547,16 @@ class _Definitions:
                     # we need to keep this as a ref
                     return False
         return True
+
+    def unpack_refs_defs(self, schema: CoreSchema) -> CoreSchema:
+        """Unpack all 'definitions' schemas into `GenerateSchema.defs.definitions`
+        and return the inner schema.
+        """
+        if schema['type'] == 'definitions':
+            for s in schema['definitions']:
+                self._unpacked_definitions[s['ref']] = s  # type: ignore
+            return schema['schema']
+        return schema
 
     @contextmanager
     def get_schema_or_ref(self, tp: Any) -> Iterator[tuple[str, None] | tuple[str, CoreSchema]]:
@@ -2587,7 +2595,7 @@ class _Definitions:
 
 def resolve_original_schema(schema: CoreSchema, definitions: _Definitions) -> CoreSchema | None:
     if schema['type'] == 'definition-ref':
-        return definitions._definitions.get(schema['schema_ref'], None)
+        return definitions.get_def(schema['schema_ref'])
     elif schema['type'] == 'definitions':
         return schema['schema']
     else:
