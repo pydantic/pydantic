@@ -274,13 +274,13 @@ jobs:
         path: coverage
         include-hidden-files: true
 
-  test-pyright:
-    name: Pyright tests
+  test-typechecking-integration:
+    name: Typechecking integration tests
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
 
-    - name: install node for pyright
+    - name: install node for Pyright
       uses: actions/setup-node@v4
       with:
         node-version: '20'
@@ -293,13 +293,16 @@ jobs:
     - name: install deps
       run: |
         pdm venv create --force $PYTHON
-        pdm install
+        pdm install -G mypy
 
-    - name: install pyright
+    - name: install Pyright
       run: npm install -g pyright@1.1.384  # keep this in sync with .pre-commit-config.yaml
 
-    - name: run pyright tests
-      run: make test-pyright
+    - name: run typechecking integration tests (Pyright)
+      run: make test-typechecking-pyright
+
+    - name: run typechecking integration tests (Mypy)
+      run: make test-typechecking-mypy
 
   coverage-combine:
     needs: [test, test-mypy]

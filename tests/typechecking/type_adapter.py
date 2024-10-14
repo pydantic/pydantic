@@ -18,10 +18,10 @@ ta1.dump_json('1')  # type: ignore[arg-type]  # pyright: ignore[reportArgumentTy
 # The following use cases require PEP 747: TypeExpr:
 
 ta2 = TypeAdapter(Annotated[int, ...])
-assert_type(ta2, TypeAdapter[int])  # type: ignore[assert-type]  # type: ignore[reportAssertTypeFailure]
+assert_type(ta2, TypeAdapter[int])  # type: ignore[assert-type]  # pyright: ignore[reportAssertTypeFailure]
 
 ta3: TypeAdapter[int] = TypeAdapter(Annotated[int, ...])
 assert_type(ta3, TypeAdapter[int])
 
 ta4 = TypeAdapter(int | str)
-assert_type(ta4, TypeAdapter[int | str])  # type: ignore[assert-type]  # type: ignore[reportAssertTypeFailure]
+assert_type(ta4, TypeAdapter[int | str])  # type: ignore[assert-type]  # pyright: ignore[reportAssertTypeFailure]
