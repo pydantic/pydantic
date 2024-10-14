@@ -475,7 +475,7 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
         visited = set()
         while next_s['type'] == 'definition-ref':
             if next_s['schema_ref'] in visited:
-                raise Exception()
+                raise Exception('Circular reference detected')
             visited.add(next_s['schema_ref'])
 
             ref_counts[next_s['schema_ref']] += 1
@@ -509,8 +509,13 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
         return True
 
     def inline_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
-        if s['type'] == 'definition-ref':
+        visited = set()
+        while s['type'] == 'definition-ref':
             ref = s['schema_ref']
+            if ref in visited:
+                raise Exception('Circular reference detected')
+            visited.add(ref)
+
             # Check if the reference is only used once, not involved in recursion and does not have
             # any extra keys (like 'serialization')
             if can_be_inlined(s, ref):
@@ -521,12 +526,10 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
                 # in particular this is needed for `serialization`
                 if 'serialization' in s:
                     new['serialization'] = s['serialization']
-                s = recurse(new, inline_refs)
-                return s
+                s = new
             else:
-                return recurse(s, inline_refs)
-        else:
-            return recurse(s, inline_refs)
+                break
+        return recurse(s, inline_refs)
 
     schema = walk_core_schema(schema, inline_refs, copy=False)
 
