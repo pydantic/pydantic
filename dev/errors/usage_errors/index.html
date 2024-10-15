@@ -2863,6 +2863,57 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
+  <a href="#validate-call-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      Unsupported type for validate_call
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Unsupported type for validate_call">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#classmethod-staticmethod-and-property" class="md-nav__link">
+    <span class="md-ellipsis">
+      @classmethod, @staticmethod, and @property
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Classes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-callable" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom callable
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#invalid-signature" class="md-nav__link">
+    <span class="md-ellipsis">
+      Invalid signature
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#unpack-typed-dict" class="md-nav__link">
     <span class="md-ellipsis">
       Unpack used without a TypedDict
@@ -3708,6 +3759,57 @@ to help you monitor and understand your
       dataclass is used on a BaseModel subclass
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validate-call-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      Unsupported type for validate_call
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Unsupported type for validate_call">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#classmethod-staticmethod-and-property" class="md-nav__link">
+    <span class="md-ellipsis">
+      @classmethod, @staticmethod, and @property
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Classes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-callable" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom callable
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#invalid-signature" class="md-nav__link">
+    <span class="md-ellipsis">
+      Invalid signature
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -4723,6 +4825,85 @@ a Pydantic model.</p>
 
 <span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;dataclass-on-model&#39;</span>
+</code></pre></div>
+<h2 id="validate-call-type">Unsupported type for <code>validate_call</code><a class="headerlink" href="#validate-call-type" title="Permanent link">&para;</a></h2>
+<p><code>validate_call</code> has some limitations on the callables it can validate. This error is raised when you try to use it with an unsupported callable. Currently the supported callables are functions (including lambdas) and methods and instances of <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functools.html#functools.partial"><code>partial</code></a>. In the case of <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functools.html#functools.partial"><code>partial</code></a>, the function being partially applied must be one of the supported callables.</p>
+<h3 id="classmethod-staticmethod-and-property"><code>@classmethod</code>, <code>@staticmethod</code>, and <code>@property</code><a class="headerlink" href="#classmethod-staticmethod-and-property" title="Permanent link">&para;</a></h3>
+<p>These decorators must be put before <code>validate_call</code>.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">validate_call</span>
+
+<span class="c1"># error</span>
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">A</span><span class="p">:</span>
+        <span class="nd">@validate_call</span>
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">f1</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span> <span class="o">...</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;validate-call-type&#39;</span>
+
+
+<span class="c1"># correct</span>
+<span class="nd">@classmethod</span>
+<span class="nd">@validate_call</span>
+<span class="k">def</span> <span class="nf">f2</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+<h3 id="classes">Classes<a class="headerlink" href="#classes" title="Permanent link">&para;</a></h3>
+<p>While classes are callables themselves, <code>validate_call</code> can't be applied on them, as it needs to know about which method to use (<code>__init__</code> or <code>__new__</code>) to fetch type annotations. If you want to validate the constructor of a class, you should put <code>validate_call</code> on top of the appropriate method instead.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">validate_call</span>
+
+<span class="c1"># error</span>
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="nd">@validate_call</span>
+    <span class="k">class</span> <span class="nc">A1</span><span class="p">:</span> <span class="o">...</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;validate-call-type&#39;</span>
+
+
+<span class="c1"># correct</span>
+<span class="k">class</span> <span class="nc">A2</span><span class="p">:</span>
+    <span class="nd">@validate_call</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="o">...</span>
+
+    <span class="nd">@validate_call</span>
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+<h3 id="custom-callable">Custom callable<a class="headerlink" href="#custom-callable" title="Permanent link">&para;</a></h3>
+<p>Although you can create custom callable types in Python by implementing a <code>__call__</code> method, currently the instances of these types cannot be validated with <code>validate_call</code>. This may change in the future, but for now, you should use <code>validate_call</code> explicitly on <code>__call__</code> instead.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">validate_call</span>
+
+<span class="c1"># error</span>
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">A1</span><span class="p">:</span>
+        <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="o">...</span>
+
+    <span class="n">validate_call</span><span class="p">(</span><span class="n">A1</span><span class="p">())</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;validate-call-type&#39;</span>
+
+
+<span class="c1"># correct</span>
+<span class="k">class</span> <span class="nc">A2</span><span class="p">:</span>
+    <span class="nd">@validate_call</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+<h3 id="invalid-signature">Invalid signature<a class="headerlink" href="#invalid-signature" title="Permanent link">&para;</a></h3>
+<p>This is generally less common, but a possible reason is that you are trying to validate a method that doesn't have at least one argument (usually <code>self</code>).</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">validate_call</span>
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">A</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">f</span><span class="p">():</span> <span class="o">...</span>
+
+    <span class="n">validate_call</span><span class="p">(</span><span class="n">A</span><span class="p">()</span><span class="o">.</span><span class="n">f</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;validate-call-type&#39;</span>
 </code></pre></div>
 <h2 id="unpack-typed-dict"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Unpack"><code>Unpack</code></a> used without a <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.TypedDict"><code>TypedDict</code></a><a class="headerlink" href="#unpack-typed-dict" title="Permanent link">&para;</a></h2>
 <p>This error is raised when <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Unpack"><code>Unpack</code></a> is used with something other than
