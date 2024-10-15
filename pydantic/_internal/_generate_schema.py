@@ -1657,6 +1657,7 @@ class GenerateSchema:
 
         item_type_schema = self.generate_schema(items_type)
         list_schema = core_schema.list_schema(item_type_schema)
+        json_schema = core_schema.list_schema(self.generate_schema(items_type))
 
         python_schema = core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence')
         if items_type != Any:
@@ -1670,7 +1671,7 @@ class GenerateSchema:
             serialize_sequence_via_list, schema=item_type_schema, info_arg=True
         )
         return core_schema.json_or_python_schema(
-            json_schema=list_schema, python_schema=python_schema, serialization=serialization
+            json_schema=json_schema, python_schema=python_schema, serialization=serialization
         )
 
     def _iterable_schema(self, type_: Any) -> core_schema.GeneratorSchema:
