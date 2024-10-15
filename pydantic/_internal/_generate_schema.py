@@ -2174,7 +2174,7 @@ class GenerateSchema:
         schema: core_schema.CoreSchema,
         serializers: list[Decorator[FieldSerializerDecoratorInfo]],
     ) -> core_schema.CoreSchema:
-        """Apply field serializers to a schema. Mutates the schema."""
+        """Apply field serializers to a schema."""
         if serializers:
             if schema['type'] == 'definitions':
                 inner_schema = schema['schema']
@@ -2184,6 +2184,8 @@ class GenerateSchema:
                 ref = typing.cast('str|None', schema.get('ref', None))
                 if ref is not None:
                     schema = self.defs.create_def_ref(ref, schema)
+                elif schema['type'] != 'definition-ref':
+                    schema = schema.copy()
 
             # use the last serializer to make it easy to override a serializer set on a parent model
             serializer = serializers[-1]
