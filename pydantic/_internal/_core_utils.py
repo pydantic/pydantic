@@ -104,7 +104,7 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
     return type_ref
 
 
-def _strip_metadata(schema: CoreSchema) -> CoreSchema:
+def _print_strip_metadata(schema: CoreSchema) -> CoreSchema:
     def strip_metadata(s: dict[str, Any]) -> dict[str, Any]:
         s = s.copy()
         s.pop('metadata', None)
@@ -131,15 +131,15 @@ def _strip_metadata(schema: CoreSchema) -> CoreSchema:
                 s.pop('config', None)
         return s
 
-    def traverse(v: Any) -> Any:
+    def traverse_strip_metadata(v: Any) -> Any:
         if isinstance(v, dict):
-            res = {k: traverse(vv) for k, vv in v.items()}
+            res = {k: traverse_strip_metadata(vv) for k, vv in v.items()}
             return strip_metadata(res)  # type: ignore
         elif isinstance(v, list):
-            return [traverse(vv) for vv in v]
+            return [traverse_strip_metadata(vv) for vv in v]
         return v
 
-    return traverse(schema)
+    return traverse_strip_metadata(schema)
 
 
 def pretty_print_core_schema(
@@ -156,7 +156,7 @@ def pretty_print_core_schema(
     from rich import print  # type: ignore  # install it manually in your dev env
 
     if not include_metadata:
-        schema = _strip_metadata(schema)
+        schema = _print_strip_metadata(schema)
 
     return print(schema)
 

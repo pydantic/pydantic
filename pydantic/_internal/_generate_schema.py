@@ -2484,7 +2484,6 @@ class _Definitions:
         self._recursively_seen: set[str] = set()
         self._definitions: dict[str, core_schema.CoreSchema] = {}
         self._unpacked_definitions: dict[str, core_schema.CoreSchema] = {}
-        self._ref_schema_counts: dict[str, int] = defaultdict(int)
         self._ref_schemas: dict[str, list[core_schema.DefinitionReferenceSchema]] = defaultdict(list)
         self._recursive_refs: set[str] = set()
         self._undefined_generic_recursive_refs: set[str] = set()
@@ -2493,18 +2492,10 @@ class _Definitions:
         return self._definitions.get(ref)
 
     def create_def_ref(self, ref: str, schema: core_schema.CoreSchema | None) -> core_schema.DefinitionReferenceSchema:
-        return self._create_def_ref(ref, schema, ref_counted=True)
-
-    def _create_def_ref(
-        self, ref: str, schema: core_schema.CoreSchema | None, ref_counted: bool
-    ) -> core_schema.DefinitionReferenceSchema:
         if schema is not None:
             if 'ref' in schema:
                 assert schema['ref'] == ref
             self._definitions[ref] = schema
-
-        if ref_counted:
-            self._ref_schema_counts[ref] += 1
 
         # Every definition_reference_schema must be created here. No other place should create them.
         ref_schema = core_schema.definition_reference_schema(ref)
@@ -2518,24 +2509,23 @@ class _Definitions:
             if ref not in self._definitions:
                 raise PydanticUndefinedAnnotation(name=ref, message='recursive generic type not fully defined')
 
-        if ref := schema.get('ref'):
-            schema = self._create_def_ref(ref, schema, ref_counted=False)
-
-        for ref, def_refs in self._ref_schemas.items():
-            if ref not in self._definitions:
-                raise PydanticUndefinedAnnotation(name=ref, message='undefined ref')
-
-            for def_ref in def_refs:
-                if self._can_be_inlined(ref, def_ref):
-                    # Mutate the definition reference directly to be the actual definition
-                    def_ref.clear()  # type: ignore
-                    def_ref.update(self._definitions[ref])  # type: ignore
-                    self._ref_schema_counts[ref] -= 1
+        ref = schema.get('ref')
+        if ref is not None and ref in self._recursive_refs:
+            schema = self.create_def_ref(ref, schema)
 
         remaining_defs = {**self._unpacked_definitions}
-        for ref, def_schema in self._definitions.items():
-            if self._ref_schema_counts[ref] > 0:
-                remaining_defs[ref] = def_schema
+
+        for ref, def_refs in self._ref_schemas.items():
+            if (referenced_def := self._definitions.get(ref)) is None:
+                raise PydanticUndefinedAnnotation(name=ref, message='undefined ref')
+
+            inline_def_ref = def_refs[0] if len(def_refs) == 1 else None
+            if inline_def_ref is not None and self._can_be_inlined(ref, inline_def_ref):
+                # Mutate the definition reference directly to be the actual definition
+                inline_def_ref.clear()  # type: ignore
+                inline_def_ref.update(referenced_def)  # type: ignore
+            else:
+                remaining_defs[ref] = referenced_def
 
         if remaining_defs:
             schema = core_schema.definitions_schema(schema=schema, definitions=[*remaining_defs.values()])
@@ -2546,15 +2536,12 @@ class _Definitions:
     def _reset(self) -> None:
         self._recursively_seen.clear()
         self._definitions.clear()
-        self._ref_schema_counts.clear()
         self._ref_schemas.clear()
         self._recursive_refs.clear()
         self._unpacked_definitions.clear()
         self._undefined_generic_recursive_refs.clear()
 
     def _can_be_inlined(self, ref: str, def_ref: core_schema.DefinitionReferenceSchema) -> bool:
-        if self._ref_schema_counts[ref] > 1:
-            return False
         if ref in self._recursive_refs:
             return False
         if 'serialization' in def_ref:
@@ -2572,9 +2559,7 @@ class _Definitions:
         return True
 
     def unpack_refs_defs(self, schema: CoreSchema) -> CoreSchema:
-        """Unpack all 'definitions' schemas into `GenerateSchema.defs.definitions`
-        and return the inner schema.
-        """
+        """Unpack all 'definitions' schemas into `_Definitions` registry and return the inner schema."""
         if schema['type'] == 'definitions':
             for s in schema['definitions']:
                 self._unpacked_definitions[s['ref']] = s  # type: ignore
@@ -2582,8 +2567,7 @@ class _Definitions:
         return schema
 
     def check_missing_recursive_generics_refs(self) -> None:
-        generic_recursive_refs = recursively_defined_type_refs()
-        if generic_recursive_refs is not None:
+        if generic_recursive_refs := recursively_defined_type_refs():
             for ref in generic_recursive_refs:
                 if ref not in self._definitions:
                     self._undefined_generic_recursive_refs.add(ref)
