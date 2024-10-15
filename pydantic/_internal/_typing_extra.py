@@ -308,7 +308,7 @@ def eval_type_backport(
 
         # If it is a `TypeError` and value isn't a `ForwardRef`, it would have failed during annotation definition.
         # Thus we assert here for type checking purposes:
-        assert isinstance(value, typing.ForwardRef), (value, e)
+        assert isinstance(value, typing.ForwardRef)
 
         message = f'Unable to evaluate type annotation {value.__forward_arg__!r}.'
         if sys.version_info >= (3, 11):

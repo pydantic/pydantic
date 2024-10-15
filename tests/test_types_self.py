@@ -198,12 +198,11 @@ def test_type_of_self(Self):
         def self_types1(self) -> List[Type[Self]]:
             return [type(self), self.self_type]
 
-        # make sure `eval_type` etc. works
+        # make sure forward refs are supported:
         @computed_field
         def self_types2(self) -> List[Type['Self']]:
             return [type(self), self.self_type]
 
-        # make sure `eval_type` etc. works
         @computed_field
         def self_types3(self) -> 'List[Type[Self]]':
             return [type(self), self.self_type]
