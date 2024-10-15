@@ -439,6 +439,9 @@ class InvalidSchema(TypedDict, total=False):
     type: Required[Literal['invalid']]
     ref: str
     metadata: Dict[str, Any]
+    # note, we never plan to use this, but include it for type checking purposes to match
+    # all other CoreSchema union members
+    serialization: SerSchema
 
 
 def invalid_schema(ref: str | None = None, metadata: Dict[str, Any] | None = None) -> InvalidSchema:
