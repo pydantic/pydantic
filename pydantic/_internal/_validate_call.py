@@ -77,14 +77,14 @@ class ValidateCallWrapper:
         else:
             schema_type = function
             module = function.__module__
-        qualname = core_config_title = extract_function_qualname(function)
+        qualname = extract_function_qualname(function)
 
         ns_resolver = NsResolver(namespaces_tuple=ns_for_function(schema_type, parent_namespace=parent_namespace))
 
         config_wrapper = ConfigWrapper(config)
         gen_schema = _generate_schema.GenerateSchema(config_wrapper, ns_resolver)
         schema = gen_schema.clean_schema(gen_schema.generate_schema(function))
-        core_config = config_wrapper.core_config(core_config_title)
+        core_config = config_wrapper.core_config(title=qualname)
 
         self.__pydantic_validator__ = create_schema_validator(
             schema,
