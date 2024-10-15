@@ -435,11 +435,11 @@ class GenerateSchema:
             )
 
             if self._config_wrapper.use_enum_values:
-                return core_schema.no_info_after_validator_function(
+                enum_schema = core_schema.no_info_after_validator_function(
                     attrgetter('value'), enum_schema, serialization=value_ser_type
                 )
-            else:
-                return self.defs.create_def_ref(enum_ref, enum_schema)
+
+            return enum_schema
 
         else:
 
