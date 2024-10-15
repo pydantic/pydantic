@@ -220,21 +220,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # test recent mypy versions on 3.10 and mypy 1.0.1 on all supported python versions
-        # if you change the value in the lockfile add the old value to this list
-        mypy-version: ['1.0.1', 'lockfile', '1.2.0', '1.4.1', '1.5.1']
-        python-version: ['3.10']
+        # test the latest version on all supported Python versions and the rest on 3.12
+        mypy-version: ['1.10.1', '1.11.2']
+        python-version: ['3.12']
         include:
-          - mypy-version: 'lockfile'
+          - mypy-version: '1.12.0'
             python-version: '3.8'
-          - mypy-version: 'lockfile'
+          - mypy-version: '1.12.0'
             python-version: '3.9'
-          - mypy-version: 'lockfile'
+          - mypy-version: '1.12.0'
+            python-version: '3.10'
+          - mypy-version: '1.12.0'
             python-version: '3.11'
-          # TODO: Once Python 3.7 is removed, and mypy is bumped on the lockfile, we can add 'lockfile' again.
-          - mypy-version: '1.5.1'
+          - mypy-version: '1.12.0'
             python-version: '3.12'
-          - mypy-version: '1.5.1'
+          - mypy-version: '1.12.0'
             python-version: '3.13'
 
     steps:
@@ -254,9 +254,7 @@ jobs:
     - name: install mypy
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
-        if [ ${{ matrix.mypy-version }} != 'lockfile' ]; then
-          pdm remove -G linting mypy && pdm remove -G mypy mypy && pdm add mypy==${{ matrix.mypy-version }}
-        fi
+        pdm remove -G mypy mypy && pdm add -dG mypy mypy==${{ matrix.mypy-version }}
         pdm list
 
     - run: mkdir coverage

@@ -227,14 +227,9 @@ def test_mypy_results(config_filename: str, python_filename: str, request: pytes
 
 def test_bad_toml_config() -> None:
     full_config_filename = 'tests/mypy/configs/pyproject-plugin-bad-param.toml'
-    full_filename = 'tests/mypy/modules/success.py'
+    full_filename = 'tests/mypy/modules/generics.py'  # File doesn't matter
 
-    # Specifying a different cache dir for each configuration dramatically speeds up subsequent execution
-    # It also prevents cache-invalidation-related bugs in the tests
-    cache_dir = '.mypy_cache/test-pyproject-plugin-bad-param'
-    command = [full_filename, '--config-file', full_config_filename, '--cache-dir', cache_dir, '--show-error-codes']
-    if MYPY_VERSION_TUPLE >= (0, 990):
-        command.append('--disable-recursive-aliases')
+    command = [full_filename, '--config-file', full_config_filename, '--show-error-codes']
     print(f"\nExecuting: mypy {' '.join(command)}")  # makes it easier to debug as necessary
     with pytest.raises(ValueError) as e:
         mypy_api.run(command)
