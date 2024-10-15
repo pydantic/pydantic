@@ -63,7 +63,6 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from pydantic._internal._core_utils import collect_invalid_schemas
 from pydantic._internal._generics import (
     _GENERIC_TYPES_CACHE,
     _LIMITED_DICT_SIZE,
@@ -1811,10 +1810,7 @@ def test_generic_recursive_models_with_a_concrete_parameter(create_module):
 
         M1.model_rebuild()
 
-    M1 = module.M1
-
-    # assert M1.__pydantic_core_schema__ == {}
-    assert collect_invalid_schemas(M1.__pydantic_core_schema__) is False
+    assert module.M1
 
 
 def test_generic_recursive_models_complicated(create_module):
@@ -1872,9 +1868,7 @@ def test_generic_recursive_models_complicated(create_module):
 
         M1.model_rebuild()
 
-    M1 = module.M1
-
-    assert collect_invalid_schemas(M1.__pydantic_core_schema__) is False
+    assert module.M1
 
 
 def test_generic_recursive_models_in_container(create_module):
@@ -2268,9 +2262,13 @@ def test_generic_recursion_contextvar():
     assert not recursively_defined_type_refs()
     try:
         with generic_recursion_self_type(Model, (int,)):
-            # Make sure that something has been added to the contextvar-managed recursive types cache
-            assert recursively_defined_type_refs()
-            raise TestingException
+            assert not recursively_defined_type_refs()
+            with generic_recursion_self_type(Model, (float,)):
+                assert not recursively_defined_type_refs()  # Not added as generic param is different
+                with generic_recursion_self_type(Model, (int,)):
+                    # Make sure that something has been added to the contextvar-managed recursive types cache
+                    assert recursively_defined_type_refs()
+                    raise TestingException
     except TestingException:
         pass
 

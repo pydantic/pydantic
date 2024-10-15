@@ -393,7 +393,7 @@ def check_parameters_count(cls: type[BaseModel], parameters: tuple[Any, ...]) ->
         raise TypeError(f'Too {description} parameters for {cls}; actual {actual}, expected {expected}')
 
 
-_generic_recursion_cache: ContextVar[set[str] | None] = ContextVar('_generic_recursion_cache', default=None)
+_generic_recursion_cache: ContextVar[dict[str, bool] | None] = ContextVar('_generic_recursion_cache', default=None)
 
 
 @contextmanager
@@ -407,32 +407,33 @@ def generic_recursion_self_type(
     can be used while building the core schema, and will produce a schema_ref that will be valid in the
     final parent schema.
     """
-    previously_seen_type_refs = _generic_recursion_cache.get()
-    if previously_seen_type_refs is None:
-        previously_seen_type_refs = set()
-        token = _generic_recursion_cache.set(previously_seen_type_refs)
+    recursive_refs = _generic_recursion_cache.get()
+    if recursive_refs is None:
+        recursive_refs = {}
+        token = _generic_recursion_cache.set(recursive_refs)
     else:
         token = None
 
     try:
         type_ref = get_type_ref(origin, args_override=args)
-        if type_ref in previously_seen_type_refs:
+        if type_ref in recursive_refs:
+            recursive_refs[type_ref] = True
             self_type = PydanticRecursiveRef(type_ref=type_ref)
             yield self_type
         else:
-            previously_seen_type_refs.add(type_ref)
+            recursive_refs[type_ref] = False
             yield None
     finally:
         if token:
             _generic_recursion_cache.reset(token)
 
 
-def recursively_defined_type_refs() -> set[str]:
+def recursively_defined_type_refs() -> set[str] | None:
     visited = _generic_recursion_cache.get()
     if not visited:
-        return set()  # not in a generic recursion, so there are no types
+        return None  # not in a generic recursion, so there are no types
 
-    return visited.copy()  # don't allow modifications
+    return {k for k, v in visited.items() if v}
 
 
 def get_cached_generic_type_early(parent: type[BaseModel], typevar_values: Any) -> type[BaseModel] | None:
