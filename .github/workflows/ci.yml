@@ -33,7 +33,7 @@ jobs:
       - name: set up python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.13'
 
       - run: pip install -r tests/requirements.txt
 
@@ -124,7 +124,7 @@ jobs:
       - name: set up python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.13'
 
       - run: pip install -r tests/requirements.txt
 
@@ -148,7 +148,7 @@ jobs:
       - name: set up python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.13'
 
       - name: resolve MSRV
         id: resolve-msrv
@@ -183,7 +183,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - '3.11'
+          - '3.13'
           - 'pypy3.10'
 
     steps:
@@ -222,7 +222,7 @@ jobs:
       - name: set up python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.13'
 
       - name: install rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -264,7 +264,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.13'
 
       # used to lint js code
       - uses: actions/setup-node@v4
@@ -310,7 +310,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.13'
 
       - run: pip install typing_extensions
 
@@ -325,7 +325,7 @@ jobs:
         id: setup-python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.13'
 
       - name: install rust nightly
         uses: dtolnay/rust-toolchain@nightly
@@ -383,6 +383,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
       - uses: PyO3/maturin-action@v1
         with:
           command: sdist
@@ -475,7 +478,7 @@ jobs:
       - name: set up python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.13'
           architecture: ${{ matrix.python-architecture || 'x64' }}
 
       - run: pip install -U twine 'ruff==0.5.0' typing_extensions
@@ -697,7 +700,7 @@ jobs:
       - name: set up python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.13'
 
       - name: get dist artifacts
         uses: actions/download-artifact@v4
@@ -721,7 +724,7 @@ jobs:
       - name: set up python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.13'
 
       - run: pip install -U twine
 
