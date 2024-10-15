@@ -1,10 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import (
-    Any,
-    Union,
-)
+from typing import Any, Union
 
 from pydantic_core import CoreSchema, core_schema
 from pydantic_core import validate_core_schema as _validate_core_schema
@@ -12,14 +9,6 @@ from typing_extensions import TypeAliasType, TypeGuard, get_args, get_origin
 
 from . import _repr
 from ._typing_extra import is_generic_alias
-
-AnyFunctionSchema = Union[
-    core_schema.AfterValidatorFunctionSchema,
-    core_schema.BeforeValidatorFunctionSchema,
-    core_schema.WrapValidatorFunctionSchema,
-    core_schema.PlainValidatorFunctionSchema,
-]
-
 
 FunctionSchemaWithInnerSchema = Union[
     core_schema.AfterValidatorFunctionSchema,
