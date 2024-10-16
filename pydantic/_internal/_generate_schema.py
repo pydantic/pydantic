@@ -22,7 +22,6 @@ from inspect import Parameter, _ParameterKind, signature
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
 from operator import attrgetter
-from types import FunctionType, LambdaType, MethodType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -101,6 +100,7 @@ from ._namespace_utils import NamespacesTuple, NsResolver
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._typing_extra import get_cls_type_hints, is_annotated, is_finalvar, is_self_type, is_zoneinfo_type
 from ._utils import lenient_issubclass, smart_deepcopy
+from ._validate_call import VALIDATE_CALL_SUPPORTED_TYPES, ValidateCallSupportedTypes
 
 if TYPE_CHECKING:
     from ..fields import ComputedFieldInfo, FieldInfo
@@ -1009,8 +1009,8 @@ class GenerateSchema:
             return self.generate_schema(
                 self._get_first_arg_or_any(obj),
             )
-        elif isinstance(obj, (FunctionType, LambdaType, MethodType, partial)):
-            return self._callable_schema(obj)
+        elif isinstance(obj, VALIDATE_CALL_SUPPORTED_TYPES):
+            return self._call_schema(obj)
         elif inspect.isclass(obj) and issubclass(obj, Enum):
             return self._enum_schema(obj)
         elif is_zoneinfo_type(obj):
@@ -1545,7 +1545,7 @@ class GenerateSchema:
                 raise PydanticUndefinedAnnotation.from_name_error(e) from e
             if not annotations:
                 # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
-                annotations = {k: Any for k in namedtuple_cls._fields}
+                annotations: dict[str, Any] = {k: Any for k in namedtuple_cls._fields}
 
             if typevars_map:
                 annotations = {
@@ -1858,15 +1858,12 @@ class GenerateSchema:
                 self.defs.definitions[dataclass_ref] = schema
                 return core_schema.definition_reference_schema(dataclass_ref)
 
-    def _callable_schema(self, function: Callable[..., Any]) -> core_schema.CallSchema:
+    def _call_schema(self, function: ValidateCallSupportedTypes) -> core_schema.CallSchema:
         """Generate schema for a Callable.
 
         TODO support functional validators once we support them in Config
         """
         sig = signature(function)
-
-        globalns, localns = self._types_namespace
-        type_hints = _typing_extra.get_function_type_hints(function, globalns=globalns, localns=localns)
 
         mode_lookup: dict[_ParameterKind, Literal['positional_only', 'positional_or_keyword', 'keyword_only']] = {
             Parameter.POSITIONAL_ONLY: 'positional_only',
@@ -1883,7 +1880,13 @@ class GenerateSchema:
             if p.annotation is sig.empty:
                 annotation = typing.cast(Any, Any)
             else:
-                annotation = type_hints[name]
+                # Note: This was originally get by `_typing_extra.get_function_type_hints`,
+                #       but we switch to simply `p.annotation` to support bultins (e.g. `sorted`).
+                #       May need to revisit if anything breaks.
+                annotation = (
+                    _typing_extra._make_forward_ref(p.annotation) if isinstance(p.annotation, str) else p.annotation
+                )
+                annotation = self._resolve_forward_ref(annotation)
 
             parameter_mode = mode_lookup.get(p.kind)
             if parameter_mode is not None:
@@ -1921,8 +1924,8 @@ class GenerateSchema:
         return_schema: core_schema.CoreSchema | None = None
         config_wrapper = self._config_wrapper
         if config_wrapper.validate_return:
-            return_hint = type_hints.get('return')
-            if return_hint is not None:
+            return_hint = sig.return_annotation
+            if return_hint is not sig.empty:
                 return_schema = self.generate_schema(return_hint)
 
         return core_schema.call_schema(

@@ -267,26 +267,39 @@ jobs:
         COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
         CONTEXT: linux-py${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
 
-    - name: install node for pyright
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-
-    - name: install pyright
-      run: npm install -g pyright@1.1.369  # try to keep this in sync with .pre-commit-config.yaml
-
-    - name: run pyright tests
-      run: make test-pyright
-      env:
-        COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-pyright
-        CONTEXT: linux-py${{ matrix.python-version }}-pyright
-
     - name: store coverage files
       uses: actions/upload-artifact@v4
       with:
         name: coverage-${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
         path: coverage
         include-hidden-files: true
+
+  test-pyright:
+    name: Pyright tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: install node for pyright
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - uses: pdm-project/setup-pdm@v4
+      with:
+        python-version: '3.12'
+        cache: true
+
+    - name: install deps
+      run: |
+        pdm venv create --force $PYTHON
+        pdm install
+
+    - name: install pyright
+      run: npm install -g pyright@1.1.384  # keep this in sync with .pre-commit-config.yaml
+
+    - name: run pyright tests
+      run: make test-pyright
 
   coverage-combine:
     needs: [test, test-mypy]
