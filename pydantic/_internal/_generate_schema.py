@@ -862,27 +862,33 @@ class GenerateSchema:
         return obj
 
     @overload
-    def _get_args_resolving_forward_refs(self, obj: Any, required: Literal[True]) -> tuple[Any, ...]: ...
+    def _get_args_resolving_forward_refs(
+        self, obj: Any, *, required: Literal[True], eval_str: bool = True
+    ) -> tuple[Any, ...]: ...
 
     @overload
-    def _get_args_resolving_forward_refs(self, obj: Any) -> tuple[Any, ...] | None: ...
+    def _get_args_resolving_forward_refs(self, obj: Any, *, eval_str: bool = True) -> tuple[Any, ...] | None: ...
 
-    def _get_args_resolving_forward_refs(self, obj: Any, required: bool = False) -> tuple[Any, ...] | None:
+    def _get_args_resolving_forward_refs(
+        self, obj: Any, *, required: bool = False, eval_str: bool = True
+    ) -> tuple[Any, ...] | None:
         args = get_args(obj)
         if args:
+            if eval_str:
+                args = [_typing_extra._make_forward_ref(a) if isinstance(a, str) else a for a in args]
             args = tuple([self._resolve_forward_ref(a) if isinstance(a, ForwardRef) else a for a in args])
         elif required:  # pragma: no cover
             raise TypeError(f'Expected {obj} to have generic parameters but it had none')
         return args
 
-    def _get_first_arg_or_any(self, obj: Any) -> Any:
-        args = self._get_args_resolving_forward_refs(obj)
+    def _get_first_arg_or_any(self, obj: Any, eval_str: bool = True) -> Any:
+        args = self._get_args_resolving_forward_refs(obj, eval_str=eval_str)
         if not args:
             return Any
         return args[0]
 
-    def _get_first_two_args_or_any(self, obj: Any) -> tuple[Any, Any]:
-        args = self._get_args_resolving_forward_refs(obj)
+    def _get_first_two_args_or_any(self, obj: Any, eval_str: bool = True) -> tuple[Any, Any]:
+        args = self._get_args_resolving_forward_refs(obj, eval_str=eval_str)
         if not args:
             return (Any, Any)
         if len(args) < 2:
@@ -1663,7 +1669,6 @@ class GenerateSchema:
     def _subclass_schema(self, type_: Any) -> core_schema.CoreSchema:
         """Generate schema for a Type, e.g. `Type[int]`."""
         type_param = self._get_first_arg_or_any(type_)
-        type_param = _typing_extra.eval_type(type_param, *self._types_namespace)
 
         # Assume `type[Annotated[<typ>, ...]]` is equivalent to `type[<typ>]`:
         type_param = _typing_extra.annotated_type(type_param) or type_param
@@ -2031,10 +2036,14 @@ class GenerateSchema:
         """Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`."""
         FieldInfo = import_cached_field_info()
 
+        # We don't want to eval string annotations as type,
+        # because there may be cases like `Annotated[int, 'not a type']`
         source_type, *annotations = self._get_args_resolving_forward_refs(
             annotated_type,
             required=True,
+            eval_str=False,
         )
+
         schema = self._apply_annotations(source_type, annotations)
         # put the default validator last so that TypeAdapter.get_default_value() works
         # even if there are function validators involved
