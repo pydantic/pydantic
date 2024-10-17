@@ -25,7 +25,7 @@ from typing import (
 import pytest
 from dirty_equals import HasRepr, IsStr
 from pydantic_core import ErrorDetails, InitErrorDetails, PydanticSerializationError, core_schema
-from typing_extensions import Annotated, Literal, TypedDict, get_args
+from typing_extensions import Annotated, Literal, TypeAliasType, TypedDict, get_args
 
 from pydantic import (
     BaseModel,
@@ -1394,7 +1394,61 @@ def test_type_on_annotation():
     assert Model.model_fields.keys() == set('abcdefg')
 
 
-def test_annotated_inside_type():
+def test_type_union():
+    class Model(BaseModel):
+        a: Type[Union[str, bytes]]
+        b: Type[Union[Any, str]]
+
+    m = Model(a=bytes, b=int)
+    assert m.model_dump() == {'a': bytes, 'b': int}
+    assert m.a == bytes
+
+
+def test_type_on_none():
+    class Model(BaseModel):
+        a: Type[None]
+
+    Model(a=type(None))
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=None)
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'is_subclass_of',
+            'loc': ('a',),
+            'msg': 'Input should be a subclass of NoneType',
+            'input': None,
+            'ctx': {'class': 'NoneType'},
+        }
+    ]
+
+
+def test_type_on_typealias():
+    Float = TypeAliasType('Float', float)
+
+    class MyFloat(float): ...
+
+    adapter = TypeAdapter(Type[Float])
+
+    adapter.validate_python(float)
+    adapter.validate_python(MyFloat)
+
+    with pytest.raises(ValidationError) as exc_info:
+        adapter.validate_python(str)
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'is_subclass_of',
+            'loc': (),
+            'msg': 'Input should be a subclass of float',
+            'input': str,
+            'ctx': {'class': 'float'},
+        }
+    ]
+
+
+def test_type_on_annotated():
     class Model(BaseModel):
         a: Type[Annotated[int, ...]]
 
@@ -1414,7 +1468,7 @@ def test_annotated_inside_type():
     ]
 
 
-def test_assign_type():
+def test_type_assign():
     class Parent:
         def echo(self):
             return 'parent'
@@ -1437,10 +1491,10 @@ def test_assign_type():
         Model(v=Different)
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'class': 'test_assign_type.<locals>.Parent'},
-            'input': HasRepr("<class 'tests.test_edge_cases.test_assign_type.<locals>.Different'>"),
+            'ctx': {'class': Parent.__qualname__},
+            'input': HasRepr(repr(Different)),
             'loc': ('v',),
-            'msg': 'Input should be a subclass of test_assign_type.<locals>.Parent',
+            'msg': f'Input should be a subclass of {Parent.__qualname__}',
             'type': 'is_subclass_of',
         }
     ]
@@ -2616,16 +2670,6 @@ def test_union_literal_with_other_type(literal_type, other_type, data, json_valu
     m = Model(value=data, value_types_reversed=data)
     assert m.model_dump() == {'value': data, 'value_types_reversed': data_reversed}
     assert m.model_dump_json() == f'{{"value":{json_value},"value_types_reversed":{json_value_reversed}}}'
-
-
-def test_type_union():
-    class Model(BaseModel):
-        a: Type[Union[str, bytes]]
-        b: Type[Union[Any, str]]
-
-    m = Model(a=bytes, b=int)
-    assert m.model_dump() == {'a': bytes, 'b': int}
-    assert m.a == bytes
 
 
 def test_model_repr_before_validation():
