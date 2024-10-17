@@ -1,5 +1,13 @@
 # Type checking test suite
 
+This test suite is meant to assert the correct behavior of the type hints we use in the Pydantic code.
+In CI, we run both Mypy and Pyright on these files, using the [`pyproject.toml`](./pyproject.toml)
+configuration file.
+
+Note that these tests do not relate to the Mypy plugin, which is tested under the [`mypy/`](../mypy/) folder.
+
+## Assertions
+
 Use [`assert_type`](https://docs.python.org/3/library/typing.html#typing.assert_type) to make assertions:
 
 ```python
