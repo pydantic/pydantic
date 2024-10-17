@@ -767,6 +767,12 @@ class GenerateSchema:
             return schema['schema']
         return schema
 
+    def _resolve_self_type(self, obj: Any) -> Any:
+        obj = self.model_type_stack.get()
+        if obj is None:
+            raise PydanticUserError('`typing.Self` is invalid in this context', code='invalid-self-type')
+        return obj
+
     def _generate_schema_from_property(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
         """Try to generate schema from either the `__get_pydantic_core_schema__` function or
         `__pydantic_core_schema__` property.
@@ -776,9 +782,7 @@ class GenerateSchema:
         """
         # avoid calling `__get_pydantic_core_schema__` if we've already visited this object
         if is_self_type(obj):
-            obj = self.model_type_stack.get()
-            if obj is None:
-                raise PydanticUserError('`typing.Self` is invalid in this context', code='invalid-self-type')
+            obj = self._resolve_self_type(obj)
         with self.defs.get_schema_or_ref(obj) as (_, maybe_schema):
             if maybe_schema is not None:
                 return maybe_schema
@@ -866,7 +870,13 @@ class GenerateSchema:
     def _get_args_resolving_forward_refs(self, obj: Any, required: bool = False) -> tuple[Any, ...] | None:
         args = get_args(obj)
         if args:
-            args = tuple([self._resolve_forward_ref(a) if isinstance(a, ForwardRef) else a for a in args])
+            if sys.version_info >= (3, 9):
+                from types import GenericAlias
+
+                if isinstance(obj, GenericAlias):
+                    # PEP 585 generic aliases don't convert args to ForwardRefs, unlike `typing.List/Dict` etc.
+                    args = (_typing_extra._make_forward_ref(a) if isinstance(a, str) else a for a in args)
+            args = tuple(self._resolve_forward_ref(a) if isinstance(a, ForwardRef) else a for a in args)
         elif required:  # pragma: no cover
             raise TypeError(f'Expected {obj} to have generic parameters but it had none')
         return args
@@ -1655,10 +1665,14 @@ class GenerateSchema:
     def _subclass_schema(self, type_: Any) -> core_schema.CoreSchema:
         """Generate schema for a Type, e.g. `Type[int]`."""
         type_param = self._get_first_arg_or_any(type_)
+
         # Assume `type[Annotated[<typ>, ...]]` is equivalent to `type[<typ>]`:
         type_param = _typing_extra.annotated_type(type_param) or type_param
+
         if type_param == Any:
             return self._type_schema()
+        elif isinstance(type_param, TypeAliasType):
+            return self.generate_schema(typing.Type[type_param.__value__])
         elif isinstance(type_param, typing.TypeVar):
             if type_param.__bound__:
                 if _typing_extra.origin_is_union(get_origin(type_param.__bound__)):
@@ -1673,6 +1687,11 @@ class GenerateSchema:
         elif _typing_extra.origin_is_union(get_origin(type_param)):
             return self._union_is_subclass_schema(type_param)
         else:
+            if is_self_type(type_param):
+                type_param = self._resolve_self_type(type_param)
+
+            if not inspect.isclass(type_param):
+                raise TypeError(f'Expected a class, got {type_param!r}')
             return core_schema.is_subclass_schema(type_param)
 
     def _sequence_schema(self, items_type: Any) -> core_schema.CoreSchema:
