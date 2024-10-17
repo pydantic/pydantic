@@ -19,7 +19,7 @@ ta1 = TypeAdapter(int)
 assert_type(ta1, TypeAdapter[int])
 ```
 
-To assert on invalid cases, add a `type: ignore` (for Mypy) and/or a  `pyright: ignore` (for Pyright) comment:
+To assert on invalid cases, add a `type: ignore` (for Mypy, must go first) and/or a  `pyright: ignore` (for Pyright) comment:
 
 ```python
 from pydantic import BaseModel

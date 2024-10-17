@@ -490,7 +490,7 @@ def inspect_namespace(  # noqa C901
             continue
         elif is_valid_privateattr_name(var_name):
             if var_name not in raw_annotations or not is_classvar(raw_annotations[var_name]):
-                private_attributes[var_name] = PrivateAttr(default=value)
+                private_attributes[var_name] = cast(ModelPrivateAttr, PrivateAttr(default=value))
                 del namespace[var_name]
         elif var_name in base_class_vars:
             continue

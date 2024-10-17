@@ -46,7 +46,6 @@ from mypy.options import Options
 from mypy.plugin import (
     CheckerPluginInterface,
     ClassDefContext,
-    FunctionContext,
     MethodContext,
     Plugin,
     ReportConfigContext,
@@ -65,7 +64,6 @@ from mypy.types import (
     CallableType,
     Instance,
     NoneType,
-    Overloaded,
     Type,
     TypeOfAny,
     TypeType,
@@ -150,13 +148,6 @@ class PydanticPlugin(Plugin):
             return self._pydantic_model_metaclass_marker_callback
         return None
 
-    def get_function_hook(self, fullname: str) -> Callable[[FunctionContext], Type] | None:
-        """Adjust the return type of the `Field` function."""
-        sym = self.lookup_fully_qualified(fullname)
-        if sym and sym.fullname == FIELD_FULLNAME:
-            return self._pydantic_field_callback
-        return None
-
     def get_method_hook(self, fullname: str) -> Callable[[MethodContext], Type] | None:
         """Adjust return type of `from_orm` method call."""
         if fullname.endswith('.from_orm'):
@@ -195,54 +186,6 @@ class PydanticPlugin(Plugin):
         assert info_metaclass, "callback not passed from 'get_metaclass_hook'"
         if getattr(info_metaclass.type, 'dataclass_transform_spec', None):
             info_metaclass.type.dataclass_transform_spec = None
-
-    def _pydantic_field_callback(self, ctx: FunctionContext) -> Type:
-        """Extract the type of the `default` argument from the Field function, and use it as the return type.
-
-        In particular:
-        * Check whether the default and default_factory argument is specified.
-        * Output an error if both are specified.
-        * Retrieve the type of the argument which is specified, and use it as return type for the function.
-        """
-        default_any_type = ctx.default_return_type
-
-        assert ctx.callee_arg_names[0] == 'default', '"default" is no longer first argument in Field()'
-        assert ctx.callee_arg_names[1] == 'default_factory', '"default_factory" is no longer second argument in Field()'
-        default_args = ctx.args[0]
-        default_factory_args = ctx.args[1]
-
-        if default_args and default_factory_args:
-            error_default_and_default_factory_specified(ctx.api, ctx.context)
-            return default_any_type
-
-        if default_args:
-            default_type = ctx.arg_types[0][0]
-            default_arg = default_args[0]
-
-            # Fallback to default Any type if the field is required
-            if not isinstance(default_arg, EllipsisExpr):
-                return default_type
-
-        elif default_factory_args:
-            default_factory_type = ctx.arg_types[1][0]
-
-            # Functions which use `ParamSpec` can be overloaded, exposing the callable's types as a parameter
-            # Pydantic calls the default factory without any argument, so we retrieve the first item
-            if isinstance(default_factory_type, Overloaded):
-                default_factory_type = default_factory_type.items[0]
-
-            if isinstance(default_factory_type, CallableType):
-                ret_type = default_factory_type.ret_type
-                # mypy doesn't think `ret_type` has `args`, you'd think mypy should know,
-                # add this check in case it varies by version
-                args = getattr(ret_type, 'args', None)
-                if args:
-                    if all(isinstance(arg, TypeVarType) for arg in args):
-                        # Looks like the default factory is a type like `list` or `dict`, replace all args with `Any`
-                        ret_type.args = tuple(default_any_type for _ in args)  # type: ignore[attr-defined]
-                return ret_type
-
-        return default_any_type
 
 
 class PydanticPluginConfig:
@@ -1278,11 +1221,6 @@ def error_untyped_fields(api: SemanticAnalyzerPluginInterface, context: Context)
 def error_extra_fields_on_root_model(api: CheckerPluginInterface, context: Context) -> None:
     """Emits an error when there is more than just a root field defined for a subclass of RootModel."""
     api.fail('Only `root` is allowed as a field of a `RootModel`', context, code=ERROR_EXTRA_FIELD_ROOT_MODEL)
-
-
-def error_default_and_default_factory_specified(api: CheckerPluginInterface, context: Context) -> None:
-    """Emits an error when `Field` has both `default` and `default_factory` together."""
-    api.fail('Field default and default_factory cannot be specified together', context, code=ERROR_FIELD_DEFAULTS)
 
 
 def add_method(
