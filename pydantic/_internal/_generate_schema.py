@@ -1023,9 +1023,6 @@ class GenerateSchema:
         return self._unknown_type_schema(obj)
 
     def _match_generic_type(self, obj: Any, origin: Any) -> CoreSchema:  # noqa: C901
-        if isinstance(origin, TypeAliasType):
-            return self._type_alias_type_schema(obj)
-
         # Need to handle generic dataclasses before looking for the schema properties because attribute accesses
         # on _GenericAlias delegate to the origin type, so lose the information about the concrete parametrization
         # As a result, currently, there is no way to cache the schema for generic dataclasses. This may be possible
@@ -1039,7 +1036,9 @@ class GenerateSchema:
         if from_property is not None:
             return from_property
 
-        if _typing_extra.origin_is_union(origin):
+        if isinstance(origin, TypeAliasType):
+            return self._type_alias_type_schema(obj)
+        elif _typing_extra.origin_is_union(origin):
             return self._union_schema(obj)
         elif origin in TUPLE_TYPES:
             return self._tuple_schema(obj)
@@ -1373,15 +1372,12 @@ class GenerateSchema:
             s = core_schema.nullable_schema(s)
         return s
 
-    def _type_alias_type_schema(
-        self,
-        obj: TypeAliasType,
-    ) -> CoreSchema:
+    def _type_alias_type_schema(self, obj: TypeAliasType) -> CoreSchema:
         with self.defs.get_schema_or_ref(obj) as (ref, maybe_schema):
             if maybe_schema is not None:
                 return maybe_schema
 
-            origin = get_origin(obj) or obj
+            origin: TypeAliasType = get_origin(obj) or obj
 
             annotation = origin.__value__
             typevars_map = get_standard_typevars_map(obj)
