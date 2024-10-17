@@ -103,8 +103,6 @@ from ._utils import lenient_issubclass, smart_deepcopy
 from ._validate_call import VALIDATE_CALL_SUPPORTED_TYPES, ValidateCallSupportedTypes
 
 if TYPE_CHECKING:
-    from types import GenericAlias
-
     from ..fields import ComputedFieldInfo, FieldInfo
     from ..main import BaseModel
     from ..types import Discriminator
@@ -1374,15 +1372,12 @@ class GenerateSchema:
             s = core_schema.nullable_schema(s)
         return s
 
-    def _type_alias_type_schema(
-        self,
-        obj: TypeAliasType | GenericAlias,
-    ) -> CoreSchema:
+    def _type_alias_type_schema(self, obj: TypeAliasType) -> CoreSchema:
         with self.defs.get_schema_or_ref(obj) as (ref, maybe_schema):
             if maybe_schema is not None:
                 return maybe_schema
 
-            origin: TypeAliasType = get_origin(obj) or cast(TypeAliasType, obj)
+            origin: TypeAliasType = get_origin(obj) or obj
 
             annotation = origin.__value__
             typevars_map = get_standard_typevars_map(obj)
