@@ -1491,10 +1491,10 @@ def test_type_assign():
         Model(v=Different)
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'class': 'test_assign_type.<locals>.Parent'},
-            'input': HasRepr("<class 'tests.test_edge_cases.test_assign_type.<locals>.Different'>"),
+            'ctx': {'class': Parent.__qualname__},
+            'input': HasRepr(repr(Different)),
             'loc': ('v',),
-            'msg': 'Input should be a subclass of test_assign_type.<locals>.Parent',
+            'msg': f'Input should be a subclass of {Parent.__qualname__}',
             'type': 'is_subclass_of',
         }
     ]
