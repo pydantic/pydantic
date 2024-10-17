@@ -870,10 +870,13 @@ class GenerateSchema:
     def _get_args_resolving_forward_refs(self, obj: Any, required: bool = False) -> tuple[Any, ...] | None:
         args = get_args(obj)
         if args:
-            if isinstance(obj, GenericAlias):
-                # PEP 585 generic aliases don't convert args to ForwardRefs, unlike `typing.List/Dict` etc.
-                args = (_typing_extra._make_forward_ref(a) if isinstance(a, str) else a for a in args)
-            args = (self._resolve_forward_ref(a) if isinstance(a, ForwardRef) else a for a in args)
+            if sys.version_info >= (3, 9):
+                from types import GenericAlias
+
+                if isinstance(obj, GenericAlias):
+                    # PEP 585 generic aliases don't convert args to ForwardRefs, unlike `typing.List/Dict` etc.
+                    args = (_typing_extra._make_forward_ref(a) if isinstance(a, str) else a for a in args)
+            args = tuple(self._resolve_forward_ref(a) if isinstance(a, ForwardRef) else a for a in args)
         elif required:  # pragma: no cover
             raise TypeError(f'Expected {obj} to have generic parameters but it had none')
         return args
@@ -1666,9 +1669,7 @@ class GenerateSchema:
     def _subclass_schema(self, type_: Any) -> core_schema.CoreSchema:
         """Generate schema for a Type, e.g. `Type[int]`."""
         type_param = self._get_first_arg_or_any(type_)
-        type_param = _typing_extra.eval_type(type_param, *self._types_namespace)
 
-        # Assume `type[Annotated[<typ>, ...]]` is equivalent to `type[<typ>]`:
         type_param = _typing_extra.annotated_type(type_param) or type_param
 
         if type_param == Any:
