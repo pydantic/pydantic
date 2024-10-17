@@ -37,9 +37,9 @@ strict_equality = true
 
 python_version = '3.10'
 
-# 3.9 drop the following line:
+# TODO 3.9 drop the following line:
 force_uppercase_builtins = true
-# 3.10 drop the following line:
+# TODO 3.10 drop the following line:
 force_union_syntax = true
 
 [tool.pydantic-mypy]
