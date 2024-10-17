@@ -46,11 +46,16 @@ class Representation:
         if not attrs_names and hasattr(self, '__dict__'):
             attrs_names = self.__dict__.keys()
         attrs = ((s, getattr(self, s)) for s in attrs_names)
-        return [(a, v) for a, v in attrs if v is not None]
+        return [(a, v if v is not self else self.__repr_recursion__(v)) for a, v in attrs if v is not None]
 
     def __repr_name__(self) -> str:
         """Name of the instance's class, used in __repr__."""
         return self.__class__.__name__
+
+    def __repr_recursion__(self, object: Any) -> str:
+        """Returns the string representation of a recursive object."""
+        # This is copied over from the stdlib `pprint` module:
+        return f'<Recursion on {type(object).__name__} with id={id(object)}>'
 
     def __repr_str__(self, join_str: str) -> str:
         return join_str.join(repr(v) if a is None else f'{a}={v!r}' for a, v in self.__repr_args__())
@@ -88,7 +93,7 @@ def display_as_type(obj: Any) -> str:
 
     Takes some logic from `typing._type_repr`.
     """
-    if isinstance(obj, types.FunctionType):
+    if isinstance(obj, (types.FunctionType, types.BuiltinFunctionType)):
         return obj.__name__
     elif obj is ...:
         return '...'

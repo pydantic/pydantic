@@ -815,3 +815,26 @@ def test_computed_field_with_field_serializer():
             return f'{info.field_name} = {value}'
 
     assert MyModel().model_dump() == {'my_field': 'my_field = foo', 'other_field': 'other_field = 42'}
+
+
+def test_fields_on_instance_and_cls() -> None:
+    """For now, we support `model_fields` and `model_computed_fields` access on both instances and classes.
+
+    In V3, we should only support class access, though we need to preserve the current behavior for V2 compatibility."""
+
+    class Rectangle(BaseModel):
+        x: int
+        y: int
+
+        @computed_field
+        @property
+        def area(self) -> int:
+            return self.x * self.y
+
+    r = Rectangle(x=10, y=5)
+
+    for attr in {'model_fields', 'model_computed_fields'}:
+        assert getattr(r, attr) == getattr(Rectangle, attr)
+
+    assert set(r.model_fields) == {'x', 'y'}
+    assert set(r.model_computed_fields) == {'area'}

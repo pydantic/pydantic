@@ -407,7 +407,6 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'callable-discriminator-no-tag'
 ```
 
-
 ## `TypedDict` version {#typed-dict-version}
 
 This error is raised when you use [typing.TypedDict][]
@@ -540,7 +539,6 @@ try:
 except PydanticUserError as exc_info:
     assert exc_info.code == 'invalid-for-json-schema'
 ```
-
 
 ## JSON schema already used {#json-schema-already-used}
 
@@ -1139,6 +1137,7 @@ pydantic.errors.PydanticUserError: Dataclass field bar has init=False and init_v
 ## `model_config` is used as a model field {#model-config-invalid-field-name}
 
 This error is raised when `model_config` is used as the name of a field.
+
 ```py
 from pydantic import BaseModel, PydanticUserError
 
@@ -1153,7 +1152,7 @@ except PydanticUserError as exc_info:
 
 ## [`with_config`][pydantic.config.with_config] is used on a `BaseModel` subclass {#with-config-on-model}
 
-This error is raised when the [`with_config`][pydantic.config.with_config]  decorator is used on a class which is already a Pydantic model (use the `model_config` attribute instead).
+This error is raised when the [`with_config`][pydantic.config.with_config] decorator is used on a class which is already a Pydantic model (use the `model_config` attribute instead).
 
 ```py
 from pydantic import BaseModel, PydanticUserError, with_config
@@ -1187,10 +1186,107 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'dataclass-on-model'
 ```
 
+## Unsupported type for `validate_call` {#validate-call-type}
+
+`validate_call` has some limitations on the callables it can validate. This error is raised when you try to use it with an unsupported callable. Currently the supported callables are functions (including lambdas) and methods and instances of [`partial`][functools.partial]. In the case of [`partial`][functools.partial], the function being partially applied must be one of the supported callables.
+
+### `@classmethod`, `@staticmethod`, and `@property`
+
+These decorators must be put before `validate_call`.
+
+```py
+from pydantic import PydanticUserError, validate_call
+
+# error
+try:
+
+    class A:
+        @validate_call
+        @classmethod
+        def f1(cls): ...
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'validate-call-type'
+
+
+# correct
+@classmethod
+@validate_call
+def f2(cls): ...
+```
+
+### Classes
+
+While classes are callables themselves, `validate_call` can't be applied on them, as it needs to know about which method to use (`__init__` or `__new__`) to fetch type annotations. If you want to validate the constructor of a class, you should put `validate_call` on top of the appropriate method instead.
+
+```py
+from pydantic import PydanticUserError, validate_call
+
+# error
+try:
+
+    @validate_call
+    class A1: ...
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'validate-call-type'
+
+
+# correct
+class A2:
+    @validate_call
+    def __init__(self): ...
+
+    @validate_call
+    def __new__(cls): ...
+```
+
+### Custom callable
+
+Although you can create custom callable types in Python by implementing a `__call__` method, currently the instances of these types cannot be validated with `validate_call`. This may change in the future, but for now, you should use `validate_call` explicitly on `__call__` instead.
+
+```py
+from pydantic import PydanticUserError, validate_call
+
+# error
+try:
+
+    class A1:
+        def __call__(self): ...
+
+    validate_call(A1())
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'validate-call-type'
+
+
+# correct
+class A2:
+    @validate_call
+    def __call__(self): ...
+```
+
+### Invalid signature
+
+This is generally less common, but a possible reason is that you are trying to validate a method that doesn't have at least one argument (usually `self`).
+
+```py
+from pydantic import PydanticUserError, validate_call
+
+try:
+
+    class A:
+        def f(): ...
+
+    validate_call(A().f)
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'validate-call-type'
+```
+
 ## [`Unpack`][typing.Unpack] used without a [`TypedDict`][typing.TypedDict] {#unpack-typed-dict}
 
 This error is raised when [`Unpack`][typing.Unpack] is used with something other than
-a [`TypedDict`][typing.TypedDict] class object to type hint variadic keyword arguments.
+a [`TypedDict`][typing.TypedDict] class object to type hint variadic keyword parameters.
 
 For reference, see the [related specification section] and [PEP 692].
 
@@ -1211,8 +1307,8 @@ except PydanticUserError as exc_info:
 
 ## Overlapping unpacked [`TypedDict`][typing.TypedDict] fields and arguments {#overlapping-unpack-typed-dict}
 
-This error is raised when the typed dictionary used to type hint variadic keywords arguments
-has field names overlapping with arguments (unless [positional only][positional-only_parameter]).
+This error is raised when the typed dictionary used to type hint variadic keywords parameters has field names
+overlapping with other parameters (unless [positional only][positional-only_parameter]).
 
 For reference, see the [related specification section] and [PEP 692].
 
@@ -1238,3 +1334,40 @@ except PydanticUserError as exc_info:
 
 [related specification section]: https://typing.readthedocs.io/en/latest/spec/callables.html#unpack-for-keyword-arguments
 [PEP 692]: https://peps.python.org/pep-0692/
+
+## Invalid `Self` type {#invalid-self-type}
+
+Currently, [`Self`][typing.Self] can only be used to annotate a field of a class (specifically, subclasses of [`BaseModel`][pydantic.BaseModel], [`NamedTuple`][typing.NamedTuple], [`TypedDict`][typing.TypedDict], or dataclasses). Attempting to use [`Self`][typing.Self] in any other ways will raise this error.
+
+```py
+from typing_extensions import Self
+
+from pydantic import PydanticUserError, validate_call
+
+try:
+
+    @validate_call
+    def func(self: Self):
+        pass
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'invalid-self-type'
+```
+
+The following example of [`validate_call()`][pydantic.validate_call] will also raise this error, even though it is correct from a type-checking perspective. This may be supported in the future.
+
+```py
+from typing_extensions import Self
+
+from pydantic import BaseModel, PydanticUserError, validate_call
+
+try:
+
+    class A(BaseModel):
+        @validate_call
+        def func(self, arg: Self):
+            pass
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'invalid-self-type'
+```

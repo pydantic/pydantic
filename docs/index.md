@@ -13,36 +13,48 @@ Pydantic is the most widely used data validation library for Python.
 
 Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define how data should be in pure, canonical Python 3.8+; validate it with Pydantic.
 
-!!! success "Migrating to Pydantic V2"
-    Using Pydantic V1? See the [Migration Guide](migration.md) for notes on upgrading to Pydantic V2 in your applications!
+!!! logfire "Monitor Pydantic with Logfire :fire:"
+    Built by the same team as Pydantic, **[Logfire](https://pydantic.dev/logfire)** is an application monitoring tool that is as simple to use and powerful as Pydantic itself.
 
-```py title="Pydantic Example" requires="3.10"
-from datetime import datetime
-from typing import Tuple
+    Logfire integrates with many popular Python libraries including FastAPI, OpenAI and Pydantic itself, so you can use Logfire to monitor Pydantic validations and understand why some inputs fail validation:
 
-from pydantic import BaseModel
+    ```py title="Monitoring Pydantic with Logfire" test="skip"
+    from datetime import datetime
+
+    import logfire
+
+    from pydantic import BaseModel
+
+    logfire.configure()
+    logfire.instrument_pydantic()  # (1)!
 
 
-class Delivery(BaseModel):
-    timestamp: datetime
-    dimensions: Tuple[int, int]
+    class Delivery(BaseModel):
+        timestamp: datetime
+        dimensions: tuple[int, int]
 
 
-m = Delivery(timestamp='2020-01-02T03:04:05Z', dimensions=['10', '20'])
-print(repr(m.timestamp))
-#> datetime.datetime(2020, 1, 2, 3, 4, 5, tzinfo=TzInfo(UTC))
-print(m.dimensions)
-#> (10, 20)
-```
+    # this will record details of a successful validation to logfire
+    m = Delivery(timestamp='2020-01-02T03:04:05Z', dimensions=['10', '20'])
+    print(repr(m.timestamp))
+    #> datetime.datetime(2020, 1, 2, 3, 4, 5, tzinfo=TzInfo(UTC))
+    print(m.dimensions)
+    #> (10, 20)
 
-!!! question "Why is Pydantic named the way it is?"
+    Delivery(timestamp='2020-01-02T03:04:05Z', dimensions=['10'])  # (2)!
+    ```
 
-    The name "Pydantic" is a portmanteau of "Py" and "pedantic." The "Py" part indicates that the library is associated with Python, and
-    "pedantic" refers to the library's meticulous approach to data validation and type enforcement.
+    1. Set logfire record all both successful and failed validations, use `record='failure'` to only record failed validations, [learn more](https://logfire.pydantic.dev/docs/integrations/pydantic/).
+    2. This will raise a `ValidationError` since there are too few `dimensions`, details of the input data and validation errors will be recorded in Logfire.
 
-    Combining these elements, "Pydantic" describes our Python library that provides detail-oriented, rigorous data validation.
+    Would give you a view like this in the Logfire platform:
 
-    We’re aware of the irony that Pydantic V1 was not strict in its validation, so if we're being pedantic, "Pydantic" was a misnomer until V2 😉.
+    [![Logfire Pydantic Integration](img/logfire-pydantic-integration.png)](https://logfire.pydantic.dev/docs/guides/web-ui/live/)
+
+    This is just a toy example, but hopefully makes clear the potential value of instrumenting a more complex application.
+
+    **[Learn more about Pydantic Logfire](https://logfire.pydantic.dev/docs/)**
+
 
 ## Why use Pydantic?
 

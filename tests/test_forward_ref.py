@@ -1130,3 +1130,217 @@ class Foo(BaseModel):
     ]
 
     assert extras_schema == {'type': 'int'}
+
+
+@pytest.mark.xfail(
+    reason='While `get_cls_type_hints` uses the correct module ns for each base, `collect_model_fields` '
+    'will still use the `FieldInfo` instances from each base (see the `parent_fields_lookup` logic). '
+    'This means that `f` is still a forward ref in `Foo.model_fields`, and it gets evaluated in '
+    '`GenerateSchema._model_schema`, where only the module of `Foo` is considered.'
+)
+def test_uses_the_correct_globals_to_resolve_model_forward_refs(create_module):
+    @create_module
+    def module_1():
+        from pydantic import BaseModel
+
+        class Bar(BaseModel):
+            f: 'A'
+
+        A = int
+
+    module_2 = create_module(
+        f"""
+from {module_1.__name__} import Bar
+
+A = str
+
+class Foo(Bar):
+    pass
+        """
+    )
+
+    assert module_2.Foo.model_fields['f'].annotation is int
+
+
+@pytest.mark.xfail(
+    reason='We should keep a reference to the parent frame, not `f_locals`. '
+    "It's probably only reasonable to support this in Python 3.14 with PEP 649."
+)
+def test_can_resolve_forward_refs_in_parent_frame_after_class_definition():
+    def func():
+        class Model(BaseModel):
+            a: 'A'
+
+        class A(BaseModel):
+            pass
+
+        return Model
+
+    Model = func()
+
+    Model.model_rebuild()
+
+
+def test_uses_correct_global_ns_for_type_defined_in_separate_module(create_module):
+    @create_module
+    def module_1():
+        from dataclasses import dataclass
+
+        @dataclass
+        class Bar:
+            f: 'A'
+
+        A = int
+
+    module_2 = create_module(
+        f"""
+from pydantic import BaseModel
+from {module_1.__name__} import Bar
+
+A = str
+
+class Foo(BaseModel):
+    bar: Bar
+        """
+    )
+
+    module_2.Foo(bar={'f': 1})
+
+
+def test_uses_the_local_namespace_when_generating_schema():
+    def func():
+        A = int
+
+        class Model(BaseModel):
+            __pydantic_extra__: 'dict[str, A]'
+
+            model_config = {'defer_build': True, 'extra': 'allow'}
+
+        return Model
+
+    Model = func()
+
+    A = str  # noqa: F841
+
+    Model.model_rebuild()
+    Model(extra_value=1)
+
+
+def test_uses_the_correct_globals_to_resolve_dataclass_forward_refs(create_module):
+    @create_module
+    def module_1():
+        from dataclasses import dataclass
+
+        A = int
+
+        @dataclass
+        class DC1:
+            a: 'A'
+
+    module_2 = create_module(f"""
+from dataclasses import dataclass
+
+from pydantic import BaseModel
+
+from {module_1.__name__} import DC1
+
+A = str
+
+@dataclass
+class DC2(DC1):
+    b: 'A'
+
+class Model(BaseModel):
+    dc: DC2
+    """)
+
+    Model = module_2.Model
+
+    Model(dc=dict(a=1, b='not_an_int'))
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='Requires PEP 695 syntax')
+def test_class_locals_are_kept_during_schema_generation(create_module):
+    create_module(
+        """
+from pydantic import BaseModel
+
+class Model(BaseModel):
+    type Test = int
+    a: 'Test | Forward'
+
+Forward = str
+
+Model.model_rebuild()
+        """
+    )
+
+
+def test_validate_call_does_not_override_the_global_ns_with_the_local_ns_where_it_is_used(create_module):
+    from pydantic import validate_call
+
+    @create_module
+    def module_1():
+        A = int
+
+        def func(a: 'A'):
+            pass
+
+    def inner():
+        A = str  # noqa: F841
+
+        from module_1 import func
+
+        func_val = validate_call(func)
+
+        func_val(a=1)
+
+
+@pytest.mark.xfail(
+    reason='In `GenerateSchema`, only the current class module is taken into account. '
+    'This is similar to `test_uses_the_correct_globals_to_resolve_model_forward_refs`.'
+)
+def test_uses_the_correct_globals_to_resolve_forward_refs_on_serializers(create_module):
+    @create_module
+    def module_1():
+        from pydantic import BaseModel, field_serializer  # or model_serializer
+
+        MyStr = str
+
+        class Model(BaseModel):
+            a: int
+
+            @field_serializer('a')
+            def ser(self) -> 'MyStr':
+                return str(self.a)
+
+    class Sub(module_1.Model):
+        pass
+
+    Sub.model_rebuild()
+
+
+@pytest.mark.xfail(reason='parent namespace is used for every type in `NsResolver`, for backwards compatibility.')
+def test_do_not_use_parent_ns_when_outside_the_function(create_module):
+    @create_module
+    def module_1():
+        import dataclasses
+
+        from pydantic import BaseModel
+
+        @dataclasses.dataclass
+        class A:
+            a: 'Model'  # shouldn't resolve
+            b: 'Test'  # same
+
+        def inner():
+            Test = int  # noqa: F841
+
+            class Model(BaseModel, A):
+                pass
+
+            return Model
+
+        ReturnedModel = inner()  # noqa: F841
+
+    assert module_1.ReturnedModel.__pydantic_complete__ is False

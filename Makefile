@@ -60,7 +60,7 @@ test-mypy-update-all: .pdm
 
 .PHONY: test-pyright  ## Run the pyright integration tests
 test-pyright: .pdm
-	pdm run bash -c 'cd tests/pyright && pyright'
+	pdm run bash -c 'cd tests/pyright && pyright --version && pyright -p pyproject.toml'
 
 .PHONY: test  ## Run all tests, skipping the type-checker integration tests
 test: .pdm

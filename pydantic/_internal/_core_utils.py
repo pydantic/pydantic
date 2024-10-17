@@ -44,10 +44,6 @@ TAGGED_UNION_TAG_KEY = 'pydantic.internal.tagged_union_tag'
 """
 Used in a `Tag` schema to specify the tag used for a discriminated union.
 """
-HAS_INVALID_SCHEMAS_METADATA_KEY = 'pydantic.internal.invalid'
-"""Used to mark a schema that is invalid because it refers to a definition that was not yet defined when the
-schema was first encountered.
-"""
 
 
 def is_core_schema(
@@ -128,7 +124,7 @@ def collect_definitions(schema: core_schema.CoreSchema) -> dict[str, core_schema
             defs[ref] = s
         return recurse(s, _record_valid_refs)
 
-    walk_core_schema(schema, _record_valid_refs)
+    walk_core_schema(schema, _record_valid_refs, copy=False)
 
     return defs
 
@@ -146,10 +142,7 @@ def define_expected_missing_refs(
     expected_missing_refs = allowed_missing_refs.difference(refs)
     if expected_missing_refs:
         definitions: list[core_schema.CoreSchema] = [
-            # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
-            #   Issue: https://github.com/pydantic/pydantic-core/issues/619
-            core_schema.none_schema(ref=ref, metadata={HAS_INVALID_SCHEMAS_METADATA_KEY: True})
-            for ref in expected_missing_refs
+            core_schema.invalid_schema(ref=ref) for ref in expected_missing_refs
         ]
         return core_schema.definitions_schema(schema, definitions)
     return None
@@ -160,14 +153,14 @@ def collect_invalid_schemas(schema: core_schema.CoreSchema) -> bool:
 
     def _is_schema_valid(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
         nonlocal invalid
-        if 'metadata' in s:
-            metadata = s['metadata']
-            if HAS_INVALID_SCHEMAS_METADATA_KEY in metadata:
-                invalid = metadata[HAS_INVALID_SCHEMAS_METADATA_KEY]
-                return s
+
+        if s['type'] == 'invalid':
+            invalid = True
+            return s
+
         return recurse(s, _is_schema_valid)
 
-    walk_core_schema(schema, _is_schema_valid)
+    walk_core_schema(schema, _is_schema_valid, copy=False)
     return invalid
 
 
@@ -180,10 +173,16 @@ Walk = Callable[[core_schema.CoreSchema, Recurse], core_schema.CoreSchema]
 # TODO: Should we move _WalkCoreSchema into pydantic_core proper?
 #   Issue: https://github.com/pydantic/pydantic-core/issues/615
 
+CoreSchemaT = TypeVar('CoreSchemaT')
+
 
 class _WalkCoreSchema:
-    def __init__(self):
+    def __init__(self, *, copy: bool = True):
         self._schema_type_to_method = self._build_schema_type_to_method()
+        self._copy = copy
+
+    def _copy_schema(self, schema: CoreSchemaT) -> CoreSchemaT:
+        return schema.copy() if self._copy else schema  # pyright: ignore[reportAttributeAccessIssue]
 
     def _build_schema_type_to_method(self) -> dict[core_schema.CoreSchemaType, Recurse]:
         mapping: dict[core_schema.CoreSchemaType, Recurse] = {}
@@ -197,7 +196,7 @@ class _WalkCoreSchema:
         return f(schema, self._walk)
 
     def _walk(self, schema: core_schema.CoreSchema, f: Walk) -> core_schema.CoreSchema:
-        schema = self._schema_type_to_method[schema['type']](schema.copy(), f)
+        schema = self._schema_type_to_method[schema['type']](self._copy_schema(schema), f)
         ser_schema: core_schema.SerSchema | None = schema.get('serialization')  # type: ignore
         if ser_schema:
             schema['serialization'] = self._handle_ser_schemas(ser_schema, f)
@@ -213,7 +212,7 @@ class _WalkCoreSchema:
         schema: core_schema.CoreSchema | None = ser_schema.get('schema', None)
         return_schema: core_schema.CoreSchema | None = ser_schema.get('return_schema', None)
         if schema is not None or return_schema is not None:
-            ser_schema = ser_schema.copy()
+            ser_schema = self._copy_schema(ser_schema)
             if schema is not None:
                 ser_schema['schema'] = self.walk(schema, f)  # type: ignore
             if return_schema is not None:
@@ -243,7 +242,7 @@ class _WalkCoreSchema:
             # This means we'd be returning a "trivial" definitions schema that just wrapped the inner schema
             return new_inner_schema
 
-        new_schema = schema.copy()
+        new_schema = self._copy_schema(schema)
         new_schema['schema'] = new_inner_schema
         new_schema['definitions'] = new_definitions
         return new_schema
@@ -329,13 +328,13 @@ class _WalkCoreSchema:
         replaced_fields: dict[str, core_schema.ModelField] = {}
         replaced_computed_fields: list[core_schema.ComputedField] = []
         for computed_field in schema.get('computed_fields', ()):
-            replaced_field = computed_field.copy()
+            replaced_field = self._copy_schema(computed_field)
             replaced_field['return_schema'] = self.walk(computed_field['return_schema'], f)
             replaced_computed_fields.append(replaced_field)
         if replaced_computed_fields:
             schema['computed_fields'] = replaced_computed_fields
         for k, v in schema['fields'].items():
-            replaced_field = v.copy()
+            replaced_field = self._copy_schema(v)
             replaced_field['schema'] = self.walk(v['schema'], f)
             replaced_fields[k] = replaced_field
         schema['fields'] = replaced_fields
@@ -347,14 +346,14 @@ class _WalkCoreSchema:
             schema['extras_schema'] = self.walk(extras_schema, f)
         replaced_computed_fields: list[core_schema.ComputedField] = []
         for computed_field in schema.get('computed_fields', ()):
-            replaced_field = computed_field.copy()
+            replaced_field = self._copy_schema(computed_field)
             replaced_field['return_schema'] = self.walk(computed_field['return_schema'], f)
             replaced_computed_fields.append(replaced_field)
         if replaced_computed_fields:
             schema['computed_fields'] = replaced_computed_fields
         replaced_fields: dict[str, core_schema.TypedDictField] = {}
         for k, v in schema['fields'].items():
-            replaced_field = v.copy()
+            replaced_field = self._copy_schema(v)
             replaced_field['schema'] = self.walk(v['schema'], f)
             replaced_fields[k] = replaced_field
         schema['fields'] = replaced_fields
@@ -364,13 +363,13 @@ class _WalkCoreSchema:
         replaced_fields: list[core_schema.DataclassField] = []
         replaced_computed_fields: list[core_schema.ComputedField] = []
         for computed_field in schema.get('computed_fields', ()):
-            replaced_field = computed_field.copy()
+            replaced_field = self._copy_schema(computed_field)
             replaced_field['return_schema'] = self.walk(computed_field['return_schema'], f)
             replaced_computed_fields.append(replaced_field)
         if replaced_computed_fields:
             schema['computed_fields'] = replaced_computed_fields
         for field in schema['fields']:
-            replaced_field = field.copy()
+            replaced_field = self._copy_schema(field)
             replaced_field['schema'] = self.walk(field['schema'], f)
             replaced_fields.append(replaced_field)
         schema['fields'] = replaced_fields
@@ -379,7 +378,7 @@ class _WalkCoreSchema:
     def handle_arguments_schema(self, schema: core_schema.ArgumentsSchema, f: Walk) -> core_schema.CoreSchema:
         replaced_arguments_schema: list[core_schema.ArgumentsParameter] = []
         for param in schema['arguments_schema']:
-            replaced_param = param.copy()
+            replaced_param = self._copy_schema(param)
             replaced_param['schema'] = self.walk(param['schema'], f)
             replaced_arguments_schema.append(replaced_param)
         schema['arguments_schema'] = replaced_arguments_schema
@@ -397,9 +396,10 @@ class _WalkCoreSchema:
 
 
 _dispatch = _WalkCoreSchema().walk
+_dispatch_no_copy = _WalkCoreSchema(copy=False).walk
 
 
-def walk_core_schema(schema: core_schema.CoreSchema, f: Walk) -> core_schema.CoreSchema:
+def walk_core_schema(schema: core_schema.CoreSchema, f: Walk, *, copy: bool = True) -> core_schema.CoreSchema:
     """Recursively traverse a CoreSchema.
 
     Args:
@@ -409,11 +409,12 @@ def walk_core_schema(schema: core_schema.CoreSchema, f: Walk) -> core_schema.Cor
              (not the same one you passed into this function, one level down).
           2. The "next" `f` to call. This lets you for example use `f=functools.partial(some_method, some_context)`
              to pass data down the recursive calls without using globals or other mutable state.
+        copy: Whether schema should be recursively copied.
 
     Returns:
         core_schema.CoreSchema: A processed CoreSchema.
     """
-    return f(schema.copy(), _dispatch)
+    return f(schema.copy() if copy else schema, _dispatch if copy else _dispatch_no_copy)
 
 
 def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:  # noqa: C901
@@ -466,7 +467,7 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
         current_recursion_ref_count[ref] -= 1
         return s
 
-    schema = walk_core_schema(schema, count_refs)
+    schema = walk_core_schema(schema, count_refs, copy=False)
 
     assert all(c == 0 for c in current_recursion_ref_count.values()), 'this is a bug! please report it'
 
@@ -509,7 +510,7 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
         else:
             return recurse(s, inline_refs)
 
-    schema = walk_core_schema(schema, inline_refs)
+    schema = walk_core_schema(schema, inline_refs, copy=False)
 
     def_values = [v for v in definitions.values() if ref_counts[v['ref']] > 0]  # type: ignore
 

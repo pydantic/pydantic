@@ -182,7 +182,7 @@ def test_construct():
         pass
 
     v = Base64Root.model_construct('test')
-    assert v.model_dump() == 'dGVzdA==\n'
+    assert v.model_dump() == 'dGVzdA=='
 
 
 def test_construct_nested():
@@ -190,7 +190,7 @@ def test_construct_nested():
         data: RootModel[Base64Str]
 
     v = Base64RootProperty.model_construct(data=RootModel[Base64Str].model_construct('test'))
-    assert v.model_dump() == {'data': 'dGVzdA==\n'}
+    assert v.model_dump() == {'data': 'dGVzdA=='}
 
     # Note: model_construct requires the inputs to be valid; the root model value does not get "validated" into
     # an actual root model instance:

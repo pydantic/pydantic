@@ -14,7 +14,7 @@ import typing_extensions
 
 from ._core_utils import get_type_ref
 from ._forward_ref import PydanticRecursiveRef
-from ._typing_extra import TypeVarType, typing_base
+from ._typing_extra import LITERAL_TYPES, TypeVarType, typing_base
 from ._utils import all_identical, is_model_class
 
 if sys.version_info >= (3, 10):
@@ -221,7 +221,7 @@ def get_origin(v: Any) -> Any:
     return typing_extensions.get_origin(v)
 
 
-def get_standard_typevars_map(cls: type[Any]) -> dict[TypeVarType, Any] | None:
+def get_standard_typevars_map(cls: Any) -> dict[TypeVarType, Any] | None:
     """Package a generic type's typevars and parametrization (if present) into a dictionary compatible with the
     `replace_types` function. Specifically, this works with standard typing generics and typing._GenericAlias.
     """
@@ -361,6 +361,8 @@ def has_instance_in_type(type_: Any, isinstance_target: Any) -> bool:
     if origin_type is typing_extensions.Annotated:
         annotated_type, *annotations = type_args
         return has_instance_in_type(annotated_type, isinstance_target)
+    elif origin_type in LITERAL_TYPES:
+        return False
 
     # Having type args is a good indicator that this is a typing module
     # class instantiation or a generic alias of some sort.

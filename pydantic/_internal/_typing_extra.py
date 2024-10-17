@@ -15,6 +15,8 @@ from typing import TYPE_CHECKING, Any, Final
 
 from typing_extensions import Annotated, Literal, TypeAliasType, TypeGuard, Unpack, deprecated, get_args, get_origin
 
+from ._namespace_utils import GlobalsNamespace, MappingNamespace, NsResolver, get_module_ns_of
+
 if TYPE_CHECKING:
     from ._dataclasses import StandardDataclass
 
@@ -100,6 +102,8 @@ def literal_values(type_: type[Any]) -> tuple[Any, ...]:
     return get_args(type_)
 
 
+# TODO remove when we drop support for Python 3.8
+# (see https://docs.python.org/3/whatsnew/3.9.html#id4).
 def all_literal_values(type_: type[Any]) -> list[Any]:
     """This method is used to retrieve all Literal values as
     Literal can be used recursively (see https://www.python.org/dev/peps/pep-0586)
@@ -197,7 +201,7 @@ def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> dic
 
     In other cases, like during initial schema build, if a class is defined at the top module level, we don't need to
     fetch that module's namespace, because the class' __module__ attribute can be used to access the parent namespace.
-    This is done in `_typing_extra.get_module_ns_of`. Thus, there's no need to cache the parent frame namespace in this case.
+    This is done in `_namespace_utils.get_module_ns_of`. Thus, there's no need to cache the parent frame namespace in this case.
     """
     frame = sys._getframe(parent_depth)
 
@@ -215,47 +219,46 @@ def parent_frame_namespace(*, parent_depth: int = 2, force: bool = False) -> dic
     return frame.f_locals
 
 
-def get_module_ns_of(obj: Any) -> dict[str, Any]:
-    """Get the namespace of the module where the object is defined.
-
-    Caution: this function does not return a copy of the module namespace, so it should not be mutated.
-    The burden of enforcing this is on the caller.
-    """
-    module_name = getattr(obj, '__module__', None)
-    if module_name:
-        try:
-            return sys.modules[module_name].__dict__
-        except KeyError:
-            # happens occasionally, see https://github.com/pydantic/pydantic/issues/2363
-            return {}
-    return {}
-
-
-def merge_cls_and_parent_ns(cls: type[Any], parent_namespace: dict[str, Any] | None = None) -> dict[str, Any]:
-    ns = get_module_ns_of(cls).copy()
-    if parent_namespace is not None:
-        ns.update(parent_namespace)
-    ns[cls.__name__] = cls
-    return ns
-
-
-def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None) -> dict[str, Any]:
+def get_cls_type_hints(
+    obj: type[Any], *, ns_resolver: NsResolver | None = None, lenient: bool = False
+) -> dict[str, Any]:
     """Collect annotations from a class, including those from parent classes.
 
-    Unlike `typing.get_type_hints`, this function will not error if a forward reference is not resolvable.
+    Args:
+        obj: The class to inspect.
+        ns_resolver: A namespace resolver instance to use. Defaults to an empty instance.
+        lenient: Whether to keep unresolvable annotations as is or re-raise the `NameError` exception. Default: re-raise.
     """
     hints = {}
+    ns_resolver = ns_resolver or NsResolver()
+
     for base in reversed(obj.__mro__):
-        ann = base.__dict__.get('__annotations__')
-        localns = dict(vars(base))
-        if ann is not None and ann is not GetSetDescriptorType:
+        ann: dict[str, Any] | None = base.__dict__.get('__annotations__')
+        if not ann or isinstance(ann, GetSetDescriptorType):
+            continue
+        with ns_resolver.push(base):
+            globalns, localns = ns_resolver.types_namespace
             for name, value in ann.items():
-                hints[name] = eval_type_lenient(value, globalns, localns)
+                hints[name] = eval_type(value, globalns, localns, lenient=lenient)
     return hints
 
 
-def eval_type_lenient(value: Any, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None) -> Any:
-    """Behaves like typing._eval_type, except it won't raise an error if a forward reference can't be resolved."""
+def eval_type(
+    value: Any,
+    globalns: GlobalsNamespace | None = None,
+    localns: MappingNamespace | None = None,
+    *,
+    lenient: bool = False,
+) -> Any:
+    """Evaluate the annotation using the provided namespaces.
+
+    Args:
+        value: The value to evaluate. If `None`, it will be replaced by `type[None]`. If an instance
+            of `str`, it will be converted to a `ForwardRef`.
+        localns: The global namespace to use during annotation evaluation.
+        globalns: The local namespace to use during annotation evaluation.
+        lenient: Whether to keep unresolvable annotations as is or re-raise the `NameError` exception. Default: re-raise.
+    """
     if value is None:
         value = NoneType
     elif isinstance(value, str):
@@ -264,15 +267,29 @@ def eval_type_lenient(value: Any, globalns: dict[str, Any] | None = None, localn
     try:
         return eval_type_backport(value, globalns, localns)
     except NameError:
+        if not lenient:
+            raise
         # the point of this function is to be tolerant to this case
         return value
 
 
+@deprecated(
+    '`eval_type_lenient` is deprecated, use `eval_type` with `lenient=True` instead.',
+    category=None,
+)
+def eval_type_lenient(
+    value: Any,
+    globalns: GlobalsNamespace | None = None,
+    localns: MappingNamespace | None = None,
+) -> Any:
+    return eval_type(value, globalns, localns, lenient=True)
+
+
 def eval_type_backport(
     value: Any,
-    globalns: dict[str, Any] | None = None,
-    localns: dict[str, Any] | None = None,
-    type_params: tuple[Any] | None = None,
+    globalns: GlobalsNamespace | None = None,
+    localns: MappingNamespace | None = None,
+    type_params: tuple[Any, ...] | None = None,
 ) -> Any:
     """An enhanced version of `typing._eval_type` which will fall back to using the `eval_type_backport`
     package if it's installed to let older Python versions use newer typing constructs.
@@ -303,9 +320,9 @@ def eval_type_backport(
 
 def _eval_type_backport(
     value: Any,
-    globalns: dict[str, Any] | None = None,
-    localns: dict[str, Any] | None = None,
-    type_params: tuple[Any] | None = None,
+    globalns: GlobalsNamespace | None = None,
+    localns: MappingNamespace | None = None,
+    type_params: tuple[Any, ...] | None = None,
 ) -> Any:
     try:
         return _eval_type(value, globalns, localns, type_params)
@@ -323,14 +340,19 @@ def _eval_type_backport(
                 '`typing` constructs or install the `eval_type_backport` package.'
             ) from e
 
-        return eval_type_backport(value, globalns, localns, try_default=False)
+        return eval_type_backport(
+            value,
+            globalns,
+            localns,  # pyright: ignore[reportArgumentType], waiting on a new `eval_type_backport` release.
+            try_default=False,
+        )
 
 
 def _eval_type(
     value: Any,
-    globalns: dict[str, Any] | None = None,
-    localns: dict[str, Any] | None = None,
-    type_params: tuple[Any] | None = None,
+    globalns: GlobalsNamespace | None = None,
+    localns: MappingNamespace | None = None,
+    type_params: tuple[Any, ...] | None = None,
 ) -> Any:
     if sys.version_info >= (3, 13):
         return typing._eval_type(  # type: ignore
@@ -354,10 +376,20 @@ def is_backport_fixable_error(e: TypeError) -> bool:
 
 
 def get_function_type_hints(
-    function: Callable[..., Any], *, include_keys: set[str] | None = None, types_namespace: dict[str, Any] | None = None
+    function: Callable[..., Any],
+    *,
+    include_keys: set[str] | None = None,
+    globalns: GlobalsNamespace | None = None,
+    localns: MappingNamespace | None = None,
 ) -> dict[str, Any]:
-    """Like `typing.get_type_hints`, but doesn't convert `X` to `Optional[X]` if the default value is `None`, also
-    copes with `partial`.
+    """Return type hints for a function.
+
+    This is similar to the `typing.get_type_hints` function, with a few differences:
+    - Support `functools.partial` by using the underlying `func` attribute.
+    - If `function` happens to be a built-in type (e.g. `int`), assume it doesn't have annotations
+      but specify the `return` key as being the actual type.
+    - Do not wrap type annotation of a parameter with `Optional` if it has a default value of `None`
+      (related bug: https://github.com/python/cpython/issues/90353, only fixed in 3.11+).
     """
     try:
         if isinstance(function, partial):
@@ -373,9 +405,15 @@ def get_function_type_hints(
             type_hints.setdefault('return', function)
         return type_hints
 
-    globalns = get_module_ns_of(function)
+    if globalns is None:
+        globalns = get_module_ns_of(function)
+    type_params: tuple[Any, ...] | None = None
+    if localns is None:
+        # If localns was specified, it is assumed to already contain type params. This is because
+        # Pydantic has more advanced logic to do so (see `_namespace_utils.ns_for_function`).
+        type_params = getattr(function, '__type_params__', ())
+
     type_hints = {}
-    type_params: tuple[Any] = getattr(function, '__type_params__', ())  # type: ignore
     for name, value in annotations.items():
         if include_keys is not None and name not in include_keys:
             continue
@@ -384,7 +422,7 @@ def get_function_type_hints(
         elif isinstance(value, str):
             value = _make_forward_ref(value)
 
-        type_hints[name] = eval_type_backport(value, globalns, types_namespace, type_params)
+        type_hints[name] = eval_type_backport(value, globalns, localns, type_params)
 
     return type_hints
 

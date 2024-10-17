@@ -1143,8 +1143,9 @@ class UuidVersion:
 
     Example:
         ```python
-        from typing_extensions import Annotated
         from uuid import UUID
+
+        from typing_extensions import Annotated
 
         from pydantic.types import UuidVersion
 
@@ -1578,6 +1579,56 @@ class Secret(_SecretBase[SecretType]):
     ```
 
     The value returned by the `_display` method will be used for `repr()` and `str()`.
+
+    You can enforce constraints on the underlying type through annotations:
+    For example:
+
+    ```py
+    from typing_extensions import Annotated
+
+    from pydantic import BaseModel, Field, Secret, ValidationError
+
+    SecretPosInt = Secret[Annotated[int, Field(gt=0, strict=True)]]
+
+    class Model(BaseModel):
+        sensitive_int: SecretPosInt
+
+    m = Model(sensitive_int=42)
+    print(m.model_dump())
+    #> {'sensitive_int': Secret('**********')}
+
+    try:
+        m = Model(sensitive_int=-42)  # (1)!
+    except ValidationError as exc_info:
+        print(exc_info.errors(include_url=False, include_input=False))
+        '''
+        [
+            {
+                'type': 'greater_than',
+                'loc': ('sensitive_int',),
+                'msg': 'Input should be greater than 0',
+                'ctx': {'gt': 0},
+            }
+        ]
+        '''
+
+    try:
+        m = Model(sensitive_int='42')  # (2)!
+    except ValidationError as exc_info:
+        print(exc_info.errors(include_url=False, include_input=False))
+        '''
+        [
+            {
+                'type': 'int_type',
+                'loc': ('sensitive_int',),
+                'msg': 'Input should be a valid integer',
+            }
+        ]
+        '''
+    ```
+
+    1. The input value is not greater than 0, so it raises a validation error.
+    2. The input value is not an integer, so it raises a validation error because the `SecretPosInt` type has strict mode enabled.
     """
 
     def _display(self) -> str | bytes:
@@ -1712,6 +1763,39 @@ class SecretStr(_SecretField[str]):
     #> password1
     print((SecretStr('password'), SecretStr('')))
     #> (SecretStr('**********'), SecretStr(''))
+    ```
+
+    As seen above, by default, [`SecretStr`][pydantic.types.SecretStr] (and [`SecretBytes`][pydantic.types.SecretBytes])
+    will be serialized as `**********` when serializing to json.
+
+    You can use the [`field_serializer`][pydantic.functional_serializers.field_serializer] to dump the
+    secret as plain-text when serializing to json.
+
+    ```py
+    from pydantic import BaseModel, SecretBytes, SecretStr, field_serializer
+
+    class Model(BaseModel):
+        password: SecretStr
+        password_bytes: SecretBytes
+
+        @field_serializer('password', 'password_bytes', when_used='json')
+        def dump_secret(self, v):
+            return v.get_secret_value()
+
+    model = Model(password='IAmSensitive', password_bytes=b'IAmSensitiveBytes')
+    print(model)
+    #> password=SecretStr('**********') password_bytes=SecretBytes(b'**********')
+    print(model.password)
+    #> **********
+    print(model.model_dump())
+    '''
+    {
+        'password': SecretStr('**********'),
+        'password_bytes': SecretBytes(b'**********'),
+    }
+    '''
+    print(model.model_dump_json())
+    #> {"password":"IAmSensitive","password_bytes":"IAmSensitiveBytes"}
     ```
     """
 
@@ -2262,7 +2346,7 @@ class Base64Encoder(EncoderProtocol):
             The decoded data.
         """
         try:
-            return base64.decodebytes(data)
+            return base64.b64decode(data)
         except ValueError as e:
             raise PydanticCustomError('base64_decode', "Base64 decoding error: '{error}'", {'error': str(e)})
 
@@ -2276,7 +2360,7 @@ class Base64Encoder(EncoderProtocol):
         Returns:
             The encoded data.
         """
-        return base64.encodebytes(value)
+        return base64.b64encode(value)
 
     @classmethod
     def get_json_format(cls) -> Literal['base64']:
@@ -2393,9 +2477,11 @@ class EncodedBytes:
         return field_schema
 
     def __get_pydantic_core_schema__(self, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        schema = handler(source)
+        _check_annotated_type(schema['type'], 'bytes', self.__class__.__name__)
         return core_schema.with_info_after_validator_function(
             function=self.decode,
-            schema=core_schema.bytes_schema(),
+            schema=schema,
             serialization=core_schema.plain_serializer_function_ser_schema(function=self.encode),
         )
 
@@ -2426,7 +2512,7 @@ class EncodedBytes:
 
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true)
-class EncodedStr(EncodedBytes):
+class EncodedStr:
     """A str type that is encoded and decoded using the specified encoder.
 
     `EncodedStr` needs an encoder that implements `EncoderProtocol` to operate.
@@ -2480,14 +2566,25 @@ class EncodedStr(EncodedBytes):
     ```
     """
 
+    encoder: type[EncoderProtocol]
+
+    def __get_pydantic_json_schema__(
+        self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        field_schema = handler(core_schema)
+        field_schema.update(type='string', format=self.encoder.get_json_format())
+        return field_schema
+
     def __get_pydantic_core_schema__(self, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        schema = handler(source)
+        _check_annotated_type(schema['type'], 'str', self.__class__.__name__)
         return core_schema.with_info_after_validator_function(
             function=self.decode_str,
-            schema=super(EncodedStr, self).__get_pydantic_core_schema__(source=source, handler=handler),  # noqa: UP008
+            schema=schema,
             serialization=core_schema.plain_serializer_function_ser_schema(function=self.encode_str),
         )
 
-    def decode_str(self, data: bytes, _: core_schema.ValidationInfo) -> str:
+    def decode_str(self, data: str, _: core_schema.ValidationInfo) -> str:
         """Decode the data using the specified encoder.
 
         Args:
@@ -2496,7 +2593,7 @@ class EncodedStr(EncodedBytes):
         Returns:
             The decoded data.
         """
-        return data.decode()
+        return self.encoder.decode(data.encode()).decode()
 
     def encode_str(self, value: str) -> str:
         """Encode the data using the specified encoder.
@@ -2507,7 +2604,7 @@ class EncodedStr(EncodedBytes):
         Returns:
             The encoded data.
         """
-        return super(EncodedStr, self).encode(value=value.encode()).decode()  # noqa: UP008
+        return self.encoder.encode(value.encode()).decode()  # noqa: UP008
 
     def __hash__(self) -> int:
         return hash(self.encoder)
@@ -2517,10 +2614,51 @@ Base64Bytes = Annotated[bytes, EncodedBytes(encoder=Base64Encoder)]
 """A bytes type that is encoded and decoded using the standard (non-URL-safe) base64 encoder.
 
 Note:
-    Under the hood, `Base64Bytes` use standard library `base64.encodebytes` and `base64.decodebytes` functions.
+    Under the hood, `Base64Bytes` uses the standard library `base64.b64encode` and `base64.b64decode` functions.
 
     As a result, attempting to decode url-safe base64 data using the `Base64Bytes` type may fail or produce an incorrect
     decoding.
+
+Warning:
+    In versions of Pydantic prior to v2.10, `Base64Bytes` used [`base64.encodebytes`][base64.encodebytes]
+    and [`base64.decodebytes`][base64.decodebytes] functions. According to the [base64 documentation](https://docs.python.org/3/library/base64.html),
+    these methods are considered legacy implementation, and thus, Pydantic v2.10+ now uses the modern
+    [`base64.b64encode`][base64.b64encode] and [`base64.b64decode`][base64.b64decode] functions.
+
+    If you'd still like to use these legacy encoders / decoders, you can achieve this by creating a custom annotated type,
+    like follows:
+
+    ```py
+    import base64
+    from typing import Literal
+
+    from pydantic_core import PydanticCustomError
+    from typing_extensions import Annotated
+
+    from pydantic import EncodedBytes, EncoderProtocol
+
+    class LegacyBase64Encoder(EncoderProtocol):
+        @classmethod
+        def decode(cls, data: bytes) -> bytes:
+            try:
+                return base64.decodebytes(data)
+            except ValueError as e:
+                raise PydanticCustomError(
+                    'base64_decode',
+                    "Base64 decoding error: '{error}'",
+                    {'error': str(e)},
+                )
+
+        @classmethod
+        def encode(cls, value: bytes) -> bytes:
+            return base64.encodebytes(value)
+
+        @classmethod
+        def get_json_format(cls) -> Literal['base64']:
+            return 'base64'
+
+    LegacyBase64Bytes = Annotated[bytes, EncodedBytes(encoder=LegacyBase64Encoder)]
+    ```
 
 ```py
 from pydantic import Base64Bytes, BaseModel, ValidationError
@@ -2537,7 +2675,7 @@ print(m.base64_bytes)
 
 # Serialize into the base64 form
 print(m.model_dump())
-#> {'base64_bytes': b'VGhpcyBpcyB0aGUgd2F5\n'}
+#> {'base64_bytes': b'VGhpcyBpcyB0aGUgd2F5'}
 
 # Validate base64 data
 try:
@@ -2555,10 +2693,19 @@ Base64Str = Annotated[str, EncodedStr(encoder=Base64Encoder)]
 """A str type that is encoded and decoded using the standard (non-URL-safe) base64 encoder.
 
 Note:
-    Under the hood, `Base64Bytes` use standard library `base64.encodebytes` and `base64.decodebytes` functions.
+    Under the hood, `Base64Str` uses the standard library `base64.b64encode` and `base64.b64decode` functions.
 
     As a result, attempting to decode url-safe base64 data using the `Base64Str` type may fail or produce an incorrect
     decoding.
+
+Warning:
+    In versions of Pydantic prior to v2.10, `Base64Str` used [`base64.encodebytes`][base64.encodebytes]
+    and [`base64.decodebytes`][base64.decodebytes] functions. According to the [base64 documentation](https://docs.python.org/3/library/base64.html),
+    these methods are considered legacy implementation, and thus, Pydantic v2.10+ now uses the modern
+    [`base64.b64encode`][base64.b64encode] and [`base64.b64decode`][base64.b64decode] functions.
+
+    See the [`Base64Bytes`](#pydantic.types.Base64Bytes) type for more information on how to
+    replicate the old behavior with the legacy encoders / decoders.
 
 ```py
 from pydantic import Base64Str, BaseModel, ValidationError
@@ -2575,7 +2722,7 @@ print(m.base64_str)
 
 # Serialize into the base64 form
 print(m.model_dump())
-#> {'base64_str': 'VGhlc2UgYXJlbid0IHRoZSBkcm9pZHMgeW91J3JlIGxvb2tpbmcgZm9y\n'}
+#> {'base64_str': 'VGhlc2UgYXJlbid0IHRoZSBkcm9pZHMgeW91J3JlIGxvb2tpbmcgZm9y'}
 
 # Validate base64 data
 try:
@@ -3064,7 +3211,9 @@ class FailFast(_fields.PydanticMetadata, BaseMetadata):
 
     ```py
     from typing import List
+
     from typing_extensions import Annotated
+
     from pydantic import BaseModel, FailFast, ValidationError
 
     class Model(BaseModel):

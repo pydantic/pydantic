@@ -63,9 +63,13 @@ class PlainSerializer:
             The Pydantic core schema.
         """
         schema = handler(source_type)
+        globalns, localns = handler._get_types_namespace()
         try:
             return_type = _decorators.get_function_return_type(
-                self.func, self.return_type, handler._get_types_namespace()
+                self.func,
+                self.return_type,
+                globalns=globalns,
+                localns=localns,
             )
         except NameError as e:
             raise PydanticUndefinedAnnotation.from_name_error(e) from e
@@ -160,9 +164,13 @@ class WrapSerializer:
             The generated core schema of the class.
         """
         schema = handler(source_type)
+        globalns, localns = handler._get_types_namespace()
         try:
             return_type = _decorators.get_function_return_type(
-                self.func, self.return_type, handler._get_types_namespace()
+                self.func,
+                self.return_type,
+                globalns=globalns,
+                localns=localns,
             )
         except NameError as e:
             raise PydanticUndefinedAnnotation.from_name_error(e) from e

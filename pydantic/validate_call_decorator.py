@@ -45,14 +45,30 @@ def validate_call(
     Returns:
         The decorated function.
     """
-    if (local_ns := _typing_extra.parent_frame_namespace()) and '__type_params__' in local_ns:
-        # When using PEP 695 syntax, an extra frame is created, which stores the type parameters.
-        # So the `local_ns` above does not contain the TypeVar.
-        #
-        # Note: since Python 3.13, `typing._eval_type` starts accepting `type_params`;
-        #       but that way won't work for Python 3.12 (which PEP 695 is introduced in).
+    parent_namespace = _typing_extra.parent_frame_namespace()
 
-        generic_param_ns = _typing_extra.parent_frame_namespace(parent_depth=3) or {}
-        local_ns = {**generic_param_ns, **local_ns}
+    # def validate(function: AnyCallableT) -> AnyCallableT:
+    #     _check_function_type(function)
+    #     validate_call_wrapper = _validate_call.ValidateCallWrapper(
+    #         cast(_validate_call.ValidateCallSupportedTypes, function), config, validate_return, parent_namespace
+    #     )
+    #     return _validate_call.update_wrapper_attributes(function, validate_call_wrapper.__call__)  # type: ignore
 
-    return _validate_call.validate_call_with_namespace(func, config, validate_return, local_ns)
+    # if func is not None:
+    #     return validate(func)
+    # else:
+    #     return validate
+
+    return _validate_call.validate_call_with_namespace(func, config, validate_return, parent_namespace)
+
+    # if (local_ns := _typing_extra.parent_frame_namespace()) and '__type_params__' in local_ns:
+    #     # When using PEP 695 syntax, an extra frame is created, which stores the type parameters.
+    #     # So the `local_ns` above does not contain the TypeVar.
+    #     #
+    #     # Note: since Python 3.13, `typing._eval_type` starts accepting `type_params`;
+    #     #       but that way won't work for Python 3.12 (which PEP 695 is introduced in).
+
+    #     generic_param_ns = _typing_extra.parent_frame_namespace(parent_depth=3) or {}
+    #     local_ns = {**generic_param_ns, **local_ns}
+
+    # return _validate_call.validate_call_with_namespace(func, config, validate_return, local_ns)
