@@ -870,6 +870,11 @@ class GenerateSchema:
     def _get_args_resolving_forward_refs(self, obj: Any, required: bool = False) -> tuple[Any, ...] | None:
         args = get_args(obj)
         if args:
+            if not _typing_extra.is_literal_type(obj) and not _typing_extra.is_annotated(obj):
+                # This is a rare case, but one example is `obj = list['int']` in Python 3.9-3.11
+                # Other examples are `tuple['int'], type['int']`, etc.
+                # These cases are due to inconsistency between for example `list` and `List` in these versions.
+                args = [_typing_extra._make_forward_ref(a) if isinstance(a, str) else a for a in args]
             args = tuple([self._resolve_forward_ref(a) if isinstance(a, ForwardRef) else a for a in args])
         elif required:  # pragma: no cover
             raise TypeError(f'Expected {obj} to have generic parameters but it had none')

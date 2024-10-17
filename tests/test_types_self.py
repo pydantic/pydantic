@@ -1,5 +1,6 @@
 import dataclasses
 import re
+import sys
 import typing
 from typing import List, Optional, Type, Union
 
@@ -200,12 +201,23 @@ def test_type_of_self(Self):
 
         # make sure forward refs are supported:
         @computed_field
-        def self_types2(self) -> List[Type['Self']]:
+        def self_types2(self) -> list[type['Self']]:
             return [type(self), self.self_type]
 
         @computed_field
         def self_types3(self) -> 'List[Type[Self]]':
             return [type(self), self.self_type]
+
+        if sys.version_info >= (3, 9):
+            # standard container types are supported in 3.9+
+
+            @computed_field
+            def self_types4(self) -> 'list[type[Self]]':
+                return [type(self), self.self_type]
+
+            @computed_field
+            def self_types5(self) -> list['type[Self]']:
+                return [type(self), self.self_type]
 
     class B(A): ...
 
