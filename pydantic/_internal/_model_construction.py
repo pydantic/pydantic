@@ -825,6 +825,7 @@ def unpack_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | N
 
 @lru_cache(maxsize=None)
 def default_ignored_types() -> tuple[type[Any], ...]:
+    from .._internal._validate_call import ValidateCallWrapper
     from ..fields import ComputedFieldInfo
 
     ignored_types = [
@@ -834,6 +835,7 @@ def default_ignored_types() -> tuple[type[Any], ...]:
         staticmethod,
         PydanticDescriptorProxy,
         ComputedFieldInfo,
+        ValidateCallWrapper,
     ]
 
     if sys.version_info >= (3, 12):

@@ -545,10 +545,14 @@ def test_item_method():
     with pytest.raises(ValidationError) as exc_info:
         x.foo()
 
-    # insert_assert(exc_info.value.errors(include_url=False))
+    # assert exc_info.value.errors(include_url=False) == [
+    #     {'type': 'missing_argument', 'loc': ('a',), 'msg': 'Missing required argument', 'input': ArgsKwargs((x,))},
+    #     {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs((x,))},
+    # ]
+
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'missing_argument', 'loc': ('a',), 'msg': 'Missing required argument', 'input': ArgsKwargs((x,))},
-        {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs((x,))},
+        {'type': 'missing_argument', 'loc': ('a',), 'msg': 'Missing required argument', 'input': ArgsKwargs(())},
+        {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs(())},
     ]
 
 
@@ -567,10 +571,14 @@ def test_class_method():
     with pytest.raises(ValidationError) as exc_info:
         x.foo()
 
-    # insert_assert(exc_info.value.errors(include_url=False))
+    # assert exc_info.value.errors(include_url=False) == [
+    #     {'type': 'missing_argument', 'loc': ('a',), 'msg': 'Missing required argument', 'input': ArgsKwargs((X,))},
+    #     {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs((X,))},
+    # ]
+
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'missing_argument', 'loc': ('a',), 'msg': 'Missing required argument', 'input': ArgsKwargs((X,))},
-        {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs((X,))},
+        {'type': 'missing_argument', 'loc': ('a',), 'msg': 'Missing required argument', 'input': ArgsKwargs(())},
+        {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs(())},
     ]
 
 
@@ -1038,6 +1046,34 @@ def test_validate_call_with_slots() -> None:
     assert c.some_instance_method == c.some_instance_method
     assert c.some_class_method == c.some_class_method
     assert c.some_static_method == c.some_static_method
+
+
+def test_super_and_override():
+    """https://github.com/pydantic/pydantic/issues/8146"""
+
+    results = []
+
+    class Parent:
+        @validate_call
+        def f(self, a: int, b: int):
+            results.append((a, b))
+
+    class Child(Parent):
+        @validate_call
+        def f(self, a: int, b: int, c: int):
+            super().f(a=a, b=b)
+            results.append(c)
+
+    parent_obj = Parent()
+    for _ in range(3):
+        parent_obj.f(a=3, b=7)
+    assert results == [(3, 7)] * 3
+
+    results.clear()
+    child_obj = Child()
+    for _ in range(3):
+        child_obj.f(a=3, b=7, c=10)
+    assert results == [(3, 7), 10] * 3
 
 
 def test_eval_type_backport():
