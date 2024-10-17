@@ -201,7 +201,7 @@ def test_type_of_self(Self):
 
         # make sure forward refs are supported:
         @computed_field
-        def self_types2(self) -> list[type['Self']]:
+        def self_types2(self) -> List[Type['Self']]:
             return [type(self), self.self_type]
 
         @computed_field
