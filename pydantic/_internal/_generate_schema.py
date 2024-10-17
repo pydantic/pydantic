@@ -22,7 +22,6 @@ from inspect import Parameter, _ParameterKind, signature
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
 from operator import attrgetter
-from types import GenericAlias
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -104,6 +103,8 @@ from ._utils import lenient_issubclass, smart_deepcopy
 from ._validate_call import VALIDATE_CALL_SUPPORTED_TYPES, ValidateCallSupportedTypes
 
 if TYPE_CHECKING:
+    from types import GenericAlias
+
     from ..fields import ComputedFieldInfo, FieldInfo
     from ..main import BaseModel
     from ..types import Discriminator
