@@ -301,7 +301,7 @@ class ModelMetaclass(ABCMeta):
 
         See #3829 and python/cpython#92810
         """
-        return hasattr(instance, '__post_root_validators__') and super().__instancecheck__(instance)
+        return hasattr(instance, '__fields__') and super().__instancecheck__(instance)
 
 
 object_setattr = object.__setattr__

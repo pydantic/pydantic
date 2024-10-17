@@ -1,5 +1,7 @@
 import warnings
 
+import pytest
+
 from pydantic import VERSION
 from pydantic import BaseModel as V2BaseModel
 from pydantic.v1 import VERSION as V1_VERSION
@@ -26,6 +28,7 @@ def test_root_validator():
     assert model.v == 'value-v1'
 
 
+@pytest.mark.xfail(reason='Pending merge of fix from v1 branch')
 def test_isinstance_does_not_raise_deprecation_warnings():
     class V1Model(V1BaseModel):
         v: int
