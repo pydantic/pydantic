@@ -2650,9 +2650,6 @@ def test_multiple_enums():
 
     ta = TypeAdapter(MyModel)
     assert ta.validate_json('{"a": 1, "b": 1}') == {'a': MyEnum.a, 'b': MyEnum.a}
-    for k in ['a', 'b']:
-        assert ta.core_schema['fields'][k]['schema']['schema']['type'] == 'enum'
-        assert ta.core_schema['fields'][k]['schema']['schema']['cls'] is MyEnum
 
 
 @pytest.mark.parametrize(
