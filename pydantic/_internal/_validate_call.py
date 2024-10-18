@@ -83,7 +83,7 @@ class ValidateCallWrapper:
 
         config_wrapper = ConfigWrapper(config)
         gen_schema = _generate_schema.GenerateSchema(config_wrapper, ns_resolver)
-        schema = gen_schema.clean_schema(gen_schema.generate_schema(function))
+        schema = gen_schema.clean_schema(gen_schema.generate_schema(function), deep_copy=False)
         core_config = config_wrapper.core_config(title=qualname)
 
         self.__pydantic_validator__ = create_schema_validator(
@@ -100,7 +100,7 @@ class ValidateCallWrapper:
             signature = inspect.signature(function)
             return_type = signature.return_annotation if signature.return_annotation is not signature.empty else Any
             gen_schema = _generate_schema.GenerateSchema(config_wrapper, ns_resolver)
-            schema = gen_schema.clean_schema(gen_schema.generate_schema(return_type))
+            schema = gen_schema.clean_schema(gen_schema.generate_schema(return_type), deep_copy=False)
             validator = create_schema_validator(
                 schema,
                 schema_type,

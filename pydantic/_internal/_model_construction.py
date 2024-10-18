@@ -657,20 +657,15 @@ def complete_model_class(
         ref_mode='unpack',
     )
 
+    core_config = config_wrapper.core_config(title=cls.__name__)
+
     try:
         schema = cls.__get_pydantic_core_schema__(cls, handler)
+        schema = gen_schema.clean_schema(schema, deep_copy=False)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
         set_model_mocks(cls, cls_name, f'`{e.name}`')
-        return False
-
-    core_config = config_wrapper.core_config(title=cls.__name__)
-
-    try:
-        schema = gen_schema.clean_schema(schema)
-    except gen_schema.CollectedInvalid:
-        set_model_mocks(cls, cls_name)
         return False
 
     # debug(schema)

@@ -94,7 +94,7 @@ def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth:
     )
     gen = _generate_schema.GenerateSchema(config_wrapper, ns_resolver=ns_resolver, typevars_map={})
     schema = gen.generate_schema(type_)
-    schema = gen.clean_schema(schema)
+    schema = gen.clean_schema(schema, deep_copy=False)
     return schema
 
 
