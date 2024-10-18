@@ -22,7 +22,6 @@ from inspect import Parameter, _ParameterKind, signature
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
 from operator import attrgetter
-from types import FunctionType, LambdaType, MethodType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -101,6 +100,7 @@ from ._namespace_utils import NamespacesTuple, NsResolver
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._typing_extra import get_cls_type_hints, is_annotated, is_finalvar, is_self_type, is_zoneinfo_type
 from ._utils import lenient_issubclass, smart_deepcopy
+from ._validate_call import VALIDATE_CALL_SUPPORTED_TYPES, ValidateCallSupportedTypes
 
 if TYPE_CHECKING:
     from ..fields import ComputedFieldInfo, FieldInfo
@@ -767,6 +767,12 @@ class GenerateSchema:
             return schema['schema']
         return schema
 
+    def _resolve_self_type(self, obj: Any) -> Any:
+        obj = self.model_type_stack.get()
+        if obj is None:
+            raise PydanticUserError('`typing.Self` is invalid in this context', code='invalid-self-type')
+        return obj
+
     def _generate_schema_from_property(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
         """Try to generate schema from either the `__get_pydantic_core_schema__` function or
         `__pydantic_core_schema__` property.
@@ -776,9 +782,7 @@ class GenerateSchema:
         """
         # avoid calling `__get_pydantic_core_schema__` if we've already visited this object
         if is_self_type(obj):
-            obj = self.model_type_stack.get()
-            if obj is None:
-                raise PydanticUserError('`typing.Self` is invalid in this context', code='invalid-self-type')
+            obj = self._resolve_self_type(obj)
         with self.defs.get_schema_or_ref(obj) as (_, maybe_schema):
             if maybe_schema is not None:
                 return maybe_schema
@@ -866,7 +870,13 @@ class GenerateSchema:
     def _get_args_resolving_forward_refs(self, obj: Any, required: bool = False) -> tuple[Any, ...] | None:
         args = get_args(obj)
         if args:
-            args = tuple([self._resolve_forward_ref(a) if isinstance(a, ForwardRef) else a for a in args])
+            if sys.version_info >= (3, 9):
+                from types import GenericAlias
+
+                if isinstance(obj, GenericAlias):
+                    # PEP 585 generic aliases don't convert args to ForwardRefs, unlike `typing.List/Dict` etc.
+                    args = (_typing_extra._make_forward_ref(a) if isinstance(a, str) else a for a in args)
+            args = tuple(self._resolve_forward_ref(a) if isinstance(a, ForwardRef) else a for a in args)
         elif required:  # pragma: no cover
             raise TypeError(f'Expected {obj} to have generic parameters but it had none')
         return args
@@ -999,8 +1009,8 @@ class GenerateSchema:
             return self.generate_schema(
                 self._get_first_arg_or_any(obj),
             )
-        elif isinstance(obj, (FunctionType, LambdaType, MethodType, partial)):
-            return self._callable_schema(obj)
+        elif isinstance(obj, VALIDATE_CALL_SUPPORTED_TYPES):
+            return self._call_schema(obj)
         elif inspect.isclass(obj) and issubclass(obj, Enum):
             return self._enum_schema(obj)
         elif is_zoneinfo_type(obj):
@@ -1023,9 +1033,6 @@ class GenerateSchema:
         return self._unknown_type_schema(obj)
 
     def _match_generic_type(self, obj: Any, origin: Any) -> CoreSchema:  # noqa: C901
-        if isinstance(origin, TypeAliasType):
-            return self._type_alias_type_schema(obj)
-
         # Need to handle generic dataclasses before looking for the schema properties because attribute accesses
         # on _GenericAlias delegate to the origin type, so lose the information about the concrete parametrization
         # As a result, currently, there is no way to cache the schema for generic dataclasses. This may be possible
@@ -1039,7 +1046,9 @@ class GenerateSchema:
         if from_property is not None:
             return from_property
 
-        if _typing_extra.origin_is_union(origin):
+        if isinstance(origin, TypeAliasType):
+            return self._type_alias_type_schema(obj)
+        elif _typing_extra.origin_is_union(origin):
             return self._union_schema(obj)
         elif origin in TUPLE_TYPES:
             return self._tuple_schema(obj)
@@ -1373,15 +1382,12 @@ class GenerateSchema:
             s = core_schema.nullable_schema(s)
         return s
 
-    def _type_alias_type_schema(
-        self,
-        obj: TypeAliasType,
-    ) -> CoreSchema:
+    def _type_alias_type_schema(self, obj: TypeAliasType) -> CoreSchema:
         with self.defs.get_schema_or_ref(obj) as (ref, maybe_schema):
             if maybe_schema is not None:
                 return maybe_schema
 
-            origin = get_origin(obj) or obj
+            origin: TypeAliasType = get_origin(obj) or obj
 
             annotation = origin.__value__
             typevars_map = get_standard_typevars_map(obj)
@@ -1535,7 +1541,7 @@ class GenerateSchema:
                 raise PydanticUndefinedAnnotation.from_name_error(e) from e
             if not annotations:
                 # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
-                annotations = {k: Any for k in namedtuple_cls._fields}
+                annotations: dict[str, Any] = {k: Any for k in namedtuple_cls._fields}
 
             if typevars_map:
                 annotations = {
@@ -1659,10 +1665,14 @@ class GenerateSchema:
     def _subclass_schema(self, type_: Any) -> core_schema.CoreSchema:
         """Generate schema for a Type, e.g. `Type[int]`."""
         type_param = self._get_first_arg_or_any(type_)
+
         # Assume `type[Annotated[<typ>, ...]]` is equivalent to `type[<typ>]`:
         type_param = _typing_extra.annotated_type(type_param) or type_param
+
         if type_param == Any:
             return self._type_schema()
+        elif isinstance(type_param, TypeAliasType):
+            return self.generate_schema(typing.Type[type_param.__value__])
         elif isinstance(type_param, typing.TypeVar):
             if type_param.__bound__:
                 if _typing_extra.origin_is_union(get_origin(type_param.__bound__)):
@@ -1677,6 +1687,11 @@ class GenerateSchema:
         elif _typing_extra.origin_is_union(get_origin(type_param)):
             return self._union_is_subclass_schema(type_param)
         else:
+            if is_self_type(type_param):
+                type_param = self._resolve_self_type(type_param)
+
+            if not inspect.isclass(type_param):
+                raise TypeError(f'Expected a class, got {type_param!r}')
             return core_schema.is_subclass_schema(type_param)
 
     def _sequence_schema(self, items_type: Any) -> core_schema.CoreSchema:
@@ -1839,15 +1854,12 @@ class GenerateSchema:
                 self.defs.definitions[dataclass_ref] = schema
                 return core_schema.definition_reference_schema(dataclass_ref)
 
-    def _callable_schema(self, function: Callable[..., Any]) -> core_schema.CallSchema:
+    def _call_schema(self, function: ValidateCallSupportedTypes) -> core_schema.CallSchema:
         """Generate schema for a Callable.
 
         TODO support functional validators once we support them in Config
         """
         sig = signature(function)
-
-        globalns, localns = self._types_namespace
-        type_hints = _typing_extra.get_function_type_hints(function, globalns=globalns, localns=localns)
 
         mode_lookup: dict[_ParameterKind, Literal['positional_only', 'positional_or_keyword', 'keyword_only']] = {
             Parameter.POSITIONAL_ONLY: 'positional_only',
@@ -1864,7 +1876,13 @@ class GenerateSchema:
             if p.annotation is sig.empty:
                 annotation = typing.cast(Any, Any)
             else:
-                annotation = type_hints[name]
+                # Note: This was originally get by `_typing_extra.get_function_type_hints`,
+                #       but we switch to simply `p.annotation` to support bultins (e.g. `sorted`).
+                #       May need to revisit if anything breaks.
+                annotation = (
+                    _typing_extra._make_forward_ref(p.annotation) if isinstance(p.annotation, str) else p.annotation
+                )
+                annotation = self._resolve_forward_ref(annotation)
 
             parameter_mode = mode_lookup.get(p.kind)
             if parameter_mode is not None:
@@ -1902,8 +1920,8 @@ class GenerateSchema:
         return_schema: core_schema.CoreSchema | None = None
         config_wrapper = self._config_wrapper
         if config_wrapper.validate_return:
-            return_hint = type_hints.get('return')
-            if return_hint is not None:
+            return_hint = sig.return_annotation
+            if return_hint is not sig.empty:
                 return_schema = self.generate_schema(return_hint)
 
         return core_schema.call_schema(
