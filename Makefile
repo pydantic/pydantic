@@ -62,7 +62,7 @@ test-typechecking-pyright: .pdm
 
 .PHONY: test-typechecking-mypy   ## Typechecking integration tests (Mypy). Not to be confused with `test-mypy`.
 test-typechecking-mypy: .pdm
-	pdm run bash -c 'cd tests/typechecking && mypy --version && mypy --config-file pyproject.toml .'
+	pdm run bash -c 'cd tests/typechecking && mypy --version && mypy --cache-dir=/dev/null --config-file pyproject.toml .'
 
 .PHONY: test  ## Run all tests, skipping the type-checker integration tests
 test: .pdm
