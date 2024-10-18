@@ -522,6 +522,53 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'removed-kwargs'
 ```
 
+## Circular reference schema {#circular-reference-schema}
+
+While Pydantic can handle recursive types, it does not allow _directly_ circular references in the schema.
+
+For example, these are valid types:
+
+```py test="skip"
+type A = A | int
+
+type B = list[C]
+type C = B | None
+```
+
+while these are not:
+
+```py test="skip"
+type A = A
+
+type B = C
+type C = B
+```
+
+So the latter will raise an error:
+
+```py
+from typing_extensions import TypeAliasType
+
+from pydantic import PydanticUserError, TypeAdapter
+
+A = TypeAliasType('A', 'A')
+
+B = TypeAliasType('B', 'C')
+C = TypeAliasType('C', 'B')
+
+
+try:
+    TypeAdapter(A)
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'circular-reference-schema'
+
+
+try:
+    TypeAdapter(B)
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'circular-reference-schema'
+```
+
 ## JSON schema invalid type {#invalid-for-json-schema}
 
 This error is raised when Pydantic fails to generate a JSON schema for some `CoreSchema`.
@@ -1065,7 +1112,7 @@ except PydanticUserError as exc_info:
 
 ## Cannot evaluate type annotation {#unevaluable-type-annotation}
 
-Because type annotations are evaluated *after* assignments, you might get unexpected results when using a type annotation name
+Because type annotations are evaluated _after_ assignments, you might get unexpected results when using a type annotation name
 that clashes with one of your fields. We raise an error in the following case:
 
 ```py test="skip"

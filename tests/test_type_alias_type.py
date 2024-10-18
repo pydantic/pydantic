@@ -1,4 +1,5 @@
 import datetime
+import re
 import sys
 from dataclasses import dataclass
 from typing import Dict, Generic, List, Sequence, Tuple, TypeVar, Union
@@ -7,8 +8,7 @@ import pytest
 from annotated_types import MaxLen
 from typing_extensions import Annotated, Literal, TypeAliasType
 
-from pydantic import BaseModel, Field, ValidationError
-from pydantic.type_adapter import TypeAdapter
+from pydantic import BaseModel, Field, PydanticUserError, TypeAdapter, ValidationError
 
 T = TypeVar('T')
 
@@ -391,7 +391,7 @@ def test_type_alias_to_type_with_ref():
     ]
 
 
-def test_intermediate_type_aliases() -> None:
+def test_intermediate_type_aliases():
     # https://github.com/pydantic/pydantic/issues/8984
     MySeq = TypeAliasType('MySeq', Sequence[T], type_params=(T,))
     MyIntSeq = TypeAliasType('MyIntSeq', MySeq[int])
@@ -408,6 +408,62 @@ def test_intermediate_type_aliases() -> None:
         'title': 'MyModel',
         'type': 'object',
     }
+
+
+def test_intermediate_type_aliases_2():
+    JSON = TypeAliasType('JSON', Union[str, int, bool, 'JSONSeq', 'JSONObj', None])
+    JSONObj = TypeAliasType('JSONObj', Dict[str, JSON])
+    JSONSeq = TypeAliasType('JSONSeq', List[JSON])
+    MyJSONAlias1 = TypeAliasType('MyJSONAlias1', JSON)
+    MyJSONAlias2 = TypeAliasType('MyJSONAlias2', MyJSONAlias1)
+    JSONs = TypeAliasType('JSONs', List[MyJSONAlias2])
+
+    adapter = TypeAdapter(JSONs)
+
+    assert adapter.validate_python([{'a': 1}, 2, '3', [4, 5], True, None]) == [{'a': 1}, 2, '3', [4, 5], True, None]
+
+
+def test_intermediate_type_aliases_3():
+    A = TypeAliasType('A', int)
+    B = TypeAliasType('B', A)
+    C = TypeAliasType('C', B)
+    D = TypeAliasType('D', C)
+    E = TypeAliasType('E', D)
+
+    TypeAdapter(E)
+
+
+def test_circular_type_aliases():
+    A = TypeAliasType('A', 'C')
+    B = TypeAliasType('B', A)
+    C = TypeAliasType('C', B)
+
+    with pytest.raises(PydanticUserError) as exc_info:
+
+        class MyModel(BaseModel):
+            a: C
+
+    assert exc_info.value.code == 'circular-reference-schema'
+    assert re.match(
+        r'Circular reference in schema detected: '
+        r'tests\.test_type_alias_type\.C:\d+ -> '
+        r'tests\.test_type_alias_type\.B:\d+ -> '
+        r'tests\.test_type_alias_type\.A:\d+ -> '
+        r'tests\.test_type_alias_type\.C:\d+',
+        exc_info.value.message,
+    )
+
+    D = TypeAliasType('D', 'D')
+
+    with pytest.raises(PydanticUserError) as exc_info:
+        TypeAdapter(D)
+    assert exc_info.value.code == 'circular-reference-schema'
+    assert re.match(
+        r'Circular reference in schema detected: '
+        r'tests\.test_type_alias_type\.D:\d+ -> '
+        r'tests\.test_type_alias_type\.D:\d+',
+        exc_info.value.message,
+    )
 
 
 REQUIRE_PEP_695 = pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+')
