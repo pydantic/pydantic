@@ -199,7 +199,7 @@ class ValidateCallWrapper:
             self.validate_return,
             self.parent_namespace,
             # ! WARNING: This cannot deal with staticmethod (although it is currently banned from here)
-            obj if obj is not None else objtype,
+            obj if obj is not None else _UNBOUND,
         )
 
         # TODO: is this correct?
@@ -207,9 +207,9 @@ class ValidateCallWrapper:
             validated_func.__set_name__(objtype, self._name)
 
         # TODO: BaseModel have slots; maybe check having __dict__?
+        # TODO: do we want to use global cache here?
         # skip binding to instance when obj or objtype has __slots__ attribute
         slots = getattr(obj, '__slots__', getattr(objtype, '__slots__', None))
-        # if hasattr(obj, '__slots__') or hasattr(objtype, '__slots__'):
         if slots is not None and self._name not in slots:
             return validated_func
 
@@ -225,19 +225,17 @@ class ValidateCallWrapper:
         self._owner = owner
         self._name = name
 
+    # For `__repr__`, `__eq__`, and `__hash__`,
+    # we want to maintain a similar behavior to `functools.wraps` for now.
+
     def __repr__(self) -> str:
-        # TODO: test this
         return repr(self._repr_dummy)
 
     def __eq__(self, value: object) -> bool:
-        # TODO: test this
-        if isinstance(value, ValidateCallWrapper):
-            return self.raw_function == value.raw_function
-        return False
+        return super().__eq__(value)
 
     def __hash__(self):
-        # TODO: test this
-        return hash(self.raw_function)
+        return super().__hash__()
 
 
 # Note: This does not play very well with type checkers. For example,
