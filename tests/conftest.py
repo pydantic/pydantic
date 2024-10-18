@@ -16,8 +16,10 @@ from typing import Any, Callable
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
 from jsonschema import Draft202012Validator, SchemaError
+from pydantic_core import core_schema
 
 from pydantic._internal._generate_schema import GenerateSchema
+from pydantic._internal._schema_generation_shared import get_existing_core_schema
 from pydantic.json_schema import GenerateJsonSchema
 
 
@@ -178,3 +180,25 @@ def validate_json_schemas(monkeypatch: pytest.MonkeyPatch, request: pytest.Fixtu
         return json_schema
 
     monkeypatch.setattr(GenerateJsonSchema, 'generate', generate)
+
+
+@pytest.fixture(scope='function', autouse=True)
+def check_core_schema_generator_existing_schema_usage_is_safe(
+    monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
+) -> None:
+    if request.node.get_closest_marker('benchmark'):
+        return
+
+    orig_process = GenerateSchema._process_schema_of_property
+
+    def process(self: GenerateSchema, obj: Any, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
+        if schema is get_existing_core_schema(obj):
+            # This must return a reference schema (also another instance) when using an existing schema of other model.
+            # GenerateSchema mutates the schemas in its various schema generator functions.
+            # So need to avoid it mutating accidentally another models' schema.
+            new_schema = orig_process(self, obj, schema)
+            assert new_schema is not schema and new_schema['type'] == 'definition-ref'
+            return new_schema
+        return orig_process(self, obj, schema)
+
+    monkeypatch.setattr(GenerateSchema, '_process_schema_of_property', process)

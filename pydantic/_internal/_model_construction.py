@@ -22,7 +22,7 @@ from ..warnings import GenericBeforeBaseModelWarning, PydanticDeprecatedSince20
 from ._config import ConfigWrapper
 from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_from_bases, unwrap_wrapped_function
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
-from ._generate_schema import GenerateSchema
+from ._generate_schema import CollectedInvalid, GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import set_model_mocks
@@ -662,8 +662,8 @@ def complete_model_class(
     core_config = config_wrapper.core_config(title=cls.__name__)
 
     try:
-        schema = gen_schema.clean_schema(schema)
-    except gen_schema.CollectedInvalid:
+        schema = gen_schema.clean_schema(schema, deep_copy=False)
+    except CollectedInvalid:
         set_model_mocks(cls)
         return False
 

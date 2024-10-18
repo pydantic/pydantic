@@ -278,8 +278,8 @@ class TypeAdapter(Generic[T]):
                 return False
 
             try:
-                self.core_schema = schema_generator.clean_schema(core_schema)
-            except schema_generator.CollectedInvalid:
+                self.core_schema = schema_generator.clean_schema(core_schema, deep_copy=False)
+            except _generate_schema.CollectedInvalid:
                 _mock_val_ser.set_type_adapter_mocks(self)
                 return False
 
