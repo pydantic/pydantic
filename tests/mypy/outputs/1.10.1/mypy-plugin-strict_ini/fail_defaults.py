@@ -6,7 +6,9 @@ class Model(BaseModel):
     undefined_default_no_args: int = Field()
     undefined_default: int = Field(description='my desc')
     positional_ellipsis_default: int = Field(...)
+# MYPY: error: Incompatible types in assignment (expression has type "EllipsisType", variable has type "int")  [assignment]
     named_ellipsis_default: int = Field(default=...)
+# MYPY: error: Incompatible types in assignment (expression has type "EllipsisType", variable has type "int")  [assignment]
 
     # Not required
     positional_default: int = Field(1)
