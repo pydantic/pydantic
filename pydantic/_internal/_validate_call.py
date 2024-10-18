@@ -2,6 +2,7 @@ from __future__ import annotations as _annotations
 
 import functools
 import inspect
+import sys
 from functools import partial
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, LambdaType, MethodType
 from typing import Any, Awaitable, Callable, Union, cast, get_args
@@ -103,7 +104,10 @@ class ValidateCallWrapper:
         qualname = extract_function_qualname(function)
 
         # `functools.wraps` do most of the work here except for `__name__` and `__qualname__`.
-        functools.wraps(wrapped)(self)
+        functools.wraps(
+            wrapped,
+            assigned=functools.WRAPPER_ASSIGNMENTS + ('__defaults__', '__kwdefaults__'),
+        )(self)
         self.__name__ = function_name
         self.__qualname__ = qualname
 
@@ -118,7 +122,13 @@ class ValidateCallWrapper:
         self._owner = None
 
         if inspect.iscoroutinefunction(function):
-            inspect.markcoroutinefunction(self)
+            if sys.version_info >= (3, 12):
+                inspect.markcoroutinefunction(self)
+            elif sys.version_info >= (3, 10):
+                self.__code__ = function.__code__
+            else:
+                # There is no way to make a custom object be recognized as a coroutine function by `inspect.iscoroutinefunction` before Python 3.10.
+                pass
 
         ns_resolver = NsResolver(namespaces_tuple=ns_for_function(schema_type, parent_namespace=parent_namespace))
 

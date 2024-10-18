@@ -506,6 +506,7 @@ def test_args_name():
     ]
 
 
+@pytest.mark.filterwarnings('ignore:coroutine .* was never awaited')
 def test_async():
     @validate_call
     async def foo(a, b):
@@ -515,8 +516,7 @@ def test_async():
         v = await foo(1, 2)
         assert v == 'a=1 b=2'
 
-    # insert_assert(inspect.iscoroutinefunction(foo) is True)
-    assert inspect.iscoroutinefunction(foo) is True
+    assert inspect.isawaitable(foo(1, 2)) is True
 
     asyncio.run(run())
     with pytest.raises(ValidationError) as exc_info:
@@ -525,6 +525,17 @@ def test_async():
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs(('x',))}
     ]
+
+
+@pytest.mark.xfail(
+    sys.version_info < (3, 10), reason='no backport for `inspect.iscoroutinefunction` before Python 3.10'
+)
+def test_iscoroutine():
+    @validate_call
+    async def foo(a, b):
+        return f'a={a} b={b}'
+
+    assert inspect.iscoroutinefunction(foo) is True
 
 
 def test_string_annotation():
