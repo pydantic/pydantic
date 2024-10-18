@@ -79,7 +79,7 @@ See the [plugin configuration](#configuring-the-plugin) for more details.
 
 Pydantic supports the mypy versions released less than 6 months ago. Older versions may still work with the plugin
 but won't be tested. The list of released mypy versions can be found [here](https://mypy-lang.org/news.html). Note
-that the support policy is subject to changes if this becomes too much of an issue on our end.
+that the version support policy is subject to change at discretion of contributors.
 
 ## Mypy plugin capabilities
 
