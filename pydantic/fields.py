@@ -694,7 +694,7 @@ _T = TypeVar('_T')
 
 # NOTE: Actual return type is 'FieldInfo', but we want to help type checkers
 # to understand the magic that happens at runtime.
-@overload
+@overload  # `default` argument set
 def Field(
     default: _T,
     *,
@@ -733,7 +733,7 @@ def Field(
     fail_fast: bool | None = _Unset,
     **extra: Unpack[_EmptyKwargs],
 ) -> _T: ...
-@overload
+@overload  # `default_factory` argument set
 def Field(
     *,
     default_factory: Callable[[], _T],
@@ -773,7 +773,7 @@ def Field(
     **extra: Unpack[_EmptyKwargs],
 ) -> _T: ...
 @overload
-def Field(
+def Field(  # No default set
     *,
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
@@ -1081,24 +1081,21 @@ class ModelPrivateAttr(_repr.Representation):
         )
 
 
-_T = TypeVar('_T')
-
-
 # NOTE: Actual return type is 'ModelPrivateAttr', but we want to help type checkers
 # to understand the magic that happens at runtime.
-@overload
+@overload  # `default` argument set
 def PrivateAttr(
     default: _T,
     *,
     init: Literal[False] = False,
 ) -> _T: ...
-@overload
+@overload  # `default_factory` argument set
 def PrivateAttr(
     *,
-    default_factory: typing.Callable[[], _T],
+    default_factory: Callable[[], _T],
     init: Literal[False] = False,
 ) -> _T: ...
-@overload
+@overload  # No default set
 def PrivateAttr(
     *,
     init: Literal[False] = False,
@@ -1106,7 +1103,7 @@ def PrivateAttr(
 def PrivateAttr(
     default: Any = PydanticUndefined,
     *,
-    default_factory: typing.Callable[[], Any] | None = None,
+    default_factory: Callable[[], Any] | None = None,
     init: Literal[False] = False,
 ) -> Any:
     """Usage docs: https://docs.pydantic.dev/2.10/concepts/models/#private-model-attributes
