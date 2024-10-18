@@ -528,7 +528,7 @@ While Pydantic can handle recursive types, it does not allow _directly_ circular
 
 For example, these are valid types:
 
-```py test="skip"
+```py test="skip" lint="skip" upgrade="skip"
 type A = A | int
 
 type B = list[C]
@@ -537,7 +537,7 @@ type C = B | None
 
 while these are not:
 
-```py test="skip"
+```py test="skip" lint="skip" upgrade="skip"
 type A = A
 
 type B = C
