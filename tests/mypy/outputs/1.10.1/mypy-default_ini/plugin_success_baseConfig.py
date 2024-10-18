@@ -119,6 +119,7 @@ MultiInheritanceModel().f()
 
 class AliasModel(BaseModel):
     x: str = Field(..., alias='y')
+# MYPY: error: Incompatible types in assignment (expression has type "EllipsisType", variable has type "str")  [assignment]
 
 
 alias_model = AliasModel(y='hello')
@@ -239,6 +240,7 @@ class FieldDefaultTestingModel(BaseModel):
     a: int
     b: int = Field()
     c: int = Field(...)
+# MYPY: error: Incompatible types in assignment (expression has type "EllipsisType", variable has type "int")  [assignment]
 
     # Default
     d: int = Field(1)

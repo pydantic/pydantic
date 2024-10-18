@@ -26,7 +26,6 @@ SelfReferencingModel.model_rebuild()
 
 model = Model(x=1, y='y')
 Model(x=1, y='y', z='z')
-# MYPY: error: Unexpected keyword argument "z" for "Model"  [call-arg]
 model.x = 2
 model.model_validate(model)
 
@@ -43,7 +42,6 @@ class KwargsModel(BaseModel, from_attributes=True):
 
 kwargs_model = KwargsModel(x=1, y='y')
 KwargsModel(x=1, y='y', z='z')
-# MYPY: error: Unexpected keyword argument "z" for "KwargsModel"  [call-arg]
 kwargs_model.x = 2
 kwargs_model.model_validate(kwargs_model.__dict__)
 
