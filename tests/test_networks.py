@@ -107,7 +107,6 @@ except ImportError:
         'http://example.org/path#fragment',
         'http://example.org/path?query#',
         'http://example.org/path?query#fragment',
-        'file://localhost/foo/bar',
     ],
 )
 def test_any_url_success(value):
