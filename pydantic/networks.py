@@ -429,11 +429,6 @@ class AmqpDsn(_BaseUrl):
 
     _constraints = UrlConstraints(allowed_schemes=['amqp', 'amqps'])
 
-    @property
-    def host(self) -> str:
-        """The required URL host."""
-        ...
-
 
 class RedisDsn(_BaseUrl):
     """A type that will accept any Redis DSN.
