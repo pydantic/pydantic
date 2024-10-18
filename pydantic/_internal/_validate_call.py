@@ -26,6 +26,9 @@ def extract_function_qualname(func: ValidateCallSupportedTypes) -> str:
     return f'partial({func.func.__qualname__})' if isinstance(func, functools.partial) else func.__qualname__
 
 
+_UNBOUND = object()
+
+
 class ValidateCallWrapper:
     """This is a wrapper around a function that validates the arguments passed to it, and optionally the return value."""
 
@@ -50,6 +53,11 @@ class ValidateCallWrapper:
         'config',
         'validate_return',
         'parent_namespace',
+        'bound_self',
+        '_repr_dummy',
+        #
+        '_name',
+        '_owner',
     )
 
     __module__: str
@@ -68,10 +76,12 @@ class ValidateCallWrapper:
     config: ConfigDict | None
     validate_return: bool
     parent_namespace: MappingNamespace | None
+    bound_self: Any
+    _generate_validator: Callable[[Any], SchemaValidator | PluggableSchemaValidator]
     _repr_dummy: Callable
 
-    _name: str | None = None
-    _owner: type[Any] | None = None
+    _name: str | None
+    _owner: type[Any] | None
 
     def __init__(
         self,
@@ -79,6 +89,7 @@ class ValidateCallWrapper:
         config: ConfigDict | None,
         validate_return: bool,
         parent_namespace: MappingNamespace | None,
+        bound_self: Any = _UNBOUND,
     ) -> None:
         if isinstance(function, partial):
             schema_type = function.func
@@ -100,8 +111,11 @@ class ValidateCallWrapper:
         self.config = config
         self.validate_return = validate_return
         self.parent_namespace = parent_namespace
-
+        self.bound_self = bound_self
         self._repr_dummy = functools.wraps(self)(lambda: ...)
+
+        self._name = None
+        self._owner = None
 
         if inspect.iscoroutinefunction(function):
             inspect.markcoroutinefunction(self)
@@ -109,26 +123,13 @@ class ValidateCallWrapper:
         ns_resolver = NsResolver(namespaces_tuple=ns_for_function(schema_type, parent_namespace=parent_namespace))
 
         config_wrapper = ConfigWrapper(config)
-        gen_schema = _generate_schema.GenerateSchema(config_wrapper, ns_resolver)
-        schema = gen_schema.clean_schema(gen_schema.generate_schema(function))
         core_config = config_wrapper.core_config(title=qualname)
 
-        self.__pydantic_validator__ = create_schema_validator(
-            schema,
-            schema_type,
-            module,
-            qualname,
-            'validate_call',
-            core_config,
-            config_wrapper.plugin_settings,
-        )
-
-        if validate_return:
-            signature = inspect.signature(function)
-            return_type = signature.return_annotation if signature.return_annotation is not signature.empty else Any
+        def generate_validator(tp: Any) -> SchemaValidator | PluggableSchemaValidator:
             gen_schema = _generate_schema.GenerateSchema(config_wrapper, ns_resolver)
-            schema = gen_schema.clean_schema(gen_schema.generate_schema(return_type))
-            validator = create_schema_validator(
+            schema = gen_schema.clean_schema(gen_schema.generate_schema(tp))
+
+            return create_schema_validator(
                 schema,
                 schema_type,
                 module,
@@ -137,7 +138,21 @@ class ValidateCallWrapper:
                 core_config,
                 config_wrapper.plugin_settings,
             )
-            if inspect.iscoroutinefunction(function):
+
+        self._generate_validator = generate_validator
+        self._build_validators()
+
+    def _build_validators(self) -> None:
+        self.__pydantic_validator__ = self._generate_validator(self.raw_function)
+
+        self.__return_pydantic_validator__ = None
+        if self.validate_return:
+            signature = inspect.signature(self.raw_function)
+            return_type = signature.return_annotation if signature.return_annotation is not signature.empty else Any
+
+            validator = self._generate_validator(return_type)
+
+            if inspect.iscoroutinefunction(self.raw_function):
 
                 async def return_val_wrapper(aw: Awaitable[Any]) -> None:
                     return validator.validate_python(await aw)
@@ -145,10 +160,11 @@ class ValidateCallWrapper:
                 self.__return_pydantic_validator__ = return_val_wrapper
             else:
                 self.__return_pydantic_validator__ = validator.validate_python
-        else:
-            self.__return_pydantic_validator__ = None
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        if self.bound_self is not _UNBOUND:
+            args = (self.bound_self, *args)
+
         res = self.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs))
         if self.__return_pydantic_validator__:
             return self.__return_pydantic_validator__(res)
@@ -163,6 +179,7 @@ class ValidateCallWrapper:
             # name to be populated by __set_name__. In this case, we'll manually acquire the name
             # from the function reference.
             if self._name is None:
+                # TODO: test this
                 self._name = extract_function_name(self.raw_function)
             try:
                 # Handle the case where a method is accessed as a class attribute
@@ -171,9 +188,25 @@ class ValidateCallWrapper:
                 # This will happen the first time the attribute is accessed
                 pass
 
-        bound_func = cast(Callable, self.raw_function).__get__(obj, objtype)
-        validated_func = self.__class__(bound_func, self.config, self.validate_return, self.parent_namespace)
+        if self._owner is None:
+            self._owner = objtype
 
+        # bound_func = cast(Callable, self.raw_function).__get__(obj, objtype)
+        validated_func = self.__class__(
+            # bound_func,
+            self.raw_function,
+            self.config,
+            self.validate_return,
+            self.parent_namespace,
+            # ! WARNING: This cannot deal with staticmethod (although it is currently banned from here)
+            obj if obj is not None else objtype,
+        )
+
+        # TODO: is this correct?
+        if self._name:
+            validated_func.__set_name__(objtype, self._name)
+
+        # TODO: BaseModel have slots; maybe check having __dict__?
         # skip binding to instance when obj or objtype has __slots__ attribute
         slots = getattr(obj, '__slots__', getattr(objtype, '__slots__', None))
         # if hasattr(obj, '__slots__') or hasattr(objtype, '__slots__'):
@@ -194,7 +227,6 @@ class ValidateCallWrapper:
 
     def __repr__(self) -> str:
         # TODO: test this
-        # return f'ValidateCallWrapper({self.raw_function})'
         return repr(self._repr_dummy)
 
     def __eq__(self, value: object) -> bool:

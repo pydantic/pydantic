@@ -102,7 +102,10 @@ def validate_call(
     def validate(function: AnyCallableT) -> AnyCallableT:
         _check_function_type(function)
         validate_call_wrapper = _validate_call.ValidateCallWrapper(
-            cast(_validate_call.ValidateCallSupportedTypes, function), config, validate_return, parent_namespace
+            cast(_validate_call.ValidateCallSupportedTypes, function),
+            config,
+            validate_return,
+            parent_namespace,
         )
         return cast(Any, validate_call_wrapper)
 
