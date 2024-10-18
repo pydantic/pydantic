@@ -184,7 +184,7 @@ class Dog(BaseModel):
 try:
 
     class Model(BaseModel):
-        pet: Union[Cat, Dog] = Field(..., discriminator='pet_type')
+        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
         number: int
 
 except PydanticUserError as exc_info:
@@ -216,7 +216,7 @@ class Dog(BaseModel):
 try:
 
     class Model(BaseModel):
-        pet: Union[Cat, Dog] = Field(..., discriminator='pet_type')
+        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
         number: int
 
 except PydanticUserError as exc_info:
@@ -246,7 +246,7 @@ class Dog(BaseModel):
 try:
 
     class Model(BaseModel):
-        pet: Union[Cat, Dog] = Field(..., discriminator='pet_type')
+        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
         number: int
 
 except PydanticUserError as exc_info:
@@ -276,7 +276,7 @@ class Dog(BaseModel):
 try:
 
     class Model(BaseModel):
-        pet: Union[Cat, Dog] = Field(..., discriminator='pet_type')
+        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
         number: int
 
 except PydanticUserError as exc_info:
@@ -314,7 +314,7 @@ class Dog(BaseModel):
 try:
 
     class Model(BaseModel):
-        pet: Union[Cat, Dog] = Field(..., discriminator='pet_type')
+        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
         number: int
 
 except PydanticUserError as exc_info:
@@ -1126,7 +1126,7 @@ from pydantic.dataclasses import dataclass
 
 @dataclass
 class Foo:
-    bar: str = Field(..., init=False, init_var=True)
+    bar: str = Field(init=False, init_var=True)
 
 
 """

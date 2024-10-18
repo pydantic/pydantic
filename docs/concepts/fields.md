@@ -65,9 +65,9 @@ For validation and serialization, you can define an alias for a field.
 
 There are three ways to define an alias:
 
-* `Field(..., alias='foo')`
-* `Field(..., validation_alias='foo')`
-* `Field(..., serialization_alias='foo')`
+* `Field(alias='foo')`
+* `Field(validation_alias='foo')`
+* `Field(serialization_alias='foo')`
 
 The `alias` parameter is used for both validation _and_ serialization. If you want to use
 _different_ aliases for validation and serialization respectively, you can use the`validation_alias`
@@ -80,7 +80,7 @@ from pydantic import BaseModel, Field
 
 
 class User(BaseModel):
-    name: str = Field(..., alias='username')
+    name: str = Field(alias='username')
 
 
 user = User(username='johndoe')  # (1)!
@@ -107,7 +107,7 @@ from pydantic import BaseModel, Field
 
 
 class User(BaseModel):
-    name: str = Field(..., validation_alias='username')
+    name: str = Field(validation_alias='username')
 
 
 user = User(username='johndoe')  # (1)!
@@ -127,7 +127,7 @@ from pydantic import BaseModel, Field
 
 
 class User(BaseModel):
-    name: str = Field(..., serialization_alias='username')
+    name: str = Field(serialization_alias='username')
 
 
 user = User(name='johndoe')  # (1)!
@@ -158,7 +158,7 @@ print(user.model_dump(by_alias=True))  # (2)!
 
 
     class User(BaseModel):
-        name: str = Field(..., alias='username')
+        name: str = Field(alias='username')
 
 
     user = User(username='johndoe')  # (1)!
@@ -177,7 +177,7 @@ print(user.model_dump(by_alias=True))  # (2)!
     class User(BaseModel):
         model_config = ConfigDict(populate_by_name=True)
 
-        name: str = Field(..., alias='username')
+        name: str = Field(alias='username')
 
 
     user = User(name='johndoe')  # (1)!
@@ -195,7 +195,7 @@ print(user.model_dump(by_alias=True))  # (2)!
     class User(BaseModel):
         model_config = ConfigDict(populate_by_name=True)
 
-        name: str = Field(..., alias=str('username'))  # noqa: UP018
+        name: str = Field(alias=str('username'))  # noqa: UP018
 
 
     user = User(name='johndoe')  # (1)!
@@ -219,7 +219,7 @@ print(user.model_dump(by_alias=True))  # (2)!
 
 
     class MyModel(BaseModel):
-        my_field: int = Field(..., validation_alias='myValidationAlias')
+        my_field: int = Field(validation_alias='myValidationAlias')
     ```
     with:
     ```py

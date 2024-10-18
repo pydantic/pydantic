@@ -2020,7 +2020,7 @@ class WhiteCat(BaseModel):
 
 
 class Model(BaseModel):
-    cat: Union[BlackCat, WhiteCat] = Field(..., discriminator='pet_type')
+    cat: Union[BlackCat, WhiteCat] = Field(discriminator='pet_type')
 
 
 try:
@@ -2049,7 +2049,7 @@ class WhiteCat(BaseModel):
 
 
 class Model(BaseModel):
-    cat: Union[BlackCat, WhiteCat] = Field(..., discriminator='pet_type')
+    cat: Union[BlackCat, WhiteCat] = Field(discriminator='pet_type')
 
 
 try:

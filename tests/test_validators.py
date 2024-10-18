@@ -1816,7 +1816,7 @@ def test_overridden_root_validators():
 
 def test_validating_assignment_pre_root_validator_fail():
     class Model(BaseModel):
-        current_value: float = Field(..., alias='current')
+        current_value: float = Field(alias='current')
         max_value: float
 
         model_config = ConfigDict(validate_assignment=True)
@@ -1844,7 +1844,7 @@ def test_validating_assignment_pre_root_validator_fail():
 
 def test_validating_assignment_model_validator_before_fail():
     class Model(BaseModel):
-        current_value: float = Field(..., alias='current')
+        current_value: float = Field(alias='current')
         max_value: float
 
         model_config = ConfigDict(validate_assignment=True)

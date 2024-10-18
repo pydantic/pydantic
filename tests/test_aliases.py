@@ -141,8 +141,8 @@ def test_alias_override_behavior():
         x: int = Field(alias='x1', gt=0)
 
     class Child(Parent):
-        x: int = Field(..., alias='x2')
-        y: int = Field(..., alias='y2')
+        x: int = Field(alias='x2')
+        y: int = Field(alias='y2')
 
     assert Parent.model_fields['x'].alias == 'x1'
     assert Child.model_fields['x'].alias == 'x2'
@@ -209,7 +209,7 @@ upper_alias_generator = [
 def test_alias_generator_on_parent(alias_generator):
     class Parent(BaseModel):
         model_config = ConfigDict(alias_generator=alias_generator)
-        x: bool = Field(..., alias='a_b_c')
+        x: bool = Field(alias='a_b_c')
         y: str
 
     class Child(Parent):
@@ -226,7 +226,7 @@ def test_alias_generator_on_parent(alias_generator):
 @pytest.mark.parametrize('alias_generator', upper_alias_generator)
 def test_alias_generator_on_child(alias_generator):
     class Parent(BaseModel):
-        x: bool = Field(..., alias='abc')
+        x: bool = Field(alias='abc')
         y: str
 
     class Child(Parent):
@@ -245,12 +245,12 @@ def test_alias_generator_used_by_default(alias_generator):
         model_config = ConfigDict(alias_generator=alias_generator)
 
         a: str
-        b: str = Field(..., alias='b_alias')
-        c: str = Field(..., validation_alias='c_val_alias')
-        d: str = Field(..., serialization_alias='d_ser_alias')
-        e: str = Field(..., alias='e_alias', validation_alias='e_val_alias')
-        f: str = Field(..., alias='f_alias', serialization_alias='f_ser_alias')
-        g: str = Field(..., alias='g_alias', validation_alias='g_val_alias', serialization_alias='g_ser_alias')
+        b: str = Field(alias='b_alias')
+        c: str = Field(validation_alias='c_val_alias')
+        d: str = Field(serialization_alias='d_ser_alias')
+        e: str = Field(alias='e_alias', validation_alias='e_val_alias')
+        f: str = Field(alias='f_alias', serialization_alias='f_ser_alias')
+        g: str = Field(alias='g_alias', validation_alias='g_val_alias', serialization_alias='g_ser_alias')
 
     assert {
         name: {k: getattr(f, k) for k in ('alias', 'validation_alias', 'serialization_alias')}
@@ -301,9 +301,9 @@ def test_alias_generator_used_by_default(alias_generator):
 @pytest.mark.parametrize('alias_generator', upper_alias_generator)
 def test_low_priority_alias(alias_generator):
     class Parent(BaseModel):
-        w: bool = Field(..., alias='w_', validation_alias='w_val_alias', serialization_alias='w_ser_alias')
+        w: bool = Field(alias='w_', validation_alias='w_val_alias', serialization_alias='w_ser_alias')
         x: bool = Field(
-            ..., alias='abc', alias_priority=1, validation_alias='x_val_alias', serialization_alias='x_ser_alias'
+            alias='abc', alias_priority=1, validation_alias='x_val_alias', serialization_alias='x_ser_alias'
         )
         y: str
 
@@ -403,7 +403,7 @@ def test_populate_by_name_config(
 
     class Foo(BaseModel):
         model_config = ConfigDict(populate_by_name=populate_by_name_config)
-        bar_: int = Field(..., alias='bar')
+        bar_: int = Field(alias='bar')
 
     with expectation:
         if use_construct:

@@ -109,7 +109,7 @@ def test_recursive_model_with_subclass_override(Self):
 def test_self_type_with_field(Self):
     class SelfRef(BaseModel):
         x: int
-        refs: typing.List[Self] = Field(..., gt=0)
+        refs: typing.List[Self] = Field(gt=0)
 
     with pytest.raises(TypeError, match=re.escape("Unable to apply constraint 'gt' to supplied value []")):
         SelfRef(x=1, refs=[SelfRef(x=2, refs=[])])

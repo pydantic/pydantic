@@ -2855,7 +2855,7 @@ def test_disallow_init_false_and_init_var_true() -> None:
 
         @pydantic.dataclasses.dataclass
         class Foo:
-            bar: str = Field(..., init=False, init_var=True)
+            bar: str = Field(init=False, init_var=True)
 
 
 def test_annotations_valid_for_field_inheritance() -> None:

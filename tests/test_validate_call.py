@@ -645,7 +645,7 @@ def test_json_schema():
     }
 
     @validate_call
-    def foo(a: Annotated[int, Field(..., alias='A')]):
+    def foo(a: Annotated[int, Field(alias='A')]):
         return a
 
     assert foo(1) == 1

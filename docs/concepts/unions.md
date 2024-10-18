@@ -222,7 +222,7 @@ class Lizard(BaseModel):
 
 
 class Model(BaseModel):
-    pet: Union[Cat, Dog, Lizard] = Field(..., discriminator='pet_type')
+    pet: Union[Cat, Dog, Lizard] = Field(discriminator='pet_type')
     n: int
 
 

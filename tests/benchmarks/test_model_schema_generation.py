@@ -246,7 +246,7 @@ def test_tagged_union_with_str_discriminator_schema_generation(benchmark):
         scales: bool
 
     class Model(DeferredModel):
-        pet: Union[Cat, Dog, Lizard] = Field(..., discriminator='pet_type')
+        pet: Union[Cat, Dog, Lizard] = Field(discriminator='pet_type')
         n: int
 
     benchmark(rebuild_model, Model)
