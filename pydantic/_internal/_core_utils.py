@@ -509,12 +509,9 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
         return True
 
     def inline_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
-        visited: set[str] = set()
+        # Assume there are no infinite loops, because we already checked for that
         while s['type'] == 'definition-ref':
             ref = s['schema_ref']
-            if ref in visited:
-                raise Exception('Circular reference detected')
-            visited.add(ref)
 
             # Check if the reference is only used once, not involved in recursion and does not have
             # any extra keys (like 'serialization')
