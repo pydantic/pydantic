@@ -472,7 +472,7 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
             recurse(s, count_refs)
 
         next_s = definitions[ref]
-        visited = set()
+        visited: set[str] = set()
         while next_s['type'] == 'definition-ref':
             if next_s['schema_ref'] in visited:
                 raise Exception('Circular reference detected')
@@ -509,7 +509,7 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
         return True
 
     def inline_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
-        visited = set()
+        visited: set[str] = set()
         while s['type'] == 'definition-ref':
             ref = s['schema_ref']
             if ref in visited:

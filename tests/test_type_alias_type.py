@@ -391,7 +391,7 @@ def test_type_alias_to_type_with_ref():
     ]
 
 
-def test_double_type_aliases():
+def test_intermediate_type_aliases() -> None:
     # https://github.com/pydantic/pydantic/issues/8984
     MySeq = TypeAliasType('MySeq', Sequence[T], type_params=(T,))
     MyIntSeq = TypeAliasType('MyIntSeq', MySeq[int])
