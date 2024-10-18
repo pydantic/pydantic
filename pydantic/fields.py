@@ -209,6 +209,10 @@ class FieldInfo(_repr.Representation):
         default = kwargs.pop('default', PydanticUndefined)
         if default is Ellipsis:
             self.default = PydanticUndefined
+            # Also remove it from the attributes set, otherwise
+            # `GenerateSchema._common_field_schema` mistakenly
+            # uses it:
+            self._attributes_set.pop('default', None)
         else:
             self.default = default
 
@@ -1033,12 +1037,15 @@ class ModelPrivateAttr(_repr.Representation):
             attribute if not provided.
     """
 
-    __slots__ = 'default', 'default_factory'
+    __slots__ = ('default', 'default_factory')
 
     def __init__(
         self, default: Any = PydanticUndefined, *, default_factory: typing.Callable[[], Any] | None = None
     ) -> None:
-        self.default = default
+        if default is Ellipsis:
+            self.default = PydanticUndefined
+        else:
+            self.default = default
         self.default_factory = default_factory
 
     if not typing.TYPE_CHECKING:

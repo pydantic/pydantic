@@ -359,7 +359,7 @@ def test_cache_keys_are_hashable(clean_cache):
     assert len(_GENERIC_TYPES_CACHE) == cache_size + 15
 
     class Model(BaseModel):
-        x: MyGenericModel[Callable[[C], Iterable[str]]] = Field(...)
+        x: MyGenericModel[Callable[[C], Iterable[str]]]
 
     models.append(Model)
     assert len(_GENERIC_TYPES_CACHE) == cache_size + 15
@@ -2324,7 +2324,7 @@ def test_construct_generic_model_with_validation():
     class Page(BaseModel, Generic[T]):
         page: int = Field(ge=42)
         items: Sequence[T]
-        unenforced: PositiveInt = Field(..., lt=10)
+        unenforced: PositiveInt = Field(lt=10)
 
     with pytest.raises(ValidationError) as exc_info:
         Page[int](page=41, items=[], unenforced=11)

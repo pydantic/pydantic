@@ -431,7 +431,7 @@ def test_forward_ref_with_field(create_module):
         Foo = ForwardRef('Foo')
 
         class Foo(BaseModel):
-            c: List[Foo] = Field(..., gt=0)
+            c: List[Foo] = Field(gt=0)
 
         with pytest.raises(TypeError, match=re.escape("Unable to apply constraint 'gt' to supplied value []")):
             Foo(c=[Foo(c=[])])
@@ -446,7 +446,7 @@ from pydantic import BaseModel, Field
 
 
 class Spec(BaseModel):
-    spec_fields: list[str] = Field(..., alias="fields")
+    spec_fields: list[str] = Field(alias="fields")
     filter: str | None = None
     sort: str | None
 
