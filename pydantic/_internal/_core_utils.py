@@ -2,18 +2,13 @@ from __future__ import annotations
 
 import os
 from collections import defaultdict
-from typing import (
-    Any,
-    Callable,
-    Hashable,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, Hashable, TypeVar, Union
 
 from pydantic_core import CoreSchema, core_schema
 from pydantic_core import validate_core_schema as _validate_core_schema
 from typing_extensions import TypeAliasType, TypeGuard, get_args, get_origin
 
+from ..errors import PydanticUserError
 from . import _repr
 from ._typing_extra import is_generic_alias
 
@@ -463,7 +458,34 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
             # Even though this is a `'definition-ref'` schema, there might
             # be more references inside the serialization schema:
             recurse(s, count_refs)
-        recurse(definitions[ref], count_refs)
+
+        # collect visited refs as key; only used to be shown in error message. None for root ref
+        parent_of_ref: dict[str, str | None] = {ref: None}
+        next_s = definitions[ref]
+        while next_s['type'] == 'definition-ref':
+            if next_s['schema_ref'] in parent_of_ref:
+                msg = next_s['schema_ref']
+
+                assert 'ref' in next_s
+                node = next_s['ref']
+                while True:
+                    msg = f'{node} -> {msg}'
+
+                    node = parent_of_ref[node]
+
+                    if node is None:
+                        break
+                raise PydanticUserError(
+                    'Circular reference in schema detected: ' + msg, code='circular-reference-schema'
+                )
+
+            assert 'ref' in next_s
+            parent_of_ref[next_s['schema_ref']] = next_s['ref']
+
+            ref_counts[next_s['schema_ref']] += 1
+            next_s = definitions[next_s['schema_ref']]
+
+        recurse(next_s, count_refs)
         current_recursion_ref_count[ref] -= 1
         return s
 
@@ -491,8 +513,10 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
         return True
 
     def inline_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
-        if s['type'] == 'definition-ref':
+        # Assume there are no infinite loops, because we already checked for that
+        while s['type'] == 'definition-ref':
             ref = s['schema_ref']
+
             # Check if the reference is only used once, not involved in recursion and does not have
             # any extra keys (like 'serialization')
             if can_be_inlined(s, ref):
@@ -503,12 +527,10 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
                 # in particular this is needed for `serialization`
                 if 'serialization' in s:
                     new['serialization'] = s['serialization']
-                s = recurse(new, inline_refs)
-                return s
+                s = new
             else:
-                return recurse(s, inline_refs)
-        else:
-            return recurse(s, inline_refs)
+                break
+        return recurse(s, inline_refs)
 
     schema = walk_core_schema(schema, inline_refs, copy=False)
 
