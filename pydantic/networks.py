@@ -424,10 +424,10 @@ class AmqpDsn(_BaseUrl):
 
     * User info required
     * TLD not required
-    * Host required
+    * Host not required
     """
 
-    _constraints = UrlConstraints(allowed_schemes=['amqp', 'amqps'], host_required=True)
+    _constraints = UrlConstraints(allowed_schemes=['amqp', 'amqps'])
 
     @property
     def host(self) -> str:
