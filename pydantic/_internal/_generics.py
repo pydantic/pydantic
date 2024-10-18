@@ -427,14 +427,6 @@ def generic_recursion_self_type(
             _generic_recursion_cache.reset(token)
 
 
-def recursively_defined_type_refs() -> set[str]:
-    visited = _generic_recursion_cache.get()
-    if not visited:
-        return set()  # not in a generic recursion, so there are no types
-
-    return visited.copy()  # don't allow modifications
-
-
 def get_cached_generic_type_early(parent: type[BaseModel], typevar_values: Any) -> type[BaseModel] | None:
     """The use of a two-stage cache lookup approach was necessary to have the highest performance possible for
     repeated calls to `__class_getitem__` on generic types (which may happen in tighter loops during runtime),
