@@ -690,6 +690,8 @@ class GenerateSchema:
                                 extras_schema = self.generate_schema(extra_items_type)
                                 break
 
+                generic_origin: type[BaseModel] | None = getattr(cls, '__pydantic_generic_metadata__', {}).get('origin')
+
                 if cls.__pydantic_root_model__:
                     root_field = self._common_field_schema('root', fields['root'], decorators)
                     inner_schema = root_field['schema']
@@ -697,6 +699,7 @@ class GenerateSchema:
                     model_schema = core_schema.model_schema(
                         cls,
                         inner_schema,
+                        generic_origin=generic_origin,
                         custom_init=getattr(cls, '__pydantic_custom_init__', None),
                         root_model=True,
                         post_init=getattr(cls, '__pydantic_post_init__', None),
@@ -723,6 +726,7 @@ class GenerateSchema:
                     model_schema = core_schema.model_schema(
                         cls,
                         inner_schema,
+                        generic_origin=generic_origin,
                         custom_init=getattr(cls, '__pydantic_custom_init__', None),
                         root_model=False,
                         post_init=getattr(cls, '__pydantic_post_init__', None),
@@ -1509,6 +1513,7 @@ class GenerateSchema:
                 td_schema = core_schema.typed_dict_schema(
                     fields,
                     cls=typed_dict_cls,
+                    generic_origin=origin,
                     computed_fields=[
                         self._computed_field_schema(d, decorators.field_serializers)
                         for d in decorators.computed_fields.values()
@@ -1839,6 +1844,7 @@ class GenerateSchema:
                 dc_schema = core_schema.dataclass_schema(
                     dataclass,
                     inner_schema,
+                    generic_origin=origin,
                     post_init=has_post_init,
                     ref=dataclass_ref,
                     fields=[field.name for field in dataclasses.fields(dataclass)],

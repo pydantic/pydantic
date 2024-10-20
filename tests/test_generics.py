@@ -689,10 +689,7 @@ def test_nested():
     OuterT_SameType[int](i={'a': 8})
     OuterT_SameType[int](i=inner_int)
     OuterT_SameType[str](i=inner_str)
-    # TODO: The next line is failing, but passes in v1.
-    #   Should re-parse-from-dict if the pydantic_generic_origin is the same
-    # OuterT_SameType[str](i=inner_int_any)
-    OuterT_SameType[int](i=inner_int_any.model_dump())
+    OuterT_SameType[int](i=inner_int_any)
 
     with pytest.raises(ValidationError) as exc_info:
         OuterT_SameType[int](i=inner_str.model_dump())
@@ -710,11 +707,10 @@ def test_nested():
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'model_type',
-            'loc': ('i',),
-            'msg': 'Input should be a valid dictionary or instance of InnerT[int]',
-            'input': InnerT[str](a='ate'),
-            'ctx': {'class_name': 'InnerT[int]'},
+            'type': 'int_parsing',
+            'loc': ('i', 'a'),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'ate',
         }
     ]
 
@@ -728,13 +724,7 @@ def test_nested():
         OuterT_SameType[int](i=inner_dict_any)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'model_type',
-            'loc': ('i',),
-            'msg': 'Input should be a valid dictionary or instance of InnerT[int]',
-            'input': InnerT[Any](a={}),
-            'ctx': {'class_name': 'InnerT[int]'},
-        }
+        {'type': 'int_type', 'loc': ('i', 'a'), 'msg': 'Input should be a valid integer', 'input': {}}
     ]
 
 

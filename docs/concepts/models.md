@@ -772,12 +772,6 @@ Order(id=1, product=ResponseModel[Product](content=Product(name='Apple', price=0
 """
 ```
 
-!!! tip
-    When using a parametrized generic model as a type in another model (like `product: ResponseModel[Product]`),
-    make sure to parametrize said generic model when you initialize the model instance
-    (like `response = ResponseModel[Product](content=product)`). If you don't, a [`ValidationError`][pydantic_core.ValidationError]
-    will be raised, as Pydantic doesn't infer the type of the generic model based on the data passed to it.
-
 Using the same type variable in nested models allows you to enforce typing relationships at different points in your model:
 
 ```py
@@ -801,18 +795,20 @@ nested = InnerT[int](inner=1)
 print(OuterT[int](outer=1, nested=nested))
 #> outer=1 nested=InnerT[int](inner=1)
 try:
-    nested = InnerT[str](inner='a')
-    print(OuterT[int](outer='a', nested=nested))
+    print(OuterT[int](outer='a', nested=InnerT(inner='a')))  # (1)!
 except ValidationError as e:
     print(e)
     """
     2 validation errors for OuterT[int]
     outer
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
-    nested
-      Input should be a valid dictionary or instance of InnerT[int] [type=model_type, input_value=InnerT[str](inner='a'), input_type=InnerT[str]]
+    nested.inner
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
     """
 ```
+
+1. The `OuterT` model is parametrized with `int`, but the data associated with the the `T` annotations during validation is of type `str`,
+leading to validation errors.
 
 !!! warning
     While it may not raise an error, we strongly advise against using parametrized generics in [`isinstance()`](https://docs.python.org/3/library/functions.html#isinstance) checks.
