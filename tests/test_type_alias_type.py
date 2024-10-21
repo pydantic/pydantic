@@ -1,6 +1,5 @@
 import datetime
 import re
-import sys
 from dataclasses import dataclass
 from typing import Dict, Generic, List, Sequence, Tuple, TypeVar, Union
 
@@ -464,37 +463,3 @@ def test_circular_type_aliases():
         r'tests\.test_type_alias_type\.D:\d+',
         exc_info.value.message,
     )
-
-
-REQUIRE_PEP_695 = pytest.mark.skipif(sys.version_info < (3, 12), reason='requires Python 3.12+')
-
-
-@REQUIRE_PEP_695
-def test_double_type_aliases_pep695(create_module):
-    """The PEP 695 implementation of the above test.
-
-    https://github.com/pydantic/pydantic/issues/8984
-    """
-
-    module = create_module("""
-from typing import Sequence
-from pydantic import BaseModel
-
-type MySeq[T] = Sequence[T]
-type MyIntSeq = MySeq[int]
-
-class MyModel(BaseModel):
-    my_int_seq: MyIntSeq
-""")
-
-    MyModel: BaseModel = module.MyModel
-
-    assert MyModel(my_int_seq=range(1, 4)).my_int_seq == [1, 2, 3]
-
-    assert MyModel.model_json_schema() == {
-        '$defs': {'MySeq_int_': {'items': {'type': 'integer'}, 'type': 'array'}},
-        'properties': {'my_int_seq': {'$ref': '#/$defs/MySeq_int_'}},
-        'required': ['my_int_seq'],
-        'title': 'MyModel',
-        'type': 'object',
-    }

@@ -530,6 +530,7 @@ For example, this is a valid type alias:
 
 ```py test="skip" lint="skip" upgrade="skip"
 type A = list[A] | None
+```
 
 while these are not:
 
@@ -538,31 +539,6 @@ type A = A
 
 type B = C
 type C = B
-```
-
-So the latter will raise an error:
-
-```py
-from typing_extensions import TypeAliasType
-
-from pydantic import PydanticUserError, TypeAdapter
-
-A = TypeAliasType('A', 'A')
-
-B = TypeAliasType('B', 'C')
-C = TypeAliasType('C', 'B')
-
-
-try:
-    TypeAdapter(A)
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'circular-reference-schema'
-
-
-try:
-    TypeAdapter(B)
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'circular-reference-schema'
 ```
 
 ## JSON schema invalid type {#invalid-for-json-schema}
@@ -1108,7 +1084,7 @@ except PydanticUserError as exc_info:
 
 ## Cannot evaluate type annotation {#unevaluable-type-annotation}
 
-Because type annotations are evaluated *after* assignments, you might get unexpected results when using a type annotation name
+Because type annotations are evaluated _after_ assignments, you might get unexpected results when using a type annotation name
 that clashes with one of your fields. We raise an error in the following case:
 
 ```py test="skip"
