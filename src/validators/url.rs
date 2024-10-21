@@ -544,8 +544,9 @@ fn check_sub_defaults(
         error: e.to_string(),
         context: None,
     };
-    if let Some(ref default_host) = default_host {
-        if !url.url().has_host() {
+
+    if !url.url().has_host() {
+        if let Some(ref default_host) = default_host {
             url.url_mut().set_host(Some(default_host)).map_err(map_parse_err)?;
         } else if host_required {
             return Err(ErrorType::UrlParsing {
