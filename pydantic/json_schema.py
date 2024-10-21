@@ -450,6 +450,10 @@ class GenerateJsonSchema:
 
         Returns:
             The generated JSON schema.
+
+        TODO: the nested function definitions here seem like bad practice, I'd like to unpack these
+        in a future PR. It'd be great if we could shorten the call stack a bit for JSON schema generation,
+        and I think there's potential for that here.
         """
         # If a schema with the same CoreRef has been handled, just return a reference to it
         # Note that this assumes that it will _never_ be the case that the same CoreRef is used
@@ -516,6 +520,35 @@ class GenerateJsonSchema:
         current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, handler_func)
 
         metadata = schema.get('metadata', {})
+
+        # TODO: I hate that we have to wrap these basic dict updates in callables, is there any way around this?
+
+        if js_updates := metadata.get('pydantic_js_updates'):
+
+            def js_updates_handler_func(
+                schema_or_field: CoreSchemaOrField,
+                current_handler: GetJsonSchemaHandler = current_handler,
+            ) -> JsonSchemaValue:
+                json_schema = {**current_handler(schema_or_field), **js_updates}
+                return json_schema
+
+            current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, js_updates_handler_func)
+
+        if js_extra := metadata.get('pydantic_js_extra'):
+
+            def js_extra_handler_func(
+                schema_or_field: CoreSchemaOrField,
+                current_handler: GetJsonSchemaHandler = current_handler,
+            ) -> JsonSchemaValue:
+                json_schema = current_handler(schema_or_field)
+                if isinstance(js_extra, dict):
+                    json_schema.update(to_jsonable_python(js_extra))
+                elif callable(js_extra):
+                    js_extra(json_schema)
+                return json_schema
+
+            current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, js_extra_handler_func)
+
         for js_modify_function in metadata.get('pydantic_js_functions', ()):
 
             def new_handler_func(

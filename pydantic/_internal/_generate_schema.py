@@ -56,7 +56,7 @@ from typing_extensions import Literal, TypeAliasType, TypedDict, get_args, get_o
 
 from ..aliases import AliasChoices, AliasGenerator, AliasPath
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
-from ..config import ConfigDict, JsonDict, JsonEncoder
+from ..config import ConfigDict, JsonDict, JsonEncoder, JsonSchemaExtraCallable
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
 from ..functional_validators import AfterValidator, BeforeValidator, FieldValidatorModes, PlainValidator, WrapValidator
 from ..json_schema import JsonSchemaValue
@@ -1323,17 +1323,12 @@ class GenerateSchema:
         )
         self._apply_field_title_generator_to_field_info(self._config_wrapper, field_info, name)
 
-        json_schema_updates = {
-            'title': field_info.title,
-            'description': field_info.description,
-            'deprecated': bool(field_info.deprecated) or field_info.deprecated == '' or None,
-            'examples': to_jsonable_python(field_info.examples),
-        }
-        json_schema_updates = {k: v for k, v in json_schema_updates.items() if v is not None}
-        json_schema_extra = field_info.json_schema_extra
-        metadata = {
-            'pydantic_js_annotation_functions': [get_json_schema_update_func(json_schema_updates, json_schema_extra)]
-        }
+        json_schema_updates, json_schema_extra = _extract_json_schema_info_from_field_info(field_info)
+        metadata: dict[str, Any] = {}
+        if json_schema_updates is not None:
+            metadata['pydantic_js_updates'] = json_schema_updates
+        if json_schema_extra is not None:
+            metadata['pydantic_js_extra'] = json_schema_extra
 
         alias_generator = self._config_wrapper.alias_generator
         if alias_generator is not None:
@@ -1998,33 +1993,13 @@ class GenerateSchema:
             )
         self._apply_field_title_generator_to_field_info(self._config_wrapper, d.info, d.cls_var_name)
 
-        def set_computed_field_metadata(schema: CoreSchemaOrField, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-            json_schema = handler(schema)
-
-            json_schema['readOnly'] = True
-
-            title = d.info.title
-            if title is not None:
-                json_schema['title'] = title
-
-            description = d.info.description
-            if description is not None:
-                json_schema['description'] = description
-
-            if d.info.deprecated or d.info.deprecated == '':
-                json_schema['deprecated'] = True
-
-            examples = d.info.examples
-            if examples is not None:
-                json_schema['examples'] = to_jsonable_python(examples)
-
-            json_schema_extra = d.info.json_schema_extra
-            if json_schema_extra is not None:
-                add_json_schema_extra(json_schema, json_schema_extra)
-
-            return json_schema
-
-        metadata = {'pydantic_js_annotation_functions': [set_computed_field_metadata]}
+        json_schema_updates, json_schema_extra = _extract_json_schema_info_from_field_info(d.info)
+        if json_schema_updates is None:
+            json_schema_updates = {}
+        json_schema_updates['readOnly'] = True
+        metadata: dict[str, Any] = {'pydantic_js_updates': json_schema_updates}
+        if json_schema_extra is not None:
+            metadata['pydantic_js_extra'] = json_schema_extra
         return core_schema.computed_field(
             d.cls_var_name, return_schema=return_type_schema, alias=d.info.alias, metadata=metadata
         )
@@ -2173,21 +2148,22 @@ class GenerateSchema:
         if isinstance(metadata, FieldInfo):
             for field_metadata in metadata.metadata:
                 schema = self._apply_single_annotation_json_schema(schema, field_metadata)
-            json_schema_update: JsonSchemaValue = {}
-            if metadata.title:
-                json_schema_update['title'] = metadata.title
-            if metadata.description:
-                json_schema_update['description'] = metadata.description
-            if metadata.examples:
-                json_schema_update['examples'] = to_jsonable_python(metadata.examples)
 
-            json_schema_extra = metadata.json_schema_extra
-            if json_schema_update or json_schema_extra:
-                metadata = schema.get('metadata', {})
-                metadata.setdefault('pydantic_js_annotation_functions', []).append(
-                    get_json_schema_update_func(json_schema_update, json_schema_extra)
-                )
-                schema['metadata'] = metadata
+            json_schema_updates, json_schema_extra = _extract_json_schema_info_from_field_info(metadata)
+            metadata = schema.get('metadata', {})
+            if json_schema_updates is not None:
+                if (existing_json_schema_updates := metadata.get('pydantic_js_updates')) is not None:
+                    metadata['pydantic_js_updates'] = {**existing_json_schema_updates, **json_schema_updates}
+                else:
+                    metadata['pydantic_js_updates'] = json_schema_updates
+            if json_schema_extra is not None:
+                existing_json_schema_extra = metadata.get('pydantic_js_extra', {})
+                if isinstance(existing_json_schema_extra, dict) and isinstance(json_schema_extra, dict):
+                    metadata['pydantic_js_extra'] = {**existing_json_schema_extra, **json_schema_extra}
+                else:
+                    # if ever there's a case of a callable, we'll just keep the last json schema extra spec
+                    metadata['pydantic_js_extra'] = json_schema_extra
+            schema['metadata'] = metadata
         return schema
 
     def _get_wrapped_inner_schema(
@@ -2472,28 +2448,6 @@ def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSch
     return js_modify_function
 
 
-def get_json_schema_update_func(
-    json_schema_update: JsonSchemaValue, json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
-) -> GetJsonSchemaFunction:
-    def json_schema_update_func(
-        core_schema_or_field: CoreSchemaOrField, handler: GetJsonSchemaHandler
-    ) -> JsonSchemaValue:
-        json_schema = {**handler(core_schema_or_field), **json_schema_update}
-        add_json_schema_extra(json_schema, json_schema_extra)
-        return json_schema
-
-    return json_schema_update_func
-
-
-def add_json_schema_extra(
-    json_schema: JsonSchemaValue, json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
-):
-    if isinstance(json_schema_extra, dict):
-        json_schema.update(to_jsonable_python(json_schema_extra))
-    elif callable(json_schema_extra):
-        json_schema_extra(json_schema)
-
-
 class _CommonField(TypedDict):
     schema: core_schema.CoreSchema
     validation_alias: str | list[str | int] | list[list[str | int]] | None
@@ -2568,6 +2522,19 @@ def resolve_original_schema(schema: CoreSchema, definitions: dict[str, CoreSchem
         return schema['schema']
     else:
         return schema
+
+
+def _extract_json_schema_info_from_field_info(
+    info: FieldInfo | ComputedFieldInfo,
+) -> tuple[JsonDict | None, JsonDict | JsonSchemaExtraCallable | None]:
+    json_schema_updates = {
+        'title': info.title,
+        'description': info.description,
+        'deprecated': bool(info.deprecated) or info.deprecated == '' or None,
+        'examples': to_jsonable_python(info.examples),
+    }
+    json_schema_updates = {k: v for k, v in json_schema_updates.items() if v is not None}
+    return (json_schema_updates or None, info.json_schema_extra)
 
 
 class _FieldNameStack:

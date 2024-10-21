@@ -7,6 +7,7 @@ import typing_extensions
 if typing.TYPE_CHECKING:
     from pydantic_core import CoreSchema
 
+    from ..config import JsonDict, JsonSchemaExtraCallable
     from ._schema_generation_shared import (
         GetJsonSchemaFunction,
     )
@@ -30,6 +31,9 @@ class CoreMetadata(typing_extensions.TypedDict, total=False):
     business, and that should be phased out as we migrate to a pydantic-core TypedDict, which
     will offer the same benefits.
 
+    NOTE: this is currently not used, I'm just adding attributes for tracking purposes so that when we migrate
+    to `pydantic-core`, things can be used.
+
     TODO: We'd like to refactor the storage of json related metadata to be more explicit, and less functionally oriented.
     This should make its way into our v2.10 release. It's inevitable that we need to store some json schema related information
     on core schemas, given that we generate JSON schemas directly from core schemas. That being said, debugging related
@@ -40,3 +44,5 @@ class CoreMetadata(typing_extensions.TypedDict, total=False):
     pydantic_js_annotation_functions: list[GetJsonSchemaFunction]
     pydantic_js_prefer_positional_arguments: bool | None
     pydantic_js_input_core_schema: CoreSchema | None
+    pydantic_js_updates: JsonDict | None
+    pydantic_js_extra: JsonDict | JsonSchemaExtraCallable | None
