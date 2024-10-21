@@ -4128,7 +4128,7 @@ To exclude a field from <strong>every</strong> member of a list or tuple, the di
 <h3 id="model-and-field-level-include-and-exclude">Model- and field-level include and exclude<a class="headerlink" href="#model-and-field-level-include-and-exclude" title="Permanent link">&para;</a></h3>
 <p>In addition to the explicit arguments <code>exclude</code> and <code>include</code> passed to <code>model_dump</code> and <code>model_dump_json</code> methods,
 we can also pass the <code>exclude: bool</code> arguments directly to the <code>Field</code> constructor:</p>
-<p>Setting <code>exclude</code> on the field constructor (<code>Field(..., exclude=True)</code>) takes priority over the
+<p>Setting <code>exclude</code> on the field constructor (<code>Field(exclude=True)</code>) takes priority over the
 <code>exclude</code>/<code>include</code> on <code>model_dump</code> and <code>model_dump_json</code>:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">SecretStr</span>
 
@@ -4136,7 +4136,7 @@ we can also pass the <code>exclude: bool</code> arguments directly to the <code>
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">username</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">password</span><span class="p">:</span> <span class="n">SecretStr</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">password</span><span class="p">:</span> <span class="n">SecretStr</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">Transaction</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -4157,7 +4157,7 @@ we can also pass the <code>exclude: bool</code> arguments directly to the <code>
 <ol>
 <li><code>value</code> excluded from the output because it excluded in <code>Field</code>.</li>
 </ol>
-<p>That being said, setting <code>exclude</code> on the field constructor (<code>Field(..., exclude=True)</code>) does not take priority
+<p>That being said, setting <code>exclude</code> on the field constructor (<code>Field(exclude=True)</code>) does not take priority
 over the <code>exclude_unset</code>, <code>exclude_none</code>, and <code>exclude_default</code> parameters on <code>model_dump</code> and <code>model_dump_json</code>:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.8 and above</label><label for="__tabbed_3_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">

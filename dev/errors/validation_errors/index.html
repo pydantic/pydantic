@@ -6375,7 +6375,7 @@ argument while calling a function decorated with <code>validate_call</code>:</p>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">cat</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">BlackCat</span><span class="p">,</span> <span class="n">WhiteCat</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
+    <span class="n">cat</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">BlackCat</span><span class="p">,</span> <span class="n">WhiteCat</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
 
 
 <span class="k">try</span><span class="p">:</span>
@@ -6400,7 +6400,7 @@ argument while calling a function decorated with <code>validate_call</code>:</p>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">cat</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">BlackCat</span><span class="p">,</span> <span class="n">WhiteCat</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
+    <span class="n">cat</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">BlackCat</span><span class="p">,</span> <span class="n">WhiteCat</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
 
 
 <span class="k">try</span><span class="p">:</span>

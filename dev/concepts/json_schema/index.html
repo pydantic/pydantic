@@ -3495,7 +3495,7 @@ depending on your use case, one approach might offer a more simple solution than
     <span class="n">foo_bar</span><span class="p">:</span> <span class="n">FooBar</span>
     <span class="n">gender</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Gender</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;Gender&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">snap</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="mi">42</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
         <span class="n">title</span><span class="o">=</span><span class="s1">&#39;The Snap&#39;</span><span class="p">,</span>
         <span class="n">description</span><span class="o">=</span><span class="s1">&#39;this is the value of snap&#39;</span><span class="p">,</span>
         <span class="n">gt</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
@@ -3615,7 +3615,7 @@ depending on your use case, one approach might offer a more simple solution than
     <span class="n">foo_bar</span><span class="p">:</span> <span class="n">FooBar</span>
     <span class="n">gender</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Gender</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;Gender&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">snap</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="mi">42</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
         <span class="n">title</span><span class="o">=</span><span class="s1">&#39;The Snap&#39;</span><span class="p">,</span>
         <span class="n">description</span><span class="o">=</span><span class="s1">&#39;this is the value of snap&#39;</span><span class="p">,</span>
         <span class="n">gt</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
@@ -3734,7 +3734,7 @@ depending on your use case, one approach might offer a more simple solution than
     <span class="n">foo_bar</span><span class="p">:</span> <span class="n">FooBar</span>
     <span class="n">gender</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Gender</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;Gender&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">snap</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="mi">42</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
         <span class="n">title</span><span class="o">=</span><span class="s1">&#39;The Snap&#39;</span><span class="p">,</span>
         <span class="n">description</span><span class="o">=</span><span class="s1">&#39;this is the value of snap&#39;</span><span class="p">,</span>
         <span class="n">gt</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
@@ -4049,7 +4049,7 @@ to <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields
     <span class="c1"># this won&#39;t work since `PositiveInt` takes precedence over the</span>
     <span class="c1"># constraints defined in `Field`, meaning they&#39;re ignored</span>
     <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-        <span class="n">foo</span><span class="p">:</span> <span class="n">PositiveInt</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">lt</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="n">foo</span><span class="p">:</span> <span class="n">PositiveInt</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">lt</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 
 <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
@@ -4061,7 +4061,7 @@ to <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields
 <span class="k">class</span> <span class="nc">ModelB</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="c1"># Here both constraints will be applied and the schema</span>
     <span class="c1"># will be generated correctly</span>
-    <span class="n">foo</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">lt</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">lt</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">ModelB</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">())</span>
@@ -4249,11 +4249,11 @@ for more details.</p>
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span>
 
 <span class="n">ExternalType</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
-    <span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">json_schema_extra</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;key1&#39;</span><span class="p">:</span> <span class="s1">&#39;value1&#39;</span><span class="p">})</span>
+    <span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">json_schema_extra</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;key1&#39;</span><span class="p">:</span> <span class="s1">&#39;value1&#39;</span><span class="p">})</span>
 <span class="p">]</span>
 
 <span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span>
-    <span class="n">Annotated</span><span class="p">[</span><span class="n">ExternalType</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">json_schema_extra</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;key2&#39;</span><span class="p">:</span> <span class="s1">&#39;value2&#39;</span><span class="p">})]</span>
+    <span class="n">Annotated</span><span class="p">[</span><span class="n">ExternalType</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">json_schema_extra</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;key2&#39;</span><span class="p">:</span> <span class="s1">&#39;value2&#39;</span><span class="p">})]</span>
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">json_schema</span><span class="p">(),</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
 <span class="sd">&quot;&quot;&quot;</span>
@@ -4276,7 +4276,7 @@ in Pydantic v2.8 and earlier:</p>
 <span class="kn">from</span> <span class="nn">pydantic.json_schema</span> <span class="kn">import</span> <span class="n">JsonDict</span>
 
 <span class="n">ExternalType</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
-    <span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">json_schema_extra</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;key1&#39;</span><span class="p">:</span> <span class="s1">&#39;value1&#39;</span><span class="p">,</span> <span class="s1">&#39;key2&#39;</span><span class="p">:</span> <span class="s1">&#39;value2&#39;</span><span class="p">})</span>
+    <span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">json_schema_extra</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;key1&#39;</span><span class="p">:</span> <span class="s1">&#39;value1&#39;</span><span class="p">,</span> <span class="s1">&#39;key2&#39;</span><span class="p">:</span> <span class="s1">&#39;value2&#39;</span><span class="p">})</span>
 <span class="p">]</span>
 
 
@@ -4287,7 +4287,7 @@ in Pydantic v2.8 and earlier:</p>
 
 
 <span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span>
-    <span class="n">Annotated</span><span class="p">[</span><span class="n">ExternalType</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">json_schema_extra</span><span class="o">=</span><span class="n">finalize_schema</span><span class="p">)]</span>
+    <span class="n">Annotated</span><span class="p">[</span><span class="n">ExternalType</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">json_schema_extra</span><span class="o">=</span><span class="n">finalize_schema</span><span class="p">)]</span>
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">json_schema</span><span class="p">(),</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
 <span class="sd">&quot;&quot;&quot;</span>
