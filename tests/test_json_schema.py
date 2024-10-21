@@ -222,7 +222,7 @@ def test_sub_model():
 def test_schema_class():
     class Model(BaseModel):
         foo: int = Field(4, title='Foo is Great')
-        bar: str = Field(..., description='this description of bar')
+        bar: str = Field(description='this description of bar')
 
     with pytest.raises(ValidationError):
         Model()
@@ -422,7 +422,7 @@ def test_enum_includes_extra_without_other_params():
 
     class Foo(BaseModel):
         enum: Names
-        extra_enum: Names = Field(..., json_schema_extra={'extra': 'Extra field'})
+        extra_enum: Names = Field(json_schema_extra={'extra': 'Extra field'})
 
     assert Foo.model_json_schema() == {
         '$defs': {
@@ -1483,7 +1483,7 @@ def test_schema_overrides_w_union():
         pass
 
     class Spam(BaseModel):
-        a: Union[Foo, Bar] = Field(..., description='xxx')
+        a: Union[Foo, Bar] = Field(description='xxx')
 
     assert Spam.model_json_schema()['properties'] == {
         'a': {
@@ -2792,7 +2792,7 @@ def test_typeddict_with__callable_json_schema_extra():
 )
 def test_enforced_constraints(annotation, kwargs, field_schema):
     class Model(BaseModel):
-        a: annotation = Field(..., **kwargs)
+        a: annotation = Field(**kwargs)
 
     schema = Model.model_json_schema()
     # debug(schema['properties']['a'])
@@ -2802,7 +2802,7 @@ def test_enforced_constraints(annotation, kwargs, field_schema):
 def test_real_constraints():
     class Model1(BaseModel):
         model_config = ConfigDict(title='Test Model')
-        foo: int = Field(..., gt=123)
+        foo: int = Field(gt=123)
 
     with pytest.raises(ValidationError, match='should be greater than 123'):
         Model1(foo=123)
@@ -3795,7 +3795,7 @@ def test_discriminated_union():
         pet_type: Literal['reptile', 'lizard']
 
     class Model(BaseModel):
-        pet: Union[Cat, Dog, Lizard] = Field(..., discriminator='pet_type')
+        pet: Union[Cat, Dog, Lizard] = Field(discriminator='pet_type')
 
     # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
@@ -3851,7 +3851,7 @@ def test_discriminated_annotated_union():
         pet_type: Literal['reptile', 'lizard']
 
     class Model(BaseModel):
-        pet: Annotated[Union[Cat, Dog, Lizard], Field(..., discriminator='pet_type')]
+        pet: Annotated[Union[Cat, Dog, Lizard], Field(discriminator='pet_type')]
 
     # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
@@ -6169,7 +6169,7 @@ def test_recursive_json_schema_build() -> None:
         VAL2 = 'Val2'
 
     class ModelA(BaseModel):
-        modelA_1: AllowedValues = Field(..., max_length=60)
+        modelA_1: AllowedValues = Field(max_length=60)
 
     class ModelB(ModelA):
         modelB_1: typing.List[ModelA]
@@ -6213,7 +6213,7 @@ def test_required_fields_in_annotated_with_create_model() -> None:
         'test_model',
         foo=(int, ...),
         bar=(Annotated[int, Field(description='Bar description')], ...),
-        baz=(Annotated[int, Field(..., description='Baz description')], ...),
+        baz=(Annotated[int, Field(description='Baz description')], ...),
     )
 
     assert Model.model_json_schema() == {

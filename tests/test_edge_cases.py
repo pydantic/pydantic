@@ -24,13 +24,14 @@ from typing import (
 
 import pytest
 from dirty_equals import HasRepr, IsStr
-from pydantic_core import ErrorDetails, InitErrorDetails, PydanticSerializationError, core_schema
+from pydantic_core import ErrorDetails, InitErrorDetails, PydanticSerializationError, PydanticUndefined, core_schema
 from typing_extensions import Annotated, Literal, TypeAliasType, TypedDict, get_args
 
 from pydantic import (
     BaseModel,
     ConfigDict,
     GetCoreSchemaHandler,
+    PrivateAttr,
     PydanticDeprecatedSince20,
     PydanticSchemaGenerationError,
     RootModel,
@@ -647,15 +648,15 @@ def test_advanced_exclude():
 def test_advanced_exclude_by_alias():
     class SubSubModel(BaseModel):
         a: str
-        aliased_b: str = Field(..., alias='b_alias')
+        aliased_b: str = Field(alias='b_alias')
 
     class SubModel(BaseModel):
-        aliased_c: str = Field(..., alias='c_alias')
-        aliased_d: List[SubSubModel] = Field(..., alias='d_alias')
+        aliased_c: str = Field(alias='c_alias')
+        aliased_d: List[SubSubModel] = Field(alias='d_alias')
 
     class Model(BaseModel):
-        aliased_e: str = Field(..., alias='e_alias')
-        aliased_f: SubModel = Field(..., alias='f_alias')
+        aliased_e: str = Field(alias='e_alias')
+        aliased_f: SubModel = Field(alias='f_alias')
 
     m = Model(
         e_alias='e',
@@ -1561,7 +1562,7 @@ def test_validated_optional_subfields():
 
 def test_optional_field_constraints():
     class MyModel(BaseModel):
-        my_int: Optional[int] = Field(..., ge=3)
+        my_int: Optional[int] = Field(ge=3)
 
     with pytest.raises(ValidationError) as exc_info:
         MyModel(my_int=2)
@@ -1897,6 +1898,24 @@ def test_required_optional():
         },
         {'input': {'nullable1': 'some text'}, 'loc': ('nullable2',), 'msg': 'Field required', 'type': 'missing'},
     ]
+
+
+def test_ellipsis_forward_ref_annotated() -> None:
+    """This previously resulted in the ellipsis being used as a default value."""
+
+    class Model(BaseModel):
+        f: 'Forward'
+
+    Forward = Annotated[int, Field(...)]
+
+    assert Model.model_fields['f'].default is PydanticUndefined
+
+
+def test_private_attr_ellipsis() -> None:
+    class Model(BaseModel):
+        _a: int = PrivateAttr(...)
+
+    assert not hasattr(Model(), '_a')
 
 
 def test_required_any():
@@ -2290,7 +2309,7 @@ def test_iter_coverage():
 def test_frozen_config_and_field():
     class Foo(BaseModel):
         model_config = ConfigDict(frozen=False, validate_assignment=True)
-        a: str = Field(...)
+        a: str
 
     assert Foo.model_fields['a'].metadata == []
 
@@ -2300,7 +2319,7 @@ def test_frozen_config_and_field():
 
     class Bar(BaseModel):
         model_config = ConfigDict(validate_assignment=True)
-        a: str = Field(..., frozen=True)
+        a: str = Field(frozen=True)
         c: Annotated[str, Field(frozen=True)]
 
     assert Bar.model_fields['a'].frozen
