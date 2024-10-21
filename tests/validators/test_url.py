@@ -287,6 +287,12 @@ def test_url_defaults_single_url(validator_kwargs, url, expected):
     url_test_case_helper(url, expected, SCHEMA_VALIDATOR_MODE, s)
 
 
+def test_url_host_required():
+    s = SchemaValidator(core_schema.url_schema(host_required=True))
+    url_test_case_helper('test:', Err('empty host'), SCHEMA_VALIDATOR_MODE, s)
+    url_test_case_helper('sftp://', Err('empty host'), SCHEMA_VALIDATOR_MODE, s)
+
+
 @pytest.mark.parametrize(
     'validator_kwargs,url,expected',
     [
