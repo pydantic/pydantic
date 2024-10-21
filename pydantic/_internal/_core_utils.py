@@ -513,7 +513,7 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
         return True
 
     def inline_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
-        # Assume there are no infinite loops, because we already checked for that
+        # Assume there are no infinite loops, because we already checked for that in `count_refs`
         while s['type'] == 'definition-ref':
             ref = s['schema_ref']
 

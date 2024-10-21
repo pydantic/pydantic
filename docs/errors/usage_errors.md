@@ -524,16 +524,12 @@ except PydanticUserError as exc_info:
 
 ## Circular reference schema {#circular-reference-schema}
 
-While Pydantic can handle recursive types, it does not allow _directly_ circular references in the schema.
+This error is raised when a circular reference is found that would otherwise result in an infinite recursion.
 
-For example, these are valid types:
+For example, this is a valid type alias:
 
 ```py test="skip" lint="skip" upgrade="skip"
-type A = A | int
-
-type B = list[C]
-type C = B | None
-```
+type A = list[A] | None
 
 while these are not:
 
@@ -1112,7 +1108,7 @@ except PydanticUserError as exc_info:
 
 ## Cannot evaluate type annotation {#unevaluable-type-annotation}
 
-Because type annotations are evaluated _after_ assignments, you might get unexpected results when using a type annotation name
+Because type annotations are evaluated *after* assignments, you might get unexpected results when using a type annotation name
 that clashes with one of your fields. We raise an error in the following case:
 
 ```py test="skip"
