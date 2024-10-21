@@ -62,7 +62,6 @@ from pydantic import (
     field_serializer,
     field_validator,
 )
-from pydantic._internal._core_metadata import build_metadata_dict
 from pydantic.color import Color
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass
@@ -3372,7 +3371,7 @@ def test_schema_for_generic_field():
         ) -> core_schema.PlainValidatorFunctionSchema:
             source_args = getattr(source, '__args__', [Any])
             param = source_args[0]
-            metadata = build_metadata_dict(js_functions=[lambda _c, h: h(handler.generate_schema(param))])
+            metadata = {'pydantic_js_functions': [lambda _c, h: h(handler.generate_schema(param))]}
             return core_schema.with_info_plain_validator_function(
                 GenModel,
                 metadata=metadata,
@@ -3542,7 +3541,7 @@ def test_advanced_generic_schema():  # noqa: C901
         ) -> core_schema.CoreSchema:
             if hasattr(source, '__args__'):
                 # the js_function ignores the schema we were given and gets a new Tuple CoreSchema
-                metadata = build_metadata_dict(js_functions=[lambda _c, h: h(handler(Tuple[source.__args__]))])
+                metadata = {'pydantic_js_functions': [lambda _c, h: h(handler(Tuple[source.__args__]))]}
                 return core_schema.with_info_plain_validator_function(
                     GenTwoParams,
                     metadata=metadata,

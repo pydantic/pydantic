@@ -1,7 +1,6 @@
 from __future__ import annotations as _annotations
 
 import typing
-from typing import Any
 
 import typing_extensions
 
@@ -41,11 +40,3 @@ class CoreMetadata(typing_extensions.TypedDict, total=False):
     pydantic_js_annotation_functions: list[GetJsonSchemaFunction]
     pydantic_js_prefer_positional_arguments: bool | None
     pydantic_js_input_core_schema: CoreSchema | None
-
-
-def build_metadata_dict(**kwargs) -> dict[str, Any]:
-    """Builds a dict to use as the metadata field of a CoreSchema object in a manner that is consistent with the `CoreMetadataHandler` class.
-
-    TODO: planning on removing this, doesn't bring much value.
-    """
-    return {f'pydantic_{k}': v for k, v in kwargs.items() if v is not None}

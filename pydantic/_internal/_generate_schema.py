@@ -64,7 +64,6 @@ from ..version import version_short
 from ..warnings import PydanticDeprecatedSince20
 from . import _core_utils, _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
 from ._config import ConfigWrapper, ConfigWrapperStack
-from ._core_metadata import build_metadata_dict
 from ._core_utils import (
     CoreSchemaOrField,
     collect_invalid_schemas,
@@ -490,9 +489,10 @@ class GenerateSchema:
                 python_schema=core_schema.is_instance_schema(tp),
             ),
             serialization=core_schema.plain_serializer_function_ser_schema(ser_ip, info_arg=True, when_used='always'),
-            metadata=build_metadata_dict(
-                js_functions=[lambda _1, _2: {'type': 'string', 'format': ip_type_json_schema_format[tp]}]
-            ),
+            # TODO: metadata - good opportunity for plain pydantic_js
+            metadata={
+                'pydantic_js_functions': [lambda _1, _2: {'type': 'string', 'format': ip_type_json_schema_format[tp]}]
+            },
         )
 
     def _fraction_schema(self) -> CoreSchema:
@@ -509,9 +509,8 @@ class GenerateSchema:
             ),
             # use str serialization to guarantee round trip behavior
             serialization=core_schema.to_string_ser_schema(when_used='always'),
-            metadata=build_metadata_dict(
-                js_functions=[lambda _1, _2: {'type': 'string', 'format': 'fraction'}],
-            ),
+            # TODO: metadata - good opportunity for plain pydantic_js
+            metadata={'pydantic_js_functions': [lambda _1, _2: {'type': 'string', 'format': 'fraction'}]},
         )
 
     def _arbitrary_type_schema(self, tp: Any) -> CoreSchema:
@@ -657,7 +656,7 @@ class GenerateSchema:
             config_wrapper = ConfigWrapper(cls.model_config, check=False)
             core_config = config_wrapper.core_config(title=cls.__name__)
             title = self._get_model_title_from_config(cls, config_wrapper)
-            metadata = build_metadata_dict(js_functions=[partial(modify_model_json_schema, cls=cls, title=title)])
+            metadata = {'pydantic_js_functions': [partial(modify_model_json_schema, cls=cls, title=title)]}
 
             model_validators = decorators.model_validators.values()
 
@@ -1331,12 +1330,10 @@ class GenerateSchema:
             'examples': to_jsonable_python(field_info.examples),
         }
         json_schema_updates = {k: v for k, v in json_schema_updates.items() if v is not None}
-
         json_schema_extra = field_info.json_schema_extra
-
-        metadata = build_metadata_dict(
-            js_annotation_functions=[get_json_schema_update_func(json_schema_updates, json_schema_extra)]
-        )
+        metadata = {
+            'pydantic_js_annotation_functions': [get_json_schema_update_func(json_schema_updates, json_schema_extra)]
+        }
 
         alias_generator = self._config_wrapper.alias_generator
         if alias_generator is not None:
@@ -1504,9 +1501,9 @@ class GenerateSchema:
                     )
 
                 title = self._get_model_title_from_config(typed_dict_cls, ConfigWrapper(config))
-                metadata = build_metadata_dict(
-                    js_functions=[partial(modify_model_json_schema, cls=typed_dict_cls, title=title)],
-                )
+                metadata = {
+                    'pydantic_js_functions': [partial(modify_model_json_schema, cls=typed_dict_cls, title=title)]
+                }
                 td_schema = core_schema.typed_dict_schema(
                     fields,
                     cls=typed_dict_cls,
@@ -1559,7 +1556,7 @@ class GenerateSchema:
                     )
                     for field_name, annotation in annotations.items()
                 ],
-                metadata=build_metadata_dict(js_prefer_positional_arguments=True),
+                metadata={'pydantic_js_prefer_positional_arguments': True},
             )
             return core_schema.call_schema(arguments_schema, namedtuple_cls, ref=namedtuple_ref)
 
@@ -1651,7 +1648,8 @@ class GenerateSchema:
             except (ZoneInfoNotFoundError, ValueError, TypeError):
                 raise PydanticCustomError('zoneinfo_str', 'invalid timezone: {value}', {'value': value})
 
-        metadata = build_metadata_dict(js_functions=[lambda _1, _2: {'type': 'string', 'format': 'zoneinfo'}])
+        # TODO: metadata - good opportunity for plain pydantic_js
+        metadata = {'pydantic_js_functions': [lambda _1, _2: {'type': 'string', 'format': 'zoneinfo'}]}
         return core_schema.no_info_plain_validator_function(
             validate_str_is_valid_iana_tz,
             serialization=core_schema.to_string_ser_schema(),
@@ -1727,7 +1725,8 @@ class GenerateSchema:
     def _pattern_schema(self, pattern_type: Any) -> core_schema.CoreSchema:
         from . import _validators
 
-        metadata = build_metadata_dict(js_functions=[lambda _1, _2: {'type': 'string', 'format': 'regex'}])
+        # TODO: metadata - good opportunity for plain pydantic_js
+        metadata = {'pydantic_js_functions': [lambda _1, _2: {'type': 'string', 'format': 'regex'}]}
         ser = core_schema.plain_serializer_function_ser_schema(
             attrgetter('pattern'), when_used='json', return_schema=core_schema.str_schema()
         )
@@ -1831,9 +1830,7 @@ class GenerateSchema:
                 inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
 
                 title = self._get_model_title_from_config(dataclass, self._config_wrapper)
-                metadata = build_metadata_dict(
-                    js_functions=[partial(modify_model_json_schema, cls=dataclass, title=title)]
-                )
+                metadata = {'pydantic_js_functions': [partial(modify_model_json_schema, cls=dataclass, title=title)]}
 
                 core_config = self._config_wrapper.core_config(title=dataclass.__name__)
 
@@ -2027,7 +2024,7 @@ class GenerateSchema:
 
             return json_schema
 
-        metadata = build_metadata_dict(js_annotation_functions=[set_computed_field_metadata])
+        metadata = {'pydantic_js_annotation_functions': [set_computed_field_metadata]}
         return core_schema.computed_field(
             d.cls_var_name, return_schema=return_type_schema, alias=d.info.alias, metadata=metadata
         )
