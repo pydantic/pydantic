@@ -326,7 +326,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     fields_values[name] = values.pop(name)
                     fields_set.add(name)
                 elif not field.is_required():
-                    fields_values[name] = field.get_default(call_default_factory=True)
+                    fields_values[name] = field.get_default(call_default_factory=True, validated_data=fields_values)
         if _fields_set is None:
             _fields_set = fields_set
 
