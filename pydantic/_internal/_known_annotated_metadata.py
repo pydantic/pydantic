@@ -80,7 +80,7 @@ constraint_schema_pairings: list[tuple[set[str], tuple[str, ...]]] = [
     (INT_CONSTRAINTS, ('int',)),
     (DATE_TIME_CONSTRAINTS, ('date', 'time', 'datetime', 'timedelta')),
     # TODO: this is a bit redundant, we could probably avoid some of these
-    (STRICT, (*TEXT_SCHEMA_TYPES, *SEQUENCE_SCHEMA_TYPES, *NUMERIC_SCHEMA_TYPES, 'typed-dict', 'model')),
+    (STRICT, (*TEXT_SCHEMA_TYPES, *SEQUENCE_SCHEMA_TYPES, *NUMERIC_SCHEMA_TYPES, 'typed-dict', 'model', 'union')),
     (UNION_CONSTRAINTS, ('union',)),
     (URL_CONSTRAINTS, ('url', 'multi-host-url')),
     (BOOL_CONSTRAINTS, ('bool',)),
