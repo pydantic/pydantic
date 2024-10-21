@@ -45,7 +45,7 @@ class BeforeModelValidator(BaseModel):
 
 
 class WrapModelValidator(BaseModel):
-    @model_validator(mode='wrap')  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
+    @model_validator(mode='wrap')  # type: ignore[arg-type] # pyright: ignore[reportArgumentType]
     def no_classmethod(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self: ...
 
     @model_validator(mode='wrap')  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
