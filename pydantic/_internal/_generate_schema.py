@@ -64,7 +64,7 @@ from ..version import version_short
 from ..warnings import PydanticDeprecatedSince20
 from . import _core_utils, _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
 from ._config import ConfigWrapper, ConfigWrapperStack
-from ._core_metadata import CoreMetadataHandler, build_metadata_dict
+from ._core_metadata import build_metadata_dict
 from ._core_utils import (
     CoreSchemaOrField,
     collect_invalid_schemas,
@@ -579,7 +579,7 @@ class GenerateSchema:
         )
 
     def _add_js_function(self, metadata_schema: CoreSchema, js_function: Callable[..., Any]) -> None:
-        metadata = CoreMetadataHandler(metadata_schema).metadata
+        metadata = metadata_schema.get('metadata', {})
         pydantic_js_functions = metadata.setdefault('pydantic_js_functions', [])
         # because of how we generate core schemas for nested generic models
         # we can end up adding `BaseModel.__get_pydantic_json_schema__` multiple times
@@ -588,6 +588,7 @@ class GenerateSchema:
         # but if it does it'll fail by inserting the duplicate
         if js_function not in pydantic_js_functions:
             pydantic_js_functions.append(js_function)
+        metadata_schema['metadata'] = metadata
 
     def generate_schema(
         self,
@@ -2120,8 +2121,9 @@ class GenerateSchema:
 
         schema = get_inner_schema(source_type)
         if pydantic_js_annotation_functions:
-            metadata = CoreMetadataHandler(schema).metadata
+            metadata = schema.get('metadata', {})
             metadata.setdefault('pydantic_js_annotation_functions', []).extend(pydantic_js_annotation_functions)
+            schema['metadata'] = metadata
         return _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, source_type, schema)
 
     def _apply_single_annotation(self, schema: core_schema.CoreSchema, metadata: Any) -> core_schema.CoreSchema:
@@ -2184,9 +2186,11 @@ class GenerateSchema:
 
             json_schema_extra = metadata.json_schema_extra
             if json_schema_update or json_schema_extra:
-                CoreMetadataHandler(schema).metadata.setdefault('pydantic_js_annotation_functions', []).append(
+                metadata = schema.get('metadata', {})
+                metadata.setdefault('pydantic_js_annotation_functions', []).append(
                     get_json_schema_update_func(json_schema_update, json_schema_extra)
                 )
+                schema['metadata'] = metadata
         return schema
 
     def _get_wrapped_inner_schema(

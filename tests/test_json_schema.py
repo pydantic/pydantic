@@ -62,7 +62,7 @@ from pydantic import (
     field_serializer,
     field_validator,
 )
-from pydantic._internal._core_metadata import CoreMetadataHandler, build_metadata_dict
+from pydantic._internal._core_metadata import build_metadata_dict
 from pydantic.color import Color
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass
@@ -5243,18 +5243,6 @@ def test_root_model():
         'title': 'C',
         'description': 'C Model docstring',
     }
-
-
-def test_core_metadata_core_schema_metadata():
-    with pytest.raises(TypeError, match=re.escape("CoreSchema metadata should be a dict; got 'test'.")):
-        CoreMetadataHandler({'metadata': 'test'})
-
-    core_metadata_handler = CoreMetadataHandler({})
-    core_metadata_handler._schema = {}
-    assert core_metadata_handler.metadata == {}
-    core_metadata_handler._schema = {'metadata': 'test'}
-    with pytest.raises(TypeError, match=re.escape("CoreSchema metadata should be a dict; got 'test'.")):
-        core_metadata_handler.metadata
 
 
 def test_type_adapter_json_schemas_title_description():
