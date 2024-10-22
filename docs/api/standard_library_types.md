@@ -899,9 +899,10 @@ Allows only `None` value.
 
 ## Strings
 
-[`str`][]: Strings are accepted as-is.
-[`bytes`][] and [`bytearray`][] are converted using the [`decode()`][bytes.decode] method.
-Enums inheriting from [`str`][] are converted using the [`value`][enum.Enum.value] attribute.
+- [`str`][]: Strings are accepted as-is.
+- [`bytes`][] and [`bytearray`][] are converted using the [`decode()`][bytes.decode] method.
+- Enums inheriting from [`str`][] are converted using the [`value`][enum.Enum.value] attribute.
+
 All other types cause an error.
 <!-- * TODO: add note about optional number to string conversion from lig's PR -->
 
