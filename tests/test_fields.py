@@ -1,6 +1,7 @@
 from typing import Union
 
 import pytest
+from pydantic_core import PydanticUndefined
 
 import pydantic.dataclasses
 from pydantic import BaseModel, ConfigDict, Field, PydanticUserError, RootModel, ValidationError, computed_field, fields
@@ -170,3 +171,9 @@ def test_coerce_numbers_to_str_field_precedence(number):
         field: str = Field(coerce_numbers_to_str=True)
 
     assert Model(field=number).field == str(number)
+
+
+def test_merge_field_infos_override_default():
+    my_field = Field(None, description='My Field')
+    merged_field = fields.FieldInfo().merge_field_infos(my_field, default=PydanticUndefined)
+    assert merged_field.is_required()

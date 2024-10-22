@@ -434,10 +434,10 @@ class FieldInfo(_repr.Representation):
             field_info = copy(field_infos[0])
             field_info._attributes_set.update(overrides)
 
-            default_override = overrides.pop('default', PydanticUndefined)
+            default_override = overrides.pop('default', _default_sentinel)
             if default_override is Ellipsis:
                 default_override = PydanticUndefined
-            if default_override is not PydanticUndefined:
+            if default_override is not _default_sentinel:
                 field_info.default = default_override
 
             for k, v in overrides.items():
@@ -1418,3 +1418,6 @@ def computed_field(
         return dec
     else:
         return dec(func)
+
+
+_default_sentinel = object()
