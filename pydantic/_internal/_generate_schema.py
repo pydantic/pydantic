@@ -63,6 +63,7 @@ from ..version import version_short
 from ..warnings import PydanticDeprecatedSince20
 from . import _core_utils, _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
 from ._config import ConfigWrapper, ConfigWrapperStack
+from ._core_metadata import update_core_metadata
 from ._core_utils import (
     collect_invalid_schemas,
     define_expected_missing_refs,
@@ -555,8 +556,7 @@ class GenerateSchema:
         # because of how we generate core schemas for nested generic models
         # we can end up adding `BaseModel.__get_pydantic_json_schema__` multiple times
         # this check may fail to catch duplicates if the function is a `functools.partial`
-        # or something like that
-        # but if it does it'll fail by inserting the duplicate
+        # or something like that, but if it does it'll fail by inserting the duplicate
         if js_function not in pydantic_js_functions:
             pydantic_js_functions.append(js_function)
         metadata_schema['metadata'] = metadata
@@ -1270,12 +1270,11 @@ class GenerateSchema:
         )
         self._apply_field_title_generator_to_field_info(self._config_wrapper, field_info, name)
 
-        json_schema_updates, json_schema_extra = _extract_json_schema_info_from_field_info(field_info)
-        metadata: dict[str, Any] = {}
-        if json_schema_updates is not None:
-            metadata['pydantic_js_updates'] = json_schema_updates
-        if json_schema_extra is not None:
-            metadata['pydantic_js_extra'] = json_schema_extra
+        pydantic_js_updates, pydantic_js_extra = _extract_json_schema_info_from_field_info(field_info)
+        core_metadata: dict[str, Any] = {}
+        update_core_metadata(
+            core_metadata, pydantic_js_updates=pydantic_js_updates, pydantic_js_extra=pydantic_js_extra
+        )
 
         alias_generator = self._config_wrapper.alias_generator
         if alias_generator is not None:
@@ -1292,7 +1291,7 @@ class GenerateSchema:
             validation_alias=validation_alias,
             serialization_alias=field_info.serialization_alias,
             frozen=field_info.frozen,
-            metadata=metadata,
+            metadata=core_metadata,
         )
 
     def _union_schema(self, union_type: Any) -> core_schema.CoreSchema:
@@ -1929,15 +1928,15 @@ class GenerateSchema:
             )
         self._apply_field_title_generator_to_field_info(self._config_wrapper, d.info, d.cls_var_name)
 
-        json_schema_updates, json_schema_extra = _extract_json_schema_info_from_field_info(d.info)
-        if json_schema_updates is None:
-            json_schema_updates = {}
-        json_schema_updates['readOnly'] = True
-        metadata: dict[str, Any] = {'pydantic_js_updates': json_schema_updates}
-        if json_schema_extra is not None:
-            metadata['pydantic_js_extra'] = json_schema_extra
+        pydantic_js_updates, pydantic_js_extra = _extract_json_schema_info_from_field_info(d.info)
+        core_metadata: dict[str, Any] = {}
+        update_core_metadata(
+            core_metadata,
+            pydantic_js_updates={'readOnly': True, **(pydantic_js_updates if pydantic_js_updates else {})},
+            pydantic_js_extra=pydantic_js_extra,
+        )
         return core_schema.computed_field(
-            d.cls_var_name, return_schema=return_type_schema, alias=d.info.alias, metadata=metadata
+            d.cls_var_name, return_schema=return_type_schema, alias=d.info.alias, metadata=core_metadata
         )
 
     def _annotated_schema(self, annotated_type: Any) -> core_schema.CoreSchema:
@@ -2029,9 +2028,8 @@ class GenerateSchema:
 
         schema = get_inner_schema(source_type)
         if pydantic_js_annotation_functions:
-            metadata = schema.get('metadata', {})
-            metadata.setdefault('pydantic_js_annotation_functions', []).extend(pydantic_js_annotation_functions)
-            schema['metadata'] = metadata
+            core_metadata = schema.setdefault('metadata', {})
+            update_core_metadata(core_metadata, pydantic_js_annotation_functions=pydantic_js_annotation_functions)
         return _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, source_type, schema)
 
     def _apply_single_annotation(self, schema: core_schema.CoreSchema, metadata: Any) -> core_schema.CoreSchema:
@@ -2085,21 +2083,11 @@ class GenerateSchema:
             for field_metadata in metadata.metadata:
                 schema = self._apply_single_annotation_json_schema(schema, field_metadata)
 
-            json_schema_updates, json_schema_extra = _extract_json_schema_info_from_field_info(metadata)
-            metadata = schema.get('metadata', {})
-            if json_schema_updates is not None:
-                if (existing_json_schema_updates := metadata.get('pydantic_js_updates')) is not None:
-                    metadata['pydantic_js_updates'] = {**existing_json_schema_updates, **json_schema_updates}
-                else:
-                    metadata['pydantic_js_updates'] = json_schema_updates
-            if json_schema_extra is not None:
-                existing_json_schema_extra = metadata.get('pydantic_js_extra', {})
-                if isinstance(existing_json_schema_extra, dict) and isinstance(json_schema_extra, dict):
-                    metadata['pydantic_js_extra'] = {**existing_json_schema_extra, **json_schema_extra}
-                else:
-                    # if ever there's a case of a callable, we'll just keep the last json schema extra spec
-                    metadata['pydantic_js_extra'] = json_schema_extra
-            schema['metadata'] = metadata
+            pydantic_js_updates, pydantic_js_extra = _extract_json_schema_info_from_field_info(metadata)
+            core_metadata = schema.setdefault('metadata', {})
+            update_core_metadata(
+                core_metadata, pydantic_js_updates=pydantic_js_updates, pydantic_js_extra=pydantic_js_extra
+            )
         return schema
 
     def _get_wrapped_inner_schema(

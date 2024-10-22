@@ -48,6 +48,7 @@ from pydantic.warnings import PydanticDeprecatedSince26, PydanticDeprecatedSince
 
 from ._internal import (
     _config,
+    _core_metadata,
     _core_utils,
     _decorators,
     _internal_dataclass,
@@ -519,7 +520,7 @@ class GenerateJsonSchema:
 
         current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, handler_func)
 
-        metadata = schema.get('metadata', {})
+        metadata = cast(_core_metadata.CoreMetadata, schema.get('metadata', {}))
 
         # TODO: I dislike that we have to wrap these basic dict updates in callables, is there any way around this?
 
@@ -544,7 +545,8 @@ class GenerateJsonSchema:
                 if isinstance(js_extra, dict):
                     json_schema.update(to_jsonable_python(js_extra))
                 elif callable(js_extra):
-                    js_extra(json_schema)
+                    # similar to typing issue in _update_class_schema when we're working with callable js extra
+                    js_extra(json_schema)  # type: ignore
                 return json_schema
 
             current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, js_extra_handler_func)

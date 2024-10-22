@@ -1,10 +1,10 @@
 from __future__ import annotations as _annotations
 
-import typing
+from typing import TYPE_CHECKING, Any, cast
 
-import typing_extensions
+from typing_extensions import TypedDict
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from pydantic_core import CoreSchema
 
     from ..config import JsonDict, JsonSchemaExtraCallable
@@ -13,7 +13,7 @@ if typing.TYPE_CHECKING:
     )
 
 
-class CoreMetadata(typing_extensions.TypedDict, total=False):
+class CoreMetadata(TypedDict, total=False):
     """A `TypedDict` for holding the metadata dict of the schema.
 
     Attributes:
@@ -28,24 +28,66 @@ class CoreMetadata(typing_extensions.TypedDict, total=False):
 
     TODO: Perhaps we should move this structure to pydantic-core. At the moment, though,
     it's easier to iterate on if we leave it in pydantic until we feel there is a semi-stable API.
-    We should implement more `cast` calls to enforce these types, though I'm unsure of if there's a way
-    to inherently make this compatible with dict[str, Any] effectively as a super type.
 
     TODO: It's unfortunate how functionally oriented JSON schema generation is, especially that which occurs during
     the core schema generation process. It's inevitable that we need to store some json schema related information
     on core schemas, given that we generate JSON schemas directly from core schemas. That being said, debugging related
     issues is quite difficult when JSON schema information is disguised via dynamically defined functions.
-
-    TODO: add utility function for updating pydantic_js_updates and pydantic_js_extra - not as easy as an append,
-    and we want to be consistent about how we do this across files.
-
-    TODO: should we have a separate attribute as we do now for pydantic_js_extra? Can we just override in the case of a callable - think
-    about this re breaking change in v2.8 (see currently failing test), basically a dict extra + callable extra no longer works (imo it shouldn't)
     """
 
     pydantic_js_functions: list[GetJsonSchemaFunction]
     pydantic_js_annotation_functions: list[GetJsonSchemaFunction]
-    pydantic_js_prefer_positional_arguments: bool | None
-    pydantic_js_input_core_schema: CoreSchema | None
-    pydantic_js_updates: JsonDict | None
-    pydantic_js_extra: JsonDict | JsonSchemaExtraCallable | None
+    pydantic_js_prefer_positional_arguments: bool
+    pydantic_js_input_core_schema: CoreSchema
+    pydantic_js_updates: JsonDict
+    pydantic_js_extra: JsonDict | JsonSchemaExtraCallable
+
+
+def update_core_metadata(
+    core_metadata: Any,
+    /,
+    pydantic_js_functions: list[GetJsonSchemaFunction] | None = None,
+    pydantic_js_annotation_functions: list[GetJsonSchemaFunction] | None = None,
+    pydantic_js_prefer_positional_arguments: bool | None = None,
+    pydantic_js_input_core_schema: CoreSchema | None = None,
+    pydantic_js_updates: JsonDict | None = None,
+    pydantic_js_extra: JsonDict | JsonSchemaExtraCallable | None = None,
+) -> None:
+    """Update CoreMetadata instance in place. When we make modifications in this function, they
+    take effect on the `core_metadata` reference passed in as the first (and only) positional argument.
+
+    First, cast to `CoreMetadata`, then finish with a cast to `dict[str, Any]` for core schema compatibility.
+    We do this here, instead of before / after each call to this function so that this typing hack
+    can be easily removed if/when we move `CoreMetadata` to `pydantic-core`.
+
+    For parameter descriptions, see `CoreMetadata` above.
+    """
+    core_metadata = cast(CoreMetadata, core_metadata)
+
+    if pydantic_js_functions:
+        core_metadata.setdefault('pydantic_js_functions', []).extend(pydantic_js_functions)
+
+    if pydantic_js_annotation_functions:
+        core_metadata.setdefault('pydantic_js_annotation_functions', []).extend(pydantic_js_annotation_functions)
+
+    if pydantic_js_prefer_positional_arguments:
+        core_metadata['pydantic_js_prefer_positional_arguments'] = pydantic_js_prefer_positional_arguments
+
+    if pydantic_js_input_core_schema:
+        core_metadata['pydantic_js_input_core_schema'] = pydantic_js_input_core_schema
+
+    if pydantic_js_updates:
+        if (existing_updates := core_metadata.get('pydantic_js_updates')) is not None:
+            core_metadata['pydantic_js_updates'] = {**existing_updates, **pydantic_js_updates}
+        else:
+            core_metadata['pydantic_js_updates'] = pydantic_js_updates
+
+    if pydantic_js_extra is not None:
+        existing_pydantic_js_extra = core_metadata.get('pydantic_js_extra', {})
+        if isinstance(existing_pydantic_js_extra, dict) and isinstance(pydantic_js_extra, dict):
+            core_metadata['pydantic_js_extra'] = {**existing_pydantic_js_extra, **pydantic_js_extra}
+        else:
+            # if ever there's a case of a callable, we'll just keep the last json schema extra spec
+            core_metadata['pydantic_js_extra'] = pydantic_js_extra
+
+    core_metadata = cast(dict[str, Any], core_metadata)
