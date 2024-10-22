@@ -4809,8 +4809,12 @@ that are subclasses of <code>T</code>.</p>
 <p><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/constants.html#None"><code>None</code></a>, <code>type(None)</code>, or <code>Literal[None]</code> are all equivalent according to <a href="https://typing.readthedocs.io/en/latest/spec/special-types.html#none">the typing specification</a>.
 Allows only <code>None</code> value.</p>
 <h2 id="strings">Strings<a class="headerlink" href="#strings" title="Permanent link">&para;</a></h2>
-<p><code>str</code>: Strings are accepted as-is. <code>bytes</code> and <code>bytearray</code> are converted using <code>v.decode()</code>.
-Enum<code>s inheriting from</code>str<code>are converted using</code>v.value`. All other types cause an error.</p>
+<ul>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str"><code>str</code></a>: Strings are accepted as-is.</li>
+<li><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes"><code>bytes</code></a> and <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytearray"><code>bytearray</code></a> are converted using the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#bytes.decode"><code>decode()</code></a> method.</li>
+<li>Enums inheriting from <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str"><code>str</code></a> are converted using the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/enum.html#enum.Enum.value"><code>value</code></a> attribute.</li>
+</ul>
+<p>All other types cause an error.</p>
 <!-- * TODO: add note about optional number to string conversion from lig's PR -->
 
 <div class="admonition warning">
