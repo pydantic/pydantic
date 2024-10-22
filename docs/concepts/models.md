@@ -807,8 +807,7 @@ except ValidationError as e:
     """
 ```
 
-1. The `OuterT` model is parametrized with `int`, but the data associated with the the `T` annotations during validation is of type `str`,
-leading to validation errors.
+1. The `OuterT` model is parametrized with `int`, but the data associated with the the `T` annotations during validation is of type `str`, leading to validation errors.
 
 !!! warning
     While it may not raise an error, we strongly advise against using parametrized generics in [`isinstance()`](https://docs.python.org/3/library/functions.html#isinstance) checks.
@@ -821,6 +820,68 @@ leading to validation errors.
     class MyIntModel(MyGenericModel[int]): ...
 
     isinstance(my_model, MyIntModel)
+    ```
+
+!!! note "Implementation Details"
+    When using nested generic models, Pydantic sometimes performs revalidation in an attempt to produce the most intuitive validation result.
+    Specifically, if you have a field of type `GenericModel[SomeType]` and you validate data like `GenericModel[SomeCompatibleType]` against this field,
+    we will inspect the data, recognize that the input data is sort of a "loose" subclass of `GenericModel`, and revalidate the contained `SomeCompatibleType` data.
+
+    This adds some validation overhead, but makes things more intuitive for cases like that shown below.
+
+    ```py
+    from typing import Any, Generic, TypeVar
+
+    from pydantic import BaseModel
+
+    T = TypeVar('T')
+
+
+    class GenericModel(BaseModel, Generic[T]):
+        a: T
+
+
+    class Model(BaseModel):
+        inner: GenericModel[Any]
+
+
+    print(repr(Model.model_validate(Model(inner=GenericModel[int](a=1)))))
+    # > Model(inner=GenericModel[Any](a=1))
+    ```
+
+    Note, validation will still fail if you, for example are validating against `GenericModel[int]` and pass in an instance `GenericModel[str](a='not an int')`.
+
+    It's also worth noting that this pattern will re-trigger any custom validation as well, like additional model validators and the like.
+    Validators will be called once on the first pass, validating directly against `GenericModel[Any]`. That validation fails, as `GenericModel[int]` is not a subclass of `GenericModel[Any]`. This relates to the warning above about the complications of using parametrized generics in `isinstance()` and `issubclass()` checks.
+    Then, the validators will be called again on the second pass, during more lax force-revalidation phase, which succeeds.
+    To better understand this consequence, see below:
+
+    ```py
+    from typing import Any, Generic, TypeVar, Self
+
+    from pydantic import BaseModel, model_validator
+
+    T = TypeVar('T')
+
+
+    class GenericModel(BaseModel, Generic[T]):
+        a: T
+
+        @model_validator(mode='after')
+        def validate_after(self: Self) -> Self:
+            print('after validator running custom validation...')
+            return self
+
+
+    class Model(BaseModel):
+        inner: GenericModel[Any]
+
+
+    m = Model.model_validate(Model(inner=GenericModel[int](a=1)))
+    # > after validator running custom validation...
+    # > after validator running custom validation...
+    print(repr(m))
+    # > Model(inner=GenericModel[Any](a=1))
     ```
 
 ### Validation of unparametrized type variables
