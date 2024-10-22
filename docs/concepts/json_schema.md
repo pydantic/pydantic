@@ -650,6 +650,8 @@ print(json.dumps(ta.json_schema(), indent=2))
 """
 ```
 
+# TODO: this is no longer supported... do we need it to be?
+
 If you would prefer for the last of your `json_schema_extra` specifications to override the previous ones,
 you can use a `callable` to make more significant changes, including adding or removing keys, or modifying values.
 You can use this pattern if you'd like to mimic the behavior of the `json_schema_extra` overrides present

@@ -17,7 +17,6 @@ from copy import copy, deepcopy
 from decimal import Decimal
 from enum import Enum
 from fractions import Fraction
-from functools import partial
 from inspect import Parameter, _ParameterKind, signature
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from itertools import chain
@@ -65,7 +64,6 @@ from ..warnings import PydanticDeprecatedSince20
 from . import _core_utils, _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
 from ._config import ConfigWrapper, ConfigWrapperStack
 from ._core_utils import (
-    CoreSchemaOrField,
     collect_invalid_schemas,
     define_expected_missing_refs,
     get_ref,
@@ -246,41 +244,17 @@ def apply_each_item_validators(
     return schema
 
 
-def modify_model_json_schema(
-    schema_or_field: CoreSchemaOrField,
-    handler: GetJsonSchemaHandler,
-    *,
-    cls: type[Any],
-    title: str | None = None,
-) -> JsonSchemaValue:
-    """Add title and description for model-like classes' JSON schema.
-
-    Args:
-        schema_or_field: The schema data to generate a JSON schema from.
-        handler: The `GetCoreSchemaHandler` instance.
-        cls: The model-like class.
-        title: The title to set for the model's schema, defaults to the model's name
-
-    Returns:
-        JsonSchemaValue: The updated JSON schema.
-    """
-    from ..root_model import RootModel
-
-    BaseModel = import_cached_base_model()
-
-    json_schema = handler(schema_or_field)
-    original_schema = handler.resolve_ref_schema(json_schema)
-    if title is not None:
-        original_schema['title'] = title
-    elif 'title' not in original_schema:
-        original_schema['title'] = cls.__name__
-    # BaseModel and dataclasses; don't use cls.__doc__ as it will contain the verbose class signature by default
-    docstring = None if cls is BaseModel or dataclasses.is_dataclass(cls) else cls.__doc__
-    if docstring and 'description' not in original_schema:
-        original_schema['description'] = inspect.cleandoc(docstring)
-    elif issubclass(cls, RootModel) and cls.__pydantic_fields__['root'].description:
-        original_schema['description'] = cls.__pydantic_fields__['root'].description
-    return json_schema
+def _extract_json_schema_info_from_field_info(
+    info: FieldInfo | ComputedFieldInfo,
+) -> tuple[JsonDict | None, JsonDict | JsonSchemaExtraCallable | None]:
+    json_schema_updates = {
+        'title': info.title,
+        'description': info.description,
+        'deprecated': bool(info.deprecated) or info.deprecated == '' or None,
+        'examples': to_jsonable_python(info.examples),
+    }
+    json_schema_updates = {k: v for k, v in json_schema_updates.items() if v is not None}
+    return (json_schema_updates or None, info.json_schema_extra)
 
 
 JsonEncoders = Dict[Type[Any], JsonEncoder]
@@ -417,13 +391,6 @@ class GenerateSchema:
             value_ser_type = core_schema.plain_serializer_function_ser_schema(lambda x: x)
 
         if cases:
-
-            def get_json_schema(schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-                json_schema = handler(schema)
-                original_schema = handler.resolve_ref_schema(json_schema)
-                original_schema.update(js_updates)
-                return json_schema
-
             # we don't want to add the missing to the schema if it's the default one
             default_missing = getattr(enum_type._missing_, '__func__', None) == Enum._missing_.__func__  # type: ignore
             enum_schema = core_schema.enum_schema(
@@ -432,7 +399,7 @@ class GenerateSchema:
                 sub_type=sub_type,
                 missing=None if default_missing else enum_type._missing_,
                 ref=enum_ref,
-                metadata={'pydantic_js_functions': [get_json_schema]},
+                metadata={'pydantic_js_updates': js_updates},
             )
 
             if self._config_wrapper.use_enum_values:
@@ -489,7 +456,6 @@ class GenerateSchema:
                 python_schema=core_schema.is_instance_schema(tp),
             ),
             serialization=core_schema.plain_serializer_function_ser_schema(ser_ip, info_arg=True, when_used='always'),
-            # TODO: metadata - good opportunity for plain pydantic_js
             metadata={
                 'pydantic_js_functions': [lambda _1, _2: {'type': 'string', 'format': ip_type_json_schema_format[tp]}]
             },
@@ -509,7 +475,6 @@ class GenerateSchema:
             ),
             # use str serialization to guarantee round trip behavior
             serialization=core_schema.to_string_ser_schema(when_used='always'),
-            # TODO: metadata - good opportunity for plain pydantic_js
             metadata={'pydantic_js_functions': [lambda _1, _2: {'type': 'string', 'format': 'fraction'}]},
         )
 
@@ -655,9 +620,6 @@ class GenerateSchema:
             )
             config_wrapper = ConfigWrapper(cls.model_config, check=False)
             core_config = config_wrapper.core_config(title=cls.__name__)
-            title = self._get_model_title_from_config(cls, config_wrapper)
-            metadata = {'pydantic_js_functions': [partial(modify_model_json_schema, cls=cls, title=title)]}
-
             model_validators = decorators.model_validators.values()
 
             with self._config_wrapper_stack.push(config_wrapper), self._ns_resolver.push(cls):
@@ -702,7 +664,6 @@ class GenerateSchema:
                         post_init=getattr(cls, '__pydantic_post_init__', None),
                         config=core_config,
                         ref=model_ref,
-                        metadata=metadata,
                     )
                 else:
                     fields_schema: core_schema.CoreSchema = core_schema.model_fields_schema(
@@ -728,33 +689,12 @@ class GenerateSchema:
                         post_init=getattr(cls, '__pydantic_post_init__', None),
                         config=core_config,
                         ref=model_ref,
-                        metadata=metadata,
                     )
 
                 schema = self._apply_model_serializers(model_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, model_validators, 'outer')
                 self.defs.definitions[model_ref] = schema
                 return core_schema.definition_reference_schema(model_ref)
-
-    @staticmethod
-    def _get_model_title_from_config(
-        model: type[BaseModel | StandardDataclass], config_wrapper: ConfigWrapper | None = None
-    ) -> str | None:
-        """Get the title of a model if `model_title_generator` or `title` are set in the config, else return None"""
-        if config_wrapper is None:
-            return None
-
-        if config_wrapper.title:
-            return config_wrapper.title
-
-        model_title_generator = config_wrapper.model_title_generator
-        if model_title_generator:
-            title = model_title_generator(model)
-            if not isinstance(title, str):
-                raise TypeError(f'model_title_generator {model_title_generator} must return str, not {title.__class__}')
-            return title
-
-        return None
 
     def _unpack_refs_defs(self, schema: CoreSchema) -> CoreSchema:
         """Unpack all 'definitions' schemas into `GenerateSchema.defs.definitions`
@@ -1495,10 +1435,6 @@ class GenerateSchema:
                         field_name, field_info, decorators, required=required
                     )
 
-                title = self._get_model_title_from_config(typed_dict_cls, ConfigWrapper(config))
-                metadata = {
-                    'pydantic_js_functions': [partial(modify_model_json_schema, cls=typed_dict_cls, title=title)]
-                }
                 td_schema = core_schema.typed_dict_schema(
                     fields,
                     cls=typed_dict_cls,
@@ -1507,7 +1443,6 @@ class GenerateSchema:
                         for d in decorators.computed_fields.values()
                     ],
                     ref=typed_dict_ref,
-                    metadata=metadata,
                     config=core_config,
                 )
 
@@ -1643,7 +1578,6 @@ class GenerateSchema:
             except (ZoneInfoNotFoundError, ValueError, TypeError):
                 raise PydanticCustomError('zoneinfo_str', 'invalid timezone: {value}', {'value': value})
 
-        # TODO: metadata - good opportunity for plain pydantic_js
         metadata = {'pydantic_js_functions': [lambda _1, _2: {'type': 'string', 'format': 'zoneinfo'}]}
         return core_schema.no_info_plain_validator_function(
             validate_str_is_valid_iana_tz,
@@ -1720,7 +1654,6 @@ class GenerateSchema:
     def _pattern_schema(self, pattern_type: Any) -> core_schema.CoreSchema:
         from . import _validators
 
-        # TODO: metadata - good opportunity for plain pydantic_js
         metadata = {'pydantic_js_functions': [lambda _1, _2: {'type': 'string', 'format': 'regex'}]}
         ser = core_schema.plain_serializer_function_ser_schema(
             attrgetter('pattern'), when_used='json', return_schema=core_schema.str_schema()
@@ -1824,9 +1757,6 @@ class GenerateSchema:
                 model_validators = decorators.model_validators.values()
                 inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
 
-                title = self._get_model_title_from_config(dataclass, self._config_wrapper)
-                metadata = {'pydantic_js_functions': [partial(modify_model_json_schema, cls=dataclass, title=title)]}
-
                 core_config = self._config_wrapper.core_config(title=dataclass.__name__)
 
                 dc_schema = core_schema.dataclass_schema(
@@ -1837,7 +1767,6 @@ class GenerateSchema:
                     fields=[field.name for field in dataclasses.fields(dataclass)],
                     slots=has_slots,
                     config=core_config,
-                    metadata=metadata,
                     # we don't use a custom __setattr__ for dataclasses, so we must
                     # pass along the frozen config setting to the pydantic-core schema
                     frozen=self._config_wrapper_stack.tail.frozen,
@@ -2522,19 +2451,6 @@ def resolve_original_schema(schema: CoreSchema, definitions: dict[str, CoreSchem
         return schema['schema']
     else:
         return schema
-
-
-def _extract_json_schema_info_from_field_info(
-    info: FieldInfo | ComputedFieldInfo,
-) -> tuple[JsonDict | None, JsonDict | JsonSchemaExtraCallable | None]:
-    json_schema_updates = {
-        'title': info.title,
-        'description': info.description,
-        'deprecated': bool(info.deprecated) or info.deprecated == '' or None,
-        'examples': to_jsonable_python(info.examples),
-    }
-    json_schema_updates = {k: v for k, v in json_schema_updates.items() if v is not None}
-    return (json_schema_updates or None, info.json_schema_extra)
 
 
 class _FieldNameStack:
