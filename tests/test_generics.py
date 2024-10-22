@@ -3033,3 +3033,69 @@ def test_generic_any_or_never() -> None:
 
     never_json_schema = GenericModel[Never].model_json_schema()
     assert never_json_schema['properties']['f'] == {'type': 'integer', 'title': 'F'}
+
+
+def test_revalidation_against_any() -> None:
+    T = TypeVar('T')
+
+    class ResponseModel(BaseModel, Generic[T]):
+        content: T
+
+    class Product(BaseModel):
+        name: str
+        price: float
+
+    class Order(BaseModel):
+        id: int
+        product: ResponseModel[Any]
+
+    product = Product(name='Apple', price=0.5)
+    response1: ResponseModel[Any] = ResponseModel[Any](content=product)
+    response2: ResponseModel[Any] = ResponseModel(content=product)
+    response3: ResponseModel[Any] = ResponseModel[Product](content=product)
+
+    for response in response1, response2, response3:
+        order = Order(id=1, product=response)
+        assert isinstance(order.product.content, Product)
+
+
+def test_revalidation_without_explicit_parametrization() -> None:
+    """Note, this is seen in the test above as well, but is added here for thoroughness."""
+
+    T1 = TypeVar('T1', bound=BaseModel)
+
+    class InnerModel(BaseModel, Generic[T1]):
+        model: T1
+
+    T2 = TypeVar('T2', bound=InnerModel)
+
+    class OuterModel(BaseModel, Generic[T2]):
+        inner: T2
+
+    class MyModel(BaseModel):
+        foo: int
+
+    # Construct two instances, with and without generic annotation in the constructor:
+    inner1 = InnerModel[MyModel](model=MyModel(foo=42))
+    inner2 = InnerModel(model=MyModel(foo=42))
+    assert inner1 == inner2
+
+    outer1 = OuterModel[InnerModel[MyModel]](inner=inner1)
+    outer2 = OuterModel[InnerModel[MyModel]](inner=inner2)
+    # implies that validation succeeds for both
+    assert outer1 == outer2
+
+
+def test_revalidation_with_basic_inference() -> None:
+    T = TypeVar('T')
+
+    class Inner(BaseModel, Generic[T]):
+        inner: T
+
+    class Holder(BaseModel, Generic[T]):
+        inner: Inner[T]
+
+    holder1 = Holder[int](inner=Inner[int](inner=1))
+    holder2 = Holder(inner=Inner(inner=1))
+    # implies that validation succeeds for both
+    assert holder1 == holder2
