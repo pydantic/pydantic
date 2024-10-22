@@ -626,33 +626,6 @@ on subclasses of the model where the validator is defined.
 If you want to disable these checks during class creation, you can pass `check_fields=False` as a keyword argument to
 the validator.
 
-## Dataclass validators
-
-Validators also work with Pydantic dataclasses.
-
-```py
-from pydantic import field_validator
-from pydantic.dataclasses import dataclass
-
-
-@dataclass
-class DemoDataclass:
-    product_id: str  # should be a five-digit string, may have leading zeros
-
-    @field_validator('product_id', mode='before')
-    @classmethod
-    def convert_int_serial(cls, v):
-        if isinstance(v, int):
-            v = str(v).zfill(5)
-        return v
-
-
-print(DemoDataclass(product_id='01234'))
-#> DemoDataclass(product_id='01234')
-print(DemoDataclass(product_id=2468))
-#> DemoDataclass(product_id='02468')
-```
-
 ## Validation Context
 
 You can pass a context object to the validation methods which can be accessed from the `info`
