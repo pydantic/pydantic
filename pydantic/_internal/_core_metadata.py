@@ -17,8 +17,8 @@ class CoreMetadata(typing_extensions.TypedDict, total=False):
     """A `TypedDict` for holding the metadata dict of the schema.
 
     Attributes:
-        pydantic_js_functions: List of JSON schema functions.
-        pydantic_js_annotation_functions: List of JSON schema functions that use ref simplification? TBD...
+        pydantic_js_functions: List of JSON schema functions that resolve refs during application.
+        pydantic_js_annotation_functions: List of JSON schema functions that don't resolve refs during application.
         pydantic_js_prefer_positional_arguments: Whether JSON schema generator will
             prefer positional over keyword arguments for an 'arguments' schema.
         pydantic_js_input_core_schema: Schema associated with the input value for the associated

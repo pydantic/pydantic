@@ -15,6 +15,7 @@ from pydantic_core import validate_core_schema as _validate_core_schema
 from typing_extensions import TypeAliasType, TypeGuard, get_args, get_origin
 
 from . import _repr
+from ._core_metadata import CoreMetadata
 from ._typing_extra import is_generic_alias
 
 AnyFunctionSchema = Union[
@@ -480,11 +481,11 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
             return False
         if 'metadata' in s:
             metadata = s['metadata']
-            for k in (
-                'pydantic_js_functions',
-                'pydantic_js_annotation_functions',
+            for k in [
+                *CoreMetadata.__annotations__.keys(),
                 'pydantic.internal.union_discriminator',
-            ):
+                'pydantic.internal.tagged_union_tag',
+            ]:
                 if k in metadata:
                     # we need to keep this as a ref
                     return False

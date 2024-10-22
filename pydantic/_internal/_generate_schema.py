@@ -391,6 +391,13 @@ class GenerateSchema:
             value_ser_type = core_schema.plain_serializer_function_ser_schema(lambda x: x)
 
         if cases:
+
+            def get_json_schema(schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+                json_schema = handler(schema)
+                original_schema = handler.resolve_ref_schema(json_schema)
+                original_schema.update(js_updates)
+                return json_schema
+
             # we don't want to add the missing to the schema if it's the default one
             default_missing = getattr(enum_type._missing_, '__func__', None) == Enum._missing_.__func__  # type: ignore
             enum_schema = core_schema.enum_schema(
@@ -399,7 +406,7 @@ class GenerateSchema:
                 sub_type=sub_type,
                 missing=None if default_missing else enum_type._missing_,
                 ref=enum_ref,
-                metadata={'pydantic_js_updates': js_updates},
+                metadata={'pydantic_js_functions': [get_json_schema]},
             )
 
             if self._config_wrapper.use_enum_values:
