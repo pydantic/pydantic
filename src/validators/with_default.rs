@@ -25,7 +25,7 @@ fn get_deepcopy(py: Python) -> PyResult<PyObject> {
 pub enum DefaultType {
     None,
     Default(PyObject),
-    DefaultFactory(PyObject),
+    DefaultFactory(PyObject, bool),
 }
 
 impl DefaultType {
@@ -37,15 +37,32 @@ impl DefaultType {
         ) {
             (Some(_), Some(_)) => py_schema_err!("'default' and 'default_factory' cannot be used together"),
             (Some(default), None) => Ok(Self::Default(default)),
-            (None, Some(default_factory)) => Ok(Self::DefaultFactory(default_factory)),
+            (None, Some(default_factory)) => Ok(Self::DefaultFactory(
+                default_factory,
+                schema
+                    .get_as::<bool>(intern!(py, "default_factory_takes_data"))?
+                    .unwrap_or(false),
+            )),
             (None, None) => Ok(Self::None),
         }
     }
 
-    pub fn default_value(&self, py: Python) -> PyResult<Option<PyObject>> {
+    pub fn default_value(&self, py: Python, validated_data: &Option<Bound<PyDict>>) -> PyResult<Option<PyObject>> {
         match self {
             Self::Default(ref default) => Ok(Some(default.clone_ref(py))),
-            Self::DefaultFactory(ref default_factory) => Ok(Some(default_factory.call0(py)?)),
+            Self::DefaultFactory(ref default_factory, ref takes_data) => {
+                let result = if *takes_data {
+                    if validated_data.is_none() {
+                        default_factory.call1(py, ({},))
+                    } else {
+                        default_factory.call1(py, (validated_data.as_deref().unwrap(),))
+                    }
+                } else {
+                    default_factory.call0(py)
+                };
+
+                Ok(Some(result?))
+            }
             Self::None => Ok(None),
         }
     }
@@ -53,7 +70,7 @@ impl DefaultType {
 
 impl PyGcTraverse for DefaultType {
     fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
-        if let Self::Default(obj) | Self::DefaultFactory(obj) = self {
+        if let Self::Default(obj) | Self::DefaultFactory(obj, _) = self {
             visit.call(obj)?;
         }
         Ok(())
@@ -163,7 +180,7 @@ impl Validator for WithDefaultValidator {
         outer_loc: Option<impl Into<LocItem>>,
         state: &mut ValidationState<'_, 'py>,
     ) -> ValResult<Option<PyObject>> {
-        match self.default.default_value(py)? {
+        match self.default.default_value(py, &state.extra().data)? {
             Some(stored_dft) => {
                 let dft: Py<PyAny> = if self.copy_default {
                     let deepcopy_func = COPY_DEEPCOPY.get_or_init(py, || get_deepcopy(py).unwrap());
