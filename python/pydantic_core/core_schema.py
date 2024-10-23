@@ -3056,6 +3056,7 @@ def model_fields_schema(
 class ModelSchema(TypedDict, total=False):
     type: Required[Literal['model']]
     cls: Required[Type[Any]]
+    generic_origin: Type[Any]
     schema: Required[CoreSchema]
     custom_init: bool
     root_model: bool
@@ -3074,6 +3075,7 @@ def model_schema(
     cls: Type[Any],
     schema: CoreSchema,
     *,
+    generic_origin: Type[Any] | None = None,
     custom_init: bool | None = None,
     root_model: bool | None = None,
     post_init: str | None = None,
@@ -3120,6 +3122,8 @@ def model_schema(
     Args:
         cls: The class to use for the model
         schema: The schema to use for the model
+        generic_origin: The origin type used for this model, if it's a parametrized generic. Ex,
+            if this model schema represents `SomeModel[int]`, generic_origin is `SomeModel`
         custom_init: Whether the model has a custom init method
         root_model: Whether the model is a `RootModel`
         post_init: The call after init to use for the model
@@ -3136,6 +3140,7 @@ def model_schema(
     return _dict_not_none(
         type='model',
         cls=cls,
+        generic_origin=generic_origin,
         schema=schema,
         custom_init=custom_init,
         root_model=root_model,
@@ -3289,6 +3294,7 @@ def dataclass_args_schema(
 class DataclassSchema(TypedDict, total=False):
     type: Required[Literal['dataclass']]
     cls: Required[Type[Any]]
+    generic_origin: Type[Any]
     schema: Required[CoreSchema]
     fields: Required[List[str]]
     cls_name: str
@@ -3308,6 +3314,7 @@ def dataclass_schema(
     schema: CoreSchema,
     fields: List[str],
     *,
+    generic_origin: Type[Any] | None = None,
     cls_name: str | None = None,
     post_init: bool | None = None,
     revalidate_instances: Literal['always', 'never', 'subclass-instances'] | None = None,
@@ -3328,6 +3335,8 @@ def dataclass_schema(
         schema: The schema to use for the dataclass fields
         fields: Fields of the dataclass, this is used in serialization and in validation during re-validation
             and while validating assignment
+        generic_origin: The origin type used for this dataclass, if it's a parametrized generic. Ex,
+            if this model schema represents `SomeDataclass[int]`, generic_origin is `SomeDataclass`
         cls_name: The name to use in error locs, etc; this is useful for generics (default: `cls.__name__`)
         post_init: Whether to call `__post_init__` after validation
         revalidate_instances: whether instances of models and dataclasses (including subclass instances)
@@ -3343,6 +3352,7 @@ def dataclass_schema(
     return _dict_not_none(
         type='dataclass',
         cls=cls,
+        generic_origin=generic_origin,
         fields=fields,
         cls_name=cls_name,
         schema=schema,
