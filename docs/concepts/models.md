@@ -157,7 +157,7 @@ Models possess the following methods and attributes:
 * [`model_extra`][pydantic.main.BaseModel.model_extra]: The extra fields set during validation.
 * [`model_fields_set`][pydantic.main.BaseModel.model_fields_set]: The set of fields which were explicitly provided when the model was initialized.
 * [`model_parametrized_name()`][pydantic.main.BaseModel.model_parametrized_name]: Computes the class name for parametrizations of generic classes.
-* [`model_post_init()`][pydantic.main.BaseModel.model_post_init]: Performs additional actions after the model is initialized and all field validators are applied.
+* [`model_post_init()`][pydantic.main.BaseModel.model_post_init]: Performs additional actions after the model is instantiated and all field validators are applied.
 * [`model_rebuild()`][pydantic.main.BaseModel.model_rebuild]: Rebuilds the model schema, which also supports building recursive generic models.
     See [Rebuilding model schema](#rebuilding-model-schema).
 
