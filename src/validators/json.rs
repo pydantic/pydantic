@@ -1,3 +1,4 @@
+use jiter::FloatMode;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -71,7 +72,7 @@ impl Validator for JsonValidator {
                     cache_mode: state.cache_str(),
                     partial_mode: PartialMode::Off,
                     catch_duplicate_keys: false,
-                    lossless_floats: false,
+                    float_mode: FloatMode::Float,
                 };
                 let obj = parse_builder
                     .python_parse(py, json_bytes)
