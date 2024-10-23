@@ -1086,15 +1086,6 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#dataclass-validators" class="md-nav__link">
-    <span class="md-ellipsis">
-      Dataclass validators
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#validation-context" class="md-nav__link">
     <span class="md-ellipsis">
       Validation Context
@@ -3137,15 +3128,6 @@ to help you monitor and understand your
 </li>
       
         <li class="md-nav__item">
-  <a href="#dataclass-validators" class="md-nav__link">
-    <span class="md-ellipsis">
-      Dataclass validators
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#validation-context" class="md-nav__link">
     <span class="md-ellipsis">
       Validation Context
@@ -3784,29 +3766,6 @@ Any other errors (including <code>TypeError</code>) are bubbled up and not wrapp
 on subclasses of the model where the validator is defined.</p>
 <p>If you want to disable these checks during class creation, you can pass <code>check_fields=False</code> as a keyword argument to
 the validator.</p>
-<h2 id="dataclass-validators">Dataclass validators<a class="headerlink" href="#dataclass-validators" title="Permanent link">&para;</a></h2>
-<p>Validators also work with Pydantic dataclasses.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">field_validator</span>
-<span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
-
-
-<span class="nd">@dataclass</span>
-<span class="k">class</span> <span class="nc">DemoDataclass</span><span class="p">:</span>
-    <span class="n">product_id</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># should be a five-digit string, may have leading zeros</span>
-
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;product_id&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;before&#39;</span><span class="p">)</span>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">convert_int_serial</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">v</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">v</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">DemoDataclass</span><span class="p">(</span><span class="n">product_id</span><span class="o">=</span><span class="s1">&#39;01234&#39;</span><span class="p">))</span>
-<span class="c1">#&gt; DemoDataclass(product_id=&#39;01234&#39;)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">DemoDataclass</span><span class="p">(</span><span class="n">product_id</span><span class="o">=</span><span class="mi">2468</span><span class="p">))</span>
-<span class="c1">#&gt; DemoDataclass(product_id=&#39;02468&#39;)</span>
-</code></pre></div>
 <h2 id="validation-context">Validation Context<a class="headerlink" href="#validation-context" title="Permanent link">&para;</a></h2>
 <p>You can pass a context object to the validation methods which can be accessed from the <code>info</code>
 argument to decorated validator functions:</p>
