@@ -63,14 +63,11 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from pydantic._internal._core_utils import collect_invalid_schemas
 from pydantic._internal._generics import (
     _GENERIC_TYPES_CACHE,
     _LIMITED_DICT_SIZE,
     LimitedDict,
-    generic_recursion_self_type,
     iter_contained_typevars,
-    recursively_defined_type_refs,
     replace_types,
 )
 from pydantic.warnings import GenericBeforeBaseModelWarning
@@ -1801,10 +1798,7 @@ def test_generic_recursive_models_with_a_concrete_parameter(create_module):
 
         M1.model_rebuild()
 
-    M1 = module.M1
-
-    # assert M1.__pydantic_core_schema__ == {}
-    assert collect_invalid_schemas(M1.__pydantic_core_schema__) is False
+    assert module.M1
 
 
 def test_generic_recursive_models_complicated(create_module):
@@ -1862,9 +1856,7 @@ def test_generic_recursive_models_complicated(create_module):
 
         M1.model_rebuild()
 
-    M1 = module.M1
-
-    assert collect_invalid_schemas(M1.__pydantic_core_schema__) is False
+    assert module.M1
 
 
 def test_generic_recursive_models_in_container(create_module):
@@ -2237,35 +2229,6 @@ def test_double_typevar_substitution() -> None:
         x: T = []
 
     assert GenericPydanticModel[List[T]](x=[1, 2, 3]).model_dump() == {'x': [1, 2, 3]}
-
-
-@pytest.fixture(autouse=True)
-def ensure_contextvar_gets_reset():
-    # Ensure that the generic recursion contextvar is empty at the start of every test
-    assert not recursively_defined_type_refs()
-
-
-def test_generic_recursion_contextvar():
-    T = TypeVar('T')
-
-    class TestingException(Exception):
-        pass
-
-    class Model(BaseModel, Generic[T]):
-        pass
-
-    # Make sure that the contextvar-managed recursive types cache begins empty
-    assert not recursively_defined_type_refs()
-    try:
-        with generic_recursion_self_type(Model, (int,)):
-            # Make sure that something has been added to the contextvar-managed recursive types cache
-            assert recursively_defined_type_refs()
-            raise TestingException
-    except TestingException:
-        pass
-
-    # Make sure that an exception causes the contextvar-managed recursive types cache to be reset
-    assert not recursively_defined_type_refs()
 
 
 def test_limited_dict():

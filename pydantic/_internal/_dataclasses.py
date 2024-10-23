@@ -172,6 +172,7 @@ def complete_dataclass(
             )
         else:
             schema = gen_schema.generate_schema(cls, from_dunder_get_core_schema=False)
+        schema = gen_schema.clean_schema(schema, deep_copy=False)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
@@ -179,12 +180,6 @@ def complete_dataclass(
         return False
 
     core_config = config_wrapper.core_config(title=cls.__name__)
-
-    try:
-        schema = gen_schema.clean_schema(schema)
-    except gen_schema.CollectedInvalid:
-        set_dataclass_mocks(cls, cls.__name__, 'all referenced types')
-        return False
 
     # We are about to set all the remaining required properties expected for this cast;
     # __pydantic_decorators__ and __pydantic_fields__ should already be set

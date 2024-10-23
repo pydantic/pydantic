@@ -2667,7 +2667,8 @@ def test_multiple_enums():
         a: Optional[MyEnum]
         b: Optional[MyEnum]
 
-    TypeAdapter(MyModel)
+    ta = TypeAdapter(MyModel)
+    assert ta.validate_json('{"a": 1, "b": 1}') == {'a': MyEnum.a, 'b': MyEnum.a}
 
 
 @pytest.mark.parametrize(
