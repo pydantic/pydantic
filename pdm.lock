@@ -5,7 +5,7 @@
 groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "testing-extra", "timezone"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:49c61ae5c0eaa6e93e05c28b1dcaf5950ffcc511c3f36c46c00c83e897ba5b2c"
+content_hash = "sha256:8203be042ea4624806b3baa1b0887fac3b1475c33db7757c2b3c6c4152d77e5e"
 
 [[metadata.targets]]
 requires_python = ">=3.8"
