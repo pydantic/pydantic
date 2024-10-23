@@ -34,16 +34,20 @@ User(id=42, name='John Doe', signup_ts=datetime.datetime(2032, 6, 21, 12, 0))
     For more information and discussion see
     [pydantic/pydantic#710](https://github.com/pydantic/pydantic/issues/710).
 
-Some differences between Pydantic dataclasses and [`BaseModel`][pydantic.BaseModel] include:
+Similarities between Pydantic dataclasses and models include:
 
-*  [validators](#validators-and-initialization-hooks).
-*  The behavior with the [`extra`][pydantic.ConfigDict.extra] configuration value.
+* [Configuration](#dataclass-config) support
+* [Nested](./models.md#nested-models) classes
+* [Generics](./models.md#generic-models)
+* Arguments used to instantiate the dataclass are [copied](./models.md#attribute-copies)
 
-You can use all the standard Pydantic field types. Note, however, that arguments passed to constructor will be copied in
-order to perform validation and, where necessary coercion.
+Some differences between Pydantic dataclasses and models include:
 
-To make use of the [various methods](./models.md#model-methods-and-properties) to validate and dump models, you can
-wrap the dataclass with a [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] and make use of its methods.
+*  [validators](#validators-and-initialization-hooks)
+*  The behavior with the [`extra`][pydantic.ConfigDict.extra] configuration value
+
+To make use of the [various methods](./models.md#model-methods-and-properties) to validate, dump and generate a JSON Schema,
+you can wrap the dataclass with a [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] and make use of its methods.
 
 You can use both the Pydantic's [`Field()`][pydantic.Field] and the stdlib's [`field()`][dataclasses.field] functions:
 
@@ -136,60 +140,6 @@ class MyDataclass2:
     While Pydantic dataclasses support the [`extra`][pydantic.config.ConfigDict.extra] configuration value, some default
     behavior of stdlib dataclasses may prevail. For example, any extra fields present on a Pydantic dataclass with
     [`extra`][pydantic.config.ConfigDict.extra] set to `'allow'` are omitted in the dataclass' string representation.
-
-## Nested dataclasses
-
-Nested dataclasses are supported:
-
-```py
-from pydantic import AnyUrl
-from pydantic.dataclasses import dataclass
-
-
-@dataclass
-class NavbarButton:
-    href: AnyUrl
-
-
-@dataclass
-class Navbar:
-    button: NavbarButton
-
-
-navbar = Navbar(button={'href': 'https://example.com'})
-print(navbar)
-#> Navbar(button=NavbarButton(href=Url('https://example.com/')))
-```
-
-When used as fields, dataclasses (Pydantic or stdlib) should use dicts as validation inputs.
-
-## Generic dataclasses
-
-Pydantic supports generic dataclasses:
-
-```py
-from typing import Generic, TypeVar
-
-from pydantic import TypeAdapter
-from pydantic.dataclasses import dataclass
-
-T = TypeVar('T')
-
-
-@dataclass
-class GenericDataclass(Generic[T]):
-    x: T
-
-
-validator = TypeAdapter(GenericDataclass)  # (1)!
-
-assert validator.validate_python({'x': None}).x is None
-assert validator.validate_python({'x': 1}).x == 1
-assert validator.validate_python({'x': 'a'}).x == 'a'
-```
-
-1. Note that, if you use the dataclass as a field of a [`BaseModel`][pydantic.BaseModel],
-   you don't need to use a  [`TypeAdapter`][pydantic.TypeAdapter].
 
 ## Stdlib dataclasses and Pydantic dataclasses
 
