@@ -2420,7 +2420,7 @@ def test_generic_enum_bound():
 
     # insert_assert(Model[MyEnum].model_json_schema())
     assert Model[MyEnum].model_json_schema() == {
-        '$defs': {'MyEnum': {'const': 1, 'enum': [1], 'title': 'MyEnum', 'type': 'integer'}},
+        '$defs': {'MyEnum': {'enum': [1], 'title': 'MyEnum', 'type': 'integer'}},
         'properties': {'x': {'$ref': '#/$defs/MyEnum'}},
         'required': ['x'],
         'title': 'Model[test_generic_enum_bound.<locals>.MyEnum]',
@@ -2472,7 +2472,7 @@ def test_generic_intenum_bound():
 
     # insert_assert(Model[MyEnum].model_json_schema())
     assert Model[MyEnum].model_json_schema() == {
-        '$defs': {'MyEnum': {'const': 1, 'enum': [1], 'title': 'MyEnum', 'type': 'integer'}},
+        '$defs': {'MyEnum': {'enum': [1], 'title': 'MyEnum', 'type': 'integer'}},
         'properties': {'x': {'$ref': '#/$defs/MyEnum'}},
         'required': ['x'],
         'title': 'Model[test_generic_intenum_bound.<locals>.MyEnum]',

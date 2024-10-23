@@ -777,9 +777,11 @@ class GenerateJsonSchema:
         # jsonify the expected values
         expected = [to_jsonable_python(v) for v in expected]
 
-        result: dict[str, Any] = {'enum': expected}
+        result: dict[str, Any] = {}
         if len(expected) == 1:
             result['const'] = expected[0]
+        else:
+            result['enum'] = expected
 
         types = {type(e) for e in expected}
         if types == {str}:
@@ -817,8 +819,6 @@ class GenerateJsonSchema:
         expected = [to_jsonable_python(v.value) for v in schema['members']]
 
         result['enum'] = expected
-        if len(expected) == 1:
-            result['const'] = expected[0]
 
         types = {type(e) for e in expected}
         if isinstance(enum_type, str) or types == {str}:
