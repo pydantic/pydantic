@@ -227,12 +227,18 @@ def test_factory_runtime_error():
         v.validate_python('wrong')
 
 
-def test_factory_type_error():
+def test_factory_missing_arg():
     def broken(x):
         return 7
 
     v = SchemaValidator(
-        {'type': 'default', 'schema': {'type': 'int'}, 'on_error': 'default', 'default_factory': broken}
+        {
+            'type': 'default',
+            'schema': {'type': 'int'},
+            'on_error': 'default',
+            'default_factory': broken,
+            'default_factory_takes_data': False,
+        }
     )
     assert v.validate_python(42) == 42
     assert v.validate_python('42') == 42

@@ -2375,7 +2375,8 @@ class WithDefaultSchema(TypedDict, total=False):
     type: Required[Literal['default']]
     schema: Required[CoreSchema]
     default: Any
-    default_factory: Callable[[], Any]
+    default_factory: Union[Callable[[], Any], Callable[[Dict[str, Any]], Any]]
+    default_factory_takes_data: bool
     on_error: Literal['raise', 'omit', 'default']  # default: 'raise'
     validate_default: bool  # default: False
     strict: bool
@@ -2388,7 +2389,8 @@ def with_default_schema(
     schema: CoreSchema,
     *,
     default: Any = PydanticUndefined,
-    default_factory: Callable[[], Any] | None = None,
+    default_factory: Union[Callable[[], Any], Callable[[Dict[str, Any]], Any], None] = None,
+    default_factory_takes_data: bool | None = None,
     on_error: Literal['raise', 'omit', 'default'] | None = None,
     validate_default: bool | None = None,
     strict: bool | None = None,
@@ -2413,7 +2415,8 @@ def with_default_schema(
     Args:
         schema: The schema to add a default value to
         default: The default value to use
-        default_factory: A function that returns the default value to use
+        default_factory: A callable that returns the default value to use
+        default_factory_takes_data: Whether the default factory takes a validated data argument
         on_error: What to do if the schema validation fails. One of 'raise', 'omit', 'default'
         validate_default: Whether the default value should be validated
         strict: Whether the underlying schema should be validated with strict mode
@@ -2425,6 +2428,7 @@ def with_default_schema(
         type='default',
         schema=schema,
         default_factory=default_factory,
+        default_factory_takes_data=default_factory_takes_data,
         on_error=on_error,
         validate_default=validate_default,
         strict=strict,
