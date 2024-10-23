@@ -4,6 +4,7 @@ from __future__ import annotations as _annotations
 
 import dataclasses as _dataclasses
 import re
+from dataclasses import fields
 from importlib.metadata import version
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -89,9 +90,9 @@ class UrlConstraints(_fields.PydanticMetadata):
         )
 
     @property
-    def set_constraints(self) -> dict[str, Any]:
+    def defined_constraints(self) -> dict[str, Any]:
         """Fetch a key / value mapping of constraints to values that are not None. Used for core schema updates."""
-        return {k: v for k, v in self.__dict__.items() if v is not None}
+        return {field.name: getattr(self, field.name) for field in fields(self)}
 
 
 # TODO: there's a lot of repeated code in these two base classes - should we consolidate, or does that up
@@ -104,7 +105,7 @@ class _BaseUrl(Url):
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         if cls is source:
-            return core_schema.url_schema(**cls._constraints.set_constraints)
+            return core_schema.url_schema(**cls._constraints.defined_constraints)
         else:
             schema = handler(source)
             # TODO: this logic is used in types.py as well in the _check_annotated_type function, should we move that to somewhere more central?
@@ -112,7 +113,7 @@ class _BaseUrl(Url):
                 raise PydanticUserError(
                     f"'{cls.__name__}' cannot annotate '{annotated_type}'.", code='invalid-annotated-type'
                 )
-            for constraint_key, constraint_value in cls._constraints.set_constraints.items():
+            for constraint_key, constraint_value in cls._constraints.defined_constraints.items():
                 schema[constraint_key] = constraint_value
             return schema
 
@@ -123,7 +124,7 @@ class _BaseMultiHostUrl(MultiHostUrl):
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         if cls is source:
-            return core_schema.multi_host_url_schema(**cls._constraints.set_constraints)
+            return core_schema.multi_host_url_schema(**cls._constraints.defined_constraints)
         else:
             schema = handler(source)
             # TODO: this logic is used in types.py as well in the _check_annotated_type function, should we move that to somewhere more central?
@@ -131,7 +132,7 @@ class _BaseMultiHostUrl(MultiHostUrl):
                 raise PydanticUserError(
                     f"'{cls.__name__}' cannot annotate '{annotated_type}'.", code='invalid-annotated-type'
                 )
-            for constraint_key, constraint_value in cls._constraints.set_constraints.items():
+            for constraint_key, constraint_value in cls._constraints.defined_constraints.items():
                 schema[constraint_key] = constraint_value
             return schema
 
