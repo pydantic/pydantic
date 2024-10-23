@@ -204,7 +204,7 @@ class HttpUrl(_BaseUrl):
         '''
         1 validation error for MyModel
         url
-        URL scheme should be 'http' or 'https' [type=url_scheme, input_value='ftp://invalid.url', input_type=str]
+          URL scheme should be 'http' or 'https' [type=url_scheme, input_value='ftp://invalid.url', input_type=str]
         '''
 
     try:
@@ -214,7 +214,7 @@ class HttpUrl(_BaseUrl):
         '''
         1 validation error for MyModel
         url
-        Input should be a valid URL, relative URL without a base [type=url_parsing, input_value='not a url', input_type=str]
+          Input should be a valid URL, relative URL without a base [type=url_parsing, input_value='not a url', input_type=str]
         '''
     ```
 
@@ -369,9 +369,9 @@ class PostgresDsn(_BaseMultiHostUrl):
         '''
         1 validation error for MyDatabaseModel
         db
-        Assertion failed, database must be provided
+          Assertion failed, database must be provided
         assert (None)
-        +  where None = MultiHostUrl('postgres://user:pass@localhost:5432').path [type=assertion_error, input_value='postgres://user:pass@localhost:5432', input_type=str]
+         +  where None = MultiHostUrl('postgres://user:pass@localhost:5432').path [type=assertion_error, input_value='postgres://user:pass@localhost:5432', input_type=str]
         '''
     ```
     """
