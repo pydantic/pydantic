@@ -104,7 +104,7 @@ class _BaseUrl(Url):
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        if cls is source:
+        if issubclass(cls, source):
             return core_schema.url_schema(**cls._constraints.defined_constraints)
         else:
             schema = handler(source)
@@ -123,7 +123,7 @@ class _BaseMultiHostUrl(MultiHostUrl):
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        if cls is source:
+        if issubclass(cls, source):
             return core_schema.multi_host_url_schema(**cls._constraints.defined_constraints)
         else:
             schema = handler(source)
