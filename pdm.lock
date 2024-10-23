@@ -1569,9 +1569,6 @@ files = [
 name = "pydantic-core"
 version = "2.25.0"
 requires_python = ">=3.8"
-git = "https://github.com/pydantic/pydantic-core"
-ref = "dependent-defaults"
-revision = "a3b4cf0cd5fd88e30da040b6aff12baeccecc702"
 summary = "Core functionality for Pydantic validation and serialization"
 groups = ["default"]
 dependencies = [
