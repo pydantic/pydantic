@@ -102,6 +102,7 @@ class DefaultTestingModel(BaseModel):
     b: int = ...
 # MYPY: error: Incompatible types in assignment (expression has type "EllipsisType", variable has type "int")  [assignment]
     c: int = Field(...)
+# MYPY: error: Incompatible types in assignment (expression has type "EllipsisType", variable has type "int")  [assignment]
     d: Union[int, str]
     e = ...
 # MYPY: error: Untyped fields disallowed  [pydantic-field]
@@ -166,6 +167,7 @@ response = Response[Model](data=1, error=None)
 
 class AliasModel(BaseModel):
     x: str = Field(..., alias='y')
+# MYPY: error: Incompatible types in assignment (expression has type "EllipsisType", variable has type "str")  [assignment]
     z: int
 
 
@@ -178,6 +180,7 @@ x_alias = 'y'
 class DynamicAliasModel(BaseModel):
     x: str = Field(..., alias=x_alias)
 # MYPY: error: Required dynamic aliases disallowed  [pydantic-alias]
+# MYPY: error: Incompatible types in assignment (expression has type "EllipsisType", variable has type "str")  [assignment]
     z: int
 
 
@@ -187,6 +190,7 @@ DynamicAliasModel(y='y', z='1')
 
 class DynamicAliasModel2(BaseModel):
     x: str = Field(..., alias=x_alias)
+# MYPY: error: Incompatible types in assignment (expression has type "EllipsisType", variable has type "str")  [assignment]
     z: int
 
     model_config = ConfigDict(populate_by_name=True)
@@ -199,6 +203,7 @@ DynamicAliasModel2(x='y', z=1)
 
 class KwargsDynamicAliasModel(BaseModel, populate_by_name=True):
     x: str = Field(..., alias=x_alias)
+# MYPY: error: Incompatible types in assignment (expression has type "EllipsisType", variable has type "str")  [assignment]
     z: int
 
 
@@ -223,6 +228,7 @@ AliasGeneratorModel(z=1)
 class AliasGeneratorModel2(BaseModel):
 # MYPY: error: Required dynamic aliases disallowed  [pydantic-alias]
     x: int = Field(..., alias='y')
+# MYPY: error: Incompatible types in assignment (expression has type "EllipsisType", variable has type "int")  [assignment]
 
     model_config = ConfigDict(alias_generator=lambda x: x + '_')  # type: ignore[pydantic-alias]
 
@@ -255,6 +261,7 @@ class KwargsAliasGeneratorModel2(BaseModel, alias_generator=lambda x: x + '_'):
 # MYPY: error: Required dynamic aliases disallowed  [pydantic-alias]
     x: int = Field(..., alias='y')
 # MYPY: error: Required dynamic aliases disallowed  [pydantic-alias]
+# MYPY: error: Incompatible types in assignment (expression has type "EllipsisType", variable has type "int")  [assignment]
 
 
 KwargsAliasGeneratorModel2(x=1)
@@ -301,34 +308,6 @@ class InheritingModel2(FrozenModel):
 
 inheriting2 = InheritingModel2(x=1, y='c')
 inheriting2.y = 'd'
-
-
-def _default_factory() -> str:
-    return 'x'
-
-
-test: List[str] = []
-
-
-class FieldDefaultTestingModel(BaseModel):
-    # Default
-    e: int = Field(None)
-# MYPY: error: Incompatible types in assignment (expression has type "None", variable has type "int")  [assignment]
-    f: int = None
-# MYPY: error: Incompatible types in assignment (expression has type "None", variable has type "int")  [assignment]
-
-    # Default factory
-    g: str = Field(default_factory=set)
-# MYPY: error: Incompatible types in assignment (expression has type "Set[Any]", variable has type "str")  [assignment]
-    h: int = Field(default_factory=_default_factory)
-# MYPY: error: Incompatible types in assignment (expression has type "str", variable has type "int")  [assignment]
-    i: List[int] = Field(default_factory=list)
-    l_: str = Field(default_factory=3)
-# MYPY: error: Argument "default_factory" to "Field" has incompatible type "int"; expected "Optional[Callable[[], Any]]"  [arg-type]
-
-    # Default and default factory
-    m: int = Field(default=1, default_factory=list)
-# MYPY: error: Field default and default_factory cannot be specified together  [pydantic-field]
 
 
 class ModelWithAnnotatedValidator(BaseModel):

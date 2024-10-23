@@ -810,7 +810,7 @@ The same holds for the `model_dump_json` method.
 In addition to the explicit arguments `exclude` and `include` passed to `model_dump` and `model_dump_json` methods,
 we can also pass the `exclude: bool` arguments directly to the `Field` constructor:
 
-Setting `exclude` on the field constructor (`Field(..., exclude=True)`) takes priority over the
+Setting `exclude` on the field constructor (`Field(exclude=True)`) takes priority over the
 `exclude`/`include` on `model_dump` and `model_dump_json`:
 
 ```py
@@ -820,7 +820,7 @@ from pydantic import BaseModel, Field, SecretStr
 class User(BaseModel):
     id: int
     username: str
-    password: SecretStr = Field(..., exclude=True)
+    password: SecretStr = Field(exclude=True)
 
 
 class Transaction(BaseModel):
@@ -841,7 +841,7 @@ print(t.model_dump(include={'id': True, 'value': True}))  # (1)!
 
 1. `value` excluded from the output because it excluded in `Field`.
 
-That being said, setting `exclude` on the field constructor (`Field(..., exclude=True)`) does not take priority
+That being said, setting `exclude` on the field constructor (`Field(exclude=True)`) does not take priority
 over the `exclude_unset`, `exclude_none`, and `exclude_default` parameters on `model_dump` and `model_dump_json`:
 
 ```py
