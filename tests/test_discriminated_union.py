@@ -1240,11 +1240,10 @@ def test_union_in_submodel() -> None:
             },
             'UnionModel1': {
                 'properties': {
-                    'type': {'const': 1, 'default': 1, 'enum': [1], 'title': 'Type', 'type': 'integer'},
+                    'type': {'const': 1, 'default': 1, 'title': 'Type', 'type': 'integer'},
                     'other': {
                         'const': 'UnionModel1',
                         'default': 'UnionModel1',
-                        'enum': ['UnionModel1'],
                         'title': 'Other',
                         'type': 'string',
                     },
@@ -1254,11 +1253,10 @@ def test_union_in_submodel() -> None:
             },
             'UnionModel2': {
                 'properties': {
-                    'type': {'const': 2, 'default': 2, 'enum': [2], 'title': 'Type', 'type': 'integer'},
+                    'type': {'const': 2, 'default': 2, 'title': 'Type', 'type': 'integer'},
                     'other': {
                         'const': 'UnionModel2',
                         'default': 'UnionModel2',
-                        'enum': ['UnionModel2'],
                         'title': 'Other',
                         'type': 'string',
                     },
@@ -1339,7 +1337,7 @@ def test_sequence_discriminated_union():
         '$defs': {
             'Cat': {
                 'properties': {
-                    'pet_type': {'const': 'cat', 'enum': ['cat'], 'title': 'Pet Type', 'type': 'string'},
+                    'pet_type': {'const': 'cat', 'title': 'Pet Type', 'type': 'string'},
                     'meows': {'title': 'Meows', 'type': 'integer'},
                 },
                 'required': ['pet_type', 'meows'],
@@ -1348,7 +1346,7 @@ def test_sequence_discriminated_union():
             },
             'Dog': {
                 'properties': {
-                    'pet_type': {'const': 'dog', 'enum': ['dog'], 'title': 'Pet Type', 'type': 'string'},
+                    'pet_type': {'const': 'dog', 'title': 'Pet Type', 'type': 'string'},
                     'barks': {'title': 'Barks', 'type': 'number'},
                 },
                 'required': ['pet_type', 'barks'],
@@ -1906,7 +1904,7 @@ def test_nested_discriminator() -> None:
             'Step_A': {
                 'properties': {
                     'count': {'title': 'Count', 'type': 'integer'},
-                    'type': {'const': 'stepA', 'enum': ['stepA'], 'title': 'Type', 'type': 'string'},
+                    'type': {'const': 'stepA', 'title': 'Type', 'type': 'string'},
                 },
                 'required': ['type', 'count'],
                 'title': 'Step_A',
@@ -1914,7 +1912,7 @@ def test_nested_discriminator() -> None:
             },
             'Step_B': {
                 'properties': {
-                    'type': {'const': 'stepB', 'enum': ['stepB'], 'title': 'Type', 'type': 'string'},
+                    'type': {'const': 'stepB', 'title': 'Type', 'type': 'string'},
                     'value': {'title': 'Value', 'type': 'number'},
                 },
                 'required': ['type', 'value'],
@@ -1934,7 +1932,7 @@ def test_nested_discriminator() -> None:
                         'title': 'Steps',
                     },
                     'sub_models': {'items': {'$ref': '#/$defs/SubModel'}, 'title': 'Sub Models', 'type': 'array'},
-                    'type': {'const': 'mixed', 'enum': ['mixed'], 'title': 'Type', 'type': 'string'},
+                    'type': {'const': 'mixed', 'title': 'Type', 'type': 'string'},
                 },
                 'required': ['type', 'sub_models', 'blending'],
                 'title': 'SubModel',
@@ -1952,7 +1950,7 @@ def test_nested_discriminator() -> None:
                 'title': 'Steps',
             },
             'sub_models': {'items': {'$ref': '#/$defs/SubModel'}, 'title': 'Sub Models', 'type': 'array'},
-            'type': {'const': 'mixed', 'enum': ['mixed'], 'title': 'Type', 'type': 'string'},
+            'type': {'const': 'mixed', 'title': 'Type', 'type': 'string'},
         },
         'required': ['type', 'sub_models'],
         'title': 'MyModel',

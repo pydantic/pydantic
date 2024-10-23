@@ -558,13 +558,13 @@ def test_discriminated_union_forward_ref(create_module):
             'Cat': {
                 'title': 'Cat',
                 'type': 'object',
-                'properties': {'type': {'const': 'cat', 'enum': ['cat'], 'title': 'Type', 'type': 'string'}},
+                'properties': {'type': {'const': 'cat', 'title': 'Type', 'type': 'string'}},
                 'required': ['type'],
             },
             'Dog': {
                 'title': 'Dog',
                 'type': 'object',
-                'properties': {'type': {'const': 'dog', 'enum': ['dog'], 'title': 'Type', 'type': 'string'}},
+                'properties': {'type': {'const': 'dog', 'title': 'Type', 'type': 'string'}},
                 'required': ['type'],
             },
         },

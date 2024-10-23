@@ -2798,7 +2798,7 @@ def test_recursive_root_models_in_discriminated_union():
         '$defs': {
             'Model1': {
                 'properties': {
-                    'kind': {'const': '1', 'default': '1', 'enum': ['1'], 'title': 'Kind', 'type': 'string'},
+                    'kind': {'const': '1', 'default': '1', 'title': 'Kind', 'type': 'string'},
                     'two': {'anyOf': [{'$ref': '#/$defs/Model2'}, {'type': 'null'}]},
                 },
                 'required': ['two'],
@@ -2807,7 +2807,7 @@ def test_recursive_root_models_in_discriminated_union():
             },
             'Model2': {
                 'properties': {
-                    'kind': {'const': '2', 'default': '2', 'enum': ['2'], 'title': 'Kind', 'type': 'string'},
+                    'kind': {'const': '2', 'default': '2', 'title': 'Kind', 'type': 'string'},
                     'one': {'anyOf': [{'$ref': '#/$defs/Model1'}, {'type': 'null'}]},
                 },
                 'required': ['one'],

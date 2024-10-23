@@ -1379,13 +1379,13 @@ def test_discriminated_union_basemodel_instance_value():
         'required': ['sub'],
         '$defs': {
             'A': {
-                'properties': {'l': {'const': 'a', 'enum': ['a'], 'title': 'L', 'type': 'string'}},
+                'properties': {'l': {'const': 'a', 'title': 'L', 'type': 'string'}},
                 'required': ['l'],
                 'title': 'A',
                 'type': 'object',
             },
             'B': {
-                'properties': {'l': {'const': 'b', 'enum': ['b'], 'title': 'L', 'type': 'string'}},
+                'properties': {'l': {'const': 'b', 'title': 'L', 'type': 'string'}},
                 'required': ['l'],
                 'title': 'B',
                 'type': 'object',
