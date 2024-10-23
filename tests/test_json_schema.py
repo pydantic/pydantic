@@ -6463,17 +6463,6 @@ def test_merge_json_schema_extra_from_field_infos() -> None:
     }
 
 
-def test_remove_key_from_like_parent_annotation() -> None:
-    class Model(BaseModel):
-        a: Annotated[
-            int,
-            Field(json_schema_extra={'key_to_remove': 'value'}),
-            Field(json_schema_extra=lambda _: None),
-        ]
-
-    assert Model.model_json_schema()['properties']['a'] == {'title': 'A', 'type': 'integer'}
-
-
 def test_ta_and_bm_same_json_schema() -> None:
     MyStr = Annotated[str, Field(json_schema_extra={'key1': 'value1'}), Field(json_schema_extra={'key2': 'value2'})]
 
@@ -6665,3 +6654,12 @@ def test_arbitrary_ref_in_json_schema() -> None:
     }
 
     # raises KeyError: '#/components/schemas/Pet'
+
+
+def test_warn_on_mixed_compose() -> None:
+    with pytest.warns(
+        PydanticJsonSchemaWarning, match='Composing `dict` and `callable` type `json_schema_extra` is not supported.'
+    ):
+
+        class Model(BaseModel):
+            field: Annotated[int, Field(json_schema_extra={'a': 'dict'}), Field(json_schema_extra=lambda x: x.pop('a'))]  # type: ignore

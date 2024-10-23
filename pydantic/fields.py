@@ -23,6 +23,7 @@ from ._internal._namespace_utils import GlobalsNamespace, MappingNamespace
 from .aliases import AliasChoices, AliasPath
 from .config import JsonDict
 from .errors import PydanticUserError
+from .json_schema import PydanticJsonSchemaWarning
 from .warnings import PydanticDeprecatedSince20
 
 if typing.TYPE_CHECKING:
@@ -451,11 +452,23 @@ class FieldInfo(_repr.Representation):
 
             try:
                 json_schema_extra = attributes_set.pop('json_schema_extra')
-                existing_json_schema_extra = merged_field_info_kwargs.get('json_schema_extra', {})
+                existing_json_schema_extra = merged_field_info_kwargs.get('json_schema_extra')
 
-                if isinstance(existing_json_schema_extra, dict) and isinstance(json_schema_extra, dict):
-                    merged_field_info_kwargs['json_schema_extra'] = {**existing_json_schema_extra, **json_schema_extra}
-                else:
+                if existing_json_schema_extra is None:
+                    merged_field_info_kwargs['json_schema_extra'] = json_schema_extra
+                if isinstance(existing_json_schema_extra, dict):
+                    if isinstance(json_schema_extra, dict):
+                        merged_field_info_kwargs['json_schema_extra'] = {
+                            **existing_json_schema_extra,
+                            **json_schema_extra,
+                        }
+                    if isinstance(json_schema_extra, Callable):
+                        warn(
+                            'Composing `dict` and `callable` type `json_schema_extra` is not supported.'
+                            "If you'd like support for this behavior, please open an issue on pydantic.",
+                            PydanticJsonSchemaWarning,
+                        )
+                elif isinstance(json_schema_extra, Callable):
                     # if ever there's a case of a callable, we'll just keep the last json schema extra spec
                     merged_field_info_kwargs['json_schema_extra'] = json_schema_extra
             except KeyError:
