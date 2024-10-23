@@ -5,8 +5,6 @@ from warnings import warn
 
 from typing_extensions import TypedDict
 
-from ..json_schema import PydanticJsonSchemaWarning
-
 if TYPE_CHECKING:
     from pydantic_core import CoreSchema
 
@@ -56,6 +54,8 @@ def update_core_metadata(
     pydantic_js_updates: JsonDict | None = None,
     pydantic_js_extra: JsonDict | JsonSchemaExtraCallable | None = None,
 ) -> None:
+    from ..json_schema import PydanticJsonSchemaWarning
+
     """Update CoreMetadata instance in place. When we make modifications in this function, they
     take effect on the `core_metadata` reference passed in as the first (and only) positional argument.
 
