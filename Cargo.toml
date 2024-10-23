@@ -46,7 +46,7 @@ base64 = "0.22.1"
 num-bigint = "0.4.6"
 python3-dll-a = "0.2.10"
 uuid = "1.11.0"
-jiter = { version = "0.5", features = ["python"] }
+jiter = { version = "0.6", features = ["python"] }
 hex = "0.4.3"
 
 [lib]

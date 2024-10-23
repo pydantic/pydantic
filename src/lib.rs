@@ -4,7 +4,7 @@ extern crate core;
 
 use std::sync::OnceLock;
 
-use jiter::{map_json_error, PartialMode, PythonParse, StringCacheMode};
+use jiter::{map_json_error, FloatMode, PartialMode, PythonParse, StringCacheMode};
 use pyo3::exceptions::PyTypeError;
 use pyo3::{prelude::*, sync::GILOnceCell};
 use serializers::BytesMode;
@@ -61,7 +61,7 @@ pub fn from_json<'py>(
         cache_mode: cache_strings,
         partial_mode: allow_partial,
         catch_duplicate_keys: false,
-        lossless_floats: false,
+        float_mode: FloatMode::Float,
     };
     parse_builder
         .python_parse(py, json_bytes)
