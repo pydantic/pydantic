@@ -27,8 +27,4 @@ cd .. && pip install . && cd fastapi
 
 # These are all failing bc we now correctly add a `'deprecated': True` attribute to the JSON schema,
 # So it's the FastAPI tests that need to be updated here
-./scripts/test.sh -vv --deselect tests/test_tutorial/test_query_params_str_validations/test_tutorial010.py::test_openapi_schema
-./scripts/test.sh -vv --deselect tests/test_tutorial/test_query_params_str_validations/test_tutorial010_an.py::test_openapi_schema
-./scripts/test.sh -vv --deselect tests/test_tutorial/test_query_params_str_validations/test_tutorial010_an_py310.py::test_openapi_schema
-./scripts/test.sh -vv --deselect tests/test_tutorial/test_query_params_str_validations/test_tutorial010_an_py39.py::test_openapi_schema
-./scripts/test.sh -vv --deselect tests/test_tutorial/test_query_params_str_validations/test_tutorial010_py310.py::test_openapi_schema
+./scripts/test.sh -vv --deselect tests/test_tutorial/test_query_params_str_validations::test_openapi_schema
