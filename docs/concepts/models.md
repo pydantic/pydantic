@@ -846,7 +846,7 @@ except ValidationError as e:
 
 
     print(repr(Model.model_validate(Model(inner=GenericModel[int](a=1)))))
-    # > Model(inner=GenericModel[Any](a=1))
+    #> Model(inner=GenericModel[Any](a=1))
     ```
 
     Note, validation will still fail if you, for example are validating against `GenericModel[int]` and pass in an instance `GenericModel[str](a='not an int')`.
@@ -856,8 +856,8 @@ except ValidationError as e:
     Then, the validators will be called again on the second pass, during more lax force-revalidation phase, which succeeds.
     To better understand this consequence, see below:
 
-    ```py
-    from typing import Any, Generic, TypeVar, Self
+    ```py test="skip"
+    from typing import Any, Generic, Self, TypeVar
 
     from pydantic import BaseModel, model_validator
 
@@ -878,10 +878,10 @@ except ValidationError as e:
 
 
     m = Model.model_validate(Model(inner=GenericModel[int](a=1)))
-    # > after validator running custom validation...
-    # > after validator running custom validation...
+    #> after validator running custom validation...
+    #> after validator running custom validation...
     print(repr(m))
-    # > Model(inner=GenericModel[Any](a=1))
+    #> Model(inner=GenericModel[Any](a=1))
     ```
 
 ### Validation of unparametrized type variables
