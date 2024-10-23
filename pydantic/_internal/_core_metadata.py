@@ -1,6 +1,6 @@
 from __future__ import annotations as _annotations
 
-from typing import TYPE_CHECKING, Any, Callable, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, cast
 from warnings import warn
 
 from typing_extensions import TypedDict
@@ -102,4 +102,4 @@ def update_core_metadata(
             # if ever there's a case of a callable, we'll just keep the last json schema extra spec
             core_metadata['pydantic_js_extra'] = pydantic_js_extra
 
-    core_metadata = cast(dict[str, Any], core_metadata)
+    core_metadata = cast(Dict[str, Any], core_metadata)
