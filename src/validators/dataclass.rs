@@ -438,6 +438,7 @@ pub struct DataclassValidator {
     strict: bool,
     validator: Box<CombinedValidator>,
     class: Py<PyType>,
+    generic_origin: Option<Py<PyType>>,
     fields: Vec<Py<PyString>>,
     post_init: Option<Py<PyString>>,
     revalidate: Revalidate,
@@ -461,6 +462,7 @@ impl BuildValidator for DataclassValidator {
         let config = config.as_ref();
 
         let class = schema.get_as_req::<Bound<'_, PyType>>(intern!(py, "cls"))?;
+        let generic_origin: Option<Bound<'_, PyType>> = schema.get_as(intern!(py, "generic_origin"))?;
         let name = match schema.get_as_req::<String>(intern!(py, "cls_name")) {
             Ok(name) => name,
             Err(_) => class.getattr(intern!(py, "__name__"))?.extract()?,
@@ -480,6 +482,7 @@ impl BuildValidator for DataclassValidator {
             strict: is_strict(schema, config)?,
             validator: Box::new(validator),
             class: class.into(),
+            generic_origin: generic_origin.map(std::convert::Into::into),
             fields,
             post_init,
             revalidate: Revalidate::from_str(
@@ -496,7 +499,11 @@ impl BuildValidator for DataclassValidator {
     }
 }
 
-impl_py_gc_traverse!(DataclassValidator { class, validator });
+impl_py_gc_traverse!(DataclassValidator {
+    class,
+    generic_origin,
+    validator
+});
 
 impl Validator for DataclassValidator {
     fn validate<'py>(
@@ -510,10 +517,30 @@ impl Validator for DataclassValidator {
             return self.validate_init(py, self_instance, input, state);
         }
 
-        // same logic as on models
+        // same logic as on models, see more explicit comment in model.rs
         let class = self.class.bind(py);
-        if let Some(py_input) = input_as_python_instance(input, class) {
-            if self.revalidate.should_revalidate(py_input, class) {
+        let generic_origin_class = self.generic_origin.as_ref().map(|go| go.bind(py));
+
+        let (py_instance_input, force_revalidate): (Option<&Bound<'_, PyAny>>, bool) =
+            match input_as_python_instance(input, class) {
+                Some(x) => (Some(x), false),
+                None => {
+                    // if the model has a generic origin, we allow input data to be instances of the generic origin rather than the class,
+                    // as cases like isinstance(SomeModel[Int], SomeModel[Any]) fail the isinstance check, but are valid, we just have to enforce
+                    // that the data is revalidated, hence we set force_revalidate to true
+                    if generic_origin_class.is_some() {
+                        match input_as_python_instance(input, generic_origin_class.unwrap()) {
+                            Some(x) => (Some(x), true),
+                            None => (None, false),
+                        }
+                    } else {
+                        (None, false)
+                    }
+                }
+            };
+
+        if let Some(py_input) = py_instance_input {
+            if self.revalidate.should_revalidate(py_input, class) || force_revalidate {
                 let input_dict = self.dataclass_to_dict(py_input)?;
                 let val_output = self.validator.validate(py, input_dict.as_any(), state)?;
                 let dc = create_class(self.class.bind(py))?;
