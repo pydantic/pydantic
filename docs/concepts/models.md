@@ -1153,12 +1153,12 @@ from pydantic import BaseModel, Field, create_model
 
 DynamicModel = create_model(
     'DynamicModel',
-    foo=(str, Field(..., description='foo description', alias='FOO')),
+    foo=(str, Field(description='foo description', alias='FOO')),
 )
 
 
 class StaticModel(BaseModel):
-    foo: str = Field(..., description='foo description', alias='FOO')
+    foo: str = Field(description='foo description', alias='FOO')
 ```
 
 The special keyword arguments `__config__` and `__base__` can be used to customize the new model.
@@ -1416,12 +1416,8 @@ print(error_locations)
 
 ## Required fields
 
-To declare a field as required, you may declare it using an annotation, or an annotation in combination with a `Field` specification.
-You may also use `Ellipsis`/`...` to emphasize that a field is required, especially when using the `Field` constructor.
-
-The [`Field`](fields.md) function is primarily used to configure settings like `alias` or `description` for an attribute.
-The constructor supports `Ellipsis`/`...` as the sole positional argument.
-This is used as a way to indicate that said field is mandatory, though it's the type hint that enforces this requirement.
+To declare a field as required, you may declare it using an annotation, or an annotation in combination with a
+[`Field`][pydantic.Field] function (without specifying any `default` or `default_factory` argument).
 
 ```py
 from pydantic import BaseModel, Field
@@ -1429,12 +1425,13 @@ from pydantic import BaseModel, Field
 
 class Model(BaseModel):
     a: int
-    b: int = ...
+    b: int = Field(alias='B')
     c: int = Field(..., alias='C')
 ```
 
-Here `a`, `b` and `c` are all required. However, this use of `b: int = ...` does not work properly with
-[mypy](../integrations/mypy.md), and as of **v1.0** should be avoided in most cases.
+Here `a`, `b` and `c` are all required. The field `c` uses the [ellipsis][Ellipsis] as a default argument,
+emphasizing on the fact that it is required. However, the usage of the [ellipsis][Ellipsis] is discouraged
+as it doesn't play well with type checkers.
 
 !!! note
     In Pydantic V1, fields annotated with `Optional` or `Any` would be given an implicit default of `None` even if no

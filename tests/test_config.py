@@ -113,7 +113,7 @@ class TestsBaseConfig:
         class MyModel(BaseModel):
             id: int
             name: str = 'John Doe'
-            f__: str = Field(..., alias='foo')
+            f__: str = Field(alias='foo')
 
             model_config = ConfigDict(extra='allow')
 
@@ -144,7 +144,7 @@ class TestsBaseConfig:
 
     def test_base_config_use_field_name(self):
         class Foo(BaseModel):
-            foo: str = Field(..., alias='this is invalid')
+            foo: str = Field(alias='this is invalid')
 
             model_config = ConfigDict(populate_by_name=True)
 
@@ -152,7 +152,7 @@ class TestsBaseConfig:
 
     def test_base_config_does_not_use_reserved_word(self):
         class Foo(BaseModel):
-            from_: str = Field(..., alias='from')
+            from_: str = Field(alias='from')
 
             model_config = ConfigDict(populate_by_name=True)
 
@@ -326,7 +326,7 @@ class TestsBaseConfig:
         expected_value: int = 7
 
         class Foo(BaseModel):
-            bar_: int = Field(..., alias='bar')
+            bar_: int = Field(alias='bar')
 
             model_config = dict(populate_by_name=populate_by_name_config)
 

@@ -7,6 +7,13 @@ theme:
   name: 'material'
   custom_dir: 'docs/theme'
   palette:
+  - media: "(prefers-color-scheme)"
+    scheme: default
+    primary: pink
+    accent: pink
+    toggle:
+      icon: material/lightbulb
+      name: "Switch to light mode"
   - media: "(prefers-color-scheme: light)"
     scheme: default
     primary: pink
@@ -19,8 +26,8 @@ theme:
     primary: pink
     accent: pink
     toggle:
-      icon: material/lightbulb
-      name: "Switch to light mode"
+      icon: material/lightbulb-auto-outline
+      name: "Switch to system preference"
   features:
     - content.tabs.link
     - content.code.annotate
