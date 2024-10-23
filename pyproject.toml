@@ -150,7 +150,7 @@ testing-extra = [
     "greenlet>=3.0.0rc3; python_version < '3.13'",
 ]
 mypy = [
-    "mypy==1.12.0",
+    "mypy==1.12.1",
     "pydantic-settings>=2.0.0",
 ]
 # TODO: remove once memray supports 3.13

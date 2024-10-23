@@ -1,6 +1,9 @@
-from typing import ClassVar, Generic, List, Optional, TypeVar, Union
+from dataclasses import InitVar
+from typing import Any, ClassVar, Generic, List, Optional, TypeVar, Union
 
-from pydantic import BaseModel, Field, create_model, field_validator
+from typing_extensions import Self
+
+from pydantic import BaseModel, ConfigDict, Field, RootModel, create_model, field_validator, model_validator, validator
 from pydantic.dataclasses import dataclass
 
 
@@ -8,10 +11,7 @@ class Model(BaseModel):
     x: float
     y: str
 
-    model_config = dict(from_attributes=True)
-
-    class NotConfig:
-        frozen = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SelfReferencingModel(BaseModel):
@@ -26,7 +26,6 @@ SelfReferencingModel.model_rebuild()
 
 model = Model(x=1, y='y')
 Model(x=1, y='y', z='z')
-# MYPY: error: Unexpected keyword argument "z" for "Model"  [call-arg]
 model.x = 2
 model.model_validate(model)
 
@@ -37,13 +36,9 @@ class KwargsModel(BaseModel, from_attributes=True):
     x: float
     y: str
 
-    class NotConfig:
-        frozen = True
-
 
 kwargs_model = KwargsModel(x=1, y='y')
 KwargsModel(x=1, y='y', z='z')
-# MYPY: error: Unexpected keyword argument "z" for "KwargsModel"  [call-arg]
 kwargs_model.x = 2
 kwargs_model.model_validate(kwargs_model.__dict__)
 
@@ -71,13 +66,13 @@ forward_model = ForwardReferencingModel(x=1, y='a', future=future_model)
 class NoMutationModel(BaseModel):
     x: int
 
-    model_config = dict(frozen=True)
+    model_config = ConfigDict(frozen=True)
 
 
 class MutationModel(NoMutationModel):
     a: int = 1
 
-    model_config = dict(frozen=False, from_attributes=True)
+    model_config = ConfigDict(frozen=False, from_attributes=True)
 
 
 MutationModel(x=1).x = 2
@@ -132,7 +127,7 @@ class ClassVarModel(BaseModel):
 ClassVarModel(x=1)
 
 
-@dataclass(config=dict(validate_assignment=True))
+@dataclass(config={'validate_assignment': True})
 class AddProject:
     name: str
     slug: Optional[str]
@@ -165,13 +160,13 @@ dynamic_model.x = 2
 class FrozenModel(BaseModel):
     x: int
 
-    model_config = dict(frozen=True)
+    model_config = ConfigDict(frozen=True)
 
 
 class NotFrozenModel(FrozenModel):
     a: int = 1
 
-    model_config = dict(frozen=False, from_attributes=True)
+    model_config = ConfigDict(frozen=False, from_attributes=True)
 
 
 NotFrozenModel(x=1).x = 2
@@ -247,3 +242,75 @@ class FieldDefaultTestingModel(BaseModel):
     g: List[int] = Field(default_factory=_default_factory_list)
     h: str = Field(default_factory=_default_factory_str)
     i: str = Field(default_factory=lambda: 'test')
+
+
+_TModel = TypeVar('_TModel')
+_TType = TypeVar('_TType')
+
+
+class OrmMixin(Generic[_TModel, _TType]):
+    @classmethod
+    def from_orm(cls, model: _TModel) -> _TType:
+        raise NotImplementedError
+
+    @classmethod
+    def from_orm_optional(cls, model: Optional[_TModel]) -> Optional[_TType]:
+        if model is None:
+            return None
+        return cls.from_orm(model)
+
+
+@dataclass
+class MyDataClass:
+    foo: InitVar[str]
+    bar: str
+
+
+MyDataClass(foo='foo', bar='bar')
+
+
+def get_my_custom_validator(field_name: str) -> Any:
+    @validator(field_name, allow_reuse=True)
+    def my_custom_validator(cls: Any, v: int) -> int:
+        return v
+
+    return my_custom_validator
+
+
+def foo() -> None:
+    class MyModel(BaseModel):
+        number: int
+        custom_validator = get_my_custom_validator('number')  # type: ignore[pydantic-field]
+
+        @model_validator(mode='before')
+        @classmethod
+        def validate_before(cls, values: Any) -> Any:
+            return values
+
+        @model_validator(mode='after')
+        def validate_after(self) -> Self:
+            return self
+
+    MyModel(number=2)
+
+
+class InnerModel(BaseModel):
+    my_var: Union[str, None] = Field(default=None)
+
+
+class OuterModel(InnerModel):
+    pass
+
+
+m = OuterModel()
+if m.my_var is None:
+    # In https://github.com/pydantic/pydantic/issues/7399, this was unreachable
+    print('not unreachable')
+
+
+class Foo(BaseModel):
+    pass
+
+
+class Bar(Foo, RootModel[int]):
+    pass
