@@ -1513,7 +1513,6 @@ class GenerateSchema:
                 td_schema = core_schema.typed_dict_schema(
                     fields,
                     cls=typed_dict_cls,
-                    generic_origin=origin,
                     computed_fields=[
                         self._computed_field_schema(d, decorators.field_serializers)
                         for d in decorators.computed_fields.values()
