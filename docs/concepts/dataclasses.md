@@ -34,17 +34,18 @@ User(id=42, name='John Doe', signup_ts=datetime.datetime(2032, 6, 21, 12, 0))
     For more information and discussion see
     [pydantic/pydantic#710](https://github.com/pydantic/pydantic/issues/710).
 
-Similarities between Pydantic dataclasses and models include:
+Similarities between Pydantic dataclasses and models include support for:
 
 * [Configuration](#dataclass-config) support
 * [Nested](./models.md#nested-models) classes
 * [Generics](./models.md#generic-models)
-* Arguments used to instantiate the dataclass are [copied](./models.md#attribute-copies)
 
 Some differences between Pydantic dataclasses and models include:
 
 *  [validators](#validators-and-initialization-hooks)
 *  The behavior with the [`extra`][pydantic.ConfigDict.extra] configuration value
+
+Similarly to Pydantic models, arguments used to instantiate the dataclass are [copied](./models.md#attribute-copies).
 
 To make use of the [various methods](./models.md#model-methods-and-properties) to validate, dump and generate a JSON Schema,
 you can wrap the dataclass with a [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] and make use of its methods.
@@ -140,6 +141,11 @@ class MyDataclass2:
     While Pydantic dataclasses support the [`extra`][pydantic.config.ConfigDict.extra] configuration value, some default
     behavior of stdlib dataclasses may prevail. For example, any extra fields present on a Pydantic dataclass with
     [`extra`][pydantic.config.ConfigDict.extra] set to `'allow'` are omitted in the dataclass' string representation.
+
+## Rebuilding dataclass schema
+
+The [`rebuild_dataclass()`][pydantic.dataclasses.rebuild_dataclass] can be used to rebuild the core schema of the dataclass.
+See the [rebuilding model schema](./models.md#rebuilding-model-schema) section for more details.
 
 ## Stdlib dataclasses and Pydantic dataclasses
 
