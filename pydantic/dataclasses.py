@@ -232,7 +232,7 @@ def dataclass(
             #   If the class is generic, we need to make sure the subclass also inherits from Generic
             #   with all the same parameters.
             bases = (cls,)
-            if issubclass(cls, Generic):
+            if issubclass(cls, Generic) and cls.__parameters__:
                 generic_base = Generic[cls.__parameters__]  # type: ignore
                 bases = bases + (generic_base,)
             cls = types.new_class(cls.__name__, bases)
