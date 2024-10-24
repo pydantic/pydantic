@@ -20,7 +20,10 @@ print(user)
 #> name='John Doe'
 ```
 
-You can also use `default_factory` to define a callable that will be called to generate a default value.
+!!! note
+    If you use the [`Optional`][typing.Optional] annotation, it doesn't mean that the field has a default value of `None`!
+
+You can also use `default_factory` (but not both at the same time) to define a callable that will be called to generate a default value.
 
 ```py
 from uuid import uuid4
@@ -32,11 +35,25 @@ class User(BaseModel):
     id: str = Field(default_factory=lambda: uuid4().hex)
 ```
 
-!!! info
-    The `default` and `default_factory` parameters are mutually exclusive.
+The default factory can also take a single required argument, in which the case the already validated data will be passed as a dictionary.
 
-!!! note
-    If you use `typing.Optional`, it doesn't mean that the field has a default value of `None`!
+```py
+from pydantic import BaseModel, EmailStr, Field
+
+
+class User(BaseModel):
+    email: EmailStr
+    username: str = Field(default_factory=lambda data: data['email'])
+
+
+user = User(email='user@example.com')
+print(user.username)
+#> user@example.com
+```
+
+The `data` argument will *only* contain the already validated data, based on the [order of model fields](./models.md#field-ordering)
+(the above example would fail if `username` were to be defined before `email`).
+
 
 ## Using `Annotated`
 

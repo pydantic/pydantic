@@ -372,21 +372,12 @@ jobs:
           path: python-coverage-comment-action.txt
 
   test-typing-extensions:
-    name: test typing-extensions ${{ matrix.typing-extensions-version }} on Python ${{ matrix.python-version }}
+    name: test typing-extensions (`main` branch) on Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # test the oldest supported version and main
-        typing-extensions-version: ['4.6.1', 'main']
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
-        exclude:
-          - typing-extensions-version: '4.6.1'
-            python-version: '3.13'
-        include:
-          - typing-extensions-version: '4.12.2'
-            python-version: '3.13'
-
     steps:
     - uses: actions/checkout@v4
 
@@ -403,11 +394,7 @@ jobs:
 
     - name: install typing-extensions
       run: |
-        if [ ${{ matrix.typing-extensions-version }} == 'main' ]; then
-          pdm remove typing-extensions && pdm add 'typing-extensions @ git+https://github.com/python/typing_extensions.git'
-        else
-          pdm remove typing-extensions && pdm add 'typing-extensions==${{ matrix.typing-extensions-version }}'
-        fi
+        pdm remove typing-extensions && pdm add 'typing-extensions @ git+https://github.com/python/typing_extensions.git'
         pdm list
     - name: test
       run: make test

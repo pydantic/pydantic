@@ -14,7 +14,7 @@ import dataclasses
 import os
 import typing
 from functools import partial
-from typing import Any, Callable, Iterable, Tuple, TypeVar
+from typing import Any, Callable, Iterable, Tuple, TypeVar, cast
 
 import typing_extensions
 from pydantic_core import (
@@ -300,7 +300,8 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
     else:
         field_info = None
     if field_info and field_info.default_factory:
-        default_default_factory = field_info.default_factory
+        # Assume the default factory does not take any argument:
+        default_default_factory = cast(Callable[[], Any], field_info.default_factory)
     else:
         default_default_factory = infer_default()
     return default_default_factory

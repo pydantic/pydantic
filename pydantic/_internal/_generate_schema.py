@@ -91,7 +91,7 @@ from ._decorators import (
     inspect_validator,
 )
 from ._docs_extraction import extract_docstrings_from_cls
-from ._fields import collect_dataclass_fields
+from ._fields import collect_dataclass_fields, takes_validated_data_argument
 from ._forward_ref import PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, has_instance_in_type, recursively_defined_type_refs, replace_types
 from ._import_utils import import_cached_base_model, import_cached_field_info
@@ -2435,7 +2435,10 @@ def wrap_default(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_
     """
     if field_info.default_factory:
         return core_schema.with_default_schema(
-            schema, default_factory=field_info.default_factory, validate_default=field_info.validate_default
+            schema,
+            default_factory=field_info.default_factory,
+            default_factory_takes_data=takes_validated_data_argument(field_info.default_factory),
+            validate_default=field_info.validate_default,
         )
     elif field_info.default is not PydanticUndefined:
         return core_schema.with_default_schema(
