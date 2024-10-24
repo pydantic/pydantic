@@ -117,6 +117,8 @@ make docs
 # You can also use `pdm run mkdocs serve` to serve the documentation at localhost:8000
 ```
 
+If this isn't working due to issues with the imaging plugin, try commenting out the `social` plugin line in `mkdocs.yml` and running `make docs` again.
+
 #### Updating the documentation
 
 We push a new version of the documentation with each minor release, and we push to a `dev` path with each commit to `main`.

@@ -411,6 +411,8 @@ def test_model_title_generator_returns_invalid_type(invalid_return_value, TypedD
         class Model(BaseModel):
             model_config = ConfigDict(model_title_generator=lambda m: invalid_return_value)
 
+        Model.model_json_schema()
+
     with pytest.raises(
         TypeError, match=f'model_title_generator .* must return str, not {invalid_return_value.__class__}'
     ):
@@ -418,6 +420,8 @@ def test_model_title_generator_returns_invalid_type(invalid_return_value, TypedD
         @pydantic.dataclasses.dataclass(config=ConfigDict(model_title_generator=lambda m: invalid_return_value))
         class MyDataclass:
             pass
+
+        TypeAdapter(MyDataclass).json_schema()
 
     with pytest.raises(
         TypeError, match=f'model_title_generator .* must return str, not {invalid_return_value.__class__}'
@@ -427,7 +431,7 @@ def test_model_title_generator_returns_invalid_type(invalid_return_value, TypedD
             __pydantic_config__ = ConfigDict(model_title_generator=lambda m: invalid_return_value)
             pass
 
-        TypeAdapter(MyTypedDict)
+        TypeAdapter(MyTypedDict).json_schema()
 
 
 @pytest.mark.parametrize('invalid_return_value', (1, 2, 3, tuple(), list(), object()))
