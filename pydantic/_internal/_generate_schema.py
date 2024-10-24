@@ -1118,6 +1118,7 @@ class GenerateSchema:
             serialization_alias=common_field['serialization_alias'],
             frozen=common_field['frozen'],
             metadata=common_field['metadata'],
+            none_as_default=field_info.none_as_default,
         )
 
     def _generate_dc_field_schema(

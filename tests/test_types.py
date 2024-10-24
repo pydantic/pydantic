@@ -1285,7 +1285,7 @@ class BoolCastable:
         ('bool_check', 'f', False),
         ('bool_check', 'F', False),
         ('bool_check', b'FALSE', False),
-        ('bool_check', None, ValidationError),
+        ('bool_check', None, True),
         ('bool_check', '', ValidationError),
         ('bool_check', [], ValidationError),
         ('bool_check', {}, ValidationError),
