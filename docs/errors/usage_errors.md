@@ -625,6 +625,26 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'create-model-field-definitions'
 ```
 
+## `create_model` clashing field names {#create-model-clashing-validator-field-name}
+
+This error is raised when you provide a validator name which clashes with the field name.
+
+```py
+from pydantic import PydanticUserError, create_model, field_validator
+
+
+def bar(s: str) -> str:
+    return s
+
+
+validator = field_validator("bar", mode="before")(bar)
+validators = {"bar": validator}
+try:
+    create_model("Foo", bar=(str, ...), __validators__=validators)
+except PydanticUserError as exc_info:
+    assert exc_info.code == "create-model-clashing-validator-field-name"
+```
+
 ## `create_model` config base {#create-model-config-base}
 
 This error is raised when you use both `__config__` and `__base__` together in `create_model`.

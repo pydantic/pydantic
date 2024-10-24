@@ -1660,6 +1660,12 @@ def create_model(  # noqa: C901
     if __doc__:
         namespace.update({'__doc__': __doc__})
     if __validators__:
+        conflicting_members = __validators__.keys() & fields.keys()
+        if conflicting_members:
+            raise PydanticUserError(
+                f'Clashing validator name with field name found for: {conflicting_members}. Field names and validator names must be different.',
+                code='create-model-clashing-validator-field-name',
+            )
         namespace.update(__validators__)
     namespace.update(fields)
     if __config__:
