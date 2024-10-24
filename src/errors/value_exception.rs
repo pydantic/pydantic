@@ -54,7 +54,7 @@ impl PydanticUseDefault {
     }
 }
 
-#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core")]
+#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", subclass)]
 #[derive(Debug, Clone, Default)]
 pub struct PydanticCustomError {
     error_type: String,
