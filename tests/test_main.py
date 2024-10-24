@@ -232,16 +232,7 @@ def test_not_required():
 
     assert Model(a=12.2).a == 12.2
     assert Model().a is None
-    with pytest.raises(ValidationError) as exc_info:
-        Model(a=None)
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'float_type',
-            'loc': ('a',),
-            'msg': 'Input should be a valid number',
-            'input': None,
-        },
-    ]
+    assert Model(a=None).a is None
 
 
 def test_allow_extra():

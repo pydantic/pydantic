@@ -50,6 +50,7 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
 
     annotation: type[Any] | None
     default_factory: typing.Callable[[], Any] | None
+    none_as_default: bool | None
     alias: str | None
     alias_priority: int | None
     validation_alias: str | AliasPath | AliasChoices | None
@@ -105,6 +106,7 @@ class FieldInfo(_repr.Representation):
         annotation: The type annotation of the field.
         default: The default value of the field.
         default_factory: The factory function used to construct the default for the field.
+        none_as_default: Whether to use default when passed `None`.
         alias: The alias name of the field.
         alias_priority: The priority of the field's alias.
         validation_alias: The validation alias of the field.
@@ -130,6 +132,7 @@ class FieldInfo(_repr.Representation):
     annotation: type[Any] | None
     default: Any
     default_factory: typing.Callable[[], Any] | None
+    none_as_default: bool | None
     alias: str | None
     alias_priority: int | None
     validation_alias: str | AliasPath | AliasChoices | None
@@ -154,6 +157,7 @@ class FieldInfo(_repr.Representation):
         'annotation',
         'default',
         'default_factory',
+        'none_as_default',
         'alias',
         'alias_priority',
         'validation_alias',
@@ -220,7 +224,7 @@ class FieldInfo(_repr.Representation):
 
         if self.default is not PydanticUndefined and self.default_factory is not None:
             raise TypeError('cannot specify both default and default_factory')
-
+        self.none_as_default = kwargs.pop('none_as_default', None)
         self.alias = kwargs.pop('alias', None)
         self.validation_alias = kwargs.pop('validation_alias', None)
         self.serialization_alias = kwargs.pop('serialization_alias', None)
@@ -661,6 +665,7 @@ class _EmptyKwargs(typing_extensions.TypedDict):
 _DefaultValues = {
     'default': ...,
     'default_factory': None,
+    'none_as_default': None,
     'alias': None,
     'alias_priority': None,
     'validation_alias': None,
@@ -818,6 +823,7 @@ def Field(  # noqa: C901
     default: Any = PydanticUndefined,
     *,
     default_factory: Callable[[], Any] | None = _Unset,
+    none_as_default: bool | None = _Unset,
     alias: str | None = _Unset,
     alias_priority: int | None = _Unset,
     validation_alias: str | AliasPath | AliasChoices | None = _Unset,
@@ -866,6 +872,7 @@ def Field(  # noqa: C901
     Args:
         default: Default value if the field is not set.
         default_factory: A callable to generate the default value, such as :func:`~datetime.utcnow`.
+        none_as_default: Whether to use default when passed `None`.
         alias: The name to use for the attribute when validating or serializing by alias.
             This is often used for things like converting between snake and camel case.
         alias_priority: Priority of the alias. This affects whether an alias generator is used.
@@ -984,6 +991,7 @@ def Field(  # noqa: C901
     return FieldInfo.from_field(
         default,
         default_factory=default_factory,
+        none_as_default=none_as_default,
         alias=alias,
         alias_priority=alias_priority,
         validation_alias=validation_alias,

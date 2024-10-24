@@ -89,6 +89,7 @@ class ConfigWrapper:
     validation_error_cause: bool
     use_attribute_docstrings: bool
     cache_strings: bool | Literal['all', 'keys', 'none']
+    none_as_default: bool
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
         if check:
@@ -284,6 +285,7 @@ config_defaults = ConfigDict(
     validation_error_cause=False,
     use_attribute_docstrings=False,
     cache_strings=True,
+    none_as_default=True,
 )
 
 

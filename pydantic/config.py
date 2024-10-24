@@ -1012,6 +1012,8 @@ class ConfigDict(TypedDict, total=False):
         as the performance difference is minimal if repeated strings are rare.
     """
 
+    none_as_default: bool
+
 
 _TypeT = TypeVar('_TypeT', bound=type)
 
