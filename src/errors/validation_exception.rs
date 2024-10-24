@@ -7,7 +7,7 @@ use pyo3::ffi;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::sync::GILOnceCell;
-use pyo3::types::{PyDict, PyList, PyString};
+use pyo3::types::{PyDict, PyList, PyString, PyType};
 use serde::ser::{Error, SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer};
 
@@ -26,7 +26,7 @@ use super::types::ErrorType;
 use super::value_exception::PydanticCustomError;
 use super::{InputValue, ValError};
 
-#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core")]
+#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core", subclass)]
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct ValidationError {
@@ -248,27 +248,35 @@ impl ValidationError {
 
 #[pymethods]
 impl ValidationError {
-    #[staticmethod]
+    #[new]
     #[pyo3(signature = (title, line_errors, input_type="python", hide_input=false))]
-    fn from_exception_data(
-        py: Python,
+    fn py_new(title: PyObject, line_errors: Vec<PyLineError>, input_type: &str, hide_input: bool) -> PyResult<Self> {
+        Ok(Self {
+            line_errors,
+            title,
+            input_type: InputType::try_from(input_type)?,
+            hide_input,
+        })
+    }
+
+    #[classmethod]
+    #[pyo3(signature = (title, line_errors, input_type="python", hide_input=false))]
+    fn from_exception_data<'py>(
+        cls: &Bound<'py, PyType>,
         title: PyObject,
         line_errors: Bound<'_, PyList>,
         input_type: &str,
         hide_input: bool,
-    ) -> PyResult<Py<Self>> {
-        Py::new(
-            py,
-            Self {
-                line_errors: line_errors
-                    .iter()
-                    .map(|error| PyLineError::try_from(&error))
-                    .collect::<PyResult<_>>()?,
-                title,
-                input_type: InputType::try_from(input_type)?,
-                hide_input,
-            },
-        )
+    ) -> PyResult<Bound<'py, PyAny>> {
+        cls.call1((
+            title,
+            line_errors
+                .iter()
+                .map(|error| PyLineError::try_from(&error))
+                .collect::<PyResult<Vec<PyLineError>>>()?,
+            InputType::try_from(input_type)?,
+            hide_input,
+        ))
     }
 
     #[getter]
