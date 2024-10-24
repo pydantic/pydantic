@@ -556,12 +556,12 @@ class FieldInfo(_repr.Representation):
         return self.deprecated if isinstance(self.deprecated, str) else self.deprecated.message
 
     @overload
-    def get_default(self, *, call_default_factory: Literal[False]) -> Any: ...
-
-    @overload
     def get_default(self, *, call_default_factory: Literal[True], validated_data: dict[str, Any]) -> Any: ...
 
-    def get_default(self, *, call_default_factory: bool, validated_data: dict[str, Any] | None = None) -> Any:
+    @overload
+    def get_default(self, *, call_default_factory: Literal[False] = ...) -> Any: ...
+
+    def get_default(self, *, call_default_factory: bool = False, validated_data: dict[str, Any] | None = None) -> Any:
         """Get the default value.
 
         We expose an option for whether to call the default_factory (if present), as calling it may
