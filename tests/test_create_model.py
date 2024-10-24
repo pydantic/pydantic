@@ -229,6 +229,17 @@ def test_inheritance_validators_all():
     assert model(a=2, b=6).model_dump() == {'a': 4, 'b': 12}
 
 
+def test_create_clashing_field_validator_name_with_field_name():
+    def bar(s: str) -> str:
+        return 'foo' + s
+
+    validator = field_validator('bar', mode='before')(bar)
+    validators = {'bar': validator}
+
+    with pytest.raises(PydanticUserError):
+        create_model('Foo', bar=(str, ...), __validators__=validators)
+
+
 def test_funky_name():
     model = create_model('FooModel', **{'this-is-funky': (int, ...)})
     m = model(**{'this-is-funky': '123'})
