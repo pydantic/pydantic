@@ -3343,7 +3343,11 @@ to help you monitor and understand your
 <span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
 <span class="c1">#&gt; name=&#39;John Doe&#39;</span>
 </code></pre></div>
-<p>You can also use <code>default_factory</code> to define a callable that will be called to generate a default value.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you use the <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/typing.html#typing.Optional"><code>Optional</code></a> annotation, it doesn't mean that the field has a default value of <code>None</code>!</p>
+</div>
+<p>You can also use <code>default_factory</code> (but not both at the same time) to define a callable that will be called to generate a default value.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">uuid4</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
@@ -3352,14 +3356,21 @@ to help you monitor and understand your
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">)</span>
 </code></pre></div>
-<div class="admonition info">
-<p class="admonition-title">Info</p>
-<p>The <code>default</code> and <code>default_factory</code> parameters are mutually exclusive.</p>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>If you use <code>typing.Optional</code>, it doesn't mean that the field has a default value of <code>None</code>!</p>
-</div>
+<p>The default factory can also take a single required argument, in which the case the already validated data will be passed as a dictionary.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">email</span><span class="p">:</span> <span class="n">EmailStr</span>
+    <span class="n">username</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span> <span class="n">data</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;email&#39;</span><span class="p">])</span>
+
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">email</span><span class="o">=</span><span class="s1">&#39;user@example.com&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">username</span><span class="p">)</span>
+<span class="c1">#&gt; user@example.com</span>
+</code></pre></div>
+<p>The <code>data</code> argument will <em>only</em> contain the already validated data, based on the <a href="../models/#field-ordering">order of model fields</a>
+(the above example would fail if <code>username</code> were to be defined before <code>email</code>).</p>
 <h2 id="using-annotated">Using <code>Annotated</code><a class="headerlink" href="#using-annotated" title="Permanent link">&para;</a></h2>
 <p>The <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a> function can also be used together with <a href="https://docs.python.org/3/library/typing.html#typing.Annotated"><code>Annotated</code></a>.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">uuid4</span>
