@@ -12,7 +12,7 @@ from typing import (
 
 from pydantic_core import CoreSchema, core_schema
 from pydantic_core import validate_core_schema as _validate_core_schema
-from typing_extensions import TypeAliasType, TypeGuard, get_args, get_origin
+from typing_extensions import TypeGuard, get_args, get_origin
 
 from . import _repr
 from ._typing_extra import TYPE_ALIAS_TYPES, is_generic_alias

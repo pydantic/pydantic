@@ -98,7 +98,14 @@ from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import MockCoreSchema
 from ._namespace_utils import NamespacesTuple, NsResolver
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
-from ._typing_extra import TYPE_ALIAS_TYPES, get_cls_type_hints, is_annotated, is_finalvar, is_self_type, is_zoneinfo_type
+from ._typing_extra import (
+    TYPE_ALIAS_TYPES,
+    get_cls_type_hints,
+    is_annotated,
+    is_finalvar,
+    is_self_type,
+    is_zoneinfo_type,
+)
 from ._utils import lenient_issubclass, smart_deepcopy
 from ._validate_call import VALIDATE_CALL_SUPPORTED_TYPES, ValidateCallSupportedTypes
 
