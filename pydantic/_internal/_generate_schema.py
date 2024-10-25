@@ -155,6 +155,13 @@ _mode_to_validator: dict[
     FieldValidatorModes, type[BeforeValidator | AfterValidator | PlainValidator | WrapValidator]
 ] = {'before': BeforeValidator, 'after': AfterValidator, 'plain': PlainValidator, 'wrap': WrapValidator}
 
+TYPE_ALIAS_TYPES: tuple[type, ...]
+if hasattr(typing, "TypeAliasType"):
+    from typing import TypeAliasType as typing_TypeAliasType
+    TYPE_ALIAS_TYPES = (TypeAliasType, typing_TypeAliasType)
+else:
+    TYPE_ALIAS_TYPES = (TypeAliasType,)
+
 
 def check_validator_fields_against_field_name(
     info: FieldDecoratorInfo,
@@ -986,7 +993,7 @@ class GenerateSchema:
             return self._sequence_schema(Any)
         elif obj in DICT_TYPES:
             return self._dict_schema(Any, Any)
-        elif isinstance(obj, TypeAliasType):
+        elif isinstance(obj, TYPE_ALIAS_TYPES):
             return self._type_alias_type_schema(obj)
         elif obj is type:
             return self._type_schema()
