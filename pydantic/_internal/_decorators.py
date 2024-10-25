@@ -804,7 +804,7 @@ def count_positional_required_params(sig: Signature) -> int:
         # First argument is the value being validated/serialized, and can have a default value
         # (e.g. `float`, which has signature `(x=0, /)`). We assume other parameters (the info arg
         # for instance) should be required, and thus without any default value.
-        and (param.default is Parameter.empty or param == parameters[0])
+        and (param.default is Parameter.empty or param is parameters[0])
     )
 
 
