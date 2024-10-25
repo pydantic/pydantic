@@ -1511,8 +1511,8 @@ class GenerateJsonSchema:
 
         if docstring:
             json_schema.setdefault('description', inspect.cleandoc(docstring))
-        elif issubclass(cls, RootModel) and cls.__pydantic_fields__['root'].description:
-            json_schema['description'] = cls.__pydantic_fields__['root'].description
+        elif issubclass(cls, RootModel) and (root_description := cls.__pydantic_fields__['root'].description):
+            json_schema.setdefault('description', root_description)
 
         extra = config.get('extra')
         if 'additionalProperties' not in json_schema:
