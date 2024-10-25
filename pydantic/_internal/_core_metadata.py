@@ -1,9 +1,7 @@
 from __future__ import annotations as _annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Dict, cast
+from typing import TYPE_CHECKING, Any, Dict, TypedDict, cast
 from warnings import warn
-
-from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
     from pydantic_core import CoreSchema
@@ -47,6 +45,7 @@ class CoreMetadata(TypedDict, total=False):
 def update_core_metadata(
     core_metadata: Any,
     /,
+    *,
     pydantic_js_functions: list[GetJsonSchemaFunction] | None = None,
     pydantic_js_annotation_functions: list[GetJsonSchemaFunction] | None = None,
     pydantic_js_prefer_positional_arguments: bool | None = None,
@@ -92,13 +91,14 @@ def update_core_metadata(
         if isinstance(existing_pydantic_js_extra, dict):
             if isinstance(pydantic_js_extra, dict):
                 core_metadata['pydantic_js_extra'] = {**existing_pydantic_js_extra, **pydantic_js_extra}
-            if isinstance(pydantic_js_extra, Callable):
+            if callable(pydantic_js_extra):
                 warn(
                     'Composing `dict` and `callable` type `json_schema_extra` is not supported.'
+                    'The `callable` type is being ignored.'
                     "If you'd like support for this behavior, please open an issue on pydantic.",
                     PydanticJsonSchemaWarning,
                 )
-        if isinstance(existing_pydantic_js_extra, Callable):
+        if callable(existing_pydantic_js_extra):
             # if ever there's a case of a callable, we'll just keep the last json schema extra spec
             core_metadata['pydantic_js_extra'] = pydantic_js_extra
 

@@ -462,13 +462,14 @@ class FieldInfo(_repr.Representation):
                             **existing_json_schema_extra,
                             **json_schema_extra,
                         }
-                    if isinstance(json_schema_extra, Callable):
+                    if callable(json_schema_extra):
                         warn(
                             'Composing `dict` and `callable` type `json_schema_extra` is not supported.'
+                            'The `callable` type is being ignored.'
                             "If you'd like support for this behavior, please open an issue on pydantic.",
                             PydanticJsonSchemaWarning,
                         )
-                elif isinstance(json_schema_extra, Callable):
+                elif callable(json_schema_extra):
                     # if ever there's a case of a callable, we'll just keep the last json schema extra spec
                     merged_field_info_kwargs['json_schema_extra'] = json_schema_extra
             except KeyError:

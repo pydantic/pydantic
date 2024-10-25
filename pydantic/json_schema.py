@@ -1509,8 +1509,8 @@ class GenerateJsonSchema:
         # BaseModel and dataclasses; don't use cls.__doc__ as it will contain the verbose class signature by default
         docstring = None if cls is BaseModel or dataclasses.is_dataclass(cls) else cls.__doc__
 
-        if docstring and 'description' not in json_schema:
-            json_schema['description'] = inspect.cleandoc(docstring)
+        if docstring:
+            json_schema.setdefault('description', inspect.cleandoc(docstring))
         elif issubclass(cls, RootModel) and cls.__pydantic_fields__['root'].description:
             json_schema['description'] = cls.__pydantic_fields__['root'].description
 
