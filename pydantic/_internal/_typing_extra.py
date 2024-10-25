@@ -78,6 +78,14 @@ if hasattr(warnings, 'deprecated'):
 
 NONE_TYPES: tuple[Any, ...] = (None, NoneType, *(tp[None] for tp in LITERAL_TYPES))
 
+# should check for both variant of types for typing_extensions > 4.12.2
+# https://typing-extensions.readthedocs.io/en/latest/#runtime-use-of-types
+TYPE_ALIAS_TYPES: tuple[type, ...] = (
+    (TypeAliasType, typing.TypeAliasType)
+    if hasattr(typing, 'TypeAliasType')
+    else (TypeAliasType, )
+)
+
 
 TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
 
@@ -594,8 +602,8 @@ def is_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
     return dataclasses.is_dataclass(_cls)
 
 
-def origin_is_type_alias_type(origin: Any) -> TypeGuard[TypeAliasType]:
-    return isinstance(origin, TypeAliasType)
+def origin_is_type_alias_type(origin: Any) -> TypeGuard[TypeAliasType | typing.TypeAliasType]:
+    return isinstance(origin, TYPE_ALIAS_TYPES)
 
 
 if sys.version_info >= (3, 10):

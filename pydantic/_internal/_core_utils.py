@@ -15,7 +15,7 @@ from pydantic_core import validate_core_schema as _validate_core_schema
 from typing_extensions import TypeAliasType, TypeGuard, get_args, get_origin
 
 from . import _repr
-from ._typing_extra import is_generic_alias
+from ._typing_extra import TYPE_ALIAS_TYPES, is_generic_alias
 
 AnyFunctionSchema = Union[
     core_schema.AfterValidatorFunctionSchema,
@@ -85,7 +85,7 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
         args = generic_metadata['args'] or args
 
     module_name = getattr(origin, '__module__', '<No __module__>')
-    if isinstance(origin, TypeAliasType):
+    if isinstance(origin, TYPE_ALIAS_TYPES):
         type_ref = f'{module_name}.{origin.__name__}:{id(origin)}'
     else:
         try:
