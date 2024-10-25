@@ -81,9 +81,7 @@ NONE_TYPES: tuple[Any, ...] = (None, NoneType, *(tp[None] for tp in LITERAL_TYPE
 # should check for both variant of types for typing_extensions > 4.12.2
 # https://typing-extensions.readthedocs.io/en/latest/#runtime-use-of-types
 TYPE_ALIAS_TYPES: tuple[type, ...] = (
-    (TypeAliasType, typing.TypeAliasType)
-    if hasattr(typing, 'TypeAliasType')
-    else (TypeAliasType, )
+    (TypeAliasType, typing.TypeAliasType) if hasattr(typing, 'TypeAliasType') else (TypeAliasType,)
 )
 
 
