@@ -105,10 +105,11 @@ class _BaseUrl(Url):
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         if issubclass(cls, source):
-            return core_schema.url_schema(**cls._constraints.defined_constraints)
+            return core_schema.no_info_after_validator_function(
+                lambda v: source(v), schema=core_schema.url_schema(**cls._constraints.defined_constraints)
+            )
         else:
             schema = handler(source)
-            # TODO: this logic is used in types.py as well in the _check_annotated_type function, should we move that to somewhere more central?
             if annotated_type := schema['type'] not in ('url', 'multi-host-url'):
                 raise PydanticUserError(
                     f"'{cls.__name__}' cannot annotate '{annotated_type}'.", code='invalid-annotated-type'
@@ -124,7 +125,9 @@ class _BaseMultiHostUrl(MultiHostUrl):
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         if issubclass(cls, source):
-            return core_schema.multi_host_url_schema(**cls._constraints.defined_constraints)
+            return core_schema.no_info_after_validator_function(
+                lambda v: source(v), schema=core_schema.multi_host_url_schema(**cls._constraints.defined_constraints)
+            )
         else:
             schema = handler(source)
             # TODO: this logic is used in types.py as well in the _check_annotated_type function, should we move that to somewhere more central?

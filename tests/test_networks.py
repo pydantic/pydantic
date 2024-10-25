@@ -1030,3 +1030,11 @@ def test_name_email_serialization():
 
     obj = json.loads(m.model_dump_json())
     Model(email=obj['email'])
+
+
+def test_isinstance_post_validation() -> None:
+    class MyModel(BaseModel):
+        url: AnyUrl
+
+    m = MyModel(url='http://test.com')
+    assert isinstance(m.url, AnyUrl)
