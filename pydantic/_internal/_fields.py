@@ -6,9 +6,11 @@ import dataclasses
 import warnings
 from copy import copy
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Pattern
+from inspect import Parameter, signature
+from typing import TYPE_CHECKING, Any, Callable, Pattern
 
 from pydantic_core import PydanticUndefined
+from typing_extensions import TypeIs
 
 from pydantic.errors import PydanticUserError
 
@@ -19,6 +21,7 @@ from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._namespace_utils import NsResolver
 from ._repr import Representation
 from ._typing_extra import get_cls_type_hints, is_classvar, is_finalvar
+from ._utils import can_be_positional
 
 if TYPE_CHECKING:
     from annotated_types import BaseMetadata
@@ -314,8 +317,8 @@ def collect_dataclass_fields(
 
                 if (
                     not dataclass_field.init
-                    and dataclass_field.default == dataclasses.MISSING
-                    and dataclass_field.default_factory == dataclasses.MISSING
+                    and dataclass_field.default is dataclasses.MISSING
+                    and dataclass_field.default_factory is dataclasses.MISSING
                 ):
                     # TODO: We should probably do something with this so that validate_assignment behaves properly
                     #   Issue: https://github.com/pydantic/pydantic/issues/5470
@@ -362,3 +365,19 @@ def is_valid_field_name(name: str) -> bool:
 
 def is_valid_privateattr_name(name: str) -> bool:
     return name.startswith('_') and not name.startswith('__')
+
+
+def takes_validated_data_argument(
+    default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any],
+) -> TypeIs[Callable[[dict[str, Any]], Any]]:
+    """Whether the provided default factory callable has a validated data parameter."""
+    try:
+        sig = signature(default_factory)
+    except (ValueError, TypeError):
+        # `inspect.signature` might not be able to infer a signature, e.g. with C objects.
+        # In this case, we assume no data argument is present:
+        return False
+
+    parameters = list(sig.parameters.values())
+
+    return len(parameters) == 1 and can_be_positional(parameters[0]) and parameters[0].default is Parameter.empty

@@ -12,7 +12,7 @@ from typing import (
 
 from pydantic_core import CoreSchema, core_schema
 from pydantic_core import validate_core_schema as _validate_core_schema
-from typing_extensions import TypeAliasType, TypeGuard, get_args, get_origin
+from typing_extensions import TypeGuard, get_args, get_origin
 
 from . import _repr
 from ._core_metadata import CoreMetadata
@@ -86,7 +86,7 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
         args = generic_metadata['args'] or args
 
     module_name = getattr(origin, '__module__', '<No __module__>')
-    if isinstance(origin, TypeAliasType):
+    if isinstance(origin, TYPE_ALIAS_TYPES):
         type_ref = f'{module_name}.{origin.__name__}:{id(origin)}'
     else:
         try:

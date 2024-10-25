@@ -11,6 +11,7 @@ import typing
 import weakref
 from collections import OrderedDict, defaultdict, deque
 from copy import deepcopy
+from inspect import Parameter
 from itertools import zip_longest
 from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
 from typing import Any, Mapping, TypeVar
@@ -60,6 +61,25 @@ BUILTIN_COLLECTIONS: set[type[Any]] = {
     defaultdict,
     deque,
 }
+
+
+def can_be_positional(param: Parameter) -> bool:
+    """Return whether the parameter accepts a positional argument.
+
+    ```python test="skip" lint="skip"
+    def func(a, /, b, *, c):
+        pass
+
+    params = inspect.signature(func).parameters
+    can_be_positional(params['a'])
+    #> True
+    can_be_positional(params['b'])
+    #> True
+    can_be_positional(params['c'])
+    #> False
+    ```
+    """
+    return param.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
 
 
 def sequence_like(v: Any) -> bool:

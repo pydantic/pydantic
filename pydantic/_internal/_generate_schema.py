@@ -89,14 +89,21 @@ from ._decorators import (
     inspect_validator,
 )
 from ._docs_extraction import extract_docstrings_from_cls
-from ._fields import collect_dataclass_fields
+from ._fields import collect_dataclass_fields, takes_validated_data_argument
 from ._forward_ref import PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, has_instance_in_type, recursively_defined_type_refs, replace_types
 from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import MockCoreSchema
 from ._namespace_utils import NamespacesTuple, NsResolver
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
-from ._typing_extra import get_cls_type_hints, is_annotated, is_finalvar, is_self_type, is_zoneinfo_type
+from ._typing_extra import (
+    TYPE_ALIAS_TYPES,
+    get_cls_type_hints,
+    is_annotated,
+    is_finalvar,
+    is_self_type,
+    is_zoneinfo_type,
+)
 from ._utils import lenient_issubclass, smart_deepcopy
 from ._validate_call import VALIDATE_CALL_SUPPORTED_TYPES, ValidateCallSupportedTypes
 
@@ -400,7 +407,7 @@ class GenerateSchema:
                 return json_schema
 
             # we don't want to add the missing to the schema if it's the default one
-            default_missing = getattr(enum_type._missing_, '__func__', None) == Enum._missing_.__func__  # type: ignore
+            default_missing = getattr(enum_type._missing_, '__func__', None) is Enum._missing_.__func__  # pyright: ignore[reportFunctionMemberAccess]
             enum_schema = core_schema.enum_schema(
                 enum_type,
                 cases,
@@ -659,6 +666,8 @@ class GenerateSchema:
                                 extras_schema = self.generate_schema(extra_items_type)
                                 break
 
+                generic_origin: type[BaseModel] | None = getattr(cls, '__pydantic_generic_metadata__', {}).get('origin')
+
                 if cls.__pydantic_root_model__:
                     root_field = self._common_field_schema('root', fields['root'], decorators)
                     inner_schema = root_field['schema']
@@ -666,6 +675,7 @@ class GenerateSchema:
                     model_schema = core_schema.model_schema(
                         cls,
                         inner_schema,
+                        generic_origin=generic_origin,
                         custom_init=getattr(cls, '__pydantic_custom_init__', None),
                         root_model=True,
                         post_init=getattr(cls, '__pydantic_post_init__', None),
@@ -691,6 +701,7 @@ class GenerateSchema:
                     model_schema = core_schema.model_schema(
                         cls,
                         inner_schema,
+                        generic_origin=generic_origin,
                         custom_init=getattr(cls, '__pydantic_custom_init__', None),
                         root_model=False,
                         post_init=getattr(cls, '__pydantic_post_init__', None),
@@ -929,7 +940,7 @@ class GenerateSchema:
             return self._sequence_schema(Any)
         elif obj in DICT_TYPES:
             return self._dict_schema(Any, Any)
-        elif isinstance(obj, TypeAliasType):
+        elif isinstance(obj, TYPE_ALIAS_TYPES):
             return self._type_alias_type_schema(obj)
         elif obj is type:
             return self._type_schema()
@@ -993,7 +1004,7 @@ class GenerateSchema:
         if from_property is not None:
             return from_property
 
-        if isinstance(origin, TypeAliasType):
+        if isinstance(origin, TYPE_ALIAS_TYPES):
             return self._type_alias_type_schema(obj)
         elif _typing_extra.origin_is_union(origin):
             return self._union_schema(obj)
@@ -1605,7 +1616,7 @@ class GenerateSchema:
 
         if type_param == Any:
             return self._type_schema()
-        elif isinstance(type_param, TypeAliasType):
+        elif isinstance(type_param, TYPE_ALIAS_TYPES):
             return self.generate_schema(typing.Type[type_param.__value__])
         elif isinstance(type_param, typing.TypeVar):
             if type_param.__bound__:
@@ -1768,6 +1779,7 @@ class GenerateSchema:
                 dc_schema = core_schema.dataclass_schema(
                     dataclass,
                     inner_schema,
+                    generic_origin=origin,
                     post_init=has_post_init,
                     ref=dataclass_ref,
                     fields=[field.name for field in dataclasses.fields(dataclass)],
@@ -2331,7 +2343,10 @@ def wrap_default(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_
     """
     if field_info.default_factory:
         return core_schema.with_default_schema(
-            schema, default_factory=field_info.default_factory, validate_default=field_info.validate_default
+            schema,
+            default_factory=field_info.default_factory,
+            default_factory_takes_data=takes_validated_data_argument(field_info.default_factory),
+            validate_default=field_info.validate_default,
         )
     elif field_info.default is not PydanticUndefined:
         return core_schema.with_default_schema(
