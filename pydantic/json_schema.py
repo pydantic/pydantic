@@ -760,7 +760,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        if self._config.ser_json_timedelta in {'milliseconds_float', 'seconds_float'}:
+        if self._config.ser_json_timedelta == 'float':
             return {'type': 'number'}
         return {'type': 'string', 'format': 'duration'}
 
