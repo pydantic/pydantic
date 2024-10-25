@@ -98,7 +98,14 @@ from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import MockCoreSchema
 from ._namespace_utils import NamespacesTuple, NsResolver
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
-from ._typing_extra import get_cls_type_hints, is_annotated, is_finalvar, is_self_type, is_zoneinfo_type
+from ._typing_extra import (
+    TYPE_ALIAS_TYPES,
+    get_cls_type_hints,
+    is_annotated,
+    is_finalvar,
+    is_self_type,
+    is_zoneinfo_type,
+)
 from ._utils import lenient_issubclass, smart_deepcopy
 from ._validate_call import VALIDATE_CALL_SUPPORTED_TYPES, ValidateCallSupportedTypes
 
@@ -986,7 +993,7 @@ class GenerateSchema:
             return self._sequence_schema(Any)
         elif obj in DICT_TYPES:
             return self._dict_schema(Any, Any)
-        elif isinstance(obj, TypeAliasType):
+        elif isinstance(obj, TYPE_ALIAS_TYPES):
             return self._type_alias_type_schema(obj)
         elif obj is type:
             return self._type_schema()
@@ -1050,7 +1057,7 @@ class GenerateSchema:
         if from_property is not None:
             return from_property
 
-        if isinstance(origin, TypeAliasType):
+        if isinstance(origin, TYPE_ALIAS_TYPES):
             return self._type_alias_type_schema(obj)
         elif _typing_extra.origin_is_union(origin):
             return self._union_schema(obj)
@@ -1675,7 +1682,7 @@ class GenerateSchema:
 
         if type_param == Any:
             return self._type_schema()
-        elif isinstance(type_param, TypeAliasType):
+        elif isinstance(type_param, TYPE_ALIAS_TYPES):
             return self.generate_schema(typing.Type[type_param.__value__])
         elif isinstance(type_param, typing.TypeVar):
             if type_param.__bound__:
