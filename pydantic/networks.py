@@ -106,7 +106,8 @@ class _BaseUrl(Url):
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         if issubclass(cls, source):
             return core_schema.no_info_after_validator_function(
-                lambda v: source(v), schema=core_schema.url_schema(**cls._constraints.defined_constraints)
+                lambda v: source if isinstance(v, source) else source(v),
+                schema=core_schema.url_schema(**cls._constraints.defined_constraints),
             )
         else:
             schema = handler(source)
@@ -126,7 +127,8 @@ class _BaseMultiHostUrl(MultiHostUrl):
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         if issubclass(cls, source):
             return core_schema.no_info_after_validator_function(
-                lambda v: source(v), schema=core_schema.multi_host_url_schema(**cls._constraints.defined_constraints)
+                lambda v: source if isinstance(v, source) else source(v),
+                schema=core_schema.multi_host_url_schema(**cls._constraints.defined_constraints),
             )
         else:
             schema = handler(source)
