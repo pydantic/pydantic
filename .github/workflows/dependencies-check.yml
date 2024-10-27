@@ -41,10 +41,10 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - run: pip install pdm && pdm install --no-isolation
+    - run: pip install uv && uv sync --all-extras
 
-    - run: pdm run pip install ${{ matrix.PYTHON_DEPENDENCY_CASE }}
+    - run: uv pip install ${{ matrix.PYTHON_DEPENDENCY_CASE }}
 
-    - run: pdm run pip freeze
+    - run: uv pip freeze
 
     - run: make test

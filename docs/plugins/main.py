@@ -99,8 +99,8 @@ def add_mkdocs_run_deps() -> None:
     version_py = (PROJECT_ROOT / 'pydantic' / 'version.py').read_text()
     pydantic_version = re.search(r'^VERSION ?= (["\'])(.+)\1', version_py, flags=re.M).group(2)
 
-    pdm_lock = (PROJECT_ROOT / 'pdm.lock').read_text()
-    pydantic_extra_types_version = re.search(r'name = "pydantic-extra-types"\nversion = "(.+?)"', pdm_lock).group(1)
+    uv_lock = (PROJECT_ROOT / 'uv.lock').read_text()
+    pydantic_extra_types_version = re.search(r'name = "pydantic-extra-types"\nversion = "(.+?)"', uv_lock).group(1)
 
     mkdocs_run_deps = json.dumps(
         [

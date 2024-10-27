@@ -17,13 +17,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pdm-project/setup-pdm@v4
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v3
         with:
-          python-version: '3.11'
-          cache: true
+          enable-cache: true
 
       - name: install
-        run: pdm install -G linting -G email
+        run: uv sync --group linting --extra email
 
       - uses: pre-commit/action@v3.0.1
         with:
@@ -36,17 +36,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pdm-project/setup-pdm@v4
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v3
         with:
-          python-version: '3.11'
-          cache: true
+          enable-cache: true
 
       - name: install deps
-        run: pdm install -G testing -G email
+        run: uv sync --group testing --extra email
 
-      - run: pdm info && pdm list
-
-      - run: 'pdm run python -c "import pydantic.version; print(pydantic.version.version_info())"'
+      - run: 'uv run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
       - run: make test
 
@@ -65,19 +63,20 @@ jobs:
       - name: checkout current branch
         uses: actions/checkout@v4
 
-      - uses: pdm-project/setup-pdm@v4
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v3
         with:
-          python-version: '3.10'
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: install
         run: |
-          pdm venv create --with-pip --force $PYTHON
-          pdm install -G docs
-          pdm run python -m pip install --extra-index-url https://pydantic:${PPPR_TOKEN}@pppr.pydantic.dev/simple/ mkdocs-material
+          uv sync --group docs
+          uv run python -m pip install --extra-index-url https://pydantic:${PPPR_TOKEN}@pppr.pydantic.dev/simple/ mkdocs-material
         env:
           PPPR_TOKEN: ${{ secrets.PPPR_TOKEN }}
 
-      - run: pdm run python -c 'import docs.plugins.main'
+      - run: uv run python -c 'import docs.plugins.main'
 
       # Adding local symlinks gets nice source locations like
       #   pydantic_core/core_schema.py
@@ -94,7 +93,7 @@ jobs:
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
 
-      - run: pdm run mike deploy -b docs-site dev --push
+      - run: uv run mike deploy -b docs-site dev --push
         if: "github.ref == 'refs/heads/main'"
 
       - if: "github.ref == 'refs/heads/docs-update' || startsWith(github.ref, 'refs/tags/')"
@@ -104,7 +103,7 @@ jobs:
           version_file_path: 'pydantic/version.py'
           skip_env_check: true
 
-      - run: pdm run mike deploy -b docs-site ${{ steps.check-version.outputs.VERSION_MAJOR_MINOR }} latest --update-aliases --push
+      - run: uv run mike deploy -b docs-site ${{ steps.check-version.outputs.VERSION_MAJOR_MINOR }} latest --update-aliases --push
         if: "(github.ref == 'refs/heads/docs-update' || startsWith(github.ref, 'refs/tags/')) && !fromJSON(steps.check-version.outputs.IS_PRERELEASE)"
         env:
           PYDANTIC_VERSION: v${{ steps.check-version.outputs.VERSION }}

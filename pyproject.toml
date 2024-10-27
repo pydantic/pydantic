@@ -102,7 +102,10 @@ substitutions = [
     {pattern = '@@', replacement = '@'},
 ]
 
-[tool.pdm.dev-dependencies]
+[dependency-groups]
+dev = [
+    "email-validator>=2.0.0",
+]
 docs = [
     "autoflake",
     "mkdocs",
@@ -155,6 +158,14 @@ mypy = [
 # TODO: remove once memray supports 3.13
 memray = ["pytest-memray; python_version < '3.13' and platform_system != 'Windows'"]
 
+all = [
+  { include-group = "docs" },
+  { include-group = "linting" },
+  { include-group = "testing" },
+  { include-group = "mypy" },
+  { include-group = "memray" },
+]
+
 [tool.pytest.ini_options]
 testpaths = 'tests'
 xfail_strict = true
@@ -175,6 +186,9 @@ addopts = [
 markers = [
     'skip_json_schema_validation: Disable JSON Schema validation.',
 ]
+
+[tool.uv]
+default-groups = ["dev"]
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
@@ -271,3 +285,6 @@ tests-root = "tests"
 test-framework = "pytest"
 ignore-paths = []
 formatter-cmd = ["ruff check --exit-zero --fix $file", "ruff format $file"]
+
+[tool.uv.sources]
+example-plugin = { path = "tests/plugin" }

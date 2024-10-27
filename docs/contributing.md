@@ -49,10 +49,9 @@ Because of this, setting up and running the tests should be very simple.
 You'll need the following prerequisites:
 
 - Any Python version between **Python 3.9 and 3.12**
-- **virtualenv** or other virtual environment tool
+- [**uv**] (https://docs.astral.sh/uv/getting-started/installation/) or other virtual environment tool
 - **git**
 - **make**
-- [**PDM**](https://pdm.fming.dev/latest/#installation)
 
 ### Installation and setup
 
@@ -63,13 +62,13 @@ Fork the repository on GitHub and clone your fork locally.
 git clone git@github.com:<your username>/pydantic.git
 cd pydantic
 
-# Install PDM and pre-commit
+# Install UV and pre-commit
 # We use pipx here, for other options see:
-# https://pdm.fming.dev/latest/#installation
+# https://docs.astral.sh/uv/getting-started/installation/
 # https://pre-commit.com/#install
 # To get pipx itself:
 # https://pypa.github.io/pipx/
-pipx install pdm
+pipx install uv
 pipx install pre-commit
 
 # Install pydantic, dependencies, test dependencies and doc dependencies
@@ -114,7 +113,7 @@ You can find directions on how to install the required dependencies [here](https
 # Build documentation
 make docs
 # If you have changed the documentation, make sure it builds successfully.
-# You can also use `pdm run mkdocs serve` to serve the documentation at localhost:8000
+# You can also use `uv run mkdocs serve` to serve the documentation at localhost:8000
 ```
 
 If this isn't working due to issues with the imaging plugin, try commenting out the `social` plugin line in `mkdocs.yml` and running `make docs` again.
