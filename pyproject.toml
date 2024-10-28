@@ -48,10 +48,9 @@ classifiers = [
 ]
 requires-python = '>=3.8'
 dependencies = [
-    'typing-extensions>=4.6.1; python_version < "3.13"',
-    'typing-extensions>=4.12.2; python_version >= "3.13"',
+    "typing-extensions>=4.12.2",
     'annotated-types>=0.6.0',
-    "pydantic-core==2.24.2",
+    "pydantic-core==2.25.0",
 ]
 dynamic = ['version', 'readme']
 
