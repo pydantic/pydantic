@@ -164,7 +164,7 @@ class DequeValidator:
     metadata: dict[str, Any]
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        if self.item_source_type is Any:
+        if _typing_extra.is_any(self.item_source_type):
             items_schema = None
         else:
             items_schema = handler.generate_schema(self.item_source_type)
@@ -320,11 +320,11 @@ class MappingValidator:
         return handler(v)
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        if self.keys_source_type is Any:
+        if _typing_extra.is_any(self.keys_source_type):
             keys_schema = None
         else:
             keys_schema = handler.generate_schema(self.keys_source_type)
-        if self.values_source_type is Any:
+        if _typing_extra.is_any(self.values_source_type):
             values_schema = None
         else:
             values_schema = handler.generate_schema(self.values_source_type)

@@ -4,15 +4,15 @@ from collections import namedtuple
 from typing import Callable, ClassVar, ForwardRef, NamedTuple
 
 import pytest
-from typing_extensions import Literal, get_origin
+from typing_extensions import Annotated, Literal, get_origin
 
 from pydantic import BaseModel, Field  # noqa: F401
 from pydantic._internal._typing_extra import (
     NoneType,
     eval_type,
     get_function_type_hints,
-    is_classvar,
-    is_literal_type,
+    is_classvar_annotation,
+    is_literal,
     is_namedtuple,
     is_none_type,
     origin_is_union,
@@ -76,19 +76,19 @@ def test_is_union(union):
 def test_is_literal_with_typing_extension_literal():
     from typing_extensions import Literal
 
-    assert is_literal_type(Literal) is False
-    assert is_literal_type(Literal['foo']) is True
+    assert is_literal(Literal) is False
+    assert is_literal(Literal['foo']) is True
 
 
 def test_is_literal_with_typing_literal():
     from typing import Literal
 
-    assert is_literal_type(Literal) is False
-    assert is_literal_type(Literal['foo']) is True
+    assert is_literal(Literal) is False
+    assert is_literal(Literal['foo']) is True
 
 
 @pytest.mark.parametrize(
-    'ann_type,extepcted',
+    ['ann_type', 'extepcted'],
     (
         (None, False),
         (ForwardRef('Other[int]'), False),
@@ -96,11 +96,15 @@ def test_is_literal_with_typing_literal():
         (ForwardRef('ClassVar[int]'), True),
         (ForwardRef('t.ClassVar[int]'), True),
         (ForwardRef('typing.ClassVar[int]'), True),
+        (ForwardRef('Annotated[ClassVar[int], ...]'), True),
+        (ForwardRef('Annotated[t.ClassVar[int], ...]'), True),
+        (ForwardRef('t.Annotated[t.ClassVar[int], ...]'), True),
         (ClassVar[int], True),
+        (Annotated[ClassVar[int], ...], True),
     ),
 )
-def test_is_classvar(ann_type, extepcted):
-    assert is_classvar(ann_type) is extepcted
+def test_is_classvar_annotation(ann_type, extepcted):
+    assert is_classvar_annotation(ann_type) is extepcted
 
 
 def test_parent_frame_namespace(mocker):

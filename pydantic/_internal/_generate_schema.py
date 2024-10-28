@@ -96,14 +96,6 @@ from ._import_utils import import_cached_base_model, import_cached_field_info
 from ._mock_val_ser import MockCoreSchema
 from ._namespace_utils import NamespacesTuple, NsResolver
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
-from ._typing_extra import (
-    TYPE_ALIAS_TYPES,
-    get_cls_type_hints,
-    is_annotated,
-    is_finalvar,
-    is_self_type,
-    is_zoneinfo_type,
-)
 from ._utils import lenient_issubclass, smart_deepcopy
 from ._validate_call import VALIDATE_CALL_SUPPORTED_TYPES, ValidateCallSupportedTypes
 
@@ -662,7 +654,7 @@ class GenerateSchema:
                                 extras_annotation,
                                 required=True,
                             )[1]
-                            if extra_items_type is not Any:
+                            if not _typing_extra.is_any(extra_items_type):
                                 extras_schema = self.generate_schema(extra_items_type)
                                 break
 
@@ -739,7 +731,7 @@ class GenerateSchema:
         decide whether to use a `__pydantic_core_schema__` attribute, or generate a fresh schema.
         """
         # avoid calling `__get_pydantic_core_schema__` if we've already visited this object
-        if is_self_type(obj):
+        if _typing_extra.is_self(obj):
             obj = self._resolve_self_type(obj)
         with self.defs.get_schema_or_ref(obj) as (_, maybe_schema):
             if maybe_schema is not None:
@@ -855,7 +847,7 @@ class GenerateSchema:
         return args[0], args[1]
 
     def _generate_schema_inner(self, obj: Any) -> core_schema.CoreSchema:
-        if is_annotated(obj):
+        if _typing_extra.is_annotated(obj):
             return self._annotated_schema(obj)
 
         if isinstance(obj, dict):
@@ -904,7 +896,7 @@ class GenerateSchema:
             return core_schema.bool_schema()
         elif obj is complex:
             return core_schema.complex_schema()
-        elif obj is Any or obj is object:
+        elif _typing_extra.is_any(obj) or obj is object:
             return core_schema.any_schema()
         elif obj is datetime.date:
             return core_schema.date_schema()
@@ -940,13 +932,13 @@ class GenerateSchema:
             return self._sequence_schema(Any)
         elif obj in DICT_TYPES:
             return self._dict_schema(Any, Any)
-        elif isinstance(obj, TYPE_ALIAS_TYPES):
+        elif _typing_extra.is_typealiastype(obj):
             return self._type_alias_type_schema(obj)
         elif obj is type:
             return self._type_schema()
-        elif _typing_extra.is_callable_type(obj):
+        elif _typing_extra.is_callable(obj):
             return core_schema.callable_schema()
-        elif _typing_extra.is_literal_type(obj):
+        elif _typing_extra.is_literal(obj):
             return self._literal_schema(obj)
         elif is_typeddict(obj):
             return self._typed_dict_schema(obj, None)
@@ -957,11 +949,11 @@ class GenerateSchema:
             return self.generate_schema(obj.__supertype__)
         elif obj is re.Pattern:
             return self._pattern_schema(obj)
-        elif obj is collections.abc.Hashable or obj is typing.Hashable:
+        elif _typing_extra.is_hashable(obj):
             return self._hashable_schema()
         elif isinstance(obj, typing.TypeVar):
             return self._unsubstituted_typevar_schema(obj)
-        elif is_finalvar(obj):
+        elif _typing_extra.is_finalvar(obj):
             if obj is Final:
                 return core_schema.any_schema()
             return self.generate_schema(
@@ -971,10 +963,10 @@ class GenerateSchema:
             return self._call_schema(obj)
         elif inspect.isclass(obj) and issubclass(obj, Enum):
             return self._enum_schema(obj)
-        elif is_zoneinfo_type(obj):
+        elif _typing_extra.is_zoneinfo_type(obj):
             return self._zoneinfo_schema()
 
-        if _typing_extra.is_dataclass(obj):
+        if dataclasses.is_dataclass(obj):
             return self._dataclass_schema(obj, None)
 
         origin = get_origin(obj)
@@ -995,8 +987,8 @@ class GenerateSchema:
         # on _GenericAlias delegate to the origin type, so lose the information about the concrete parametrization
         # As a result, currently, there is no way to cache the schema for generic dataclasses. This may be possible
         # to resolve by modifying the value returned by `Generic.__class_getitem__`, but that is a dangerous game.
-        if _typing_extra.is_dataclass(origin):
-            return self._dataclass_schema(obj, origin)
+        if dataclasses.is_dataclass(origin):
+            return self._dataclass_schema(obj, origin)  # pyright: ignore[reportArgumentType]
         if _typing_extra.is_namedtuple(origin):
             return self._namedtuple_schema(obj, origin)
 
@@ -1004,7 +996,7 @@ class GenerateSchema:
         if from_property is not None:
             return from_property
 
-        if isinstance(origin, TYPE_ALIAS_TYPES):
+        if _typing_extra.is_typealiastype(origin):
             return self._type_alias_type_schema(obj)
         elif _typing_extra.origin_is_union(origin):
             return self._union_schema(obj)
@@ -1353,7 +1345,7 @@ class GenerateSchema:
 
     def _literal_schema(self, literal_type: Any) -> CoreSchema:
         """Generate schema for a Literal."""
-        expected = _typing_extra.all_literal_values(literal_type)
+        expected = _typing_extra.literal_values(literal_type)
         assert expected, f'literal "expected" cannot be empty, obj={literal_type}'
         schema = core_schema.literal_schema(expected)
 
@@ -1419,7 +1411,9 @@ class GenerateSchema:
                     field_docstrings = None
 
                 try:
-                    annotations = get_cls_type_hints(typed_dict_cls, ns_resolver=self._ns_resolver, lenient=False)
+                    annotations = _typing_extra.get_cls_type_hints(
+                        typed_dict_cls, ns_resolver=self._ns_resolver, lenient=False
+                    )
                 except NameError as e:
                     raise PydanticUndefinedAnnotation.from_name_error(e) from e
 
@@ -1427,13 +1421,13 @@ class GenerateSchema:
                     annotation = replace_types(annotation, typevars_map)
                     required = field_name in required_keys
 
-                    if get_origin(annotation) == _typing_extra.Required:
+                    if _typing_extra.is_required(annotation):
                         required = True
                         annotation = self._get_args_resolving_forward_refs(
                             annotation,
                             required=True,
                         )[0]
-                    elif get_origin(annotation) == _typing_extra.NotRequired:
+                    elif _typing_extra.is_not_required(annotation):
                         required = False
                         annotation = self._get_args_resolving_forward_refs(
                             annotation,
@@ -1481,7 +1475,9 @@ class GenerateSchema:
                 namedtuple_cls = origin
 
             try:
-                annotations = get_cls_type_hints(namedtuple_cls, ns_resolver=self._ns_resolver, lenient=False)
+                annotations = _typing_extra.get_cls_type_hints(
+                    namedtuple_cls, ns_resolver=self._ns_resolver, lenient=False
+                )
             except NameError as e:
                 raise PydanticUndefinedAnnotation.from_name_error(e) from e
             if not annotations:
@@ -1614,9 +1610,9 @@ class GenerateSchema:
         # Assume `type[Annotated[<typ>, ...]]` is equivalent to `type[<typ>]`:
         type_param = _typing_extra.annotated_type(type_param) or type_param
 
-        if type_param == Any:
+        if _typing_extra.is_any(type_param):
             return self._type_schema()
-        elif isinstance(type_param, TYPE_ALIAS_TYPES):
+        elif _typing_extra.is_typealiastype(type_param):
             return self.generate_schema(typing.Type[type_param.__value__])
         elif isinstance(type_param, typing.TypeVar):
             if type_param.__bound__:
@@ -1632,7 +1628,7 @@ class GenerateSchema:
         elif _typing_extra.origin_is_union(get_origin(type_param)):
             return self._union_is_subclass_schema(type_param)
         else:
-            if is_self_type(type_param):
+            if _typing_extra.is_self(type_param):
                 type_param = self._resolve_self_type(type_param)
 
             if not inspect.isclass(type_param):
@@ -1648,7 +1644,7 @@ class GenerateSchema:
 
         json_schema = smart_deepcopy(list_schema)
         python_schema = core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence')
-        if items_type != Any:
+        if not _typing_extra.is_any(items_type):
             from ._validators import sequence_validator
 
             python_schema = core_schema.chain_schema(
@@ -2378,7 +2374,7 @@ def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSch
             )
 
     # handle GenericAlias' but ignore Annotated which "lies" about its origin (in this case it would be `int`)
-    if hasattr(tp, '__origin__') and not is_annotated(tp):
+    if hasattr(tp, '__origin__') and not _typing_extra.is_annotated(tp):
         return _extract_get_pydantic_json_schema(tp.__origin__, schema)
 
     if js_modify_function is None:

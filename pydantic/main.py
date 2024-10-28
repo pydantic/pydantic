@@ -759,7 +759,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         _generics.check_parameters_count(cls, typevar_values)
 
         # Build map from generic typevars to passed params
-        typevars_map: dict[_typing_extra.TypeVarType, type[Any]] = dict(
+        typevars_map: dict[TypeVar, type[Any]] = dict(
             zip(cls.__pydantic_generic_metadata__['parameters'], typevar_values)
         )
 

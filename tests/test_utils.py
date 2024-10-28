@@ -15,7 +15,7 @@ from typing_extensions import Annotated, Literal
 from pydantic import BaseModel
 from pydantic._internal import _repr
 from pydantic._internal._core_utils import _WalkCoreSchema, pretty_print_core_schema
-from pydantic._internal._typing_extra import all_literal_values, get_origin, is_new_type
+from pydantic._internal._typing_extra import get_origin, is_new_type, literal_values
 from pydantic._internal._utils import (
     BUILTIN_COLLECTIONS,
     ClassAttribute,
@@ -380,21 +380,21 @@ def test_class_attribute():
     assert f.attr == 'not foo'
 
 
-def test_all_literal_values():
+def test_literal_values():
     L1 = Literal['1']
-    assert all_literal_values(L1) == ['1']
+    assert literal_values(L1) == ['1']
 
     L2 = Literal['2']
     L12 = Literal[L1, L2]
-    assert all_literal_values(L12) == IsList('1', '2', check_order=False)
+    assert literal_values(L12) == IsList('1', '2', check_order=False)
 
     L312 = Literal['3', Literal[L1, L2]]
-    assert all_literal_values(L312) == IsList('3', '1', '2', check_order=False)
+    assert literal_values(L312) == IsList('3', '1', '2', check_order=False)
 
 
 @pytest.mark.parametrize(
     'obj',
-    (1, 1.0, '1', b'1', int, None, test_all_literal_values, len, test_all_literal_values.__code__, lambda: ..., ...),
+    (1, 1.0, '1', b'1', int, None, test_literal_values, len, test_literal_values.__code__, lambda: ..., ...),
 )
 def test_smart_deepcopy_immutable_non_sequence(obj, mocker):
     # make sure deepcopy is not used

@@ -99,17 +99,17 @@ def display_as_type(obj: Any) -> str:
         return '...'
     elif isinstance(obj, Representation):
         return repr(obj)
-    elif isinstance(obj, typing_extensions.TypeAliasType):
+    elif isinstance(obj, typing.ForwardRef) or _typing_extra.is_typealiastype(obj):
         return str(obj)
 
-    if not isinstance(obj, (_typing_extra.typing_base, _typing_extra.WithArgsTypes, type)):
+    if not isinstance(obj, (typing._BaseGenericAlias, _typing_extra.WithArgsTypes, type)):  # pyright: ignore[reportAttributeAccessIssue]
         obj = obj.__class__
 
     if _typing_extra.origin_is_union(typing_extensions.get_origin(obj)):
         args = ', '.join(map(display_as_type, typing_extensions.get_args(obj)))
         return f'Union[{args}]'
     elif isinstance(obj, _typing_extra.WithArgsTypes):
-        if typing_extensions.get_origin(obj) == typing_extensions.Literal:
+        if _typing_extra.is_literal(obj):
             args = ', '.join(map(repr, typing_extensions.get_args(obj)))
         else:
             args = ', '.join(map(display_as_type, typing_extensions.get_args(obj)))
