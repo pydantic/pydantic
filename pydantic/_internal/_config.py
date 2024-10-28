@@ -89,6 +89,7 @@ class ConfigWrapper:
     validation_error_cause: bool
     use_attribute_docstrings: bool
     cache_strings: bool | Literal['all', 'keys', 'none']
+    lazy_iterables: bool
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
         if check:
@@ -206,6 +207,7 @@ class ConfigWrapper:
             'regex_engine': config.get('regex_engine'),
             'validation_error_cause': config.get('validation_error_cause'),
             'cache_strings': config.get('cache_strings'),
+            'lazy_iterables': config.get('lazy_iterables'),
         }
 
         return core_schema.CoreConfig(**{k: v for k, v in core_config_values.items() if v is not None})
@@ -284,6 +286,7 @@ config_defaults = ConfigDict(
     validation_error_cause=False,
     use_attribute_docstrings=False,
     cache_strings=True,
+    lazy_iterables=True,
 )
 
 

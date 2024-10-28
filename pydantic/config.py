@@ -1012,6 +1012,11 @@ class ConfigDict(TypedDict, total=False):
         as the performance difference is minimal if repeated strings are rare.
     """
 
+    lazy_iterables: bool
+    """
+    Whether to lazily evaluate iterables during validation. Defaults to `True`. Default will likely be changed in V3.
+    """
+
 
 _TypeT = TypeVar('_TypeT', bound=type)
 
