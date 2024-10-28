@@ -11,7 +11,7 @@ sources = pydantic tests docs/plugins
 
 .PHONY: install  ## Install the package, dependencies, and pre-commit for local development
 install: .uv .pre-commit
-	uv sync --group all
+	uv sync --group all --all-extras
 	pre-commit install --install-hooks
 
 .PHONY: rebuild-lockfiles  ## Rebuild lockfiles from scratch, updating all dependencies

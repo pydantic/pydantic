@@ -79,6 +79,7 @@ jobs:
 
       - name: install deps
         run: |
+          uv venv
           uv sync --group testing --group testing-extra --group memray
 
       - name: test
@@ -144,7 +145,7 @@ jobs:
         CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
 
     - name: install extra deps
-      run: uv sync --group testing-extra --extra timezone
+      run: uv sync --group testing --group testing-extra --extra timezone
 
     - name: test with deps
       run: make test
@@ -180,6 +181,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup uv
         uses: astral-sh/setup-uv@v3
         with:
@@ -189,16 +191,16 @@ jobs:
         run: uv sync --group testing
 
       - name: install example plugin
-        run: uv add ./tests/plugin
+        run: uv add ./tests/plugin --no-sync
 
-      - run: uv run pytest ./tests/plugin
+      - run: uv run pytest tests/plugin
         env:
           TEST_PLUGIN: 1
 
       # uninstalling is necessary because cache is shared with other jobs
       # which includes the plugin
       - name: uninstall example plugin
-        run: uv remove ./tests/plugin
+        run: uv remove example_plugin --no-sync
 
   test-mypy:
     name: mypy ${{ matrix.mypy-version }} / ${{ matrix.python-version }}
@@ -231,17 +233,14 @@ jobs:
       with:
         enable-cache: true
 
-    - name: Set up Python ${{ matrix.python-version }}
-      run: uv python install ${{ matrix.python-version }}
-
     - name: install deps
-      run: uv sync --group testing --group mypy
+      run: |
+        uv venv --python ${{ matrix.python-version }}
+        uv sync --group testing --group mypy --frozen
 
     - name: install mypy
       if: steps.cache.outputs.cache-hit != 'true'
-      run: |
-        uv remove --group mypy mypy && uv add --group mypy mypy==${{ matrix.mypy-version }}
-        uv pip list
+      run: uv pip install 'mypy==${{ matrix.mypy-version }}.*'
 
     - run: mkdir coverage
 
@@ -306,7 +305,7 @@ jobs:
           pattern: coverage-*
           path: coverage
 
-      - run: uv pip install coverage[toml]
+      - run: pip install coverage[toml]
 
       - run: ls -la coverage
       - run: coverage combine coverage
@@ -370,16 +369,14 @@ jobs:
       with:
         enable-cache: true
 
-    - name: Set up Python ${{ matrix.python-version }}
-      run: uv python install ${{ matrix.python-version }}
-
     - name: install deps
-      run: uv sync --group testing
+      run: |
+        uv venv --python ${{ matrix.python-version }}
+        uv sync --group testing
 
     - name: install typing-extensions
-      run: |
-        uv remove typing-extensions && uv add typing-extensions
-        uv pip list
+      run: uv pip install 'typing-extensions @ git+https://github.com/python/typing_extensions.git'
+
     - name: test
       run: make test
 
