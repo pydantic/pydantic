@@ -1,6 +1,6 @@
 from __future__ import annotations as _annotations
 
-from typing import TYPE_CHECKING, Any, Dict, TypedDict, cast
+from typing import TYPE_CHECKING, Any, TypedDict, cast
 from warnings import warn
 
 if TYPE_CHECKING:
@@ -48,8 +48,6 @@ def update_core_metadata(
     *,
     pydantic_js_functions: list[GetJsonSchemaFunction] | None = None,
     pydantic_js_annotation_functions: list[GetJsonSchemaFunction] | None = None,
-    pydantic_js_prefer_positional_arguments: bool | None = None,
-    pydantic_js_input_core_schema: CoreSchema | None = None,
     pydantic_js_updates: JsonDict | None = None,
     pydantic_js_extra: JsonDict | JsonSchemaExtraCallable | None = None,
 ) -> None:
@@ -71,12 +69,6 @@ def update_core_metadata(
 
     if pydantic_js_annotation_functions:
         core_metadata.setdefault('pydantic_js_annotation_functions', []).extend(pydantic_js_annotation_functions)
-
-    if pydantic_js_prefer_positional_arguments:
-        core_metadata['pydantic_js_prefer_positional_arguments'] = pydantic_js_prefer_positional_arguments
-
-    if pydantic_js_input_core_schema:
-        core_metadata['pydantic_js_input_core_schema'] = pydantic_js_input_core_schema
 
     if pydantic_js_updates:
         if (existing_updates := core_metadata.get('pydantic_js_updates')) is not None:
@@ -101,5 +93,3 @@ def update_core_metadata(
         if callable(existing_pydantic_js_extra):
             # if ever there's a case of a callable, we'll just keep the last json schema extra spec
             core_metadata['pydantic_js_extra'] = pydantic_js_extra
-
-    core_metadata = cast(Dict[str, Any], core_metadata)
