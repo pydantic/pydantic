@@ -8,7 +8,7 @@ import types
 from typing import TYPE_CHECKING, Any, Callable, Generic, NoReturn, TypeVar, overload
 from warnings import warn
 
-from typing_extensions import Literal, TypeGuard, dataclass_transform, get_type_hints
+from typing_extensions import Literal, TypeGuard, dataclass_transform
 
 from ._internal import _config, _decorators, _namespace_utils, _typing_extra
 from ._internal import _dataclasses as _pydantic_dataclasses
@@ -232,35 +232,10 @@ def dataclass(
             #   If the class is generic, we need to make sure the subclass also inherits from Generic
             #   with all the same parameters.
             bases = (cls,)
-            if issubclass(cls, Generic) and (parameters := cls.__parameters__):  # type: ignore
-                generic_base = Generic[parameters]  # type: ignore
+            if issubclass(cls, Generic):
+                generic_base = Generic[cls.__parameters__]  # type: ignore
                 bases = bases + (generic_base,)
-
             cls = types.new_class(cls.__name__, bases)
-
-            # Compute type hints with annotations that are aware of the parametrizations of the generic bases
-            if orig_bases := getattr(cls, '__orig_bases__', None):
-                cls_type_hints: dict[str, Any] = get_type_hints(cls)
-                for orig_base in reversed(orig_bases):
-                    if (
-                        (origin := getattr(orig_base, '__origin__', None))
-                        and (parameters := getattr(origin, '__parameters__', None))
-                        and (args := getattr(orig_base, '__args__', None))
-                    ):
-                        # consider the case:
-                        # class SomeBase(Generic[T]):
-                        #    x: T
-                        # Parametrized = SomeBase[int
-                        base_type_hints = get_type_hints(origin)  # mapping like {'x': ~T}
-                        base_generic_mapping = dict(zip(parameters, args))  # mapping like {'~T': <class 'int>}
-                        base_resolved_type_hints = {  # mapping like {'x': <class 'int>}
-                            k: base_generic_mapping.get(v)
-                            for k, v in base_type_hints.items()
-                            if v in base_generic_mapping
-                        }
-                        cls_type_hints.update(base_resolved_type_hints)
-
-                cls.__annotations__ = cls_type_hints
 
         make_pydantic_fields_compatible(cls)
 
