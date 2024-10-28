@@ -16,7 +16,7 @@ from typing_extensions import TypeGuard, get_args, get_origin
 
 from . import _repr
 from ._core_metadata import CoreMetadata
-from ._typing_extra import is_generic_alias
+from ._typing_extra import TYPE_ALIAS_TYPES, is_generic_alias
 
 AnyFunctionSchema = Union[
     core_schema.AfterValidatorFunctionSchema,
