@@ -3384,6 +3384,7 @@ make<span class="w"> </span>docs
 <span class="c1"># If you have changed the documentation, make sure it builds successfully.</span>
 <span class="c1"># You can also use `pdm run mkdocs serve` to serve the documentation at localhost:8000</span>
 </code></pre></div>
+<p>If this isn't working due to issues with the imaging plugin, try commenting out the <code>social</code> plugin line in <code>mkdocs.yml</code> and running <code>make docs</code> again.</p>
 <h4 id="updating-the-documentation">Updating the documentation<a class="headerlink" href="#updating-the-documentation" title="Permanent link">&para;</a></h4>
 <p>We push a new version of the documentation with each minor release, and we push to a <code>dev</code> path with each commit to <code>main</code>.</p>
 <p>If you're updating the documentation out of cycle with a minor release and want your changes to be reflected on <code>latest</code>,
