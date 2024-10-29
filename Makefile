@@ -47,9 +47,9 @@ test-mypy-update: .uv
 .PHONY: test-mypy-update-all  ## Update the mypy integration tests for all mypy versions
 test-mypy-update-all: .uv
 	rm -rf tests/mypy/outputs
-	pip install --force mypy==1.10.1 && make test-mypy-update
-	pip install --force mypy==1.11.2 && make test-mypy-update
-	pip install --force mypy==1.12.0 && make test-mypy-update
+	uv pip install mypy==1.10.1 && make test-mypy-update
+	uv pip install mypy==1.11.2 && make test-mypy-update
+	uv pip install mypy==1.12.0 && make test-mypy-update
 
 .PHONY: test-typechecking-pyright  ## Typechecking integration tests (Pyright)
 test-typechecking-pyright: .uv
