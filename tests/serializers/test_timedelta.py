@@ -31,7 +31,7 @@ def test_timedelta():
 
 
 def test_timedelta_float():
-    v = SchemaSerializer(core_schema.timedelta_schema(), config={'ser_json_timedelta': 'seconds_float'})
+    v = SchemaSerializer(core_schema.timedelta_schema(), config={'ser_json_timedelta': 'float'})
     assert v.to_python(timedelta(seconds=4, microseconds=500_000)) == timedelta(seconds=4, microseconds=500_000)
 
     assert v.to_python(timedelta(seconds=4, microseconds=500_000), mode='json') == 4.5
