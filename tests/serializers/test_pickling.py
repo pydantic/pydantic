@@ -42,7 +42,7 @@ def test_schema_serializer_capturing_function(value, expected_python, expected_j
 
 
 def test_schema_serializer_containing_config():
-    s = SchemaSerializer(core_schema.timedelta_schema(), config={'ser_json_timedelta': 'seconds_float'})
+    s = SchemaSerializer(core_schema.timedelta_schema(), config={'ser_json_timedelta': 'float'})
     s = pickle.loads(pickle.dumps(s))
 
     assert s.to_python(timedelta(seconds=4, microseconds=500_000)) == timedelta(seconds=4, microseconds=500_000)
