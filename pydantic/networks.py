@@ -910,7 +910,7 @@ def validate_email(value: str) -> tuple[str, str]:
             and the normalized email.
 
     Raises:
-        PydanticCustomError: if the email is invalid.
+        PydanticCustomError: If the email is invalid.
 
     Note:
         Note that:
