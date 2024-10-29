@@ -35,9 +35,15 @@ def _get_typing_objects_by_name_of(name: str) -> tuple[Any, ...]:
     return result
 
 
-# @lru_cache
+# As suggested by the `typing-extensions` documentation, we could apply caching to this method,
+# but it doesn't seem to improve performance. This also requires `obj` to be hashable, which
+# might not be always the case:
 def _is_typing_name(obj: object, name: str) -> bool:
-    return any(obj is thing for thing in _get_typing_objects_by_name_of(name))
+    # Using `any()` is slower:
+    for thing in _get_typing_objects_by_name_of(name):
+        if obj is thing:
+            return True
+    return False
 
 
 def is_any(tp: Any, /) -> bool:
@@ -52,7 +58,7 @@ def is_any(tp: Any, /) -> bool:
 
 
 def is_union(tp: Any, /) -> bool:
-    """Return whether the provided argument is the a `Union` special form.
+    """Return whether the provided argument is a `Union` special form.
 
     ```python test="skip" lint="skip"
     is_union(Union[int, str])
@@ -174,6 +180,11 @@ def is_callable(tp: Any, /) -> bool:
     return tp is collections.abc.Callable or get_origin(tp) is collections.abc.Callable
 
 
+_PARAMSPEC_TYPES: tuple[type[typing_extensions.ParamSpec], ...] = (typing_extensions.ParamSpec,)
+if sys.version_info >= (3, 10):
+    _PARAMSPEC_TYPES = (*_PARAMSPEC_TYPES, typing.ParamSpec)  # pyright: ignore[reportAssignmentType]
+
+
 def is_paramspec(tp: Any, /) -> bool:
     """Return whether the provided argument is a `ParamSpec`.
 
@@ -183,7 +194,12 @@ def is_paramspec(tp: Any, /) -> bool:
     #> True
     ```
     """
-    return _is_typing_name(type(tp), name='ParamSpec')
+    return isinstance(tp, _PARAMSPEC_TYPES)
+
+
+_TYPEALIASTYPES: tuple[type[typing_extensions.TypeAliasType], ...] = (typing_extensions.TypeAliasType,)
+if sys.version_info >= (3, 12):
+    _TYPEALIASTYPES = (*_TYPEALIASTYPES, typing.TypeAliasType)
 
 
 def is_typealiastype(tp: Any, /) -> TypeIs[typing_extensions.TypeAliasType]:
@@ -198,7 +214,7 @@ def is_typealiastype(tp: Any, /) -> TypeIs[typing_extensions.TypeAliasType]:
     #> True
     ```
     """
-    return _is_typing_name(type(tp), name='TypeAliasType')
+    return isinstance(tp, _TYPEALIASTYPES)
 
 
 def is_classvar(tp: Any, /) -> bool:
