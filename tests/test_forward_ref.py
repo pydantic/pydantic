@@ -576,7 +576,8 @@ def test_class_var_as_string(create_module):
         # language=Python
         """
 from __future__ import annotations
-from typing import Annotated, ClassVar, ClassVar as CV
+from typing import ClassVar, ClassVar as CV
+from typing_extensions import Annotated
 from pydantic import BaseModel
 
 class Model(BaseModel):

@@ -295,8 +295,8 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
 
         if (
             origin_type is not None
-            and isinstance(type_, typing._Final)
-            and not isinstance(origin_type, typing._Final)
+            and isinstance(type_, _typing_extra.typing_base)
+            and not isinstance(origin_type, _typing_extra.typing_base)
             and getattr(type_, '_name', None) is not None
         ):
             # In python < 3.9 generic aliases don't exist so any of these like `list`,
@@ -369,7 +369,11 @@ def has_instance_in_type(type_: Any, isinstance_target: Any) -> bool:
 
     # Handle special case for typehints that can have lists as arguments.
     # `typing.Callable[[int, str], int]` is an example for this.
-    if isinstance(type_, list):
+    if (
+        isinstance(type_, list)
+        # On Python < 3.10, typing_extensions implements `ParamSpec` as a subclass of `list`:
+        and not isinstance(type_, typing_extensions.ParamSpec)
+    ):
         for element in type_:
             if has_instance_in_type(element, isinstance_target):
                 return True

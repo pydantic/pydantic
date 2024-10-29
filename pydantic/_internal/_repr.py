@@ -102,7 +102,7 @@ def display_as_type(obj: Any) -> str:
     elif isinstance(obj, typing.ForwardRef) or _typing_extra.is_typealiastype(obj):
         return str(obj)
 
-    if not isinstance(obj, (typing._BaseGenericAlias, _typing_extra.WithArgsTypes, type)):  # pyright: ignore[reportAttributeAccessIssue]
+    if not isinstance(obj, (_typing_extra.typing_base, _typing_extra.WithArgsTypes, type)):
         obj = obj.__class__
 
     if _typing_extra.origin_is_union(typing_extensions.get_origin(obj)):
@@ -116,7 +116,7 @@ def display_as_type(obj: Any) -> str:
         try:
             return f'{obj.__qualname__}[{args}]'
         except AttributeError:
-            return str(obj)  # handles TypeAliasType in 3.12
+            return str(obj).replace('typing.', '').replace('typing_extensions.', '')  # handles TypeAliasType in 3.12
     elif isinstance(obj, type):
         return obj.__qualname__
     else:

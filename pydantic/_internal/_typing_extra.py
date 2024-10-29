@@ -379,13 +379,10 @@ if sys.version_info < (3, 10):
 
     def origin_is_union(tp: Any, /) -> bool:
         """Return whether the provided argument is the `Union` special form."""
-        return is_union(tp)
+        return _is_typing_name(tp, name='Union')
 
     def is_generic_alias(type_: type[Any]) -> bool:
         return isinstance(type_, typing._GenericAlias)  # pyright: ignore[reportAttributeAccessIssue]
-
-    WithArgsTypes: tuple[Any, ...] = (typing._GenericAlias,)  # pyright: ignore[reportAttributeAccessIssue]
-
 
 else:
 
@@ -396,7 +393,19 @@ else:
     def is_generic_alias(tp: Any, /) -> bool:
         return isinstance(tp, (types.GenericAlias, typing._GenericAlias))  # pyright: ignore[reportAttributeAccessIssue]
 
+
+# Ideally, we should avoid relying on the private `typing` constructs:
+
+if sys.version_info < (3, 9):
+    WithArgsTypes: tuple[Any, ...] = (typing._GenericAlias,)  # pyright: ignore[reportAttributeAccessIssue]
+elif sys.version_info < (3, 10):
+    WithArgsTypes: tuple[Any, ...] = (typing._GenericAlias, types.GenericAlias)  # pyright: ignore[reportAttributeAccessIssue]
+else:
     WithArgsTypes: tuple[Any, ...] = (typing._GenericAlias, types.GenericAlias, types.UnionType)  # pyright: ignore[reportAttributeAccessIssue]
+
+
+# Similarly, we shouldn't rely on this `_Final` class, which is even more private than `_GenericAlias`:
+typing_base: Any = typing._Final  # pyright: ignore[reportAttributeAccessIssue]
 
 
 ### Annotation evaluations functions:
