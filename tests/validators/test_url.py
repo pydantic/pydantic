@@ -1305,3 +1305,19 @@ def test_url_build() -> None:
     )
     assert url == Url('postgresql://testuser:testpassword@127.0.0.1:5432/database?sslmode=require#test')
     assert str(url) == 'postgresql://testuser:testpassword@127.0.0.1:5432/database?sslmode=require#test'
+
+
+def test_url_subclass() -> None:
+    class UrlSubclass(Url):
+        pass
+
+    validator = SchemaValidator(core_schema.url_schema(cls=UrlSubclass))
+    assert isinstance(validator.validate_python('http://example.com'), UrlSubclass)
+
+
+def test_multi_host_url_subclass() -> None:
+    class MultiHostUrlSubclass(MultiHostUrl):
+        pass
+
+    validator = SchemaValidator(core_schema.multi_host_url_schema(cls=MultiHostUrlSubclass))
+    assert isinstance(validator.validate_python('http://example.com'), MultiHostUrlSubclass)
