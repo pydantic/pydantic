@@ -3597,10 +3597,12 @@ JSON Schema (in validation mode).</p>
 <p><a href="../../concepts/validators/#annotated-validators">Annotated Validators</a></p>
 </div>
 <p>A metadata class that indicates that a validation should be applied <strong>instead</strong> of the inner validation logic.</p>
-<p>!!! note:
-    Before v2.9, <code>PlainValidator</code> wasn't always compatible with JSON Schema generation for <code>mode='validation'</code>.
-    You can now use the <code>json_schema_input_type</code> argument to specify the input type of the function
-    to be used in the JSON schema when <code>mode='validation'</code> (the default). See the example below for more details.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Before v2.9, <code>PlainValidator</code> wasn't always compatible with JSON Schema generation for <code>mode='validation'</code>.
+You can now use the <code>json_schema_input_type</code> argument to specify the input type of the function
+to be used in the JSON schema when <code>mode='validation'</code> (the default). See the example below for more details.</p>
+</div>
 
 
 <p><span class="doc-section-title">Attributes:</span></p>
