@@ -163,7 +163,7 @@ class PlainValidator:
 
     A metadata class that indicates that a validation should be applied **instead** of the inner validation logic.
 
-    !!! note:
+    !!! note
         Before v2.9, `PlainValidator` wasn't always compatible with JSON Schema generation for `mode='validation'`.
         You can now use the `json_schema_input_type` argument to specify the input type of the function
         to be used in the JSON schema when `mode='validation'` (the default). See the example below for more details.
