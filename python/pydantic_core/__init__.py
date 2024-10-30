@@ -124,7 +124,7 @@ class ErrorTypeInfo(_TypedDict):
     """Example of context values."""
 
 
-class MultiHostHost(_TypedDict):
+class MultiHostHost(_TypedDict, total=False):
     """
     A host part of a multi-host URL.
     """
