@@ -904,6 +904,13 @@ A somewhat arbitrary but very generous number compared to what is allowed by mos
 def validate_email(value: str) -> tuple[str, str]:
     """Email address validation using [email-validator](https://pypi.org/project/email-validator/).
 
+    Returns:
+        A tuple containing the local part of the email (or the name for "pretty" email addresses)
+            and the normalized email.
+
+    Raises:
+        PydanticCustomError: If the email is invalid.
+
     Note:
         Note that:
 
