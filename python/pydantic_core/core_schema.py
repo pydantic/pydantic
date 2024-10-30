@@ -3655,6 +3655,7 @@ def json_schema(
 
 class UrlSchema(TypedDict, total=False):
     type: Required[Literal['url']]
+    cls: Type[Any]
     max_length: int
     allowed_schemes: List[str]
     host_required: bool  # default False
@@ -3669,6 +3670,7 @@ class UrlSchema(TypedDict, total=False):
 
 def url_schema(
     *,
+    cls: Type[Any] | None = None,
     max_length: int | None = None,
     allowed_schemes: list[str] | None = None,
     host_required: bool | None = None,
@@ -3693,6 +3695,7 @@ def url_schema(
     ```
 
     Args:
+        cls: The class to use for the URL build (a subclass of `pydantic_core.Url`)
         max_length: The maximum length of the URL
         allowed_schemes: The allowed URL schemes
         host_required: Whether the URL must have a host
@@ -3706,6 +3709,7 @@ def url_schema(
     """
     return _dict_not_none(
         type='url',
+        cls=cls,
         max_length=max_length,
         allowed_schemes=allowed_schemes,
         host_required=host_required,
@@ -3721,6 +3725,7 @@ def url_schema(
 
 class MultiHostUrlSchema(TypedDict, total=False):
     type: Required[Literal['multi-host-url']]
+    cls: Type[Any]
     max_length: int
     allowed_schemes: List[str]
     host_required: bool  # default False
@@ -3735,6 +3740,7 @@ class MultiHostUrlSchema(TypedDict, total=False):
 
 def multi_host_url_schema(
     *,
+    cls: Type[Any] | None = None,
     max_length: int | None = None,
     allowed_schemes: list[str] | None = None,
     host_required: bool | None = None,
@@ -3759,6 +3765,7 @@ def multi_host_url_schema(
     ```
 
     Args:
+        cls: The class to use for the URL build (a subclass of `pydantic_core.MultiHostUrl`)
         max_length: The maximum length of the URL
         allowed_schemes: The allowed URL schemes
         host_required: Whether the URL must have a host
@@ -3772,6 +3779,7 @@ def multi_host_url_schema(
     """
     return _dict_not_none(
         type='multi-host-url',
+        cls=cls,
         max_length=max_length,
         allowed_schemes=allowed_schemes,
         host_required=host_required,
