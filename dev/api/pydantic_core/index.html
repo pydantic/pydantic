@@ -20,7 +20,7 @@
       
       
       <link rel="icon" href="../../favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.41">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.42">
     
     
       
@@ -6501,7 +6501,7 @@ which detail why validation failed.</p>
 
 
   <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
   </span>
 
 <a href="#pydantic_core.ValidationError.from_exception_data" class="headerlink" title="Permanent link">&para;</a></h3>
@@ -6510,7 +6510,7 @@ which detail why validation failed.</p>
     <span class="n">line_errors</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="pydantic_core.InitErrorDetails" href="#pydantic_core.InitErrorDetails">InitErrorDetails</a></span><span class="p">],</span>
     <span class="n">input_type</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;python&quot;</span><span class="p">,</span> <span class="s2">&quot;json&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;python&quot;</span><span class="p">,</span>
     <span class="n">hide_input</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pydantic_core._pydantic_core.ValidationError" href="#pydantic_core.ValidationError">ValidationError</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing_extensions.Self">Self</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8292,7 +8292,7 @@ by Mozilla.</p>
     <span class="n">scheme</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
     <span class="n">username</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">password</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">host</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">host</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">port</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">path</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">query</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -8361,15 +8361,15 @@ by Mozilla.</p>
           <tr class="doc-section-item">
             <td><code>host</code></td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | None</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The host part of the URL.</p>
+                <p>The host part of the URL, or omit for no host.</p>
               </div>
             </td>
             <td>
-                <em>required</em>
+                  <code>None</code>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -9620,9 +9620,7 @@ identifies a value as being present, and provides a way to access it.</p>
     <span class="n">by_alias</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">exclude_none</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">round_trip</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">timedelta_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span>
-        <span class="s2">&quot;iso8601&quot;</span><span class="p">,</span> <span class="s2">&quot;seconds_float&quot;</span><span class="p">,</span> <span class="s2">&quot;milliseconds_float&quot;</span>
-    <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;iso8601&quot;</span><span class="p">,</span>
+    <span class="n">timedelta_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;iso8601&quot;</span><span class="p">,</span> <span class="s2">&quot;float&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;iso8601&quot;</span><span class="p">,</span>
     <span class="n">bytes_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;utf8&quot;</span><span class="p">,</span> <span class="s2">&quot;base64&quot;</span><span class="p">,</span> <span class="s2">&quot;hex&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;utf8&quot;</span><span class="p">,</span>
     <span class="n">inf_nan_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span>
         <span class="s2">&quot;null&quot;</span><span class="p">,</span> <span class="s2">&quot;constants&quot;</span><span class="p">,</span> <span class="s2">&quot;strings&quot;</span>
@@ -9752,11 +9750,11 @@ identifies a value as being present, and provides a way to access it.</p>
           <tr class="doc-section-item">
             <td><code>timedelta_mode</code></td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;iso8601&#39;, &#39;seconds_float&#39;, &#39;milliseconds_float&#39;]</code>
+                  <code><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;iso8601&#39;, &#39;float&#39;]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>How to serialize <code>timedelta</code> objects, either <code>'iso8601'</code>, <code>'seconds_float'</code> or <code>'milliseconds_float'</code>.</p>
+                <p>How to serialize <code>timedelta</code> objects, either <code>'iso8601'</code> or <code>'float'</code>.</p>
               </div>
             </td>
             <td>
@@ -10069,9 +10067,7 @@ input is reached before the full object is deserialized, e.g. <code>["aa", "bb",
     <span class="n">by_alias</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">exclude_none</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">round_trip</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">timedelta_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span>
-        <span class="s2">&quot;iso8601&quot;</span><span class="p">,</span> <span class="s2">&quot;seconds_float&quot;</span><span class="p">,</span> <span class="s2">&quot;milliseconds_float&quot;</span>
-    <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;iso8601&quot;</span><span class="p">,</span>
+    <span class="n">timedelta_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;iso8601&quot;</span><span class="p">,</span> <span class="s2">&quot;float&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;iso8601&quot;</span><span class="p">,</span>
     <span class="n">bytes_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span><span class="s2">&quot;utf8&quot;</span><span class="p">,</span> <span class="s2">&quot;base64&quot;</span><span class="p">,</span> <span class="s2">&quot;hex&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;utf8&quot;</span><span class="p">,</span>
     <span class="n">inf_nan_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a></span><span class="p">[</span>
         <span class="s2">&quot;null&quot;</span><span class="p">,</span> <span class="s2">&quot;constants&quot;</span><span class="p">,</span> <span class="s2">&quot;strings&quot;</span>
@@ -10188,11 +10184,11 @@ input is reached before the full object is deserialized, e.g. <code>["aa", "bb",
           <tr class="doc-section-item">
             <td><code>timedelta_mode</code></td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;iso8601&#39;, &#39;seconds_float&#39;, &#39;milliseconds_float&#39;]</code>
+                  <code><a class="autorefs autorefs-external" title="typing.Literal" href="https://docs.python.org/3/library/typing.html#typing.Literal">Literal</a>[&#39;iso8601&#39;, &#39;float&#39;]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>How to serialize <code>timedelta</code> objects, either <code>'iso8601'</code>, <code>'seconds_float'</code>, or<code>'milliseconds_float'</code>.</p>
+                <p>How to serialize <code>timedelta</code> objects, either <code>'iso8601'</code> or <code>'float'</code>.</p>
               </div>
             </td>
             <td>
@@ -10406,7 +10402,7 @@ if <code>None</code> a <a class="autorefs autorefs-internal" href="#pydantic_cor
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.10.0a1", "pydantic-core==2.25.0", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.10.0a1", "pydantic-core==2.25.1", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

@@ -20,7 +20,7 @@
       
       
       <link rel="icon" href="../../favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.41">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.42">
     
     
       
@@ -4982,24 +4982,17 @@ of subclasses of the model.</p>
   </span>
 
 <a href="#pydantic.config.ConfigDict.ser_json_timedelta" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">ser_json_timedelta</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span>
-    <span class="s2">&quot;iso8601&quot;</span><span class="p">,</span> <span class="s2">&quot;seconds_float&quot;</span><span class="p">,</span> <span class="s2">&quot;milliseconds_float&quot;</span>
-<span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">ser_json_timedelta</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span><span class="s1">&#39;iso8601&#39;</span><span class="p">,</span> <span class="s1">&#39;float&#39;</span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>The format of JSON serialized timedeltas. Accepts the string values of <code>'iso8601'</code>,
-<code>'seconds_float'</code>, and <code>'milliseconds_float'</code>. Defaults to <code>'iso8601'</code>.</p>
+        <p>The format of JSON serialized timedeltas. Accepts the string values of <code>'iso8601'</code> and
+<code>'float'</code>. Defaults to <code>'iso8601'</code>.</p>
 <ul>
 <li><code>'iso8601'</code> will serialize timedeltas to ISO 8601 durations.</li>
-<li><code>'seconds_float'</code> will serialize timedeltas to the total number of seconds.</li>
-<li><code>'milliseconds_float'</code> will serialize timedeltas to the total number of milliseconds.</li>
+<li><code>'float'</code> will serialize timedeltas to the total number of seconds.</li>
 </ul>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p><code>'float' is deprecated in v2.10 in favour of</code>'milliseconds_float'`</p>
-</div>
     </div>
 
 </div>
@@ -5884,7 +5877,11 @@ especially with <code>TypedDict</code>.</p>
 
             <details class="quote">
               <summary>Source code in <code>pydantic/config.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1019</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1015</span>
+<span class="normal">1016</span>
+<span class="normal">1017</span>
+<span class="normal">1018</span>
+<span class="normal">1019</span>
 <span class="normal">1020</span>
 <span class="normal">1021</span>
 <span class="normal">1022</span>
@@ -5920,11 +5917,7 @@ especially with <code>TypedDict</code>.</p>
 <span class="normal">1052</span>
 <span class="normal">1053</span>
 <span class="normal">1054</span>
-<span class="normal">1055</span>
-<span class="normal">1056</span>
-<span class="normal">1057</span>
-<span class="normal">1058</span>
-<span class="normal">1059</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
+<span class="normal">1055</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_TypeT</span><span class="p">],</span> <span class="n">_TypeT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.10/concepts/config/#configuration-with-dataclass-from-the-standard-library-or-typeddict</span>
 
 <span class="sd">    A convenience decorator to set a [Pydantic configuration](config.md) on a `TypedDict` or a `dataclass` from the standard library.</span>
@@ -6415,7 +6408,7 @@ especially with <code>TypedDict</code>.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.10.0a1", "pydantic-core==2.25.0", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.10.0a1", "pydantic-core==2.25.1", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>

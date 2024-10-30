@@ -20,7 +20,7 @@
       
       
       <link rel="icon" href="../../favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.41">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.42">
     
     
       
@@ -7351,7 +7351,7 @@ This sort is recursive, so it will sort all nested dictionaries as well.</p>
 <span class="sd">    Returns:</span>
 <span class="sd">        The generated JSON schema.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">ser_json_timedelta</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;milliseconds_float&#39;</span><span class="p">,</span> <span class="s1">&#39;seconds_float&#39;</span><span class="p">}:</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">ser_json_timedelta</span> <span class="o">==</span> <span class="s1">&#39;float&#39;</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;number&#39;</span><span class="p">}</span>
     <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="s1">&#39;duration&#39;</span><span class="p">}</span>
 </code></pre></div></td></tr></table></div>
@@ -15025,7 +15025,7 @@ If <code>False</code>, fields will be serialized according to their attribute na
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.10.0a1", "pydantic-core==2.25.0", "pydantic-extra-types==2.10.0"]
+    window.mkdocs_run_deps = ["pydantic==2.10.0a1", "pydantic-core==2.25.1", "pydantic-extra-types==2.10.0"]
     </script>
 
               </article>
