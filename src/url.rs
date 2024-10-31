@@ -156,12 +156,12 @@ impl PyUrl {
     }
 
     #[classmethod]
-    #[pyo3(signature=(*, scheme, host=None, username=None, password=None, port=None, path=None, query=None, fragment=None))]
+    #[pyo3(signature=(*, scheme, host, username=None, password=None, port=None, path=None, query=None, fragment=None))]
     #[allow(clippy::too_many_arguments)]
     pub fn build<'py>(
         cls: &Bound<'py, PyType>,
         scheme: &str,
-        host: Option<&str>,
+        host: &str,
         username: Option<&str>,
         password: Option<&str>,
         port: Option<u16>,
@@ -172,7 +172,7 @@ impl PyUrl {
         let url_host = UrlHostParts {
             username: username.map(Into::into),
             password: password.map(Into::into),
-            host: host.map(Into::into),
+            host: Some(host.into()),
             port,
         };
         let mut url = format!("{scheme}://{url_host}");
@@ -423,7 +423,6 @@ impl PyMultiHostUrl {
     }
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct UrlHostParts {
     username: Option<String>,
     password: Option<String>,
@@ -441,12 +440,11 @@ impl FromPyObject<'_> for UrlHostParts {
     fn extract_bound(ob: &Bound<'_, PyAny>) -> PyResult<Self> {
         let py = ob.py();
         let dict = ob.downcast::<PyDict>()?;
-
         Ok(UrlHostParts {
-            username: dict.get_as::<Option<_>>(intern!(py, "username"))?.flatten(),
-            password: dict.get_as::<Option<_>>(intern!(py, "password"))?.flatten(),
-            host: dict.get_as::<Option<_>>(intern!(py, "host"))?.flatten(),
-            port: dict.get_as::<Option<_>>(intern!(py, "port"))?.flatten(),
+            username: dict.get_as(intern!(py, "username"))?,
+            password: dict.get_as(intern!(py, "password"))?,
+            host: dict.get_as(intern!(py, "host"))?,
+            port: dict.get_as(intern!(py, "port"))?,
         })
     }
 }
