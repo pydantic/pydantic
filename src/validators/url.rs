@@ -4,7 +4,7 @@ use std::str::Chars;
 
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList, PyType};
+use pyo3::types::{PyDict, PyList};
 
 use ahash::AHashSet;
 use url::{ParseError, SyntaxViolation, Url};
@@ -26,7 +26,6 @@ type AllowedSchemas = Option<(AHashSet<String>, String)>;
 #[derive(Debug, Clone)]
 pub struct UrlValidator {
     strict: bool,
-    cls: Option<Py<PyType>>,
     max_length: Option<usize>,
     allowed_schemes: AllowedSchemas,
     host_required: bool,
@@ -48,7 +47,6 @@ impl BuildValidator for UrlValidator {
 
         Ok(Self {
             strict: is_strict(schema, config)?,
-            cls: schema.get_as(intern!(schema.py(), "cls"))?,
             max_length: schema.get_as(intern!(schema.py(), "max_length"))?,
             host_required: schema.get_as(intern!(schema.py(), "host_required"))?.unwrap_or(false),
             default_host: schema.get_as(intern!(schema.py(), "default_host"))?,
@@ -61,7 +59,7 @@ impl BuildValidator for UrlValidator {
     }
 }
 
-impl_py_gc_traverse!(UrlValidator { cls });
+impl_py_gc_traverse!(UrlValidator {});
 
 impl Validator for UrlValidator {
     fn validate<'py>(
@@ -95,31 +93,7 @@ impl Validator for UrlValidator {
             Ok(()) => {
                 // Lax rather than strict to preserve V2.4 semantic that str wins over url in union
                 state.floor_exactness(Exactness::Lax);
-
-                if let Some(url_subclass) = &self.cls {
-                    // TODO: we do an extra build for a subclass here, we should avoid this
-                    // in v2.11 for perf reasons, but this is a worthwhile patch for now
-                    // given that we want isinstance to work properly for subclasses of Url
-                    let py_url = match either_url {
-                        EitherUrl::Py(py_url) => py_url.get().clone(),
-                        EitherUrl::Rust(rust_url) => PyUrl::new(rust_url),
-                    };
-
-                    let py_url = PyUrl::build(
-                        url_subclass.bind(py),
-                        py_url.scheme(),
-                        py_url.host(),
-                        py_url.username(),
-                        py_url.password(),
-                        py_url.port(),
-                        py_url.path().filter(|path| *path != "/"),
-                        py_url.query(),
-                        py_url.fragment(),
-                    )?;
-                    Ok(py_url.into_py(py))
-                } else {
-                    Ok(either_url.into_py(py))
-                }
+                Ok(either_url.into_py(py))
             }
             Err(error_type) => Err(ValError::new(error_type, input)),
         }
@@ -212,7 +186,6 @@ impl CopyFromPyUrl for EitherUrl<'_> {
 #[derive(Debug, Clone)]
 pub struct MultiHostUrlValidator {
     strict: bool,
-    cls: Option<Py<PyType>>,
     max_length: Option<usize>,
     allowed_schemes: AllowedSchemas,
     host_required: bool,
@@ -240,7 +213,6 @@ impl BuildValidator for MultiHostUrlValidator {
         }
         Ok(Self {
             strict: is_strict(schema, config)?,
-            cls: schema.get_as(intern!(schema.py(), "cls"))?,
             max_length: schema.get_as(intern!(schema.py(), "max_length"))?,
             allowed_schemes,
             host_required: schema.get_as(intern!(schema.py(), "host_required"))?.unwrap_or(false),
@@ -253,7 +225,7 @@ impl BuildValidator for MultiHostUrlValidator {
     }
 }
 
-impl_py_gc_traverse!(MultiHostUrlValidator { cls });
+impl_py_gc_traverse!(MultiHostUrlValidator {});
 
 impl Validator for MultiHostUrlValidator {
     fn validate<'py>(
@@ -286,38 +258,7 @@ impl Validator for MultiHostUrlValidator {
             Ok(()) => {
                 // Lax rather than strict to preserve V2.4 semantic that str wins over url in union
                 state.floor_exactness(Exactness::Lax);
-
-                if let Some(url_subclass) = &self.cls {
-                    // TODO: we do an extra build for a subclass here, we should avoid this
-                    // in v2.11 for perf reasons, but this is a worthwhile patch for now
-                    // given that we want isinstance to work properly for subclasses of Url
-                    let py_url = match multi_url {
-                        EitherMultiHostUrl::Py(py_url) => py_url.get().clone(),
-                        EitherMultiHostUrl::Rust(rust_url) => rust_url,
-                    };
-
-                    let hosts = py_url
-                        .hosts(py)?
-                        .into_iter()
-                        .map(|host| host.extract().expect("host should be a valid UrlHostParts"))
-                        .collect();
-
-                    let py_url = PyMultiHostUrl::build(
-                        url_subclass.bind(py),
-                        py_url.scheme(),
-                        Some(hosts),
-                        py_url.path().filter(|path| *path != "/"),
-                        py_url.query(),
-                        py_url.fragment(),
-                        None,
-                        None,
-                        None,
-                        None,
-                    )?;
-                    Ok(py_url.into_py(py))
-                } else {
-                    Ok(multi_url.into_py(py))
-                }
+                Ok(multi_url.into_py(py))
             }
             Err(error_type) => Err(ValError::new(error_type, input)),
         }
