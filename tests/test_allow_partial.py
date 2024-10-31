@@ -6,46 +6,75 @@ from typing_extensions import Annotated, TypedDict
 
 from pydantic import TypeAdapter, ValidationError
 
+from .conftest import Err
 
-def test_typed_dict():
+
+@pytest.mark.parametrize(
+    'mode,value,expected',
+    [
+        ('python', {'a': 1, 'b': 'b', 'c': (3, '4')}, {'a': 1, 'b': 'b', 'c': (3, '4')}),
+        ('python', {'a': 1, 'b': 'b', 'c': (3,)}, {'a': 1, 'b': 'b'}),
+        ('python', {'a': 1, 'b': 'b'}, {'a': 1, 'b': 'b'}),
+        ('json', '{"a": 1, "b": "b", "c": [3, "4"]}', {'a': 1, 'b': 'b', 'c': (3, '4')}),
+        ('json', '{"a": 1, "b": "b", "c": [3, "4"]}', {'a': 1, 'b': 'b', 'c': (3, '4')}),
+        ('json', '{"a": 1, "b": "b", "c": [3]}', {'a': 1, 'b': 'b'}),
+        ('json', '{"a": 1, "b": "b", "c": [3', {'a': 1, 'b': 'b'}),
+        ('json', '{"a": 1, "b": "b', {'a': 1, 'b': 'b'}),
+        ('json', '{"a": 1, "b": ', {'a': 1}),
+        ('python', {'a': 1, 'c': (3,), 'b': 'b'}, Err(r'c\.1\s+Field required')),
+        ('json', '{"a": 1, "c": [3], "b": "b"}', Err(r'c\.1\s+Field required')),
+    ],
+)
+def test_typed_dict(mode, value, expected):
     class Foobar(TypedDict, total=False):
         a: int
         b: str
         c: Tuple[int, str]
 
     ta = TypeAdapter(Foobar)
-    eap = dict(experimental_allow_partial=True)
-
-    assert ta.validate_python({'a': 1, 'b': 'b', 'c': (3, '4')}) == {'a': 1, 'b': 'b', 'c': (3, '4')}
-    assert ta.validate_python({'a': 1, 'b': 'b', 'c': (3, '4')}, **eap) == {'a': 1, 'b': 'b', 'c': (3, '4')}
-    assert ta.validate_python({'a': 1, 'b': 'b', 'c': (3,)}, **eap) == {'a': 1, 'b': 'b'}
-    assert ta.validate_python({'a': 1, 'b': 'b'}, **eap) == {'a': 1, 'b': 'b'}
-    assert ta.validate_json('{"a": 1, "b": "b", "c": [3, "4"]}') == {'a': 1, 'b': 'b', 'c': (3, '4')}
-    assert ta.validate_json('{"a": 1, "b": "b", "c": [3, "4"]}', **eap) == {'a': 1, 'b': 'b', 'c': (3, '4')}
-    assert ta.validate_json('{"a": 1, "b": "b", "c": [3]}', **eap) == {'a': 1, 'b': 'b'}
-    assert ta.validate_json('{"a": 1, "b": "b", "c": [3', **eap) == {'a': 1, 'b': 'b'}
-    assert ta.validate_json('{"a": 1, "b": "b', **eap) == {'a': 1, 'b': 'b'}
-    assert ta.validate_json('{"a": 1, "b": ', **eap) == {'a': 1}
-    with pytest.raises(ValidationError, match=r'c\.1\s+Field required'):
-        ta.validate_python({'a': 1, 'c': (3,), 'b': 'b'}, **eap)
-    with pytest.raises(ValidationError, match=r'c\.1\s+Field required'):
-        ta.validate_json('{"a": 1, "c": [3], "b": "b"}', **eap)
+    if mode == 'python':
+        if isinstance(expected, Err):
+            with pytest.raises(ValidationError, match=expected.message):
+                ta.validate_python(value, experimental_allow_partial=True)
+        else:
+            assert ta.validate_python(value, experimental_allow_partial=True) == expected
+    else:
+        if isinstance(expected, Err):
+            with pytest.raises(ValidationError, match=expected.message):
+                ta.validate_json(value, experimental_allow_partial=True)
+        else:
+            assert ta.validate_json(value, experimental_allow_partial=True) == expected
 
 
-def test_list():
+@pytest.mark.parametrize(
+    'mode,value,expected',
+    [
+        ('python', [10, 20, 30], [10, 20, 30]),
+        ('python', ['10', '20', '30'], [10, 20, 30]),
+        ('python', [10, 20, 30], [10, 20, 30]),
+        ('python', [10, 20, 3], [10, 20]),
+        ('json', '[10, 20, 30]', [10, 20, 30]),
+        ('json', '[10, 20, 30', [10, 20, 30]),
+        ('json', '[10, 20, 3', [10, 20]),
+    ],
+)
+def test_list(mode, value, expected):
     ta = TypeAdapter(List[Annotated[int, Ge(10)]])
-    eap = dict(experimental_allow_partial=True)
+    if mode == 'python':
+        if isinstance(expected, Err):
+            with pytest.raises(ValidationError, match=expected.message):
+                ta.validate_python(value, experimental_allow_partial=True)
+        else:
+            assert ta.validate_python(value, experimental_allow_partial=True) == expected
+    else:
+        if isinstance(expected, Err):
+            with pytest.raises(ValidationError, match=expected.message):
+                ta.validate_json(value, experimental_allow_partial=True)
+        else:
+            assert ta.validate_json(value, experimental_allow_partial=True) == expected
 
-    assert ta.validate_python([10, 20, 30]) == [10, 20, 30]
-    assert ta.validate_python(['10', '20', '30']) == [10, 20, 30]
-    assert ta.validate_python([10, 20, 30], **eap) == [10, 20, 30]
-    assert ta.validate_python([10, 20, 3], **eap) == [10, 20]
-    assert ta.validate_json('[10, 20, 30]') == [10, 20, 30]
-    assert ta.validate_json('[10, 20, 30', **eap) == [10, 20, 30]
-    assert ta.validate_json('[10, 20, 3', **eap) == [10, 20]
 
-
-def test_dict():
+def test_dict(mode, value, expected):
     ta = TypeAdapter(Dict[str, Annotated[int, Ge(10)]])
     eap = dict(experimental_allow_partial=True)
 
