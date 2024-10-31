@@ -583,7 +583,7 @@ class Url(SupportsAllComparisons):
         scheme: str,
         username: str | None = None,
         password: str | None = None,
-        host: str | None = None,
+        host: str,
         port: int | None = None,
         path: str | None = None,
         query: str | None = None,
@@ -596,7 +596,7 @@ class Url(SupportsAllComparisons):
             scheme: The scheme part of the URL.
             username: The username part of the URL, or omit for no username.
             password: The password part of the URL, or omit for no password.
-            host: The host part of the URL, or omit for no host.
+            host: The host part of the URL.
             port: The port part of the URL, or omit for no port.
             path: The path part of the URL, or omit for no path.
             query: The query part of the URL, or omit for no query.
