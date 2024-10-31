@@ -1571,7 +1571,7 @@ version = "2.25.1"
 requires_python = ">=3.8"
 git = "https://github.com/pydantic/pydantic-core.git"
 ref = "allow_partial"
-revision = "0d453a06e5a588e245d5724817336a0f29aa0460"
+revision = "f28aaba855ce0047d5ca705e7cabe176b2fc9396"
 summary = "Core functionality for Pydantic validation and serialization"
 groups = ["default"]
 dependencies = [
