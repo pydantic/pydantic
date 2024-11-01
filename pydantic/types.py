@@ -906,17 +906,16 @@ if TYPE_CHECKING:
 else:
 
     class ImportString:
-        """A type that can be used to import a type from a string.
+        """A type that can be used to import a Python object from a string.
 
         `ImportString` expects a string and loads the Python object importable at that dotted path.
-        Attributes of modules may be separated from the module by `:` or `.`, e.g. if `'math:cos'` was provided,
-        the resulting field value would be the function`cos`. If a `.` is used and both an attribute and submodule
+        Attributes of modules may be separated from the module by `:` or `.`, e.g. if `'math:cos'` is provided,
+        the resulting field value would be the function `cos`. If a `.` is used and both an attribute and submodule
         are present at the same path, the module will be preferred.
 
         On model instantiation, pointers will be evaluated and imported. There is
         some nuance to this behavior, demonstrated in the examples below.
 
-        **Good behavior:**
         ```py
         import math
 
@@ -971,7 +970,7 @@ else:
 
         Serializing an `ImportString` type to json is also possible.
 
-        ```py lint="skip"
+        ```py
         from pydantic import BaseModel, ImportString
 
         class ImportThings(BaseModel):
@@ -2704,7 +2703,7 @@ Warning:
     these methods are considered legacy implementation, and thus, Pydantic v2.10+ now uses the modern
     [`base64.b64encode`][base64.b64encode] and [`base64.b64decode`][base64.b64decode] functions.
 
-    See the [`Base64Bytes`](#pydantic.types.Base64Bytes) type for more information on how to
+    See the [`Base64Bytes`][pydantic.types.Base64Bytes] type for more information on how to
     replicate the old behavior with the legacy encoders / decoders.
 
 ```py
