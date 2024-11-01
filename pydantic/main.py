@@ -351,7 +351,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         return m
 
-    def model_copy(self, *, update: dict[str, Any] | None = None, deep: bool = False) -> Self:
+    def model_copy(self, *, update: Mapping[str, Any] | None = None, deep: bool = False) -> Self:
         """Usage docs: https://docs.pydantic.dev/2.10/concepts/serialization/#model_copy
 
         Returns a copy of the model.
