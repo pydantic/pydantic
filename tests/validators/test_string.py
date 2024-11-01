@@ -286,6 +286,14 @@ def test_subclass_preserved() -> None:
     assert not isinstance(v.validate_python(StrSubclass(''), strict=True), StrSubclass)
 
 
+@pytest.mark.parametrize('string', [True, False])
+def test_coerce_numbers_to_str_with_invalid_unicode_character(string) -> None:
+    config = core_schema.CoreConfig(coerce_numbers_to_str=True)
+
+    v = SchemaValidator(core_schema.str_schema(strict=string), config)
+    assert v.validate_python('\ud835') == '\ud835'
+
+
 def test_coerce_numbers_to_str_disabled_in_strict_mode() -> None:
     config = core_schema.CoreConfig(coerce_numbers_to_str=True)
 
