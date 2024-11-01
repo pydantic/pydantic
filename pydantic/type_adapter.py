@@ -344,7 +344,8 @@ class TypeAdapter(Generic[T]):
             strict: Whether to strictly check types.
             from_attributes: Whether to extract data from object attributes.
             context: Additional context to pass to the validator.
-            experimental_allow_partial: **Experimental** whether to support partial validation, e.g. to process streams.
+            experimental_allow_partial: **Experimental** whether to enable
+                [partial validation](../concepts/experimental.md#partial-validation), e.g. to process streams.
 
         !!! note
             When using `TypeAdapter` with a Pydantic `dataclass`, the use of the `from_attributes`
@@ -379,7 +380,8 @@ class TypeAdapter(Generic[T]):
             data: The JSON data to validate against the model.
             strict: Whether to strictly check types.
             context: Additional context to use during validation.
-            experimental_allow_partial: **Experimental** whether to support partial validation, e.g. to process streams.
+            experimental_allow_partial: **Experimental** whether to enable
+                [partial validation](../concepts/experimental.md#partial-validation), e.g. to process streams.
 
         Returns:
             The validated object.
@@ -404,7 +406,8 @@ class TypeAdapter(Generic[T]):
             obj: The object contains string data to validate.
             strict: Whether to strictly check types.
             context: Additional context to use during validation.
-            experimental_allow_partial: **Experimental** whether to support partial validation, e.g. to process streams.
+            experimental_allow_partial: **Experimental** whether to enable
+                [partial validation](../concepts/experimental.md#partial-validation), e.g. to process streams.
 
         Returns:
             The validated object.
