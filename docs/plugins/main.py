@@ -96,7 +96,7 @@ def add_mkdocs_run_deps() -> None:
     pyproject_toml = (PROJECT_ROOT / 'pyproject.toml').read_text()
     m = re.search(r'pydantic-core==(.+?)["\']', pyproject_toml)
     if not m:
-        logger.warning(
+        logger.info(
             "Could not find pydantic-core version in pyproject.toml, this is expected if you're using a git ref"
         )
         return
