@@ -200,7 +200,7 @@ impl StrConstrainedValidator {
     }
 
     // whether any of the constraints/customisations are actually enabled
-    // except strict which can be set on StrValidator
+    // except strict and coerce_numbers_to_str which can be set on StrValidator
     fn has_constraints_set(&self) -> bool {
         self.pattern.is_some()
             || self.max_length.is_some()
@@ -208,7 +208,6 @@ impl StrConstrainedValidator {
             || self.strip_whitespace
             || self.to_lower
             || self.to_upper
-            || self.coerce_numbers_to_str
     }
 }
 
