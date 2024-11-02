@@ -236,7 +236,7 @@ jobs:
     - name: install deps
       run: |
         uv venv --python ${{ matrix.python-version }}
-        uv sync --group testing --group mypy --frozen
+        uv sync --group testing --group mypy
 
     - name: install mypy
       if: steps.cache.outputs.cache-hit != 'true'

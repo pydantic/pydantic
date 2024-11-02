@@ -1442,12 +1442,12 @@ all = [
     { name = "mkdocstrings-python" },
     { name = "mypy", specifier = "==1.12.1" },
     { name = "packaging", specifier = ">=23.2" },
-    { name = "pydantic-extra-types", specifier = ">=2.9.0" },
+    { name = "pydantic-extra-types", git = "https://github.com/pydantic/pydantic-extra-types.git?rev=main" },
     { name = "pydantic-settings", specifier = ">=2.0b1" },
     { name = "pydantic-settings", specifier = ">=2.0.0" },
     { name = "pytest", specifier = ">=8.2.2" },
     { name = "pytest-benchmark", specifier = ">=4.0.0" },
-    { name = "pytest-codspeed", specifier = "~=2.2.0" },
+    { name = "pytest-codspeed", specifier = ">=2.2.0" },
     { name = "pytest-examples" },
     { name = "pytest-examples", specifier = ">=0.0.13" },
     { name = "pytest-memray", marker = "python_full_version < '3.13' and platform_system != 'Windows'" },
@@ -1457,7 +1457,7 @@ all = [
     { name = "pyupgrade" },
     { name = "requests" },
     { name = "ruff", specifier = "==0.5.6" },
-    { name = "sqlalchemy", specifier = ">=2.0,<3.0" },
+    { name = "sqlalchemy", specifier = ">=2.0" },
     { name = "tomli" },
 ]
 dev = [{ name = "email-validator", specifier = ">=2.0.0" }]
@@ -1469,7 +1469,7 @@ docs = [
     { name = "mkdocs-material", extras = ["imaging"] },
     { name = "mkdocs-redirects" },
     { name = "mkdocstrings-python" },
-    { name = "pydantic-extra-types", specifier = ">=2.9.0" },
+    { name = "pydantic-extra-types", git = "https://github.com/pydantic/pydantic-extra-types.git?rev=main" },
     { name = "pydantic-settings", specifier = ">=2.0b1" },
     { name = "pytest-examples", specifier = ">=0.0.13" },
     { name = "pyupgrade" },
@@ -1495,7 +1495,7 @@ testing = [
     { name = "packaging", specifier = ">=23.2" },
     { name = "pytest", specifier = ">=8.2.2" },
     { name = "pytest-benchmark", specifier = ">=4.0.0" },
-    { name = "pytest-codspeed", specifier = "~=2.2.0" },
+    { name = "pytest-codspeed", specifier = ">=2.2.0" },
     { name = "pytest-examples" },
     { name = "pytest-mock" },
     { name = "pytest-pretty" },
@@ -1505,7 +1505,7 @@ testing-extra = [
     { name = "ansi2html" },
     { name = "devtools" },
     { name = "greenlet", marker = "python_full_version < '3.13'", specifier = ">=3.0.0rc3" },
-    { name = "sqlalchemy", specifier = ">=2.0,<3.0" },
+    { name = "sqlalchemy", specifier = ">=2.0" },
 ]
 
 [[package]]
@@ -1620,14 +1620,11 @@ wheels = [
 
 [[package]]
 name = "pydantic-extra-types"
-version = "2.9.0"
-source = { registry = "https://pypi.org/simple" }
+version = "2.10.0"
+source = { git = "https://github.com/pydantic/pydantic-extra-types.git?rev=main#f843f3779c6c514e32db2de6feb2a9f37d247acc" }
 dependencies = [
     { name = "pydantic" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/fb/95/d61dcadd933cb34461adc271c13bbe14a7080b9922b9e0dc3c1d18b421cb/pydantic_extra_types-2.9.0.tar.gz", hash = "sha256:e061c01636188743bb69f368dcd391f327b8cfbfede2fe1cbb1211b06601ba3b", size = 39578 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/37/2f/efc4877d1a1536ec76ca0114c3e9dee7d0a10a262c53d384d50163f5684c/pydantic_extra_types-2.9.0-py3-none-any.whl", hash = "sha256:f0bb975508572ba7bf3390b7337807588463b7248587e69f43b1ad7c797530d0", size = 30544 },
+    { name = "typing-extensions" },
 ]
 
 [[package]]

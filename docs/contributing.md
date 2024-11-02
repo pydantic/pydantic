@@ -49,7 +49,7 @@ Because of this, setting up and running the tests should be very simple.
 You'll need the following prerequisites:
 
 - Any Python version between **Python 3.9 and 3.12**
-- [**uv**] (https://docs.astral.sh/uv/getting-started/installation/) or other virtual environment tool
+- [**uv**](https://docs.astral.sh/uv/getting-started/installation/) or other virtual environment tool
 - **git**
 - **make**
 

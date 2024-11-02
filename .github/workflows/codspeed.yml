@@ -20,10 +20,11 @@ jobs:
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
-          cache-dependency-glob: "uv.lock"
 
       - name: install deps
-        run: uv sync --group testing --group testing-extra --extra email --frozen
+        run: |
+          uv venv --python 3.12
+          uv sync --group testing --group testing-extra --extra email --frozen
 
       - name: Run CodSpeed benchmarks
         uses: CodSpeedHQ/action@v3
