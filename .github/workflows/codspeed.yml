@@ -22,9 +22,7 @@ jobs:
           enable-cache: true
 
       - name: install deps
-        run: |
-          uv venv --python 3.12
-          uv sync --group testing --group testing-extra --extra email --frozen
+        run: uv sync --group testing --group testing-extra --extra email --frozen
 
       - name: Run CodSpeed benchmarks
         uses: CodSpeedHQ/action@v3
